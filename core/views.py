@@ -4654,7 +4654,10 @@ def fileInfo(request):
         query['scope'] = request.session['requestParams']['scope']
     if 'pandaid' in request.session['requestParams'] and request.session['requestParams']['pandaid'] != '':
         query['pandaid'] = request.session['requestParams']['pandaid']
-    
+    if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid'] != '':
+        query['jeditaskid'] = request.session['requestParams']['jeditaskid']
+
+
     if file:
         files = JediDatasetContents.objects.filter(**query).values()
         if len(files) == 0:
@@ -4690,6 +4693,13 @@ def fileInfo(request):
             columns.append(pair)
     del request.session['TFIRST']
     del request.session['TLAST']
+
+    for file_ in files:
+        if (file_['startevent'] != None):
+            file_['startevent'] += 1
+        if (file_['endevent'] != None):
+            file_['endevent'] += 1
+
     if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
         data = {
             'request' : request,
