@@ -1,0 +1,18 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA{% endblock %}
+{% block title %} {{ viewParams.MON_VO }} PanDA monitor{% endblock %}
+{% block subtitle %}{{ viewParams.MON_VO }} PanDA monitor error{% endblock %}
+
+{% block body %}
+
+<table style="margin:30px" ><tr><td>
+
+
+<p>
+{{ errormessage }} {% if url %} Please click <a href="{{url}}">here</a> to load the certificate{% endif %}
+</p>
+
+</td></tr></table>
+
+{% endblock %}

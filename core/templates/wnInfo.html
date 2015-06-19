@@ -1,0 +1,201 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA WN {{ wnname }}@{{ site }} {% endblock %}
+{% block title %} <a href="{% url 'mainPage' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA WN slot performance {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at {{ site }}{{ viewParams.selection|safe }}
+{% endblock %}
+{% block body %}
+
+{{ viewParams.header }}
+
+<div class='section'>Worker node slot performance {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at <a href="{% url 'siteInfo' site %}">{{ site }}</a></div>
+
+{% if requestParams.sortby %} <p><b>Sorted by: {{ requestParams.sortby }} </b><p> {% endif %}
+
+{% if wnPlotFailed %}
+
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+{% if wnPlotFailed|length > 0 %}
+        var data = google.visualization.arrayToDataTable([
+          ['Time', 'Count'],
+
+{% for wn, count in wnPlotFailed %}
+          ['{{ wn }}', {{ count }}],
+{% endfor %}
+
+            ])
+        var options = {
+          title: 'Failed jobs per WN slot',
+          legend: { position: 'none' },
+          hAxis: {title: 'WN slot (empty bins suppressed)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
+        };
+
+        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+{% endif %}
+
+{% if wnPlotFinished|length > 0 %}
+        var data2 = google.visualization.arrayToDataTable([
+          ['Time', 'Count'],
+
+{% for wn, count in wnPlotFinished %}
+          ['{{ wn }}', {{ count }}],
+{% endfor %}
+
+            ])
+        var options2 = {
+          title: 'Finished jobs per WN slot',
+          legend: { position: 'none' },
+          hAxis: {title: 'WN (empty bins suppressed)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
+        };
+
+        var chart2 = new google.visualization.ColumnChart(document.getElementById('chart_div2'));
+        chart2.draw(data2, options2);
+{% endif %}
+      }
+    </script>
+{% if wnPlotFailed|length > 0 %}
+    <div id="chart_div" style="height: 500px;"></div>
+{% endif %}
+{% if wnPlotFinished|length > 0 %}
+    <div id="chart_div2" style="height: 500px;"></div>
+{% endif %}
+
+{% endif %}
+
+{% if wnname != 'all' %}
+
+<table>
+<tr class='tablesection'><th colspan=20> Slot info for worker node {{ wnname }} at {{ site }}</th></tr>
+<tr class='tablesection'>
+<th> WN </th>
+<th> nSlots </th>
+<th> nJobs </th>
+<th> <a href="{{nosorturl}}?sortby=defined">defined</a> </th>
+<th> <a href="{{nosorturl}}?sortby=waiting">waiting</a> </th>
+<th> <a href="{{nosorturl}}?sortby=throttled">throttled</a> </th>
+<th> <a href="{{nosorturl}}?sortby=sent">sent</a> </th>
+<th> <a href="{{nosorturl}}?sortby=starting">starting</a> </th>
+<th> <a href="{{nosorturl}}?sortby=running">running</a> </th>
+<th> <a href="{{nosorturl}}?sortby=holding">holding</a> </th>
+<th> <a href="{{nosorturl}}?sortby=transferring">transferring</a> </th>
+<th> <a href="{{nosorturl}}?sortby=finished">finished</a> </th>
+<th> <a href="{{nosorturl}}?sortby=failed">failed</a> </th>
+<th> <a href="{{nosorturl}}?sortby=cancelled">cancelled</a> </th>
+<th> <a href="{{nosorturl}}?sortby=pctfail">% failed</a> </th>
+<th> outliers </th>
+</tr>
+
+{% for wn in summary %}
+<tr {% if wn.outlier != '' %} class='warning' {% endif %}>
+<th> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </th>
+<td>{{ wn.slotcount  }} </td>
+<td><a href="{% url 'jobList' %}?computingsite={{ site }}&modificationhost={{ wn.name }}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
+{% for state in wn.statelist %}
+{% if state.name != 'assigned' and state.name != 'activated' %}
+<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}&modificationhost={{ wn.name }}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% endif %} </td>
+{% endif %}
+{% endfor %}
+<td> {% if wn.pctfail > errthreshold %} <font color=red>{{ wn.pctfail  }}</font> {% else %} {{ wn.pctfail  }} {% endif %} </td>
+<td> {% if wn.outlier != '' %} <span class='warning'> {{ wn.outlier }} </span> {% endif %} </td>
+</tr>
+{% endfor %}
+
+</table>
+
+
+{% else %}
+
+{% comment %}
+<table>
+<tr class='tablesection'><th colspan=20> WN outliers for {{ site }} </th></tr>
+<tr class='tablesection'>
+<th> WN </th>
+<th> nSlots </th>
+<th> nJobs </th>
+<th> <a href="{{nosorturl}}?sortby=defined">defined</a> </th>
+<th> <a href="{{nosorturl}}?sortby=waiting">waiting</a> </th>
+<th> <a href="{{nosorturl}}?sortby=throttled">throttled</a> </th>
+<th> <a href="{{nosorturl}}?sortby=sent">sent</a> </th>
+<th> <a href="{{nosorturl}}?sortby=starting">starting</a> </th>
+<th> <a href="{{nosorturl}}?sortby=running">running</a> </th>
+<th> <a href="{{nosorturl}}?sortby=holding">holding</a> </th>
+<th> <a href="{{nosorturl}}?sortby=transferring">transferring</a> </th>
+<th> <a href="{{nosorturl}}?sortby=finished">finished</a> </th>
+<th> <a href="{{nosorturl}}?sortby=failed">failed</a> </th>
+<th> <a href="{{nosorturl}}?sortby=cancelled">cancelled</a> </th>
+<th> <a href="{{nosorturl}}?sortby=pctfail">% failed</a> </th>
+<th> outliers </th>
+</tr>
+
+{% for wn in summary %}
+{% if wn.outlier != '' %}
+
+<tr {% if wn.outlier != '' %} class='warning' {% endif %}>
+<th> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </th>
+<td>{{ wn.slotcount  }} </th>
+<td><a href="{% url 'jobList' %}?computingsite={{ site }}&modificationhost={{ wn.name }}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
+{% for state in wn.statelist %}
+{% if state.name != 'assigned' and state.name != 'activated' %}
+<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}&modificationhost={{ wn.name }}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% endif %} </td>
+{% endif %}
+{% endfor %}
+<td> {% if wn.pctfail > errthreshold %} <font color=red>{{ wn.pctfail  }}</font> {% else %} {{ wn.pctfail  }} {% endif %} </th>
+<td> {% if wn.outlier != '' %} <span class='warning'> {{ wn.outlier }} </span> {% endif %} </td>
+</tr>
+
+{% endif %}
+{% endfor %}
+</table>
+{% endcomment %}
+
+<table>
+<tr class='tablesection'><th colspan=20> WN summary for {{ site }} </th></tr>
+<tr bgcolor="lightcyan">
+<th> WN </th>
+<th> nSlots </th>
+<th> nJobs </th>
+<th> <a href="{{nosorturl}}?sortby=defined">defined</a> </th>
+<th> <a href="{{nosorturl}}?sortby=waiting">waiting</a> </th>
+<th> <a href="{{nosorturl}}?sortby=throttled">throttled</a> </th>
+<th> <a href="{{nosorturl}}?sortby=sent">sent</a> </th>
+<th> <a href="{{nosorturl}}?sortby=starting">starting</a> </th>
+<th> <a href="{{nosorturl}}?sortby=running">running</a> </th>
+<th> <a href="{{nosorturl}}?sortby=holding">holding</a> </th>
+<th> <a href="{{nosorturl}}?sortby=transferring">transferring</a> </th>
+<th> <a href="{{nosorturl}}?sortby=finished">finished</a> </th>
+<th> <a href="{{nosorturl}}?sortby=failed">failed</a> </th>
+<th> <a href="{{nosorturl}}?sortby=cancelled">cancelled</a> </th>
+<th> <a href="{{nosorturl}}?sortby=pctfail">% failed</a> </th>
+<th> outliers </th>
+</tr>
+
+{% for wn in summary %}
+<tr {% if wn.outlier != '' %} class='warning' {% endif %}>
+<th> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </th>
+<td>{{ wn.slotcount  }} </th>
+<td><a href="{% url 'jobList' %}?computingsite={{ site }}&modificationhost=*@{{ wn.name }}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
+{% for state in wn.statelist %}
+{% if state.name != 'assigned' and state.name != 'activated' %}
+<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}&modificationhost=*@{{ wn.name }}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% endif %} </td>
+{% endif %}
+{% endfor %}
+<td> {% if wn.pctfail > errthreshold %} <font color=red>{{ wn.pctfail  }}</font> {% else %} {{ wn.pctfail  }} {% endif %} </th>
+<td> {% if wn.outlier != '' %} <span class='warning'> {{ wn.outlier }} </span> {% endif %} </td>
+</tr>
+{% endfor %}
+
+</table>
+
+{% endif %}
+
+{% endblock %}
+
+{% block helptext %}
+{% include "wnInfoHelp.html" with helptitle="Worker node information" %}
+{% endblock %}

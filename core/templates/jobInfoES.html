@@ -1,0 +1,391 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %}PanDA job {{ pandaid }}{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA Event Service job details for job <b>{{ jobid }}</b>{% endblock %}
+
+{% block body %}
+
+{% if job %}
+<table width="100%">
+<tr bgcolor='lightcyan'>
+	<th>PandaID {% if not job.jeditaskid %} <br>Attempt# {% endif %}</th>
+	<th>Owner{% if job.workinggroup %} &nbsp;  WG{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / VO{% endif %}{% endif %}</th>
+	<th>TaskID</th>
+{% if job.parentid %}
+    <th>Parent</th>
+{% endif %}
+	<th>Mode</th>
+    <th>Cores</th>
+	<th>Status</th>
+	<th>Substate</th>
+	<th>Created</th>
+	<th>Time to start<br> d:h:m:s</th>
+	<th>Duration<br>d:h:m:s</th>
+	<th>Modified</th>
+	<th>{% if viewParams.MON_VO == 'ATLAS' %}Cloud {% endif%}Site</th>
+	<th>Priority</th>
+</tr>
+<tr>
+	<td>{{ job.pandaid }}  {% if not job.jeditaskid %} <br>Attempt {{ job.attemptnr }} {% endif %}</td>
+	<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if job.workinggroup %} / <a href="{{xurl}}workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }} {% endif %}{% endif %}</td>
+	<td>{% if job.jeditaskid %}<a href="{% url 'taskInfo' job.jeditaskid %}">{{ job.jeditaskid }}</a> {% else %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
+{% if job.parentid %}
+    <td> <a href="{% url 'jobInfo' %}?pandaid={{ job.parentid }}"> {{ job.parentid }} </a>
+    </td>
+{% endif %}
+	<td>{{ job.jobmode }}</td>
+    <td>{{ job.corecount }}</td>
+	<td class='{{job.jobstatus}}_fill'>{{ job.jobstatus }}</td>
+	<td>{{ job.substate }}</td>
+	<td>{{ job.creationtime|date:"Y-m-d H:i" }}</td>
+	<td>{{ job.waittime }}</td>
+	<td>{{ job.duration }}</td>
+	<td>{{ job.modificationtime|date:"m-d H:i" }}</td>
+	<td>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite  %}">{{ job.computingsite }}</a></td>
+	<td>{{ job.currentpriority }}</td>
+</tr>
+<tr>
+	<td colspan="20">
+	{% if job.processingtype %} &nbsp; <b>Job type:</b> {{ job.processingtype }} {% endif %}
+    {% if job.transformation %} &nbsp; <b>Job transform:</b> {{ job.transformation|safe }} {% endif %}
+    {% if esjobstr|length > 0 %} &nbsp; <b>Dispatched event states:</b> {{ esjobstr|safe }} {% endif %}
+
+	</td>
+</tr>
+<tr> 
+	<td colspan="20" class='highlightcell'> <b>Datasets:</b> &nbsp; {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> &nbsp;{% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td>
+</tr>
+</table>
+<font size=-1>
+<p>
+{% if not job.jeditaskid %}
+{% if job.attemptnr > 1 %}
+This is attempt number {{ job.attemptnr }} for this job. To see a history of job attempts click on the job name above.
+{% endif %}
+{% endif %}
+</font>
+
+<table>
+    {% if esjobstr|length > 0 %} <tr><th class="tablesection">Dispatched event states</span></th><td> {{ esjobstr|safe }} </td></tr> {% endif %}
+
+    {% if job.errorinfo %}
+		<tr><th class="tablesection"><span class="alarm">Error description</span></th><td class="alarm">{{ job.errorinfo|safe }}</td></tr>
+    {% endif %}
+	{% if job.jobdispatchererrorcode %}
+		<tr><th class="tablesection"><span class="alarm">Job dispatch error code</span></th><td class="alarm">{{ job.jobdispatchererrorcode }}</td></tr>
+		<tr><th class="tablesection"><span class="alarm">Job dispatch error message</span></th><td class="alarm">{{ job.jobdispatchererrordiag }}</td></tr>
+	{% endif %}
+	{% if job.brokerageerrorcode %}
+		<tr><th class="tablesection"><span class="alarm">Brokerage error code</span></th><td class="alarm">{{ job.brokerageerrorcode }}</td></tr>
+		<tr><th class="tablesection"><span class="alarm">Brokerage error message</span></th><td class="alarm">{{ job.brokerageerrordiag }}</td></tr>
+	{% endif %}
+	{% if job.ddmerrorcode %}
+		<tr><th class="tablesection"><span class="alarm">DDM error code</span></th><td class="alarm">{{ job.ddmerrorcode }}</td></tr>
+		<tr><th class="tablesection"><span class="alarm">DDM error message</span></th><td class="alarm">{{ job.ddmerrordiag }}</td></tr>
+	{% endif %}
+	{% if job.exeerrorcode %}
+		<tr><th class="tablesection"><span class="alarm">Execution error code</span></th><td class="alarm">{{ job.exeerrorcode }}</td></tr>
+		<tr><th class="tablesection"><span class="alarm">Execution error message</span></th><td class="alarm">{{ job.exeerrordiag }}</td></tr>
+	{% endif %}
+	{% if job.piloterrorcode %}
+		<tr><th class="tablesection"><span class="alarm">Pilot error code</span></th><td class="alarm">{{ job.piloterrorcode }}</td></tr>
+		<tr><th class="tablesection"><span class="alarm">Pilot error message</span></th><td class="alarm">{{ job.piloterrordiag }}</td></tr>
+	{% endif %}
+	{% if job.superrorcode %}
+		<tr><th class="tablesection"><span class="alarm">Supervisor error code</span></th><td class="alarm">{{ job.superrorcode }}</td></tr>
+		<tr><th class="tablesection"><span class="alarm">Supervisor error message</span></th><td class="alarm">{{ job.superrordiag }}</td></tr>
+	{% endif %}
+	{% if job.taskbuffererrorcode %}
+		<tr><th class="tablesection"><span>TaskBuffer return code</span></th><td>{{ job.taskbuffererrorcode }}</td></tr>
+		<tr><th class="tablesection"><span>TaskBuffer message</span></th><td>{{ job.taskbuffererrordiag }}</td></tr>
+	{% endif %}
+</table>
+
+{% if "esmerge" in job.specialhandling %}
+<p>
+<b>This is an event service merge job.</b>
+</p>
+{% endif %}
+
+{% if pretries %}
+<table width=900><tr><td>
+<div class="section">This job is a descendent of upstream job(s)</div>
+<font size=-1>
+{% for pretry in pretries %}
+<a href="{% url 'jobInfo' pretry.oldpandaid %}">{{ pretry.oldpandaid }}</a> &nbsp; 
+{% endfor %}
+</font>
+</td></tr></table>
+<p>
+{% endif %}
+
+{% if retries %}
+<table width=900><tr><td>
+<div class="section">This job has descendents downstream</div>
+<font size=-1>
+{% for retry in retries %}
+<a href="{% url 'jobInfo' retry.newpandaid %}">{{ retry.newpandaid }}</a> &nbsp;
+{% endfor %}
+</font>
+</td></tr></table>
+<p>
+{% endif %}
+
+{% if coreData %}
+<p>
+<b>core job info:</b>
+&nbsp; Pipeline task: <b>{{ coreData.pipelinetask }}</b>
+&nbsp; process: <a href="http://srs.slac.stanford.edu/Pipeline-II/exp/SRS/pi.jsp?pi={{coreData.processinstance}}">{{coreData.processinstance}}</a>
+<p>
+{% endif %}
+
+<table>
+<tr><th bgcolor='lightcyan'>Job information</th>
+
+{% if logfile.lfn %}
+{% if viewParams.MON_VO == 'ATLAS' %}
+
+{% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' %}
+{% if oslogpath %}
+<td><a href="{{ oslogpath }}">log tarball</a>
+</td>
+{% endif %}
+
+<td>
+<a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}">logfiles</a>
+</td>
+
+{% comment %}
+<td><a href="http://panda.cern.ch/?overview=viewlogfile&nocachemark=yes&guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}">logfiles</a>
+</td>
+{% endcomment %}
+
+{% endif %}
+
+{% else %}
+
+{% if job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
+<td>
+job <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/application_log.txt">stdout</a ,
+<a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/output/">outputs</a>
+</td>
+{% endif %}
+
+<td>
+<a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt">payload stdout</a>
+</td>
+
+<td>
+<a href='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'>job cache tarball</a>
+</td>
+
+{% endif %}
+{% endif %}
+
+{% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
+{% if stdout %}<td>pilot job <a href='{{stdout}}'>stdout</a>, <a href='{{stderr}}'>stderr</a>,
+<a href='{{stdlog}}'>batch log</a> </td>{% endif %}
+{% endif %}
+
+<td>
+<a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">logger records</a>
+</td>
+
+<td>
+<a href="{% url 'jobList' %}?parentid={{ job.pandaid }}">child jobs</a>
+</td>
+
+</tr>
+
+{% if job.jobsetid and job.jobsetid > 0 %}
+<tr height=10></tr>
+<tr><th  class='tablesection'>Jobset <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}">{{ job.jobsetid }}</a></th>
+
+{% if libjob and libjob != job.pandaid  %}
+<td>
+<a href="{% url 'jobInfo' %}?pandaid={{ libjob }}">build job {{ libjob }}</a>
+</td>
+{% endif %}
+
+{% if runjobs|length > 0 %}
+<td><a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&processingtype=pathena">{{ runjobs|length }} run jobs</a></td>
+{% endif %}
+
+{% if mergejobs|length > 0 %}
+<td><a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&processingtype=usermerge">{{ mergejobs|length }} merge jobs</a></td>
+{% endif %}
+
+{% endif %}
+
+</table>
+
+{% if debugmode %}
+{% if debugstdout %}
+<table width=1000><tr><td bgcolor="#FFF4A3"> <b>Job debug stdout </td></tr>
+<tr><td>
+<font size=-1><pre>
+{{ debugstdout }}
+</pre></font>
+</td></tr>
+</table>
+{% else %}
+{% if 'showdebug' in requestParams %}
+<p> <b>Debug mode:</b> This job is in debug mode but no debug stdout can be found. The pilot may not have sent any yet (it can take up to 1/2 hour for the pilot to be informed after a job is put in debug mode), or it may have been deleted if the job is completed. <a href="{% url 'jobInfo' pandaid %}?showdebug=1">Check again</a>
+{% else %}
+<p><b>Debug mode:</b> This job is in debug mode, meaning stdout is transmitted to PanDA every few minutes as the job runs.
+{% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus ==  'cancelled' %}
+However, this job is completed so the debug data has probably been deleted; you can view the logfiles instead. 
+But if you want, you can check.
+{% endif %}
+ <a href="{% url 'jobInfo' pandaid %}?showdebug=1">Look for debug stdout</a>
+{% endif %}
+{% endif %}
+{% else %}
+{% if 'showdebug' in requestParams %}
+<p> <b>Debug mode:</b> 'showdebug' has been requested but this job is not in debug mode.
+{% endif %}
+{% endif %}
+
+{% if nfiles > 0 %}
+            <script language=javascript type='text/javascript'>
+            function toggle_files() {
+            var el = document.getElementById("filestable"); 
+            if ( el.style.display != 'none' ) { 
+             el.style.display = 'none' } 
+            else { el.style.display = ''; } 
+             } </script>
+
+{% if files|length > 10 %}
+<a style="cursor:pointer;" onClick=toggle_files()><font size=-1 color=black>Show/hide list of {{ files|length }} job files</font></a>
+{% endif %}
+
+<div id="filestable" style="display: inline">
+<table>
+<tr><th colspan=20 bgcolor='lightcyan'> {{ nfiles }} job files </th></tr>
+<tr><th>Filename (Type)</th><th>Scope</th><th>Size (MB)</th><th>Status</th><th>Attempt (max)</th><th>Dataset</th></tr>
+{% for file in files %}
+<tr><td>
+<font size=-1>
+{% if viewParams.MON_VO == 'ATLAS' %}
+   {% if file.type != 'pseudo_input' %}
+       <a href="{% url 'fileInfo' %}?lfn={{file.lfn}}&scope={{file.scope}}&pandaid={{pandaid}}">{{ file.lfn}}</a>
+    {% else %}
+    {{ file.lfn }}
+    {% endif %}
+{% else %}
+{{ file.lfn}}
+{% endif %} ({{ file.type }})
+{% if file.type == 'input' %} &nbsp;  <a href="{% url 'jobInfo' %}?creator={{file.lfn}}">Find creator job</a> {% endif %}
+</font>
+</td>
+<td> <font size=-1>{{ file.scope }}</font> </td>
+<td> {{ file.fsize }} </td>
+<td class='{{file.status}}'> {{ file.status }} </td>
+<td> {% if file.attemptnr %} {{ file.attemptnr }} ({{ file.maxattempt }}){% endif %} </td>
+<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{file.datasetname}}"> {{ file.datasetname }}</a>
+{% if file.dispatchdblock %}
+<br />(dispatch block: {{ file.dispatchdblock }} <a href="http://panda.cern.ch/server/pandamon/query?dataset={{ file.dispatchdblock }}">pinkpanda</a> <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.dispatchdblock }}">rucio</a>)
+{% endif %}
+{% if file.destinationdblock %}
+<br />(destination block: {% if file.destinationdblock_vis %}{{ file.destinationdblock_vis }}{% else %}{{ file.destinationdblock }}{% endif %} <a href="http://panda.cern.ch/server/pandamon/query?dataset={{ file.destinationdblock }}">
+pinkpanda</a> <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.destinationdblock }}">rucio</a>)
+{% endif %}
+</font>
+</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+{% endif %}
+
+<p>
+
+{% if "esmerge" in job.specialhandling %}
+
+{% elif eventservice %}
+
+{% if evtable|length > 0 %}
+<p><div class='section'>Latest event range records:</div>
+
+<table>
+<tr>
+<th> Min event </th>
+<th> Max </th>
+<th> Status </th>
+<th> ProcessID </th>
+<th> Attempt </th>
+</tr>
+{% for ev in evtable %}
+<tr>
+<td> {{ ev.def_min_eventid }} </td>
+<td> {{ ev.def_max_eventid }} </td>
+<td> <span class="{{ ev.status }}">{{ ev.status }}</span> </td>
+<td> {{ ev.job_processid }} </td>
+<td> {{ ev.attemptnr }} </td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% endif %}
+
+<table>
+<tr><th colspan=20 bgcolor='lightcyan'> Other key job parameters </th></tr>
+	{% if job.statechangetime %}<tr><th>Last state change</th><td>to <span class={{job.jobstatus}}>{{job.jobstatus}}</span> at {{ job.statechangetime|date:"Y-m-d H:i" }}</td></tr></tr>{% endif %}
+	{% if job.atlasrelease %}<tr><th>Release</th><td>{{ job.atlasrelease }}</td></tr></tr>{% endif %}
+	{% if job.transexitcode != '0' and job.transexitcode != 'None' and job.transexitcode != '' %}<tr><th class="alarm">Transformation exit code</th><td class="alarm">{{ job.transexitcode }} (non-zero exit code from job payload)</td></tr></tr>{% endif %}
+	{% if job.parentid %}<tr><th>Parent job ID</th><td><a href="{% url 'jobInfo' job.parentid %}">{{ job.parentid }}</a></td></tr></tr>{% endif %}
+	{% if job.proddblock %}<tr><th>Proddblock</th><td><a href="http://panda.cern.ch/server/pandamon/query?dataset={{ job.proddblock }}">{{ job.proddblock }}</a></td></tr>{% endif %}
+	{% if job.workinggroup %}<tr><th>Working group</th><td>{{ job.workinggroup }}</td></tr></tr>{% endif %}
+	{% if job.transfertype %}<tr><th>Transfer type</th><td>{{ job.transfertype }}</td></tr>{% endif %}
+	{% if job.specialhandling %}<tr><th>Special handling</th><td>{{ job.specialhandling }}</td></tr>{% endif %}
+	{% if job.nevents %}<tr><th># events</th><td>{{ job.nevents }}</td></tr>{% endif %}
+	{% if job.attemptnr %}<tr><th>Attempt number</th><td>{{ job.attemptnr }} of a maximum {{ job.maxattempt }}</td></tr></tr>{% endif %}
+	{% if job.destinationse %}<tr><th>Output destination</th><td>{{ job.destinationse }}</td></tr>{% endif %}
+	{% if job.cpuconsumptiontime %}
+		<tr><th>CPU consumption time (s)</th><td>{{ job.cpuconsumptiontime }}</td></tr>
+	{% endif %}
+	{% if job.jobmetrics %}<tr><th>Job metrics</th><td>{{ job.jobmetrics }}</td></tr>{% endif %}
+	{% if jobparams %}<tr><th>Job parameters</th><td><font size=-1>{{ jobparams }}</font></td></tr>{% endif %}
+	{% if job.pilotid %}<tr><th>Pilot ID</th><td>{{ job.pilotid }}</td></tr>{% endif %}
+	{% if job.batchid %}<tr><th>Batch ID</th><td>{{ job.batchid }}</td></tr>{% endif %}
+</table>
+
+{% if logextract %}
+<table width=1000><tr><td bgcolor="#FFF4A3"> <b>Warning: job log extract indicates possible problems </td></tr>
+<tr><td>
+<font size=-1><pre>
+{{ logextract }}
+</pre></font>
+</td></tr>
+</table>
+{% endif %}
+
+{% if metadata %}
+<table width=1000><tr><td bgcolor="#f8d9ff"> <b>Job metadata </td></tr>
+<tr><td>
+<font size=-1><pre>
+{{ metadata }}
+</pre></font>
+</td></tr>
+</table>
+{% endif %}
+
+<table>
+<tr><th colspan=20 bgcolor='lightcyan'> All job parameters </th></tr>
+{% for col in columns %}
+<tr><th>{{ col.name }}</th><td> {{ col.value }} </td></tr>
+{% endfor %}
+</table>
+
+{% else %}
+    <p>Job {{ jobid }} not found.</p>
+{% endif %}
+
+{% endblock %}
+
+{% block helptext %}
+{% include "jobInfoHelp.html" with helptitle="Job detail page help" %}
+{% endblock %}
+

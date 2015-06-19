@@ -1,0 +1,74 @@
+{% load url from future %}{% load pbm_extras %}
+
+
+<a href="#sec.toc">[top]</a>&nbsp;
+<a name="sec.{{ divid }}" href="{% url 'pbm-detail' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}{% if plotid %}&amp;plotid={{ plotid }}{% endif %}#sec.toc">[permalink]</a>&nbsp;
+<a name="sec.{{ divid }}" href="{% url 'pbm-plot' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}{% if plotid %}&amp;plotid={{ plotid }}{% endif %}#sec.toc">[plot only]</a>&nbsp;
+<a name="sec.{{ divid }}" href="{% url 'pbm-table' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}{% if plotid %}&amp;plotid={{ plotid }}{% endif %}#sec.toc">[table only]</a>&nbsp;
+<a name="sec.{{ divid }}" href="{% url 'pbm-index' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}#sec.toc">[all plots]</a>&nbsp;
+
+
+
+<div id="{{ divid }}" style="min-width: 450px; height: 500px; max-width: 800px; margin: 0 auto"></div>
+
+
+<script type="text/javascript" charset="utf-8">
+$(function () {
+
+{% if colors %}
+	Highcharts.setOptions({
+		colors: {{ colors }}
+	});
+{% endif %}
+
+	$('#{{ divid }}').highcharts({
+		chart: {
+			plotBackgroundColor: null,
+			plotBorderWidth: 1,//null,
+			plotShadow: false
+		},
+		title: {
+			text: '{{ title }}'
+		},
+		tooltip: {
+			pointFormat: '{series.name}: <b>{point.percentage:.2f}%</b>'
+		},
+		plotOptions: {
+			pie: {
+				allowPointSelect: true,
+				cursor: 'pointer',
+				dataLabels: {
+					enabled: true,
+					format: '<b>{point.name}</b>: {point.percentage:.2f} %',
+					style: {
+						color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+					}
+				},
+				showInLegend: true
+			}
+		},
+		{% if startdate %}{% if enddate %}
+		subtitle: {
+			text: 'Showing data for interval from {{startdate}} to {{enddate}}.'
+		},
+		{% endif %}{% endif %}
+		series: [{
+			type: 'pie',
+			name: '{{ title }}',
+			data: {{ data|safe }}
+		}]
+	}, 
+	function (chart) { // on complete
+		{% if startdate %}
+			chart.renderer.image('http://bigpanda.cern.ch/static/images/favicon.png', 20, 70, 30, 30)
+				.add();
+		{% else %}
+			chart.renderer.image('http://bigpanda.cern.ch/static/images/favicon.png', 20, 60, 30, 30)
+				.add();
+		{% endif %}
+		{% if not data|length %}
+			chart.renderer.text('<span style="font-size:xx-large;">No data available.', 275, 275).add();
+		{% endif %}
+	});
+});
+</script>

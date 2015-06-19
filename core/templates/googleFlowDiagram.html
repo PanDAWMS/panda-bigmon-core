@@ -1,0 +1,35 @@
+<p>
+{% comment %} Flow diagram entries: {{ struct.rows|length }} {% endcomment %}
+
+<div id="sankey_multiple" style="width: 1300px; height: 700px;"></div>
+
+<center>
+<script type="text/javascript">
+google.setOnLoadCallback(drawFlowChart);
+   function drawFlowChart() {
+    var flowdata = new google.visualization.DataTable();
+{% for col in struct.columns %}
+    flowdata.addColumn('{{ col.0 }}', '{{ col.1 }}');
+{% endfor %}
+flowdata.addRows([
+{% for row in struct.rows %}
+['{{ row.0 }}', '{{ row.1 }}', {{ row.2 }}],
+{% endfor %}
+]);
+
+    // Set chart options
+    var flowoptions = { width: 1200, height: 700,
+       sankey: {
+          link: { color: { fill: 'light grey'} },
+	  node: { color: { fill: 'blue'}, 
+	          label: { color: 'black'} },
+       }
+    }; 
+
+    // Instantiate and draw our chart, passing in some options.
+    var flowchart = new google.visualization.Sankey(document.getElementById('sankey_multiple'));
+    flowchart.draw(flowdata, flowoptions);
+   }
+</script>
+</center>
+</p>

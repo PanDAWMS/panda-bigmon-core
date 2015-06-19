@@ -1,0 +1,80 @@
+
+MY_SECRET_KEY = 'FIX_ME'
+
+dbaccess = {
+
+         'default':
+         {
+         'ENGINE':'django.db.backends.oracle',
+         'OPTIONS': {
+                 'threaded': True,
+          },
+         'NAME': 'FIX_ME',
+#         'HOST': 'FIX_ME',
+#         'PORT': 'FIX_ME',
+#	 'SERVICE_NAME':'FIX_ME',
+#	 'INSTANCE_NAME':'FIX_ME',
+#         'HOST': 'FIX_ME',
+         'USER': 'FIX_ME',
+#         'PASSWORD': 'FIX_ME',
+         'PASSWORD': 'FIX_ME',
+         },
+
+         'pbm':
+         {
+         'ENGINE':'FIX_ME',
+         'NAME': 'FIX_ME',
+         'HOST': 'FIX_ME',
+         'USER': 'FIX_ME',
+         'PASSWORD': 'FIX_ME',
+         },
+
+         'default_INTR':
+         {
+         'ENGINE':'django.db.backends.oracle',
+         'NAME': 'FIX_ME',
+         'USER': 'FIX_ME',
+         'PASSWORD': 'FIX_ME',
+         },
+
+
+         'deft':
+         {
+         'ENGINE':'django.db.backends.oracle',
+         'NAME': 'FIX_ME',
+         'USER': 'FIX_ME',
+         'PASSWORD': 'FIX_ME',
+         },
+ 
+          'deft_adcr':
+         {
+         'ENGINE':'django.db.backends.oracle',
+         'NAME': 'FIX_ME',
+         'USER': 'FIX_ME',
+         'PASSWORD': 'FIX_ME',
+         },
+
+         'grisli':
+         {
+         'ENGINE':'django.db.backends.oracle',
+         'NAME': 'FIX_ME',
+         'USER': 'FIX_ME',
+         'PASSWORD': 'FIX_ME',
+         }
+       }
+
+aws = {
+"AWS_ACCESS_KEY_ATLAS" : "FIX_ME",
+"AWS_SECRET_KEY_ATLAS" : "FIX_ME"
+}
+
+CACHES = {
+    "default": {
+    "BACKEND": "redis_cache.RedisCache",
+    #'LOCATION': '/tmp/redis.sock',
+    'LOCATION': 'FIX_ME',
+    }
+}
+
+RUCIO_ACCOUNT = "FIX_ME"
+

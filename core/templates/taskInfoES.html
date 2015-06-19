@@ -1,0 +1,269 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA ES task {{ jeditaskid }} {% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA Event Service task {{ jeditaskid }} at {{ task.site }} {% endblock %}
+
+{% block body %}
+
+{% if columns %}
+
+<table>
+<tr bgcolor='lightcyan'><th colspan=20> Event Service Task {{ jeditaskid }} at site <a href="{% url 'siteInfo' task.site %}">{{ task.site }}</a> </th></tr>
+<tr bgcolor='lightcyan'>
+	<th>Task ID</th>
+    {% if task.deftreqid %} <th> Request </th> {% endif %}
+	{% if task.reqid != task.jeditaskid and not task.deftreqid %}<th>Jobset</th>{% endif %}
+	<th>Type</th>
+	<th>Processing type</th>
+	<th>Transform</th>
+	<th>User</th>
+	{% if task.campaign %} <th> Campaign </th> {% endif %}
+	<th>Task status </th>{% if task.superstatus %} {% if task.superstatus != task.status %}<th> Detailed JEDI status </th>{% endif %} {% endif %}
+{% if task.dsinfo %}
+    <th> Event dispatches </th>
+{% endif %}
+	<th>Created</th>
+	<th>Modified</th>
+	<th>Cores</th>
+	<th>Priority</th>
+	{% if task.ticketid %} <th>Tracker</th> {% endif %}
+</tr>
+	<tr>
+		<td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a></td>
+        {% if task.deftreqid %} <td> <a href="http://bigpanda.cern.ch/prodsys/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a> </td> {% endif %}
+		{% if task.reqid != task.jeditaskid and not task.deftreqid %}<td>{{ task.reqid }}</td>{% endif %}
+		<td>{{ task.tasktype }}</td>
+		<td>{% if task.processingtype %} {{ task.processingtype }} {% endif %} </td>
+		<td> {{ task.transpath }} </td>
+		<td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
+		{% if task.campaign %} <td><a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a></td> {% endif %}
+		<td class='{{task.status}}_fill'>{% if task.superstatus %}<b><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.superstatus }}</a></b> {% if task.superstatus != task.status %}<td class='{{task.status}}'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.status }}</a></td>{% endif %} {% else %}<a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.status }}</a>{% endif %}</td>
+
+        <td> {{task.estaskstr}} </td>
+		<td>{{ task.creationdate|date:"Y-m-d H:i" }}</td>
+		<td>{{ task.modificationtime|date:"m-d H:i" }}</td>
+		<td>{{ task.corecount }}</td>
+		<td>{{ task.taskpriority }}</td>
+{% if task.ticketid %}
+        <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a></td>
+{% endif %}
+	</tr>
+</table>
+
+{% if jobsummary %}
+
+<table>
+<tr bgcolor="lightcyan"><th colspan=20>
+<b>States of jobs in this task</b>   &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&mode=eventservice&display_limit=100">Show jobs</a>
+</th></tr>
+<tr>
+{% for state in jobsummary %}
+<td class="{{ state.name}}"> <b> {{ state.name }} </b> </td>
+{% endfor %}
+</tr><tr>
+{% for state in jobsummary %}
+<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&mode=eventservice&display_limit=100"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+{% endfor %}
+</table>
+{% endif %}
+
+<p>
+{% if task.errordialog %}
+<table width=1000><tr><td bgcolor="#FFFBDA"><font color='brown'> <b>Logged status: {{ task.errordialog|safe }}</b></font></td></tr>
+{% if logtxt %}
+<tr><td>
+<font size=-1><pre>
+{{ logtxt }}
+</pre></font>
+</td></tr>
+{% endif %}
+</table>
+{% endif %}
+
+<table><tr>
+<td bgcolor='lightcyan'><b> View: </b></td>
+
+{% if jobsummary %}
+<td>
+<a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&jobtype=eventservice&display_limit=100">job list (access to job details and logs)</a>
+</td>
+{% endif %}
+
+{% if task.parent_tid != task.jeditaskid and task.parent_tid != None %}
+<td>
+parent task<a href="{% url 'taskInfo' task.parent_tid %}"> {{ task.parent_tid }}</a>
+</td>
+{% endif %}
+
+<td>
+<a href="{% url 'taskList' %}?parent_tid={{ task.jeditaskid }}&display_limit=100">child tasks</a>
+</td>
+
+{% if viewParams.MON_VO == 'ATLAS' %}
+<td>
+<a href="http://bigpanda.cern.ch/prodsys/prodtask/task/{{ task.jeditaskid }}/">prodsys task page</a>
+</td>
+{% endif %}
+
+<td>
+<a href="{% url 'pandaLogger' %}?category=panda.mon.bamboo&type=taskbrokerage&taskid={{ jeditaskid }}">brokerage logger</a>
+</td>
+
+<td>
+<a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&jeditaskid={{ jeditaskid }}">JEDI action logger</a>
+</td>
+
+<td>
+<a href="{% url 'errorSummary' %}?jeditaskid={{jeditaskid}}">error summary</a>
+</td>
+
+</tr></table>
+
+{% if inctrs %}
+<table>
+<tr bgcolor='lightcyan' >
+	<th>Input containers</th>
+</tr>
+{% for dsrec in inctrs %}
+	<tr>
+		<td><font size=-1><a href="{% url 'datasetList' %}?containername={{ dsrec }}">{{ dsrec }}</a></font></td>
+	</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if outctrs %}
+<table>
+<tr bgcolor='lightcyan' >
+	<th>Output containers</th>
+</tr>
+{% for dsrec in outctrs %}
+	<tr>
+		<td><font size=-1><a href="{% url 'datasetList' %}?containername={{ dsrec }}">{{ dsrec }}</a></font></td>
+	</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if datasets %}
+<script type="text/javascript">    
+function toggleRowsDisplay(className) {                                                                                                                                                                                    
+   el = document.getElementsByClassName(className)
+   for (i=0; i<el.length; i++) {   
+     el[i].style.display = (el[i].style.display=="none") ? "" : "none";                                                                                           
+   }
+}   
+</script>
+
+<table>
+
+{% if dstypes %}
+<tr bgcolor='lightcyan'> <th colspan=20> 
+{{ datasets|length }} datasets, show/hide by type:
+&nbsp; <a style="cursor: pointer;" onclick="javascript:toggleRowsDisplay('type-all');">all</a>
+{% for dst in dstypes %}
+  &nbsp; <a style="cursor: pointer;" onclick="javascript:toggleRowsDisplay('type-{{ dst.type }}');">{{ dst.type }}({{ dst.count }})</a>
+{% endfor %}
+</th> </tr>
+{% endif %}
+
+<tr bgcolor='lightcyan' >
+	<th>Dataset, container name</th>
+	<th>Type</th>
+	<th>Stream</th>
+	<th>State</th>
+	<th>Status</th>
+	<th>Nfiles</th>
+	<th>Created</th>
+	<th>Modified</th>
+</tr>
+
+{% for dsrec in datasets %}
+	<tr class="type-{{ dsrec.type }} type-all" style="display:all">
+		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{ dsrec.datasetname }}">{{ dsrec.datasetname }}</a></font></td>
+		<td>{{ dsrec.type }}</td>
+		<td>{{ dsrec.streamname }}</td>
+		<td class='{{dsrec.state}}'>{{ dsrec.state }}</td>
+		<td class='{{dsrec.status}}'>{{ dsrec.status }}</td>
+		<td>{{ dsrec.nfiles }}</td>
+		<td>{{ dsrec.creationtime|date:"Y-m-d H:i" }}</td>
+		<td>{{ dsrec.modificationtime|date:"m-d H:i" }}</td>
+	</tr>
+{% endfor %}
+</table>
+</p>
+
+{% else %}
+
+No datasets were found for this task
+
+{% endif %}
+
+{% if sumd %}
+<table>
+{% for fdict in sumd %}
+<tr><th> {{ fdict.field }} </th><td>
+{% for item in fdict.list %}
+{% if fdict.field == 'status' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+{% endfor %}
+</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if jobparams %}
+<table>
+<a name="jobparams"></a>
+<tr bgcolor='lightcyan'><th colspan=20> Job parameters </th></tr>
+{% for p in jobparams %}
+<tr><td><font size=-1>{{ p|safe }}</font></td></tr>
+{% endfor %}
+</table>
+<p>
+{% endif %}
+
+<a name="taskparams"></a>
+{% if taskparaml %}
+<table>
+<tr bgcolor='lightcyan'><th colspan=20> Prodsys task parameters </th></tr>
+{% for p in taskparaml %}
+{% if p.name != 'jobParameters' and p.name != 'log' %}
+<tr><th> {{ p.name }} </th><td>{% if p.value != None %} {{ p.value }} {% endif %}</td></tr>
+{% endif %}
+{% endfor %}
+</table>
+<p>
+{% endif %}
+
+<table>
+<tr bgcolor='lightcyan'><th colspan=20> PanDA/JEDI task parameters </th></tr>
+{% for col in columns %}
+<tr><th>{{ col.name }} </th><td> {% if col.value != 'None' %} {{ col.value }} {% endif %}</td></tr>
+{% endfor %}
+</table>
+
+{% else %}
+
+<p>
+PanDA task {% if jeditaskid > 0 %}{{ jeditaskid }}:{% endif %} <b>{{ taskname }}</b> not found.
+</p>
+
+{% if viewParams.MON_VO == 'ATLAS' %}
+
+ <p> Note that task info pages are currently only available for JEDI tasks in the new monitor.
+ </p><p>
+ You can however get a job listing for any task in quick search.
+</p><p>
+You can see the old monitor's task page for this task <a href="http://panda.cern.ch/server/pandamon/query?taskname={{ jeditaskid }}&overview=taskinfo">here</a>.
+</p>
+{% endif%}
+
+{% endif %}
+
+{% endblock %}
+
+{% block helptext %}
+{% include "taskInfoHelp.html" with helptitle="Task detail page help" %}
+{% endblock %}

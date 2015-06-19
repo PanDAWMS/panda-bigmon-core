@@ -1,0 +1,19 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA self monitor {% endblock %}
+{% block subtitle %}view summary{{ viewParams.selection|safe }} {% if nmax %}<b> display limit:{{nmax}}</b> {% endif %}
+{% if user %} &nbsp; user={{ user }} {% endif %}
+{% if site %} &nbsp; site={{ site }} {% endif %}
+{% if vo %} &nbsp; VO={{ vo }} {% endif %}
+{% endblock %}
+{% block body %}
+
+{{ viewParams.header }}
+
+<p><a href="{{ url }}reqplot" target="_blank">Client views of last 7 days</a> <br/></p>
+<p><a href="{{ url }}reqplot?days=1" target="_blank">Client views of last 1 day</a> <br/></p>
+<p><a href="{{ url }}reqplot?hours=12" target="_blank">Client views of last 12 hours</a> <br/></p>
+<p><a href="{{ url }}reqplot?hours=1" target="_blank">Client views of last 1 hours</a> <br/></p>
+
+{% endblock %}

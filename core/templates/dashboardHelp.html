@@ -1,0 +1,68 @@
+<tr class="docsection"><th><a name="dashboardHelp"></a> {{ helptitle }} </th></tr>
+<tr><td class="doctextlight">
+
+{% if viewParams.MON_VO != 'ATLAS' %}
+
+<p>
+This page summarizes recent job status for VOs, clouds and sites. Click on the numbers to see job listings.
+Note that only sites that have jobs in the system within the sampled period are shown. It is not a static list of available sites that is shown.
+</p>
+
+<p>
+Click the cloud name in the overall summary to go to the cloud's site summary.
+</p>
+
+{% endif %}
+
+{% if viewParams.MON_VO == 'ATLAS' %}
+
+{% if mode == 'site' or show == 'all' %}
+
+    {% if view != 'analysis' or show == 'all' %}
+
+        {% if cloudview == 'region' or show == 'all' %}
+
+<p>
+        <b>Region view</b><br>
+        This view associates jobs with clouds on the basis of the region in which the processing site is located.
+        The alternative <a href="{% url 'dashProduction' %}">'cloud' view</a> associates jobs with clouds on the basis of which Tier 1 the job is assigned to (which can be different for a site participating in multi-cloud production).
+        Click the cloud name in the overall summary to go to the cloud's site summary.
+        Click the job counts to go to job listings.
+</p>
+
+        {% endif %}
+        {% if cloudview == 'cloud' or show == 'all' %}
+
+<p>
+        <b>Cloud view</b><br>
+        This view associates jobs with clouds on the basis of which Tier 1 the job is assigned to, which can be different from the 'home cloud' of the processing site for a site participating in multi-cloud production (MCP). Thus in this view you may see sites listed in the CA cloud which are not located in CA.
+        The alternative <a href="{% url 'dashProduction' %}?cloudview=region">'region' view</a> associates production jobs with clouds on the basis of the region in which the processing site is located.
+        Click the cloud name in the overall summary to go to the cloud's site summary.
+</p>
+
+        {% endif %}
+
+    {% elif view == 'analysis' %}
+
+<p>
+    Click the cloud name in the overall summary to go to the cloud's site summary.
+</p>
+
+    {% endif %}
+
+<p>
+Pilot counts (nPilots) are for the last 3 hours. They are only shown in region view (they only make sense in that view, they are regional by nature).
+</p>
+
+{% endif %}
+
+{% endif %}
+
+<p>
+Click on column titles to sort.
+Click the job counts to go to job listings.
+Failure rates above {{ errthreshold }}% are shown in red.
+Click on the failure percentage to go to an error summary.
+</p>
+
+</td>

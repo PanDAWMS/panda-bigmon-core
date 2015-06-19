@@ -1,0 +1,89 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA{% endblock %}
+{% block title %} {{ viewParams.MON_VO }} PanDA monitor{% endblock %}
+{% block subtitle %}{{ viewParams.MON_VO }} PanDA monitor home page{% endblock %}
+
+{% block header-nav-chain %}{% endblock %}
+
+{% block body %}
+{% endblock %}
+
+{% block bottom_info %}
+<p>
+Welcome to the {{ viewParams.MON_VO }} PanDA monitor.
+Select what you'd like to have a look at in the top menu bar: dashboard overview; job and task lists; error summaries; user lists and pages; site, cloud and WN information; etc.
+
+{% if viewParams.MON_VO == 'ATLAS' %}
+
+<div class='section'>ATLAS PanDA overview from 
+<a href="http://grid.triumf.ca/">TRIUMF</a>
+<a href="http://panglia.triumf.ca">Panglia</a>. 
+Panglia has <a href="http://panglia.triumf.ca/world/generator.php">world</a>, 
+<a href="http://panglia.triumf.ca/cloud/generator.php">cloud</a>,
+<a href="http://panglia.triumf.ca/site/generator.php">site</a>
+plot generators
+
+</div>
+<table width='100%' border='0'>
+<tr>
+<td><a target='_blank' href='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=production&amp;SIZE=large'>
+<img width='100%' src='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=production&amp;SIZE=medium'
+alt='Daily World Production Queues'></a>
+</td>
+<td><a target='_blank' href='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=analysis&amp;SIZE=large'>
+<img width='100%' src='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=analysis&amp;SIZE=medium'
+alt='Daily World Analysis Queues'></a>
+</td>
+<td><a target='_blank' href='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=combined&amp;SIZE=large'>
+<img width='100%' src='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=combined&amp;SIZE=medium'
+alt='Daily World Production and Analysis Queues (combined)'></a>
+</td>
+</tr>
+</table>
+
+{% endif %}
+
+<p>
+
+<table>
+<tr><td> <div class='section'>Quick search</div></td>
+<td>
+
+<table>
+<tr><td><form action="{% url 'jobInfo' %}" method='get'>
+Panda ID </td><td><font size=-1> <input id="pandaid" name="pandaid" size="15" maxlength="15" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'jobInfo' %}" method='get'>
+Batch ID</td><td><font size=-1> <input id="batchid" name="batchid" size="15" maxlength="200" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+{% if viewParams.MON_VO == 'ATLAS' %}
+<tr><td><form action="{% url 'taskInfo' %}" method='get'>
+JEDI Task ID </td><td><font size=-1><input id="jeditaskid" name="jeditaskid" size="15" maxlength="15" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+{% endif %}
+
+<tr><td><form action="{% url 'jobList' %}" method='get'>
+Task ID </td><td><font size=-1><input id="taskid" name="taskid" size="15" maxlength="15" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'siteInfo' %}" method='get'>
+Site </td><td><font size=-1><input id="site" name="site" size="15" maxlength="15" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'userInfo' %}" method='get'>
+User </td><td><font size=-1><input id="user" name="user" size="15" maxlength="15" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+</table>
+
+</td></tr>
+</table>
+
+{% endblock %}
+
+{% block left_menu %}
+{% comment %}
+<div class="left-menu">
+  {% block left_menu_content %}
+    <span class="left-menu-title">Menu</span>
+     <br> <a class="left-menu-item" href="{{ prefix }}/#">Home</a>
+  {% endblock %}
+</div>
+{% endcomment %}
+{% endblock %}

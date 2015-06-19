@@ -1,0 +1,127 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA sites{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA sites{{viewParams.selection|safe }}
+{% if vo %} &nbsp; for VO {{ vo }}
+{% endif %}
+{% endblock %}
+{% block body %}
+
+{% if requestParams.tier %}<br><b>Tier: {{ requestParams.tier }}</b> {% endif %}
+{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
+{% if requestParams.region %}<br><b>Region: {{ requestParams.region }}</b> {% endif %}
+{% if requestParams.siteid %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.siteid %}">{{ requestParams.siteid }}</a>  &nbsp; <a href="{% url 'siteInfo' requestParams.siteid %}">Show site information page</a></b> {% endif %}
+{% if requestParams.category %}<br><b>Category: {{ requestParams.category }}</b> {% endif %}
+{% if requestParams.status %}<br><b>Status: <span class="{{ requestParams.status }}">{{ requestParams.status }}</span></b> {% endif %}
+<p>
+
+{% if clouds %}
+
+<div class='section'>Jump to <a href="#siteatt">site attribute summary</a>, <a href="#sites">site list</a></div>
+
+<table>
+<tr class='tablesection'><th colspan=20> Clouds  &nbsp; &nbsp; 
+<font size=-1>TLo, THi are transfer timeouts for low and high priority jobs</font> </th></tr>
+<tr class='tablesection'>
+<th>Cloud</th>
+<th>Tier 1</th>
+<th>Status</th>
+<th>Comment</th>
+<th>TLo/Hi<br>days</th>
+<th>Storage endpoints</th>
+<th>Free space<br>TB</th>
+<th>Space updated</th>
+</tr>
+{% for cloud in clouds %}
+{% if cloud.display %}
+<tr><th rowspan=2><a href="{% url 'siteList' %}?cloud={{ cloud.name }}">{{ cloud.name }}</a></th>
+<td><font size=-1><a href="{% url 'siteList' %}?siteid={{ cloud.tier1 }}">{{ cloud.tier1 }}</a></font></td>
+<td class="{{ cloud.status }}">{{ cloud.status }}</td>
+<td><font size=-1>{{ cloud.comment_field }}<br>{{ cloud.modtime|date:"Y-m-d H:i" }} {{ cloud.moduser }}</font></td>
+<td>{{ cloud.transtimelo }}/{{ cloud.transtimehi }}</td>
+<td width=300><font size=-1>{{ cloud.tier1se }}</font></td>
+<td>{{ cloud.space }}</td>
+<td> {{ cloud.tspace|date:"m-d H:i" }}</td>
+</tr>
+<tr><td colspan=7> <font size=-2><b>MCP sites (home cloud sites in bold):</b> {{ cloud.mcpsites|safe }}</font></td></tr>
+{% endif %}
+{% endfor %}
+</table>
+{% endif %}
+
+{% if sites %}
+
+<table>
+<tr class='tablesection'><th colspan=20> Site attribute summary </th></tr>
+{% for fdict in sumd %}
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
+{% for item in fdict.list %}
+{% if item.kname != '' %}
+{% if fdict.field == 'status' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+{% endif %}
+{% endfor %}
+</td></tr>
+{% endfor %}
+</table>
+
+<table>
+<tr class='tablesection'><th colspan=20> Sites (PanDA resources) &nbsp; {% if mcpsites %} (<a href="#mcpsites">MCP sites are below</a>) {% endif %}</th></tr>
+<tr class='tablesection'>
+	<th><a href="{{nosorturl}}#sites">PanDA resource</a><br> Queue name (where different)</th>
+	<th><a href="{{nosorturl}}sortby=gocname#sites">GOC site name</a></th>
+{% if viewParams.MON_VO == 'ATLAS' %}
+	<th>Cloud</th>
+{% else %}
+	<th>Region</th>
+{% endif %}
+	<th>Status</th>
+	<th>Tier</th>
+	<th><a href="{{nosorturl}}sortby=maxmemory#sites">Max mem</a><br>(MB)</th>
+	<th><a href="{{nosorturl}}sortby=maxtime#sites">Max time</a><br>(hr)</th>
+	<th>Multicloud</th>
+	<th>Comment</th>
+</tr>
+    {% for site in sites %}
+	<tr>
+		<td><a href="{% url 'siteInfo' site.siteid %}">{{ site.siteid }}</a> {% if site.nickname != site.siteid %}  <br> {{ site.nickname }} {% endif %} </td>
+		<td> <a href="{{xurl}}gocname={{site.gocname}}">{{ site.gocname }}</a></td>
+{% if viewParams.MON_VO == 'ATLAS' %}
+		<td> {{ site.cloud }}</td>
+{% else %}
+		<td> {{ site.region }}</td>
+{% endif %}
+		<td class='{{site.status}}'>{{ site.status }}</td>
+		<td> {{ site.tier }}</td>
+		<td> {% if site.maxmemory > 0 %} {{ site.maxmemory }} {% endif %}</td>
+		<td> {% if site.maxtime > 0 %} {{ site.maxtime }} {% endif %}</td>
+		<td> {% if site.multicloud != 'None' %} <font size=-1> {{ site.multicloud }} </font> {% else %} &nbsp; {% endif %} </td>
+		<td> {{ site.comment_field }} </td>
+	</tr>
+    {% endfor %}
+</table>
+
+{% if mcpsites %}
+
+<div class='section'><a name="mcpsites"></a>Multicloud production sites in this cloud</div>
+
+<table>
+<tr><th>Site ({{ requestParams.cloud }} home cloud sites in bold)</th><th>Home cloud</th></tr>
+{% for site in mcpsites %}
+<tr><td><a href="{% url 'siteInfo' site.name %}">{% if site.type == 'home' %}<b>{{ site.name }}</b> {% else %} {{ site.name }} {% endif %}</a></td><td>{% if site.type == 'home' %} <b>{{ site.cloud }}</b> {% else %} {{ site.cloud }} {% endif %}</td></tr>
+{% endfor %}
+</table>
+
+{% endif %}
+
+{% else %}
+    <p>No matches to query.</p>
+{% endif %}
+{% endblock %}
+
+
+{% block helptext %}
+{% include "siteListHelp.html" with helptitle="Site, cloud listings" %}
+{% endblock %}

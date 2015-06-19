@@ -1,0 +1,50 @@
+<tr class="docsection"><th><a name="jobList"></a> {{ helptitle }} </th></tr>
+<tr><td class="doctextlight">
+
+<p>
+The job attribute summary gives an overview of the parameters of the selected jobs and enables you to drill down to the jobs of interest. If there are other parameters that it would be useful to have summarized here, let us know.
+</p>
+
+<p>
+The job list itself is expensive to build (for the server, network and your browser) and so is limited by the display_limit parameter that is included by default on the URL. You can remove the limit on jobs displayed (by removing display_limit in the URL), but be careful. The intent is that you drill down to a relatively small number of jobs (a few thousand at most), then you can list them if necessary. With JEDI, tasks are the main focus anyway, and you can drill down from tasks to their jobs.
+</p>
+
+<p>
+Note that the number of records retrieved from each table of the database is limited for performance reasons. (Job data is spread across several tables depending on the state and age of the job). This means that if the search interval is 12 hours, you are probably not seeing all jobs from the last 12 hours, only the latest N from each table. As you drill down, narrowing your search to jobs of interest, the (unchanged) limit will encompass more jobs of interest to you. If you need to increase the limit, use &limit=N in the URL. Similarly you can specify &days=N on the URL, but use carefully, the load on the DB is heavy for days greater than 3. 
+</p>
+
+<p>
+If you know the jobsetid=N or taskid=N, jeditaskid=N of the jobs you're interested in, you can add these to the URL, and the search will not be time limited (because these IDs give the DB enough indexing info that it isn't stressful on the DB to exclude the time constraint).
+</p>
+
+<p>
+You can use wildcard search over different job descriptors such as schedulerid, pilotid, creationhost, modificationhost, atlasrelease, transformation, homepackage, prodserieslabel, prodsourcelabel, produserid, jobstatus, jobname, maxcpuunit, maxdiskunit, ipconnectivity, commandtopilot, transexitcode, piloterrordiag, exeerrordiag, superrordiag, ddmerrordiag, brokerageerrordiag, jobdispatchererrordiag, taskbuffererrordiag, computingsite, computingelement, jobparameters, metadata, proddblock, dispatchdblock, destinationdblock, destinationse, grid, cloud, sourcesite, destinationsite, transfertype, cmtconfig, lockedby, vo, pilottiming, workinggroup, processingtype, produsername, countrygroup, batchid, specialhandling, inputfiletype, inputfileproject, jobmetrics, jobsubstatus (<a target=new href="https://its.cern.ch/jira/browse/ATLASPANDA-40">ATLASPANDA-40</a>) and jobs parameters (<a target=new href="https://its.cern.ch/jira/browse/ATLASPANDA-133">ATLASPANDA-133</a>).
+</p>
+
+<p>
+To filter out fields in the JSON response use &fields= parameter like:
+<br><font size=-1><code>
+curl -H 'Accept: application/json' -H 'Content-Type: application/json' "http://bigpanda.cern.ch/jobs/?PandaID=2398201837&fields=pandaid,jobsetrange"</code></font>
+    
+<p>
+
+<p>
+URL tricks: you can include hours=N or days=N on the URL to specify the time depth. And you can use earlierthan=Nhours or earlierthandays=Ndays to look only at old jobs. You can also use date_from=2014-10-01&amp;date_to=2014-10-03
+</p>
+
+<p>
+Job data can be retrieved in json format with curl so that it can be used programmatically. <b>Use this carefully</b>, do not for example put scripts in crons that do heavy retrieval of job data this way. If you have systematic needs for PanDA job data, tell us what they are. Do not use web page scraping. An example curl command is as follows; it takes the same url parameters as the browser version.
+<br><font size=-1><code>
+curl -H 'Accept: application/json' -H 'Content-Type: application/json' "http://bigpanda.cern.ch/jobs/?transfertype=fax&hours=1"
+</code></font>
+If it is job parameters you want, that is maintained in a separate table, and requires a different query:
+<br><font size=-1><code>
+curl -H 'Accept: application/json' -H 'Content-Type: application/json' "http://bigpanda.cern.ch/jobs/?dump=parameters&pandaid=1234,1235,1236"
+</code></font>
+<br>By default the JSON response does not contain dataset information. If you need it, add <br><font size=-1><code>&datasets=true</code></font> to the URI (<a target=new href="https://its.cern.ch/jira/browse/ATLASPANDA-109">ATLASPANDA-109</a>).
+
+
+</p>
+
+</td>
+

@@ -1,0 +1,104 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA file {{ filename }} {% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA file <b>{{ filename }}</b>{{ viewParams.selection|safe }}{% endblock %}
+
+{% block body %}
+
+{% if columns %}
+
+{% if requestParams.datasetname %}<br>Occurrences of the file in dataset <b>{{ requestParams.datasetname }}</b> {% endif %}
+{% if requestParams.datasetid %}<br>Occurrences of the file in dataset ID = <b>{{ requestParams.datasetid }}</b> {% endif %}
+{% if requestParams.jeditaskid %}<br>Occurrences of the file in task <b>{{ requestParams.jeditaskid }}</b> {% endif %}
+{% if requestParams.pandaid %}<br>Occurrence of the file in job <b>{{ requestParams.pandaid }}</b> {% endif %}
+
+<p>
+
+<table>
+<tr class='tablesection'><th colspan=20> File {{ filename }} </th></tr>
+<tr>
+	<th>Scope</th>
+	<th># events</th>
+	<th>Size (MB)</th>
+	<th>Created</th>
+    <th>GUID</th>
+	<th>ID</th>
+</tr>
+	<tr>
+		<td>{{ frec.scope }}</td>
+		<td>{{ frec.nevents }}</td>
+		<td>{{ frec.fsizemb }}</td>
+		<td>{{ frec.creationdate|date:"Y-m-d H:i" }}</td>
+		<td>{{ frec.guid }}</td>
+		<td>{{ frec.fileid }}</td>
+	</tr>
+</table>
+
+{% if files|length > 0 %}
+
+<table>
+<tr class='tablesection'><th colspan=20> Occurrences of the file in processing (most recent jobs listed first)</th></tr>
+<tr>
+	<th>Dataset</th>
+	<th>Task</th>
+	<th>Type</th>
+	<th>Job</th>
+	<th>First<br>event</th>
+	<th>End<br>event</th>
+	<th>Status</th>
+	<th>Attempt (max)</th>
+</tr>
+{% for f in files %}
+	<tr>
+		<td><font size=-1><a href="{% url 'fileInfo' %}?lfn={{ f.lfn }}&datasetname={{ f.datasetname }}">{{ f.datasetname }}</a></font></td>
+		<td>{% if f.jeditaskid %} <a href="{% url 'fileInfo' %}?lfn={{ f.lfn }}&jeditaskid={{ f.jeditaskid }}">{{ f.jeditaskid }}</a> {% endif %}</td>
+		<td>{{ f.type }}</td>
+		<td><a href="{% url 'jobInfo' %}?pandaid={{ f.pandaid }}">{{ f.pandaid }}</a></td>
+		<td>{{ f.startevent }}</td>
+		<td>{{ f.endevent }}</td>
+		<td class='{{frec.status}}'>{{ f.status }}</td>
+		<td>{% if f.attemptnr %} {{ f.attemptnr }} ({{ f.maxattempt }}){% endif %}</td>
+	</tr>
+{% endfor %}
+</table>
+
+{% endif %}
+
+<p>
+
+<table>
+<tr class='tablesection'><th colspan=20> File attributes (sample occurrence)</th></tr>
+{% for col in columns %}
+<tr><th>{{ col.name }} </th><td> {% if col.value != 'None' %} {{ col.value }} {% endif %}</td></tr>
+{% endfor %}
+</table>
+
+{% else %}
+
+PanDA file <b>{{ filename }}</b> not found.
+
+{% endif %}
+
+{% endblock %}
+
+<tr class="docsection"><th> File query </th></tr>
+<tr><td class="doctextlight">
+
+{% if files.0.oldfiletable %}
+
+<p>
+This is a 'pre-JEDI' PanDA file record.
+</p>
+
+{% else %}
+
+<p>
+This is a PanDA JEDI file.
+</p>
+
+{% endif %}
+
+{% block helptext %}
+{% include "fileInfoHelp.html" with helptitle="File detail page help" %}
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA dataset {{ datasetname }} {% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA dataset <b>{{ datasetname }}</b>{% endblock %}
+
+{% block body %}
+
+{% if columns %}
+
+<table>
+<tr class='tablesection'><th colspan=20>  Dataset {{ datasetname }} </th></tr>
+<tr class='tablesection'>
+	<th>Type</th>
+	{% if dsrec.scope %} <th>Scope</th> {% endif %}
+	<th>Task</th>
+	<th>Status</th>
+	<th>Nfiles <br> <span class='finished'>finished</span></th>
+	<th>Nfiles <br> <span class='failed'>failed</span></th>
+    <th>Nevents</th>
+	<th>Created</th>
+	<th>Modified</th>
+	<th>State</th>
+	<th>Stream</th>
+	<th>Token</th>
+	<th>ID</th>
+</tr>
+	<tr>
+		<td>{{ dsrec.type }}</td>
+		{% if dsrec.scope %} <td>{{ dsrec.scope }}</td> {% endif %}
+		<td><a href="{% url 'taskInfo' %}?jeditaskid={{ dsrec.jeditaskid }}">{{ dsrec.jeditaskid }}</a></td>
+		<td class='{{dsrec.status}}'>{{ dsrec.status }}</td>
+		<td><span class='finished'>{{ dsrec.nfilesfinished }}</span></td>
+		<td><span class='failed'>{{ dsrec.nfilesfailed }}</span></td>
+		<td>{{ dsrec.nevents }}</td>
+		<td>{{ dsrec.creationtime|date:"Y-m-d H:i" }}</td>
+		<td>{{ dsrec.modificationtime|date:"m-d H:i" }}</td>
+		<td>{{ dsrec.state }}</td>
+		<td>{{ dsrec.streamname }}</td>
+		<td>{{ dsrec.storagetoken }}</td>
+		<td>{{ dsrec.datasetid }}</td>
+	</tr>
+</table>
+
+{% if not dsrec.vuid %}
+
+<p>
+<div class='section'><a href="{% url 'fileList' %}?datasetname={{ datasetname }}">Show files in dataset</a></div>
+</p>
+
+{% endif %}
+
+<table>
+<tr class='tablesection'><th colspan=20>  Dataset attributes </th></tr>
+{% for col in columns %}
+<tr><th>{{ col.name }} </th><td> {% if col.value != 'None' %} {{ col.value }} {% endif %}</td></tr>
+{% endfor %}
+</table>
+
+{% else %}
+
+No PanDA dataset <b>{{ datasetname }}</b> found.
+
+{% endif %}
+
+{% endblock %}
+
+
+
+{% block helptext %}
+
+<tr class="docsection"><th> Dataset query </th></tr>
+<tr><td class="doctextlight">
+
+{% if columns %}
+
+{% if dsrec.vuid %}
+
+<p>
+This is a 'pre-JEDI' old format dataset.
+</p>
+
+{% else %}
+
+<p>
+This is a PanDA JEDI dataset. 
+</p>
+
+{% endif %}
+
+{% else %}
+
+You can try looking up the dataset <a href="http://panda.cern.ch/server/pandamon/query?dataset={{ datasetname }}">in the old monitor</a> which will try to find it in DQ2.
+
+{% endif %}
+
+</td>
+
+{% include "datasetInfoHelp.html" with helptitle="PanDA/JEDI Dataset information" %}
+
+{% endblock %}

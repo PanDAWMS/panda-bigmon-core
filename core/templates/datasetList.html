@@ -1,0 +1,58 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA datasets {% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA datasets<font size=-1>{{ viewParams.selection|safe }}</font>{% endblock %}
+
+{% block body %}
+
+{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<br><b>Task ID: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}</a></b> {% endif %}
+{% if requestParams.containername %}<br><b>Container: {{ requestParams.containername }}</b> {% endif %}
+
+
+{% if datasets %}
+<p>
+
+<table>
+<tr class='tablesection'><th colspan=20> Datasets </th></tr>
+<tr class='tablesection'>
+	<th>Name</th>
+	<th>ID</th>
+	<th>Type</th>
+	<th>Stream</th>
+	<th>Task</th>
+	<th>State</th>
+	<th>Status</th>
+	<th>Nfiles</th>
+	<th>Created</th>
+	<th>Modified</th>
+</tr>
+{% for dsrec in datasets %}
+    {% if requestParams.containername != dsrec.datasetname %}
+	<tr>
+		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{ dsrec.datasetname }}">{{ dsrec.datasetname }}</a></font></td>
+		<td>{{ dsrec.datasetid }}</td>
+		<td>{{ dsrec.type }}</td>
+		<td>{{ dsrec.streamname }}</td>
+		<td><a href="{% url 'taskInfo' %}?jeditaskid={{ frec.jeditaskid }}">{{ dsrec.jeditaskid }}</a></td>
+		<td>{{ dsrec.state }}</td>
+		<td class='{{dsrec.status}}'>{{ dsrec.status }}</td>
+		<td>{{ dsrec.nfiles }}</td>
+		<td>{{ dsrec.creationtime|date:"Y-m-d H:i" }}</td>
+		<td>{{ dsrec.modificationtime|date:"m-d H:i" }}</td>
+	</tr>
+    {% endif %}
+{% endfor %}
+</table>
+
+{% else %}
+
+No datasets matching search were found.
+
+{% endif %}
+
+{% endblock %}
+
+{% block helptext %}
+{% include "datasetListHelp.html" with helptitle="Dataset list help" %}
+{% endblock %}

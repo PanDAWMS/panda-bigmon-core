@@ -1,0 +1,152 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA ES jobs{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA Event Service jobs<font size=-1>{{ viewParams.selection|safe }}
+</font>
+{% endblock %}
+{% block body %}
+
+{{ viewParams.header }}
+
+<b>{{ njobs }} jobs in this selection</b>
+{% if requestParams.transferringnotupdated %}<br><b>Jobs in transferring state for more than {{ requestParams.transferringnotupdated }} hours</b> {% endif %}
+{% if requestParams.statenotupdated %}<br><b>Jobs in <span class="{{ requestParams.jobstatus }}">{{ requestParams.jobstatus }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}
+{% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
+{% if requestParams.jobtype %}<br><b>Job type: {{ requestParams.jobtype }}</b> {% endif %}
+{% if requestParams.jobstatus %}<br><b>Job status: <span class={{requestParams.jobstatus}}>{{ requestParams.jobstatus }}</span></b> {% endif %}
+{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
+{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a> &nbsp; <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a></b> {% endif %}
+{% if user %}<br><b>User: <a href="{% url 'userInfo' user %}?display_limit=100">{{ user }}</a> &nbsp; <a href="{% url 'userInfo' user %}?display_limit=100">Show user page</a></b> {% endif %}
+{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}  &nbsp; {{ taskname }}</a> </b> {% endif %}
+{% if requestParams.taskid and requestParams.taskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.taskid  %}">{{ requestParams.taskid }}  &nbsp; {{ taskname }}</a></b> {% endif %}
+{% if requestParams.jobsetid %}<br><b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}
+{% if requestParams.parentid %}<br><b>Parent ID: {{ requestParams.parentid }}</b> {% endif %}
+{% if requestParams.jobname %}<br><b>Job name: {{ requestParams.jobname }}</b> {% endif %}
+{% if requestParams.priorityrange %}<br><b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}
+{% if requestParams.processingtype %}<br><b>Processing type: {{ requestParams.processingtype }}</b> {% endif %}
+{% if requestParams.transformation %}<br><b>Transformation: {{ requestParams.transformation }}</b> {% endif %}
+<p>
+
+{% if jobList %}
+<br>Job <b>modification times</b> in this listing range from <b>{{ tfirst|date:"Y-m-d H:i" }}</b> to <b>{{ tlast|date:"Y-m-d H:i" }}</b>.
+<br>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.
+{% endif %}
+
+{% if ndrops > 0 %}
+<table width=900><tr><td class='highlightcell'>
+<b>{{ ndrops }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
+<font size=-1>
+<br>Dropped (retry):<br>
+{% for drop in droplist %}
+<a href="{% url 'jobInfo' drop.pandaid %}">{{ drop.pandaid }}</a>&nbsp;(<a href="{% url 'jobInfo' drop.newpandaid %}">{{ drop.newpandaid }}</a>) &nbsp;
+{% endfor %}
+</font>
+</tr></td></table>
+<p>
+{% endif %}
+
+{% if jobList %}
+
+<table>
+<tr class='tablesection'><th colspan=20> Job attribute summary   &nbsp; Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
+{% for fdict in sumd %}
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
+{% for item in fdict.list %}
+{% if fdict.field == 'jobstatus' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+{% endfor %}
+</td></tr>
+{% endfor %}
+</table>
+
+<table>
+<tr class='tablesection'><th colspan=20>
+<a name="joblist"></a> Job list &nbsp; &nbsp; 
+{% if display_limit  and display_limit < njobs %}
+<font size=-1>Only the most recent {{ display_limit }} jobs (sorted by PandaID) are shown. Remove the limit and sort by 
+<a href="{{nosorturl}}">PandaID</a>, 
+{% else %}
+Sort by 
+{% if sortby == "PandaID" %}
+<b>PandaID</b>,
+{% else %}
+<a href="{{nosorturl}}">PandaID</a>, 
+{% endif %}
+{% endif %}
+
+{% if sortby == "time-ascending" %}
+<b>ascending mod time</b>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>
+{% elif sortby == "time-descending" %}
+<a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <b>descending mod time</b>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>
+{% elif sortby == "priority" %}
+<a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <b>priority</b>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>
+{% elif sortby == "attemptnr" %}
+<a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <b>attemptnr</b>
+{% else %}
+<a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>
+{% endif %}
+</font>
+</th></tr>
+<tr class='tablesection'>
+	<th>PanDA ID<br>Attempt#</th>
+	<th>Owner {% if viewParams.MON_VO != 'ATLAS' %} / VO{% endif %}<br>Group  </th>
+	<th>Task ID</th>
+	<th>Transformation</th>
+	<th>Mode</th>
+	<th>Cores</th>
+	<th>Status</th>
+	<th>Substate</th>
+	<th>Created</th>
+	<th>Time to start<br>d:h:m:s</th>
+	<th>Duration<br>d:h:m:s</th>
+	<th>Mod</th>
+	<th>{% if viewParams.MON_VO == 'ATLAS' %}Cloud {% endif%}Site</th>
+	<th>Priority</th>
+	<th>Job info</th>
+</tr>
+    {% for job in jobList %}
+	<tr>
+		<td rowspan=3><a href="{% url 'jobInfo' %}?pandaid={{ job.pandaid }}">{{ job.pandaid }}</a><br>Attempt {{ job.attemptnr }}</td>
+		<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if job.workinggroup %}<br><a href="{{xurl}}workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }}{% endif %} {% endif %}
+		</td>
+		<td>{% if job.jeditaskid  and job.jeditaskid != 'None' %}<a href="{{xurl}}jeditaskid={{job.jeditaskid}}">{{ job.jeditaskid }}</a> {% elif job.taskid and job.taskid != 'None' %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
+		<td><font size=-1><a href="{{xurl}}transformation={{job.transformation}}">{{ job.transformation }}</a></font></td>
+
+	    <td>{{ job.jobmode }}</td>
+	    <td>{{ job.corecount }}</td>
+		<td class='{{job.jobstatus}}_fill'>{{ job.jobstatus }}</td>
+	    <td>{{ job.substate }}</td>
+		<td><font size=-1>{{ job.creationtime|date:"Y-m-d H:i" }}</font></td>
+		<td><font size=-1>{{ job.waittime }}</font></td>
+		<td><font size=-1>{{ job.duration }}</font></td>
+		<td><font size=-1>{{ job.modificationtime|date:"m-d H:i" }}</font></td>
+		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a></font></td>
+		<td>{{ job.currentpriority }}</td>
+		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
+		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}
+		</td>
+	<tr><td colspan=20> {{ job.esjobstr }} </td></tr>
+	</tr>
+	<tr><td colspan="20" class='highlightcell'> Datasets: &nbsp; {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> &nbsp;{% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
+
+    {% endfor %}
+</table>
+
+{% else %}
+
+<p>
+No jobs matched the query. You can increase the time depth with a days=N parameter on the URL, but use judiciously, this is hard on the database. If you know the jobsetid or taskid/jeditaskid of the jobs you're interested in, you can add these to the URL, and the search will not be time limited (because these IDs give the DB enough indexing info that it isn't stressful on the DB to exclude the time constraint) and it will be fast also.
+</p>
+
+{% endif %}
+
+{% endblock %}
+
+
+{% block helptext %}
+{% include "jobListHelp.html" with helptitle="Job list help" %}
+{% include "jobInfoHelp.html" with helptitle="Job information" show="all" %}
+{% endblock %}
+

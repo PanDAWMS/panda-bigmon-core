@@ -1,0 +1,340 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA {{view}} {{ requestParams.mode }} dashboard{{ viewParams.selection|safe }}
+{% endblock %}
+{% block body %}
+
+{{ viewParams.header }}
+
+{% if requestParams.sortby %} <p><b>Sorted by: {{ requestParams.sortby }} </b><p> {% endif %}
+
+{% if viewParams.MON_VO != 'ATLAS' %}
+
+<table width=800><tr><td>
+This page summarizes recent job status for VOs, clouds and sites. Click on the numbers to see job listings.
+Failure rates above {{ errthreshold }}% are shown in red.
+Click the cloud name in the overall summary to go to the cloud's site summary.
+Click the job counts to go to job listings.
+Click on column titles to sort.
+</tr></td></table>
+<p>
+
+<div class='section'>VO / Cloud / Site summary</div>
+{% else %}
+
+
+{% if noldtransjobs > 0 %}
+<p>
+<table>
+<tr class='tablesection'>
+<th> Jobs in transferring state more than {{ hoursSinceUpdate }} hours </th>
+<th> Total </th>
+{% for cloud in transclouds %}
+<th> {{ cloud.name }} </th>
+{% endfor %}
+</tr>
+<tr>
+<td> By home cloud </td>
+<td> <a href="{% url 'jobList' %}?transferringnotupdated={{ hoursSinceUpdate }}&display_limit=100">{{ noldtransjobs }}</a> </td>
+{% for cloud in transclouds %}
+<td> {{ cloud.count }} </td>
+{% endfor %}
+</tr>
+<tr>
+<td> By assigned (multi-cloud production) cloud </td>
+<td> <a href="{% url 'jobList' %}?transferringnotupdated={{ hoursSinceUpdate }}&display_limit=100">{{ noldtransjobs }}</a> </td>
+{% for cloud in transrclouds %}
+<td> <a href="{% url 'jobList' %}?transferringnotupdated={{ hoursSinceUpdate }}&cloud={{ cloud.name }}&display_limit=100">{{ cloud.count }}</a> </td>
+{% endfor %}
+</tr>
+</table>
+</p>
+{% endif %}
+
+{% if mode == 'task' %}
+
+{% if cloudTaskSummary %}
+
+<table>
+<tr class='tablesection'><th colspan=30> {{ view }} task summary by cloud, last {{ taskdays }} days</span> &nbsp; &nbsp; <font size=-1>Hover over state name to see full name. <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">Task state documentation</a></font> </th></tr>
+<tr class='tablesection'>
+<th>Cloud</th>
+
+{% if rw %}
+<th><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Task_brokerage" target="new">RW</a></th>
+{% endif %}
+
+{% if jobsLeft %}
+<th>nJobs left</th>
+{% endif %}
+<th><font size=-1>nTask</font></th>
+{% for state in taskstates %}
+<th><div title="{{state.state}}"><font size=-1><span class="{{ state.state }}"> {{ state.short }} </span></font></div></th>
+{% endfor %}
+</tr>
+
+
+{% for fdict in cloudTaskSummary %}
+<tr><td> <b>{{ fdict.field }}</b> </td>
+{% if rw %}
+<td>{{ rw|get_item:fdict.field }}</td>
+{% endif %}
+{% if jobsLeft %}
+<td bgcolor=whitesmoke align='right'> <a href="{% url 'jobList' %}?cloud={{ fdict.field }}&hours={{hours}}&jobstatus=waiting|assigned|activated|starting|running|transferring|holding|defined|sent|throttled|merging&jobtype={{ view }}&display_limit=100">{{ jobsLeft|get_item:fdict.field }}</a> </td>
+{% endif %}
+<td> <a href="{% url 'taskList' %}?cloud={{fdict.field}}&jobtype={{view}}&days={{taskdays}}">{{ fdict.count }}</a></td>
+{% for item in fdict.list %}
+<td {% if item.kvalue > 0 %} class='{{item.kname}}_fill' {% endif %}> <a href="{% url 'taskList' %}?cloud={{fdict.field}}&status={{item.kname}}&jobtype={{view}}&days={{taskdays}}"><span {% if item.kvalue == 0 %}class='{{item.kname}}'{% else %}class='{{item.kname}}_fill'{% endif %}>{{ item.kvalue }}</span></a></td>
+{% endfor %}
+</tr>
+{% endfor %}
+
+</table>
+
+<p>
+{% endif %}
+
+{% else %}
+
+<p>The Production task summary by cloud table moved to the Dash/Production Tasks
+
+{% endif %}
+
+
+{% endif %}
+
+
+<table>
+
+{% if viewParams.MON_VO != 'ATLAS' %}
+
+<tr class='tablesection'><th colspan=20> VO summary </th></tr>
+<tr class='tablesection'>
+<th> <a href="{{nosorturl}}">VO</a> </th>
+<th>  </th>
+<th> nJobs </th>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=defined">defined</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=waiting">waiting</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=assigned">assigned</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=throttled">throttled</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=activated">activated</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=sent">sent</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=starting">starting</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=running">running</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=holding">holding</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=transferring">transferring</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=finished">finished</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=failed">failed</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=cancelled">cancelled</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=pctfail">% failed</a> </td>
+</tr>
+
+
+
+{% for vo in vosummary %}
+<tr height=10 colspan=12></tr>
+<tr>
+<th  bgcolor=whitesmoke> {{ vo.name }} </th>
+<th bgcolor=whitesmoke> </th>
+<th  bgcolor=whitesmoke align='right'> <a href="{% url 'jobList' %}?vo={{ vo.name }}&hours={{hours}}&jobtype={{ view }}&display_limit=100">{{ vo.count }}</a> </th>
+{% for state in vo.statelist %}
+<th {% if state.count > 0 %} class='{{ state.name }}_fill' {% else %} bgcolor=whitesmoke {% endif %} align='right'> <a href="{% url 'jobList' %}?vo={{ vo.name }}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}">{{ state.count }}</span></a> </th>
+{% endfor %}
+<th  bgcolor=whitesmoke align='right'>  {% if vo.pctfail > errthreshold %} <font color=red>{{ vo.pctfail  }}</font> {% else %} {{ vo.pctfail  }} {% endif %}  </th>
+</tr>
+{% endfor %}
+<tr height=10 colspan=12></tr>
+
+{% endif %}
+
+{% if summary %}
+
+<tr class='tablesection'><th colspan=20> Cloud / Site summary 
+{% if view == 'analysis' %}
+of analysis jobs
+{% elif view == 'production' %}
+of production jobs
+{% else %}
+of all jobs
+{% endif %}
+{% if view != 'analysis' %}
+{% if cloudview == 'region' %}
+- Region view &nbsp; &nbsp; For a description of region view 
+{% else %}
+- Cloud view &nbsp; &nbsp; For a description of cloud view 
+{% endif %}
+{% else %}
+&nbsp; &nbsp; For a description 
+{% endif %}
+<a href="#doc"><span class="helpdark">see below</a>
+</th></tr>
+
+<tr class='tablesection'>
+<th> <a href="{{nosorturl}}">Cloud</a> </th>
+<th> Status</th>
+<th> nJobs </th>
+{% if cloudview == 'region' %}
+<th> nPilots </th>
+{% endif %}
+<th> <a href="{{nosorturl}}sortby=defined">defined</a> </th>
+<th> <a href="{{nosorturl}}sortby=waiting">waiting</a> </th>
+<th> <a href="{{nosorturl}}sortby=assigned">assigned</a> </th>
+<th> <a href="{{nosorturl}}sortby=throttled">throttled</a> </th>
+<th> <a href="{{nosorturl}}sortby=activated">activated</a> </th>
+<th> <a href="{{nosorturl}}sortby=sent">sent</a> </th>
+<th> <a href="{{nosorturl}}sortby=starting">starting</a> </th>
+<th> <a href="{{nosorturl}}sortby=running">running</a> </th>
+<th> <a href="{{nosorturl}}sortby=holding">holding</a> </th>
+<th> <a href="{{nosorturl}}sortby=transferring">transferring</a> </th>
+<th> <a href="{{nosorturl}}sortby=finished">finished</a> </th>
+<th> <a href="{{nosorturl}}sortby=failed">failed</a> </th>
+<th> <a href="{{nosorturl}}sortby=cancelled">cancelled</a> </th>
+<th> <a href="{{nosorturl}}sortby=pctfail">% failed</a> </th>
+</tr>
+
+{% for cloud in summary %}
+<tr height=10 colspan=12></tr>
+<tr>
+<th  bgcolor=whitesmoke> {% if cloud.name != 'All' %}{% if cloud.name != '' %}<a href="#cloud_{{ cloud.name }}"><span class="{{cloud.status}}">{{ cloud.name }}</span></a> <a onclick='PopUp("SITE={{ cloud.name }}&SIZE=medium", "{{ cloud.name }}", "day")'><img src='http://tjweb.org/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assigned {% endif %} {% else %}  All clouds {% endif %}</th>
+<th  bgcolor=whitesmoke> <span class="{{cloud.status}}">{{ cloud.status }}</span> </th>
+<th  bgcolor=whitesmoke align='right'><a href="{% url 'jobList' %}?cloud={{ cloud.name }}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100">{{ cloud.count }} </a></th>
+{% if cloudview == 'region' %}
+<th  bgcolor=whitesmoke align='right'> {{ cloud.pilots }} </th>
+{% endif %}
+{% for state in cloud.statelist %}
+<th  {% if state.count > 0 %} class='{{ state.name }}_fill' {% else %} bgcolor=whitesmoke {% endif %} align='right'><a href="{% url 'jobList' %}?cloud={{ cloud.name }}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }}</span></a> </td>
+{% endfor %}
+<th  bgcolor=whitesmoke align='right'> <a href="{% url 'errorSummary' %}?jobtype={{view}}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}&sortby=count&cloud={{cloud.name}}&hours={{hours}}"> {% if cloud.pctfail > errthreshold %} <font color=red>{{ cloud.pctfail  }}</font> {% else %} {{ cloud.pctfail  }} {% endif %} </a></th>
+</tr>
+{% endfor %}
+
+
+{% for cloud in summary %}
+
+{% if cloud.name != 'All' %}
+
+<tr height=10 colspan=12></tr>
+<tr>
+<td class="tablesection"> <a name="cloud_{{ cloud.name }}"><span class="{{cloud.status}}">{{ cloud.name }} Cloud</span></a>, Sites </td>
+<td class="tablesection"> Status</td>
+<td class="tablesection"> nJobs </td>
+{% if cloudview == 'region' %}
+<td class="tablesection"> nPilots </td>
+{% endif %}
+<td class="tablesection"> <a href="{{nosorturl}}sortby=defined">defined</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=waiting">waiting</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=assigned">assigned</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=throttled">throttled</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=activated">activated</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=sent">sent</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=starting">starting</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=running">running</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=holding">holding</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=transferring">transferring</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=finished">finished</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=failed">failed</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=cancelled">cancelled</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=pctfail">% failed</a> </td>
+</tr>
+
+
+<tr height=10 colspan=12></tr>
+<tr>
+<th bgcolor=whitesmoke> {{ cloud.name }} all sites {% if cloudview != 'region' and view != 'analysis' %} including MCP {% endif %}</th>
+<th bgcolor=whitesmoke> </th>
+<th bgcolor=whitesmoke align='right'> <a href="{% url 'jobList' %}?cloud={{ cloud.name }}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100">{{ cloud.count }}</a> </th>
+{% if cloudview == 'region' %}
+<th> {{ cloud.pilots }} </th>
+{% endif %}
+{% for state in cloud.statelist %}
+<th {% if state.count > 0 %} class='{{ state.name }}_fill' {% else %} bgcolor=whitesmoke {% endif %} align='right'> <a href="{% url 'jobList' %}?cloud={{ cloud.name }}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100"><span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}">{{ state.count }}</span></a> </th>
+{% endfor %}
+<th  bgcolor=whitesmoke align='right'> <a href="{% url 'errorSummary' %}?jobtype={{view}}&sortby=count{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}&cloud={{cloud.name}}&hours={{hours}}"> {% if cloud.pctfail > errthreshold %} <font color=red>{{ cloud.pctfail  }}</font> {% else %} {{ cloud.pctfail  }} {% endif %} </a> </th>
+</tr>
+{% for site in cloud.summary %}
+<tr>
+<td> {% if site.name %} <a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={{ site.name }}&SIZE=medium", "{{ site.name }}", "day")'>                        <img src='http://tjweb.org/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assignment {% endif %} </td>
+<td><span class="{{site.status}}">{{ site.status  }}</span> </td>
+<td align='right'><a href="{% url 'jobList' %}?cloud={{cloud.name}}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}&computingsite={{ site.name }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&hours={{hours}}&jobtype={{ view }}&display_limit=100">{{ site.count }} </a></td>
+{% if cloudview == 'region' %}
+<td> {{ site.pilots }} </td>
+{% endif %}
+{% for state in site.summary %}
+<td class='{{state.name}}{% if state.count > 0 %}_fill{% endif %}' align='right'><a href="{% url 'jobList' %}?computingsite={{ site.name }}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }} </span></a> </td>
+{% endfor %}
+<td> <a href="{% url 'errorSummary' %}?jobtype={{view}}&sortby=count&computingsite={{site.name}}&hours={{hours}}"> {% if site.pctfail > errthreshold %} <font color=red>{{ site.pctfail  }}</font> {% else %} {{ site.pctfail  }} {% endif %} </a> </td>
+</tr>
+{% endfor %}
+
+{% endif %}
+
+{% endfor %}
+</table>
+
+{% endif %}
+
+{% if taskJobSummary %}
+<p>
+<table>
+<tr class='tablesection'>
+<th> Job summary for {{ taskJobSummary|length }} recently active {{ view }} tasks. 
+{% if display_limit >= taskJobSummary|length %} &nbsp; display_limit={{ display_limit }} {% endif %}
+</th>
+<th> Status </th>
+<th> nJobs </th>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=defined">defined</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=waiting">waiting</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=assigned">assigned</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=throttled">throttled</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=activated">activated</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=sent">sent</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=starting">starting</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=running">running</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=holding">holding</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=transferring">transferring</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=finished">finished</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=failed">failed</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=cancelled">cancelled</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=pctfail">% failed</a> </td>
+</tr>
+{% for task in taskJobSummary %}
+<tr>
+<td> <a href="{% url 'taskInfo' task.taskid %}"><span class="{{task.status}}">{{ task.name }}</span></a></td>
+<td> <span class="{{task.status}}{% if task.count > 0 %}_fill{% endif %}">{{ task.status }}</span> </td>
+<td><a href="{% url 'jobList' %}?taskid={{ task.taskid }}&hours={{hours}}&jobtype={{ view }}&display_limit=100"> {{ task.count }} </a></td>
+{% for state in task.statelist %}
+<td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}><a href="{% url 'jobList' %}?taskid={{ task.taskid }}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }}</span></a> </td>
+{% endfor %}
+<td> <a href="{% url 'errorSummary' %}?taskid={{ task.taskid }}&sortby=count&hours={{hours}}"> {% if task.pctfail > errthreshold %} <font color=red>{{ task.pctfail  }}</font> {% else %} {{ task.pctfail  }} {% endif %} </a></td>
+</tr>
+{% endfor %}
+</table>
+</p>
+{% endif %}
+
+<script language="javascript"> var newWin;function PopUp(ref, site, type) {
+var strFeatures="toolbar=no,status=no,menubar=no,location=no"
+strFeatures=strFeatures+",scrollbars=no,resizable=no,height=500,width=500"
+if (!newWin || newWin.closed) {newWin = window.open(ref,'TellObj',strFeatures);
+if (!newWin.opener) {newWin.opener = window; }
+newWin.document.write('<img src="http://gridinfo.triumf.ca/panglia/sites/day.php?'+ref+'" id="show_image"><p>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/hour.php?'+ref+'"; value=Hour>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/day.php?'+ref+'"; value=Day>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/week.php?'+ref+'"; value=Week>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/month.php?'+ref+'"; value=Month>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/year.php?'+ref+'"; value=Year>');
+newWin.document.write('<p><input type=button value="Close" onclick="window.close();return false;">');
+newWin.document.close(); 
+}else { 
+    if (window.focus) {newWin.focus()}; 
+} }</script>
+
+{% endblock %}
+
+{% block helptext %}
+{% include "dashboardHelp.html" with helptitle="Dashboard help" %}
+{% include "jobInfoHelp.html" with helptitle="Job information" show="all" %}
+{% endblock %}

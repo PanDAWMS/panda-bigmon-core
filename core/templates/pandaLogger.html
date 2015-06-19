@@ -1,0 +1,104 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA logger{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA logger{{ viewParams.selection|safe }}
+{% if user %} &nbsp; user={{ user }} {% endif %}
+{% if site %} &nbsp; site={{ site }} {% endif %}
+{% if vo %} &nbsp; VO={{ vo }} {% endif %}
+{% endblock %}
+{% block body %}
+
+{{ viewParams.header }}
+
+<p>
+{% if requestParams.category %} <br><b>Log category: {{ requestParams.category }}</b> {% endif %}
+{% if requestParams.type %} <br><b>Log type: {{ requestParams.type }}</b> {% endif %}
+{% if requestParams.level %} <br><b>Log level: <span class="{{ requestParams.level }}">{{ requestParams.level }}</span></b> {% endif %}
+{% if requestParams.taskid %} <br><b>Task ID: <a href="{% url 'taskInfo' requestParams.taskid %}">{{ requestParams.taskid }}</a></b> {% endif %}
+{% if requestParams.jeditaskid %} <br><b>Task ID: <a href="{% url 'taskInfo' requestParams.jeditaskid %}">{{ requestParams.jeditaskid }}</a></b> {% endif %}
+{% if requestParams.site %} <br><b>Site: <a href="{% url 'siteInfo' requestParams.site %}">{{ requestParams.site }}</a></b> {% endif %}
+{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
+</p>
+
+{% if requestParams|length == 0 %}
+<p><b>View recent <a href="{% url 'pandaLogger' %}?level=error&limit=2000"><span class="error">errors</span></a>, <a href="{% url 'pandaLogger' %}?level=warning&limit=2000"><span class="warning">warnings</span></a></b>
+</p>
+{% endif %}
+
+{% if logl %}
+<p>
+<table>
+<tr class='tablesection'><th colspan=20>{{ ninc }} logger entries</th></tr>
+<tr class='tablesection'><th> Category </th> <th> Type </th> <th> Level(count) </th> </tr>
+{% for rec in logl %}
+{% for type in rec.types %}
+<tr bgcolor="#FCFCFC"><th> <a href="{% url 'pandaLogger' %}?category={{rec.name}}&limit=2000">{{ rec.name }}</a> </th><td> <a href="{% url 'pandaLogger' %}?category={{rec.name}}&type={{type.name}}&limit=2000">{{ type.name }}</a> </td><td>
+{% for level in type.levellist %}
+<a href="{% url 'pandaLogger' %}?category={{rec.name}}&type={{type.name}}&level={{level.name}}&limit=2000"><span class="{{ level.name }}">{{ level.name }}</span>({{ level.count }})</a> &nbsp; 
+{% endfor %}
+</td></tr>
+{% endfor %}
+<tr height=20></tr>
+{% endfor %}
+</table>
+</p>
+{% endif %}
+
+{% if records %}
+
+{% if logHist %}
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['Time', 'Count'],
+{% for time, count in logHist %}
+          ['{{ time|date:"m-d H:i" }}', {{ count }}],
+{% endfor %}
+            ])
+        var options = {
+          title: 'Log timeline, latest {{ records|length }} logs',
+          legend: { position: 'none' },
+          hAxis: {title: 'Time (30min bins, empty bins suppressed)'}
+        };
+
+        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+      }
+    </script>
+    <div id="chart_div" style="height: 500px;"></div>
+{% endif %}
+
+<p>
+<table>
+<tr class='tablesection'><th colspan=20>Latest {{ records|length }} log records</th></tr>
+<tr class='tablesection'><th>Logged at</th><th>Category</th><th>Type</th><th>Level</th><th>Log message</th></tr>
+{% for inc in records %}
+<tr><td> {{ inc.bintime|date:"Y-m-d H:i" }} </td>
+<td> {{ inc.name }}</td>
+<td> {{ inc.type }}</td>
+<td> <span class="{{inc.levelname}}">{{ inc.levelname }}</span></td>
+<td><font size=-1> {% if inc.loguser != '' %} <i>Logged by {{ inc.loguser }}:</i> &nbsp; {% endif %} {% if inc.pid > 0 %} PandaID={{ inc.pid }} &nbsp; {% endif %} {{ inc.message|safe }}</font></td>
+</tr>
+{% endfor %}
+</table>
+</p>
+
+{% elif getrecs %}
+
+<p>
+No matching log records found
+</p>
+
+{% endif %}
+
+{% endblock %}
+
+{% block helptext %}
+{% include "pandaLoggerHelp.html" with helptitle="PanDA logger help" %}
+{% endblock %}
+

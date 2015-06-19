@@ -1,0 +1,533 @@
+{% load staticfiles %}{% load url from future %}<!DOCTYPE html>
+<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<head profile="http://www.w3.org/2005/10/profile">
+<link rel="icon" type="image/png" href='{% static "images/favicon.png" %}' />
+
+	<!-- Set the viewport width to device width for mobile -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+	<title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
+
+	<!-- Included CSS Files -->
+
+
+{% comment %}
+	<link rel="stylesheet" href="http://hepsoftware.org/static/css/normalize.css" %}">
+	<link rel="stylesheet" href="http://hepsoftware.org/static/css/foundation.css" %}">
+{% endcomment %}
+
+  <link rel="stylesheet" href="{% static "css/foundation/normalize.css" %}">
+  <link rel="stylesheet" href="{% static "css/foundation_5.3.1.css" %}">
+
+	{% comment %} <link rel="stylesheet" href="{% static "css/bigpandamon.css" %}"> {% endcomment %}
+
+
+	{% block base_css %}{% endblock %}
+	{% block extra_css %}{% endblock %}
+
+	<script src="{% static "js/vendor/custom.modernizr.js" %}"></script>
+	{% block base_js %}{% endblock %}
+	{% block extra_js %}{% endblock %}
+	<script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', '{% block gacode %}UA-44940804-1{% endblock %}', '{% block gaweb %}pandawms.org{% endblock %}');
+    ga('send', 'pageview');
+	</script>
+
+<STYLE type="text/css">
+
+.top-subbar {
+  background-color: #DDDDDD;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 1em;
+  padding-right: 1em;
+  height: 1.8em;
+  margin-bottom: 8px;
+}
+
+.showentries {
+  background-color : transparent;
+  font-size: 1em;
+  color: #FFFFFF;
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.1875em; 
+}
+.showentries.label {
+  background-color : transparent;
+  font-size: 1em;
+  color: #FFFFFF;
+}
+
+.tableFilter{
+vertical-align: top;
+}
+.tableFilter.td{
+vertical-align: top;
+}
+
+.tdF{
+vertical-align: top;
+}
+
+.inputW{
+width:10em;
+}
+
+a:hover, a:visited, a:link, a:active
+{
+    text-decoration: none;
+    color:#0a47ff;
+}
+th { text-align:left; border-style:solid; border-width:1px; border-color:grey;}
+td { text-align:left; border-style:solid; border-width:1px; border-color:lightgrey;}
+.alarm { color:red }
+.error { color:red !important; background-color:white !important; font-size:12pt !important; font-style:normal !important;  }
+.info { color:black }
+.messageinfo { color:forestgreen }
+.debug { color:darkgrey }
+.finished { color:#248F24 }
+.completed { color:#248F24 }
+.done { color:#248F24 }
+.ready { color:#248F24 }
+.cached { color:#248F24 }
+.online { color:#248F24 }
+.failed { color:red }
+.aborted { color:red }
+.aborting { color:red }
+.broken { color:red }
+.tobroken { color:red }
+.deleted { color:red }
+.brokeroff { color:darkgrey }
+.test { color:darkgrey }
+.offline { color:darkgrey }
+.skipped { color:darkgrey }
+.notcheckedskipped { color:darkgrey }
+.holding { color:#FF9933 }
+.throttled { color:#FF9933 }
+.cancelled { color:#FF9933 }
+.warning { color:#FF9933 }
+.timeout { color:#FF9933 }
+.discarded { color:#FF9933 }
+.finishing { color:#FF9933 }
+.running { color:#47D147 }
+.approved { color:#47D147 }
+.merging { color:#47D147 }
+.topreprocess { color:#47D147 }
+.preprocessing { color:#47D147 }
+.prepared { color:#47D147 }
+.starting { color:#47D147 }
+.submitting { color:#47D147 }
+.scouting { color:#47D147 }
+.scouted { color:#47D147 }
+.transferring { color:#47D147 }
+.activated { color:#099999 }
+.assigning { color:#099999 }
+.defined { color:grey }
+.registered { color:grey }
+.assigned { color:black }
+.pending { color:grey }
+.waiting { color:grey }
+.toretry { color:grey }
+.toincexec { color:grey }
+.rerefine { color:grey }
+.sent { color:#FF9933 }
+
+.alarm_fill { color:black;  background-color:#FF8174 }
+.error_fill { color:black;  background-color:#FF8174 }
+
+.broken_fill { color:black;  background-color:#FF8174 }
+.tobroken_fill { color:black;  background-color:#FF8174 }
+
+.failed_fill { color:black;  background-color:#FFABA2 }
+.aborted_fill { color:black;  background-color:#FFABA2 }
+.aborting_fill { color:black;  background-color:#FFABA2 }
+.deleted_fill { color:black;  background-color:#FFABA2 }
+
+.info_fill { color:black;  color:black }
+.debug_fill { color:black;  color:darkgrey }
+
+.failedscouting_fill { color:white;  background-color:red }
+
+.done_fill { color:black;  background-color:#62AC21 }
+.toincexec_fill { color:black;  background-color:#62AC21 }
+.rerefine_fill { color:black;  background-color:#62AC21 }
+
+.prepared_fill { color:black;  background-color:#A0D670 }
+.finished_fill { color:black;  background-color:#A0D670 }
+.completed_fill { color:black;  background-color:#A0D670 }
+.toretry_fill { color:black; background-color:#A0D670 }
+
+.running_fill { color:black;  background-color:#C7E9A9 }
+.pending_fill { color:black;  background-color:#C7E9A9 }
+.starting_fill { color:black;  background-color:#C7E9A9 }
+.scouted_fill { color:black;  background-color:#C7E9A9 }
+.transferring_fill { color:black;  background-color:#C7E9A9 }
+.finishing_fill { color:black;  background-color:#C7E9A9 }
+.ready_fill { color:black;  background-color:#C7E9A9 }
+.cached_fill { color:black;  background-color:#C7E9A9 }
+.online_fill { color:black;  background-color:#C7E9A9 }
+.merging_fill { color:black;  background-color:#C7E9A9 }
+
+.scouting_fill { color:black;  background-color:#DBF1C6 }
+.topreprocess_fill { color:black;  background-color:#DBF1C6 }
+.preprocessing_fill { color:black;  background-color:#DBF1C6 }
+.assigned_fill { color:black;  background-color:#DBF1C6 }
+.activated_fill { color:black;  background-color:#DBF1C6 }
+
+.assigning_fill { color:black;  background-color:#EBF5E2 }
+.defined_fill { color:black;  background-color:#EBF5E2 }
+.registered_fill { color:black;  background-color:#EBF5E2 }
+.submitting_fill { color:black;  background-color:#EBF5E2 }
+.approved_fill { color:black;  background-color:#EBF5E2 }
+.processed_fill { color:black;  background-color:#EBF5E2 }
+
+.warning_fill { color:#FFCB2F }
+
+.discarded_fill { color:black; background-color:#FFD65D }
+.timeout_fill { color:black; background-color:#FFD65D }
+.cancelled_fill { color:black; background-color:#FFD65D }
+
+.holding_fill { color:black; background-color:#FFE38E }
+.throttled_fill { color:black; background-color:#FFE38E }
+
+.waiting_fill { color:black; background-color:#FFF5D6 }
+.sent_fill { color:black; background-color:#FFF5D6 }
+
+.brokeroff_fill { color:darkgrey }
+.test_fill { color:darkgrey }
+.offline_fill { color:darkgrey }
+
+.section{ font-weight:bold; color:darkblue; padding-bottom:10px }
+.tablesection{ font-weight:bold; background-color:lightcyan; border-style:solid; border-width:1px; border-color:grey;}
+.docsection{ background-color:#b2d546; font-weight:bold; border-style:solid; border-width:1px; border-color:#324f00;}
+.doctext{ background-color:#e4f9a6; border-style:solid; border-width:1px; border-color:#324f00;}
+.doctextlight{ background-color:#F4FFDD; border-style:solid; border-width:1px; border-color:#324f00;}
+li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
+.help { color:#b2d546 }
+.helpsection{ font-weight:bold; font-size:14pt; background-color:forestgreen; color:white; border-style:solid; border-width:1px; border-color:forestgreen;}
+.helplight { color:#e4f9a6 }
+.helpdark { color:forestgreen }
+.highlightcell { background-color:#ECE6E6 }
+.whitecell { background-color:white }
+.whitesmokecell { background-color:whitesmoke }
+
+.invisibletable{ border-width:0px; border-color:white; vertical-align: top;}
+
+.inputW{width:10em}
+.input8{width:8em}
+.inputN{width:2em}
+.input4{width:4em}
+
+</STYLE>
+
+</head>
+<body>
+
+<nav class="top-bar" data-topbar>
+
+    <ul class="title-area">
+        <li class="name">
+        <h1><a href="{% url 'index' %}">{% block title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}  PanDA {% endblock %}</a></h1>
+        </li>
+        <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
+        <li class="toggle-topbar menu-icon"><a href="#"><span></span></a></li>
+    </ul>
+
+    <section class="top-bar-section">
+
+        <ul class="left">
+
+            <li class="has-dropdown">
+            <a href="#">Dash</a>
+            <ul class="dropdown">
+                {% if viewParams.MON_VO == 'ATLAS' %}
+                    <li><a href="{% url 'dashboard' %}">All jobs</a></li>
+                    <li><a href="{% url 'dashAnalysis' %}">Analysis jobs</a></li>
+                    <li><a href="{% url 'dashProduction' %}">Production jobs - Cloud view</a></li>
+                    <li><a href="{% url 'dashProduction' %}?cloudview=region">Production jobs - Region view</a></li>
+                    <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
+                    <li><a href="{% url 'dashAnalysis' %}?mode=task">Analysis tasks</a></li>
+                    <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
+                {% else %}
+                    <li><a href="{% url 'dashboard' %}">VOs, sites</a></li>
+                    <li><a href="{% url 'workingGroups' %}">Working groups</a></li>
+                {% endif %}
+            </ul>
+            </li>
+
+            <li class="has-dropdown">
+            <a href="#">Tasks</a>
+            <ul class="dropdown">
+                <li><a href="{% url 'taskList' %}?display_limit=300">All</a></li>
+                {% if viewParams.MON_VO == 'ATLAS' %}
+                    <li><a href="{% url 'taskList' %}?tasktype=analy&display_limit=300">Analysis</a></li>
+                    <li><a href="{% url 'taskList' %}?tasktype=prod&display_limit=300">Production</a></li>
+                    <li><a href="{% url 'taskList' %}?eventservice=1&display_limit=300">Event service</a></li>
+                {% endif %}
+            </ul>
+            </li>
+
+            <li class="has-dropdown">
+            <a href="#">Jobs</a>
+            <ul class="dropdown">
+                <li><a href="{% url 'jobList' %}?display_limit=100">All</a></li>
+                {% if viewParams.MON_VO == 'ATLAS' %}
+                    <li><a href="{% url 'jobList' %}?jobtype=analysis&display_limit=100">Analysis</a></li>
+                    <li><a href="{% url 'jobList' %}?jobtype=production&display_limit=100">Production</a></li>
+                    <li><a href="{% url 'jobList' %}?jobtype=groupproduction&display_limit=100">Group production</a></li>
+                    <li><a href="{% url 'jobList' %}?jobtype=eventservice&display_limit=100">Event service</a></li>
+                {% endif %}
+                <li><a href="{% url 'jobList' %}?jobtype=test&display_limit=100">Test</a></li>
+            </ul>
+            </li>
+
+            <li class="has-dropdown">
+            <a href="#">Errors</a>
+            <ul class="dropdown">
+                <li><a href="{% url 'errorSummary' %}?sortby=count">All</a></li>
+                {% if viewParams.MON_VO == 'ATLAS' %}
+                    <li><a href="{% url 'errorSummary' %}?jobtype=analysis&sortby=count">Analysis</a></li>
+                    <li><a href="{% url 'errorSummary' %}?jobtype=production&sortby=count">Production</a></li>
+                    <li><a href="{% url 'errorSummary' %}?sortby=count&prodsourcelabel=rc_test">rc_test</a></li>
+                {% endif %}
+            </ul>
+            </li>
+
+            <li class="has-dropdown">
+            <a href="#">Users</a>
+            <ul class="dropdown">
+                {% if viewParams.MON_VO == 'ATLAS' %}
+                    <li><a href="{% url 'userList' %}?sortby=date&view=database">Usage stats view</a></li>
+                {% endif %}
+                <li><a href="{% url 'userList' %}?sortby=date&view=dynamic">Dynamic view</a></li>
+            </ul>
+            </li>
+
+            <li class="has-dropdown">
+            <a href="#">Sites</a>
+            <ul class="dropdown">
+                <li><a href="{% url 'siteList' %}">Clouds, sites</a></li>
+                {% if viewParams.MON_VO == 'ATLAS' %}
+                    <li><a href="{% url 'siteList' %}?cloud=CA">CA</a></li>
+                    <li><a href="{% url 'siteList' %}?cloud=CERN">CERN</a></li>
+                    <li><a href="{% url 'siteList' %}?cloud=DE">DE</a></li>
+                    <li><a href="{% url 'siteList' %}?cloud=ES">ES</a></li>
+                    <li><a href="{% url 'siteList' %}?cloud=FR">FR</a></li>
+                    <li><a href="{% url 'siteList' %}?cloud=IT">IT</a></li>
+                    <li><a href="{% url 'siteList' %}?cloud=ND">ND</a></li>
+                    <li><a href="{% url 'siteList' %}?cloud=NL">NL</a></li>
+                    <li><a href="{% url 'siteList' %}?cloud=RU">RU</a></li>
+                    <li><a href="{% url 'siteList' %}?cloud=TW">TW</a></li>
+                    <li><a href="{% url 'siteList' %}?cloud=UK">UK</a></li>
+                    <li><a href="{% url 'siteList' %}?cloud=US">US</a></li>
+                {% endif %}
+                <li><a href="{% url 'workQueues' %}">Work queues</a></li>
+            </ul>
+            </li>
+
+            <li class="has-dropdown">
+            <a href="#">Incidents</a>
+            <ul class="dropdown">
+                {% if viewParams.MON_VO == 'ATLAS' %}
+                    <li><a href="{% url 'incidentList' %}">Recent incidents</a></li>
+                {% endif %}
+                <li><a href="{% url 'pandaLogger' %}">PanDA logger</a></li>
+            </ul>
+            </li>
+
+            <li>
+            <a href="{% url 'index' %}?mode=quicksearch">Search</a>
+            </li>
+            <li>
+            <a href="{% url 'admin:adMain' %}">Admin</a>
+            </li>
+
+        </ul>
+
+        <ul class="right">
+
+            {% if viewParams.MON_VO == 'ATLAS' %}
+
+                <li class="has-dropdown">
+                <a href="#">Prodsys</a>
+                <ul class="dropdown">
+                    <li><a href="http://bigpanda.cern.ch/prodsys/prodtask/task_table/">Prodsys task list</a>
+                    <li><a href="http://bigpanda.cern.ch/prodsys/prodtask/task_manage/">Manage tasks</a>
+                    <li><a href="http://bigpanda.cern.ch/prodsys/prodtask/task_create/">Create task</a>
+                    <li><a href="http://bigpanda.cern.ch/prodsys/prodtask/request_table/">Requests</a>
+                    <li><a href="http://bigpanda.cern.ch/prodsys/getdatasets/">Input dataset search</a>
+                    <li><a href="http://bigpanda.cern.ch/prodsys/prodtask/production_dataset_table/">Aborted and obsolete datasets</a>
+                </ul>
+                </li>
+
+                <li class="has-dropdown">
+                <a href="#">Services</a>
+                <ul class="dropdown">
+                    <li><a href="http://apfmon.lancs.ac.uk/">Pilot factory monitor</a>
+                    {% comment %} <li><a href="http://bigpanda.cern.ch/pbm/">PanDA Brokerage Monitor</a>{% endcomment %}
+                    <li><a href="http://dashb-atlas-job.cern.ch/dashboard/request.py/dailysummary#button=jobstatus&sites%5B%5D=All+T3210&sitesCat%5B%5D=All+Clouds&activities%5B%5D=Data+Processing&activities%5B%5D=Extra+Production&activities%5B%5D=Group+Production&activities%5B%5D=MC+Reconstruction&activities%5B%5D=MC+Simulation&activities%5B%5D=Others&activities%5B%5D=T0+Processing&resourcetype=All&sitesSort=7&sitesCatSort=1&start=null&end=null&timerange=last24&granularity=Hourly&generic=3&sortby=3&series=All">Dashboard historical views</a></li>
+                    <li><a href="http://dashb-atlas-data.cern.ch/ddm2/">DDM dashboard</a>
+                    <li><a href="http://dashb-atlas-ssb.cern.ch/dashboard/request.py/siteview#currentView=Shifter+view&highlight=false">Site Status Board</a>
+                    <li><a href="http://panda.cern.ch/">Classic (aka old) PanDA monitor</a>
+                    <li><a href="http://adc-monitoring.cern.ch/">All ADC monitoring services</a>
+                </ul>
+                </li>
+
+            {% endif %}
+
+            <li class="has-dropdown">
+            <a href="#">VO</a>
+            <ul class="dropdown">
+                <li><a href="http://bigpanda.cern.ch/dev">ATLAS</a></li>
+                <li><a href="http://bigpanda.pandawms.org/dev">BigPanDA</a></li>
+                <li><a href="http://htcondor.pandawms.org/dev">HTCondor</a></li>
+                <li><a href="http://core.pandawms.org/core">core</a></li>
+                <li><a href="http://test.pandawms.org/dev">Test</a></li>
+                <li><a href="http://pandawms.org/dev">All</a></li>
+            </ul>
+            </li>
+
+            {% if request.session.username %}
+            <li>
+            <a href="{% url 'userInfo' request.session.username %}?display_limit=200">{{request.session.username}}</a>
+            </li>
+            {% endif %}
+
+            <li class="has-dropdown">
+            <a href="#"><span class='help'>Help</span></a>
+            <ul class="dropdown">
+                <li><a href="#doc"><span class='help'>See the bottom of the page for contextual help on current page</span></a>
+                <li><a href="/help/"><span class='help'>Complete PanDA monitor help page</span></a>
+                {% if viewParams.MON_VO == 'ATLAS' %}
+                <li><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/AtlasDAST">Distributed analysis support</a>
+                {% endif %}
+                <li><a href="mailto:atlas-adc-pandamon-support@cern.ch">PanDA monitor support</a>
+                <li><a href="https://github.com/PanDAWMS"> PanDA repository </a>
+                <li><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a>
+            </ul>
+            </li>
+
+        </ul>
+    
+    </section>
+</nav>
+
+  <!-- End Header and Nav -->
+
+  <!-- sub-title and bread-crumbs -->
+
+  <div class="top-subbar">
+
+    <!-- sub-title -->
+    <div class="left" id="div-subtitle"><font size=-1>{% block subtitle %}Subtitle goes here{% endblock %}</font></div>
+    <!-- End sub-title -->
+
+    <!-- bread-crumbs -->
+    <div class="right">
+      {% block header-nav-chain %}
+      <span class="hide-for-small"><font size=-1>{% if request.session.hostname %}{{ request.session.hostname }}{% endif %} Built  {% now "H:i" %}{% if request.session.max_age_minutes %}, cache {{ request.session.max_age_minutes }}'{% endif %}</font></span>
+      {% endblock %}
+    </div>
+    <!-- End bread-crumbs -->
+    
+    
+  </div>
+  <!-- End sub-title and bread-crumbs -->
+
+{% block left_menu %}{% endblock %}
+
+<div class="large-12 columns">
+{% block body %}
+
+{% endblock %}
+</div>
+
+{% block extra_js_bottombody %}{% endblock %}
+
+	<br>
+
+
+  <!-- Main Grid Section -->
+      {% block bottom_info %} 
+      {% comment %} {% if query %} Query: <i>{{ query }}</i> {% endif %}  {% endcomment %}
+      {% endblock %}
+<br>
+  <!-- End Main Grid Section -->
+
+
+  <!-- Footer -->
+
+  <footer>
+    <div class="large-12 columns">
+        {% block bottom_copy %}
+
+<table width=1000 class="hide-for-small">
+<a name="doc"></a>
+
+{% block helptext %}
+
+{% endblock %}
+
+{% if debuginfo %}
+<p>********** DEBUG:<br>
+<font size=-2>
+{{ debuginfo|safe }}
+<br><br>********** Request:<br>{{ request }}
+<br><br>********** Session:<br>
+{% for key, val in request.session.items %}
+{{ key }} = {{ val }} <br>
+{% endfor %}
+</font></p>
+{% endif %}
+
+</td></tr>
+</table>
+
+            <table borderwidth=0>
+            <tr><td valign="bottom">
+          <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PanDA"><img src="{% static "images/panda-verysmall-notext.png" %}"></a></td>
+          <td valign="bottom"><font size=-1>Brought to you by the PanDA team. <br> All times are in UTC. Page may be cached; check the build time above.
+          <br><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a></font></td>
+          </tr></table>
+        {% endblock %}
+      </div>
+    </div>
+  </footer>
+
+{% comment %}
+  <script src="{% static 'js/vendor/modernizr.js' %}"></script>
+  <script src="{% static 'js/vendor/jquery.js' %}"></script>
+  <script src="{% static 'js/foundation/foundation.js' %}"></script>
+  <script src="{% static 'js/foundation/foundation.topbar.js' %}"></script>
+{% endcomment %}
+
+{% block extra_js_hepsw %}
+
+  <script src="{% static 'js/vendor/modernizr.js' %}"></script>
+  <script src="{% static 'js/vendor/jquery.js' %}"></script>
+  <script src="{% static 'js/foundation/foundation.js' %}"></script>
+  <script src="{% static 'js/foundation/foundation.topbar.js' %}"></script>
+
+{% comment %}
+  <script src="http://hepsoftware.org/static/js/vendor/modernizr.js"></script>
+  <script src="http://hepsoftware.org/static/js/vendor/jquery.js"></script>
+  <script src="http://hepsoftware.org/static/js/foundation/foundation.js"></script>
+  <script src="http://hepsoftware.org/static/js/foundation/foundation.topbar.js"></script>
+{% endcomment %}
+
+{% endblock %}
+
+  <script>
+    $(document).foundation();
+  </script>
+
+</body>
+</html>

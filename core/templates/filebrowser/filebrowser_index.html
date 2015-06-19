@@ -1,0 +1,46 @@
+{% extends "_base_core.html" %}{% load url from future %}
+{% block page_title %} {{ viewParams.MON_VO }} PanDA filebrowser{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA filebrowser{{ viewParams.selection|safe }}
+{% if site %} &nbsp; site={{ site }} {% endif %}
+{% if scope %} &nbsp; scope={{ scope }}{% endif %}
+{% if lfn %} &nbsp; lfn={{ lfn }}{% endif %}
+{% endblock %}
+{% block body %}
+<div><span style="color: navy; font-weight: bold;">File lookup parameters</span></div>
+<div><br/>
+<table>
+{% if scope %}<tr><th>Scope</th><td>{{scope}}</td></tr>{% endif %}
+{% if lfn %}<tr><th>LFN</th><td>{% if errors %}{{lfn}}{% else %}<a href="http://{{ HOSTNAME }}{{MEDIA_URL}}{{dirprefix}}/{{lfn}}" >{{lfn}}</a>{% endif %}</td></tr>{% endif %}
+{% if site %}<tr><th>Site</th><td>{{site}}</td></tr>{% endif %}
+{% if guid %}<tr><th>GUID</th><td>{{guid}}</td></tr>{% endif %}
+</table> 
+</div>
+
+{% if files %}
+<div><span style="color: navy; font-weight: bold;">File listing</span></div>
+<br/>
+<table>
+<thead>
+<th>Modification time</th>
+<th>Size [B]</th>
+<th>File</th>
+</thead>
+<tbody>
+{% for f in files %}
+<tr>
+<td>{{f.modification}}</td>
+<td align='right'>{{f.size}}</td>
+<td><a href="http://{{ HOSTNAME }}{{MEDIA_URL}}{{dirprefix}}/{{tardir}}{{f.dirname}}/{{f.name}}" >
+{% if f.dirname %}{{f.dirname}}/{% endif %}{{f.name}}</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+{% if errors.missingparameter %}<div><span style="color: red; font-weight: bold;">Query error.</span> {{errors.missingparameter}}</div>{% endif %}
+{% if errors.improperformat %}<div><span style="color: red; font-weight: bold;">Improperly formatted parameters.</span> {{errors.improperformat}}</div>{% endif %}
+{% if errors.lookup %}<div><span style="color: red; font-weight: bold;">Lookup error.</span> {{errors.lookup}}</div>{% endif %}
+{% if errors.download %}<div><span style="color: red; font-weight: bold;">Download error.</span> {{errors.download}}</div>{% endif %}
+{% endif %}
+{% endblock %}

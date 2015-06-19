@@ -1,0 +1,18 @@
+
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} PanDA Monitor Help{% endblock %}
+{% block title %} {{ viewParams.MON_VO }} PanDA monitor{% endblock %}
+{% block subtitle %} Consolidated help information {% endblock %}
+
+{% block body %}
+<table style="margin:10px; width:80%" >
+<tr class="docsection"><th> PanDA data reprocess </th></tr>
+<tr><td class="doctextlight">
+
+<p>
+This page consolidates information about data refresh in Sorl.
+
+{% if not error == None %}Error:{{error}}{% endif %}
+
+{% endblock %}

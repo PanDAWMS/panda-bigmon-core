@@ -1,0 +1,62 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA files {% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA files<font size=-1>{{ viewParams.selection|safe }}</font>{% endblock %}
+
+{% block body %}
+
+{% if files %}
+
+{% if requestParams.datasetname %}<br>Files in dataset <b>{{ requestParams.datasetname }}</b> {% endif %}
+{% if requestParams.datasetid %}<br>Files in dataset ID = <b>{{ requestParams.datasetid }}</b> {% endif %}
+<p>
+<b>{{ files|length }} listed files</b>
+{% if nfiles != files|length %} <br> <b>{{ nfiles }} unique files</b> {% endif %}
+
+<p>
+
+<table>
+<tr class='tablesection'>
+	<th>File name</th>
+	<th>Scope</th>
+	<th>Type</th>
+	<th>Size (MB)</th>
+	<th>Task</th>
+	<th>PanDA Job</th>
+	<th>Attempt</th>
+	<th>Status</th>
+	<th>Created</th>
+	<th>GUID</th>
+	<th>File ID</th>
+</tr>
+{% for frec in files %}
+	<tr><font size=-1>
+		<td><a href="{% url 'fileInfo' %}?lfn={{ frec.lfn }}">{{ frec.lfn }}</a></td>
+		<td><font size=-1>{{ frec.scope }}</font></td>
+		<td>{{ frec.type }}</td>
+		<td>{{ frec.fsizemb }}</td>
+		<td><a href="{% url 'taskInfo' %}?jeditaskid={{ frec.jeditaskid }}">{{ frec.jeditaskid }}</a></td>
+		<td>{% if frec.pandaid %}<a href="{% url 'jobInfo' %}?pandaid={{ frec.pandaid }}">{{ frec.pandaid }}</a> {% endif %}</td>
+		<td>{{ frec.attemptnr }}</td>
+		<td class='{{frec.status}}'>{{ frec.status }}</td>
+		<td><font size=-1>{{ frec.creationdate|date:"Y-m-d H:i" }}</font></td>
+		<td><font size=-1>{{ frec.guid }}</font></td>
+		<td><font size=-1>{{ frec.fileid }}</font></td>
+	</font></tr>
+{% endfor %}
+</table>
+
+{% else %}
+
+No files matching selection were found.
+
+{% endif %}
+
+{% endblock %}
+
+{% block helptext %}
+{% include "fileListHelp.html" with helptitle="File list help" %}
+{% include "fileInfoHelp.html" with helptitle="File details" %}
+{% endblock %}
+

@@ -1,0 +1,130 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA {% if viewParams.MON_VO == 'ATLAS' %}
+ resource {% else %} site {% endif %} {{ site.siteid }} {% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA {% if viewParams.MON_VO == 'ATLAS' %}
+ resource {% else %} site {% endif %} {{ site.siteid }}{% endblock %}
+
+{% block body %}
+
+{% if site %}
+
+<table>
+<tr class='tablesection'><th colspan=20> {{ site.siteid }} information </th></tr>
+{% for att in attrs %}
+<tr><th>
+{{ att.name }}
+</th><td>
+<span {% if att.name == 'Status' %} class='{{att.value}}' {% endif %}>
+{% if att.name == 'GOC name' %} <a href="{% url 'siteList' %}?gocname={{ att.value }}">{{ att.value }}</a>
+{% else %}
+{% if att.value != 'None' %} {{ att.value }} {% endif %}
+{% endif %}
+</span>
+</td></tr>
+{% endfor %}
+</table>
+
+{% if queues|length > 1 %}
+
+<table>
+<tr class='tablesection'><th colspan=20> All queues for {{ site.siteid }} </th></tr>
+<tr class='tablesection'>
+<th> Queue </th>
+<th> Status </th>
+<th> Last modified </th>
+<th> Comment </th>
+</tr>
+
+{% for queue in queues %}
+<tr>
+<td> {{ queue.nickname }} </td><td> <span class='{{ queue.status }}'>{{ queue.status }}</span> </td>
+<td> {{ queue.lastmod|date:"Y-m-d H:i" }} </td> <td> {{ queue.comment_field }} </td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+
+<table><tr>
+<th class='tablesection'> View: </th>
+<td>
+<a href="{% url 'wnInfo' site.siteid %}">worker nodes</a>
+</td>
+<td>
+<a href="{% url 'jobList' %}?computingsite={{site.siteid}}&hours={{njobhours}}&display_limit=100">jobs</a>, <a href="{% url 'errorSummary' %}?computingsite={{site.siteid}}">job errors</a>
+</td>
+<td>
+<a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&type=prod_brokerage&site={{ site.siteid }}&hours={{njobhours}}">brokerage actions</a>
+</td>
+{% if site.nickname %}
+<td>
+<a href="http://apfmon.lancs.ac.uk/q/{{site.nickname}}">pilots</a>
+</td>
+{% endif %}
+
+{% if viewParams.MON_VO == 'ATLAS' %}
+<td>
+<a href="http://dashb-atlas-ssb.cern.ch/dashboard/request.py/sitehistory?site={{site.gocname}}#currentView=Shifter+view">Site status board</a>
+</td>
+
+<td>
+<a href="https://atlas-logbook.cern.ch/elog/ATLAS+Computer+Operations+Logbook/?mode=full&reverse=0&reverse=1&npp=20&Subject={{site.gocname}}">elogs</a>
+</td>
+
+<td>
+DDM 
+<a href="http://dashb-atlas-data.cern.ch/ddm2/#src.cloud=(%22{{site.cloud}}%22)&src.site=(%22{{site.gocname}}%22)&grouping.src=(cloud,site,token)">source</a>
+
+<a href="http://dashb-atlas-data.cern.ch/ddm2/#dst.cloud=(%22{{site.cloud}}%22)&dst.site=(%22{{site.gocname}}%22)&grouping.dst=(cloud,site,token)">destination</a>
+</td>
+
+<td> 
+<a href=" https://atlas-install.roma1.infn.it/atlas_install/list.php?resource={{site.siteid}}">SW install status</a>
+</td>
+
+
+{% endif %}
+
+</tr></table>
+
+{% if incidents %}
+
+<table>
+<tr class='tablesection'><th colspan=20> Incidents over the last month </th></tr>
+{% for inc in incidents %}
+<tr><td> {{ inc.at_time|date:"Y-m-d H:i" }} </td>
+<td> <font size=-1>{{ inc.description|safe }}</font> </td>
+{% endfor %}
+</table>
+
+{% else %}
+
+<p>
+This site has no logged incidents over the last month.
+</p>
+
+{% endif %}
+
+<table>
+<tr class='tablesection'><th colspan=20> {{ site.siteid }} parameters </th></tr>
+{% for col in colnames %}
+<tr><th>{{ col.name }} </th><td> {% if col.value != 'None' %} {{ col.value }} {% endif %}</td></tr>
+{% endfor %}
+</table>
+
+{% else %}
+
+No site specified.
+
+{% endif %}
+
+{% endblock %}
+
+
+{% block helptext %}
+{% include "siteInfoHelp.html" with helptitle="Site information page" %}
+{% include "siteListHelp.html" with helptitle="Site, clouds, queues, tiers etc." %}
+{% endblock %}
+

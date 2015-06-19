@@ -1,0 +1,309 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA{% endblock %}
+{% block subtitle %}{{ viewParams.MON_VO }} PanDA monitor home{% endblock %}
+
+{% block bottom_info %}
+{% if requestParams|length == 0 %}
+
+{% if viewParams.MON_VO == 'ATLAS' %}
+
+<table border='0'>
+<tr><td colspan=10>
+<b>Global concurrent running job core counts, all sites, all job types, by cloud, last 1, 7, 30 days</b>
+</td></tr>
+<tr>
+<td width='30%' height='365' class="hide-for-small">
+<!-- Day: -->
+<a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=last24&granularity=Hourly&generic=3&sortBy=3&series=All&type=rmulticores'>
+<img width='447' height='363' src='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=last24&granularity=Hourly&generic=3&sortBy=3&series=All&type=rmulticores' alt='Daily World All Queues'></a>
+</td>
+<td width='30%' height='365'>
+<!-- Week -->
+<a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastWeek&granularity=Daily&generic=3&sortBy=3&series=All&type=rmulticores'>
+<img width='447' height='363' src='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastWeek&granularity=Daily&generic=3&sortBy=3&series=All&type=rmulticores' alt='Weekly World All Queues'></a>
+</td>
+<td width='30%' height='365'  class="hide-for-small">
+<!-- Month -->
+<a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastMonth&granularity=Daily&generic=3&sortBy=3&series=All&type=rmulticores'>
+<img width='447' height='363' src='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastMonth&granularity=Daily&generic=3&sortBy=3&series=All&type=rmulticores' alt='Monthly World All Queues'></a>
+</td>
+</tr>
+<tr><td colspan=10>
+<b>Global concurrent running job core counts, all sites, all job types, by activity, last 1, 7, 30 days</b>
+</td></tr>
+<tr>
+<td width='30%' height='365' class="hide-for-small">
+<!-- Day: -->
+<a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=last24&granularity=Hourly&generic=3&sortBy=10&series=All&type=rmulticores'>
+<img width='447' height='363' src='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=last24&granularity=Hourly&generic=3&sortBy=10&series=All&type=rmulticores' alt='Daily World All Queues'></a>
+</td>
+<td width='30%' height='365'>
+<!-- Week -->
+<a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastWeek&granularity=Daily&generic=3&sortBy=10&series=All&type=rmulticores'>
+<img width='447' height='363' src='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastWeek&granularity=Daily&generic=3&sortBy=10&series=All&type=rmulticores' alt='Weekly World All Queues'></a>
+</td>
+<td width='30%' height='365'  class="hide-for-small">
+<!-- Month -->
+<a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastMonth&granularity=Daily&generic=3&sortBy=10&series=All&type=rmulticores'>
+<img width='447' height='363' src='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastMonth&granularity=Daily&generic=3&sortBy=10&series=All&type=rmulticores' alt='Monthly World All Queues'></a>
+</td>
+</tr>
+</table>
+
+{% comment %}
+
+<div class='section'>ATLAS PanDA processing overview from 
+<a href="http://grid.triumf.ca/">TRIUMF</a>
+<a href="http://panglia.triumf.ca">Panglia</a>. 
+Panglia has <a href="http://panglia.triumf.ca/world/generator.php">world</a>, 
+<a href="http://panglia.triumf.ca/cloud/generator.php">cloud</a>,
+<a href="http://panglia.triumf.ca/site/generator.php">site</a>
+plot generators
+</div>
+
+<table border='0'>
+<tr>
+<td><a target='_blank' href='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=production&amp;SIZE=large'>
+<img width='100%' src='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=production&amp;SIZE=medium'
+alt='Daily World Production Queues'></a>
+</td>
+<td><a target='_blank' href='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=analysis&amp;SIZE=large'>
+<img width='100%' src='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=analysis&amp;SIZE=medium'
+alt='Daily World Analysis Queues'></a>
+</td>
+<td><a target='_blank' href='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=combined&amp;SIZE=large'>
+<img width='100%' src='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=combined&amp;SIZE=medium'
+alt='Daily World Production and Analysis Queues (combined)'></a>
+</td>
+</tr>
+</table>
+
+{% endcomment %}
+
+{% else %}
+
+<p>
+Welcome to the {{ viewParams.MON_VO }} PanDA monitor.
+Select what you'd like to have a look at in the top menu bar: dashboard overview; job and task lists; error summaries; user lists and pages; site, cloud and WN information; etc.
+
+{% endif %}
+
+{% endif %}
+<p>
+
+<div style="float: left; padding: 3px; ">
+<table  class='invisibletable'>
+<tr  class='invisibletable'><th colspan=10  class='highlightcell'> Search </th></tr>
+<tr>
+<td><form action="{% url 'jobInfo' %}" method='get'>
+PanDA job ID or name</td><td><font size=-1> <input id="pandaid" name="pandaid" size="25" maxlength="200" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'jobList' %}" method='get'>
+Batch ID</td><td><font size=-1> <input id="batchid" name="batchid" size="25" maxlength="200" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'taskInfo' %}?" method='get'>
+Task ID </td><td><font size=-1><input id="jeditaskid" name="jeditaskid" size="25" maxlength="15" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'taskList' %}" method='get'>
+Task name </td><td><font size=-1><input id="taskname" name="taskname" size="25" maxlength="400" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'taskList' %}" method='get'>
+Request ID </td><td><font size=-1><input id="reqid" name="reqid" size="6" maxlength="10" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'taskList' %}" method='get'>
+Tasks for Request IDs </td><td><font size=-1> from <input id="reqid_from" name="reqid_from" size="6" maxlength="10" class="input4" /> to <input id="reqid_to" name="reqid_to" size="6" maxlength="10" class="input4" /><input type='hidden' name="display_limit" readonly="readonly" value=200 />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'jobList' %}" method='get'>
+Jobs for Request IDs </td><td><font size=-1> from <input id="reqid_from" name="reqid_from" size="6" maxlength="10" class="input4" /> to <input id="reqid_to" name="reqid_to" size="6" maxlength="10" class="input4" /><input type='hidden' name="display_limit" readonly="readonly" value=200 />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'taskList' %}" method='post'>
+{% csrf_token %}
+Tasks for campaign </td><td><font size=-1><input id="campaign" name="campaign" size="25" maxlength="400" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 /><input type='hidden' name="tasktype" readonly="readonly" value="prod" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'taskList' %}" method='post'>
+{% csrf_token %}
+Tasks for project </td><td><font size=-1><input id="project" name="project" size="25" maxlength="400" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 /><input type='hidden' name="tasktype" readonly="readonly" value="prod" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'taskList' %}" method='post'>
+{% csrf_token %}
+Tasks for tag </td><td><font size=-1><input id="tag" name="tag" size="25" maxlength="400" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 /><input type='hidden' name="days" readonly="readonly" value="30" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'taskList' %}" method='post'>
+{% csrf_token %}
+Tasks for stream </td><td><font size=-1><input id="stream" name="stream" size="25" maxlength="400" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 /><input type='hidden' name="days" readonly="readonly" value="30" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+
+<tr><td><form action="{% url 'siteInfo' %}" method='get'>
+Site </td><td><font size=-1><input id="site" name="site" size="25" maxlength="50" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'userInfo' %}" method='get'>
+User </td><td><font size=-1><input id="user" name="user" size="25" maxlength="50" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'datasetInfo' %}" method='get'>
+Dataset </td><td><font size=-1><input id="datasetname" name="datasetname" size="25" maxlength="300" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'fileInfo' %}" method='get'>
+File </td><td><font size=-1><input id="filename" name="filename" size="25" maxlength="300" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'jobList' %}" method='get'>
+Stalled jobs </td><td> in 
+<select name="jobstatus" class="input8">
+    <option value="defined"><span class="defined">defined</span></option>
+    <option value="waiting"><span class="waiting">waiting</span></option>
+    <option value="assigned"><span class="assigned">assigned</span></option>
+    <option value="activated"><span class="activated">activated</span></option>
+    <option value="starting"><span class="starting">starting</span></option>
+    <option value="running"><span class="running">running</span></option>
+    <option value="holding"><span class="holding">holding</span></option>
+    <option value="transferring"><span class="transferring">transferring</span></option>
+</select>
+for over <font size=-1><input id="statenotupdated" name="statenotupdated" class="inputN" /> hours &nbsp; <input type='hidden' name="display_limit" readonly="readonly" value=200 /><input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'taskList' %}" method='get'>
+Stalled tasks </td><td> in 
+<select name="superstatus" class="input8">
+    <option value="registered"><span class="registered">registered</span></option>
+    <option value="submitting"><span class="submitting">submitting</span></option>
+    <option value="running"><span class="running">running</span></option>
+</select>
+for over <font size=-1><input id="statenotupdated" name="statenotupdated" class="inputN" /> hours &nbsp; <input type='hidden' name="display_limit" readonly="readonly" value=300 /><input type='submit' value='Submit' /></form></font></td></tr>
+
+</table>
+</div>
+
+{% if requestParams|length == 0 %}
+
+<div style="float: left;  padding: 3px; ">
+<table><tr><th class='highlightcell'> News </th></tr>
+<td>
+<div style="width:500px;height:100%;overflow:auto;word-wrap: break-word">
+<ul style="font-size:small">
+<!-- most recent at the top -->
+<li class="news">20150318: Memory infomation added to jobs and tasks pages 
+<li class="news">20150316: RW metric added to dashboard 
+<li class="news">20150205: Responce time of tasks display improved 
+<li class="news">20150205: Wildcard search of jobs on job parameters added (<a target=new href="https://its.cern.ch/jira/browse/ATLASPANDA-133">ATLASPANDA-133</a>)
+<li class="news">20150205: Dataset information added to JSON responce (<a target=new href="https://its.cern.ch/jira/browse/ATLASPANDA-109">ATLASPANDA-109</a>)
+<li class="news">20150205: Wildcard search on jobs added (<a target=new href="https://its.cern.ch/jira/browse/ATLASPANDA-40">ATLASPANDA-40</a>)
+<li class="news">20141229: Main page plots show all jobs by cloud and activity
+<li class="news">20141219: curl dumps of job params. See job list page help.
+<li class="news">20141216: Request ID shown for jobs, range search added
+<li class="news">20141215: Sort by duration option for job lists
+<li class="news">20141211: Error code links in error summary changed to job lists
+<li class="news">20141211: RequestID, requestID range added to search
+<li class="news">20141210: Use transformation json metadata for error info
+<li class="news">20141209: https with auto-login if browser presents cert known to PanDA
+<li class="news">20141209: User sessions to manage state and customizations
+<li class="news">20141209: Dynamic, page dependent cache lifetimes
+<li class="news">20141209: Support reqid_from, reqid_to for job list, error pages
+<li class="news">20141208: Flow diagram on task pages if &amp;flow=1 in URL
+<li class="news">20141206: Flow diagram on errors, jobs pages if &amp;flow=1 in URL
+<li class="news">20141206: Add link to a task's error page on the task list
+<li class="news">20141203: Add outputfiletype on job lists
+<li class="news">20141124: rc_test error page added
+<li class="news">20141123: WN pages reflect only the last 12hrs as advertised
+<li class="news">20141123: Task dashboards cleaned up, speeded up
+<li class="news">20141116: Task, job displays customized for event service
+<li class="news">20141113: Dashboards show all (pre)active jobs, not just N hrs
+<li class="news">20141113: Support URLS of form .../jobs/?pandaid=firstid,secondid,...
+<li class="news">20141107: Task name search supports front and/or back wildcards
+<li class="news">20141102: batchid search uses job list instead of a single-job search
+<li class="news">20141013: Support date_from=2014-10-01&amp;date_to=2014-10-03
+<li class="news">20141013: Support earlierthan=Nhours, earlierthandays=Ndays on URL
+<li class="news">20141013: Filter duplicate jobs arising from archive transfer overlap
+<li class="news">20141013: Include zero-job sites and test jobs in dashboards
+<li class="news">20141013: Logfile links routed to Jarka's new filebrowser
+<li class="news">20141013: Creator job links on job pages now work for ages up to a year
+<li class="news">20141013: Task list depth on user pages shortened to 7 days for speed.
+<li class="news">20141010: Job pages provide links to creator job search for input files
+<li class="news">20140923: Job pages directly link to object store based log tarballs
+<li class="news">20140913: Link DEFT request page from task list and detail pages
+<li class="news">20140912: On task page highlight input containers, hide datasets by default
+<li class="news">20140911: Task name search supports wildcarding
+<li class="news">20140911: Show wait time, duration for jobs not yet running, completed
+<li class="news">20140818: Job attempt# off for user page, JEDI jobs. Not meaningful in JEDI.
+<li class="news">20140818: Task attribute summary added to user page
+<li class="news">20140817: Output container list added to task detail page
+<li class="news">20140817: Support clarified. Use DAST list, as ever, for dist analysis support
+<li class="news">20140817: curl retrieval of json task data. Search on curl in <a href="/help">the help</a>
+<li class="news">20140817: Merge (and other non-retry) jobs supported as a relationship type
+<li class="news">20140816: Cache lifetime 3min for all pages, documented in footer. Report issues
+<li class="news">20140816: <span class="helpdark">Restructured help with <a href="/help">consolidated help page</a></span>
+<li class="news">20140815: Show prodsys1 tasknames in error summary
+<li class="news">20140814: Task summaries (huge and slow) removed from non-task dashboards
+<li class="news">20140814: Task state names in task list, detail pages link to state doc
+<li class="news">20140814: Task list in user pages brought up to date, with input completion
+<li class="news">20140814: Wildcarding implemented for taskname in task lists
+<li class="news">20140813: Works on mobile. Still tuning to do. Report bad issues please.
+<li class="news">20140813: Add task searches for campaign, project, stream, tag
+<li class="news">20140813: Add project, stream and tag summary info to task lists
+<li class="news">20140813: Auto redirect pre-JEDI task detail pages to old monitor
+<li class="news">20140813: Show in, out datasets on user pages and job lists
+<li class="news">20140813: Fill state colors in dashboard task, job summary tables
+<li class="news">20140813: Filled color in the status cells for job and task pages
+<li class="news">20140812: Campaign added to task list and detail pages
+<li class="news">20140812: Task pages use new DEFT-friendly 'superstatus'. See task page help.
+<li class="news">20140812: Stalled task search added
+<li class="news">20140812: Improved job listings on user pages (matching job lists)
+<li class="news">20140801: Job name links in job lists
+<li class="news">20140801: Finished/failed job counts and %failed added to task error summary
+<li class="news">20140801: Dashboards for task-based analysis, production job summaries
+<li class="news">20140801: Finished/failed job counts and %failed added to site error summary
+<li class="news">20140731: Task names in error summary (for JEDI; old tasks need DB fix)
+<li class="news">20140730: Json output for job lists added. See job list page green doc.
+<li class="news">20140730: Pilot counts (last 3 hours) added to regional dashboard
+<li class="news">20140730: Defined, waiting states added to dashboards
+<li class="news">20140730: Panglia plot popups for clouds and sites added to dashboards
+<li class="news">20140730: Switch front-page plots to ones that take multicore into account
+<li class="news">20140711: Add error interpretation from the ErrorCodes.py descriptions
+<li class="news">20140710: JEDI action log added to task detail page
+<li class="news">20140709: Site job listings and WN info pages changed to 12hr default
+<li class="news">20140709: Computingsite wildcards in error summary. See error page help.
+<li class="news">20140709: Direct navigation to clouds in Sites menu
+<li class="news">20140708: %fail numbers on dashboard and task list link to error summary
+<li class="news">20140708: Stalled jobs search added
+<li class="news">20140708: Show jobs transferring &gt;36hrs, by cloud, in prod dash
+<li class="news">20140707: Task page sorting added
+<li class="news">20140704: Links to <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJediAnalysis">new documentation on JEDI for analysis</a>
+<li class="news">20140703: Metadata added to job pages
+<li class="news">20140702: Added contextual help framework
+<li class="news">20140702: Improved file info for JEDI's more complex file processing
+<li class="news">20140701: Added working group task summary to WG dashboard
+<li class="news">20140701: Added inline dataset list, job parameters to task detail page
+<li class="news">20140630: Show input file counts for tasks to indicate progress
+<li class="news">20140630: Ticket specs retrieved from JEDI task table (not taskparams)
+<li class="news">20140626: Task status labelled as JEDI task status in list and detail views
+<li class="news">20140626: JIRA ticket links added to task list and detail pages
+<li class="news">20140626: JEDI log information added to task list and detail pages
+<li class="news">20140624: Priority ranges show how priorities are apportioned, allow drill-down
+<li class="news">20140624: Jobset ranges added to job attribute summaries to de-clutter listings
+<li class="news">20140623: Debug mode in job pages (—debugMode option; <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaShiftGuide#How_to_use_debug_mode">prod usage</a>)
+<li class="news">20140622: Show time to start, duration instead of start time, end time
+<li class="news">20140621: JEDI dataset, file, file list pages added
+<li class="news">20140620: JEDI work queue added under Sites menu
+<li class="news">20140620: Event service job, task listings added
+<li class="news">20140617: Expanded sorting support
+<li class="news">20140617: Show multi-cloud production sites associated with clouds
+<li class="news">20140616: PanDA logger added
+<li class="news">20140611: Throttled state supported
+<li class="news">20140610: Working group dashboard added, summarizing job status by WG
+</ul>
+</div>
+</td></tr></table>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block helptext %}
+
+{% if requestParams|length == 0 %}
+{% include "mainHelp.html" with helptitle="Help" %}
+{% endif %}
+
+{% include "searchHelp.html" with helptitle="Searches" %}
+
+{% endblock %}
+

@@ -1,0 +1,117 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA self monitor {% endblock %}
+{% block subtitle %}view summary{{ viewParams.selection|safe }} {% if nmax %}<b> display limit:{{nmax}}</b> {% endif %}
+{% if user %} &nbsp; user={{ user }} {% endif %}
+{% if site %} &nbsp; site={{ site }} {% endif %}
+{% if vo %} &nbsp; VO={{ vo }} {% endif %}
+{% endblock %}
+{% block body %}
+
+{{ viewParams.header }}
+<script type="text/javascript"
+           src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
+</script>
+
+{% if flowstruct %}
+{% include "googleFlowDiagram.html" with struct=flowstruct %}
+{% endif %}
+
+
+{% if reqHist %}
+
+    <script type="text/javascript">
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['Time', 'Count'],
+
+{% for time,count in reqHist %}
+          ['{{ time|date:"m-d H:i" }}', {{ count }}],
+{% endfor %}
+
+            ])
+        var options = {
+          title: 'View Count timeline',
+          legend: { position: 'none' },
+          hAxis: {title: 'Time (empty bins suppressed)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
+        };
+
+        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+      }
+    </script>
+    <div id="chart_div" style="height: 500px;"></div>
+
+{% endif %}
+
+{% if drHist %}
+
+    <script type="text/javascript">
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['Time', 'Count'],
+
+{% for duration,count in drHist|slice:":20" %}
+          ['{{ duration }}', {{ count }}],
+{% endfor %}
+
+            ])
+        var options = {
+          title: 'Query Duration',
+          legend: { position: 'none' },
+          hAxis: {title: 'Duration (empty bins suppressed)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
+        };
+
+        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div1'));
+        chart.draw(data, options);
+      }
+    </script>
+    <div id="chart_div1" style="height: 500px;"></div>
+
+{% endif %}
+
+
+{% if reqPages %}
+<div class="pagination" style="float: right;">
+    <span class="step-links">
+        {% if reqPages.has_previous %}
+            <a href="?page={{ reqPages.previous_page_number }}{% for key,value in request.GET.items %}{% ifnotequal key 'page' %}&{{ key }}={{ value }}{% endifnotequal %}{% endfor %}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ reqPages.number }} of {{ reqPages.paginator.num_pages }}.
+        </span>
+
+        {% if reqPages.has_next %}
+            <a href="?page={{ reqPages.next_page_number }}{% for key,value in request.GET.items %}{% ifnotequal key 'page' %}&{{ key }}={{ value }}{% endifnotequal %}{% endfor %}">next</a>
+        {% endif %}
+    </span>
+</div>
+
+<table>
+  <tr class='tablesection'>
+    <th>Sort by: <a href="{{ url }}sortby=id">Query time</a> ; <a href="{{ url }}sortby=duration">Query Duration </a>&nbsp;</th>
+  </tr>
+</table>
+<table>
+  <tr class='tablesection'>
+    <td style="word-wrap:break-word;word-break:break-all;">URL&nbsp;</td>
+    <td>REMOTE&nbsp;</td>
+    <td>QUERY START TIME&nbsp;</td>
+    <td>DURATION</td>
+  </tr>
+{% for pg in reqPages %}
+  <tr>
+    <td style="word-wrap:break-word;word-break:break-all;">{{ pg.urls}}&nbsp;</td>
+    <td>{{ pg.remote}}&nbsp;</td>
+    <td>{{ pg.qtime}}&nbsp;</td>
+    <td>{{ pg.duration}}s&nbsp;</td>
+  </tr>
+{% endfor %}
+
+</table>
+{% endif %}
+{% endblock %}

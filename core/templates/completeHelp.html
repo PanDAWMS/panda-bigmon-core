@@ -1,0 +1,72 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} PanDA Monitor Help{% endblock %}
+{% block title %} {{ viewParams.MON_VO }} PanDA monitor{% endblock %}
+{% block subtitle %} Consolidated help information {% endblock %}
+
+{% block body %}
+
+<table style="margin:10px; width:80%" >
+<tr class="docsection"><th> PanDA Monitor Help </th></tr>
+<tr><td class="doctextlight">
+
+<p>
+This page consolidates the help information displayed at the bottom of PanDA monitor pages, for ease of reference and to give a complete view of the available internal documentation.
+
+<ul>
+    <li> <a href="#mainHelp"> PanDA monitor overview </a>
+    <li> <a href="#searchHelp"> Search </a>
+    <li> <a href="#dashboardHelp"> Dashboards </a>
+    <li> <a href="#taskInfoHelp"> Tasks </a>
+    <li> <a href="#jobInfoHelp"> Jobs </a>
+    <li> <a href="#errorSummaryHelp"> Errors </a>
+    <li> <a href="#userInfoHelp"> Users </a>
+    <li> <a href="#siteInfoHelp"> Sites, clouds, worker nodes, work queues </a>
+    <li> <a href="#datasetInfoHelp"> Datasets </a>
+    <li> <a href="#fileInfoHelp"> Files </a>
+    <li> <a href="#incidentsHelp"> Incidents, logger </a>
+</ul>
+</p>
+</tr></td>
+
+{% include "mainHelp.html" with helptitle="Introduction" show="all"  %}
+
+{% include "searchHelp.html" with helptitle="Search" show="all"  %}
+
+{% include "dashboardHelp.html" with helptitle="Dashboards" show="all" %}
+
+{% include "workingGroupsHelp.html" with helptitle="Working group dashboard" show="all"  %}
+
+{% include "taskInfoHelp.html" with helptitle="Tasks" show="all"  %}
+
+{% include "jobInfoHelp.html" with helptitle="Jobs" show="all"  %}
+
+{% include "jobListHelp.html" with helptitle="Job lists" show="all"  %}
+
+{% include "errorSummaryHelp.html" with helptitle="Error summary" show="all"  %}
+
+{% include "userInfoHelp.html" with helptitle="User page" show="all"  %}
+
+{% include "userListHelp.html" with helptitle="User lists" show="all"  %}
+
+{% include "siteInfoHelp.html" with helptitle="Site information" show="all"  %}
+
+{% include "siteListHelp.html" with helptitle="Site/cloud list"  show="all" %}
+
+{% include "wnInfoHelp.html" with helptitle="Worker node pages" show="all"  %}
+
+{% include "workQueuesHelp.html" with helptitle="Work queues"  show="all" %}
+
+{% include "datasetInfoHelp.html" with helptitle="Dataset pages" show="all"  %}
+
+{% include "datasetListHelp.html" with helptitle="Dataset lists" show="all"  %}
+
+{% include "fileInfoHelp.html" with helptitle="Files" show="all"  %}
+
+{% include "fileListHelp.html" with helptitle="File lists" show="all"  %}
+
+{% include "incidentsHelp.html" with helptitle="Incidents" show="all"  %}
+
+{% include "pandaLoggerHelp.html" with helptitle="PanDA logger" show="all"  %}
+
+{% endblock %}

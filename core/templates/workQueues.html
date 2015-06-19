@@ -1,0 +1,71 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA work queues{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA work queues{{viewParams.selection|safe }}
+{% if vo %} &nbsp; for VO {{ vo }}
+{% endif %}
+{% endblock %}
+{% block body %}
+
+{% if requestParams.status %}<br><b>Task status: <span class='{{requestParams.status}}'>{{ requestParams.status }}</span></b> {% endif %}
+{% if requestParams.eventservice %}<br><b>Event service tasks</b> {% endif %}
+
+<p>
+{% if queues %}
+
+{% if sumd %}
+
+<div class='section'>Queue attribute summary</div>
+
+<table>
+{% for fdict in sumd %}
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
+{% for item in fdict.list %}
+{% if fdict.field == 'status' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+{% endfor %}
+</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+
+<table>
+<tr class='tablesection'><th colspan=20> {{ queues|length }} Work queues </th></tr>
+<tr class='tablesection'>
+	<th>Name</th>
+	<th>ID</th>
+	<th>Type</th>
+	<th>Order</th>
+	<th>Share</th>
+	<th>Status</th>
+	<th>Partition</th>
+	<th>Stretchable</th>
+	<th>Criteria</th>
+	<th>Variables</th>
+</tr>
+    {% for queue in queues %}
+	<tr>
+		<td>{{ queue.queue_name }}</td>
+		<td>{{ queue.queue_id }}</td>
+		<td>{{ queue.queue_type }}</td>
+		<td>{{ queue.queue_order }}</td>
+		<td>{% if queue.queue_share %}{{ queue.queue_share }}{% else %} Not throttled {% endif %}</td>
+		<td class='{{queue.status}}'>{{ queue.status }}</td>
+		<td>{% if queue.partitionid %}{{ queue.partitionid }}{% endif %}</td>
+		<td>{% if queue.stretchable %}{{ queue.stretchable }}{% endif %}</td>
+		<td>{{ queue.criteria }}</td>
+		<td>{{ queue.variables }}</td>
+	</tr>
+    {% endfor %}
+</table>
+
+{% else %}
+    <p>No matches to query.</p>
+{% endif %}
+{% endblock %}
+
+{% block helptext %}
+{% include "workQueuesHelp.html" with helptitle="Work queues" %}
+{% endblock %}

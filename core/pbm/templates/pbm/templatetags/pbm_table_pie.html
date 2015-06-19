@@ -1,0 +1,31 @@
+{% load url from future %}{% load pbm_extras %}
+
+<a href="#sec.toc">[top]</a>&nbsp;
+<a name="sec.{{ divid }}" href="{% url 'pbm-detail' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}{% if plotid %}&amp;plotid={{ plotid }}{% endif %}#sec.toc">[permalink]</a>&nbsp;
+<a name="sec.{{ divid }}" href="{% url 'pbm-plot' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}{% if plotid %}&amp;plotid={{ plotid }}{% endif %}#sec.toc">[plot only]</a>&nbsp;
+<a name="sec.{{ divid }}" href="{% url 'pbm-table' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}{% if plotid %}&amp;plotid={{ plotid }}{% endif %}#sec.toc">[table only]</a>&nbsp;
+<a name="sec.{{ divid }}" href="{% url 'pbm-index' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}#sec.toc">[all plots]</a>&nbsp;
+
+<br/><br/><br/>
+<div id="{{ divid }}">
+{% if data %}
+<table>
+<thead>
+<tr>
+<th>Label</th>
+<th>#</th>
+</tr>
+</thead>
+<tbody>
+{% for item in data %}
+<tr>
+<td>{{item.0}}</td>
+<td>{{item.1}}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+</div>
+
+

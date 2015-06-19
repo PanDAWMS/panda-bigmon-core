@@ -1,0 +1,31 @@
+{% extends "pbm/index.html" %}{% load url from future %}{% load pbm_extras %}
+{% block header-nav-chain-1 %}<a href="{% url 'pbm-index' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}">PanDA Brokerage</a>{% endblock %}
+{% block header-nav-chain-1-separator %}&nbsp;&#187;&nbsp;{% endblock %}
+{% block header-nav-chain-2 %}<a href="{% url 'pbm-table' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}{% if plotid %}&amp;plotid={{ plotid }}{% endif %}{% endblock %}
+{% block header-nav-chain-2-separator %}">Single table</a>{% endblock %}
+{% block body %}
+<a name="sec.toc"></a>
+<div><span style="color: navy; font-weight: bold;">Query parameters</span></div>
+<br/>
+Showing data for interval from {{startdate}} to {{enddate}}.
+<br/>Showing tabular data of a single plot: &quot;{{ titleX }}&quot;.
+{% if errors_GET %}
+{% if errors_GET.noparams %}
+	<div><span style="color: red; font-weight: bold;">Query warning.</span> {{errors_GET.noparams}}</div>
+{% else %}
+{% if errors_GET.startdate %}<div><span style="color: red; font-weight: bold;">Query error.</span> {{errors_GET.startdate}}</div>{% endif %}
+{% if errors_GET.enddate %}<div><span style="color: red; font-weight: bold;">Query error.</span> {{errors_GET.enddate}}</div>{% endif %}
+{% if errors_GET.ndays %}<div><span style="color: red; font-weight: bold;">Query error.</span> {{errors_GET.ndays}}</div>{% endif %}
+{% endif %}
+{% endif %}
+
+<br/><br/><br/>
+<div><span style="color: navy; font-weight: bold;">{{ titleX }}</span></div>
+<br/>
+
+{% pbm_table_pie dataX titleX 'tableX' startdate enddate colorsX|safe plotid|safe %}
+
+<br/>
+
+{% endblock %}
+

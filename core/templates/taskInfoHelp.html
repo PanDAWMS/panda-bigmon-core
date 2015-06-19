@@ -1,0 +1,111 @@
+<tr class="docsection"><th><a name="taskInfoHelp"></a> {{ helptitle }} </th></tr>
+<tr><td class="doctextlight">
+
+<p>
+Details on JEDI's task based workload management can be found in the <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Introduction">JEDI twiki</a>.
+</p>
+
+<p>
+The task status shown in the monitor is in JEDI terms the simplified 'superstatus' the task is in. In ATLAS, these are in sync with DEFT states. JEDI uses internally a more complex set of states, shown on task detail pages as 'Detailed JEDI status' (when it differs from the superstatus); this is the 'status' field in the JEDI task.
+</p>
+
+<ul>
+{% if show == 'all' or task.superstatus == 'registered' %} <li>  Status <b class='registered'>registered</b> indicates the task has been received by JEDI and the task information is inserted to the JEDI_Tasks table. {% endif %}
+{% if show == 'all' or task.superstatus == 'submitting' %} <li>  Status <b class='submitting'>submitting</b> indicates the task is progressing through the steps preparing it to be run, including scouting (sending scout jobs to validate the task and measure its parameters). {% endif %}
+{% if show == 'all' or task.superstatus == 'running' %} <li>  Status <b class='running'>running</b> indicates the task has successfully validated and is running. {% endif %}
+{% if show == 'all' or task.superstatus == 'finished' %} <li>  Status <b class='finished'>finished</b> indicates that some inputs of the task were successfully processed but others were failed or not processed (e.g. because files were unavailable) when the task was terminated. It can be re-tried by resubmitting the same command again, in order to try again the files not yet processed. It is possible to set/unset --site, --cloud, and --excludedSite when re-submitting the task.
+{% endif %}
+{% if show == 'all' or task.superstatus == 'done' %} <li>  Status <b class='done'>done</b> indicates that all inputs of the task were successfully processed. {% endif %}
+{% if show == 'all' or task.superstatus == 'failed' %} <li>  Status <b class='failed'>failed</b> indicates the task has failed, all inputs have failed, in a way that retry is possible (if retry is judged to be impossible the task goes to status 'broken'). If some inputs succeeded while others failed and the class is terminated, the task goes to 'finished' status. {% endif %}
+{% if show == 'all' or task.superstatus == 'aborted' %} <li>  Status <b class='aborted'>aborted</b> indicates the task has been killed. Aborted tasks can be re-executed. {% endif %}
+{% if show == 'all' or task.superstatus == 'broken' %} <li>  Status <b class='broken'>broken</b> indicates the task has failed in a way that makes retry very likely impossible. Tasks are declared as broken only in very limited circumstances, e.g. when all scout jobs failed, build jobs failed at multiple sites, etc. Users can force retry from broken state at their own risk, using the --allowTaskDuplication option; see the pathena/prun documentation. {% endif %}
+</ul>
+
+<p>
+The JEDI twiki has details on JEDI task
+<a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">state transitions and detailed internal states</a> and
+<a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#The_JEDI_Tasks_table">task schema</a>. Task state names in the monitor are links to this documentation.
+</p>
+
+{% if viewParams.MON_VO == 'ATLAS' %}
+<p>
+Prodsys, DEFT, and JEDI task states, transitions and relationships are
+<a href="https://twiki.cern.ch/twiki/bin/view/AtlasComputing/ProdSys#Transition_of_Request_and_Task_s">described here on the Prodsys twiki</a>.
+</p>
+{% endif %}
+
+<p>
+Finished/failed progress of the task is indicated by the percentage and counts of input files that are finished/failed.
+Click on the failed file percentage or count to see a summary of the errors.
+</p>
+
+<p>
+In the new JEDI system, task progress cannot be monitored in terms of jobs completed/failed because jobs are defined dynamically. The input files associated with a task are an invariant of the task, so measuring their progress is a valid metric of task progress.
+JEDI centers around tasks, no longer around jobs as in the old system.
+</p>
+<p>
+In the old system, the front end clients -- analysis and prodsys1 -- predefined the jobs for panda, and panda's mission was to process those jobs. The metric for progress and success was the processing of those jobs.
+</p>
+<p>
+In the new system, the front end clients -- JEDI based analysis and prodsys2 -- define only the task: a transformation to be applied to a set of inputs. Panda's mission in this system is to process those inputs, and the metric is progress and success in processing those input files. Jobs are dynamically created and re-created at panda's discretion to process and as necessary retry those inputs, shaping the jobs optimally for the resources available at a given time. So jobs are shapeshifting and fluid, it is the inputs that really define the task and are the measure of its completion.
+</p>
+<p>
+<b>For JEDI based analysis and production, monitoring tasks and the processing of their input files is the best means of assessing processing status.</b>
+</p>
+
+<p>
+Further information that can be viewed via the task detail page:
+<ul>
+<li> Job list: lists the task's jobs. Jobs that have been retried are excluded from the list (they are obsolete and would clutter the list with misleading information). 
+<li> Child tasks: tasks can have parent/child relationships. This lists child tasks of the present task
+<li> Prodsys task page: the prodsys2 page for the task with access to DEFT information and functionality
+<li> Brokerage logger: shows the history of brokerage actions for the task
+<li> JEDI action logger: look here to see the detailed history of JEDI actions in processing the task
+<li> Error summary: job error summary page for the jobs in this task
+</ul>
+</p>
+
+<p>
+Tasks can be listed based on a substring of the taskname using the Search page. It supports searches by project, tag, stream. All of these are simply taskname substring searches. You can also use &amp;taskname=*substring* in the URL.
+</p>
+
+<p>
+It is possible to retrieve task data in json format via curl so that it can be used programmatically. Do not use web page scraping; if you need info, ask how to get it. An example curl command is as follows; it takes the same url parameters as the browser version.
+<br><font size=-1><code>
+curl -H 'Accept: application/json' -H 'Content-Type: application/json' "http://bigpanda.cern.ch/tasks/?taskname=user.nacken*&days=3"
+</code></font>
+What you get is a list with each element a dictionary with info for a task. If your request is for a single task (jeditaskid=N), you get additional info: an element 'datasets' in the task dictionary with input/output dataset info. 
+</p>
+
+<h3> Q&amp;A </h3>
+
+<dl>
+
+<dt> The status of the task is failed but all input/output have the status running?
+<dd> Failed jobs remain in the active table while other jobs are still running. The idea is to allow users to retry
+failed jobs while the task is still running. They finally go to the archived table and file status is updated
+at the same time.
+
+<dt> The status of the task is running but the % of finished or failed jobs is 0 even though one job finished and one failed?
+<dd> The finished job was a build job, so there was no successful jobs. The failed job was going to be retried and thus it was not counted as a failure at that time. 
+
+<dt> My task failed because input data is only available on tape?
+<dd> You cannot process data directly from tape. Use DaTRI to first replicate the data to disk.
+
+<dt> How can I see my job logs from the task page?
+<dd> Click on 'job list' in the View box, then on a job PandaID link and then the log files link in the box.
+
+<dt> If we want to kill a JEDI task, is there a way that I can do: "kill(JEDI TASK ID)"? Or should I instead kill the corresponding JobsetID associated to this task? i.e. Just do "kill(Jobset ID)"?
+<dd> Yes, for now, kill the Jobset ID. Each jediTaskID is mapped to a unique jobsetID for the user. Once everything migrates to JEDI,
+pbook functions could change to take jediTaskID instead of jobsetID.
+
+<dt> If I want to retry the some failed jobs in a running JEDI task, is it possible? And what should I do in pbook?
+<dd> They are automatically retried at the same and/or other sites at most 3 times by default.
+Once the task goes to finished/failed, you can retry it by using pbook.retry(jobsetID).
+
+<dt> How do I find out the JobsetIDs associated with a task?
+<dd> There is a 1:1 correspondence between jobsetid and task. The jobsetid for a given task is shown in the task detail page top summary, and in the task list on user pages.
+</dl>
+
+</td>
+

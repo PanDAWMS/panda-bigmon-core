@@ -1,0 +1,158 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA job errors{% endblock %}
+{% block subtitle %}PanDA job error summary{{ viewParams.selection|safe }}
+{% if user %} &nbsp; user={{ user }} {% endif %}
+{% if site %} &nbsp; site={{ site }} {% endif %}
+{% if vo %} &nbsp; VO={{ vo }} {% endif %}
+{% endblock %}
+{% block body %}
+
+{{ viewParams.header }}
+
+{% if sumd %}
+
+<b>{{ njobs }} jobs found. Show jobs: </b>
+&nbsp;  <a href="{% url 'jobList' %}?{{ requestString }}&jobstatus=failed&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>Failed</b></a>
+&nbsp; &nbsp;  <a href="{% url 'jobList' %}?{{ requestString }}&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>All</b></a>
+
+{% if sortby == "count" %}
+<p>Sort by <b>count</b>, <a href="{{nosorturl}}">alpha</a>
+{% else %}
+<p>Sort by <a href="{{xurl}}sortby=count">count</a>, <b>alpha</b>
+{% endif %}
+
+{% if requestParams.jobtype %}<br><b>Job type: {{ requestParams.jobtype }}</b> {% endif %}
+{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
+{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a></b> {% endif %}
+{% if requestParams.produsername %}<br><b>User: <a href="{% url 'userInfo' requestParams.produsername %}?display_limit=100">{{ requestParams.produsername }}</a></b> {% endif %}
+{% if requestParams.jeditaskid %}<br><b>JEDI Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }} &nbsp; {{ taskname }}</a> </b> {% endif %}
+
+{% if requestParams.reqid_from %}<br><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
+{% if requestParams.reqid_to %}<br><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
+
+{% if requestParams.taskid %}<br><b>Task ID: {{ requestParams.taskid }}</b> {% endif %}
+{% if requestParams.jobsetid %}<br><b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}
+{% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
+
+<p>
+
+<p>Job modification times in this listing range from <b>{{ tfirst|date:"Y-m-d H:i" }}</b> to <b>{{ tlast|date:"Y-m-d H:i" }}</b><p>
+
+<p>Go to <a href="#summary">overall</a>, <a href="#sites">site</a>, <a href="#users">user</a>, <a href="#tasks">task</a> summary
+
+<script type="text/javascript"
+           src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
+</script>
+
+{% if flowstruct %}
+{% include "googleFlowDiagram.html" with struct=flowstruct %}
+{% endif %}
+
+{% if errHist %}
+
+    <script type="text/javascript">
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['Time', 'Count'],
+
+{% for time, count in errHist %}
+          ['{{ time|date:"m-d H:i" }}', {{ count }}],
+{% endfor %}
+
+            ])
+        var options = {
+          title: 'Error count timeline',
+          legend: { position: 'none' },
+          hAxis: {title: 'Time (empty bins suppressed)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
+        };
+
+        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+      }
+    </script>
+    <div id="chart_div" style="height: 500px;"></div>
+
+{% endif %}
+
+<table>
+<tr class='tablesection'><th colspan=20> Error occurrences by job attribute </th></tr>
+{% for fdict in sumd %}
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
+{% for item in fdict.list %}
+{% if fdict.field == 'jobstatus' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+{% endfor %}
+</td></tr>
+{% endfor %}
+</table>
+
+{% endif %}
+
+{% if errsByCount %}
+<a name="summary"></a>
+<table>
+<tr class='tablesection'><th colspan=20> Overall error summary </th></tr>
+<tr><th>Category:code</th><th>Job list</th><th>Nerrors</th><th>Sample error description</th></tr>
+{% for errval in errsByCount %}
+<tr><th> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> {{ errval.error }} </a> </td><td> <a href="{{jobsurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> jobs </a> </th> <td> {{ errval.count }} </td> <td> {{ errval.diag }} </td>  </tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if errsBySite %}
+<a name="sites"></a>
+<table>
+<tr class='tablesection'><th colspan=20> Site error summary </th></tr>
+{% for site in errsBySite %}
+<tr><th> <a href="{{xurl}}computingsite={{ site.name }}"> {{ site.name }} </a> </th>
+<th> {{ site.toterrors }} </th>
+<th> Total errors in {{ site.toterrjobs }} jobs. &nbsp; <a href="{% url 'jobList' %}{{xurl}}computingsite={{ site.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ site.finished }} </span></a> &nbsp; <a href="{% url 'jobList' %}{{xurl}}computingsite={{ site.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ site.failed }} </span></a> &nbsp; % failed: {{ site.pctfail }} &nbsp; <a href="{% url 'jobList' %}{{xurl}}computingsite={{ site.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ site.holding }} </span></a> &nbsp;  <a href="{% url 'jobList' %}{{xurl}}computingsite={{ site.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ site.cancelled }} </span></a> </th>  </tr>
+{% for errval in site.errorlist %}
+<tr><td>  </td> <td> <a href="{{jobsurl}}computingsite={{site.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td> <b>{{ errval.error }}</b> &nbsp; <font size=-1> {{ errval.diag }} </font></td>  </tr>
+{% endfor %}
+{% endfor %}
+</table>
+{% endif %}
+
+{% if errsByUser %}
+<a name="users"></a>
+<table>
+<tr class='tablesection'><th colspan=20> User error summary </th></tr>
+{% for user in errsByUser %}
+<tr><th> <a href="{{xurl}}produsername={{ user.name }}"> {{ user.name }} </a> </th> <th> {{ user.toterrors }} </th> <th> Total errors </th>  </tr>
+{% for errval in user.errorlist %}
+<tr><td>  </td> <td> <a href="{{jobsurl}}produsername={{user.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td> <b>{{ errval.error }}</b> &nbsp; <font size=-1> {{ errval.diag }} </font></td>  </tr>
+{% endfor %}
+{% endfor %}
+</table>
+{% endif %}
+
+{% if errsByTask %}
+<a name="tasks"></a>
+<table>
+<tr class='tablesection'><th colspan=20> Task error summary </th></tr>
+{% for task in errsByTask %}
+<tr><th colspan=10> <a href="{{xurl}}{{task.tasktype}}={{ task.name }}"> {{ task.tasktype }} &nbsp; {{ task.name }} </a> &nbsp; &nbsp; {% if task.longname != '' %} <a href="{{xurl}}{{task.tasktype}}={{ task.name }}">{{ task.longname }}</a>{% endif %} </th></tr>
+<tr>
+<th> &nbsp; </th>
+<th> {{ task.toterrors }} </th>
+
+<th> Total errors in {{ task.toterrjobs }} jobs. &nbsp; <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ task.finished }} </span></a> &nbsp; <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ task.failed }} </span></a> &nbsp; % failed: {{ task.pctfail }} &nbsp; <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ task.holding }} </span></a> &nbsp;  <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ task.cancelled }} </span></a> </th>
+
+</tr>
+{% for errval in task.errorlist %}
+<tr><td>  </td> <td> <a href="{{jobsurl}}{{task.tasktype}}={{task.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td> <b>{{ errval.error }}</b> &nbsp; <font size=-1> {{ errval.diag }} </font></td>  </tr>
+{% endfor %}
+{% endfor %}
+</table>
+
+{% endif %}
+
+{% endblock %}
+
+{% block helptext %}
+{% include "errorSummaryHelp.html" with helptitle="Error summary help" %}
+{% endblock %}

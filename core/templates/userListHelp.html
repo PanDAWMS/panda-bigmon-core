@@ -1,0 +1,17 @@
+<tr class="docsection"><th><a name="userListHelp"></a> {{ helptitle }} </th></tr>
+<tr><td class="doctextlight">
+
+{% if show == 'all' or sumd %}
+
+<p>The dynamic user list view shows dynamic usage info from the latest jobs.
+{% if viewParams.MON_VO == 'ATLAS' %}
+Alternate view: <a href="{% url 'userList' %}?view=database&sortby=date">Summary usage information updated every few hours</a><p>
+{% endif %}
+{% endif %}
+
+{% if show == 'all' or userdb %}
+<p>The usage stats view shows summary usage information updated every few hours. Alternate view: <a href="{% url 'userList' %}?view=dynamic&sortby=date">Dynamic usage info from the latest jobs</a><p>
+{% endif %}
+
+</td>
+

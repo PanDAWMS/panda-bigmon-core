@@ -1,0 +1,1268 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} DPC {% endblock %}
+{% block subtitle %} Prototype Data Product Browser 
+&nbsp; &nbsp; <a href="/dp/">Main</a>
+&nbsp; &nbsp; <a href="/dp/?mode=dataset">Datasets</a>
+&nbsp; &nbsp; <a href="/dp/?mode=request">Requests</a>
+&nbsp; &nbsp; <a href="/dp/?mode=processing">Processing</a>
+{% endblock %}
+
+{% block body %}
+
+{% if messages %}
+<p>
+    <font size=-1>
+    {% for message in messages %}
+   &nbsp; &nbsp; <span {% if message.tags %} class="message{{ message.tags }}" {% else %} class='messageinfo' {% endif %}>{{ message|safe }}</span> <br>
+    {% endfor %}
+    </font>
+</p>
+{% endif %}
+
+<script language=javascript type='text/javascript'>
+function toggle_details(id) {
+var el = document.getElementById(id); 
+if ( el.style.display != 'none' ) { 
+ el.style.display = 'none' } 
+else { el.style.display = ''; } 
+ } </script>
+
+<script language=javascript type='text/javascript'>
+function toggle_class_details(classname) {
+var els = document.getElementsByClassName(classname); 
+for (var i = 0; i < els.length; i++) {
+    if ( els[i].style.display != 'none' ) { 
+     els[i].style.display = 'none' } 
+    else { els[i].style.display = ''; } 
+    }
+}
+ </script>
+
+{% if mode == 'intro' %}
+
+<table width=600> 
+
+<tr><td>
+<p width=300>
+This Data Product Browser component of the bigpanda monitor is a collection of prototype
+ideas and elements for a Data Product Catalog and surrounding services, as sketched out by
+Torre at the <a href="https://indico.cern.ch/event/363422/">Feb 23 2015 ADC development meeting</a>.
+</p>
+
+<p>
+The bigpanda monitor is oriented towards showing how the system is operating. These views are oriented towards
+showing how the system is being used, from the perspective of generating and using physics data products.
+</p>
+</td></tr>
+
+<tr><td>
+<a href="/dp/?mode=request"><b>Production requests</b></a>
+</td></tr>
+
+<tr><td>
+<a href="/dp/?mode=processing"><b>Current processing</b></a>
+</td></tr>
+
+<tr><td>
+<a href="/dp/?mode=dataset"><b>Dataset search</b></a>
+</td></tr>
+
+</table>
+
+{% endif %}
+
+{% if mode == 'dataset' %}
+
+{% if show_form %}
+<table width=600> 
+<tr><td>
+<p><b>Dataset search</b></p>
+<form action="/dp/" method="post">
+{{ dataset_form.non_field_errors }}
+<table width=900 class='formtable'>
+    {% csrf_token %}
+
+{{ xform.as_table }}
+
+{% for field in dataset_form %}
+{% if field.is_hidden %}
+{{ field }}
+{% elif field.field.label == 'Date' %}
+<tr><td> Date &nbsp; 
+
+<input type="text" id="id_date_year" name="date_year" value=2014 style="width:50px; margin:0px; display: inline-block;">-<input type="text" id="id_date_month" name="date_month" value=12 style="width:40px; margin:0px; display: inline-block;">-<input type="text" id="id_date_day" name="date_day" value=31 style="width:40px; margin:0px; display: inline-block;">
+
+</td></tr>
+{% else %}
+    <tr class="fieldWrapper"><td>
+        {% for error in field.errors %}
+            {% if error != "This field is required." %}
+                <p>{{ error }}</p>
+            {% endif %}
+        {% endfor %}
+{% if field.field.required %}
+<b>{{ field.field.label }} *</b>
+{% else %}
+{{ field.field.label }}
+{% endif %}
+<br><font color=grey> {{ field.help_text|safe }} </font>
+         {{ field }}
+    </td></tr>
+
+{% endif %}
+
+{% endfor %}
+
+{% if not emptyform %}
+{% comment %} Only need to show the submit button if there's more to the form than the type selection {% endcomment %}
+<tr><td>
+<input type="submit" name="save" class="subButton" value="Submit" />
+</td></tr>
+{% endif %}
+
+</table>
+</form>
+{% endif %}
+
+</td></tr>
+
+</table>
+
+{% endif %}
+
+{% if dataset %}
+<table><tr><td>
+<h3>Search results for dataset</h3>
+<p>
+<b>{{ dataset }}</b>
+{% if scope %} <br> Scope: {{ scope }} {% endif %}
+{% if tid %} <br> tid suffix <em>"{{ tid }}"</em> trimmed for search. {% endif %}
+{% if tidnum %} The tid dataset was created by task <a href="{% url 'taskInfo' %}?jeditaskid={{ tidnum }}">{{ tidnum }}</a> {% endif %}
+<p>
+Rucio link:
+<br> <a href="https://rucio-ui.cern.ch/did?scope={{ scope }}&name={{ dataset }}">{{ dataset }}</a>
+{% if tid %}
+<br> <a href="https://rucio-ui.cern.ch/did?scope={{ scope }}&name={{ dataset }}{{ tid }}">{{ dataset }}{{ tid }}</a>
+
+{% endif %}
+</p>
+</p>
+</td></tr></table>
+{% endif %}
+
+{% if reqid %}
+
+<h3>Production request {{ reqid }}</h3>
+{% if thisProject %}
+<p>
+&nbsp; <b>{{ request.description }} </b>
+<br>&nbsp; Project: <b>{{ thisProject.project }}</b> &nbsp; &nbsp; {{ thisProject.description }}
+</p>
+{% if info_fields.long_description|length > 0 %}
+<table width=700><tr><td>
+<b>Description:</b><br>
+
+{% comment %} <pre width=700 style="word-break:break-all;"> {% endcomment %}
+{{ info_fields.long_description|safe }}
+{% comment %} </pre> {% endcomment %}
+
+</td></tr></table>
+{% endif %}
+
+{% endif %}
+
+{% elif requests %}
+
+<h3>Production requests</h3>
+
+<table>
+<tr class='tablesection'><th colspan=20> Request attribute summary  &nbsp; Sort by {% if request.GET.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
+{% for fdict in reqsuml %}
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
+{% for item in fdict.list %}
+<span> {{ item.kname }} </span>
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+{% endfor %}
+</td></tr>
+{% endfor %}
+</table>
+
+<table>
+<tr class='tablesection'><th colspan=20> Production task attribute summary 
+</th></tr>
+{% for fdict in ptasksuml %}
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
+{% for item in fdict.list %}
+<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
+({{ item.kvalue }}) &nbsp; 
+{% endfor %}
+</td></tr>
+{% endfor %}
+</table>
+
+{% endif %}
+
+{% if requests %}
+{% comment %} CStatus is the cstatus field in the TRequest record. Status is the status field in the RequestStatus record. {% endcomment %}
+<p>
+<a style="cursor:pointer;" onClick=toggle_class_details('req_details')>Show details</a>
+</p>
+<table width="100%">
+<tr class='tablesection'>
+<th> <a href="{{ nosorturl }}sortby=reqid">Request</a> </th>
+<th> Group <br> Manager </th>
+<th> Description <br>Slices &nbsp; GeV &nbsp;  Provenance &nbsp; Reference link
+<br><font color='brown'>Comment</font>
+</th>
+<th> Project
+<br> Campaign
+<br> Type </th>
+<th> Status </th>
+<th> <a href="{{ nosorturl }}sortby=timestamp">Timestamp</a> </th>
+</tr>
+
+{% for request in requests %}
+<tr>
+<td rowspan=1> <a href="{{ xurl }}reqid={{ request.reqid }}">{{ request.reqid }}</a> </td>
+<td rowspan=1> <a href="{{ xurl }}phys_group={{ request.phys_group }}">{{ request.phys_group }}</a>
+<br>
+<a href="{{ xurl }}manager={{ request.manager }}">{{ request.manager|slice:":14" }}</a>
+ </td>
+<td rowspan=1> <b>{{ request.description }}</b>
+<br>
+{% if request.nslices %} {{ request.nslices }} slices &nbsp; {% endif %}
+{{ request.energy_gev }} GeV
+{% if request.provenance %}
+&nbsp; Provenance:<a href="{{ xurl }}provenance={{ request.provenance }}">{{ request.provenance }}</a>
+{% endif %}
+{% if request.ref_link %}
+&nbsp; <a href="{{ request.ref_link }}">{{ request.ref_link_path }}</a>
+{% endif %}
+&nbsp; 
+<a style="cursor:pointer;" onClick=toggle_class_details('req_{{ request.reqid }}_details')>Show details</a>
+
+{% if request.ntasks %}
+<table width='100%' border=0 padding=0 cellspacing=0 style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; font-size:9pt">
+{% for istep in request.ntasks %}
+<tr><td width=100>  {{ istep.0 }} </td>
+<td>
+{% for istate in istep.1 %}
+<span class='{{ istate.0 }}'><b>{{ istate.0 }}</b></span>:<a href="{% url 'taskList' %}?tasktype=prod&reqid={{ request.reqid }}&superstatus={{ istate.0 }}">{{ istate.1 }}</a> &nbsp; 
+{% endfor %}
+</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+
+<span class="req_details req_{{ request.reqid }}_details" style="display: none">
+
+{% if totalfiles %}
+<table width='100%' border=0 padding=0 cellspacing=0 style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; font-size:9pt">
+<tr><th colspan=20> Total file counts from files in input, output datasets. Progress at right is based on this. </th></tr>
+{% for tf in totalfiles %}
+<tr>
+<td> {{ tf.processingtype }} </td><td> total_in={{ tf.total_in }} </td><td> total_out={{ tf.total_out }} </td><td> finished={{ tf.finished }} </td><td> failed={{ tf.failed }} </td></tr>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if request.clouddisttxt %}
+<table width='100%' border=0 padding=0 cellspacing=0 style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; font-size:9pt">
+<tr><th colspan=20> Cloud/core task distribution: (JEDI tasks active in last 30 days)</th></tr>
+{% for line in request.clouddisttxt %}
+{{ line|safe }}
+{% endfor %}
+</table>
+{% endif %}
+
+{% if request.jobdisttxt %}
+<table width='100%' border=0 padding=0 cellspacing=0 style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; font-size:9pt">
+<tr><th colspan=20>Recent cloud/core event production (PanDA jobs completed in last 3 days)</th></tr>
+{% if request.jobsumd %}
+<tr><th>  Totals </th> <th colspan=20> 
+{% for j in request.jobsumd %}
+<b>{{ j.0 }}</b>:{{ j.1 }}k &nbsp; 
+{% endfor %}
+</th></tr>
+{% endif %}
+
+{% for line in request.jobdisttxt %}
+<tr><td width=100>  {{ line|safe }} </td></tr>
+{% endfor %}
+</table>
+{% endif %}
+
+</span>
+
+{% if request.comment %} <br><font color='brown'>{{ request.comment }}</font> {% endif %}
+</td>
+<td rowspan=1> <a href="{{ xurl }}project_id={{ request.project_id }}">{{ request.project_id }}</a>
+{% if request.campaign != request.project_id %}
+<br> <a href="{{ xurl }}campaign={{ request.campaign }}">{{ request.campaign|slice:":15" }}</a> {{ request.sub_campaign }}
+{% endif %}
+<br>
+{% if request.is_fast == True %} <a href="{{ xurl }}is_fast=True">Fast</a> {% endif %} 
+ <a href="{{ xurl }}request_type={{ request.request_type }}">{{ request.request_type|slice:":6" }}</a> </td>
+</td>
+ <td width=170 style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; padding: 0; border-spacing: 0; "  border=0 padding=0 cellspacing=0>
+
+<table width='100%' border=0 padding=0 cellspacing=0 style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; font-size:9pt" >
+{% if request.nrequestedevents %}
+    <tr><td class='statustable'> {{ request.nrequestedevents }}k evs requested </td></tr>
+{% endif %}
+
+{% if not request.completedevpct and not request.nprocessedevents %}
+<tr><td class='{{request.cstatus}}_fill statustable'> request {{ request.cstatus }} </td></tr>
+{% endif %}
+
+{% if request.completedevpct %}
+
+{% for istep in request.completedevpct %}
+<tr><td class='statustable'>
+<label for="progress-{{ request.reqid }}-{{ istep.0 }}">{{ istep.0 }}: {{ istep.1 }}%<br></label>
+<progress max="100" value="{{ istep.1 }}" id="progress-{{ request.reqid }}-{{ istep.0 }}" style="font-size:9pt"></progress>
+</td></tr>
+{% endfor %}
+
+{% elif totalfiles %}
+
+{% for typ in totalfiles %}
+<tr><td class='statustable'>
+<label for="progress-{{ request.reqid }}-{{ typ }}">{{ typ.processingtype }}: {{ typ.progress }}%<br></label>
+<progress max="100" value="{{ typ.progress }}" id="progress-{{ request.reqid }}-{{ typ }}" style="font-size:9pt"></progress>
+</td></tr>
+{% endfor %}
+
+{% elif request.nprocessedevents %}
+
+{% for istep in request.nprocessedevents %}
+<tr><td class='statustable'>
+{{ istep.0 }}: {{ istep.1 }}k evs
+</td></tr>
+{% endfor %}
+
+{% endif %}
+
+{% comment %}
+
+<tr><td>
+<label for="progress0">Progress: 80%</label>
+<progress max="100" value="80" id="progress0">
+    <div class="progress-bar">
+        <span style="width: 80%;">Progress: 80%</span>
+    </div>
+</progress>
+</td></tr>
+
+<tr><td>
+<label for="progress1">Progress: 40%</label>
+			<progress max="1" value=".40" id="progress1"></progress>
+</td></tr>
+
+<tr><td>
+<table class='statustable' width='100%' border=0 padding=0 cellspacing=0 style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; font-size:9pt" >
+<tr class='statustable' style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; padding: 0; border-spacing: 0;>
+<td width='20%' class='finished_fill statustable' style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; padding: 0; border-spacing: 0; "> &nbsp; </td>
+<td width='80%' class='statustable'> &nbsp; </td></tr>
+</table>
+</td></tr>
+
+{% endcomment %}
+
+</table>
+
+</td>
+<td rowspan=1> <font size=-1>{{ request.timestamp|date:"Y-m-d H:i" }} </font></td>
+</tr>
+
+{% endfor %}
+</table>
+
+<STYLE type="text/css">
+.statustable {
+font-size : 10pt;
+margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em;
+}
+
+{% comment %}
+
+progress[value] {
+  /* Reset the default appearance */
+  -webkit-appearance: none;
+   appearance: none;
+  border: none;
+  width: 100%;
+  height: 100%;
+}
+
+progress[value]::-webkit-progress-bar {
+  background-color: #fff;
+  border-radius: 0px;
+  box-shadow: 0 0px 0px rgba(0, 0, 0, 0.25) inset;
+}
+
+.progress-bar {
+  background-color: whiteSmoke;
+  border-radius: 2px;
+  box-shadow: 0 0px 0px rgba(0, 0, 0, 0.25) inset;
+
+  width: 100%;
+  height: 100%;
+  
+  position: relative;
+  display: block;
+}
+  
+.progress-bar > span {
+  background-color: green;
+  border-radius: 2px;
+
+  display: block;
+  text-indent: 0px;
+  content: 'Text';
+}
+
+progress[role] {
+	display: inline-block;
+	position: relative;
+	width: 10em;
+	height: 1em;
+	vertical-align: -.2em;
+	background-image: url('data:image/gif;base64,R0lGODlhIAAQAIABAP///wAAACH/C05FVFNDQVBFMi4wAwEAAAAh/wtYTVAgRGF0YVhNUDw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDowMTgwMTE3NDA3MjA2ODExODE3QTgyOEM0MzAwRkUyMyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo3NEY2MUMyQTlDMzgxMUUwOUFFQ0M4MEYwM0YzNUE2RCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo3NEY2MUMyOTlDMzgxMUUwOUFFQ0M4MEYwM0YzNUE2RCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjAxODAxMTc0MDcyMDY4MTE4MTdBODI4QzQzMDBGRTIzIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjAxODAxMTc0MDcyMDY4MTE4MTdBODI4QzQzMDBGRTIzIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+Af/+/fz7+vn49/b19PPy8fDv7u3s6+rp6Ofm5eTj4uHg397d3Nva2djX1tXU09LR0M/OzczLysnIx8bFxMPCwcC/vr28u7q5uLe2tbSzsrGwr66trKuqqainpqWko6KhoJ+enZybmpmYl5aVlJOSkZCPjo2Mi4qJiIeGhYSDgoGAf359fHt6eXh3dnV0c3JxcG9ubWxramloZ2ZlZGNiYWBfXl1cW1pZWFdWVVRTUlFQT05NTEtKSUhHRkVEQ0JBQD8+PTw7Ojk4NzY1NDMyMTAvLi0sKyopKCcmJSQjIiEgHx4dHBsaGRgXFhUUExIREA8ODQwLCgkIBwYFBAMCAQAAIfkECQoAAQAsAAAAACAAEAAAAiwMjqkQ7Q/bmijaR+ndee7bLZ8VKmNUJieUVqvTHi8cz1Jtx0yOz7pt6L10BQAh+QQJCgABACwAAAAAIAAQAAACLYwNqctwD2GbKtpH6d157ts1nxUyY1Qup5QmK9Y6LxLPdGsHsTvv8uuzBXuhAgAh+QQJCgABACwAAAAAIAAQAAACLIx/oMsNCKNxdMk7K8VXbx55DhiKDAmZJ5qoFhu4LysrcFzf9QPvet4D0igFACH5BAkKAAEALAAAAAAgABAAAAIsjI8Hy+2QYnyUyWtqxVdvnngUGIoOiZgnmqkWG7gvKy9wXN81BO963gPSGAUAIfkECQoAAQAsAAAAACAAEAAAAixEjqkB7Q/bmijaR+ndee7bLZ8VKmNUJieUVqvTHi8cz1Jtx0yOz7pt6L10BQAh+QQJCgABACwAAAAAIAAQAAACLYQdqctxD2GbKtpH6d157ts1nxUyY1Qup5QmK9Y6LxLPdGsDsTvv8uuzBXuhAgAh+QQJCgABACwAAAAAIAAQAAACLIR/ocsdCKNxdMk7K8VXbx55DhiKDAmZJ5qoFgu4LysrcFzf9QPvet4D0igFACH5BAUKAAEALAAAAAAgABAAAAIshI8Xy+2RYnyUyWtqxVdvnngUGIoOiZgnmqkWC7gvKy9wXN81BO963gPSGAUAOw==');
+	
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+progress[role],
+progress[aria-valuenow]:before {
+	background-color: #5af;
+}
+
+progress[role],
+progress[role]:after {
+	background-repeat:repeat-x;
+	background-position: 0 0;
+	-moz-background-size: auto 100%;
+	-webkit-background-size: auto 100%;
+	background-size: auto 100%;
+}
+
+/* Determinate only overrides */
+progress[aria-valuenow] {
+	background: #eee;
+}
+
+progress[aria-valuenow]:before {
+	content: "";
+	display: block;
+	height: 100%;
+}
+
+/* Overlay */
+progress[role]:after {
+	content: "";
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA6lpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpFRTE5QjlCQTlDMkQxMUUwOUFFQ0M4MEYwM0YzNUE2RCIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDowNkRFQUIzNjlDMkUxMUUwOUFFQ0M4MEYwM0YzNUE2RCI+IDxkYzp0aXRsZT4gPHJkZjpBbHQ+IDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+Z3JhZGllbnQ8L3JkZjpsaT4gPC9yZGY6QWx0PiA8L2RjOnRpdGxlPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpFRTE5QjlCODlDMkQxMUUwOUFFQ0M4MEYwM0YzNUE2RCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpFRTE5QjlCOTlDMkQxMUUwOUFFQ0M4MEYwM0YzNUE2RCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pq477Q0AAAD2SURBVHjaxFIxDsIwDLRF/1AmRp7AM9iYWHkD76AP6h9Qi1SGfqAMqGJg6XA4jts0RUwZiKLEsZ3L+Rwmoi0lDC6Ky4rAMuGO5DY5iuWH93oDegMuK8QA7JIYCMDpvwDDMBzNHCGtONYq2enjHKYLMObCp7dtu/+FDppDgyJpTemsrm/9l7L2ku4aUy4BTEmKR1hmVXV9OjfsqlqC7irAhBKxDnmOQdPc+ynKMXdenEELAFmzrnu8RoK6jpRhHkGJmFgdXmsByNf5Wx+fJPbigEI3OKrB77Bfy2VZzppqC0IfAtlIAusC9CNtUn/iIRXgnALwEWAA/+5+ZNOapmcAAAAASUVORK5CYII=');
+}
+
+{% endcomment %}
+
+</STYLE>
+
+{% endif %}
+
+{% if reqid %}
+
+{% if events_processed %}
+<table>
+<tr class='tablesection'><th colspan=99> Events produced, from prodsys2 counts</th></tr>
+<tr class='tablesection'><th> Step ctag </th><th> Events produced in healthy tasks (not aborted or broken) </th></tr>
+{% for evts in events_processed %}
+<tr><td> {{ evts.0 }}  </td><td> {{ evts.1 }}k </td></tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if jobsum %}
+<table>
+<tr class='tablesection'><th colspan=99> Events produced in last 3 days, from finished job counts. <a href="{% url 'jobList' %}?reqid={{ reqid }}&days=3">Job list</a></th></tr>
+<tr class='tablesection'><th> Processingtype </th><th> Events produced </th></tr>
+{% for j in jobsum %}
+<tr><td> {{ j.processingtype }}  </td><td> {{ j.nevents__sum }}k </td></tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if tasks %}
+<table>
+<tr class='tablesection'><th colspan=20> PanDA JEDI task attribute summary 
+&nbsp; <a href="{% url 'taskList' %}?reqid={{ reqid }}&tasktype=prod&days=360">Task list</a>
+
+</th></tr>
+{% for fdict in jtasksuml %}
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
+{% for item in fdict.list %}
+<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
+<a href="{% url 'taskList' %}?reqid={{reqid}}&{{fdict.field}}={{item.kname}}&tasktype=prod&days=360">({{ item.kvalue }})</a> &nbsp; 
+{% endfor %}
+</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% endif %}
+
+{% if datasets and not reqid %}
+<table>
+<tr class='tablesection'><th colspan=20> Production system task datasets: {{ datasets|length }} </th></tr>
+<tr> <th> Task ID</th> <th> Dataset </th> <th> Events </th> <th> Files </th> <th> Status </th> <th> Group </th> <th> Timestamp </th> </tr>
+{% for e in datasets %}
+<tr>
+<td> <a href="{% url 'taskInfo' %}?jeditaskid={{ e.task_id }}">{{ e.task_id }}</a> </td>
+<td> <font size=-1><a href="/dp/?dataset={{ e.name }}">{{ e.name }}</a> </font>
+<br><i>Request:</i> <a href="/dp/?reqid={{ e.ptask.request_id }}{% if e.ptask.step.slice.slice %}#slice_{{ e.ptask.step.slice.slice }}{% endif %}">{{ e.ptask.request_id }}{% if e.ptask.step.slice.slice %} slice {{ e.ptask.step.slice.slice }}{% endif %}</a>
+{% if e.ptask.step.step_template.step %}&nbsp; <i>Step:</i> {{ e.ptask.step.step_template.step }} {{ e.ptask.step.step_template.ctag }}{% endif %}
+
+{% if e.parent_task_id and e.parent_task_id != e.task_id%}
+&nbsp; Parent task <a href="{% url 'taskInfo' %}?jeditaskid={{ e.parent_task_id }}">{{ e.parent_task_id }}</a>
+{% endif %}
+</td>
+<td> {{ e.events }} </td>
+<td> {{ e.files }} </td>
+<td class='{{ e.status|lower }}_fill'>{{ e.status|lower }}</td> 
+<td> {{ e.phys_group }} </td>
+<td> {{ e.timestamp|date:"Y-m-d H:i" }} </td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if containers %}
+<table>
+<tr class='tablesection'><th colspan=20> Containers: {{ containers|length }} </th></tr>
+<tr> <th> Parent task </th> <th> Container </th> <th> Status </th> <th> Request </th> <th> Group </th> </tr>
+{% for e in containers %}
+<tr>
+<td> <a href="{% url 'taskInfo' %}?jeditaskid={{ e.parent_task_id }}">{{ e.parent_task_id }}</a> </td>
+<td> <a href="/dp/?dataset={{ e.name }}">{{ e.name }}</a> </td>
+<td class='{{ e.status|lower }}_fill'>{{ e.status }}</td>
+<td> {{ e.rid }} </td>
+<td>{{ e.phys_group }} </td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if dsslices %}
+<table>
+<tr class='tablesection'><th colspan=20> Production slices: {{ dsslices|length }}  </th></tr>
+<tr><th> Request#Slice </th> <th> Dataset </th> <th> Input evs </th> </tr>
+{% for s in dsslices %}
+<tr> <td>
+<a href="/dp/?reqid={{ s.request_id }}#slice_{{ s.slice }}">{{ s.request_id }} #{{ s.slice }}</a>
+</td><td>
+<a href="/ds/?dataset={{ s.dataset_id }}">{{ s.dataset_id }}</a>
+<font color=brown>
+{% if s.brief %} <br> {{ s.brief }} {% endif %}
+{% if s.phys_comment %} <br> {{ s.phys_comment }} {% endif %}
+{% if s.comment %} <br> {{ s.comment }} {% endif %}
+</font>
+</td><td>
+{{ s.input_events }}
+</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if jedidatasets %}
+<table>
+<tr class='tablesection'><th colspan=20> JEDI datasets: {{ jedidatasets|length }} </th></tr>
+<tr>
+ <th rowspan=2>Task</th>
+ <th colspan=20> Dataset </th> </tr> 
+<tr>
+	<th>Type</th>
+	{% if dsrec.scope %} <th>Scope</th> {% endif %}
+	<th>Files</th>
+	<th>Nfiles <br> <span class='finished'>finished</span></th>
+	<th>Nfiles <br> <span class='failed'>failed</span></th>
+    <th>Nevents</th>
+	<th>Created</th>
+	<th>Modified</th>
+	<th>Status</th>
+	<th>Stream</th>
+	<th>Token</th>
+	<th>ID</th>
+</tr>
+{% for dsrec in jedidatasets %}
+	<tr>
+		<td rowspan=2><a href="{% url 'taskInfo' %}?jeditaskid={{ dsrec.jeditaskid }}">{{ dsrec.jeditaskid }}</a></td>
+	 <td colspan=20> <font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{ dsrec.datasetname }}">{{ dsrec.datasetname }}</a></font> </td></tr>
+    <tr>
+		<td>{{ dsrec.type }}</td>
+		{% if dsrec.scope %} <td>{{ dsrec.scope }}</td> {% endif %}
+        <td><a href="{% url 'fileList' %}?datasetname={{ dsrec.datasetname }}&jeditaskid={{ dsrec.jeditaskid }}">{{ dsrec.nfiles }}</a></td>
+		<td><span class='finished'>{{ dsrec.nfilesfinished }}</span></td>
+		<td><span class='failed'>{{ dsrec.nfilesfailed }}</span></td>
+		<td>{{ dsrec.nevents }}</td>
+		<td>{{ dsrec.creationtime|date:"Y-m-d H:i" }}</td>
+		<td>{{ dsrec.modificationtime|date:"m-d H:i" }}</td>
+		<td class='{{ dsrec.status|lower }}_fill'>{{ dsrec.status }}</td>
+		<td>{{ dsrec.streamname }}</td>
+		<td>{{ dsrec.storagetoken }}</td>
+		<td>{{ dsrec.datasetid }}</td>
+</td>
+	</tr>
+
+<tr>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+
+{% if njeditasks > 0 %}
+<table>
+<tr class='tablesection'><th colspan=20> JEDI tasks: {{ njeditasks }} </th></tr>
+<tr> <th rowspan=2> Task ID</th> <th> Task info </th> <th> Status </th> <th> Group </th> <th> Cloud </th> <th> Cores </th> <th> RAM </th> <th> Modified </th> <th> Info </th> </tr>
+<tr> <th colspan=20> Datasets </th> </tr>
+{% for e in jeditasks %}
+{% if e.has_dataset %}
+<tr>
+<td rowspan=2> <a href="{% url 'taskInfo' %}?jeditaskid={{ e.jeditaskid }}">{{ e.jeditaskid }}</a> </td>
+<td> <font size=-1>{{ e.taskname }} 
+<br>
+<i>Request:</i> <a href="/dp/?reqid={{ e.reqid }}">{{ e.reqid }}</a>
+&nbsp; <i>Splitrule:</i> {{ e.splitrule }}
+<i>Trf:</i> {{ e.transpath }} {{ e.transuses }}
+</font>
+</td>
+<td class='{{ e.superstatus }}_fill'>{{ e.superstatus }}</td>
+<td> {{ e.workinggroup }} </td>
+<td> {{ e.cloud }} </td>
+<td> {{ e.corecount }} </td>
+<td> {{ e.ramcount }} </td>
+<td> {{ e.modificationtime|date:"Y-m-d H:i" }} </td>
+<td> {{ e.dsinfo }} </td>
+</tr>
+<tr> <td colspan=20>
+{% for ds in e.datasets %}
+{{ ds.type }} 
+&nbsp; <a href="{% url 'datasetInfo' %}?datasetname={{ ds.datasetname }}">{{ ds.datasetname }}</a>
+&nbsp; <span class='{{ ds.status }}'>{{ ds.status }}</span>
+&nbsp; files={{ ds.nfiles }}
+{% if ds.type == 'output' %} &nbsp; evs={{ ds.nevents }} {% endif %}
+<br>
+{% endfor %}
+</td></tr>
+{% endif %}
+{% endfor %}
+</table>
+{% endif %}
+
+{% if files %}
+<table>
+<tr class='tablesection'><th colspan=20> {{ datasets|length }} files into dataset </th></tr>
+{% for e in files %}
+<tr>
+<td> {{ e.lfn }} </td>
+<td> PandaID <a href="{% url 'jobInfo' %}?pandaid={{ e.pandaid }}">{{ e.pandaid }}</a> </td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if tasks and not reqid %}
+<table>
+<tr class='tablesection'><th colspan=20> {{ tasks|length }} tasks </th></tr>
+{% for e in tasks %}
+<tr>
+<td> <a href="{% url 'taskInfo' %}?taskname={{ e.name }}">{{ e.name }}</a> </td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if steps and not reqid %}
+<table>
+<tr class='tablesection'><th colspan=20> {{ steps|length }} steps </th></tr>
+{% for e in steps %}
+<tr>
+<td> {{ e.id }} </td>
+<td> {{ e.status }} </td>
+<td> {{ e.input_events }} </td>
+<td> {{ e.priority }} </td>
+<td> {{ e.task_config }} </td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if slices %}
+<table>
+<tr class='tablesection'><th colspan=20> {{ slices|length }} slices &nbsp; &nbsp; Click on step status, dataset name, task name to toggle details </th></tr>
+{% for e in slices %}
+{% if not e.is_hide %}
+<tr>
+
+<td rowspan=2> {{ e.slice }} </td>
+<td> <a name="slice_{{ e.slice }}"></a> {{ e.input_data }}
+{% if e.comment %} <br> <font color='brown'>{{ e.comment }}</font> {% endif %}
+{% if e.phys_comment %} <br> <font color='brown'>{{ e.phys_comment }}</font> {% endif %}
+{% if e.brief %} <br><font color='brown'>{{ e.brief }}</font> {% endif %}
+</td>
+<td>
+
+<font size=-1><a href="/dp/?dataset={{ e.dataset_id_html }}">{{ e.dataset_id_html|safe }}</a>
+
+{% comment %}
+<a style="cursor:pointer;" onClick=toggle_class_details('{{e.dataset_id}}')><font size=-1>{{ e.dataset_id_html|safe }} </font></a>
+<span class={{e.dataset_id}} style="display: none">
+{% if e.dataset_data %}
+{% if e.dataset_data.task_id %}
+<br>Task <a href="{% url 'taskInfo' %}?jeditaskid={{ e.dataset_data.task_id }}">{{ e.dataset_data.task_id }}</a>
+{% endif %}
+{% if e.dataset_data.parent_task_id and e.dataset_data.parent_task_id != e.dataset_data.task_id%}
+<br>Parent task <a href="{% url 'taskInfo' %}?jeditaskid={{ e.dataset_data.parent_task_id }}">{{ e.dataset_data.parent_task_id }}</a>
+{% endif %}
+<br>events={{ e.dataset_data.events }} &nbsp; files={{ e.dataset_data.files }} &nbsp; status=<span class='{{ e.dataset_data.status }}'>{{ e.dataset_data.status }}</span> &nbsp; campaign={{ e.dataset_data.campaign }} &nbsp; timestamp={{ e.dataset_data.timestamp }}
+{% else %}
+<br> No dataset details found
+{% endif %}
+</span>
+{% endcomment %}
+
+{% if e.cloned_from %} 
+Cloned from <a href="#slice_{{ e.cloned_from }}">{{ e.cloned_from }}</a> <br>
+{% endif %}
+{% if e.clones %}
+Clones: 
+{% for c in e.clones %}
+    &nbsp; <a href="#slice_{{ c }}">{{ c }}</a>
+{% endfor %}
+<br>
+{% endif %}
+
+</td>
+<td> evts <br> {{ e.input_events }} </td>
+<td> prio <br> {{ e.priority }} </td>
+</tr>
+<tr> 
+<td colspan=20>
+<font size=-1>
+{% for step in e.steps %}
+<a style="cursor:pointer;" onClick=toggle_class_details('slice_{{e.slice}}')> <b>{{ step.ctag.step }}</b> 
+{{ step.ctag.ctag }}
+created {{ step.ctag.def_time|date:"Y-m-d H:i" }}
+&nbsp; {{ step.ctag.output_formats }}
+&nbsp; {{ step.ctag.trf_name }}  {{ step.ctag.swrelease }}
+&nbsp; mem={{ step.ctag.memory }}
+&nbsp; cpu/ev={{ step.ctag.cpu_per_event }}
+{% if step.step_parent %} &nbsp; parent={{ step.step_parent__step_template__step }} {{ step.step_parent__step_template__ctag }} {% endif %}
+&nbsp; <span class='{{ step.status|lower }}'> {{ step.status }} </span></a> <br>
+<span class='slice_{{e.slice}}'  style="display: none">
+ &nbsp;
+    {% if step.step_def_time %} &nbsp; defined {{ step.step_def_time|date:"Y-m-d H:i" }} {% endif %}
+    {% if step.step_appr_time %} &nbsp; approved {{ step.step_appr_time|date:"m-d H:i" }} {% endif %}
+    {% if step.step_exe_time %} &nbsp; exe {{ step.step_exe_time|date:"m-d H:i" }} {% endif %}
+    {% if step.step_done_time %} &nbsp; done {{ step.step_done_time|date:"m-d H:i" }} {% endif %}
+    &nbsp; &nbsp; Input events {{ step.input_events }}
+<br>
+{% if step.ctagdetails %}
+ &nbsp; &nbsp; ctag {{ step.ctag.ctag }} created by {{ step.ctagdetails.createdby }}
+ {% if step.ctagdetails.input %} &nbsp; input={{ step.ctagdetails.input }} {% endif %}
+ {% if step.ctagdetails.cache %} &nbsp; cache={{ step.ctagdetails.cache }} {% endif %}
+ {% if step.ctagdetails.memory %} &nbsp; memory={{ step.ctagdetails.memory }} {% endif %}
+ {% if step.ctagdetails.events_per_job %} &nbsp; evs/job={{ step.ctagdetails.events_per_job }} {% endif %}
+ {% if step.ctagdetails.formats %} &nbsp; formats={{ step.ctagdetails.formats }} {% endif %}
+ {% if step.ctagdetails.trf %} &nbsp; trf={{ step.ctagdetails.trf }} {{ step.ctagdetails.trfv }}{% endif %}
+ {% if step.ctagdetails.priority %} &nbsp; priority={{ step.ctagdetails.priority }} {% endif %}
+<br>  &nbsp; &nbsp;  &nbsp; &nbsp; <font color=darkgrey><i>ctag params: {{ step.ctagdetails.params|safe }}</i></font>
+ <br>
+ {% endif %}
+ &nbsp;  &nbsp; task_config: {{ step.task_config }} <br>
+ </span>
+
+{% for task in step.tasks %}
+    &nbsp; &nbsp; <a style="cursor:pointer;" onClick=toggle_class_details('slice_{{e.slice}}_tasks')><span class='{{ task.status }}'>task  <b>{{ task.id }}: {{ task.name }}</b>  &nbsp; {{ task.status }} </span></a>
+    &nbsp; 
+    <a href="{% url 'taskInfo' %}?jeditaskid={{ task.id }}"><span class='{{ task.jedistatus }}'>JEDI task {% if task.jedistatus != task.status %} {{ task.jedistatus }} {% endif %}</span> </a>
+    &nbsp; 
+    {% if task.total_req_jobs > 0 or task.total_done_jobs > 0 %}
+        jobs done/req:<a href="{% url 'jobList' %}?jeditaskid={{task.id}}">{{ task.total_done_jobs }}/{{ task.total_req_jobs }}</a>
+    {% else %}
+        <a href="{% url 'jobList' %}?jeditaskid={{task.id}}&prodsourcelabel=managed">Look for jobs</a>
+    {% endif %}
+    {% if task.total_events and task.total_events > 0 %}
+        &nbsp; totevs={{ task.total_events }}
+    {% endif %}
+
+    {% if task.jeditask.progress %} &nbsp; progress={{ task.jeditask.progress }} {% endif %}
+
+    {% if task.jeditask.failurerate %} &nbsp; failurerate={{ task.jeditask.failurerate }} {% endif %}
+
+    {% if task.jobstats %}
+        &nbsp; jobs:
+        <a href="{% url 'jobList' %}?jeditaskid={{task.id}}&prodsourcelabel=managed">
+        {% for s in task.jobstats %} {{ s|safe }} {% endfor %}
+        </a>
+    {% endif %}
+
+    {% if task.chain_tid and task.chain_tid != task.id %}
+        &nbsp; <a href="{% url 'taskInfo' %}?jeditaskid={{ task.chain_tid }}"> chain_tid {{ task.chain_tid }} </a> 
+    {% endif %}
+    {% if task.parent_tid and task.parent_tid != task.id %}
+        &nbsp; <a href="{% url 'taskInfo' %}?jeditaskid={{ task.parent_tid }}"> parent_tid {{ task.parent_tid }} </a> 
+    {% endif %}
+    <br>
+    <span class='slice_{{e.slice}}_tasks' style="display: none">
+    &nbsp; &nbsp; &nbsp; &nbsp; 
+    {% if task.dsn %} dsn={{ task.dsn }} &nbsp;  {% endif %}
+    {% if task.physics_tag %} tag={{ task.physics_tag }} &nbsp;  {% endif %}
+    submitted {{ task.submit_time|date:"m-d H:i" }}
+    {% if task.start_time %} &nbsp; started {{ task.start_time|date:"m-d H:i" }} {% endif %}
+    &nbsp; timestamp {{ task.timestamp|date:"m-d H:i" }} 
+    {% if task.update_time %}
+        &nbsp; updated {{ task.update_time|date:"m-d H:i" }} by {{ task.update_owner }}
+    {% endif %}
+
+    {% if task.jeditask.cloud %} &nbsp; cloud={{ task.jeditask.cloud }} {% endif %}
+    {% if task.jeditask.corecount %} &nbsp; cores={{ task.jeditask.corecount }} {% endif %}
+    {% if task.jeditask.ramcount %} &nbsp; ram={{ task.jeditask.ramcount }} {% endif %}
+    {% if task.jeditask.walltime %} &nbsp; wall={{ task.jeditask.walltime }} {% endif %}
+    {% if task.jeditask.currentpriority %} &nbsp; currentpriority={{ task.jeditask.currentpriority }} {% endif %}
+
+    <br>
+    {% comment %}  getting it from JEDI instead
+    &nbsp; &nbsp; &nbsp; &nbsp; Input <a href="/dp/?dataset={{ task.inputdataset }}">{{ task.inputdataset }}</a> <br>
+    {% if task.dslist %}
+        {% for ds in task.dslist %}
+            &nbsp; &nbsp; &nbsp; &nbsp; Output <a href="/dp/?dataset={{ ds.name }}">{{ ds.name }}</a> 
+                &nbsp; files:{{ ds.files }} &nbsp; evs:{{ ds.events }} &nbsp; status:<span class='{{ ds.status|lower }}'>{{ ds.status|lower }}</span><br>
+        {% endfor %}
+    {% endif %}
+    {% endcomment %}
+
+    {% if task.indslist %}
+        {% for ds in task.indslist %}
+            &nbsp; &nbsp; &nbsp; &nbsp; In <a href="/dp/?dataset={{ ds.datasetname}}">{{ ds.datasetname }}</a> &nbsp; files fin/fail=<span class='finished'>{{ ds.nfilesfinished }}</span>/<span class='failed'>{{ ds.nfilesfailed }}</span> &nbsp; nevs={{ ds.nevents }}<br> 
+        {% endfor %}
+    {% endif %}
+
+    {% if task.outdslist %}
+        {% for ds in task.outdslist %}
+            &nbsp; &nbsp; &nbsp; &nbsp; Out <a href="/dp/?dataset={{ ds.datasetname}}">{{ ds.datasetname }}</a> &nbsp; files fin/fail=<span class='finished'>{{ ds.nfilesfinished }}</span>/<span class='failed'>{{ ds.nfilesfailed }}</span> &nbsp; nevs={{ ds.nevents }}<br> 
+        {% endfor %}
+    {% endif %}
+    {% if task.postproduction %}
+    &nbsp; &nbsp; &nbsp; &nbsp; Postproduction: {{ task.postproduction }} <br>
+    {% endif %}
+    {% if task.comments %}
+    &nbsp; &nbsp; &nbsp; &nbsp; <font color='brown'> Comments: {{ task.comments }} </font> <br>
+    {% endif %}
+    {% if task.reference %}
+    &nbsp; &nbsp; &nbsp; &nbsp; Reference: <a href="https://its.cern.ch/jira/browse/{{ task.reference }}">{{ task.reference }}</a> <br>
+    {% endif %}
+    </span>
+    {% if task.jedi_info %}
+    &nbsp; &nbsp; &nbsp; &nbsp; <font color='brown'> JEDI: {{ task.jedi_info|safe }} </font> <br>
+    {% endif %}
+{% endfor %}
+
+{% endfor %}
+</font>
+</td>
+</tr>
+{% endif %} 
+{% endfor %}
+</table>
+{% endif %}
+
+{% if reqid %}
+<table>
+<tr><th colspan=20 bgcolor='lightcyan'> All request parameters </th></tr>
+{% for col in request_columns %}
+<tr><th>{{ col.name }}</th><td> {{ col.value }} </td></tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if mode == 'processing' %}
+<h3> Current queued production jobs, all pre-run states</h3>
+<p>
+Total queued production jobs: {{ totqjobs }} &nbsp; requests: {{ queuejobs|length }}
+</p>
+<table width=100%>
+<tr><th> Request 
+<br><a style="cursor:pointer;" onClick=toggle_class_details('full_queued_list')>Show&nbsp;all</a>
+</th> <th> Info </th> <th> Description </th> <th> Queued jobs </th> <th> Share of all queued production jobs </th> </tr>
+{% for r in queuejobs %}
+<tr {% if forloop.counter > 10 %} class="full_queued_list" style="display: none"{% endif %} ><td> <a href="/dp/?reqid={{ r.reqid }}">{{ r.reqid }}</a> </td>
+<td><font size=-1> {{ r.reqdata.campaign }} {{ r.reqdata.phys_group }} {{ r.reqdata.project_id }} {{ r.reqdata.manager }} </font> </td>
+<td> <font size=-1> {{ r.reqdata.description }} </font> </td>
+<td> {{ r.reqid__count }} </td>
+<td> <progress max="100" style="width:400px" value="{{ r.fraction }}"></progress> </td>
+</tr>
+{% endfor %}
+</table>
+
+<h3> Current running production jobs </h3>
+<p>
+Total running production jobs: {{ totrunjobs }} &nbsp; requests: {{ runjobs|length }}
+</p>
+<table width=100%>
+<tr><th> Request 
+<br><a style="cursor:pointer;" onClick=toggle_class_details('full_running_list')>Show&nbsp;all</a>
+</th> <th> Info </th> <th> Description </th> <th> Running jobs </th> <th> Share of all running production jobs </th> </tr>
+{% for r in runjobs %}
+<tr {% if forloop.counter > 10 %} class="full_running_list" style="display: none"{% endif %}><td> <a href="/dp/?reqid={{ r.reqid }}">{{ r.reqid }}</a> </td>
+<td><font size=-1> {{ r.reqdata.campaign }} {{ r.reqdata.phys_group }} {{ r.reqdata.project_id }} {{ r.reqdata.manager }} </font> </td>
+<td> <font size=-1> {{ r.reqdata.description }} </font> </td>
+<td> {{ r.reqid__count }} </td>
+<td> <progress max="100" style="width:400px" value="{{ r.fraction }}"></progress> </td>
+</tr>
+{% endfor %}
+</table>
+
+<h4> Events produced, last 3 days</h4>
+
+<table width=100%>
+<tr><th> Project
+<br><a style="cursor:pointer;" onClick=toggle_class_details('full_project_event_counts')>Show&nbsp;all</a>
+</th> <th> Events (k)</th> <th> Fraction of events </th> </tr>
+{% for r in projeventsl %}
+<tr {% if forloop.counter > 10 %} class="full_project_event_counts" style="display: none"{% endif %}><td> {{ r.project }} </td>
+<td> {{ r.nevents }} </td>
+<td> <progress max="100" style="width:400px" value="{{ r.fraction }}"></progress> </td>
+</tr>
+{% endfor %}
+</table>
+
+<table width=100%>
+<tr><th> Request 
+<br><a style="cursor:pointer;" onClick=toggle_class_details('full_event_counts')>Show&nbsp;all</a>
+</th> <th> Info </th> <th> Description </th> <th> Events (k)</th> <th> Fraction of events </th> </tr>
+{% for r in sumeventsl %}
+<tr {% if forloop.counter > 10 %} class="full_event_counts" style="display: none"{% endif %}><td> <a href="/dp/?reqid={{ r.reqid }}">{{ r.reqid }}</a> </td>
+<td><font size=-1> {{ r.reqdata.campaign }} {{ r.reqdata.phys_group }} {{ r.reqdata.project_id }} {{ r.reqdata.manager }} </font> </td>
+<td> <font size=-1> {{ r.reqdata.description }} </font> </td>
+<td> {{ r.nevents }} </td>
+<td> <progress max="100" style="width:400px" value="{{ r.fraction }}"></progress> </td>
+</tr>
+{% endfor %}
+</table>
+
+<h3> Completed production jobs, last 3 days </h3>
+<table><tr>
+<td rowspan=3> Job counts <br> total: {{ job_total }} </td>
+<td><span class='finished'> finished: {{ totjobs.finished }} </span></td>
+<td> <span class='finished'>{{ jobpct.finished }}%</span> </td>
+<td> <progress max="100" style="width:200px" value="{{ jobpct.finished }}"></progress> </td>
+
+<td rowspan=3>CPU usage <br> total: {{ cpu_total }}</td>
+
+<td><span class='finished'> finished: {{ totcpu.finished }} </span></td>
+<td> <span class='finished'>{{ cpupct.finished }}%</span> </td>
+<td> <progress max="100" style="width:200px" value="{{ cpupct.finished }}"></progress> </td>
+</tr>
+
+<tr>
+<td><span class='failed'> failed: {{ totjobs.failed }} </span></td> 
+<td> <span class='failed'>{{ jobpct.failed }}%</span> </td>
+<td> <progress max="100" style="width:200px" value="{{ jobpct.failed }}"></progress> </td>
+
+<td><span class='failed'> failed: {{ totcpu.failed }} </span></td>
+<td> <span class='failed'>{{ cpupct.failed }}%</span> </td>
+<td> <progress max="100" style="width:200px" value="{{ cpupct.failed }}"></progress> </td>
+</tr>
+
+<tr>
+<td><span class='cancelled'> cancelled: {{ totjobs.cancelled }} </span></td>
+<td> <span class='cancelled'>{{ jobpct.cancelled }}%</span> </td>
+<td> <progress max="100" style="width:200px" value="{{ jobpct.cancelled }}"></progress> </td>
+
+<td><span class='cancelled'> cancelled: {{ totcpu.cancelled }} </span></td>
+<td> <span class='cancelled'>{{ cpupct.cancelled }}%</span> </td>
+<td> <progress max="100" style="width:200px" value="{{ cpupct.cancelled }}"></progress> </td>
+</tr>
+
+</table>
+
+{% for s in sumjobs %}
+<h4> <span class='{{s.status}}'>{{s.status}} job counts</span></h4>
+<table width=100%>
+<tr><th> Request 
+<br><a style="cursor:pointer;" onClick=toggle_class_details('full_{{ s.status}}_job_counts')>Show&nbsp;all</a>
+</th> <th> Info </th> <th> Description </th> <th> Jobs </th> <th> Fraction of {{s.status}} jobs </th> </tr>
+{% for r in s.recs %}
+<tr {% if forloop.counter > 10 %} class="full_{{ s.status}}_job_counts" style="display: none"{% endif %}><td> <a href="/dp/?reqid={{ r.reqid }}">{{ r.reqid }}</a> </td>
+<td><font size=-1> {{ r.reqdata.campaign }} {{ r.reqdata.phys_group }} {{ r.reqdata.project_id }} {{ r.reqdata.manager }} </font> </td>
+<td> <font size=-1> {{ r.reqdata.description }} </font> </td>
+<td> {{ r.jobstatus__count }} </td>
+<td> <progress max="100" style="width:400px" value="{{ r.fraction }}"></progress> </td>
+</tr>
+{% endfor %}
+</table>
+{% endfor %}
+
+{% for s in cpujobs %}
+<h4> <span class='{{s.status}}'>{{s.status}} job walltime</span></h4>
+<table width=100%>
+<tr><th> Request 
+<br><a style="cursor:pointer;" onClick=toggle_class_details('full_{{ s.status}}_cpu_counts')>Show&nbsp;all</a>
+</th> <th> Info </th> <th> Description </th> <th> Walltime </th> <th> Fraction of {{s.status}} walltime </th> </tr>
+{% for r in s.recs %}
+<tr {% if forloop.counter > 10 %} class="full_{{ s.status}}_cpu_counts" style="display: none"{% endif %}><td> <a href="/dp/?reqid={{ r.reqid }}">{{ r.reqid }}</a> </td>
+<td><font size=-1> {{ r.reqdata.campaign }} {{ r.reqdata.phys_group }} {{ r.reqdata.project_id }} {{ r.reqdata.manager }} </font> </td>
+<td> <font size=-1> {{ r.reqdata.description }} </font> </td>
+<td> {{ r.cpuconsumptiontime__sum }} </td>
+<td> <progress max="100" style="width:400px" value="{{ r.cpufraction }}"></progress> </td>
+</tr>
+{% endfor %}
+</table>
+{% endfor %}
+
+{% endif %}
+
+<script language=javascript type='text/javascript'>
+
+/*
+ * <progress> polyfill
+ * Don't forget to also include progress-polyfill.css!
+ * @author Lea Verou http://leaverou.me
+ */
+ 
+(function(){
+
+// Test browser support first
+if('position' in document.createElement('progress')) {
+	return;
+}
+
+/**
+ * Private functions
+ */
+
+// Smoothen out differences between Object.defineProperty
+// and __defineGetter__/__defineSetter__
+var defineProperty, supportsEtters = true;
+
+if(Object.defineProperty) {
+	// Changed to fix issue #3 https://github.com/LeaVerou/HTML5-Progress-polyfill/issues/3
+	defineProperty = function(o, property, etters) {
+		etters.enumerable = true;
+		etters.configurable = true;
+		
+		try {
+			Object.defineProperty(o, property, etters);
+		} catch(e) {
+			if(e.number === -0x7FF5EC54) {
+				etters.enumerable = false;
+				Object.defineProperty(o, property, etters);
+			}
+		}
+	}
+}
+else {
+	if ('__defineSetter__' in document.body) {
+		defineProperty = function(o, property, etters) {
+			o.__defineGetter__(property, etters.get);
+			
+			if(etters.set) {
+				o.__defineSetter__(property, etters.set);
+			}
+		};
+	}
+	else {
+		// Fallback to regular properties if getters/setters are not supported
+		defineProperty = function(o, property, etters) {
+				o[property] = etters.get.call(o);
+			},
+			supportsEtters = false;
+	}
+}
+
+try {
+	[].slice.apply(document.images)
+	
+	var arr = function(collection) {
+		return [].slice.apply(collection);
+	}
+} catch(e) {
+	var arr = function(collection) {
+		var ret = [], len = collection.length;
+		
+		for(var i=0; i<len; i++) {
+			ret[i] = collection[i];
+		}
+		
+		return ret;
+	}
+}
+
+// Does the browser use attributes as properties? (IE8- bug)
+var attrsAsProps = (function(){
+	var e = document.createElement('div');
+	e.foo = 'bar';
+	return e.getAttribute('foo') === 'bar';
+})();
+
+var self = window.ProgressPolyfill = {
+	DOMInterface: {
+		max: {
+			get: function(){
+				return parseFloat(this.getAttribute('aria-valuemax')) || 1;
+			},
+			
+			set: function(value) {
+				this.setAttribute('aria-valuemax', value);
+				
+				if(!attrsAsProps) {
+					this.setAttribute('max', value);
+				}
+				
+				self.redraw(this);
+			}
+		},
+		
+		value: {
+			get: function(){
+				return parseFloat(this.getAttribute('aria-valuenow')) || 0;
+			},
+			
+			set: function(value) {
+				this.setAttribute('aria-valuenow', value);
+				
+				if(!attrsAsProps) {
+					this.setAttribute('value', value);
+				}
+				
+				self.redraw(this);
+			}
+		},
+		
+		position: {
+			get: function(){
+				return this.hasAttribute('aria-valuenow')? this.value/this.max : -1;
+			}
+		},
+		
+		labels: {
+			get: function(){
+				var label = this.parentNode;
+				
+				while(label && !/^label$/i.test(label.nodeName)) {
+					label = label.parentNode;
+				}
+				
+				var labels = label? [label] : [];
+				
+				if(this.id && document.querySelectorAll) {
+					var forLabels = arr(document.querySelectorAll('label[for="' + this.id + '"]'));
+					
+					if(forLabels.length) {
+						labels = labels.concat(forLabels);
+					}
+				}
+				
+				return labels;
+			}
+		}
+	},
+	
+	redraw: function redraw(progress) {
+		if(!self.isInited(progress)) {
+			self.init(progress);
+		}
+		else if(!attrsAsProps) {
+			progress.setAttribute('aria-valuemax', parseFloat(progress.getAttribute('max')) || 1);
+			
+			if(progress.hasAttribute('value')) {
+				progress.setAttribute('aria-valuenow', parseFloat(progress.getAttribute('value')) || 0);
+			}
+			else {
+				progress.removeAttribute('aria-valuenow');
+			}
+		}
+		    
+		if(progress.position !== -1) {
+		   progress.style.paddingRight = progress.offsetWidth * (1-progress.position) + 'px';
+		}
+	},
+	
+	isInited: function(progress) {
+		return progress.getAttribute('role') === 'progressbar';
+	},
+	
+	init: function (progress) {
+		if(self.isInited(progress)) {
+			return; // Already init-ed
+		}
+		
+		// Add ARIA
+		progress.setAttribute('role', 'progressbar');
+		progress.setAttribute('aria-valuemin', '0');
+		progress.setAttribute('aria-valuemax', parseFloat(progress.getAttribute('max')) || 1);
+		
+		if(progress.hasAttribute('value')) {
+			progress.setAttribute('aria-valuenow', parseFloat(progress.getAttribute('value')) || 0);
+		}
+		
+		// We can't add them on a prototype, as it's the same for all unknown elements
+		for(var attribute in self.DOMInterface) {
+			defineProperty(progress, attribute, {
+				get: self.DOMInterface[attribute].get,
+				set: self.DOMInterface[attribute].set
+			});
+		}
+		
+		self.redraw(progress);
+	},
+	
+	// Live NodeList, will update automatically
+	progresses: document.getElementsByTagName('progress')
+};
+
+
+
+for(var i=self.progresses.length-1; i>=0; i--) {
+	self.init(self.progresses[i]);
+}
+
+// Take care of future ones too, if supported
+if(document.addEventListener) {
+	document.addEventListener('DOMAttrModified', function(evt) {
+		var node = evt.target, attribute = evt.attrName;
+		
+		if(/^progress$/i.test(node.nodeName) && (attribute === 'max' || attribute === 'value')) {
+			self.redraw(node);
+		}
+	}, false);
+	
+	document.addEventListener('DOMNodeInserted', function(evt) {
+		var node = evt.target;
+		
+		if(/^progress$/i.test(node.nodeName)) {
+			self.init(node);
+		}
+	}, false);
+}
+
+})();
+</script>
+
+
+{% endblock %}
+
+{% block helptext %}
+
+
+
+{% endblock %}

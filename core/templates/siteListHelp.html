@@ -1,0 +1,23 @@
+<tr class="docsection"><th><a name="siteListHelp"></a> {{ helptitle }} </th></tr>
+<tr><td class="doctextlight">
+
+<p>
+<b>Sites, queues, resources, GOC names</b><br>
+PanDA submits jobs to 'PanDA sites' otherwise known as 'PanDA resources' in ATLAS lingo. It submits jobs via pilots running on queues defined in a PanDA site database; there is typically but not necessarily a 1:1 correspondence between resource and associated queue. These are the queues shown above. PanDA resources are hosted at facilities that (generally) are part of the WLCG computing infrastructure, and have a name (GOC name) within that infrastructure. 
+</p>
+
+<p>
+<b>Tier levels and multicloud</b><br>
+Sites are categorized by the familiar Tier 1, Tier 2, Tier 3 levels. A further subcategorization is T2D; these are Tier 2s validated for heavy duty workloads. T2Ds can be 'shared' across clouds via multicloud production (MCP) -- they can be dynamically assigned to accept work from Tier 1s other than their 'home' Tier 1. These multicloud assignments are indicated for clouds and sites. 
+</p>
+
+<p>
+<b>Online, offline, brokeroff, test</b><br>
+Online sites are up and running, able to accept jobs via automatic brokerage or direct assignment. Brokeroff sites accept jobs only by direct assignment. Test sites accept only test jobs. Offline sites accept no jobs at all. The comment field often gives an indication of how the site wound up with the status it presently has. Very often this comment indicates that the Hammercloud (HC) automated testing and blacklisting system has taken action. 
+</p>
+
+<p>
+Where sites are served by queues that have meximum allowed memory allocations and/or job execution times, they are so indicated.
+</p>
+
+</td>

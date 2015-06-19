@@ -1,0 +1,12 @@
+# Database settings for pbm
+dbaccess = {
+    'default': {}, 
+    'pbm': {
+         'ENGINE':'django.db.backends.oracle',
+         'NAME': 'ADCR',
+         'HOST': 'ADCR',
+         'USER': 'ATLAS_PANDABROMON_R',
+         'PASSWORD': 'FIXME',
+    },
+}
+

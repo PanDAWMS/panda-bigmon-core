@@ -1,0 +1,265 @@
+{% extends "_base_bigpandamon.html" %}{% load url from future %}{% load pbm_extras %}
+{% block title %}PanDA Brokerage Monitor{% endblock %}
+{% block page_title %}PanDA Brokerage Monitor{% endblock %}
+{% block bl_page_title %}PanDA Brokerage Monitor{% endblock %}
+{% block gacode %}UA-44940804-1{% endblock %}
+{% block gaweb %}pandawms.org{% endblock %}
+{% block subtitle %}PanDA Brokerage{% endblock %}
+{% block header-nav-chain-1 %}<a href="#">PanDA Brokerage</a>{% endblock %}{% block header-nav-chain-1-separator %}{{ SEPARATOR_NAVIGATION_ITEM|safe }}{% endblock %}
+{% block header-nav-chain-2 %}{% endblock %}{% block header-nav-chain-2-separator %}{% endblock %}
+{% block header-nav-chain-3 %}{% endblock %}{% block header-nav-chain-3-separator %}{% endblock %}
+{% block header-nav-chain-4 %}{% endblock %}{% block header-nav-chain-4-separator %}{% endblock %}
+{% block header-nav-chain-5 %}{% endblock %}{% block header-nav-chain-5-separator %}{% endblock %}
+{% block header-nav-chain-6 %}{% endblock %}
+{% block left_menu %}{% endblock %}
+{% block body_mobile %}{% endblock %}
+{% block extra_js %}
+	<script type="text/javascript" src="{{ STATIC_URL }}/js/jquery-1.9.1.min.js"></script>
+	<script type="text/javascript" src="{{ STATIC_URL }}/js/highcharts/highcharts.js"></script>
+	<script type="text/javascript" src="{{ STATIC_URL }}/js/highcharts/modules/exporting.js"></script>
+{% endblock %}
+{% block body %}
+<a name="sec.toc"></a>
+<div><span style="color: navy; font-weight: bold;">Query parameters</span></div>
+<br/>
+Showing data for interval from {{startdate}} to {{enddate}}.
+{% if errors_GET %}
+{% if errors_GET.noparams %}
+	<div><span style="color: red; font-weight: bold;">Query warning.</span> {{errors_GET.noparams}}</div>
+{% else %}
+{% if errors_GET.startdate %}<div><span style="color: red; font-weight: bold;">Query error.</span> {{errors_GET.startdate}}</div>{% endif %}
+{% if errors_GET.enddate %}<div><span style="color: red; font-weight: bold;">Query error.</span> {{errors_GET.enddate}}</div>{% endif %}
+{% if errors_GET.ndays %}<div><span style="color: red; font-weight: bold;">Query error.</span> {{errors_GET.ndays}}</div>{% endif %}
+{% endif %}
+{% endif %}
+<br/><br/><br/>
+
+<div><span style="color: navy; font-weight: bold;">Plots listing</span></div>
+<div>
+<br/>
+<p>User selected a site vs. User selected a cloud vs. PanDA Brokerage decision 
+	<a href="#sec.plot01">on jobs</a>,
+	<a href="#sec.plot02">on jobDefs</a>,
+	<a href="#sec.plot03">on jobSets</a>
+</p>
+<p>User selected a site - Top sites with share &gt; 1 % 
+	<a href="#sec.plot04">on jobs</a>,
+	<a href="#sec.plot05">on jobDefs</a>,
+	<a href="#sec.plot06">on jobSets</a>
+</p>
+<p>User selected a site - Per cloud 
+	<a href="#sec.plot07">on jobs</a>,
+	<a href="#sec.plot08">on jobDefs</a>,
+	<a href="#sec.plot09">on jobSets</a>
+</p>
+<p>User selected a cloud - Per cloud 
+	<a href="#sec.plot13">on jobs</a>,
+	<a href="#sec.plot14">on jobDefs</a>,
+	<a href="#sec.plot15">on jobSets</a>
+</p>
+</div>
+<p>PanDA Brokerage decision - Top sites with share &gt; 1 % 
+	<a href="#sec.plot16">on jobs</a>,
+	<a href="#sec.plot17">on jobDefs</a>
+</p>
+<p>PanDA Brokerage decision - Per cloud 
+	<a href="#sec.plot18">on jobs</a>,
+	<a href="#sec.plot19">on jobDefs</a>
+</p>
+<p>User excluded a site - With exclude / Without exclude 
+	<a href="#sec.plot20">on distinct jobSet</a>,
+</p>
+<p>User excluded a site - Top sites with share &gt; 1 % 
+	<a href="#sec.plot21">on distinct jobSet</a>,
+	<a href="#sec.plot22">on distinct UserDN</a>,
+</p>
+<p>User excluded a site - Per cloud 
+	<a href="#sec.plot23">on distinct jobSet</a>,
+	<a href="#sec.plot24">on distinct UserDN</a>,
+</p>
+<p>Submitted by Country (from UserDN) 
+	<a href="#sec.plot25">jobs</a>,
+	<a href="#sec.plot26">jobDefs</a>,
+	<a href="#sec.plot27">jobSets</a>
+</p>
+
+
+<br/><br/><br/>
+
+<div><span style="color: navy; font-weight: bold;">
+User selected a site vs. User selected a cloud vs. PanDA Brokerage decision
+</span></div><br/>
+
+<br/>
+<!-- Plot 1: [User selected a site/User selected a cloud/PanDA Brokerage decision] on Jobs -->
+{% pbm_plot_pie data01 title01 'plot01' startdate enddate colors01|safe '01' %}
+
+
+<br/>
+<!-- Plot 2: [User selected a site/User selected a cloud/Panda Brokerage decision] on jobDef -->
+{% pbm_plot_pie data02 title02 'plot02' startdate enddate colors02|safe '02' %}
+
+<br/>
+<!-- Plot 3: [User selected a site/User selected a cloud/Panda Brokerage decision] on jobSet -->
+{% pbm_plot_pie data03 title03 'plot03' startdate enddate colors03|safe '03' %}
+
+
+
+<br/><br/><br/>
+
+<div><span style="color: navy; font-weight: bold;">
+User selected a site - Top sites with share &gt; 1 %
+</span></div><br/>
+
+<br/>
+<!-- Plot 4: [User selected a site] on Jobs - Top sites with &gt; 1 % -->
+{% pbm_plot_pie data04 title04 'plot04' startdate enddate colors04|safe '04' %}
+
+<br/>
+<!-- Plot 5: [User selected a site] on jobDef - Top sites with &gt; 1 % -->
+{% pbm_plot_pie data05 title05 'plot05' startdate enddate colors05|safe '05' %}
+
+<br/>
+<!-- Plot 6: [User selected a site] on jobSet - Top sites with &gt; 1 % -->
+{% pbm_plot_pie data06 title06 'plot06' startdate enddate colors06|safe '06' %}
+
+
+
+<br/><br/><br/>
+
+<div><span style="color: navy; font-weight: bold;">
+User selected a site - Per cloud
+</span></div><br/>
+
+<br/>
+<!-- Plot 7: [User selected a site] on Jobs - Per cloud -->
+{% pbm_plot_pie data07 title07 'plot07' startdate enddate colors07|safe '07' %}
+
+<br/>
+<!-- Plot 8: [User selected a site] on jobDef - Per cloud  -->
+{% pbm_plot_pie data08 title08 'plot08' startdate enddate colors08|safe '08' %}
+
+<br/>
+<!-- Plot 9: [User selected a site] on jobSet - Per cloud  -->
+{% pbm_plot_pie data09 title09 'plot09' startdate enddate colors09|safe '09' %}
+
+
+
+<br/><br/><br/>
+
+<div><span style="color: navy; font-weight: bold;">
+User selected a cloud - Per cloud
+</span></div><br/>
+
+<br/>
+<!-- Plot 13: [User selected a cloud] on Jobs - Per cloud -->
+{% pbm_plot_pie data13 title13 'plot13' startdate enddate colors13|safe '13' %}
+
+<br/>
+<!-- Plot 14: [User selected a cloud] on jobDef - Per cloud  -->
+{% pbm_plot_pie data14 title14 'plot14' startdate enddate colors14|safe '14' %}
+
+<br/>
+<!-- Plot 15: [User selected a cloud] on jobSet - Per cloud  -->
+{% pbm_plot_pie data15 title15 'plot15' startdate enddate colors15|safe '15' %}
+
+
+<br/><br/><br/>
+
+<div><span style="color: navy; font-weight: bold;">
+PanDA Brokerage decision - Top sites with share &gt; 1 %
+</span></div><br/>
+
+<br/>
+<!-- Plot 16: PanDA Brokerage decision on Jobs - Top sites with &gt; 1 % -->
+{% pbm_plot_pie data16 title16 'plot16' startdate enddate colors16|safe '16' %}
+
+<br/>
+<!-- Plot 17: PanDA Brokerage decision on jobDef - Top sites with &gt; 1 % -->
+{% pbm_plot_pie data17 title17 'plot17' startdate enddate colors17|safe '17' %}
+
+
+
+<br/><br/><br/>
+
+<div><span style="color: navy; font-weight: bold;">
+PanDA Brokerage decision - Per cloud
+</span></div><br/>
+
+<br/>
+<!-- Plot 18: PanDA Brokerage decision on Jobs - Per cloud % -->
+{% pbm_plot_pie data18 title18 'plot18' startdate enddate colors18|safe '18' %}
+
+<br/>
+<!-- Plot 19: PanDA Brokerage decision on jobDef - Per cloud % -->
+{% pbm_plot_pie data19 title19 'plot19' startdate enddate colors19|safe '19' %}
+
+
+
+
+<br/><br/><br/>
+
+<div><span style="color: navy; font-weight: bold;">
+User excluded a site on distinct jobSet - With exclude / Without exclude
+</span></div><br/>
+
+<br/>
+<!-- Plot 20: User excluded a site on distinct jobSet - With exclude / Without exclude % -->
+{% pbm_plot_pie data20 title20 'plot20' startdate enddate colors20|safe '20' %}
+
+
+
+
+<br/><br/><br/>
+
+<div><span style="color: navy; font-weight: bold;">
+User excluded a site - Top sites with share &gt; 1 %
+</span></div><br/>
+
+<br/>
+<!-- Plot 21: User excluded a site - Top sites with share &gt; 1 % -->
+{% pbm_plot_pie data21 title21 'plot21' startdate enddate colors21|safe '21' %}
+
+<br/>
+<!-- Plot 22: User excluded a site on distinct DnUser - Top sites with share > 1 % -->
+{% pbm_plot_pie data22 title22 'plot22' startdate enddate colors22|safe '22' %}
+
+
+
+<br/><br/><br/>
+
+<div><span style="color: navy; font-weight: bold;">
+User excluded a site - Per cloud
+</span></div><br/>
+
+<br/>
+<!-- Plot 23: User excluded a site - Top sites with share &gt; 1 % -->
+{% pbm_plot_pie data23 title23 'plot23' startdate enddate colors23|safe '23' %}
+
+<br/>
+<!-- Plot 24: User excluded a site on distinct DnUser - Top sites with share > 1 % -->
+{% pbm_plot_pie data24 title24 'plot24' startdate enddate colors24|safe '24' %}
+
+
+<br/><br/><br/>
+
+<div><span style="color: navy; font-weight: bold;">
+Submitted by Country (from UserDN)
+</span></div><br/>
+
+<br/>
+<!-- Plot 25: Jobs submitted by Country -->
+{% pbm_plot_pie data25 title25 'plot25' startdate enddate colors25|safe '25' %}
+
+<br/>
+<!-- Plot 26: JobDefs submitted by Country -->
+{% pbm_plot_pie data26 title26 'plot26' startdate enddate colors26|safe '26' %}
+
+<br/>
+<!-- Plot 27: JobSetss submitted by Country -->
+{% pbm_plot_pie data27 title27 'plot27' startdate enddate colors27|safe '27' %}
+
+
+{% endblock %}
+
+

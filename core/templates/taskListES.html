@@ -1,0 +1,96 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA ES tasks{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA Event Service tasks{{viewParams.selection|safe }}
+{% if vo %} &nbsp; for VO {{ vo }}
+{% endif %}
+{% endblock %}
+{% block body %}
+
+{% if requestParams.statenotupdated %}<br><b>Tasks in <span class="{{ requestParams.status }}">{{ requestParams.status }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}
+{% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
+{% if requestParams.username %}<br><b>User: <a href="{% url 'userInfo' requestParams.username %}?display_limit=300">{{ requestParams.username }}</a> &nbsp; <a href="{% url 'userInfo' requestParams.username %}?display_limit=300">Show user page</a></b> {% endif %}
+{% if requestParams.tasktype %}<br><b>Task type: {{ requestParams.tasktype }}</b> {% endif %}
+
+{% if requestParams.campaign %}<br><b>Campaign: {{ requestParams.campaign }}</b> {% endif %}
+{% if requestParams.project %}<br><b>Project: {{ requestParams.project }}</b> {% endif %}
+{% if requestParams.stream %}<br><b>Stream: {{ requestParams.stream }}</b> {% endif %}
+{% if requestParams.tag %}<br><b>Tag: {{ requestParams.tag }}</b> {% endif %}
+
+{% if requestParams.transpath %}<br><b>Transformation: {{ requestParams.transpath }}</b> {% endif %}
+{% if requestParams.transuses %}<br><b>Release: {{ requestParams.transuses }}</b> {% endif %}
+{% if requestParams.processingtype %}<br><b>Processing type: {{ requestParams.processingtype }}</b> {% endif %}
+{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
+{% if requestParams.parent_tid %}<br><b>Parent task: {{ requestParams.parent_tid }}</b> {% endif %}
+{% if requestParams.status %}<br><b>{% if viewParams.MON_VO == 'ATLAS' %}Detailed JEDI task status {% else %}Task status {% endif %}: <span class='{{requestParams.status}}'>{{ requestParams.status }}</span></b> {% endif %}
+{% if requestParams.superstatus %}<br><b>{% if viewParams.MON_VO == 'ATLAS' %}Task status {% else %}Task status {% endif %}: <span class='{{requestParams.superstatus}}'>{{ requestParams.superstatus }}</span></b> {% endif %}
+
+<p>
+{% if tasks %}
+
+{% if sumd %}
+
+<table>
+<tr class='tablesection'><th colspan=20> Task attribute summary, {{ ntasks }} tasks </th></tr>
+{% for fdict in sumd %}
+<tr><th> {% if fdict.field == 'superstatus' %} status {% else %} {{ fdict.field }} {% endif %} ({{ fdict.list|length }}) </th><td>
+{% for item in fdict.list %}
+<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+{% endfor %}
+</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+
+<table>
+<tr class='tablesection'><th colspan=20> {{ ntasks }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
+{% if display_limit %} {% if tasks|length >= display_limit %}
+&nbsp; &nbsp; <font size=-1>Only the most recent {{ display_limit }} tasks are shown. <a href="{{ url_nolimit }}">Remove the limit</a></font>
+{% endif %} {% endif %}
+</th></tr>
+<tr class='tablesection'>
+	<th><a href="{{nosorturl}}">ID</a></th>
+    {% if requestParams.tasktype == 'anal' %}<th>Jobset</th>{% endif %}
+	<th>TaskType/ProcessingType &nbsp; Group<br><font color='brown'>Logged status</font></th>
+
+    <th>Site</th>
+
+	<th>Task status</th>
+	<th>Event dispatches</th>
+
+	<th><a href="{{nosorturl}}sortby=time-descending">Modified</a></th>
+	<th><a href="{{nosorturl}}sortby=statetime-descending">State changed</a></th>
+	<th><a href="{{nosorturl}}sortby=priority">Priority</a></th>
+</tr>
+    {% for task in tasks %}
+	<tr>
+		<td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>
+		</td>
+		{% if requestParams.tasktype == 'anal' %}<td>{{ task.reqid }}</td>{% endif %}
+		<td>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %} &nbsp; {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a> &nbsp; {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %} &nbsp; <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %} 
+{% if task.deftreqid %} &nbsp; RequestID:<a href="http://bigpanda.cern.ch/prodsys/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a> {% endif %}
+		<br><font color='brown'>{{ task.errordialog|safe }}</font></td>
+
+        <td> <a href="{% url 'siteInfo' task.site %}">{{ task.site }}</a> </td>
+
+		<td  class='{{task.superstatus}}_fill'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} {{ task.superstatus }} {% else %} {{ task.status }} {% endif %}</a></td>
+        <td> {{task.estaskstr}} </td>
+
+		<td><font size=-1>{{ task.modificationtime|date:"Y-m-d H:i" }}</font></td>
+		<td><font size=-1>{{ task.statechangetime|date:"m-d H:i" }}</font></td>
+		<td>{{ task.taskpriority }}</td>
+	</tr>
+    {% endfor %}
+</table>
+
+{% else %}
+    <p>No matches to query.</p>
+{% endif %}
+{% endblock %}
+
+{% block helptext %}
+{% include "taskInfoHelp.html" with helptitle="Task list help" show="all" %}
+{% endblock %}

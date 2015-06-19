@@ -1,0 +1,22 @@
+<tr class="docsection"><th><a name="searchHelp"></a> {{ helptitle }} </th></tr>
+<tr><td class="doctextlight">
+
+<p>
+The following searches are available.
+<ul>
+<li> PanDA ID or name: numeric ID or full job name, displays job detail page
+<li> Batch ID: the batch system ID for the batch job running the pilot. Used e.g. by site people to find what PanDA job a local batch job corresponds to.
+<li> Task ID: the numeric ID for a JEDI task, displays the task's detail page. Detail pages for old (non-JEDI) tasks are not available. For old type tasks, the search brings up a listing of jobs in the task.
+<li> Task name: as above, using task name rather than numeric ID.
+<li> Tasks for campaign, project, tag, stream: lists tasks for the specified campaign etc. Case insensitive. The project, tag, stream are obtained from the task name by substring match (ie they are all simply task substring searches at present). Task name substring searches can also be done by including taskname=*substring* in the URL.
+<li> Site: the name of a PanDA site (PanDA resource), displays a detail page for the site. From there you can click through to details on worker node performance etc.
+<li> User: the user name as known to PanDA, case insensitive, and will match a substring of the full name. See the user list pages for the names as known to PanDA.
+<li> Dataset: the JEDI dataset name, displays a detail page for the dataset. JEDI datasets record information necessary for processing datasets, they are not part of the data management system. 
+<li> File: as for datasets; these are the files contained in JEDI datasets. The file information records e.g. processing attempts on a file (full file or range of events in a file).
+<li> Stalled jobs: shows jobs that have been in the selected state for more than N hours (determined from the statechangetime job parameter)
+<li> Stalled tasks: shows tasks that have been in the selected state for more than N hours (determined from the statechangetime JEDI task parameter)
+</ul>
+</p>
+
+</td>
+

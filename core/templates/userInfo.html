@@ -1,0 +1,266 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA user {{ user }} {% endblock %}
+{% block subtitle %}PanDA user <b>{{ user }}</b>{{ viewParams.selection|safe }}{% endblock %}
+
+{% block body %}
+
+<p>
+<div class='section'>User page for <a href="{% url 'userInfo' user %}?display_limit=100">{{user}}</a>
+&nbsp; &nbsp; &nbsp;  Please read (and keep an eye on) the <a href="#doc"><span class='helpdark'>help section below</a> to familiarize yourself with using the monitor in JEDI based analysis.
+</div>
+
+
+{% if requestParams.priorityrange %}<br><b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}
+{% if requestParams.jobsetrange %}<br><b>Jobset ID range: {{ requestParams.jobsetrange }}</b> {% endif %}
+{% if requestParams.jobsetid %}<br><b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}
+</p>
+
+{% if userstats %}
+<table>
+<tr class='tablesection'><th colspan=20>Stats from the user DB (updated every few hours)</th></tr>
+<tr class='tablesection'>
+<th> User </th>
+<th> Jobs in last week </th>
+<th> Latest job in the DB stats </th>
+<th> Personal CPU-hrs - 1 day </th>
+<th> Personal CPU-hrs - 7 days </th>
+<th> Group CPU-hrs - 1 day </th>
+<th> Group CPU-hrs - 7 days </th>
+</tr>
+
+<tr>
+<td> {{ userstats.name }} </td>
+<td> {% if userstats.njobsa %}{{ userstats.njobsa }} {% endif %}</td>
+<td>{{ userstats.latestjob|date:"Y-m-d H:i" }}</td>
+
+{% comment %}
+<td class='finished'> {{ userstats.nfinished }} </td>
+<td class='failed'> {{ userstats.nfailed }} </td>
+<td class='holding'> {{ userstats.nholding }} </td>
+<td class='cancelled'> {{ userstats.ncancelled }} </td>
+<td class='defined'> {{ userstats.nqueued }} </td>
+{% endcomment %}
+<td> {% if userstats.cpua1 %}{{ userstats.cpua1 }} {% endif %}</td>
+<td> {% if userstats.cpua7 %}{{ userstats.cpua7 }} {% endif %}</td>
+<td> {% if userstats.cpup1 %}{{ userstats.cpup1 }} {% endif %}</td>
+<td> {% if userstats.cpup7 %}{{ userstats.cpup7 }} {% endif %}</td>
+</tr>
+</table>
+
+<p>
+{% endif %}
+
+{% if ntasks > 0 or njobsets > 0 or njobs > 0 %}
+<b>Jump to recent {% if ntasks > 0 %}  &nbsp; <a href="#tasks">tasks</a> {% endif %} {% if njobsets > 0 %} &nbsp; <a href="#jobsets">jobsets</a> {% endif %} {% if njobs > 0 %} &nbsp; <a href="#jobs">jobs</a> {% endif %}
+{% endif %}
+</b>
+<p>
+
+{% if ntasks > 0 %}
+
+{% if tasksumd %}
+
+<table>
+<tr class='tablesection'><th colspan=20><a name="tasks"></a> Task attribute summary, {{ ntasks }} tasks </th></tr>
+{% for fdict in tasksumd %}
+<tr><th> {% if fdict.field == 'superstatus' %} status {% else %} {{ fdict.field }} {% endif %} ({{ fdict.list|length }}) </th><td>
+{% for item in fdict.list %}
+<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
+<a href="{% url 'taskList' %}?username={{ user }}&{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+{% endfor %}
+</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+
+
+
+
+
+<table>
+<tr class='tablesection'><th colspan=20> {{ ntasks }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
+{% if display_limit %} {% if tasks|length >= display_limit %}
+&nbsp; &nbsp; <font size=-1>Only the most recent {{ display_limit }} tasks are shown. <a href="{{ url_nolimit }}">Remove the limit</a></font>
+{% endif %} {% endif %}
+
+&nbsp; &nbsp; <a href="{% url 'taskList' %}?tasktype=analy&username={{ user }}&days=7&display_limit=300">Show in task list page</a>
+</th></tr>
+<tr class='tablesection'>
+	<th><a href="{{nosorturl}}#tasks">ID</a><br>Parent</th>
+    <th>Jobset</th>
+	<th><a href="{{nosorturl}}sortby=taskname#tasks">Task name</a><br>TaskType/ProcessingType &nbsp; Campaign &nbsp; Group &nbsp; User {% if requestParams.tasktype == 'prod' %} &nbsp; TrackerLink {% endif %}<br><font color='brown'>Logged status</font></th>
+	<th>Task status<br><a href="{{nosorturl}}sortby=nfiles#tasks">Nfiles</a></th>
+	<th>Input files <br><a href="{{nosorturl}}sortby=pctfinished#tasks"><span class='finished'>finish%</span></a> <a href="{{nosorturl}}sortby=pctfailed#tasks"><span class='failed'>fail%</span></a>
+<br>	<a href="{{nosorturl}}sortby=pctfinished#tasks"><span class='finished'>Nfinish</span></a> <a href="{{nosorturl}}sortby=pctfailed#tasks"><span class='failed'>Nfail</span></a>
+	</th>
+	<th><a href="{{nosorturl}}sortby=time-descending#tasks">Modified</a></th>
+	<th><a href="{{nosorturl}}sortby=statetime-descending#tasks">State changed</a></th>
+	<th><a href="{{nosorturl}}sortby=priority#tasks">Priority</a></th>
+</tr>
+    {% for task in tasks %}
+	<tr>
+		<td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>		
+		{% if task.parent_tid and task.parent_tid != task.jeditaskid %}
+		<br><a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a>
+			{% endif %}
+		</td>
+		<td>{{ task.reqid }} </td>
+		<td><font size=-1><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %} {% if task.campaign %} &nbsp; <a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %} &nbsp; {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a> &nbsp; {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %} &nbsp; <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %} <br><font color='brown'>{{ task.errordialog|safe }}</font></td>
+		<td  class='{{task.superstatus}}_fill'>{% if task.superstatus %} <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.superstatus }}</a> {% else %} <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.status }}</a> {% endif %}
+        {% if task.dsinfo.nfiles > 0 %} <br>{{task.dsinfo.nfiles}} {% endif %} </td>
+        <td>{% if task.dsinfo.nfilesfinished > 0 %}<span  class='finished'>{{task.dsinfo.pctfinished}}%</span>{% endif %} {% if task.dsinfo.nfilesfailed > 0 %}<a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span class='failed'> {{task.dsinfo.pctfailed}}%</span>{% endif %}</a>
+        <br> {% if task.dsinfo.nfilesfinished > 0 %} <span  class='finished'>{{ task.dsinfo.nfilesfinished }}</span> {% endif %} &nbsp; {% if task.dsinfo.nfilesfailed > 0 %} <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span  class='failed'>{{ task.dsinfo.nfilesfailed }}</span></a> {% endif %}
+		</td>
+		<td><font size=-1>{{ task.modificationtime|date:"Y-m-d H:i" }}</font></td>
+		<td><font size=-1>{{ task.statechangetime|date:"m-d H:i" }}</font></td>
+		<td>{{ task.taskpriority }}</td>
+	</tr>
+    {% endfor %}
+</table>
+
+{% endif %}
+
+{% if njobsets > 0 %}
+
+<table>
+<tr class='tablesection'><th colspan=20> <a name="jobsets"></a> Recent jobsets {% if njobsetmax <= njobsets %} (listing limited to {{ njobsetmax }}. Use the jobset ranges in the attribute summary to see more jobsets) {% endif %} 
+&nbsp; &nbsp; &nbsp; Note that with JEDI you should pay more attention to tasks than jobsets! <a href="#doc"><span class='helpdark'>See the help section below.</span></a>
+
+</th></tr>
+<tr class='tablesection'>
+<th> Jobset ID </th>
+<th> nJobs </th>
+<th> Modification times </th>
+<th> Priorities </th>
+<th> defined </th>
+<th> waiting </th>
+<th> assigned </th>
+<th> activated </th>
+<th> sent </th>
+<th> starting </th>
+<th> running </th>
+<th> holding </th>
+<th> transferring </th>
+<th> finished </th>
+<th> failed </th>
+<th> cancelled </th>
+</tr>
+{% for jobset in jobsets %}
+<tr>
+<th> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&display_limit=100">{{ jobset.jobsetid }}</a></th>
+<td> {{ jobset.njobs }} </td>
+<td> {{ jobset.tfirst|date:"Y-m-d H:i" }} to {{ jobset.tlast|date:"m-d H:i" }} </td>
+<td> {{ jobset.plow }} to {{ jobset.phigh }} </td>
+<td {% if jobset.sum.defined > 0 %} class='defined_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=defined&display_limit=100">{% if jobset.sum.defined > 0 %}<span class="defined_fill">{% else %}<span class="defined">{% endif %}{{ jobset.sum.defined }}</span></a> </td>
+<td {% if jobset.sum.waiting > 0 %} class='waiting_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=waiting&display_limit=100">{% if jobset.sum.waiting > 0 %}<span class="waiting_fill">{% else %}<span class="waiting">{% endif %}{{ jobset.sum.waiting }}</span></a> </td>
+<td {% if jobset.sum.assigned > 0 %} class='assigned_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=assigned&display_limit=100">{% if jobset.sum.assigned > 0 %}<span class="assigned_fill">{% else %}<span class="assigned">{% endif %}{{ jobset.sum.assigned }}</span></a> </td>
+<td {% if jobset.sum.activated > 0 %} class='activated_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=activated&display_limit=100">{% if jobset.sum.activated > 0 %}<span class="activated_fill">{% else %}<span class="activated">{% endif %}{{ jobset.sum.activated }}</span></a> </td>
+<td {% if jobset.sum.sent > 0 %} class='sent_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=sent&display_limit=100">{% if jobset.sum.sent > 0 %}<span class="sent_fill">{% else %}<span class="sent">{% endif %}{{ jobset.sum.sent }}</span></a> </td>
+<td {% if jobset.sum.starting > 0 %} class='starting_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=starting&display_limit=100">{% if jobset.sum.starting > 0 %}<span class="starting_fill">{% else %}<span class="starting">{% endif %}{{ jobset.sum.starting }}</span></a> </td>
+<td {% if jobset.sum.running > 0 %} class='running_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=running&display_limit=100">{% if jobset.sum.running > 0 %}<span class="running_fill">{% else %}<span class="running">{% endif %}{{ jobset.sum.running }}</span></a> </td>
+<td {% if jobset.sum.holding > 0 %} class='holding_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=holding&display_limit=100">{% if jobset.sum.holding > 0 %}<span class="holding_fill">{% else %}<span class="holding">{% endif %}{{ jobset.sum.holding }}</span></a> </td>
+<td {% if jobset.sum.transferring > 0 %} class='transferring_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=transferring&display_limit=100">{% if jobset.sum.transferring > 0 %}<span class="transferring_fill">{% else %}<span class="transferring">{% endif %}{{ jobset.sum.transferring }}</span></a> </td>
+<td {% if jobset.sum.finished > 0 %} class='finished_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=finished&display_limit=100">{% if jobset.sum.finished > 0 %}<span class="finished_fill">{% else %}<span class="finished">{% endif %}{{ jobset.sum.finished }}</span></a> </td>
+<td {% if jobset.sum.failed > 0 %} class='failed_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=failed&display_limit=100">{% if jobset.sum.failed > 0 %}<span class="failed_fill">{% else %}<span class="failed">{% endif %}{{ jobset.sum.failed }}</span></a> </td>
+<td {% if jobset.sum.cancelled > 0 %} class='cancelled_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=cancelled&display_limit=100">{% if jobset.sum.cancelled > 0 %}<span class="cancelled_fill">{% else %}<span class="cancelled">{% endif %}{{ jobset.sum.cancelled }}</span></a> </td>
+</tr>
+{% endfor %}
+</table>
+
+{% endif %}
+
+
+{% if njobs > 0 %}
+<a name="jobs"></a>
+<p>
+<b>{{ njobs }} jobs</b>
+<br>Job <b>modification times</b> in this listing range from <b>{{ tfirst|date:"Y-m-d H:i" }}</b> to <b>{{ tlast|date:"Y-m-d H:i" }}</b>.
+<br>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.
+</p>
+
+<div class='section'><a href="{% url 'errorSummary' %}?produsername={{ user }}">Show recent job errors</a></div><p>
+
+
+<table>
+<tr class='tablesection'><th colspan=20> Recent job attributes </th></tr>
+{% for fdict in jobsumd %}
+{% if fdict.field %}
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
+
+{% if fdict.list|length > 300 %}
+{{ fdict.list|length }} {{ fdict.field }} values is too many to show
+{% else %}
+{% for item in fdict.list %}
+{% if fdict.field == 'jobstatus' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+{% endfor %}
+{% endif %}
+</td></tr>
+{% endif %}
+{% endfor %}
+</table>
+
+
+<table>
+<tr class='tablesection'><th colspan=20> Recent jobs {% if display_limit < jobList|length %} &nbsp; &nbsp; 
+Only the most recent {{ display_limit }} jobs are shown. <a href="{{ url_nolimit }}">Remove the limit</a>
+{% endif %}
+&nbsp; &nbsp; &nbsp; Note that with JEDI, tasks are the best tool to monitor the progress of your submissions! <a href="#doc"><span class='helpdark'>See the help section below.</span></a>
+</th></tr>
+<tr class='tablesection'>
+	<th>PanDA ID</th>
+	<th>Owner {% if viewParams.MON_VO != 'ATLAS' %} / VO{% endif %}<br>Group  </th>
+	<th>Task ID</th>
+	<th>Transformation</th>
+	<th>Status</th>
+	<th>Created</th>
+	<th>Time to start<br>d:h:m:s</th>
+	<th>Duration<br>d:h:m:s</th>
+	<th>Mod</th>
+	<th>{% if viewParams.MON_VO == 'ATLAS' %}Cloud {% endif%}Site</th>
+	<th>Priority</th>
+	<th>Job info</th>
+</tr>
+    {% for job in jobList %}
+	<tr>
+		<td rowspan=3><a href="{% url 'jobInfo' %}?pandaid={{ job.pandaid }}">{{ job.pandaid }}</a></td>
+		<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if job.workinggroup %}<br><a href="{{xurl}}workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }}{% endif %} {% endif %}
+		</td>
+		<td>{% if job.jeditaskid  and job.jeditaskid != 'None' %}<a href="{{xurl}}jeditaskid={{job.jeditaskid}}">{{ job.jeditaskid }}</a> {% elif job.taskid and job.taskid != 'None' %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
+		<td><font size=-1><a href="{{xurl}}transformation={{job.transformation}}">{{ job.transformation }}</a></font></td>
+
+		<td class='{{job.jobstatus}}_fill'>{{ job.jobstatus }}</td>
+		<td><font size=-1>{{ job.creationtime|date:"Y-m-d H:i" }}</font></td>
+		<td><font size=-1>{{ job.waittime }}</font></td>
+		<td><font size=-1>{{ job.duration }}</font></td>
+		<td><font size=-1>{{ job.modificationtime|date:"m-d H:i" }}</font></td>
+		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a></font></td>
+		<td>{{ job.currentpriority }}</td>
+		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
+		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}
+		</td>
+	<tr><td colspan=11 class='whitecell'> <font size=-1>Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}{% if job.taskid > 0 %}&taskid={{ job.taskid }}{% endif %}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&produsername={{ job.produsername }}&sortby=attemptnr">{{ job.jobname }}</a></font> </td></tr>
+	</tr>
+	<tr><td colspan="20" class='highlightcell'> Datasets: &nbsp; {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> &nbsp;{% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
+
+
+    {% endfor %}
+</table>
+
+{% else %}
+
+<p>
+No jobs matched the query. You can increase the time depth with a days=N parameter on the URL, but use judiciously, this is hard on the database. If you know the jobsetid or taskid/jeditaskid of the jobs you're interested in, you can add these to the URL, and the search will not be time limited (because these IDs give the DB enough indexing info that it isn't stressful on the DB to exclude the time constraint) and it will be fast also.
+</p>
+
+{% endif %}
+
+{% endblock %}
+
+{% block helptext %}
+{% include "userInfoHelp.html" with helptitle="User information page help" %}
+{% include "taskInfoHelp.html" with helptitle="Tasks" %}
+{% include "jobListHelp.html" with helptitle="Job list" %}
+{% include "jobInfoHelp.html" with helptitle="Jobs" %}
+{% endblock %}

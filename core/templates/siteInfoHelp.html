@@ -1,0 +1,23 @@
+<tr class="docsection"><th><a name="siteInfoHelp"></a> {{ helptitle }} </th></tr>
+<tr><td class="doctextlight">
+
+<p>
+The site detail page provides information and links to other services for the PanDA site (resource):
+<ul>
+<li> Click on 'worker nodes' to get a breakdown of jobs handled by different worker nodes at the site, useful for spotting problematic WNs.
+<li> Links to job listings for the site and a job error breakdown for the site are also provided.
+<li> Click 'brokerage actions' to see any recent PanDA brokerage actions involving the site.
+<li> Click 'pilots' for the pilot factory monitor's view of factories and pilots serving the site.
+{% if viewParams.MON_VO == 'ATLAS' %}
+<li> The ATLAS Site Status Board (SSB) page for the site is linked.
+<li> ATLAS shift e-logs mentioning the site's GOC name in the title are linked.
+<li> Distributed data management (DDM) monitors for the site serving as source and destination are linked.
+{% endif %}
+</ul>
+</p>
+
+<p>
+The site parameters shown are those recorded in PanDA's internal site configuration database, schedconfig.
+</p>
+
+</td>

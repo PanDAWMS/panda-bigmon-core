@@ -1,0 +1,24 @@
+{% extends "_base_core.html" %}{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA{% endblock %}
+{% block title %} {{ viewParams.MON_VO }} PanDA monitor{% endblock %}
+{% block subtitle %}{{ viewParams.MON_VO }} PanDA monitor error{% endblock %}
+
+{% block body %}
+
+<table style="margin:30px" ><tr><td>
+
+<p>
+<b> Oops! Something went wrong. </b>
+</p>
+
+<p>
+{{ errormessage }}
+</p>
+
+</td></tr></table>
+
+{% endblock %}
+
+
+

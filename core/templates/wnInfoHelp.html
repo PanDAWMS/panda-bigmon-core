@@ -1,0 +1,28 @@
+<tr class="docsection"><th><a name="wnInfoHelp"></a> {{ helptitle }} </th></tr>
+<tr><td class="doctextlight">
+
+{% if wnname == 'all' or show == 'all' %}
+
+<p>
+The site-level WN view summarizes job activity for all the active WNs, and batch slots within those WNs, at a particular site.
+</p>
+
+<p>
+Slot count shown is the number of uniquely named slots (from the slot@WN convention of slot/WN naming) that have picked up jobs in the interval, which may be less than the actual number of batch slots on the WN. Statistics shown are aggregated over all slots on the WN. For a breakdown by slot for a particular WN, click the WN name.
+Failure rates above 20% are shown in red.
+Click the cloud name in the overall summary to go to the cloud's site summary.
+Click the job counts to go to job listings.
+</p>
+
+{% endif %}
+
+{% if wnname != 'all' or show == 'all' %}
+
+<p>
+The WN-level view summarizes job activity for all the active batch slots on a particular worker node.
+</p>
+
+{% endif %}
+
+</td>
+

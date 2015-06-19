@@ -1,0 +1,79 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA incidents{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA incidents{{ viewParams.selection|safe }}
+{% if user %} &nbsp; user={{ user }} {% endif %}
+{% if site %} &nbsp; site={{ site }} {% endif %}
+{% if vo %} &nbsp; VO={{ vo }} {% endif %}
+{% endblock %}
+{% block body %}
+
+{{ viewParams.header }}
+
+<b>{{ ninc }} incidents</b>
+{% if requestParams.site %}<br><b>Site: <a href="{% url 'incidentList' %}?site={{ requestParams.site }}">{{ requestParams.site }}</a></b> {% endif %}
+{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
+
+{% if incHist %}
+
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['Time', 'Count'],
+{% for time, count in incHist %}
+          ['{{ time|date:"m-d H:i" }}', {{ count }}],
+{% endfor %}
+            ])
+        var options = {
+          title: 'Incident timeline',
+          legend: { position: 'none' },
+          hAxis: {title: 'Time (30min bins, empty bins suppressed)'}
+        };
+
+        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+      }
+    </script>
+    <div id="chart_div" style="height: 500px;"></div>
+
+{% endif %}
+
+<p>
+{% if sumd %}
+<table>
+{% for fdict in sumd %}
+<tr><th> {{ fdict.param }} ({{ fdict.list|length }})</th><td>
+{% for item in fdict.list %}
+{{ item.kname }}(<a href="{{xurl}}{{fdict.param}}={{item.kname}}">{{ item.kvalue }}</a>) &nbsp; 
+{% endfor %}
+</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+<p>
+
+{% if incidents %}
+
+<div class='section'> Recent Incidents</div>
+
+<table>
+{% for inc in incidents %}
+<tr><td> {{ inc.at_time|date:"Y-m-d H:i" }} </td>
+<td> <font size=-1>{{ inc.description|safe }}</font> </td>
+{% endfor %}
+</table>
+
+{% endif %}
+
+{% endblock %}
+
+{% block helptext %}
+{% include "incidentsHelp.html" with helptitle="Incidents page help" %}
+{% endblock %}
+
+
