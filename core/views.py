@@ -4657,7 +4657,6 @@ def fileInfo(request):
     if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid'] != '':
         query['jeditaskid'] = request.session['requestParams']['jeditaskid']
 
-
     if file:
         files = JediDatasetContents.objects.filter(**query).values()
         if len(files) == 0:
@@ -4699,6 +4698,9 @@ def fileInfo(request):
             file_['startevent'] += 1
         if (file_['endevent'] != None):
             file_['endevent'] += 1
+
+    if ((len(files) > 0) & ('jeditaskid' in files[0])):
+        files = sorted(files, key=lambda k: (-k['jeditaskid'], k['startevent']))
 
     if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
         data = {

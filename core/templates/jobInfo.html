@@ -294,7 +294,7 @@ But if you want, you can check.
 <font size=-1>
 {% if viewParams.MON_VO == 'ATLAS' %}
    {% if file.type != 'pseudo_input' %}
-       <a href="{% url 'fileInfo' %}?lfn={{file.lfn}}&scope={{file.scope}}&pandaid={{pandaid}}">{{ file.lfn}}</a>
+       <a href="{% url 'fileInfo' %}?lfn={{file.lfn}}&scope={{file.scope}}">{{ file.lfn}}</a>
     {% else %}
     {{ file.lfn }}
     {% endif %}
