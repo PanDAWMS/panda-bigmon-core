@@ -4195,7 +4195,7 @@ def removeParam(urlquery, parname, mode='complete'):
             if urlquery.endswith('?') or urlquery.endswith('&'): urlquery = urlquery[:len(urlquery)-1]
     return urlquery
 
-@cache_page(60*6)
+#@cache_page(60*6)
 def incidentList(request):
     valid, response = initRequest(request)
     if not valid: return response
