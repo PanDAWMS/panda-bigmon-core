@@ -792,7 +792,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
         if job['modificationtime'] < request.session['TFIRST']: request.session['TFIRST'] = job['modificationtime']
         if job['currentpriority'] > PHIGH: PHIGH = job['currentpriority']
         if job['currentpriority'] < PLOW: PLOW = job['currentpriority']
-    jobs = sorted(jobs, key=lambda x:-x['modificationtime'], reverse=True)
+    jobs = sorted(jobs, key=lambda x:x['modificationtime'], reverse=True)
 
     print 'job list cleaned'
     return jobs
@@ -3452,8 +3452,7 @@ def getBrokerageLog(request):
         print message
     
 
-
-@cache_page(60*6)
+#@cache_page(60*6)
 def taskInfo(request, jeditaskid=0):
     jeditaskid = int(jeditaskid)
     valid, response = initRequest(request)
