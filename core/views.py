@@ -780,7 +780,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
         else:
             droplist.append( { 'pandaid' : pandaid, 'newpandaid' : dropJob } )
             
-    droplist = sorted(droplist, key=lambda x:-x['modificationtime'], reverse=True)
+    #droplist = sorted(droplist, key=lambda x:-x['modificationtime'], reverse=True)
     jobs = newjobs
     global PLOW, PHIGH
     request.session['TFIRST'] = timezone.now()#.strftime(defaultDatetimeFormat)
