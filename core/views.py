@@ -1623,7 +1623,6 @@ def jobList(request, mode=None, param=None):
         return  HttpResponse(json.dumps(jobs, cls=DateEncoder), mimetype='text/html')
 
 
-
 def isEventService(job):
     if 'specialhandling' in job and job['specialhandling'] and ( job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 ):
         return True
