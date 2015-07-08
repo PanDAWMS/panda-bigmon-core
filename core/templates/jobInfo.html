@@ -46,7 +46,7 @@
 	</td>
 </tr>
 <tr> 
-	<td colspan="20" class='highlightcell'> <b>Datasets:</b> &nbsp; {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> &nbsp;{% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td>
+	<td colspan="20" class='highlightcell'> <b>Datasets:</b> &nbsp; {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> &nbsp;{% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.destinationdblock }} </a> {% endif %} </td>
 </tr>
 {%if not fileSummary == '' %}
 <tr>
@@ -308,7 +308,7 @@ But if you want, you can check.
 <td> {{ file.fsize }} </td>
 <td class='{{file.status}}'> {{ file.status }} </td>
 <td> {% if file.attemptnr %} {{ file.attemptnr }} ({{ file.maxattempt }}){% endif %} </td>
-<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{file.datasetname}}"> {{ file.datasetname }}</a>
+<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{file.datasetname}}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ file.datasetname }}</a>
 {% if file.dispatchdblock %}
 <br />(dispatch block: {{ file.dispatchdblock }} <a href="http://panda.cern.ch/server/pandamon/query?dataset={{ file.dispatchdblock }}">pinkpanda</a> <a href="https://rucio-ui.cern.ch/did?scope=panda&name={{ file.dispatchdblock }}">rucio</a>)
 {% endif %}

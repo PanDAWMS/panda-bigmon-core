@@ -1407,6 +1407,7 @@ def jobList(request, mode=None, param=None):
     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': dropmode = True
     droplist = []
     droppedIDs = set()
+
     if dropmode and (len(taskids) == 1):
         print 'doing the drop'
         for task in taskids:
@@ -1422,7 +1423,8 @@ def jobList(request, mode=None, param=None):
                     ## there is a retry for this job. Drop it.
                     dropJob = retry['newpandaid']
             if dropJob == 0 or isEventService(job):
-                newjobs.append(job)
+                if not (job['processingtype'] == 'pmerge'):
+                    newjobs.append(job)
             else:
                 if not pandaid in droppedIDs:
                     droppedIDs.add(pandaid)
@@ -4542,7 +4544,10 @@ def datasetInfo(request):
         query['datasetid'] = request.session['requestParams']['datasetid']
     else:
         dataset = None
-    
+
+    if 'jeditaskid' in request.session['requestParams']:
+        query['jeditaskid'] = int(request.session['requestParams']['jeditaskid'])
+
     if dataset:
         dsets = JediDatasets.objects.filter(**query).values()
         if len(dsets) == 0:
