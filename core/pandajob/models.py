@@ -187,6 +187,16 @@ class PandaJob(models.Model):
     actualcorecount = models.IntegerField(null=True, db_column='ACTUALCORECOUNT', blank=True)
     reqid = models.BigIntegerField(null=True, db_column='REQID', blank=True) # Field name made lowercase.
 
+    maxrss = models.BigIntegerField(null=True, db_column='maxrss', blank=True) # Field name made lowercase.
+    maxvmem = models.BigIntegerField(null=True, db_column='maxvmem', blank=True) # Field name made lowercase.
+    maxswap = models.BigIntegerField(null=True, db_column='maxswap', blank=True) # Field name made lowercase.
+    maxpss = models.BigIntegerField(null=True, db_column='maxpss', blank=True) # Field name made lowercase.
+    avgrss = models.BigIntegerField(null=True, db_column='avgrss', blank=True) # Field name made lowercase.
+    avgvmem = models.BigIntegerField(null=True, db_column='avgvmem', blank=True) # Field name made lowercase.
+    avgswap = models.BigIntegerField(null=True, db_column='avgswap', blank=True) # Field name made lowercase.
+    avgpss = models.BigIntegerField(null=True, db_column='avgpss', blank=True) # Field name made lowercase.
+
+
     def __str__(self):
         return 'PanDA:' + str(self.pandaid)
 
