@@ -1622,7 +1622,6 @@ def jobList(request, mode=None, param=None):
                         del job[field]
         return  HttpResponse(json.dumps(jobs, cls=DateEncoder), mimetype='text/html')
 
-
 def isEventService(job):
     if 'specialhandling' in job and job['specialhandling'] and ( job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 ):
         return True
@@ -4031,7 +4030,7 @@ def getTaskName(tasktype,taskid):
             taskname = tasks[0]['taskname']
     return taskname
 
-@cache_page(60*6)
+#@cache_page(60*6)
 def errorSummary(request):
     valid, response = initRequest(request)
     if not valid: return response
