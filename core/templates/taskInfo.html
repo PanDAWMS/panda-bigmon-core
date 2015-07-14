@@ -64,7 +64,7 @@
 {% endfor %}
 </tr><tr>
 {% for state in jobsummary %}
-<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}{% ifequal state.name 'failed' %}&mode=drop{%  endifequal %}&display_limit=100"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}{% ifequal state.name 'failed' %}&mode=drop{%  endifequal %}{% ifequal state.name 'finished' %}&mode=drop{%  endifequal %}&display_limit=100"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
 {% endfor %}
 </table>
 {% endif %}
@@ -202,7 +202,7 @@ function toggleRowsDisplay(className) {
 
 {% for dsrec in datasets %}
 	<tr class="type-{{ dsrec.type }} type-all" style="display:none">
-		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{ dsrec.datasetname }}">{{ dsrec.datasetname }}</a></font></td>
+		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{ dsrec.datasetname }}&jeditaskid={{ jeditaskid }}">{{ dsrec.datasetname }}</a></font></td>
 		<td>{{ dsrec.type }}</td>
 		<td>{{ dsrec.streamname }}</td>
 		<td class='{{dsrec.state}}'>{{ dsrec.state }}</td>

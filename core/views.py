@@ -4414,31 +4414,29 @@ def pandaLogger(request):
         logl.append(itemd)
     logl = sorted(logl, key=lambda x:x['name'])
 
+    del request.session['TFIRST']
+    del request.session['TLAST']
+    data = {
+        'request' : request,
+        'viewParams' : request.session['viewParams'],
+        'requestParams' : request.session['requestParams'],
+        'user' : None,
+        'logl' : logl,
+        'records' : records,
+        'ninc' : totcount,
+        'logHist' : logHistL,
+        'xurl' : extensibleURL(request),
+        'hours' : hours,
+        'getrecs' : getrecs,
+    }
     if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        data = {
-            'request' : request,
-            'viewParams' : request.session['viewParams'],
-            'requestParams' : request.session['requestParams'],
-            'user' : None,
-            'logl' : logl,
-            'records' : records,
-            'ninc' : totcount,
-            'logHist' : logHistL,
-            'xurl' : extensibleURL(request),
-            'hours' : hours,
-            'getrecs' : getrecs,
-        }
         ##self monitor
         endSelfMonitor(request)
         response = render_to_response('pandaLogger.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
     elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        resp = incidents
+        resp = data
         return  HttpResponse(json.dumps(resp), mimetype='text/html')
 
 @cache_page(60*6)
