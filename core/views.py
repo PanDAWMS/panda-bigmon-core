@@ -4319,7 +4319,8 @@ def pandaLogger(request):
         iquery['name'] = request.session['requestParams']['category']
         getrecs = True
     if 'type' in request.session['requestParams']:
-        iquery['type'] = request.session['requestParams']['type']
+        val = escapeInput(request.session['requestParams']['type'])
+        iquery['type__in'] = val.split('|')
         getrecs = True
     if 'level' in request.session['requestParams']:
         iquery['levelname'] = request.session['requestParams']['level'].upper()

@@ -56,7 +56,7 @@
 <a href="{% url 'jobList' %}?computingsite={{site.siteid}}&hours={{njobhours}}&display_limit=100">jobs</a>, <a href="{% url 'errorSummary' %}?computingsite={{site.siteid}}">job errors</a>
 </td>
 <td>
-<a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&type=prod_brokerage&site={{ site.siteid }}&hours={{njobhours}}">brokerage actions</a>
+<a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&type=prod_brokerage|analy_brokerage&site={{ site.siteid }}&hours={{njobhours}}">brokerage actions</a>
 </td>
 {% if site.nickname %}
 <td>
