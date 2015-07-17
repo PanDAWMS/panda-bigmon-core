@@ -45,7 +45,7 @@
 {% if not dsrec.vuid %}
 
 <p>
-<div class='section'><a href="{% url 'fileList' %}?datasetname={{ datasetname }}">Show files in dataset</a></div>
+<div class='section'><a href="{% url 'fileList' %}?datasetid={{ dsrec.datasetid }}">Show files in dataset</a></div>
 </p>
 
 {% endif %}

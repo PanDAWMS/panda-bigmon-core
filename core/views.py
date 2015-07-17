@@ -4733,6 +4733,9 @@ def fileList(request):
     columns = []
     datasetname = ''
     datasetid = 0
+
+
+#### It's dangerous when dataset name is not unique over table
     if 'datasetname' in request.session['requestParams']:
         datasetname = request.session['requestParams']['datasetname']
         dsets = JediDatasets.objects.filter(datasetname=datasetname).values()
