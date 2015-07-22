@@ -144,7 +144,6 @@ def __main__() :
 
     hostId = patternOfXMLFileName % host
     xmlFile = generateXML(hostId, redisAddress)
-    print xmlFile
     result = ''
     try:
         result = requests.post(serverToPost, files=dict(file=(xmlFile)))
