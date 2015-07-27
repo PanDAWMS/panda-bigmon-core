@@ -306,7 +306,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     elif limit != -99 and limit > 0:
         request.session['JOB_LIMIT'] = limit
     elif VOMODE == 'atlas':
-        request.session['JOB_LIMIT'] = 6000
+        request.session['JOB_LIMIT'] = 1000
     else:
         request.session['JOB_LIMIT'] = 10000
 
