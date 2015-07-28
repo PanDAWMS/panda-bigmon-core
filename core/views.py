@@ -266,16 +266,16 @@ def preprocessWildCardString(strToProcess, fieldToLookAt):
 
 
             if (leadStar and trailStar):
-                extraQueryString += '( UPPER('+fieldToLookAt+')  LIKE UPPER (TRANSLATE(\'%%' + parameter +'%%\' USING NCHAR_CS)))'
+                extraQueryString += '( '+fieldToLookAt+'  LIKE (\'%%' + parameter +'%%\'))'
 
             elif ( not leadStar and not trailStar):
-                extraQueryString += '( UPPER('+fieldToLookAt+')  LIKE UPPER (TRANSLATE(\'' + parameter +'\' USING NCHAR_CS)))'
+                extraQueryString += '( '+fieldToLookAt+'  LIKE (\'' + parameter +'\'))'
 
             elif (leadStar and not trailStar):
-                extraQueryString += '( UPPER('+fieldToLookAt+')  LIKE UPPER (TRANSLATE(\'%%' + parameter +'\' USING NCHAR_CS)))'
+                extraQueryString += '( '+fieldToLookAt+'  LIKE (\'%%' + parameter +'\'))'
                 
             elif (not leadStar and trailStar):
-                extraQueryString += '( UPPER('+fieldToLookAt+')  LIKE UPPER (TRANSLATE(\'' + parameter +'%%\' USING NCHAR_CS)))'
+                extraQueryString += '( '+fieldToLookAt+'  LIKE (\'' + parameter +'%%\'))'
 
             currentRealParCount+=1
             if currentRealParCount < countRealParameters:
