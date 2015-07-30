@@ -1337,7 +1337,7 @@ def jobParamList(request):
     else:
         return HttpResponse('not supported', mimetype='text/html')
     
-#@cache_page(60*6)
+@cache_page(60*6)
 def jobList(request, mode=None, param=None):
     
     valid, response = initRequest(request)
@@ -4030,7 +4030,7 @@ def getTaskName(tasktype,taskid):
             taskname = tasks[0]['taskname']
     return taskname
 
-#@cache_page(60*6)
+@cache_page(60*6)
 def errorSummary(request):
     valid, response = initRequest(request)
     if not valid: return response

@@ -10,6 +10,16 @@
 
 	<title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
 
+{% block extra_js_hepsw %}
+
+  <script src="{% static 'js/vendor/modernizr.js' %}"></script>
+  <script src="{% static 'js/vendor/jquery.js' %}"></script>
+  <script src="{% static 'js/foundation/foundation.js' %}"></script>
+  <script src="{% static 'js/foundation/foundation.topbar.js' %}"></script>
+
+{% endblock %}
+
+
 	<!-- Included CSS Files -->
 
 
@@ -501,29 +511,6 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
       </div>
     </div>
   </footer>
-
-{% comment %}
-  <script src="{% static 'js/vendor/modernizr.js' %}"></script>
-  <script src="{% static 'js/vendor/jquery.js' %}"></script>
-  <script src="{% static 'js/foundation/foundation.js' %}"></script>
-  <script src="{% static 'js/foundation/foundation.topbar.js' %}"></script>
-{% endcomment %}
-
-{% block extra_js_hepsw %}
-
-  <script src="{% static 'js/vendor/modernizr.js' %}"></script>
-  <script src="{% static 'js/vendor/jquery.js' %}"></script>
-  <script src="{% static 'js/foundation/foundation.js' %}"></script>
-  <script src="{% static 'js/foundation/foundation.topbar.js' %}"></script>
-
-{% comment %}
-  <script src="http://hepsoftware.org/static/js/vendor/modernizr.js"></script>
-  <script src="http://hepsoftware.org/static/js/vendor/jquery.js"></script>
-  <script src="http://hepsoftware.org/static/js/foundation/foundation.js"></script>
-  <script src="http://hepsoftware.org/static/js/foundation/foundation.topbar.js"></script>
-{% endcomment %}
-
-{% endblock %}
 
   <script>
     $(document).foundation();
