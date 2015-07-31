@@ -140,7 +140,7 @@ def setupSiteInfo(request):
         for f in ( 'siteid', 'status', 'tier', 'comment_field', 'cloud' ):
             pandaSites[site['siteid']][f] = site[f]
         homeCloud[site['siteid']] = site['cloud']
-        if site['catchall'].find('log_to_objectstore') >= 0 or site['objectstore'] != '':
+        if (site['catchall'] != None) and (site['catchall'].find('log_to_objectstore') >= 0 or site['objectstore'] != ''):
             #print 'object store site', site['siteid'], site['catchall'], site['objectstore']
             try:
                 fpath = getFilePathForObjectStore(site['objectstore'],filetype="logs")
@@ -676,7 +676,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
         except:
             job['homecloud'] = None
         if 'produsername' in job and not job['produsername']:
-            if job['produserid']:
+            if ('produserid' in job) and job['produserid']:
                 job['produsername'] = job['produserid']
             else:
                 job['produsername'] = 'Unknown'
@@ -1392,7 +1392,7 @@ def jobList(request, mode=None, param=None):
         ##hard limit is set to 2K
         if ('jobstatus' not in request.session['requestParams'] or len(queryFrozenStates) > 0):
             
-            totalJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension, 'ROWNUM<2002']).count()
+            totalJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].count()
             if ('limit' not in request.session['requestParams']) & (int(totalJobs)>2000):
                request.session['JOB_LIMIT'] = 2000
                showTop = 1
@@ -1472,7 +1472,8 @@ def jobList(request, mode=None, param=None):
             jobs = sorted(jobs, key=lambda x:x['pandaid'], reverse=True)
     else:
         sortby = "statetime"
-        jobs = sorted(jobs, key=lambda x:x['statechangetime'], reverse=True)
+        if 'statechangetime' in jobs:
+            jobs = sorted(jobs, key=lambda x:x['statechangetime'], reverse=True)
 
     taskname = ''
     if 'jeditaskid' in request.session['requestParams']:
@@ -3847,10 +3848,13 @@ def errorSummaryDict(request,jobs, tasknamedict, testjobs):
             if taskid in tasknamedict:
                 taskname = tasknamedict[taskid]
             tasktype = 'taskid'
-        tm = job['modificationtime']
-        tm = tm - timedelta(minutes=tm.minute % 30, seconds=tm.second, microseconds=tm.microsecond)
-        if not tm in errHist: errHist[tm] = 0
-        errHist[tm] += 1
+
+        if 'modificationtime' in job:
+            tm = job['modificationtime']
+            if tm is not None:
+                tm = tm - timedelta(minutes=tm.minute % 30, seconds=tm.second, microseconds=tm.microsecond)
+                if not tm in errHist: errHist[tm] = 0
+                errHist[tm] += 1
 
         ## Overall summary
         for f in flist:
