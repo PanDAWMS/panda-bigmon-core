@@ -4287,9 +4287,10 @@ def incidentList(request):
     for k in kys:
         incHistL.append( [ k, incHist[k] ] )
 
+    del request.session['TFIRST']
+    del request.session['TLAST']
+
     if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
-        del request.session['TFIRST']
-        del request.session['TLAST']
         data = {
             'request' : request,
             'viewParams' : request.session['viewParams'],
@@ -4308,10 +4309,15 @@ def incidentList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
     elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        resp = incidents
-        return  HttpResponse(json.dumps(resp), mimetype='text/html')
+        clearedInc = []
+        for inc in incidents:
+            test = {}
+            test['at_time'] = inc['at_time'].isoformat()
+            test['typekey'] = inc['typekey']
+            test['description'] = inc['description']
+            clearedInc.append(test)
+        jsonResp = json.dumps(clearedInc)
+        return  HttpResponse(jsonResp, mimetype='text/html')
 
 @cache_page(60*6)
 def pandaLogger(request):
