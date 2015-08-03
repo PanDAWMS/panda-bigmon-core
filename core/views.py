@@ -4311,11 +4311,11 @@ def incidentList(request):
     elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
         clearedInc = []
         for inc in incidents:
-            test = {}
-            test['at_time'] = inc['at_time'].isoformat()
-            test['typekey'] = inc['typekey']
-            test['description'] = inc['description']
-            clearedInc.append(test)
+            entry = {}
+            entry['at_time'] = inc['at_time'].isoformat()
+            entry['typekey'] = inc['typekey']
+            entry['description'] = inc['description']
+            clearedInc.append(entry)
         jsonResp = json.dumps(clearedInc)
         return  HttpResponse(jsonResp, mimetype='text/html')
 
