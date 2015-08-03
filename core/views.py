@@ -3479,7 +3479,10 @@ def taskInfo(request, jeditaskid=0):
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
             exclude = {'processingtype' : 'pmerge' }
-            jobsummary = jobSummary2(query, exclude=exclude)
+            mode='nodrop'
+            if 'mode' in request.session['requestParams']:
+                mode= request.session['requestParams']['mode']
+            jobsummary = jobSummary2(query, exclude=exclude, mode=mode)
     elif 'taskname' in request.session['requestParams']:
         querybyname = {'taskname' : request.session['requestParams']['taskname'] }
         tasks = JediTasks.objects.filter(**querybyname).values()
