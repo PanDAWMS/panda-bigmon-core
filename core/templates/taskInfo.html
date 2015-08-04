@@ -64,7 +64,12 @@
 {% endfor %}
 </tr><tr>
 {% for state in jobsummary %}
-<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}{% ifequal state.name 'failed' %}&mode=drop{%  endifequal %}{% ifequal state.name 'finished' %}&mode=drop{%  endifequal %}&display_limit=100"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&jobstatus={{state.name}}&display_limit=100"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+
+{% comment "Removed in order of consistency between task and jobs page" %}
+    {% ifequal state.name 'failed' %}&mode=drop{%  endifequal %}{% ifequal state.name 'finished' %}&mode=drop{%  endifequal %}
+{% endcomment %}
+
 {% endfor %}
 </table>
 {% endif %}

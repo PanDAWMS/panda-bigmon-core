@@ -1403,8 +1403,10 @@ def jobList(request, mode=None, param=None):
 
     for job in jobs:
         if 'jeditaskid' in job: taskids[job['jeditaskid']] = 1
-    dropmode = False
+    dropmode = True
     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': dropmode = True
+    if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'nodrop': dropmode = False
+
     droplist = []
     droppedIDs = set()
 
@@ -3453,7 +3455,7 @@ def getBrokerageLog(request):
         print message
     
 
-#@cache_page(60*6)
+@cache_page(60*6)
 def taskInfo(request, jeditaskid=0):
     jeditaskid = int(jeditaskid)
     valid, response = initRequest(request)
@@ -3479,7 +3481,7 @@ def taskInfo(request, jeditaskid=0):
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
             exclude = {'processingtype' : 'pmerge' }
-            mode='nodrop'
+            mode='drop'
             if 'mode' in request.session['requestParams']:
                 mode= request.session['requestParams']['mode']
             jobsummary = jobSummary2(query, exclude=exclude, mode=mode)
@@ -4201,7 +4203,7 @@ def removeParam(urlquery, parname, mode='complete'):
             if urlquery.endswith('?') or urlquery.endswith('&'): urlquery = urlquery[:len(urlquery)-1]
     return urlquery
 
-#@cache_page(60*6)
+@cache_page(60*6)
 def incidentList(request):
     valid, response = initRequest(request)
     if not valid: return response
