@@ -56,7 +56,7 @@
 
 <table>
 <tr bgcolor="lightcyan"><th colspan=20>
-<b>States of jobs in this task (merge jobs excluded)</b>   &nbsp; &nbsp; &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&display_limit=100">Show all jobs</a>
+<b>States of jobs in this task (merge jobs excluded)</b>   &nbsp; &nbsp; &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&mode=nodrop&display_limit=100">Show all jobs</a>
 </th></tr>
 <tr>
 {% for state in jobsummary %}
