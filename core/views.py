@@ -4075,17 +4075,22 @@ def errorSummary(request):
     query,wildCardExtension  = setupView(request, hours=hours, limit=limit, wildCardExt=True)
 
     if not testjobs: query['jobstatus__in'] = [ 'failed', 'holding' ]
-
-    print 'errSummary query', query
     jobs = []
     values = 'produsername', 'pandaid', 'cloud','computingsite','cpuconsumptiontime','jobstatus','transformation','prodsourcelabel','specialhandling','vo','modificationtime', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'currentpriority', 'computingelement'
-    jobs.extend(Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
+
+    if testjobs:
+        jobs.extend(Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
+
     jobs.extend(Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
-    jobs.extend(Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
     jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
-    jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
-    
+
+    if (((datetime.now() - datetime.strptime(query['modificationtime__range'][0], "%Y-%m-%d %H:%M:%S" )).days > 1) or \
+        ((datetime.now() - datetime.strptime(query['modificationtime__range'][1], "%Y-%m-%d %H:%M:%S" )).days > 1)):
+        jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
+
     jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta = False)
+
     njobs = len(jobs)
     tasknamedict = taskNameDict(jobs)
     ## Build the error summary.
@@ -4104,17 +4109,23 @@ def errorSummary(request):
             for s in savestates:
                 sitestates[sitename][s] = cloud['sites'][site]['states'][s]['count']
             sitestates[sitename]['pctfail'] = cloud['sites'][site]['pctfail']
-            
+
     for site in errsBySite:
         sitename = site['name']
         if sitename in sitestates:
             for s in savestates:
                 if s in sitestates[sitename]: site[s] = sitestates[sitename][s]
             if 'pctfail' in sitestates[sitename]: site['pctfail'] = sitestates[sitename]['pctfail']
+
     taskname = ''
     if not testjobs:
+        print "step3-1"
+        print str(datetime.now())
         ## Build the task state summary and add task state info to task error summary
         taskstatesummary = dashTaskSummary(request, hours, limit=limit, view=jobtype)
+        print "step3-2"
+        print str(datetime.now())
+
         taskstates = {}
         for task in taskstatesummary:
             taskid = task['taskid']
@@ -4130,6 +4141,7 @@ def errorSummary(request):
                 if 'pctfail' in taskstates[taskid]: task['pctfail'] = taskstates[taskid]['pctfail']
         if 'jeditaskid' in request.session['requestParams']:
             taskname = getTaskName('jeditaskid',request.session['requestParams']['jeditaskid'])
+
 
     if 'sortby' in request.session['requestParams']:
         sortby = request.session['requestParams']['sortby']
