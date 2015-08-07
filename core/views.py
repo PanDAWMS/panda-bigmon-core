@@ -4723,13 +4723,16 @@ def fileInfo(request):
     del request.session['TLAST']
 
     for file_ in files:
-        if (file_['startevent'] != None):
-            file_['startevent'] += 1
-        if (file_['endevent'] != None):
-            file_['endevent'] += 1
+        if 'startevent' in file_:
+            if (file_['startevent'] != None):
+                file_['startevent'] += 1
+        if 'endevent' in file_:
+            if (file_['endevent'] != None):
+                file_['endevent'] += 1
 
-    if ((len(files) > 0) & ('jeditaskid' in files[0])):
-        files = sorted(files, key=lambda k: (-k['jeditaskid'], k['startevent']))
+    if ((len(files) > 0) & ('jeditaskid' in files[0]) & (files[0]['jeditaskid'] != None)):
+            files = sorted(files, key=lambda k: (-k['jeditaskid'], k['startevent']))
+
 
     if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
         data = {
