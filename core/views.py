@@ -20,6 +20,7 @@ from django.db.models import Q
 from django.core.cache import cache
 from django.utils import encoding
 from django.conf import settings as djangosettings
+from django.db import connection
 
 
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
@@ -5302,6 +5303,17 @@ def buildGoogleTaskFlow(request, tasks):
 
     return flowrows
 
+def dictfetchall(cursor):
+    "Returns all rows from a cursor as a dict"
+    desc = cursor.description
+    return [
+        dict(zip([col[0] for col in desc], row))
+        for row in cursor.fetchall()
+    ]
+
+
+# This function created backend dependable for avoiding numerous arguments in metadata query.
+# Transaction and cursors used due to possible issues with django connection pooling
 def addJobMetadata(jobs):
     print 'adding metadata'
     pids = []
@@ -5311,8 +5323,17 @@ def addJobMetadata(jobs):
     query['pandaid__in'] = pids
     mdict = {}
     ## Get job metadata
-    mrecs = Metatable.objects.filter(**query).values()
-    print 'got metadata', ' ',mrecs
+
+    connection.enter_transaction_management()
+    #connection.managed(True)
+    new_cur = connection.cursor()
+    for id in pids:
+        # Backend dependable
+        new_cur.execute("INSERT INTO ATLAS_PANDABIGMON.TMP_IDS(ID) VALUES (%i)" % id)
+    connection.commit()
+
+    new_cur.execute("SELECT METADATA,MODIFICATIONTIME,PANDAID FROM ATLAS_PANDA.METATABLE WHERE PANDAID in (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS)")
+    mrecs = dictfetchall(new_cur)
     for m in mrecs:
         try:
             mdict[m['pandaid']] = m['metadata']
@@ -5326,6 +5347,9 @@ def addJobMetadata(jobs):
                 pass
                 #job['metadata'] = mdict[job['pandaid']]
     print 'added metadata'
+    new_cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS")
+    connection.commit()
+    connection.leave_transaction_management()
     return jobs
 
 ##self monitor
