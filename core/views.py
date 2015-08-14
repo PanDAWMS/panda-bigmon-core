@@ -3006,6 +3006,84 @@ def dashTaskSummary(request, hours, limit=999999, view='all'):
     return fullsummary
 
 
+def preProcess(request):
+    data = {}
+    response = render_to_response('preprocessLog.html', data, RequestContext(request))
+    patch_response_headers(response, cache_timeout=-1)
+    return response
+
+
+def dashTaskSummary_preprocess(request, hours, limit=999999, view='all'):
+    query = setupView(request,hours=hours,limit=limit,opmode=view)
+    tasksummarydata = taskSummaryData(request, query)
+    tasks = {}
+    totstates = {}
+    totjobs = 0
+    for state in sitestatelist:
+        totstates[state] = 0
+
+    taskids = []
+    for rec in tasksummarydata:
+        if 'jeditaskid' in rec and rec['jeditaskid'] and rec['jeditaskid'] > 0:
+            taskids.append( { 'jeditaskid' : rec['jeditaskid'] } )
+        elif 'taskid' in rec and rec['taskid'] and rec['taskid'] > 0 :
+            taskids.append( { 'taskid' : rec['taskid'] } )
+    tasknamedict = taskNameDict(taskids)
+    for rec in tasksummarydata:
+        if 'jeditaskid' in rec and rec['jeditaskid'] and rec['jeditaskid'] > 0:
+            taskid = rec['jeditaskid']
+            tasktype = 'JEDI'
+        elif 'taskid' in rec and rec['taskid'] and rec['taskid'] > 0 :
+            taskid = rec['taskid']
+            tasktype = 'old'
+        else:
+            continue
+        jobstatus = rec['jobstatus']
+        count = rec['jobstatus__count']
+        if jobstatus not in sitestatelist: continue
+        totjobs += count
+        totstates[jobstatus] += count
+        if taskid not in tasks:
+            tasks[taskid] = {}
+            tasks[taskid]['taskid'] = taskid
+            if taskid in tasknamedict:
+                tasks[taskid]['name'] = tasknamedict[taskid]
+            else:
+                tasks[taskid]['name'] = str(taskid)
+            tasks[taskid]['count'] = 0
+            tasks[taskid]['states'] = {}
+            tasks[taskid]['statelist'] = []
+            for state in sitestatelist:
+                tasks[taskid]['states'][state] = {}
+                tasks[taskid]['states'][state]['name'] = state
+                tasks[taskid]['states'][state]['count'] = 0
+        tasks[taskid]['count'] += count
+        tasks[taskid]['states'][jobstatus]['count'] += count
+    if view == 'analysis':
+        ## Show only tasks starting with 'user.'
+        kys = tasks.keys()
+        for t in kys:
+            if not str(tasks[t]['name'].encode('ascii','ignore')).startswith('user.'): del tasks[t]
+    ## Convert dict to summary list
+    taskkeys = tasks.keys()
+    taskkeys.sort()
+    fullsummary = []
+    for taskid in taskkeys:
+        for state in sitestatelist:
+            tasks[taskid]['statelist'].append(tasks[taskid]['states'][state])
+        if tasks[taskid]['states']['finished']['count'] + tasks[taskid]['states']['failed']['count'] > 0:
+            tasks[taskid]['pctfail'] =  int(100.*float(tasks[taskid]['states']['failed']['count'])/(tasks[taskid]['states']['finished']['count']+tasks[taskid]['states']['failed']['count']))
+
+        fullsummary.append(tasks[taskid])
+    if 'sortby' in request.session['requestParams']:
+        if request.session['requestParams']['sortby'] in sitestatelist:
+            fullsummary = sorted(fullsummary, key=lambda x:x['states'][request.session['requestParams']['sortby']],reverse=True)
+        elif request.session['requestParams']['sortby'] == 'pctfail':
+            fullsummary = sorted(fullsummary, key=lambda x:x['pctfail'],reverse=True)
+
+    return fullsummary
+
+
 
 
 
@@ -4078,6 +4156,8 @@ def errorSummary(request):
     if not testjobs: query['jobstatus__in'] = [ 'failed', 'holding' ]
     jobs = []
     values = 'produsername', 'pandaid', 'cloud','computingsite','cpuconsumptiontime','jobstatus','transformation','prodsourcelabel','specialhandling','vo','modificationtime', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'currentpriority', 'computingelement'
+    print "step3-1"
+    print str(datetime.now())
 
     if testjobs:
         jobs.extend(Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
@@ -4090,10 +4170,20 @@ def errorSummary(request):
         ((datetime.now() - datetime.strptime(query['modificationtime__range'][1], "%Y-%m-%d %H:%M:%S" )).days > 1)):
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
 
+    print "step3-1-0"
+    print str(datetime.now())
+
+
     jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta = False)
+
 
     njobs = len(jobs)
     tasknamedict = taskNameDict(jobs)
+
+    print "step3-1-1"
+    print str(datetime.now())
+
+
     ## Build the error summary.
     errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(request,jobs, tasknamedict, testjobs)
     ## Build the state summary and add state info to site error summary
@@ -4120,9 +4210,9 @@ def errorSummary(request):
 
     taskname = ''
     if not testjobs:
-        print "step3-1"
-        print str(datetime.now())
         ## Build the task state summary and add task state info to task error summary
+        print "step3-1-2"
+        print str(datetime.now())
         taskstatesummary = dashTaskSummary(request, hours, limit=limit, view=jobtype)
         print "step3-2"
         print str(datetime.now())
@@ -4149,6 +4239,10 @@ def errorSummary(request):
     else:
         sortby = 'alpha'
     flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
+
+    print "step3-3"
+    print str(datetime.now())
+
 
     request.session['max_age_minutes'] = 6
     if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
