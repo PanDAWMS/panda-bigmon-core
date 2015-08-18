@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import time
 import json
 import copy
-import itertools
+import itertools, random
 import string as strm
 
 from django.http import HttpResponse
@@ -20,7 +20,7 @@ from django.db.models import Q
 from django.core.cache import cache
 from django.utils import encoding
 from django.conf import settings as djangosettings
-from django.db import connection
+from django.db import connection, transaction
 
 
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
@@ -49,6 +49,7 @@ from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
 from core.common.models import RequestStat
 from core.settings.config import ENV
+
 
 from time import gmtime, strftime
 from settings.local import dbaccess
@@ -811,8 +812,17 @@ def cleanTaskList(request, tasks):
     taskl = []
     for t in tasks:
         taskl.append(t['jeditaskid'])
-    dsquery['jeditaskid__in'] = taskl
-    dsets = JediDatasets.objects.filter(**dsquery).values('jeditaskid','nfiles','nfilesfinished','nfilesfailed')
+#    dsquery['jeditaskid__in'] = taskl
+
+    random.seed()
+    tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+    transactionKey = random.randrange(1000000)
+    connection.enter_transaction_management()
+    new_cur = connection.cursor()
+    for id in taskl:
+        new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,id,transactionKey)) # Backend dependable
+    connection.commit()
+    dsets = JediDatasets.objects.filter(**dsquery).extra(where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid','nfiles','nfilesfinished','nfilesfailed')
     dsinfo = {}
     if len(dsets) > 0:
         for ds in dsets:        
@@ -820,7 +830,12 @@ def cleanTaskList(request, tasks):
             if taskid not in dsinfo:
                 dsinfo[taskid] = []
             dsinfo[taskid].append(ds)
-            
+
+    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+    connection.commit()
+    connection.leave_transaction_management()
+
+
     for task in tasks:
         if 'totevrem' not in task:
             task['totevrem'] = None
@@ -1901,7 +1916,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         dslist = []
         for ds in datasetids:
             dslist.append(ds)
-        datasets = JediDatasets.objects.filter(datasetid__in=dslist).values()
+        #datasets = JediDatasets.objects.filter(datasetid__in=dslist).values()
         dsfiles = JediDatasetContents.objects.filter(fileid__in=flist).values()        
         #for ds in datasets:
         #    datasetids[int(ds['datasetid'])]['dict'] = ds
@@ -3002,20 +3017,35 @@ def dashTaskSummary(request, hours, limit=999999, view='all'):
             fullsummary = sorted(fullsummary, key=lambda x:x['states'][request.session['requestParams']['sortby']],reverse=True)
         elif request.session['requestParams']['sortby'] == 'pctfail':
             fullsummary = sorted(fullsummary, key=lambda x:x['pctfail'],reverse=True)
-
     return fullsummary
 
 
 def preProcess(request):
     data = {}
+    dashTaskSummary_preprocess(request)
     response = render_to_response('preprocessLog.html', data, RequestContext(request))
     patch_response_headers(response, cache_timeout=-1)
     return response
 
 
-def dashTaskSummary_preprocess(request, hours, limit=999999, view='all'):
-    query = setupView(request,hours=hours,limit=limit,opmode=view)
-    tasksummarydata = taskSummaryData(request, query)
+def dashTaskSummary_preprocess(request):
+#    query = setupView(request,hours=hours,limit=limit,opmode=view)
+    query = { 'modificationtime__range' : [timezone.now() - timedelta(hours=LAST_N_HOURS_MAX), timezone.now()] }
+
+    tasksummarydata = []
+    querynotime = query
+    del querynotime['modificationtime__range']
+    tasksummarydata.extend(Jobsactive4.objects.filter(**querynotime).values('taskid','jobstatus','computingsite','produsername','transexitcode','piloterrorcode','processingtype','prodsourcelabel').annotate(Count('jobstatus'), Count('computingsite'), Count('produsername'), Count('transexitcode'), Count('piloterrorcode'), Count('processingtype'), Count('prodsourcelabel')).order_by('taskid','jobstatus')[:request.session['JOB_LIMIT']])
+    tasksummarydata.extend(Jobsdefined4.objects.filter(**querynotime).values('taskid','jobstatus','computingsite','produsername','transexitcode','piloterrorcode','processingtype','prodsourcelabel').annotate(Count('jobstatus'), Count('computingsite'), Count('produsername'), Count('transexitcode'), Count('piloterrorcode'), Count('processingtype'), Count('prodsourcelabel')).order_by('taskid','jobstatus')[:request.session['JOB_LIMIT']])
+    tasksummarydata.extend(Jobswaiting4.objects.filter(**querynotime).values('taskid','jobstatus','computingsite','produsername','transexitcode','piloterrorcode','processingtype','prodsourcelabel').annotate(Count('jobstatus'), Count('computingsite'),  Count('produsername'), Count('transexitcode'), Count('piloterrorcode'), Count('processingtype'), Count('prodsourcelabel')).order_by('taskid','jobstatus')[:request.session['JOB_LIMIT']])
+    tasksummarydata.extend(Jobsarchived4.objects.filter(**query).values('taskid','jobstatus','computingsite','produsername','transexitcode','piloterrorcode','processingtype','prodsourcelabel').annotate(Count('jobstatus'), Count('computingsite'), Count('produsername'), Count('transexitcode'), Count('piloterrorcode'), Count('processingtype'), Count('prodsourcelabel')).order_by('taskid','jobstatus')[:request.session['JOB_LIMIT']])
+    tasksummarydata.extend(Jobsactive4.objects.filter(**querynotime).values('jeditaskid','jobstatus','computingsite','produsername','transexitcode','piloterrorcode','processingtype','prodsourcelabel').annotate(Count('jobstatus'), Count('computingsite'), Count('produsername'), Count('transexitcode'), Count('piloterrorcode'), Count('processingtype'), Count('prodsourcelabel')).order_by('jeditaskid','jobstatus')[:request.session['JOB_LIMIT']])
+    tasksummarydata.extend(Jobsdefined4.objects.filter(**querynotime).values('jeditaskid','jobstatus','computingsite','produsername','transexitcode','piloterrorcode','processingtype','prodsourcelabel').annotate(Count('jobstatus'), Count('computingsite'), Count('produsername'), Count('transexitcode'), Count('piloterrorcode'), Count('processingtype'), Count('prodsourcelabel')).order_by('jeditaskid','jobstatus')[:request.session['JOB_LIMIT']])
+    tasksummarydata.extend(Jobswaiting4.objects.filter(**querynotime).values('jeditaskid','jobstatus','computingsite','produsername','transexitcode','piloterrorcode','processingtype','prodsourcelabel').annotate(Count('jobstatus'), Count('computingsite'), Count('produsername'), Count('transexitcode'), Count('piloterrorcode'), Count('processingtype'), Count('prodsourcelabel')).order_by('jeditaskid','jobstatus')[:request.session['JOB_LIMIT']])
+    tasksummarydata.extend(Jobsarchived4.objects.filter(**query).values('jeditaskid','jobstatus','computingsite','produsername','transexitcode','piloterrorcode','processingtype','prodsourcelabel').annotate(Count('jobstatus'), Count('computingsite'), Count('produsername'), Count('transexitcode'), Count('piloterrorcode'), Count('processingtype'), Count('prodsourcelabel')).order_by('jeditaskid','jobstatus')[:request.session['JOB_LIMIT']])
+
+
+    '''
     tasks = {}
     totstates = {}
     totjobs = 0
@@ -3080,8 +3110,9 @@ def dashTaskSummary_preprocess(request, hours, limit=999999, view='all'):
             fullsummary = sorted(fullsummary, key=lambda x:x['states'][request.session['requestParams']['sortby']],reverse=True)
         elif request.session['requestParams']['sortby'] == 'pctfail':
             fullsummary = sorted(fullsummary, key=lambda x:x['pctfail'],reverse=True)
+    '''
 
-    return fullsummary
+    return -1
 
 
 
@@ -5406,6 +5437,7 @@ def dictfetchall(cursor):
     ]
 
 
+
 # This function created backend dependable for avoiding numerous arguments in metadata query.
 # Transaction and cursors used due to possible issues with django connection pooling
 def addJobMetadata(jobs):
@@ -5418,16 +5450,17 @@ def addJobMetadata(jobs):
     mdict = {}
     ## Get job metadata
 
+    random.seed()
+    tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+    transactionKey = random.randrange(1000000)
     connection.enter_transaction_management()
-    #connection.managed(True)
     new_cur = connection.cursor()
     for id in pids:
-        # Backend dependable
-        new_cur.execute("INSERT INTO ATLAS_PANDABIGMON.TMP_IDS(ID) VALUES (%i)" % id)
+        new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,id,transactionKey)) # Backend dependable
     connection.commit()
-
-    new_cur.execute("SELECT METADATA,MODIFICATIONTIME,PANDAID FROM ATLAS_PANDA.METATABLE WHERE PANDAID in (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS)")
+    new_cur.execute("SELECT METADATA,MODIFICATIONTIME,PANDAID FROM ATLAS_PANDA.METATABLE WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
     mrecs = dictfetchall(new_cur)
+
     for m in mrecs:
         try:
             mdict[m['pandaid']] = m['metadata']
@@ -5441,7 +5474,7 @@ def addJobMetadata(jobs):
                 pass
                 #job['metadata'] = mdict[job['pandaid']]
     print 'added metadata'
-    new_cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS")
+    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
     connection.commit()
     connection.leave_transaction_management()
     return jobs
