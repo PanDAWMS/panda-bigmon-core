@@ -1179,6 +1179,14 @@ def wgTaskSummary(request, fieldname='workinggroup', view='production', taskdays
     if 'processingtype' in request.session['requestParams']:
         query['processingtype'] = request.session['requestParams']['processingtype']
 
+    if 'workinggroup' in request.session['requestParams']:
+        query['workinggroup'] = request.session['requestParams']['workinggroup']
+
+    if 'project' in request.session['requestParams']:
+        query['taskname__istartswith'] = request.session['requestParams']['project']
+
+
+
     summary = JediTasks.objects.filter(**query).values(fieldname,'status').annotate(Count('status')).order_by(fieldname,'status')
     totstates = {}
     tottasks = 0

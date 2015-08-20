@@ -83,11 +83,11 @@ Click on column titles to sort.
 <td>{{ rw|get_item:fdict.field }}</td>
 {% endif %}
 {% if jobsLeft %}
-<td bgcolor=whitesmoke align='right'> <a href="{% url 'jobList' %}?cloud={{ fdict.field }}&hours={{hours}}&jobstatus=waiting|assigned|activated|starting|running|transferring|holding|defined|sent|throttled|merging&jobtype={{ view }}&display_limit=100">{{ jobsLeft|get_item:fdict.field }}</a> </td>
+<td bgcolor=whitesmoke align='right'> <a href="{% url 'jobList' %}?cloud={{ fdict.field }}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&hours={{hours}}&jobstatus=waiting|assigned|activated|starting|running|transferring|holding|defined|sent|throttled|merging&jobtype={{ view }}&display_limit=100">{{ jobsLeft|get_item:fdict.field }}</a> </td>
 {% endif %}
-<td> <a href="{% url 'taskList' %}?cloud={{fdict.field}}&jobtype={{view}}&days={{taskdays}}">{{ fdict.count }}</a></td>
+<td> <a href="{% url 'taskList' %}?cloud={{fdict.field}}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&days={{taskdays}}">{{ fdict.count }}</a></td>
 {% for item in fdict.list %}
-<td {% if item.kvalue > 0 %} class='{{item.kname}}_fill' {% endif %}> <a href="{% url 'taskList' %}?cloud={{fdict.field}}&status={{item.kname}}&jobtype={{view}}&days={{taskdays}}"><span {% if item.kvalue == 0 %}class='{{item.kname}}'{% else %}class='{{item.kname}}_fill'{% endif %}>{{ item.kvalue }}</span></a></td>
+<td {% if item.kvalue > 0 %} class='{{item.kname}}_fill' {% endif %}> <a href="{% url 'taskList' %}?cloud={{fdict.field}}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.project %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&project={{requestParams.project}}{% endif %}&status={{item.kname}}&jobtype={{view}}&days={{taskdays}}"><span {% if item.kvalue == 0 %}class='{{item.kname}}'{% else %}class='{{item.kname}}_fill'{% endif %}>{{ item.kvalue }}</span></a></td>
 {% endfor %}
 </tr>
 {% endfor %}
