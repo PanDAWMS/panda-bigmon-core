@@ -3028,6 +3028,13 @@ def preProcess(request):
     return response
 
 
+#class prepDashTaskSummary:
+
+
+
+
+
+
 def dashTaskSummary_preprocess(request):
 #    query = setupView(request,hours=hours,limit=limit,opmode=view)
     query = { 'modificationtime__range' : [timezone.now() - timedelta(hours=LAST_N_HOURS_MAX), timezone.now()] }
@@ -4149,6 +4156,10 @@ def getTaskName(tasktype,taskid):
         if len(tasks) > 0:
             taskname = tasks[0]['taskname']
     return taskname
+
+
+
+
 
 @cache_page(60*6)
 def errorSummary(request):

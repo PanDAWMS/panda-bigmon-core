@@ -43,7 +43,10 @@ class GetRWWithPrioJedi3DAYS(models.Model):
     startevent = models.BigIntegerField(db_column='STARTEVENT')
     endevent = models.BigIntegerField(db_column='ENDEVENT')
     nevents = models.BigIntegerField(db_column='NEVENTS')
-    
+    taskname = models.CharField(max_length=132, db_column='PRODSOURCELABEL')
+    workinggroup = models.CharField(max_length=132, db_column='WORKINGGROUP')
+
+
    
     def get_all_fields(self):
         """Returns a list of all field names on the instance."""
