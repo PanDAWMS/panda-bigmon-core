@@ -577,6 +577,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         extraQueryString = ''
 
     wildSearchFields = (set(wildSearchFields) & set(request.session['requestParams'].keys()))
+    wildSearchFields1 = set()
+    for currenfField in wildSearchFields:
+        if not ((currenfField.lower() == 'cloud') & (  any(card.lower()  == 'all' for card in request.session['requestParams'][currenfField].split('|')))):
+            wildSearchFields1.add(currenfField)
+    wildSearchFields = wildSearchFields1
 
     lenWildSearchFields = len(wildSearchFields)
     currentField = 1
@@ -594,6 +599,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             extraQueryString += ')'
             if (currentField < lenWildSearchFields): extraQueryString +=' AND '
             currentField += 1
+
 
     if ('jobparam' in request.session['requestParams'].keys()):
         jobParWildCards = request.session['requestParams']['jobparam'].split('|')
