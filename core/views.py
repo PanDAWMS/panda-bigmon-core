@@ -1424,7 +1424,8 @@ def jobList(request, mode=None, param=None):
             
             totalJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].count()
             if ('limit' not in request.session['requestParams']) & (int(totalJobs)>2000):
-               request.session['JOB_LIMIT'] = 2000
+               request.session['JOB_LIMIT'] = 5000
+               JOB_LIMITS = 5000
                showTop = 1
             jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
              
@@ -2793,7 +2794,7 @@ def wnInfo(request,site,wnname='all'):
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
     pilots = getPilotCounts(view)
-    query = setupView(request,hours=hours,limit=limit,opmode=view)
+    query, wildcard = setupView(request,hours=hours,limit=limit,opmode=view)
     
     if VOMODE == 'atlas' and len(request.session['requestParams']) == 0:
         cloudinfol = Cloudconfig.objects.filter().exclude(name='CMS').exclude(name='OSG').values('name','status')
