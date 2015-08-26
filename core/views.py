@@ -3052,11 +3052,26 @@ def dashTaskSummary(request, hours, limit=999999, view='all'):
 
 
 def preProcess(request):
-    data = {}
-    dashTaskSummary_preprocess(request)
-    response = render_to_response('preprocessLog.html', data, RequestContext(request))
-    patch_response_headers(response, cache_timeout=-1)
-    return response
+
+    ''' todo:
+    0. Decide tables structure and parameters aggregates approach
+    1. Get List of Jobs modified later than previosly saved last modified job
+    2. For each of them calculate output variables of Error summary.
+    Factorize using set of request parameters causing different flow.
+    3. Save new variables in the dedicated table in form - jobid ~ variable
+    4. When a new query comes, select from job tables correspondent ids.
+    5. Select variables from the transistent table.
+    6. Merge them and display output.
+
+    '''
+
+
+#    data = {}
+#    dashTaskSummary_preprocess(request)
+#    response = render_to_response('preprocessLog.html', data, RequestContext(request))
+#    patch_response_headers(response, cache_timeout=-1)
+
+    return None
 
 
 #class prepDashTaskSummary:
