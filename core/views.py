@@ -2561,12 +2561,14 @@ def getListOfFailedBeforeSiteAssignedJobs(query, mismatchedSites, notime=True):
             jobsString += str(job['pandaid'])+','
     jobsString = jobsString[:-1]
     return jobsString
-    
+
 
 def siteSummary(query, notime=True):
     summary = []
     querynotime = copy.deepcopy(query)
-    if notime: del querynotime['modificationtime__range']
+    if notime:
+        if 'modificationtime__range' in querynotime:
+            del querynotime['modificationtime__range']
     summary.extend(Jobsactive4.objects.filter(**querynotime).values('cloud','computingsite','jobstatus').annotate(Count('jobstatus')).order_by('cloud','computingsite','jobstatus'))     
     summary.extend(Jobsdefined4.objects.filter(**querynotime).values('cloud','computingsite','jobstatus').annotate(Count('jobstatus')).order_by('cloud','computingsite','jobstatus'))
     summary.extend(Jobswaiting4.objects.filter(**querynotime).values('cloud','computingsite','jobstatus').annotate(Count('jobstatus')).order_by('cloud','computingsite','jobstatus'))
@@ -2794,7 +2796,7 @@ def wnInfo(request,site,wnname='all'):
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
     pilots = getPilotCounts(view)
-    query, wildcard = setupView(request,hours=hours,limit=limit,opmode=view)
+    query = setupView(request,hours=hours,limit=limit,opmode=view)
     
     if VOMODE == 'atlas' and len(request.session['requestParams']) == 0:
         cloudinfol = Cloudconfig.objects.filter().exclude(name='CMS').exclude(name='OSG').values('name','status')
@@ -3878,6 +3880,8 @@ def jobSummaryForTasks(request):
 
 def jobSummary2(query, exclude={}, mode='drop'):
     jobs = []
+
+
     jobs.extend(Jobsdefined4.objects.filter(**query).exclude(**exclude).\
         values('pandaid','jobstatus','jeditaskid','processingtype'))
     jobs.extend(Jobswaiting4.objects.filter(**query).exclude(**exclude).\
@@ -3937,7 +3941,6 @@ def jobSummary2(query, exclude={}, mode='drop'):
                     if not pandaid in droppedIDs:
                         droppedIDs.add(pandaid)
                         droplist.append( { 'pandaid' : pandaid, 'newpandaid' : dropJob } )
-            droplist = sorted(droplist, key=lambda x:-x['pandaid'])
             jobs = newjobs
         print 'done filtering'
     
