@@ -298,7 +298,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     wildSearchFields = []
     for field in Jobsactive4._meta.get_all_field_names():
         if (Jobsactive4._meta.get_field(field).get_internal_type() == 'CharField'):
-            if not field == 'jobstatus':
+            if not (field == 'jobstatus' or field == 'modificationhost'):
                 wildSearchFields.append(field)
     
     deepquery = False
