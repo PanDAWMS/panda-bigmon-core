@@ -557,7 +557,7 @@ class JediTasks(models.Model):
     cputime = models.IntegerField(null=True, db_column='cputime', blank=True)
     cputimeunit = models.CharField(max_length=72, db_column='cputimeunit', blank=True)
     basewalltime = models.IntegerField(null=True, db_column='basewalltime', blank=True)
-    cpuefficiency = models.IntegerField(null=True, db_column='basewalltime', blank=True)
+    cpuefficiency = models.IntegerField(null=True, db_column='cpuefficiency', blank=True)
 
 
 
