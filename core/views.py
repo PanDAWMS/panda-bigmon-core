@@ -629,7 +629,8 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': mode='drop'
     doAddMetaStill = False
     if 'fields' in request.session['requestParams']:
-        fields = request.session['requestParams']['fields'].split("|")
+        fieldsStr = request.session['requestParams']['fields']
+        fields = fieldsStr.split("|")
         if 'metastruct' in fields:
             doAddMetaStill = True
     if doAddMeta:
