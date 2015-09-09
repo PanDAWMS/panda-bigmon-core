@@ -2183,8 +2183,13 @@ def userInfo(request, user=''):
         if 'user' in request.session['requestParams']: user = request.session['requestParams']['user']
         if 'produsername' in request.session['requestParams']: user = request.session['requestParams']['produsername']
 
+    if 'days' in request.session['requestParams']:
+        days = int(request.session['requestParams']['days'])
+    else:
+        days = 7
+
     ## Tasks owned by the user
-    startdate = timezone.now() - timedelta(hours=7*24)
+    startdate = timezone.now() - timedelta(hours=days*24)
     startdate = startdate.strftime(defaultDatetimeFormat)
     enddate = timezone.now().strftime(defaultDatetimeFormat)
     query = { 'modificationtime__range' : [startdate, enddate] }
