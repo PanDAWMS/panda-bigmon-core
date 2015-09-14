@@ -3506,7 +3506,8 @@ def taskList(request):
     ntasks = len(tasks)
     nmax = ntasks
 
-    if 'display_limit' in request.session['requestParams'] and int(request.session['requestParams']['display_limit']) < nmax:
+    if 'display_limit' in request.session['requestParams']:
+#            and int(request.session['requestParams']['display_limit']) < nmax:
         display_limit = int(request.session['requestParams']['display_limit'])
         nmax = display_limit
         url_nolimit = removeParam(request.get_full_path(), 'display_limit')
