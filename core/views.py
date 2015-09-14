@@ -3506,15 +3506,29 @@ def taskList(request):
     ntasks = len(tasks)
     nmax = ntasks
 
-    if 'display_limit' in request.session['requestParams']:
+#    if 'display_limit' in request.session['requestParams']:
 #            and int(request.session['requestParams']['display_limit']) < nmax:
+#        display_limit = int(request.session['requestParams']['display_limit'])
+#        nmax = display_limit
+#        url_nolimit = removeParam(request.get_full_path(), 'display_limit')
+#    else:
+#        display_limit = 300
+#        nmax = display_limit
+#        url_nolimit = request.get_full_path()
+
+
+    if 'display_limit' not in request.session['requestParams']:
+        display_limit = 300
+        url_nolimit = request.get_full_path() +"&display_limit="+str(nmax)
+    else:
         display_limit = int(request.session['requestParams']['display_limit'])
         nmax = display_limit
-        url_nolimit = removeParam(request.get_full_path(), 'display_limit')
-    else:
-        display_limit = 300
-        nmax = display_limit
-        url_nolimit = request.get_full_path()
+        url_nolimit = request.get_full_path() +"&display_limit="+str(nmax)
+
+
+
+
+
 
     #from django.db import connection
     #print 'SQL query:', connection.queries
