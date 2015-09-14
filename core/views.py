@@ -643,27 +643,27 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
                 job['taskbuffererrordiag'] = 'Rerun scheduled to pick up unprocessed events'
                 job['piloterrorcode'] = 0
                 job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-                job['jobstatus'] = 'finished'
+#                job['jobstatus'] = 'finished'
             if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 112:
                 job['taskbuffererrordiag'] = 'All events processed, merge job created'
                 job['piloterrorcode'] = 0
                 job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-                job['jobstatus'] = 'finished'
+#                job['jobstatus'] = 'finished'
             if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 114:
                 job['taskbuffererrordiag'] = 'No rerun to pick up unprocessed, at max attempts'
                 job['piloterrorcode'] = 0
                 job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-                job['jobstatus'] = 'finished'
+#                job['jobstatus'] = 'finished'
             if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 115:
                 job['taskbuffererrordiag'] = 'No events remaining, other jobs still processing'
                 job['piloterrorcode'] = 0
                 job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-                job['jobstatus'] = 'finished'
+#                job['jobstatus'] = 'finished'
             if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 116:
                 job['taskbuffererrordiag'] = 'No remaining event ranges to allocate'
                 job['piloterrorcode'] = 0
                 job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-                job['jobstatus'] = 'finished'
+#                job['jobstatus'] = 'finished'
             if 'jobmetrics' in job:
                 pat = re.compile('.*mode\=([^\s]+).*HPCStatus\=([A-Za-z0-9]+)')
                 mat = pat.match(job['jobmetrics'])
@@ -3974,8 +3974,8 @@ def jobSummary2(query, exclude={}, mode='drop'):
         statecount['name'] = state
         statecount['count'] = 0
         for job in jobs:
-#            if mode == 'eventservice' and job['jobstatus'] == 'cancelled':
-#                job['jobstatus'] = 'finished'
+            if mode == 'eventservice' and job['jobstatus'] == 'cancelled':
+                job['jobstatus'] = 'finished'
             if job['jobstatus'] == state:
                 statecount['count'] += 1
                 continue
