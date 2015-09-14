@@ -956,15 +956,29 @@ def jobSummaryDict(request, jobs, fieldlist = None):
                 esjobdict[job['pandaid']][s] = 0
     if len(esjobs) > 0:
         sumd['eventservice'] = {}
-        esquery = {}
-        esquery['pandaid__in'] = esjobs
-        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
+
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+        transactionKey = random.randrange(1000000)
+
+        connection.enter_transaction_management()
+        new_cur = connection.cursor()
+        for pandaid in esjobs:
+            new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,pandaid,transactionKey)) # Backend dependable
+        connection.commit()
+
+        new_cur.execute("SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
+        evtable = dictfetchall(new_cur)
+
+        new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+        connection.commit()
+        connection.leave_transaction_management()
+
         for ev in evtable:
-            evstat = eventservicestatelist[ev['status']]
+            evstat = eventservicestatelist[ev['STATUS']]
             if evstat not in sumd['eventservice']:
                 sumd['eventservice'][evstat] = 0
             sumd['eventservice'][evstat] += 1
-            esjobdict[ev['pandaid']][evstat] += 1
+            esjobdict[ev['PANDAID']][evstat] += 1
 
     ## convert to ordered lists
     suml = []
@@ -3945,8 +3959,8 @@ def jobSummary2(query, exclude={}, mode='drop'):
         statecount['name'] = state
         statecount['count'] = 0
         for job in jobs:
-            if mode == 'eventservice' and job['jobstatus'] == 'cancelled':
-                job['jobstatus'] = 'finished'
+#            if mode == 'eventservice' and job['jobstatus'] == 'cancelled':
+#                job['jobstatus'] = 'finished'
             if job['jobstatus'] == state:
                 statecount['count'] += 1
                 continue
