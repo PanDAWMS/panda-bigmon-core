@@ -3570,17 +3570,42 @@ def taskList(request):
         esjobs = []
         for job in jobs:
             esjobs.append(job['pandaid'])
-        esquery = {}
-        esquery['pandaid__in'] = esjobs
-        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
+
+
+
+        random.seed()
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+        transactionKey = random.randrange(1000000)
+        connection.enter_transaction_management()
+        new_cur = connection.cursor()
+        for id in esjobs:
+            new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,id,transactionKey)) # Backend dependable
+        connection.commit()
+        new_cur.execute("SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
+        evtable = dictfetchall(new_cur)
+
+
+#        esquery = {}
+#        esquery['pandaid__in'] = esjobs
+#        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
+
+
+        new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+        connection.commit()
+        connection.leave_transaction_management()
+
+
+
+
+
 
         for ev in evtable:
-            taskid = taskdict[ev['pandaid']]
+            taskid = taskdict[ev['PANDAID']]
             if taskid not in estaskdict:
                 estaskdict[taskid] = {}
                 for s in eventservicestatelist:
                     estaskdict[taskid][s] = 0
-            evstat = eventservicestatelist[ev['status']]
+            evstat = eventservicestatelist[ev['STATUS']]
             estaskdict[taskid][evstat] += 1
         for task in tasks:
             taskid = task['jeditaskid']
