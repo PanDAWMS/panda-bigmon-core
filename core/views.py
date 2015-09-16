@@ -1697,6 +1697,47 @@ def isEventService(job):
     else:
         return False
 
+
+def getSequentialRetries(pandaid, jeditaskid):
+    retryquery = {}
+    retryquery['jeditaskid'] = jeditaskid
+    retryquery['newpandaid'] = pandaid
+    retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
+    newretries = []
+    newretries.extend(retries)
+    for retry in retries:
+        if retry['relationtype'] == 'merge':
+            jsquery = {}
+            jsquery['jeditaskid'] = jeditaskid
+            jsquery['pandaid'] = retry['oldpandaid']
+            values = [ 'pandaid', 'jobstatus', 'jeditaskid' ]
+            jsjobs = []
+            jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
+            for job in jsjobs:
+                if job['jobstatus'] == 'failed':
+                    for retry in newretries:
+                        if retry['oldpandaid'] == job['pandaid']:
+                            retry['relationtype'] = 'retry'
+                    newretries.extend(getSequentialRetries(job['pandaid'], job['jeditaskid']))
+
+    outlist=[]
+    added_keys = set()
+    for row in newretries:
+        lookup = row['oldpandaid']
+        if lookup not in added_keys:
+            outlist.append(row)
+            added_keys.add(lookup)
+
+    return outlist
+
+
+
+
+
 @csrf_exempt
 @cache_page(60*6)
 def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
@@ -1910,14 +1951,18 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     if 'jeditaskid' in job and job['jeditaskid'] > 0:
         print "looking for retries"
         ## Look for retries of this job
+
+
         retryquery = {}
         retryquery['jeditaskid'] = job['jeditaskid']
         retryquery['oldpandaid'] = job['pandaid']
         retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
-        pretryquery = {}
-        pretryquery['jeditaskid'] = job['jeditaskid']
-        pretryquery['newpandaid'] = job['pandaid']
-        pretries = JediJobRetryHistory.objects.filter(**pretryquery).order_by('oldpandaid').reverse().values()
+        if job['jobstatus'] == 'failed':
+            for retry in retries:
+                if retry['relationtype'] == 'merge':
+                    retry['relationtype'] = 'retry'
+
+        pretries = getSequentialRetries(job['pandaid'], job['jeditaskid'])
     else:
         retries = None
         pretries = None
@@ -3880,7 +3925,7 @@ def taskInfo(request, jeditaskid=0):
 #        esquery['pandaid__in'] = esjobs
 #        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
 
- 
+
         for ev in evtable:
             taskid = taskdict[ev['PANDAID']]
             if taskid not in estaskdict:
