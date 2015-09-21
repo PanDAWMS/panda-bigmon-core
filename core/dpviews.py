@@ -38,8 +38,8 @@ from core.common.models import JediTasks
 from core.common.models import Filestable4 
 from core.common.models import FilestableArch
 from core.common.models import JediDatasets
-from core.common.settings.config import ENV
-from core.common.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
+from core.settings.config import ENV
+from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 
 import views as coreviews
 
