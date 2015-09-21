@@ -31,15 +31,15 @@ from boto.dynamodb2.types import STRING_SET
 
 from settings.local import aws
 
-from core.common.models import TRequest, TProject, RequestStatus, ProductionTask, StepTemplate, StepExecution, InputRequestList, ProductionContainer, ProductionDataset, Ttrfconfig
+from atlas.prodtask.models import TRequest, TProject, RequestStatus, ProductionTask, StepTemplate, StepExecution, InputRequestList, ProductionContainer, ProductionDataset, Ttrfconfig
 
 from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived
 from core.common.models import JediTasks
-from core.common.models import Filestable4
+from core.common.models import Filestable4 
 from core.common.models import FilestableArch
 from core.common.models import JediDatasets
-from core.settings.config import ENV
-from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
+from core.common.settings.config import ENV
+from core.common.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 
 import views as coreviews
 
@@ -965,9 +965,33 @@ def doRequest(request):
         'sumeventsl' : sumeventsl,
         'projeventsl' : projeventsl,
     }
-    response = render_to_response('dpMain.html', data, RequestContext(request))
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
-    return response
+    if 'json' in request.session['requestParams']  or request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+        if len(data['slices']) > 0: print data['slices'][0]
+        if len(data['requests']) > 0: print data['requests'][0]
+        if len(data['tasks']) > 0: print data['tasks'][0]
+        if len(data['jeditasks']) > 0: print data['jeditasks'][0]
+        if len(data['datasets']) > 0: print data['datasets'][0]
+        data['requests'] = list(data['requests'])
+        data['slices'] = list(data['slices'])
+        data['tasks'] = list(data['tasks'])
+        data['jeditasks'] = list(data['jeditasks'])
+        data['datasets'] = list(data['datasets'])
+        data['containers'] = list(data['containers'])
+        data['steps'] = list(data['steps'])
+        data['jobsum'] = list(data['jobsum'])
+        jsondump = json.dumps(data, cls=coreviews.DateEncoder)
+        try:
+            fh = open('dpc.json','w')
+            fh.write(jsondump)
+            fh.close()
+            print "wrote json to dpc.json"
+        except:
+            pass
+        return  HttpResponse(jsondump, content_type='application/json')
+    else:
+        response = render_to_response('dpMain.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
+        return response
 
 def attSummaryDict(request, reqs, flist):
     """ Return a dictionary summarizing the field values for the chosen most interesting fields """
