@@ -643,7 +643,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
                 job['taskbuffererrordiag'] = 'Rerun scheduled to pick up unprocessed events'
                 job['piloterrorcode'] = 0
                 job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-                job['jobstatus'] = 'finished'
+#                job['jobstatus'] = 'finished'
             if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 112:
                 job['taskbuffererrordiag'] = 'All events processed, merge job created'
                 job['piloterrorcode'] = 0
@@ -653,7 +653,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
                 job['taskbuffererrordiag'] = 'No rerun to pick up unprocessed, at max attempts'
                 job['piloterrorcode'] = 0
                 job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-                job['jobstatus'] = 'finished'
+#                job['jobstatus'] = 'finished'
             if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 115:
                 job['taskbuffererrordiag'] = 'No events remaining, other jobs still processing'
                 job['piloterrorcode'] = 0
@@ -956,15 +956,30 @@ def jobSummaryDict(request, jobs, fieldlist = None):
                 esjobdict[job['pandaid']][s] = 0
     if len(esjobs) > 0:
         sumd['eventservice'] = {}
-        esquery = {}
-        esquery['pandaid__in'] = esjobs
-        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
+
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+        transactionKey = random.randrange(1000000)
+
+        connection.enter_transaction_management()
+        new_cur = connection.cursor()
+        for pandaid in esjobs:
+            new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,pandaid,transactionKey)) # Backend dependable
+        connection.commit()
+
+        new_cur.execute("SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
+        evtable = dictfetchall(new_cur)
+
+        new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+        connection.commit()
+        connection.leave_transaction_management()
+
         for ev in evtable:
-            evstat = eventservicestatelist[ev['status']]
+
+            evstat = eventservicestatelist[ev['STATUS']]
             if evstat not in sumd['eventservice']:
                 sumd['eventservice'][evstat] = 0
             sumd['eventservice'][evstat] += 1
-            esjobdict[ev['pandaid']][evstat] += 1
+            esjobdict[ev['PANDAID']][evstat] += 1
 
     ## convert to ordered lists
     suml = []
@@ -1682,6 +1697,47 @@ def isEventService(job):
     else:
         return False
 
+
+def getSequentialRetries(pandaid, jeditaskid):
+    retryquery = {}
+    retryquery['jeditaskid'] = jeditaskid
+    retryquery['newpandaid'] = pandaid
+    retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
+    newretries = []
+    newretries.extend(retries)
+    for retry in retries:
+        if retry['relationtype'] == 'merge':
+            jsquery = {}
+            jsquery['jeditaskid'] = jeditaskid
+            jsquery['pandaid'] = retry['oldpandaid']
+            values = [ 'pandaid', 'jobstatus', 'jeditaskid' ]
+            jsjobs = []
+            jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
+            for job in jsjobs:
+                if job['jobstatus'] == 'failed':
+                    for retry in newretries:
+                        if retry['oldpandaid'] == job['pandaid']:
+                            retry['relationtype'] = 'retry'
+                    newretries.extend(getSequentialRetries(job['pandaid'], job['jeditaskid']))
+
+    outlist=[]
+    added_keys = set()
+    for row in newretries:
+        lookup = row['oldpandaid']
+        if lookup not in added_keys:
+            outlist.append(row)
+            added_keys.add(lookup)
+
+    return outlist
+
+
+
+
+
 @csrf_exempt
 @cache_page(60*6)
 def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
@@ -1895,14 +1951,18 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     if 'jeditaskid' in job and job['jeditaskid'] > 0:
         print "looking for retries"
         ## Look for retries of this job
+
+
         retryquery = {}
         retryquery['jeditaskid'] = job['jeditaskid']
         retryquery['oldpandaid'] = job['pandaid']
         retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
-        pretryquery = {}
-        pretryquery['jeditaskid'] = job['jeditaskid']
-        pretryquery['newpandaid'] = job['pandaid']
-        pretries = JediJobRetryHistory.objects.filter(**pretryquery).order_by('oldpandaid').reverse().values()
+        if job['jobstatus'] == 'failed':
+            for retry in retries:
+                if retry['relationtype'] == 'merge':
+                    retry['relationtype'] = 'retry'
+
+        pretries = getSequentialRetries(job['pandaid'], job['jeditaskid'])
     else:
         retries = None
         pretries = None
@@ -3492,14 +3552,29 @@ def taskList(request):
     ntasks = len(tasks)
     nmax = ntasks
 
-    if 'display_limit' in request.session['requestParams'] and int(request.session['requestParams']['display_limit']) < nmax:
+#    if 'display_limit' in request.session['requestParams']:
+#            and int(request.session['requestParams']['display_limit']) < nmax:
+#        display_limit = int(request.session['requestParams']['display_limit'])
+#        nmax = display_limit
+#        url_nolimit = removeParam(request.get_full_path(), 'display_limit')
+#    else:
+#        display_limit = 300
+#        nmax = display_limit
+#        url_nolimit = request.get_full_path()
+
+
+    if 'display_limit' not in request.session['requestParams']:
+        display_limit = 300
+        url_nolimit = request.get_full_path() +"&display_limit="+str(nmax)
+    else:
         display_limit = int(request.session['requestParams']['display_limit'])
         nmax = display_limit
-        url_nolimit = removeParam(request.get_full_path(), 'display_limit')
-    else:
-        display_limit = 300
-        nmax = display_limit
-        url_nolimit = request.get_full_path()
+        url_nolimit = request.get_full_path() +"&display_limit="+str(nmax)
+
+
+
+
+
 
     #from django.db import connection
     #print 'SQL query:', connection.queries
@@ -3541,17 +3616,42 @@ def taskList(request):
         esjobs = []
         for job in jobs:
             esjobs.append(job['pandaid'])
-        esquery = {}
-        esquery['pandaid__in'] = esjobs
-        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
+
+
+
+        random.seed()
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+        transactionKey = random.randrange(1000000)
+        connection.enter_transaction_management()
+        new_cur = connection.cursor()
+        for id in esjobs:
+            new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,id,transactionKey)) # Backend dependable
+        connection.commit()
+        new_cur.execute("SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
+        evtable = dictfetchall(new_cur)
+
+
+#        esquery = {}
+#        esquery['pandaid__in'] = esjobs
+#        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
+
+
+        new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+        connection.commit()
+        connection.leave_transaction_management()
+
+
+
+
+
 
         for ev in evtable:
-            taskid = taskdict[ev['pandaid']]
+            taskid = taskdict[ev['PANDAID']]
             if taskid not in estaskdict:
                 estaskdict[taskid] = {}
                 for s in eventservicestatelist:
                     estaskdict[taskid][s] = 0
-            evstat = eventservicestatelist[ev['status']]
+            evstat = eventservicestatelist[ev['STATUS']]
             estaskdict[taskid][evstat] += 1
         for task in tasks:
             taskid = task['jeditaskid']
@@ -3804,16 +3904,37 @@ def taskInfo(request, jeditaskid=0):
         for job in jobs:
             esjobs.append(job['pandaid'])
         esquery = {}
-        esquery['pandaid__in'] = esjobs
-        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
+
+
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+        transactionKey = random.randrange(1000000)
+
+        connection.enter_transaction_management()
+        new_cur = connection.cursor()
+        for pandaid in esjobs:
+            new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,pandaid,transactionKey)) # Backend dependable
+        connection.commit()
+
+        new_cur.execute("SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
+        evtable = dictfetchall(new_cur)
+
+        new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+        connection.commit()
+        connection.leave_transaction_management()
+
+#        esquery['pandaid__in'] = esjobs
+#        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
+
+
         for ev in evtable:
-            taskid = taskdict[ev['pandaid']]
+            taskid = taskdict[ev['PANDAID']]
             if taskid not in estaskdict:
                 estaskdict[taskid] = {}
                 for s in eventservicestatelist:
                     estaskdict[taskid][s] = 0
-            evstat = eventservicestatelist[ev['status']]
+            evstat = eventservicestatelist[ev['STATUS']]
             estaskdict[taskid][evstat] += 1
+
         if jeditaskid in estaskdict:
             estaskstr = ''
             for s in estaskdict[jeditaskid]:
