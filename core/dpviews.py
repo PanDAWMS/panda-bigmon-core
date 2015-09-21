@@ -31,7 +31,7 @@ from boto.dynamodb2.types import STRING_SET
 
 from settings.local import aws
 
-from atlas.prodtask.models import TRequest, TProject, RequestStatus, ProductionTask, StepTemplate, StepExecution, InputRequestList, ProductionContainer, ProductionDataset, Ttrfconfig
+from core.common.models import TRequest, TProject, RequestStatus, ProductionTask, StepTemplate, StepExecution, InputRequestList, ProductionContainer, ProductionDataset, Ttrfconfig
 
 from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived
 from core.common.models import JediTasks
