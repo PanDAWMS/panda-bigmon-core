@@ -5635,6 +5635,45 @@ def addJobMetadata(jobs, require = False):
 
 ##self monitor
 
+def g4exceptions(request):
+
+    if 'hours' in request.session['requestParams']:
+        hours = int(request.session['requestParams']['hours'])
+    else:
+        hours = 3
+
+    query,wildCardExtension  = setupView(request, hours=hours, wildCardExt=True)
+    query['jobstatus__in'] = [ 'failed', 'holding' ]
+    query['exeerrordiag__icontains'] = 'G4 exception'
+    values = 'pandaid', 'atlasrelease',  'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'currentpriority', 'computingelement'
+
+
+
+    jobs = []
+    jobs.extend(Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
+    jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
+    if (((datetime.now() - datetime.strptime(query['modificationtime__range'][0], "%Y-%m-%d %H:%M:%S" )).days > 1) or \
+        ((datetime.now() - datetime.strptime(query['modificationtime__range'][1], "%Y-%m-%d %H:%M:%S" )).days > 1)):
+        jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
+
+    jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta = True)
+
+    for job in jobs:
+        print job
+
+# "G4Exception : GeomNav0003\nissued by
+#   "details"
+
+    #if request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    resp = []
+        #for job in jobs:
+        #    resp.append({ 'pandaid': job.pandaid, 'status': job.jobstatus, 'prodsourcelabel': job.prodsourcelabel, 'produserid' : job.produserid})
+    del request.session['TFIRST']
+    del request.session['TLAST']
+    return  HttpResponse(json.dumps(resp), mimetype='text/html')
+
+
+
 def initSelfMonitor(request):
     import psutil
     server=request.session['hostname'],

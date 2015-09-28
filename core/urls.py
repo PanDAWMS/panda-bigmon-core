@@ -49,6 +49,10 @@ urlpatterns = patterns('',
     url(r'^workQueues/$', coremon_views.workQueues, name='workQueues'),
     url(r'^preprocess/$', coremon_views.preProcess, name='preprocess'),
 
+    url(r'^g4exceptions/$', coremon_views.g4exceptions, name='g4exceptions'),
+
+
+
 #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
 
     ### data product catalog prototyping                                                                                                                                                         
@@ -65,6 +69,8 @@ urlpatterns = patterns('',
     url(r'^support/maxpandaid/$', core_coremon_support_views.maxpandaid, name='supportMaxpandaid'),
     url(r'^support/jobinfouservohrs/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<nhours>\d+)/$', core_coremon_support_views.jobUserOrig, name='supportJobUserVoHrs'),
     url(r'^support/jobinfouservo/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<ndays>\d+)/$', core_coremon_support_views.jobUserDaysOrig, name='supportJobUserVo'),
+
+
 
 
     ###self monitor
