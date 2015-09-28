@@ -5636,7 +5636,8 @@ def addJobMetadata(jobs, require = False):
 ##self monitor
 
 def g4exceptions(request):
-
+    valid, response = initRequest(request)
+    setupView(request, hours=365*24, limit=999999999)
     if 'hours' in request.session['requestParams']:
         hours = int(request.session['requestParams']['hours'])
     else:
@@ -5644,10 +5645,9 @@ def g4exceptions(request):
 
     query,wildCardExtension  = setupView(request, hours=hours, wildCardExt=True)
     query['jobstatus__in'] = [ 'failed', 'holding' ]
+    query['exeerrorcode'] = 68
     query['exeerrordiag__icontains'] = 'G4 exception'
-    values = 'pandaid', 'atlasrelease',  'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'currentpriority', 'computingelement'
-
-
+    values = 'pandaid', 'atlasrelease',  'exeerrorcode', 'exeerrordiag', 'jobstatus', 'transformation'
 
     jobs = []
     jobs.extend(Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
@@ -5656,21 +5656,30 @@ def g4exceptions(request):
         ((datetime.now() - datetime.strptime(query['modificationtime__range'][1], "%Y-%m-%d %H:%M:%S" )).days > 1)):
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
 
-    jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta = True)
+    jobs = addJobMetadata(jobs, True)
+    errorFrequency = {}
+    errorJobs = {}
 
     for job in jobs:
-        print job
+        if (job['metastruct']['executor'][0]['logfileReport']['countSummary']['FATAL'] > 0):
+            message = job['metastruct']['executor'][0]['logfileReport']['details']['FATAL'][0]['message']
+            exceptMess = message[message.find("G4Exception :") + 14 : message.find("issued by :") -1 ]
+            if exceptMess not in errorFrequency:
+                errorFrequency[exceptMess] = 1
+            else:
+                errorFrequency[exceptMess] += 1
 
-# "G4Exception : GeomNav0003\nissued by
-#   "details"
+            if exceptMess not in errorJobs:
+                errorJobs[exceptMess] = []
+                errorJobs[exceptMess].append(job['pandaid'])
+            else:
+                errorJobs[exceptMess].append(job['pandaid'])
 
-    #if request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
-    resp = []
-        #for job in jobs:
-        #    resp.append({ 'pandaid': job.pandaid, 'status': job.jobstatus, 'prodsourcelabel': job.prodsourcelabel, 'produserid' : job.produserid})
+    resp = {'errorFrequency': errorFrequency, 'errorJobs':errorJobs}
+
     del request.session['TFIRST']
     del request.session['TLAST']
-    return  HttpResponse(json.dumps(resp), mimetype='text/html')
+    return  HttpResponse(json.dumps(resp), content_type='text/plain')
 
 
 
