@@ -5643,6 +5643,9 @@ def g4exceptions(request):
     else:
         hours = 3
 
+    #ATLASRELEASE , example:
+    #JOBPARAMSTABLE, JOBPARAMETERS, PANDAID, --AMITag=e4387
+
     query,wildCardExtension  = setupView(request, hours=hours, wildCardExt=True)
     query['jobstatus__in'] = [ 'failed', 'holding' ]
     query['exeerrorcode'] = 68
@@ -5655,6 +5658,37 @@ def g4exceptions(request):
     if (((datetime.now() - datetime.strptime(query['modificationtime__range'][0], "%Y-%m-%d %H:%M:%S" )).days > 1) or \
         ((datetime.now() - datetime.strptime(query['modificationtime__range'][1], "%Y-%m-%d %H:%M:%S" )).days > 1)):
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
+
+    if 'amitag' in request.session['requestParams']:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+        transactionKey = random.randrange(1000000)
+        connection.enter_transaction_management()
+        new_cur = connection.cursor()
+        for job in jobs:
+            new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,job['pandaid'],transactionKey)) # Backend dependable
+        connection.commit()
+        new_cur.execute("SELECT JOBPARAMETERS, PANDAID FROM ATLAS_PANDA.JOBPARAMSTABLE WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
+        mrecs = dictfetchall(new_cur)
+        connection.commit()
+        connection.leave_transaction_management()
+        jobsToRemove = set()
+        for rec in mrecs:
+            acceptJob = True
+            parameters = rec['JOBPARAMETERS'].read()
+            tagName = "--AMITag"
+            startPos = parameters.find(tagName)
+            if startPos == -1:
+                acceptJob = False
+            endPos = parameters.find(" ", startPos)
+            AMITag = parameters[startPos+len(tagName)+1:endPos]
+            if AMITag != request.session['requestParams']['amitag']:
+                acceptJob = False
+            if acceptJob == False:
+                jobsToRemove.add(rec['PANDAID'])
+
+        jobs = filter(lambda x: not x['pandaid'] in jobsToRemove, jobs)
+
+
 
     jobs = addJobMetadata(jobs, True)
     errorFrequency = {}
