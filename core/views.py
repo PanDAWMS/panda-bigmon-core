@@ -3635,15 +3635,9 @@ def taskList(request):
 #        esquery['pandaid__in'] = esjobs
 #        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
 
-
         new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
         connection.commit()
         connection.leave_transaction_management()
-
-
-
-
-
 
         for ev in evtable:
             taskid = taskdict[ev['PANDAID']]
@@ -3943,10 +3937,30 @@ def taskInfo(request, jeditaskid=0):
             taskrec['estaskstr'] = estaskstr
 
     if request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
-        resp = []
+
+        del tasks
+        del columns
+        del ds
+        taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
+        taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
+        taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
+        taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
+
+        for dset in dsets:
+            dset['creationtime'] = dset['creationtime'].strftime(defaultDatetimeFormat)
+            dset['modificationtime'] = dset['modificationtime'].strftime(defaultDatetimeFormat)
+            if dset['statechecktime'] is not None:
+                dset['statechecktime'] = dset['statechecktime'].strftime(defaultDatetimeFormat)
+
+        data = {
+            'task' : taskrec,
+            'taskparams' : taskparams,
+            'datasets' : dsets,
+        }
+
         del request.session['TFIRST']
         del request.session['TLAST']
-        return  HttpResponse(json.dumps(resp), mimetype='text/html') 
+        return  HttpResponse(json.dumps(data), mimetype='text/html')
     else:
         attrs = []
         do_redirect = False
@@ -3985,6 +3999,7 @@ def taskInfo(request, jeditaskid=0):
         data.update(getContextVariables(request))
         ##self monitor
         endSelfMonitor(request)
+
         if eventservice:
             response = render_to_response('taskInfoES.html', data, RequestContext(request))       
         else:
@@ -5643,8 +5658,6 @@ def g4exceptions(request):
     else:
         hours = 3
 
-    #ATLASRELEASE , example:
-    #JOBPARAMSTABLE, JOBPARAMETERS, PANDAID, --AMITag=e4387
 
     query,wildCardExtension  = setupView(request, hours=hours, wildCardExt=True)
     query['jobstatus__in'] = [ 'failed', 'holding' ]
