@@ -1636,6 +1636,7 @@ def jobList(request, mode=None, param=None):
         TLAST = request.session['TLAST']
         del request.session['TFIRST']
         del request.session['TLAST']
+        nodropPartURL = cleanURLFromDropPart(xurl)
         data = {
             'prefix': getPrefix(request),
             'errsByCount' : errsByCount,
@@ -1666,6 +1667,7 @@ def jobList(request, mode=None, param=None):
             'nosorturl' : nosorturl,
             'taskname' : taskname,
             'flowstruct' : flowstruct,
+            'nodropPartURL':nodropPartURL,
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -1697,6 +1699,18 @@ def isEventService(job):
     else:
         return False
 
+def cleanURLFromDropPart(url):
+    posDropPart = url.find('mode')
+    if ( posDropPart== -1):
+        return url
+    else:
+        if url[posDropPart-1] == '&':
+            posDropPart -= 1
+        nextAmp = url.find('&', posDropPart+1)
+        if nextAmp == -1:
+            return url[0:posDropPart]
+        else:
+            return url[0:posDropPart] + url[nextAmp+1:]
 
 def getSequentialRetries(pandaid, jeditaskid):
     retryquery = {}

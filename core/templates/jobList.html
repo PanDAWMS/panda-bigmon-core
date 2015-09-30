@@ -68,7 +68,7 @@ function toggleDetailDisplay(className) {
 <b>{{ ndrops }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
 
 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('retries');"><br>Click to show/hide dropped jobs</a>
-
+<br><a href="{{xurl}}&mode=nodrop">Switch to nodrop mode</a>
 <div class="retries" style="display:none">
 <font size=-1>
 <br>Dropped (retry):<br>
