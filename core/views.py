@@ -2719,14 +2719,21 @@ def wnSummary(query):
 @cache_page(60*6)
 def wnInfo(request,site,wnname='all'):
     """ Give worker node level breakdown of site activity. Spot hot nodes, error prone nodes. """
+
+    if 'hours' in request.REQUEST:
+        hours = int(request.REQUEST['hours'])
+    else:
+        hours=12
+
     valid, response = initRequest(request)
     if not valid: return response
     errthreshold = 15
+
     if wnname != 'all':
-        query = setupView(request,hours=12,limit=999999)
+        query = setupView(request,hours=hours,limit=999999)
         query['modificationhost__endswith'] = wnname
     else:
-        query = setupView(request,hours=12,limit=999999)
+        query = setupView(request,hours=hours,limit=999999)
     query['computingsite'] = site
     wnsummarydata = wnSummary(query)
     totstates = {}
