@@ -81,6 +81,13 @@ function toggleDetailDisplay(className) {
 <p>
 {% endif %}
 
+{% if ndrops < 0 %}
+<table width=900><tr><td class='highlightcell'>
+    <a href="{{xurl}}&mode=nodrop">Switch to nodrop mode</a>
+</table>
+{% endif %}
+
+
 {% if jobList %}
 
 <table>
