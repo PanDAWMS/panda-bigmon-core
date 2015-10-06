@@ -7,6 +7,12 @@ import copy
 import itertools, random
 import string as strm
 
+import cgi
+import urlparse
+from urllib import urlencode
+from urlparse import urlparse, urlunparse, parse_qs
+
+
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, render, redirect
@@ -161,8 +167,15 @@ def initRequest(request):
     viewParams = {}
     #if not 'viewParams' in request.session:
     request.session['viewParams'] = viewParams
-    
-    
+
+    url = request.get_full_path()
+    u = urlparse(url)
+    query = parse_qs(u.query)
+    query.pop('timestamp', None)
+    u = u._replace(query=urlencode(query, True))
+    request.session['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
+
+
     if 'USER' in os.environ and os.environ['USER'] != 'apache':
         request.session['debug'] = True
     elif 'debug' in request.GET and request.GET['debug'] == 'insider':
@@ -1219,7 +1232,8 @@ def wgTaskSummary(request, fieldname='workinggroup', view='production', taskdays
     if 'project' in request.session['requestParams']:
         query['taskname__istartswith'] = request.session['requestParams']['project']
 
-
+#    if fieldname=='cloud':
+#        query['status'] = 'done'
 
     summary = JediTasks.objects.filter(**query).values(fieldname,'status').annotate(Count('status')).order_by(fieldname,'status')
     totstates = {}

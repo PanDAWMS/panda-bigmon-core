@@ -443,7 +443,7 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
     <!-- bread-crumbs -->
     <div class="right">
       {% block header-nav-chain %}
-      <span class="hide-for-small"><font size=-1>{% if request.session.hostname %}{{ request.session.hostname }}{% endif %} Built  {% now "H:i" %}{% if request.session.max_age_minutes %}, cache {{ request.session.max_age_minutes }}'{% endif %}</font></span>
+      <span class="hide-for-small"><font size=-1>{% if request.session.hostname %}{{ request.session.hostname }}{% endif %} Built  {% now "H:i" %}{% if request.session.max_age_minutes %}, cache {{ request.session.max_age_minutes }}' <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i" %}">Actual version</a> {% endif %}</font></span>
       {% endblock %}
     </div>
     <!-- End bread-crumbs -->
