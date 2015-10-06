@@ -7,8 +7,6 @@ import copy
 import itertools, random
 import string as strm
 
-import cgi
-import urlparse
 from urllib import urlencode
 from urlparse import urlparse, urlunparse, parse_qs
 
@@ -1231,9 +1229,6 @@ def wgTaskSummary(request, fieldname='workinggroup', view='production', taskdays
 
     if 'project' in request.session['requestParams']:
         query['taskname__istartswith'] = request.session['requestParams']['project']
-
-#    if fieldname=='cloud':
-#        query['status'] = 'done'
 
     summary = JediTasks.objects.filter(**query).values(fieldname,'status').annotate(Count('status')).order_by(fieldname,'status')
     totstates = {}
