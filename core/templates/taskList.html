@@ -100,12 +100,12 @@ Too many to list
 		<td><font size=-1><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %} {% if task.campaign %} &nbsp; <a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %} &nbsp; {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a> &nbsp; {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %} &nbsp; <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %} 
 {% if task.deftreqid %} &nbsp; RequestID:<a href="http://bigpanda.cern.ch/prodsys/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a> {% endif %}  &nbsp; <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}">Errors</a>
 		<br><font color='brown'>{{ task.errordialog|safe }}</font></td>
-        <td  {% if task.failedscouting == True %}  class='failedscouting_fill'
-             {% elif task.scoutinghascritfailures == True %} class='broken_fill'
+        <td  {% if task.scoutinghascritfailures == True %} class='broken_fill'
              {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
              {% else %}class='{{task.superstatus}}_fill'
              {% endif %}>
-            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} {{ task.superstatus }} {% else %} {{ task.status }} {% endif %}</a>        {% if task.dsinfo.nfiles > 0 %} <br>{{task.dsinfo.nfiles}} {% endif %} </td>
+            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} {{ task.superstatus }} {% else %} {{ task.status }} {% endif %}</a> {% if task.failedscouting == True %}<br>during scouting{%endif%}
+                    {% if task.dsinfo.nfiles > 0 %} <br>{{task.dsinfo.nfiles}} {% endif %} </td>
         <td>{% if task.dsinfo.nfilesfinished > 0 %}<span  class='finished'>{{task.dsinfo.pctfinished}}%</span>{% endif %} {% if task.dsinfo.nfilesfailed > 0 %}<a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span class='failed'> {{task.dsinfo.pctfailed}}%</span>{% endif %}</a>
         <br> {% if task.dsinfo.nfilesfinished > 0 %} <span  class='finished'>{{ task.dsinfo.nfilesfinished }}</span> {% endif %} &nbsp; {% if task.dsinfo.nfilesfailed > 0 %} <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span  class='failed'>{{ task.dsinfo.nfilesfailed }}</span></a> {% endif %}
 		</td>
