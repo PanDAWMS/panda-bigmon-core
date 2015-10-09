@@ -80,7 +80,7 @@ cloudList = [ 'CA', 'CERN', 'DE', 'ES', 'FR', 'IT', 'ND', 'NL', 'RU', 'TW', 'UK'
 statelist = [ 'defined', 'waiting', 'pending', 'assigned', 'throttled', \
              'activated', 'sent', 'starting', 'running', 'holding', \
              'transferring', 'finished', 'failed', 'cancelled', 'merging']
-sitestatelist = [ 'defined', 'waiting', 'assigned', 'throttled',  'activated', 'sent', 'starting', 'running', 'holding', 'transferring', 'finished', 'failed', 'cancelled' ]
+sitestatelist = [ 'defined', 'waiting', 'assigned', 'throttled',  'activated', 'sent', 'starting', 'running', 'holding', 'merging', 'transferring', 'finished', 'failed', 'cancelled' ]
 eventservicestatelist = [ 'ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed' ]
 taskstatelist = [ 'registered', 'defined', 'assigning', 'ready', 'pending', 'scouting', 'scouted', 'running', 'prepared', 'done', 'failed', 'finished', 'aborting', 'aborted', 'finishing', 'topreprocess', 'preprocessing', 'tobroken', 'broken', 'toretry', 'toincexec', 'rerefine' ]
 taskstatelist_short = [ 'reg', 'def', 'assgn', 'rdy', 'pend', 'scout', 'sctd', 'run', 'prep', 'done', 'fail', 'finish', 'abrtg', 'abrtd', 'finishg', 'toprep', 'preprc', 'tobrok', 'broken', 'retry', 'incexe', 'refine' ]
