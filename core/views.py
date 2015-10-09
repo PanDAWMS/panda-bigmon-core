@@ -3621,7 +3621,7 @@ def taskList(request):
 
     taskStatuses = dict((task['jeditaskid'], task['status']) for task in tasks)
 
-    failedInScouting = [ item['jeditaskid'] for item in failedInScouting if (taskStatuses[item['jeditaskid']] not in ('scouting'))]
+    failedInScouting = [ item['jeditaskid'] for item in failedInScouting if (taskStatuses[item['jeditaskid']] in ('failed', 'broken'))]
 
     #scoutingHasCritFailures
     tquery['nfilesfailed__gt'] = 0
