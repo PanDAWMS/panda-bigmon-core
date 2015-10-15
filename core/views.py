@@ -1299,7 +1299,7 @@ def mainPage(request):
         for env in os.environ:
             debuginfo += "%s = %s<br>" % ( env, os.environ[env] )
 
-    if (((request.META.get('HTTP_ACCEPT') in ('application/json')))) and ('json' not in request.session['requestParams']):
+    if (not (request.META.get('HTTP_ACCEPT') in ('application/json'))) and ('json' not in request.session['requestParams']):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
