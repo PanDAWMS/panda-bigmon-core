@@ -1299,7 +1299,7 @@ def mainPage(request):
         for env in os.environ:
             debuginfo += "%s = %s<br>" % ( env, os.environ[env] )
 
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
@@ -1315,7 +1315,7 @@ def mainPage(request):
         response = render_to_response('core-mainPage.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    elif (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
         return  HttpResponse('json', mimetype='text/html')
     else:
         return  HttpResponse('not understood', mimetype='text/html')
@@ -1399,7 +1399,7 @@ def jobParamList(request):
     query = {}
     query['pandaid__in'] = idlist
     jobparams = Jobparamstable.objects.filter(**query).values()
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    if (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
         return HttpResponse(json.dumps(jobparams, cls=DateEncoder), mimetype='text/html')
     else:
         return HttpResponse('not supported', mimetype='text/html')
@@ -1423,7 +1423,8 @@ def jobList(request, mode=None, param=None):
     if 'batchid' in request.session['requestParams']:
         query['batchid'] = request.session['requestParams']['batchid']
     jobs = []
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+
+    if (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
         values = Jobsactive4._meta.get_all_field_names()
     elif eventservice:
         values = 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime'
@@ -1622,7 +1623,9 @@ def jobList(request, mode=None, param=None):
     else:
         showwarn=1
 
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+
+
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         sumd, esjobdict = jobSummaryDict(request, jobs)
         testjobs = False
 
@@ -1690,7 +1693,7 @@ def jobList(request, mode=None, param=None):
             response = render_to_response('jobList.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         del request.session['TFIRST']
         del request.session['TLAST']
         if (('fields' in request.session['requestParams']) and (len(jobs) > 0)):
@@ -2072,7 +2075,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         if len(errorinfo) > 0:
             job['errorinfo'] = errorinfo
 
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
@@ -2116,7 +2119,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             response = render_to_response('jobInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    elif (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
         del request.session['TFIRST']
         del request.session['TLAST']
         return  HttpResponse('json', mimetype='text/html')
@@ -2229,7 +2232,7 @@ def userList(request):
             
         jobsumd = jobSummaryDict(request, jobs, sumparams)[0]
         
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         TFIRST = request.session['TFIRST']
         TLAST = request.session['TLAST']
         del request.session['TFIRST']
@@ -2255,7 +2258,7 @@ def userList(request):
         response = render_to_response('userList.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    elif (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = sumd
@@ -2363,7 +2366,7 @@ def userInfo(request, user=''):
         njobsmax = display_limit
         url_nolimit = request.get_full_path()
 
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         sumd = userSummaryDict(jobs)
         flist =  [ 'jobstatus', 'prodsourcelabel', 'processingtype', 'specialhandling', 'transformation', 'jobsetid', 'jeditaskid', 'computingsite', 'cloud', 'workinggroup', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'priorityrange', 'jobsetrange' ]
         if VOMODE != 'atlas':
@@ -2424,7 +2427,7 @@ def userInfo(request, user=''):
         response = render_to_response('userInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = sumd
@@ -2516,7 +2519,7 @@ def siteList(request):
         clouds = None
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby',mode='extensible')
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         sumd = siteSummaryDict(sites)
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -2537,7 +2540,7 @@ def siteList(request):
         response = render_to_response('siteList.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = sites
@@ -2569,7 +2572,7 @@ def siteInfo(request, site=''):
     except AttributeError:
         pass
 
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         attrs = []
         if siterec:
             attrs.append({'name' : 'GOC name', 'value' : siterec.gocname })
@@ -2635,7 +2638,7 @@ def siteInfo(request, site=''):
         response = render_to_response('siteInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = []
@@ -2882,7 +2885,7 @@ def wnInfo(request,site,wnname='all'):
     for k in kys:
         wnPlotFinishedL.append( [ k, wnPlotFinished[k] ] )
 
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         xurl = extensibleURL(request)
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -2906,7 +2909,7 @@ def wnInfo(request,site,wnname='all'):
         response = render_to_response('wnInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = []
@@ -3422,7 +3425,7 @@ def dashboard(request, view='production'):
             
             
     request.session['max_age_minutes'] = 6
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby',mode='extensible')
         del request.session['TFIRST']
@@ -3457,7 +3460,7 @@ def dashboard(request, view='production'):
         response = render_to_response('dashboard.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = []
@@ -3523,7 +3526,7 @@ def dashTasks(request, hours, view='production'):
         if cloud['name'] in rwData.keys():
             rw[cloud['name']] = rwData[cloud['name']]
 
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby',mode='extensible')
         del request.session['TFIRST']
@@ -3553,7 +3556,7 @@ def dashTasks(request, hours, view='production'):
         response = render_to_response('dashboard.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = []
@@ -3717,7 +3720,7 @@ def taskList(request):
     flowstruct = buildGoogleFlowDiagram(request, tasks=tasks)
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby',mode='extensible')
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    if (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
         ## Add info to the json dump if the request is for a single task
         if len(tasks) == 1:
             id = tasks[0]['jeditaskid']
@@ -3993,7 +3996,7 @@ def taskInfo(request, jeditaskid=0):
                     estaskstr += " %s(%s) " % ( s, estaskdict[jeditaskid][s] )
             taskrec['estaskstr'] = estaskstr
 
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    if (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
 
         del tasks
         del columns
@@ -4501,7 +4504,7 @@ def errorSummary(request):
 
 
     request.session['max_age_minutes'] = 6
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         nosorturl = removeParam(request.get_full_path(), 'sortby')
         xurl = extensibleURL(request)
         jobsurl = xurl.replace('/errors/','/jobs/')
@@ -4543,7 +4546,7 @@ def errorSummary(request):
         response = render_to_response('errorSummary.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = []
@@ -4659,7 +4662,7 @@ def incidentList(request):
     del request.session['TFIRST']
     del request.session['TLAST']
 
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
         data = {
             'request' : request,
             'viewParams' : request.session['viewParams'],
@@ -4677,7 +4680,7 @@ def incidentList(request):
         response = render_to_response('incidents.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         clearedInc = []
         for inc in incidents:
             entry = {}
@@ -4809,13 +4812,13 @@ def pandaLogger(request):
         'hours' : hours,
         'getrecs' : getrecs,
     }
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         ##self monitor
         endSelfMonitor(request)
         response = render_to_response('pandaLogger.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    if (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
         resp = data
         return  HttpResponse(json.dumps(resp), mimetype='text/html')
 
@@ -4874,7 +4877,7 @@ def workingGroups(request):
         wgsummary.append(wgs[wg])
     if len(wgsummary) == 0: wgsummary = None
 
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         xurl = extensibleURL(request)
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -4897,7 +4900,7 @@ def workingGroups(request):
         response = render_to_response('workingGroups.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = []
@@ -4958,7 +4961,7 @@ def datasetInfo(request):
             columns.append(pair)
     del request.session['TFIRST']
     del request.session['TLAST']
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         data = {
             'request' : request,
             'viewParams' : request.session['viewParams'],
@@ -4973,7 +4976,7 @@ def datasetInfo(request):
         response = render_to_response('datasetInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         return  HttpResponse(json.dumps(dsrec), mimetype='text/html')
 
 def datasetList(request):
@@ -4992,7 +4995,7 @@ def datasetList(request):
 
     del request.session['TFIRST']
     del request.session['TLAST']
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         data = {
             'viewParams' : request.session['viewParams'],
             'requestParams' : request.session['requestParams'],
@@ -5004,7 +5007,7 @@ def datasetList(request):
         response = render_to_response('datasetList.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         return  HttpResponse(json.dumps(dsrec), mimetype='text/html')
 
 def fileInfo(request):
@@ -5085,7 +5088,7 @@ def fileInfo(request):
             files = sorted(files, key=lambda k: (-k['jeditaskid'], k['startevent']))
 
 
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         data = {
             'request' : request,
             'viewParams' : request.session['viewParams'],
@@ -5101,7 +5104,7 @@ def fileInfo(request):
         response = render_to_response('fileInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         return  HttpResponse(json.dumps(dsrec), mimetype='text/html')
 
 def fileList(request):
@@ -5143,7 +5146,7 @@ def fileList(request):
     nfiles = len(filed)
     del request.session['TFIRST']
     del request.session['TLAST']
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         data = {
             'request' : request,
             'viewParams' : request.session['viewParams'],
@@ -5157,7 +5160,7 @@ def fileList(request):
         response = render_to_response('fileList.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         return  HttpResponse(json.dumps(files), mimetype='text/html')
 
 @cache_page(60*6)
@@ -5175,7 +5178,7 @@ def workQueues(request):
 
     del request.session['TFIRST']
     del request.session['TLAST']
-    if request.META.get('CONTENT_TYPE', 'text/plain') == 'text/plain':
+    if (request.META.get('HTTP_ACCEPT') in ('text/plain', 'text/html')) and ('json' not in request.session['requestParams']):
         data = {
             'request' : request,
             'viewParams' : request.session['viewParams'],
@@ -5188,7 +5191,7 @@ def workQueues(request):
         response = render_to_response('workQueues.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
+    else:
         return  HttpResponse(json.dumps(queues), mimetype='text/html')
 
 def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values = standard_fields, count = False, wildCardExtension='(1=1)'):
