@@ -1315,7 +1315,7 @@ def mainPage(request):
         response = render_to_response('core-mainPage.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
+    elif ( ('HTTP_ACCEPT' in request.META) and request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
         return  HttpResponse('json', mimetype='text/html')
     else:
         return  HttpResponse('not understood', mimetype='text/html')
@@ -1399,7 +1399,7 @@ def jobParamList(request):
     query = {}
     query['pandaid__in'] = idlist
     jobparams = Jobparamstable.objects.filter(**query).values()
-    if (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
+    if ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
         return HttpResponse(json.dumps(jobparams, cls=DateEncoder), mimetype='text/html')
     else:
         return HttpResponse('not supported', mimetype='text/html')
@@ -1424,7 +1424,7 @@ def jobList(request, mode=None, param=None):
         query['batchid'] = request.session['requestParams']['batchid']
     jobs = []
 
-    if (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
+    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
         values = Jobsactive4._meta.get_all_field_names()
     elif eventservice:
         values = 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime'
@@ -1572,7 +1572,7 @@ def jobList(request, mode=None, param=None):
     ## set up google flow diagram
     flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
 
-    if (('datasets' in request.session['requestParams']) and (request.session['requestParams']['datasets'] == 'yes') and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))):
+    if (('datasets' in request.session['requestParams']) and (request.session['requestParams']['datasets'] == 'yes') and (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')))):
         for job in jobs:
             files = []
             files.extend(JediDatasetContents.objects.filter(pandaid=pandaid).order_by('type').values())
@@ -2119,7 +2119,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             response = render_to_response('jobInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
+    elif (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
         del request.session['TFIRST']
         del request.session['TLAST']
         return  HttpResponse('json', mimetype='text/html')
@@ -2258,7 +2258,7 @@ def userList(request):
         response = render_to_response('userList.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
-    elif (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or ('json' in request.session['requestParams']):
+    elif (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = sumd
