@@ -1872,7 +1872,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     if 'nofiles' not in request.session['requestParams']:
         ## Get job files. First look in JEDI datasetcontents
         print "Pulling file info"
-        files.extend(JediDatasetContents.objects.filter(pandaid=pandaid).order_by('type').values())
+        files.extend(Filestable4.objects.filter(pandaid=pandaid).order_by('type').values())
         ninput = 0
         noutput = 0
         npseudo_input = 0
@@ -1898,7 +1898,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 if (i == 'input'): fileSummary += ', size: '+inputFilesSize+'(MB)'
                 fileSummary += '; '
             fileSummary = fileSummary[:-2]
-        files.extend(Filestable4.objects.filter(pandaid=pandaid).order_by('type').values())
         if len(files) == 0:
             files.extend(FilestableArch.objects.filter(pandaid=pandaid).order_by('type').values())
         if len(files) > 0:
