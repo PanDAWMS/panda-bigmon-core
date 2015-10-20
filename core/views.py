@@ -3333,7 +3333,6 @@ def dashboard(request, view='production'):
     valid, response = initRequest(request)
     if not valid: return response
     taskdays = 3
-
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         VOMODE = 'atlas'
     else:
