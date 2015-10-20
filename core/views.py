@@ -29,7 +29,8 @@ from django.db import connection, transaction
 
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
-from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, GetRWWithPrioJedi3DAYS
+from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
+    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind
 from resource.models import Schedconfig
 from core.common.models import Filestable4
 from core.common.models import Datasets
@@ -3415,7 +3416,7 @@ def dashboard(request, view='production'):
     cloudTaskSummary = wgTaskSummary(request,fieldname='cloud', view=view, taskdays=taskdays)
     jobsLeft = {}
     rw = {}
-    rwData, nRemJobs  = calculateRWwithPrio_JEDI(query)
+    rwData, nRemJobs = calculateRWwithPrio_JEDI(query)
     for cloud in fullsummary:
         if cloud['name'] in nRemJobs.keys():
             jobsLeft[cloud['name']] = nRemJobs[cloud['name']]
@@ -3463,7 +3464,8 @@ def dashboard(request, view='production'):
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = []
-        return  HttpResponse(json.dumps(resp), mimetype='text/html')
+        return HttpResponse(json.dumps(resp), mimetype='text/html')
+
 
 from django.template.defaulttags import register
 @register.filter
@@ -3558,8 +3560,15 @@ def dashTasks(request, hours, view='production'):
     else:
         del request.session['TFIRST']
         del request.session['TLAST']
-        resp = []
-        return  HttpResponse(json.dumps(resp), mimetype='text/html')
+        remainingEvents = RemainedEventsPerCloud3dayswind.objects.values('cloud','nrem')
+        remainingEventsSet = {}
+        for remev in remainingEvents:
+            remainingEventsSet[remev['cloud']] = remev['nrem']
+        data = {
+            'jobsLeft' : jobsLeft,
+            'remainingWeightedEvents':remainingEventsSet,
+        }
+        return  HttpResponse(json.dumps(data), mimetype='text/html')
 
 @csrf_exempt
 @cache_page(60*6)
@@ -3994,6 +4003,14 @@ def taskInfo(request, jeditaskid=0):
                 if estaskdict[jeditaskid][s] > 0:
                     estaskstr += " %s(%s) " % ( s, estaskdict[jeditaskid][s] )
             taskrec['estaskstr'] = estaskstr
+
+    tquery = {}
+    tquery['jeditaskid'] = jeditaskid
+    tasksEventInfo = GetEventsForTask.objects.filter(**tquery).values('jeditaskid','totevrem', 'totev')
+    taskrec['totev'] = tasksEventInfo[0]['totev']
+    taskrec['totevproc'] = tasksEventInfo[0]['totev'] - tasksEventInfo[0]['totevrem']
+    taskrec['pctfinished'] = taskrec['totevproc']/taskrec['totev']
+
 
     if (('HTTP_ACCEPT' in request.META) and(request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
 

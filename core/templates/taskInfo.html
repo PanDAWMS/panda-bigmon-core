@@ -38,8 +38,8 @@
 		<td class='{{task.status}}_fill'>{% if task.superstatus %}<b><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.superstatus }}</a></b> {% if task.superstatus != task.status %}<td class='{{task.status}}'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.status }}</a></td>{% endif %} {% else %}<a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.status }}</a>{% endif %}</td>
 
 {% if task.dsinfo %}
-        <td> {{task.dsinfo.nevents}} |
-            <span class='finished'>{{task.dsinfo.neventsused}} ({{task.dsinfo.pctfinished}}%)</span></td>
+        <td> {{task.totev}} |
+            <span class='finished'>{{task.totevproc}} ({{task.pctfinished}}%)</span></td>
 {% endif %}
 
 		<td>{{ task.creationdate|date:"Y-m-d H:i" }}</td>

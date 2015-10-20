@@ -46,8 +46,6 @@ class GetRWWithPrioJedi3DAYS(models.Model):
     taskname = models.CharField(max_length=132, db_column='PRODSOURCELABEL')
     workinggroup = models.CharField(max_length=132, db_column='WORKINGGROUP')
 
-
-   
     def get_all_fields(self):
         """Returns a list of all field names on the instance."""
         fields = []
@@ -93,6 +91,12 @@ class GetRWWithPrioJedi3DAYS(models.Model):
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."GETRWWITHPRIOJEDI3DAYS"'
 
+
+class RemainedEventsPerCloud3dayswind(models.Model):
+    cloud = models.CharField(max_length=10, db_column='CLOUD', blank=True)
+    nrem = models.BigIntegerField(db_column='REMNORMEV')
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."REMEVPCL3DAYSWIND"'
 
 
 class PandaJob(models.Model):
