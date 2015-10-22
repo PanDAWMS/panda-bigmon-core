@@ -4715,7 +4715,7 @@ def incidentList(request):
     del request.session['TFIRST']
     del request.session['TLAST']
 
-    if (('HTTP_ACCEPT' in request.META) and(request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
+    if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
         data = {
             'request' : request,
             'viewParams' : request.session['viewParams'],
