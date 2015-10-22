@@ -1935,6 +1935,17 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     else:
         stdout = stderr = stdlog = None
 
+    # input,pseudo_input,output,log and alphabetically within those please
+
+    filesSorted = []
+    filesSorted.extend(sorted([file for file in files if file['type'] == 'input'], key=lambda x:x['datasetname']))
+    filesSorted.extend(sorted([file for file in files if file['type'] == 'pseudo_input'], key=lambda x:x['datasetname']))
+    filesSorted.extend(sorted([file for file in files if file['type'] == 'output'], key=lambda x:x['datasetname']))
+    filesSorted.extend(sorted([file for file in files if file['type'] == 'log'], key=lambda x:x['datasetname']))
+    files = filesSorted
+
+
+
     ## Check for object store based log
     oslogpath = None
     if 'computingsite' in job and job['computingsite'] in objectStores:
@@ -3907,18 +3918,30 @@ def taskInfo(request, jeditaskid=0):
         for ds in dsets:
             if ds['type'] not in ['input', 'pseudo_input' ]: continue
             if ds['masterid']: continue
-            if int(ds['nevents']) > 0:
-                nfiles += int(ds['nevents'])
-                nfinished += int(ds['neventsused'])
-#                nfailed += int(ds['nfilesfailed'])
+#            if int(ds['nevents']) > 0:
+#                nfiles += int(ds['nevents'])
+#                nfinished += int(ds['neventsused'])
+
+            if int(ds['nfiles']) > 0:
+                nfiles += int(ds['nfiles'])
+                nfinished += int(ds['nfilesfinished'])
+                nfailed += int(ds['nfilesfailed'])
+
         dsets = sorted(dsets, key=lambda x:x['datasetname'].lower())
         if nfiles > 0:
             dsinfo = {}
             dsinfo['nevents'] = nfiles
             dsinfo['neventsused'] = nfinished
-#            dsinfo['nfilesfailed'] = nfailed
+            dsinfo['nfilesfailed'] = nfailed
             dsinfo['pctfinished'] = int(100.*nfinished/nfiles)
+            dsinfo['pctfailed'] = int(100.*nfailed/nfiles)
+
+#            dsinfo['nfiles'] = nfiles
+#            dsinfo['nfilesfinished'] = nfinished
+#            dsinfo['nfilesfailed'] = nfailed
+#            dsinfo['pctfinished'] = int(100.*nfinished/nfiles)
 #            dsinfo['pctfailed'] = int(100.*nfailed/nfiles)
+
     if taskrec: taskrec['dsinfo'] = dsinfo
 
     ## get dataset types
