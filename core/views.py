@@ -1938,10 +1938,10 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     # input,pseudo_input,output,log and alphabetically within those please
 
     filesSorted = []
-    filesSorted.extend(sorted([file for file in files if file['type'] == 'input'], key=lambda x:x['datasetname']))
-    filesSorted.extend(sorted([file for file in files if file['type'] == 'pseudo_input'], key=lambda x:x['datasetname']))
-    filesSorted.extend(sorted([file for file in files if file['type'] == 'output'], key=lambda x:x['datasetname']))
-    filesSorted.extend(sorted([file for file in files if file['type'] == 'log'], key=lambda x:x['datasetname']))
+    filesSorted.extend(sorted([file for file in files if file['type'] == 'input'], key=lambda x:x['lfn']))
+    filesSorted.extend(sorted([file for file in files if file['type'] == 'pseudo_input'], key=lambda x:x['lfn']))
+    filesSorted.extend(sorted([file for file in files if file['type'] == 'output'], key=lambda x:x['lfn']))
+    filesSorted.extend(sorted([file for file in files if file['type'] == 'log'], key=lambda x:x['lfn']))
     files = filesSorted
 
 
