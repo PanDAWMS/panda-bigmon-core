@@ -2938,8 +2938,22 @@ def wnInfo(request,site,wnname='all'):
     else:
         del request.session['TFIRST']
         del request.session['TLAST']
-        resp = []
-        return  HttpResponse(json.dumps(resp), mimetype='text/html')
+
+        data = {
+            'request' : request,
+            'viewParams' : request.session['viewParams'],
+            'requestParams' : request.session['requestParams'],
+            'url' : request.path,
+            'site' : site,
+            'wnname' : wnname,
+            'user' : None,
+            'summary' : fullsummary,
+            'wnPlotFailed' : wnPlotFailedL,
+            'wnPlotFinished' : wnPlotFinishedL,
+            'hours' : LAST_N_HOURS_MAX,
+            'errthreshold' : errthreshold,
+        }
+        return  HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
     pilots = getPilotCounts(view)
