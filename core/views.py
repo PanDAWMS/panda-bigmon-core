@@ -2133,11 +2133,26 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     elif (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
         del request.session['TFIRST']
         del request.session['TLAST']
-        return  HttpResponse('json', mimetype='text/html')
+
+        data = {'files':files,
+                'job':job,
+                'dsfiles' : dsfiles,
+               }
+
+        return  HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
     else:
         del request.session['TFIRST']
         del request.session['TLAST']
         return  HttpResponse('not understood', mimetype='text/html')
+
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+
+
 
 def userList(request):
     valid, response = initRequest(request)
