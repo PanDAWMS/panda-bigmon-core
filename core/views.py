@@ -4058,9 +4058,16 @@ def taskInfo(request, jeditaskid=0):
     tquery = {}
     tquery['jeditaskid'] = jeditaskid
     tasksEventInfo = GetEventsForTask.objects.filter(**tquery).values('jeditaskid','totevrem', 'totev')
-    taskrec['totev'] = tasksEventInfo[0]['totev']
-    taskrec['totevproc'] = tasksEventInfo[0]['totev'] - tasksEventInfo[0]['totevrem']
-    taskrec['pctfinished'] = (100*taskrec['totevproc']/taskrec['totev']) if (taskrec['totev'] > 0) else ''
+    if len(tasksEventInfo) > 0:
+        taskrec['totev'] = tasksEventInfo[0]['totev']
+        taskrec['totevproc'] = tasksEventInfo[0]['totev'] - tasksEventInfo[0]['totevrem']
+        taskrec['pctfinished'] = (100*taskrec['totevproc']/taskrec['totev']) if (taskrec['totev'] > 0) else ''
+    else:
+        taskrec['totev'] = ''
+        taskrec['totevproc'] = ''
+        taskrec['pctfinished'] = ''
+
+
 
 
     if (('HTTP_ACCEPT' in request.META) and(request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
