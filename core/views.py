@@ -3961,17 +3961,11 @@ def taskInfo(request, jeditaskid=0):
         dsets = sorted(dsets, key=lambda x:x['datasetname'].lower())
         if nfiles > 0:
             dsinfo = {}
-            dsinfo['nevents'] = nfiles
-            dsinfo['neventsused'] = nfinished
+            dsinfo['nfiles'] = nfiles
+            dsinfo['nfilesfinished'] = nfinished
             dsinfo['nfilesfailed'] = nfailed
             dsinfo['pctfinished'] = int(100.*nfinished/nfiles)
             dsinfo['pctfailed'] = int(100.*nfailed/nfiles)
-
-#            dsinfo['nfiles'] = nfiles
-#            dsinfo['nfilesfinished'] = nfinished
-#            dsinfo['nfilesfailed'] = nfailed
-#            dsinfo['pctfinished'] = int(100.*nfinished/nfiles)
-#            dsinfo['pctfailed'] = int(100.*nfailed/nfiles)
 
     if taskrec: taskrec['dsinfo'] = dsinfo
 
