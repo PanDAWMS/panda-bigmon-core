@@ -3943,13 +3943,15 @@ def taskInfo(request, jeditaskid=0):
     nfiles = 0
     nfinished = 0
     nfailed = 0
+    neventsTot = 0
+    neventsUsedTot = 0
     if len(dsets) > 0:
         for ds in dsets:
             if ds['type'] not in ['input', 'pseudo_input' ]: continue
             if ds['masterid']: continue
-#            if int(ds['nevents']) > 0:
-#                nfiles += int(ds['nevents'])
-#                nfinished += int(ds['neventsused'])
+            if int(ds['nevents']) > 0:
+                neventsTot += int(ds['nevents'])
+                neventsUsedTot += int(ds['neventsused'])
 
             if int(ds['nfiles']) > 0:
                 nfiles += int(ds['nfiles'])
@@ -4055,6 +4057,7 @@ def taskInfo(request, jeditaskid=0):
                     estaskstr += " %s(%s) " % ( s, estaskdict[jeditaskid][s] )
             taskrec['estaskstr'] = estaskstr
 
+    '''
     tquery = {}
     tquery['jeditaskid'] = jeditaskid
     tasksEventInfo = GetEventsForTask.objects.filter(**tquery).values('jeditaskid','totevrem', 'totev')
@@ -4066,6 +4069,14 @@ def taskInfo(request, jeditaskid=0):
         taskrec['totev'] = ''
         taskrec['totevproc'] = ''
         taskrec['pctfinished'] = ''
+    '''
+
+    #neventsTot = 0
+    #neventsUsedTot = 0
+
+    taskrec['totev'] = neventsTot
+    taskrec['totevproc'] = neventsUsedTot
+    taskrec['pctfinished'] = (100*taskrec['totevproc']/taskrec['totev']) if (taskrec['totev'] > 0) else ''
 
 
 
