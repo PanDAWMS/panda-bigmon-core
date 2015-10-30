@@ -102,12 +102,232 @@ Click on column titles to sort.
 <p>The Production task summary by cloud table moved to the Dash/Production Tasks
 
 {% endif %}
-
-
 {% endif %}
 
 
-<table>
+
+{% comment %}
+
+<th> <a href="{{nosorturl}}sortby=defined">defined</a> </th>
+<th> <a href="{{nosorturl}}sortby=waiting">waiting</a> </th>
+<th> <a href="{{nosorturl}}sortby=assigned">assigned</a> </th>
+<th> <a href="{{nosorturl}}sortby=throttled">throttled</a> </th>
+<th> <a href="{{nosorturl}}sortby=activated">activated</a> </th>
+<th> <a href="{{nosorturl}}sortby=sent">sent</a> </th>
+<th> <a href="{{nosorturl}}sortby=starting">starting</a> </th>
+<th> <a href="{{nosorturl}}sortby=running">running</a> </th>
+<th> <a href="{{nosorturl}}sortby=holding">holding</a> </th>
+
+<th> <a href="{{nosorturl}}sortby=merging">merging</a> </th>
+
+<th> <a href="{{nosorturl}}sortby=transferring">transferring</a> </th>
+<th> <a href="{{nosorturl}}sortby=finished">finished</a> </th>
+<th> <a href="{{nosorturl}}sortby=failed">failed</a> </th>
+<th> <a href="{{nosorturl}}sortby=cancelled">cancelled</a> </th>
+<th> <a href="{{nosorturl}}sortby=pctfail">% failed</a> </th>
+
+{% endcomment %}
+
+<script type="text/javascript">
+
+    var shift = 0;
+
+    $(document).ready(function() {
+
+        $('#defined').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child(5),#cloudsitesummary th:nth-child(5)').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child(5),#cloudsitesummary th:nth-child(5)').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child(5),#cloudsitesummary th:nth-child(5)').show();
+        });
+        $('#waiting').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child(6),#cloudsitesummary th:nth-child(6)').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child(6),#cloudsitesummary th:nth-child(6)').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child(6),#cloudsitesummary th:nth-child(6)').show();
+        });
+        $('#assigned').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child(7),#cloudsitesummary th:nth-child(7)').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child(7),#cloudsitesummary th:nth-child(7)').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child(7),#cloudsitesummary th:nth-child(7)').show();
+        });
+        $('#throttled').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child(8),#cloudsitesummary th:nth-child(8)').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child(8),#cloudsitesummary th:nth-child(8)').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child(8),#cloudsitesummary th:nth-child(8)').show();
+        });
+        $('#activated').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child(9),#cloudsitesummary th:nth-child(9)').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child(9),#cloudsitesummary th:nth-child(9)').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child(9),#cloudsitesummary th:nth-child(9)').show();
+        });
+        $('#sent').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child(10),#cloudsitesummary th:nth-child(10)').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child(10),#cloudsitesummary th:nth-child(10)').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child(10),#cloudsitesummary th:nth-child(10)').show();
+        });
+        $('#starting').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child(11),#cloudsitesummary th:nth-child(11)').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child(11),#cloudsitesummary th:nth-child(11)').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child(11),#cloudsitesummary th:nth-child(11)').show();
+        });
+        $('#running').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child(12),#cloudsitesummary th:nth-child(12)').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child(12),#cloudsitesummary th:nth-child(12)').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child(12),#cloudsitesummary th:nth-child(12)').show();
+        });
+        $('#holding').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child(13),#cloudsitesummary th:nth-child(13)').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child(13),#cloudsitesummary th:nth-child(13)').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child(13),#cloudsitesummary th:nth-child(13)').show();
+        });
+
+
+{% if viewParams.MON_VO == 'ATLAS' %}
+       $('#merging').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child(14),#cloudsitesummary th:nth-child(14)').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child(14),#cloudsitesummary th:nth-child(14)').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child(14),#cloudsitesummary th:nth-child(14)').show();
+        });
+        shift = 1;
+{% endif %}
+
+        $('#transferring').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child('+(14+shift).toString()+'),#cloudsitesummary th:nth-child('+(14+shift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(14+shift).toString()+'),#cloudsitesummary th:nth-child('+(14+shift).toString()+')').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child('+(14+shift).toString()+'),#cloudsitesummary th:nth-child('+(14+shift).toString()+')').show();
+        });
+
+        $('#finished').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child('+(15+shift).toString()+'),#cloudsitesummary th:nth-child('+(15+shift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(15+shift).toString()+'),#cloudsitesummary th:nth-child('+(15+shift).toString()+')').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child('+(15+shift).toString()+'),#cloudsitesummary th:nth-child('+(15+shift).toString()+')').show();
+        });
+
+        $('#failed').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child('+(16+shift).toString()+'),#cloudsitesummary th:nth-child('+(16+shift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(16+shift).toString()+'),#cloudsitesummary th:nth-child('+(16+shift).toString()+')').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child('+(16+shift).toString()+'),#cloudsitesummary th:nth-child('+(16+shift).toString()+')').show();
+        });
+
+        $('#cancelled').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child('+(17+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+shift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(17+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+shift).toString()+')').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child('+(17+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+shift).toString()+')').show();
+        });
+
+        $('#pctfail').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child('+(18+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+shift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(18+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+shift).toString()+')').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child('+(18+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+shift).toString()+')').show();
+        });
+
+        if (!$("#defined").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(5).toString()+'),#cloudsitesummary th:nth-child('+(5).toString()+')').hide();
+
+        if (!$("#waiting").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(6).toString()+'),#cloudsitesummary th:nth-child('+(6).toString()+')').hide();
+
+        if (!$("#assigned").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(7).toString()+'),#cloudsitesummary th:nth-child('+(7).toString()+')').hide();
+
+        if (!$("#throttled").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(8).toString()+'),#cloudsitesummary th:nth-child('+(8).toString()+')').hide();
+
+        if (!$("#activated").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(9).toString()+'),#cloudsitesummary th:nth-child('+(9).toString()+')').hide();
+
+        if (!$("#sent").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(10).toString()+'),#cloudsitesummary th:nth-child('+(10).toString()+')').hide();
+
+        if (!$("#starting").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(11).toString()+'),#cloudsitesummary th:nth-child('+(11).toString()+')').hide();
+
+        if (!$("#running").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(12).toString()+'),#cloudsitesummary th:nth-child('+(12).toString()+')').hide();
+
+        if (!$("#holding").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(13).toString()+'),#cloudsitesummary th:nth-child('+(13).toString()+')').hide();
+
+        if (!$("#merging").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(14).toString()+'),#cloudsitesummary th:nth-child('+(14).toString()+')').hide();
+
+        if (!$("#transferring").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(14+shift).toString()+'),#cloudsitesummary th:nth-child('+(14+shift).toString()+')').hide();
+
+        if (!$("#finished").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(15+shift).toString()+'),#cloudsitesummary th:nth-child('+(15+shift).toString()+')').hide();
+
+        if (!$("#failed").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(16+shift).toString()+'),#cloudsitesummary th:nth-child('+(16+shift).toString()+')').hide();
+
+        if (!$("#cancelled").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(17+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+shift).toString()+')').hide();
+
+        if (!$("#pctfail").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(18+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+shift).toString()+')').hide();
+
+        toggle('hiderow');
+
+    });
+
+
+    function toggle(thisname) {
+       tr=document.getElementsByTagName('tr')
+          for (i=0;i<tr.length;i++){
+              if (tr[i].className == thisname){
+                 if ( tr[i].style.display=='none' ){
+                    tr[i].style.display = '';
+                 }
+              else {
+                 tr[i].style.display = 'none';
+                 }
+              }
+           }
+        }
+
+
+</script>
+
+
+
+<table id="columnstoshow">
+<th><a style="cursor: pointer;" onclick="javascript:toggle('hiderow');" href="#">Select states to show</a></th>
+<tr class='hiderow'><td>defined <input id="defined" type="checkbox" checked/></td>
+<td>waiting <input id="waiting" type="checkbox" checked/></td>
+<td>assigned <input id="assigned" type="checkbox" checked/></td>
+<td>throttled <input id="throttled" type="checkbox" checked/></td>
+<td>activated <input id="activated" type="checkbox" checked/></td>
+<td>sent <input id="sent" type="checkbox" checked/></td>
+<td>starting <input id="starting" type="checkbox" checked/></td>
+<tr class='hiderow'><td>running <input id="running" type="checkbox" checked/></td>
+<td>holding <input id="holding" type="checkbox" checked/></td>
+{% if viewParams.MON_VO == 'ATLAS' %}
+    <td>merging <input id="merging" type="checkbox" checked/></td>
+{% endif %}
+<td>transferring <input id="transferring" type="checkbox" checked/></td>
+<td>finished <input id="finished" type="checkbox" checked/></td>
+<td>failed <input id="failed" type="checkbox" checked/></td>
+<td>cancelled <input id="cancelled" type="checkbox" checked/></td>
+<td>pctfail <input id="pctfail" type="checkbox" checked/></td></tr>
+
+</table>
+
+
+<table id="cloudsitesummary">
 
 {% if viewParams.MON_VO != 'ATLAS' %}
 
