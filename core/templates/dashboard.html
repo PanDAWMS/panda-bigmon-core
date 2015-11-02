@@ -105,6 +105,7 @@ Click on column titles to sort.
 {% endif %}
 
 
+{% if summary or vosummary%}
 
 <script type="text/javascript">
 
@@ -280,8 +281,6 @@ Click on column titles to sort.
 
 </script>
 
-
-
 <table id="columnstoshow">
 <th><a style="cursor: pointer;" onclick="javascript:toggle('hiderow');" href="#">Select states to show</a></th>
 <tr class='hiderow'><td>defined <input id="defined" type="checkbox" checked/></td>
@@ -303,6 +302,8 @@ Click on column titles to sort.
 <td>pctfail <input id="pctfail" type="checkbox" checked/></td></tr>
 
 </table>
+
+{% endif %}
 
 
 <table id="cloudsitesummary">
