@@ -110,154 +110,161 @@ Click on column titles to sort.
 <script type="text/javascript">
 
     var shift = 0;
+    var startshift = -1;
+
+    {% if cloudview == 'region' %}
+        startshift = 0
+    {% endif %}
+
+
 
     $(document).ready(function() {
 
         $('#defined').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child(5),#cloudsitesummary th:nth-child(5)').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child(5),#cloudsitesummary th:nth-child(5)').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(5+startshift).toString()+'),#cloudsitesummary th:nth-child('+(5+startshift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(5+startshift).toString()+'),#cloudsitesummary th:nth-child('+(5+startshift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child(5),#cloudsitesummary th:nth-child(5)').show();
+                $('#cloudsitesummary tr td:nth-child('+(5+startshift).toString()+'),#cloudsitesummary th:nth-child('+(5+startshift).toString()+')').show();
         });
         $('#waiting').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child(6),#cloudsitesummary th:nth-child(6)').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child(6),#cloudsitesummary th:nth-child(6)').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(6+startshift).toString()+'),#cloudsitesummary th:nth-child('+(6+startshift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(6+startshift).toString()+'),#cloudsitesummary th:nth-child('+(6+startshift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child(6),#cloudsitesummary th:nth-child(6)').show();
+                $('#cloudsitesummary tr td:nth-child('+(6+startshift).toString()+'),#cloudsitesummary th:nth-child('+(6+startshift).toString()+')').show();
         });
         $('#assigned').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child(7),#cloudsitesummary th:nth-child(7)').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child(7),#cloudsitesummary th:nth-child(7)').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(7+startshift).toString()+'),#cloudsitesummary th:nth-child('+(7+startshift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(7+startshift).toString()+'),#cloudsitesummary th:nth-child('+(7+startshift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child(7),#cloudsitesummary th:nth-child(7)').show();
+                $('#cloudsitesummary tr td:nth-child('+(7+startshift).toString()+'),#cloudsitesummary th:nth-child('+(7+startshift).toString()+')').show();
         });
         $('#throttled').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child(8),#cloudsitesummary th:nth-child(8)').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child(8),#cloudsitesummary th:nth-child(8)').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(8+startshift).toString()+'),#cloudsitesummary th:nth-child('+(8+startshift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(8+startshift).toString()+'),#cloudsitesummary th:nth-child('+(8+startshift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child(8),#cloudsitesummary th:nth-child(8)').show();
+                $('#cloudsitesummary tr td:nth-child('+(8+startshift).toString()+'),#cloudsitesummary th:nth-child('+(8+startshift).toString()+')').show();
         });
         $('#activated').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child(9),#cloudsitesummary th:nth-child(9)').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child(9),#cloudsitesummary th:nth-child(9)').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(9+startshift).toString()+'),#cloudsitesummary th:nth-child('+(9+startshift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(9+startshift).toString()+'),#cloudsitesummary th:nth-child('+(9+startshift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child(9),#cloudsitesummary th:nth-child(9)').show();
+                $('#cloudsitesummary tr td:nth-child('+(9+startshift).toString()+'),#cloudsitesummary th:nth-child('+(9+startshift).toString()+')').show();
         });
         $('#sent').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child(10),#cloudsitesummary th:nth-child(10)').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child(10),#cloudsitesummary th:nth-child(10)').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(10+startshift).toString()+'),#cloudsitesummary th:nth-child('+(10+startshift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(10+startshift).toString()+'),#cloudsitesummary th:nth-child('+(10+startshift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child(10),#cloudsitesummary th:nth-child(10)').show();
+                $('#cloudsitesummary tr td:nth-child('+(10+startshift).toString()+'),#cloudsitesummary th:nth-child('+(10+startshift).toString()+')').show();
         });
         $('#starting').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child(11),#cloudsitesummary th:nth-child(11)').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child(11),#cloudsitesummary th:nth-child(11)').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(11+startshift).toString()+'),#cloudsitesummary th:nth-child('+(11+startshift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(11+startshift).toString()+'),#cloudsitesummary th:nth-child('+(11+startshift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child(11),#cloudsitesummary th:nth-child(11)').show();
+                $('#cloudsitesummary tr td:nth-child('+(11+startshift).toString()+'),#cloudsitesummary th:nth-child('+(11+startshift).toString()+')').show();
         });
         $('#running').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child(12),#cloudsitesummary th:nth-child(12)').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child(12),#cloudsitesummary th:nth-child(12)').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(12+startshift).toString()+'),#cloudsitesummary th:nth-child('+(12+startshift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(12+startshift).toString()+'),#cloudsitesummary th:nth-child('+(12+startshift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child(12),#cloudsitesummary th:nth-child(12)').show();
+                $('#cloudsitesummary tr td:nth-child('+(12+startshift).toString()+'),#cloudsitesummary th:nth-child('+(12+startshift).toString()+')').show();
         });
         $('#holding').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child(13),#cloudsitesummary th:nth-child(13)').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child(13),#cloudsitesummary th:nth-child(13)').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(13+startshift).toString()+'),#cloudsitesummary th:nth-child('+(13+startshift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(13+startshift).toString()+'),#cloudsitesummary th:nth-child('+(13+startshift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child(13),#cloudsitesummary th:nth-child(13)').show();
+                $('#cloudsitesummary tr td:nth-child('+(13+startshift).toString()+'),#cloudsitesummary th:nth-child('+(13+startshift).toString()+')').show();
         });
 
 
 {% if viewParams.MON_VO == 'ATLAS' %}
        $('#merging').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child(14),#cloudsitesummary th:nth-child(14)').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child(14),#cloudsitesummary th:nth-child(14)').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(14+startshift).toString()+'),#cloudsitesummary th:nth-child('+(14+startshift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(14+startshift).toString()+'),#cloudsitesummary th:nth-child('+(14+startshift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child(14),#cloudsitesummary th:nth-child(14)').show();
+                $('#cloudsitesummary tr td:nth-child('+(14+startshift).toString()+'),#cloudsitesummary th:nth-child('+(14+startshift).toString()+')').show();
         });
         shift = 1;
 {% endif %}
 
         $('#transferring').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child('+(14+shift).toString()+'),#cloudsitesummary th:nth-child('+(14+shift).toString()+')').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child('+(14+shift).toString()+'),#cloudsitesummary th:nth-child('+(14+shift).toString()+')').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(14+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(14+startshift+shift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(14+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(14+startshift+shift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child('+(14+shift).toString()+'),#cloudsitesummary th:nth-child('+(14+shift).toString()+')').show();
+                $('#cloudsitesummary tr td:nth-child('+(14+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(14+startshift+shift).toString()+')').show();
         });
 
         $('#finished').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child('+(15+shift).toString()+'),#cloudsitesummary th:nth-child('+(15+shift).toString()+')').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child('+(15+shift).toString()+'),#cloudsitesummary th:nth-child('+(15+shift).toString()+')').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(15+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(15+startshift+shift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(15+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(15+startshift+shift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child('+(15+shift).toString()+'),#cloudsitesummary th:nth-child('+(15+shift).toString()+')').show();
+                $('#cloudsitesummary tr td:nth-child('+(15+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(15+startshift+shift).toString()+')').show();
         });
 
         $('#failed').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child('+(16+shift).toString()+'),#cloudsitesummary th:nth-child('+(16+shift).toString()+')').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child('+(16+shift).toString()+'),#cloudsitesummary th:nth-child('+(16+shift).toString()+')').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(16+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(16+startshift+shift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(16+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(16+startshift+shift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child('+(16+shift).toString()+'),#cloudsitesummary th:nth-child('+(16+shift).toString()+')').show();
+                $('#cloudsitesummary tr td:nth-child('+(16+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(16+startshift+shift).toString()+')').show();
         });
 
         $('#cancelled').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child('+(17+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+shift).toString()+')').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child('+(17+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+shift).toString()+')').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(17+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+startshift+shift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(17+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+startshift+shift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child('+(17+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+shift).toString()+')').show();
+                $('#cloudsitesummary tr td:nth-child('+(17+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+startshift+shift).toString()+')').show();
         });
 
         $('#pctfail').change(function() {
-            if ($('#cloudsitesummary tr td:nth-child('+(18+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+shift).toString()+')').is(':visible'))
-                $('#cloudsitesummary tr td:nth-child('+(18+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+shift).toString()+')').hide();
+            if ($('#cloudsitesummary tr td:nth-child('+(18+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+startshift+shift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(18+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+startshift+shift).toString()+')').hide();
             else
-                $('#cloudsitesummary tr td:nth-child('+(18+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+shift).toString()+')').show();
+                $('#cloudsitesummary tr td:nth-child('+(18+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+startshift+shift).toString()+')').show();
         });
 
         if (!$("#defined").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(5).toString()+'),#cloudsitesummary th:nth-child('+(5).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(5+startshift).toString()+'),#cloudsitesummary th:nth-child('+(5+startshift).toString()+')').hide();
 
         if (!$("#waiting").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(6).toString()+'),#cloudsitesummary th:nth-child('+(6).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(6+startshift).toString()+'),#cloudsitesummary th:nth-child('+(6+startshift).toString()+')').hide();
 
         if (!$("#assigned").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(7).toString()+'),#cloudsitesummary th:nth-child('+(7).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(7+startshift).toString()+'),#cloudsitesummary th:nth-child('+(7+startshift).toString()+')').hide();
 
         if (!$("#throttled").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(8).toString()+'),#cloudsitesummary th:nth-child('+(8).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(8+startshift).toString()+'),#cloudsitesummary th:nth-child('+(8+startshift).toString()+')').hide();
 
         if (!$("#activated").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(9).toString()+'),#cloudsitesummary th:nth-child('+(9).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(9+startshift).toString()+'),#cloudsitesummary th:nth-child('+(9+startshift).toString()+')').hide();
 
         if (!$("#sent").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(10).toString()+'),#cloudsitesummary th:nth-child('+(10).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(10+startshift).toString()+'),#cloudsitesummary th:nth-child('+(10+startshift).toString()+')').hide();
 
         if (!$("#starting").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(11).toString()+'),#cloudsitesummary th:nth-child('+(11).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(11+startshift).toString()+'),#cloudsitesummary th:nth-child('+(11+startshift).toString()+')').hide();
 
         if (!$("#running").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(12).toString()+'),#cloudsitesummary th:nth-child('+(12).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(12+startshift).toString()+'),#cloudsitesummary th:nth-child('+(12+startshift).toString()+')').hide();
 
         if (!$("#holding").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(13).toString()+'),#cloudsitesummary th:nth-child('+(13).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(13+startshift).toString()+'),#cloudsitesummary th:nth-child('+(13+startshift).toString()+')').hide();
 
         if (!$("#merging").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(14).toString()+'),#cloudsitesummary th:nth-child('+(14).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(14+startshift).toString()+'),#cloudsitesummary th:nth-child('+(14+startshift).toString()+')').hide();
 
         if (!$("#transferring").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(14+shift).toString()+'),#cloudsitesummary th:nth-child('+(14+shift).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(14+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(14+startshift+shift).toString()+')').hide();
 
         if (!$("#finished").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(15+shift).toString()+'),#cloudsitesummary th:nth-child('+(15+shift).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(15+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(15+startshift+shift).toString()+')').hide();
 
         if (!$("#failed").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(16+shift).toString()+'),#cloudsitesummary th:nth-child('+(16+shift).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(16+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(16+startshift+shift).toString()+')').hide();
 
         if (!$("#cancelled").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(17+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+shift).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(17+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+startshift+shift).toString()+')').hide();
 
         if (!$("#pctfail").is(':checked'))
-            $('#cloudsitesummary tr td:nth-child('+(18+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+shift).toString()+')').hide();
+            $('#cloudsitesummary tr td:nth-child('+(18+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+startshift+shift).toString()+')').hide();
 
         toggle('hiderow');
 
