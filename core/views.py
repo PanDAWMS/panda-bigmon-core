@@ -2479,6 +2479,8 @@ def siteList(request):
             query['siteid__icontains'] = 'test'
         if param == 'category' and request.session['requestParams'][param] == 'production':
             prod = True
+        if param == 'jobseed':
+            query['jobseed__icontains'] = escapeInput(request.session['requestParams'][param])
         for field in Schedconfig._meta.get_all_field_names():
             if param == field:
                 query[param] = escapeInput(request.session['requestParams'][param])

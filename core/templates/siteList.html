@@ -54,7 +54,7 @@
 {% if sites %}
 
 <table>
-<tr class='tablesection'><th colspan=20> Site attribute summary </th></tr>
+<tr class='tablesection' id="siteatt"><th colspan=20> Site attribute summary </th></tr>
 {% for fdict in sumd %}
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
 {% for item in fdict.list %}
@@ -68,7 +68,7 @@
 </table>
 
 <table>
-<tr class='tablesection'><th colspan=20> Sites (PanDA resources) &nbsp; {% if mcpsites %} (<a href="#mcpsites">MCP sites are below</a>) {% endif %}</th></tr>
+<tr class='tablesection' id="sites"><th colspan=20> Sites (PanDA resources) &nbsp; {% if mcpsites %} (<a href="#mcpsites">MCP sites are below</a>) {% endif %}</th></tr>
 <tr class='tablesection'>
 	<th><a href="{{nosorturl}}#sites">PanDA resource</a><br> Queue name (where different)</th>
 	<th><a href="{{nosorturl}}sortby=gocname#sites">GOC site name</a></th>
