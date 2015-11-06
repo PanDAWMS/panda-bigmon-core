@@ -2482,7 +2482,7 @@ def siteList(request):
         if param == 'jobseed':
             query['jobseed__icontains'] = escapeInput(request.session['requestParams'][param])
         for field in Schedconfig._meta.get_all_field_names():
-            if param == field:
+            if param == field and not (param == 'jobseed'):
                 query[param] = escapeInput(request.session['requestParams'][param])
     
     siteres = Schedconfig.objects.filter(**query).exclude(cloud='CMS').values()
