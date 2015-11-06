@@ -2470,6 +2470,7 @@ def siteList(request):
     ### Add any extensions to the query determined from the URL  
     if VOMODE == 'core': query['siteid__contains'] = 'CORE'
     prod = False
+    extraParCondition = ''
     for param in request.session['requestParams']:
         if param == 'category' and request.session['requestParams'][param] == 'multicloud':
             query['multicloud__isnull'] = False
@@ -2479,13 +2480,26 @@ def siteList(request):
             query['siteid__icontains'] = 'test'
         if param == 'category' and request.session['requestParams'][param] == 'production':
             prod = True
-        if param == 'jobseed':
-            query['jobseed__icontains'] = escapeInput(request.session['requestParams'][param])
+        if param == 'catchall':
+            wildCards = request.session['requestParams'][param].split('|')
+            countCards = len(wildCards)
+            currentCardCount = 1
+            extraParCondition = '('
+            for card in wildCards:
+                extraParCondition += preprocessWildCardString( escapeInput(card) , 'catchall')
+                if (currentCardCount < countCards): extraParCondition +=' OR '
+                currentCardCount += 1
+            extraParCondition += ')'
+
+#            preprocessWildCardString(strToProcess, fieldToLookAt)
+#            queryparam =
+#            query['jobseed__icontains'] = escapeInput(request.session['requestParams'][param])
+
         for field in Schedconfig._meta.get_all_field_names():
-            if param == field and not (param == 'jobseed'):
+            if param == field and not (param == 'catchall'):
                 query[param] = escapeInput(request.session['requestParams'][param])
     
-    siteres = Schedconfig.objects.filter(**query).exclude(cloud='CMS').values()
+    siteres = Schedconfig.objects.filter(**query).exclude(cloud='CMS').extra(where=[extraParCondition]).values()
     mcpres = Schedconfig.objects.filter(status='online').exclude(cloud='CMS').exclude(siteid__icontains='test').values('siteid','multicloud','cloud').order_by('siteid')
     sites = []
     for site in siteres:
