@@ -338,7 +338,7 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
                     <li><a href="{% url 'siteList' %}?cloud=TW">TW</a></li>
                     <li><a href="{% url 'siteList' %}?cloud=UK">UK</a></li>
                     <li><a href="{% url 'siteList' %}?cloud=US">US</a></li>
-                    <li><a href="{% url 'siteList' %}?CATCHALL=jobseed%3Des|jobseed%3Dall">Event Service sites</a></li>
+                    <li><a href="{% url 'siteList' %}?CATCHALL=*jobseed%3Des*|*jobseed%3Dall*">Event Service sites</a></li>
                 {% endif %}
                 <li><a href="{% url 'workQueues' %}">Work queues</a></li>
             </ul>
