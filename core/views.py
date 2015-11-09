@@ -2062,6 +2062,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             #evrange['datasetid'] = datasetids[evrange['datasetid']]['dict']['datasetname']
             evrange['status'] = eventservicestatelist[evrange['status']]
             esjobdict[evrange['status']] += 1
+            evrange['attemptnr'] = 10-evrange['attemptnr']
+
         esjobstr = ''
         for s in esjobdict:
             if esjobdict[s] > 0:
@@ -2085,6 +2087,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         errorinfo = getErrorDescription(job)
         if len(errorinfo) > 0:
             job['errorinfo'] = errorinfo
+
+    job['attemptnr'] = 10-job['attemptnr']
 
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
         del request.session['TFIRST']
