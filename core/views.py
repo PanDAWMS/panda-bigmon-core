@@ -2474,7 +2474,7 @@ def siteList(request):
     ### Add any extensions to the query determined from the URL  
     if VOMODE == 'core': query['siteid__contains'] = 'CORE'
     prod = False
-    extraParCondition = ''
+    extraParCondition = '1=1'
     for param in request.session['requestParams']:
         if param == 'category' and request.session['requestParams'][param] == 'multicloud':
             query['multicloud__isnull'] = False
