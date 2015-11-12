@@ -1846,6 +1846,13 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     columns = []
     try:
         job = jobs[0]
+        tquery = {}
+        tquery['jeditaskid'] = job['jeditaskid']
+        tquery['storagetoken__isnull'] = False
+        storagetoken = JediDatasets.objects.filter(**tquery).values('storagetoken')
+        if storagetoken:
+            job['destinationse']=storagetoken[0]['storagetoken']
+
         pandaid = job['pandaid']
         colnames = job.keys()
         colnames.sort()
@@ -1943,8 +1950,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     filesSorted.extend(sorted([file for file in files if file['type'] == 'output'], key=lambda x:x['lfn']))
     filesSorted.extend(sorted([file for file in files if file['type'] == 'log'], key=lambda x:x['lfn']))
     files = filesSorted
-
-
 
     ## Check for object store based log
     oslogpath = None
