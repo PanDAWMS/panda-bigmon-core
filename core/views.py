@@ -5259,6 +5259,8 @@ def fileList(request):
     for f in files:
         filed[f['lfn']] = 1
     nfiles = len(filed)
+    if nfiles > 0:
+        files = sorted(files, key=lambda x:x['lfn'])
     del request.session['TFIRST']
     del request.session['TLAST']
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
