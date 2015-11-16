@@ -1624,10 +1624,9 @@ def jobList(request, mode=None, param=None):
     else:
         showwarn=1
 
-
+    sumd, esjobdict = jobSummaryDict(request, jobs)
 
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
-        sumd, esjobdict = jobSummaryDict(request, jobs)
         testjobs = False
 
         if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams']['prodsourcelabel'].lower().find('test') >= 0:
@@ -1707,7 +1706,13 @@ def jobList(request, mode=None, param=None):
                         pass
                     else:
                         del job[field]
-        return  HttpResponse(json.dumps(jobs, cls=DateEncoder), mimetype='text/html')
+
+        data = {
+            "selectionsummury": sumd,
+            "jobs": jobs
+        }
+
+        return  HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
 
 def isEventService(job):
     if 'specialhandling' in job and job['specialhandling'] and ( job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 ):
