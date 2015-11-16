@@ -6,7 +6,6 @@
 {% block body %}
 
 {% if columns %}
-
 <table>
 <tr bgcolor='lightcyan'><th colspan=20> Task {{ jeditaskid }}: {{ taskname }} </th></tr>
 <tr bgcolor='lightcyan'>
@@ -15,6 +14,7 @@
 	{% if task.reqid != task.jeditaskid and not task.deftreqid %}<th>Jobset</th>{% endif %}
 	<th>Type</th>
 	<th>WorkingGroup</th><th>User</th>
+	<th>Destination</th>
 	{% if task.campaign %} <th> Campaign </th> {% endif %}
 	<th>Task status </th>{% if task.superstatus %} {% if task.superstatus != task.status %}<th> Detailed JEDI status </th>{% endif %} {% endif %}
 {% if task.dsinfo %}
@@ -34,6 +34,7 @@
 		<td>{% if task.tasktype == 'anal' %} analy {% else %} {{ task.tasktype }} {% endif %}</td>
 		<td>{% if task.workinggroup %} {{ task.workinggroup }} {% endif %} </td>
 		<td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
+        <td>{{task.destination}}</td>
 		{% if task.campaign %} <td><a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a></td> {% endif %}
 		<td class='{{task.status}}_fill'>{% if task.superstatus %}<b><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.superstatus }}</a></b> {% if task.superstatus != task.status %}<td class='{{task.status}}'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.status }}</a></td>{% endif %} {% else %}<a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.status }}</a>{% endif %}</td>
 

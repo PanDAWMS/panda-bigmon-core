@@ -4103,6 +4103,12 @@ def taskInfo(request, jeditaskid=0):
     taskrec['pctfinished'] = (100*taskrec['totevproc']/taskrec['totev']) if (taskrec['totev'] > 0) else ''
 
 
+    tquery = {}
+    tquery['jeditaskid'] = jeditaskid
+    tquery['storagetoken__isnull'] = False
+    storagetoken = JediDatasets.objects.filter(**tquery).values('storagetoken')
+    if storagetoken:
+       taskrec['destination']=storagetoken[0]['storagetoken']
 
 
     if (('HTTP_ACCEPT' in request.META) and(request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
