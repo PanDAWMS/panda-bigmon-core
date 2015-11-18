@@ -312,6 +312,24 @@ Click on column titles to sort.
 
 {% endif %}
 
+{% if summary or vosummary %}
+<script type="text/javascript">
+    $(document).ready(function() {
+        if (!$(".hideofflinerow").is(':visible'))
+                $(".hideofflinerow").show();
+    });
+    function hideoffline(){
+        if ($(".hideofflinerow").is(':visible'))
+            $(".hideofflinerow").hide();
+        else
+            $(".hideofflinerow").show();
+    }
+</script>
+<table>
+<th><a style="cursor: pointer;" onclick="javascript:hideoffline();" href="#">Hide/show offline and brokeroff queues</a></th>
+</table>
+{% endif %}
+
 
 <table id="cloudsitesummary">
 
@@ -463,7 +481,7 @@ of all jobs
 <th  bgcolor=whitesmoke align='right'> <a href="{% url 'errorSummary' %}?jobtype={{view}}&sortby=count{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&cloud={{cloud.name}}&hours={{hours}}"> {% if cloud.pctfail > errthreshold %} <font color=red>{{ cloud.pctfail  }}</font> {% else %} {{ cloud.pctfail  }} {% endif %} </a> </th>
 </tr>
 {% for site in cloud.summary %}
-<tr>
+<tr  {% if site.status != 'online'%} class="hideofflinerow" {% endif %}>
 <td> {% if site.name %} <a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={{ site.name }}&SIZE=medium", "{{ site.name }}", "day")'>                        <img src='http://tjweb.org/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assignment {% endif %} </td>
 <td><span class="{{site.status}}">{{ site.status  }}</span> </td>
 <td align='right'><a href="{% url 'jobList' %}?cloud={{cloud.name}}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&computingsite={{ site.name }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&hours={{hours}}&jobtype={{ view }}&display_limit=100">{{ site.count }} </a></td>
