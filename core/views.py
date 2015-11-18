@@ -4118,10 +4118,10 @@ def taskInfo(request, jeditaskid=0):
     if len(specsFailed) > 0:
         failedSpecsCount = 0
         for specFailed in specsFailed:
-            failedSpecsCount += specFailed['timeinhepspec']
+            failedSpecsCount += int(specFailed['timeinhepspec'])
 
 
-    taskrec['failedevprochs06'] = int(failedSpecsCount)
+    taskrec['failedevprochs06'] = failedSpecsCount
 
 
 
