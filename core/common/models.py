@@ -558,11 +558,7 @@ class JediTasks(models.Model):
     cputimeunit = models.CharField(max_length=72, db_column='cputimeunit', blank=True)
     basewalltime = models.IntegerField(null=True, db_column='basewalltime', blank=True)
     cpuefficiency = models.IntegerField(null=True, db_column='cpuefficiency', blank=True)
-
-
-
-
-
+    nucleus = models.CharField(max_length=72, db_column='NUCLEUS', blank=True)
 
     class Meta:
         db_table = u'jedi_tasks'

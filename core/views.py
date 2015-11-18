@@ -30,7 +30,7 @@ from django.db import connection, transaction
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
-    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind
+    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, Getfailedjobshspecarch, Getfailedjobshspec
 from resource.models import Schedconfig
 from core.common.models import Filestable4
 from core.common.models import Datasets
@@ -116,7 +116,7 @@ PHIGH = -1000000
 
 standard_fields = [ 'processingtype', 'computingsite', 'destinationse', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid', 'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount' ]
 standard_sitefields = [ 'region', 'gocname', 'nickname', 'status', 'tier', 'comment_field', 'cloud', 'allowdirectaccess', 'allowfax', 'copytool', 'faxredirector', 'retry', 'timefloor' ]
-standard_taskfields = [ 'tasktype', 'superstatus', 'corecount', 'taskpriority', 'username', 'transuses', 'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag', 'reqid', 'ramcount']
+standard_taskfields = [ 'tasktype', 'superstatus', 'corecount', 'taskpriority', 'username', 'transuses', 'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag', 'reqid', 'ramcount', 'nucleus']
 
 VOLIST = [ 'atlas', 'bigpanda', 'htcondor', 'core', ]
 VONAME = { 'atlas' : 'ATLAS', 'bigpanda' : 'BigPanDA', 'htcondor' : 'HTCondor', 'core' : 'LSST', '' : '' }
@@ -1207,6 +1207,7 @@ def taskSummaryDict(request, tasks, fieldlist = None):
         suml.append(itemd)
     suml = sorted(suml, key=lambda x:x['field'])
     return suml
+
 
 def wgTaskSummary(request, fieldname='workinggroup', view='production', taskdays=3):
     """ Return a dictionary summarizing the field values for the chosen most interesting fields """
@@ -4101,6 +4102,29 @@ def taskInfo(request, jeditaskid=0):
     taskrec['totev'] = neventsTot
     taskrec['totevproc'] = neventsUsedTot
     taskrec['pctfinished'] = (100*taskrec['totevproc']/taskrec['totev']) if (taskrec['totev'] > 0) else ''
+
+    taskrec['totevhs06'] = neventsTot*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsTot > 0) else None
+    taskrec['totevprochs06'] = neventsUsedTot*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsUsedTot > 0) else None
+
+
+    specsFailed = []
+    tquery = {}
+    tquery['jeditaskid'] = jeditaskid
+
+    specsFailed.extend(Getfailedjobshspec.objects.filter(**tquery).values('timeinhepspec'))
+    specsFailed.extend(Getfailedjobshspecarch.objects.filter(**tquery).values('timeinhepspec'))
+
+    failedSpecsCount = None
+    if len(specsFailed) > 0:
+        failedSpecsCount = 0
+        for specFailed in specsFailed:
+            failedSpecsCount += specFailed['timeinhepspec']
+
+
+    taskrec['failedevprochs06'] = int(failedSpecsCount)
+
+
+
 
 
     tquery = {}

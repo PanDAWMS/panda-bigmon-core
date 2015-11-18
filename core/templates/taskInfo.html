@@ -19,6 +19,7 @@
 	<th>Task status </th>{% if task.superstatus %} {% if task.superstatus != task.status %}<th> Detailed JEDI status </th>{% endif %} {% endif %}
 {% if task.dsinfo %}
     <th> Nevents | <span class='finished'>used</span> </th>
+    <th> HS06*sec | <span class='done'>done</span> | <span class='failed'>failed</span></th>
 {% endif %}
 	<th>Created</th>
 	<th>Modified</th>
@@ -41,6 +42,8 @@
 {% if task.dsinfo %}
         <td> {{task.totev}} |
             <span class='finished'>{{task.totevproc}} ({{task.pctfinished}}%)</span></td>
+        <td> {{task.totevhs06}} |
+            <span class='finished'>{{task.totevprochs06}}</span> | <span class='failed'>{{task.failedevprochs06}}</span></td>
 {% endif %}
 
 		<td>{{ task.creationdate|date:"Y-m-d H:i" }}</td>

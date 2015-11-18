@@ -27,6 +27,19 @@ class MonitorUsers(models.Model):
         db_table = u'MONITOR_USERS'
 
 
+class Getfailedjobshspec(models.Model):
+    jeditaskid = models.BigIntegerField(db_column='JEDITASKID')
+    timeinhepspec = models.FloatField(default=None, db_column='TIMEINHEPSPEC')
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."GETFAILEDJOBSHSPEC"'
+
+class Getfailedjobshspecarch(models.Model):
+    jeditaskid = models.BigIntegerField(db_column='JEDITASKID')
+    timeinhepspec = models.FloatField(default=None, db_column='TIMEINHEPSPEC')
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."GETFAILEDJOBSHSPECARCH"'
+
+
 class GetRWWithPrioJedi3DAYS(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID')
     datasetid = models.BigIntegerField(db_column='DATASETID')
