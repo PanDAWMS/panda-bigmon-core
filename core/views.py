@@ -305,7 +305,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     if not 'viewParams' in request.session:
         request.session['viewParams'] = viewParams
 
-    global LAST_N_HOURS_MAX
+    LAST_N_HOURS_MAX = 0
     
     wildSearchFields = []
     for field in Jobsactive4._meta.get_all_field_names():
@@ -342,6 +342,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             if 'jobsetid' in fields: fields.remove('jobsetid')
     else:
         fields.append('vo')
+
     if hours > 0:
         ## Call param overrides default hours, but not a param on the URL
         LAST_N_HOURS_MAX = hours
@@ -635,7 +636,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     if (len(extraQueryString) < 2):
         extraQueryString = '1=1'        
     
-    return (query,extraQueryString)
+    return (query,extraQueryString, LAST_N_HOURS_MAX)
 
 def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': mode='drop'
@@ -1420,7 +1421,7 @@ def jobList(request, mode=None, param=None):
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         eventservice = True
         
-    query,wildCardExtension = setupView(request, wildCardExt=True)
+    query,wildCardExtension,LAST_N_HOURS_MAX  = setupView(request, wildCardExt=True)
 
     if 'batchid' in request.session['requestParams']:
         query['batchid'] = request.session['requestParams']['batchid']
@@ -2173,7 +2174,7 @@ def userList(request):
     valid, response = initRequest(request)
     if not valid: return response
     nhours = 90*24
-    query = setupView(request, hours=nhours, limit=-99)    
+    query,dump,LAST_N_HOURS_MAX = setupView(request, hours=nhours, limit=-99)
     if VOMODE == 'atlas':
         view = 'database'
     else:
@@ -2607,7 +2608,7 @@ def siteInfo(request, site=''):
     valid, response = initRequest(request)
     if not valid: return response
     if site == '' and 'site' in request.session['requestParams']: site = request.session['requestParams']['site']
-    setupView(request)
+    query,dump, LAST_N_HOURS_MAX = setupView(request)
     startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
     startdate = startdate.strftime(defaultDatetimeFormat)
     enddate = timezone.now().strftime(defaultDatetimeFormat)
@@ -4549,7 +4550,7 @@ def errorSummary(request):
     if 'hours' in request.session['requestParams']:
         hours = int(request.session['requestParams']['hours'])
         
-    query,wildCardExtension  = setupView(request, hours=hours, limit=limit, wildCardExt=True)
+    query,wildCardExtension, LAST_N_HOURS_MAX  = setupView(request, hours=hours, limit=limit, wildCardExt=True)
 
     if not testjobs: query['jobstatus__in'] = [ 'failed', 'holding' ]
     jobs = []
@@ -5860,7 +5861,7 @@ def g4exceptions(request):
         hours = 3
 
 
-    query,wildCardExtension  = setupView(request, hours=hours, wildCardExt=True)
+    query,wildCardExtension,LAST_N_HOURS_MAX  = setupView(request, hours=hours, wildCardExt=True)
     query['jobstatus__in'] = [ 'failed', 'holding' ]
     query['exeerrorcode'] = 68
     query['exeerrordiag__icontains'] = 'G4 exception'
