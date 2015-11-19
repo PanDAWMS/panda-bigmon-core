@@ -3922,30 +3922,34 @@ def taskInfo(request, jeditaskid=0):
     jobparamstxt = []
     if len(taskpars) > 0:
         taskparams = taskpars[0]['taskparams']
-        taskparams = json.loads(taskparams)
-        tpkeys = taskparams.keys()
-        tpkeys.sort()
-        taskparaml = []
-        for k in tpkeys:
-            rec = { 'name' : k, 'value' : taskparams[k] }
-            taskparaml.append(rec)
-        jobparams = taskparams['jobParameters']
-        jobparams.append(taskparams['log'])
-        for p in jobparams:
-            if p['type'] == 'constant':
-                ptxt = p['value']
-            elif p['type'] == 'template':
-                ptxt = "<i>%s template:</i> value='%s' " % ( p['param_type'], p['value'] )
-                for v in p:
-                    if v in ['type', 'param_type', 'value' ]: continue
-                    ptxt += "  %s='%s'" % ( v, p[v] )
-            else:
-                ptxt = '<i>unknown parameter type %s:</i> ' % p['type']
-                for v in p:
-                    if v in ['type', ]: continue
-                    ptxt += "  %s='%s'" % ( v, p[v] )
-            jobparamstxt.append(ptxt)
-        jobparamstxt = sorted(jobparamstxt, key=lambda x:x.lower())
+        try:
+            taskparams = json.loads(taskparams)
+            tpkeys = taskparams.keys()
+            tpkeys.sort()
+            taskparaml = []
+            for k in tpkeys:
+                rec = { 'name' : k, 'value' : taskparams[k] }
+                taskparaml.append(rec)
+            jobparams = taskparams['jobParameters']
+            jobparams.append(taskparams['log'])
+            for p in jobparams:
+                if p['type'] == 'constant':
+                    ptxt = p['value']
+                elif p['type'] == 'template':
+                    ptxt = "<i>%s template:</i> value='%s' " % ( p['param_type'], p['value'] )
+                    for v in p:
+                        if v in ['type', 'param_type', 'value' ]: continue
+                        ptxt += "  %s='%s'" % ( v, p[v] )
+                else:
+                    ptxt = '<i>unknown parameter type %s:</i> ' % p['type']
+                    for v in p:
+                        if v in ['type', ]: continue
+                        ptxt += "  %s='%s'" % ( v, p[v] )
+                jobparamstxt.append(ptxt)
+            jobparamstxt = sorted(jobparamstxt, key=lambda x:x.lower())
+
+        except ValueError:
+            pass
 
     if taskrec and 'ticketsystemtype' in taskrec and taskrec['ticketsystemtype'] == '' and taskparams != None:
         if 'ticketID' in taskparams: taskrec['ticketid'] = taskparams['ticketID']
