@@ -2608,7 +2608,8 @@ def siteInfo(request, site=''):
     valid, response = initRequest(request)
     if not valid: return response
     if site == '' and 'site' in request.session['requestParams']: site = request.session['requestParams']['site']
-    query,dump, LAST_N_HOURS_MAX = setupView(request)
+    setupView(request)
+    LAST_N_HOURS_MAX = 12
     startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
     startdate = startdate.strftime(defaultDatetimeFormat)
     enddate = timezone.now().strftime(defaultDatetimeFormat)
