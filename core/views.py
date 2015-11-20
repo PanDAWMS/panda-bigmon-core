@@ -1628,13 +1628,12 @@ def jobList(request, mode=None, param=None):
 
     sumd, esjobdict = jobSummaryDict(request, jobs)
 
+    testjobs = False
+    if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams']['prodsourcelabel'].lower().find('test') >= 0:
+        testjobs = True
+    tasknamedict = taskNameDict(jobs)
+    errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request,jobs, tasknamedict, testjobs)
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
-        testjobs = False
-
-        if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams']['prodsourcelabel'].lower().find('test') >= 0:
-            testjobs = True
-        tasknamedict = taskNameDict(jobs)
-        errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request,jobs, tasknamedict, testjobs)
 
         if esjobdict and len(esjobdict) > 0:
             for job in jobs:
@@ -1711,7 +1710,8 @@ def jobList(request, mode=None, param=None):
 
         data = {
             "selectionsummary": sumd,
-            "jobs": jobs
+            "jobs": jobs,
+            "errsByCount": errsByCount,
         }
 
         return  HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
