@@ -5291,15 +5291,39 @@ def fileList(request):
     nfiles = len(filed)
     if nfiles > 0:
         files = sorted(files, key=lambda x:x['lfn'])
+
+    if 'sortby' in request.session['requestParams']:
+        sortby = request.session['requestParams']['sortby']
+        if sortby == 'lfn':
+            files = sorted(files, key=lambda x:x['lfn'])
+        elif sortby == 'nevents':
+            files = sorted(files, key=lambda x:x['nevents'],reverse=True)
+        elif sortby == 'fsizemb':
+            files = sorted(files, key=lambda x:x['fsize'], reverse=True)
+        elif sortby == 'pandaid':
+            files = sorted(files, key=lambda x:x['pandaid'])
+        elif sortby == 'fileid':
+            files = sorted(files, key=lambda x:x['fileid'])
+        elif sortby == 'attemptnr':
+            files = sorted(files, key=lambda x:x['attemptnr'])
+        elif sortby == 'status':
+            files = sorted(files, key=lambda x:x['status'])
+    else:
+        sortby='lfn'
+        files = sorted(files, key=lambda x:x['lfn'])
+
     del request.session['TFIRST']
     del request.session['TLAST']
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
+        xurl = extensibleURL(request)
+        nosorturl = removeParam(xurl, 'sortby',mode='extensible')
         data = {
             'request' : request,
             'viewParams' : request.session['viewParams'],
             'requestParams' : request.session['requestParams'],
             'files' : files,
             'nfiles' : nfiles,
+            'nosorturl' : nosorturl,
         }
         ##self monitor
         endSelfMonitor(request)

@@ -18,17 +18,18 @@
 
 <table>
 <tr class='tablesection'>
-	<th>File name</th>
+	<th><a href="{{nosorturl}}sortby=lfn">File name</a></th>
 	<th>Scope</th>
 	<th>Type</th>
-	<th>Size (MB)</th>
+	<th><a href="{{nosorturl}}sortby=fsizemb">Size (MB)</a></th>
+    <th><a href="{{nosorturl}}sortby=nevents">N events</a></th>
 	<th>Task</th>
-	<th>PanDA Job</th>
-	<th>Attempt</th>
-	<th>Status</th>
+	<th><a href="{{nosorturl}}sortby=pandaid">PanDA Job</a></th>
+	<th><a href="{{nosorturl}}sortby=attemptnr">Attempt</a></th>
+	<th><a href="{{nosorturl}}sortby=status">Status</a></th>
 	<th>Created</th>
 	<th>GUID</th>
-	<th>File ID</th>
+	<th><a href="{{nosorturl}}sortby=fileid">File ID</a></th>
 </tr>
 {% for frec in files %}
 	<tr><font size=-1>
@@ -36,6 +37,7 @@
 		<td><font size=-1>{{ frec.scope }}</font></td>
 		<td>{{ frec.type }}</td>
 		<td>{{ frec.fsizemb }}</td>
+        <td>{{ frec.nevents }}</td>
 		<td><a href="{% url 'taskInfo' %}?jeditaskid={{ frec.jeditaskid }}">{{ frec.jeditaskid }}</a></td>
 		<td>{% if frec.pandaid %}<a href="{% url 'jobInfo' %}?pandaid={{ frec.pandaid }}">{{ frec.pandaid }}</a> {% endif %}</td>
 		<td>{{ frec.attemptnr }}</td>
