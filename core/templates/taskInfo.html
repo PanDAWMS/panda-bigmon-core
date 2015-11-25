@@ -19,7 +19,7 @@
 	<th>Task status </th>{% if task.superstatus %} {% if task.superstatus != task.status %}<th> Detailed JEDI status </th>{% endif %} {% endif %}
 {% if task.dsinfo %}
     <th> Nevents | <span class='finished'>used</span> </th>
-    <th> HS06*sec | <span class='done'>done</span> | <span class='failed'>failed</span></th>
+    <th> HS06*sec expected | <span class='done'>done</span> | <span class='failed'>failed</span></th>
     <th> Ninputfiles | <span class='finished'>finished</span> | <span class='failed'>failed</span> </th>
 
 {% endif %}
@@ -45,7 +45,7 @@
 {% if task.dsinfo %}
         <td> {{task.totev}} |
             <span class='finished'>{{task.totevproc}} ({{task.pctfinished}}%)</span></td>
-        <td> {{task.totevhs06}} |
+        <td> {{task.totevremhs06}} |
             <span class='finished'>{{task.totevprochs06}}</span> | <span class='failed'>{{task.failedevprochs06}}</span></td>
         <td> {{task.dsinfo.nfiles}} |
             <span class='finished'>{{task.dsinfo.nfilesfinished}} ({{task.dsinfo.pctfinished}}%)</span> {% if task.dsinfo.nfilesfailed > 0 %} | <span class='failed'>{{task.dsinfo.nfilesfailed}} ({{task.dsinfo.pctfailed}}%)</span>  {% endif %} </td>

@@ -4109,9 +4109,8 @@ def taskInfo(request, jeditaskid=0):
     taskrec['totevproc'] = neventsUsedTot
     taskrec['pctfinished'] = (100*taskrec['totevproc']/taskrec['totev']) if (taskrec['totev'] > 0) else ''
 
-    taskrec['totevhs06'] = neventsTot*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsTot > 0) else None
+    taskrec['totevremhs06'] = (neventsTot-neventsUsedTot)*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsTot > 0) else None
     taskrec['totevprochs06'] = neventsUsedTot*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsUsedTot > 0) else None
-
 
     specsFailed = []
     tquery = {}
