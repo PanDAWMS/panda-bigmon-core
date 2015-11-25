@@ -91,6 +91,7 @@ for i in range (0, len(taskstatelist)):
     taskstatedict.append(tsdict)
 
 
+
 errorcodelist = [ 
     { 'name' : 'brokerage', 'error' : 'brokerageerrorcode', 'diag' : 'brokerageerrordiag' },
     { 'name' : 'ddm', 'error' : 'ddmerrorcode', 'diag' : 'ddmerrordiag' },
@@ -104,8 +105,6 @@ errorcodelist = [
 
 
 _logger = logging.getLogger('bigpandamon')
-#viewParams = {}
-#requestParams = {}
 
 LAST_N_HOURS_MAX = 0
 #JOB_LIMIT = 0
@@ -188,6 +187,8 @@ def initRequest(request):
     ##self monitor
     initSelfMonitor(request)
 
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        VOMODE = 'atlas'
 
     ## Set default page lifetime in the http header, for the use of the front end cache
     request.session['max_age_minutes'] = 3
@@ -832,7 +833,13 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
     return jobs
 
 def cleanTaskList(request, tasks):
-    
+
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+    else:
+        tmpTableName = "TMP_IDS1"
+
+
     for task in tasks:
         if task['transpath']: task['transpath'] = task['transpath'].split('/')[-1]
         if task['statechangetime'] == None: task['statechangetime'] = task['modificationtime']
@@ -847,7 +854,6 @@ def cleanTaskList(request, tasks):
 #    dsquery['jeditaskid__in'] = taskl
 
     random.seed()
-    tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
     transactionKey = random.randrange(1000000)
     connection.enter_transaction_management()
     new_cur = connection.cursor()
@@ -970,7 +976,13 @@ def jobSummaryDict(request, jobs, fieldlist = None):
     if len(esjobs) > 0:
         sumd['eventservice'] = {}
 
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+
+        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+        else:
+            tmpTableName = "TMP_IDS1"
+
+
         transactionKey = random.randrange(1000000)
 
         connection.enter_transaction_management()
@@ -2174,7 +2186,8 @@ def userList(request):
     valid, response = initRequest(request)
     if not valid: return response
     nhours = 90*24
-    query,dump,LAST_N_HOURS_MAX = setupView(request, hours=nhours, limit=-99)
+
+    setupView(request, hours=nhours, limit=-99)
     if VOMODE == 'atlas':
         view = 'database'
     else:
@@ -3484,16 +3497,18 @@ def dashboard(request, view='production'):
         cloudview = 'N/A'
 
     fullsummary = dashSummary(request, hours=hours, view=view, cloudview=cloudview)
-    
+
     cloudTaskSummary = wgTaskSummary(request,fieldname='cloud', view=view, taskdays=taskdays)
     jobsLeft = {}
     rw = {}
-    rwData, nRemJobs = calculateRWwithPrio_JEDI(query)
-    for cloud in fullsummary:
-        if cloud['name'] in nRemJobs.keys():
-            jobsLeft[cloud['name']] = nRemJobs[cloud['name']]
-        if cloud['name'] in rwData.keys():
-            rw[cloud['name']] = rwData[cloud['name']]
+
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        rwData, nRemJobs = calculateRWwithPrio_JEDI(query)
+        for cloud in fullsummary:
+            if cloud['name'] in nRemJobs.keys():
+                jobsLeft[cloud['name']] = nRemJobs[cloud['name']]
+            if cloud['name'] in rwData.keys():
+                rw[cloud['name']] = rwData[cloud['name']]
             
             
     request.session['max_age_minutes'] = 6
@@ -3757,10 +3772,13 @@ def taskList(request):
         for job in jobs:
             esjobs.append(job['pandaid'])
 
-
-
         random.seed()
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+
+        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+        else:
+            tmpTableName = "TMP_IDS1"
+
         transactionKey = random.randrange(1000000)
         connection.enter_transaction_management()
         new_cur = connection.cursor()
@@ -4051,8 +4069,11 @@ def taskInfo(request, jeditaskid=0):
             esjobs.append(job['pandaid'])
         esquery = {}
 
+        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+        else:
+            tmpTableName = "TMP_IDS1"
 
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
         transactionKey = random.randrange(1000000)
 
         connection.enter_transaction_management()
@@ -5849,14 +5870,22 @@ def addJobMetadata(jobs, require = False):
     ## Get job metadata
 
     random.seed()
-    tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        metaTableName = "ATLAS_PANDA.METATABLE"
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+    else:
+        metaTableName = "METATABLE"
+        tmpTableName = "TMP_IDS1"
+
+
     transactionKey = random.randrange(1000000)
     connection.enter_transaction_management()
     new_cur = connection.cursor()
     for id in pids:
         new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,id,transactionKey)) # Backend dependable
     connection.commit()
-    new_cur.execute("SELECT METADATA,MODIFICATIONTIME,PANDAID FROM ATLAS_PANDA.METATABLE WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
+    new_cur.execute("SELECT METADATA,MODIFICATIONTIME,PANDAID FROM %s WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (metaTableName, tmpTableName, transactionKey))
     mrecs = dictfetchall(new_cur)
 
 
@@ -5903,7 +5932,12 @@ def g4exceptions(request):
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
 
     if 'amitag' in request.session['requestParams']:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+
+        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+        else:
+            tmpTableName = "TMP_IDS1"
+
         transactionKey = random.randrange(1000000)
         connection.enter_transaction_management()
         new_cur = connection.cursor()
