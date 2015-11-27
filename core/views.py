@@ -5314,20 +5314,50 @@ def fileList(request):
 
     if 'sortby' in request.session['requestParams']:
         sortby = request.session['requestParams']['sortby']
-        if sortby == 'lfn':
+        if sortby == 'lfn-asc':
             files = sorted(files, key=lambda x:x['lfn'])
-        elif sortby == 'nevents':
-            files = sorted(files, key=lambda x:x['nevents'],reverse=True)
-        elif sortby == 'fsizemb':
+        elif sortby == 'lfn-desc':
+            files = sorted(files, key=lambda x:x['lfn'],reverse=True)
+        elif sortby == 'scope-asc':
+            files = sorted(files, key=lambda x:x['scope'])
+        elif sortby == 'scope-desc':
+            files = sorted(files, key=lambda x:x['scope'], reverse=True)
+        elif sortby == 'type-asc':
+            files = sorted(files, key=lambda x:x['type'])
+        elif sortby == 'type-desc':
+            files = sorted(files, key=lambda x:x['type'],reverse=True)
+        elif sortby == 'fsizemb-asc':
+            files = sorted(files, key=lambda x:x['fsize'])
+        elif sortby == 'fsizemb-desc':
             files = sorted(files, key=lambda x:x['fsize'], reverse=True)
-        elif sortby == 'pandaid':
-            files = sorted(files, key=lambda x:x['pandaid'])
-        elif sortby == 'fileid':
+        elif sortby == 'nevents-asc':
+            files = sorted(files, key=lambda x:x['nevents'])
+        elif sortby == 'nevents-desc':
+            files = sorted(files, key=lambda x:x['nevents'],reverse=True)
+        elif sortby == 'jeditaskid-asc':
+            files = sorted(files, key=lambda x:x['jeditaskid'])
+        elif sortby == 'jeditaskid-desc':
+            files = sorted(files, key=lambda x:x['jeditaskid'],reverse=True)
+        elif sortby == 'fileid-asc':
             files = sorted(files, key=lambda x:x['fileid'])
-        elif sortby == 'attemptnr':
+        elif sortby == 'fileid-desc':
+            files = sorted(files, key=lambda x:x['fileid'], reverse=True)
+        elif sortby == 'attemptnr-asc':
             files = sorted(files, key=lambda x:x['attemptnr'])
-        elif sortby == 'status':
+        elif sortby == 'attemptnr-desc':
+            files = sorted(files, key=lambda x:x['attemptnr'], reverse=True)
+        elif sortby == 'status-asc':
             files = sorted(files, key=lambda x:x['status'])
+        elif sortby == 'status-desc':
+            files = sorted(files, key=lambda x:x['status'], reverse=True)
+        elif sortby == 'creationdate-asc':
+            files = sorted(files, key=lambda x:x['creationdate'])
+        elif sortby == 'creationdate-desc':
+            files = sorted(files, key=lambda x:x['creationdate'], reverse=True)
+        elif sortby == 'pandaid-asc':
+            files = sorted(files, key=lambda x:x['pandaid'])
+        elif sortby == 'pandaid-desc':
+            files = sorted(files, key=lambda x:x['pandaid'], reverse=True)
     else:
         sortby='lfn'
         files = sorted(files, key=lambda x:x['lfn'])
@@ -5344,6 +5374,7 @@ def fileList(request):
             'files' : files,
             'nfiles' : nfiles,
             'nosorturl' : nosorturl,
+            'sortby' : sortby,
         }
         ##self monitor
         endSelfMonitor(request)
