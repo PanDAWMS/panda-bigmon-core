@@ -18,18 +18,84 @@
 
 <table>
 <tr class='tablesection'>
-	<th><a href="{{nosorturl}}sortby=lfn">File name</a></th>
-	<th>Scope</th>
-	<th>Type</th>
-	<th><a href="{{nosorturl}}sortby=fsizemb">Size (MB)</a></th>
-    <th><a href="{{nosorturl}}sortby=nevents">N events</a></th>
-	<th>Task</th>
-	<th><a href="{{nosorturl}}sortby=pandaid">PanDA Job</a></th>
-	<th><a href="{{nosorturl}}sortby=attemptnr">Attempt</a></th>
-	<th><a href="{{nosorturl}}sortby=status">Status</a></th>
-	<th>Created</th>
+    {% if sortby == 'lfn-desc' %}
+        <th>File name<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=lfn-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'lfn-asc' %}
+        <th>File name<br><a href="{{nosorturl}}sortby=lfn-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}
+        <th>File name<br><a href="{{nosorturl}}sortby=lfn-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=lfn-asc" class="headerSortUp"></a></th>
+    {% endif %}
+    {% if sortby == 'scope-desc' %}
+        <th>Scope<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=scope-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'scope-asc' %}
+        <th>Scope<br><a href="{{nosorturl}}sortby=scope-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}
+        <th>Scope<br><a href="{{nosorturl}}sortby=scope-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=scope-asc" class="headerSortUp"></a></th>
+    {% endif %}
+    {% if sortby == 'type-desc' %}
+        <th>Type<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=type-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'type-asc' %}
+        <th>Type<br><a href="{{nosorturl}}sortby=type-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}
+        <th>Type<br><a href="{{nosorturl}}sortby=type-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=type-asc" class="headerSortUp"></a></th>
+    {% endif %}
+    {% if sortby == 'fsizemb-desc' %}
+        <th>Size (MB)<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=fsizemb-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'fsizemb-asc' %}
+        <th>Size (MB)<br><a href="{{nosorturl}}sortby=fsizemb-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}
+        <th>Size (MB)<br><a href="{{nosorturl}}sortby=fsizemb-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=fsizemb-asc" class="headerSortUp"></a></th>
+    {% endif %}
+    {% if sortby == 'nevents-desc' %}
+        <th>N events<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=nevents-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'nevents-asc' %}
+        <th>N events<br><a href="{{nosorturl}}sortby=nevents-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}
+        <th>N events<br><a href="{{nosorturl}}sortby=nevents-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=nevents-asc" class="headerSortUp"></a></th>
+    {% endif %}
+    {% if sortby == 'jeditaskid-desc' %}
+        <th>Task<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=jeditaskid-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'jeditaskid-asc' %}
+        <th>Task<br><a href="{{nosorturl}}sortby=jeditaskid-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}
+        <th>Task<br><a href="{{nosorturl}}sortby=jeditaskid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=jeditaskid-asc" class="headerSortUp"></a></th>
+    {% endif %}
+    {% if sortby == 'pandaid-desc' %}
+        <th>PanDA Job<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=pandaid-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'pandaid-asc' %}
+        <th>PanDA Job<br><a href="{{nosorturl}}sortby=pandaid-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}
+        <th>PanDA Job<br><a href="{{nosorturl}}sortby=pandaid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=pandaid-asc" class="headerSortUp"></a></th>
+    {% endif %}
+    {% if sortby == 'attemptnr-desc' %}
+        <th>Attempt<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=attemptnr-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'attemptnr-asc' %}
+        <th>Attempt<br><a href="{{nosorturl}}sortby=attemptnr-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}
+        <th>Attempt<br><a href="{{nosorturl}}sortby=attemptnr-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=attemptnr-asc" class="headerSortUp"></a></th>
+    {% endif %}
+    {% if sortby == 'status-desc' %}
+        <th>Status<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=status-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'status-asc' %}
+        <th>Status<br><a href="{{nosorturl}}sortby=status-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}
+        <th>Status<br><a href="{{nosorturl}}sortby=status-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=status-asc" class="headerSortUp"></a></th>
+    {% endif %}
+    {% if sortby == 'creationdate-desc' %}
+        <th>Created<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=creationdate-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'creationdate-asc' %}
+        <th>Created<br><a href="{{nosorturl}}sortby=creationdate-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}
+        <th>Created<br><a href="{{nosorturl}}sortby=creationdate-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=creationdate-asc" class="headerSortUp"></a></th>
+    {% endif %}
 	<th>GUID</th>
-	<th><a href="{{nosorturl}}sortby=fileid">File ID</a></th>
+    {% if sortby == 'fileid-desc' %}
+        <th>File ID<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=fileid-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'fileid-asc' %}
+        <th>File ID<br><a href="{{nosorturl}}sortby=fileid-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}
+        <th>File ID<br><a href="{{nosorturl}}sortby=fileid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=fileid-asc" class="headerSortUp"></a></th>
+    {% endif %}
 </tr>
 {% for frec in files %}
 	<tr><font size=-1>
