@@ -4193,7 +4193,7 @@ def taskInfo(request, jeditaskid=0):
 
         del request.session['TFIRST']
         del request.session['TLAST']
-        return  HttpResponse(json.dumps(data), mimetype='text/html')
+        return  HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
     else:
         attrs = []
         do_redirect = False
