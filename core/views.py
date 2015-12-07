@@ -1643,7 +1643,7 @@ def jobList(request, mode=None, param=None):
     if 'jeditaskid' in request.session['requestParams']:
         if len(jobs)>0:
             for job in jobs:
-                if 'maxvmem' in jobs:
+                if 'maxvmem' in job:
                     if type(job['maxvmem']) is int and job['maxvmem'] > 0:
                        job['maxvmemmb'] = "%0.2f" % (job['maxvmem']/1000.)
                        job['avgvmemmb'] = "%0.2f" % (job['avgvmem']/1000.)
