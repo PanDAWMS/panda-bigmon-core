@@ -2528,10 +2528,6 @@ def siteList(request):
                 currentCardCount += 1
             extraParCondition += ')'
 
-#            preprocessWildCardString(strToProcess, fieldToLookAt)
-#            queryparam =
-#            query['jobseed__icontains'] = escapeInput(request.session['requestParams'][param])
-
         for field in Schedconfig._meta.get_all_field_names():
             if param == field and not (param == 'catchall'):
                 query[param] = escapeInput(request.session['requestParams'][param])
@@ -4135,12 +4131,12 @@ def taskInfo(request, jeditaskid=0):
     #neventsTot = 0
     #neventsUsedTot = 0
 
-    taskrec['totev'] = neventsTot
-    taskrec['totevproc'] = neventsUsedTot
-    taskrec['pctfinished'] = (100*taskrec['totevproc']/taskrec['totev']) if (taskrec['totev'] > 0) else ''
-
-    taskrec['totevremhs06'] = (neventsTot-neventsUsedTot)*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsTot > 0) else None
-    taskrec['totevprochs06'] = neventsUsedTot*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsUsedTot > 0) else None
+    if taskrec:
+        taskrec['totev'] = neventsTot
+        taskrec['totevproc'] = neventsUsedTot
+        taskrec['pctfinished'] = (100*taskrec['totevproc']/taskrec['totev']) if (taskrec['totev'] > 0) else ''
+        taskrec['totevremhs06'] = (neventsTot-neventsUsedTot)*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsTot > 0) else None
+        taskrec['totevprochs06'] = neventsUsedTot*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsUsedTot > 0) else None
 
     specsFailed = []
     tquery = {}
@@ -4155,8 +4151,8 @@ def taskInfo(request, jeditaskid=0):
         for specFailed in specsFailed:
             failedSpecsCount += int(specFailed['timeinhepspec'])
 
-
-    taskrec['failedevprochs06'] = failedSpecsCount
+    if taskrec:
+        taskrec['failedevprochs06'] = failedSpecsCount
 
 
 
@@ -4167,7 +4163,8 @@ def taskInfo(request, jeditaskid=0):
     tquery['storagetoken__isnull'] = False
     storagetoken = JediDatasets.objects.filter(**tquery).values('storagetoken')
     if storagetoken:
-       taskrec['destination']=storagetoken[0]['storagetoken']
+        if taskrec:
+           taskrec['destination']=storagetoken[0]['storagetoken']
 
 
     if (('HTTP_ACCEPT' in request.META) and(request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
@@ -4175,10 +4172,11 @@ def taskInfo(request, jeditaskid=0):
         del tasks
         del columns
         del ds
-        taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
-        taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
-        taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
-        taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
+        if taskrec:
+            taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
+            taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
+            taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
+            taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
 
         for dset in dsets:
             dset['creationtime'] = dset['creationtime'].strftime(defaultDatetimeFormat)
