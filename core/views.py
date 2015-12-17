@@ -3554,8 +3554,27 @@ def dashboard(request, view='production'):
     else:
         del request.session['TFIRST']
         del request.session['TLAST']
-        resp = []
-        return HttpResponse(json.dumps(resp), mimetype='text/html')
+
+        data = {
+            'summary' : fullsummary,
+            'vosummary' : vosummary,
+            'view' : view,
+            'mode' : 'site',
+            'cloudview': cloudview,
+            'hours' : hours,
+            'errthreshold' : errthreshold,
+            'cloudTaskSummary' : cloudTaskSummary ,
+            'taskstates' : taskstatedict,
+            'taskdays' : taskdays,
+            'noldtransjobs' : noldtransjobs,
+            'transclouds' : transclouds,
+            'transrclouds' : transrclouds,
+            'hoursSinceUpdate' : hoursSinceUpdate,
+            'jobsLeft' : jobsLeft,
+            'rw': rw
+        }
+
+        return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
 
 
 from django.template.defaulttags import register
