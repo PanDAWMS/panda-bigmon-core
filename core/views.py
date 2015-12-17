@@ -5224,14 +5224,15 @@ def fileInfo(request):
         query['guid'] = request.session['requestParams']['guid']
     else:
         file = None
-    if 'scope' in request.session['requestParams']:
-        query['scope'] = request.session['requestParams']['scope']
+
     if 'pandaid' in request.session['requestParams'] and request.session['requestParams']['pandaid'] != '':
         query['pandaid'] = request.session['requestParams']['pandaid']
     if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid'] != '':
         query['jeditaskid'] = request.session['requestParams']['jeditaskid']
+    if 'scope' in request.session['requestParams']:
+        query['scope'] = request.session['requestParams']['scope']
 
-    if file:
+    if file or (query['pandaid'] is not None) or (query['jeditaskid'] is not None):
         files = JediDatasetContents.objects.filter(**query).values()
         if len(files) == 0:
             morefiles = Filestable4.objects.filter(**query).values()
@@ -5296,7 +5297,13 @@ def fileInfo(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
     else:
-        return  HttpResponse(json.dumps(dsrec), mimetype='text/html')
+        data = {
+            'frec' : frec,
+            'files' : files,
+            'filename' : file,
+            'columns' : columns,
+        }
+        return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
 
 def fileList(request):
     valid, response = initRequest(request)
