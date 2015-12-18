@@ -299,6 +299,7 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
                     <li><a href="{% url 'jobList' %}?jobtype=production&display_limit=100">Production</a></li>
                     <li><a href="{% url 'jobList' %}?jobtype=groupproduction&display_limit=100">Group production</a></li>
                     <li><a href="{% url 'jobList' %}?jobtype=eventservice&display_limit=100">Event service</a></li>
+                    <li><a href="{% url 'status_summary-index' %}">Status Summary</a></li>
                 {% endif %}
                 <li><a href="{% url 'jobList' %}?jobtype=test&display_limit=100">Test</a></li>
             </ul>
