@@ -3951,7 +3951,10 @@ def taskInfo(request, jeditaskid=0):
         if maxpssjob > 0:
             maxpssave += maxpssjob
             maxpsscount += 1
-    maxpssave = maxpssave/maxpsscount
+    if maxpsscount > 0:
+        maxpssave = maxpssave/maxpsscount
+    else:
+        maxpssave = ''
 
     tasks = cleanTaskList(request,tasks)
     try:
