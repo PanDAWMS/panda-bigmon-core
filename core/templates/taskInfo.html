@@ -21,9 +21,8 @@
     <th> Nevents | <span class='finished'>used</span> </th>
     <th> HS06*sec expected | <span class='done'>done</span> | <span class='failed'>failed</span></th>
     <th> Ninputfiles | <span class='finished'>finished</span> | <span class='failed'>failed</span> </th>
-
 {% endif %}
-
+	<th>Average maxpss</th>
 	<th>Created</th>
 	<th>Modified</th>
 	<th>Cores</th>
@@ -50,7 +49,7 @@
         <td> {{task.dsinfo.nfiles}} |
             <span class='finished'>{{task.dsinfo.nfilesfinished}} ({{task.dsinfo.pctfinished}}%)</span> {% if task.dsinfo.nfilesfailed > 0 %} | <span class='failed'>{{task.dsinfo.nfilesfailed}} ({{task.dsinfo.pctfailed}}%)</span>  {% endif %} </td>
 {% endif %}
-
+		<td>{{ task.maxpssave }}</td>
 		<td>{{ task.creationdate|date:"Y-m-d H:i" }}</td>
 		<td>{{ task.modificationtime|date:"m-d H:i" }}</td>
 		<td>{{ task.corecount }}</td>

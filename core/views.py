@@ -1444,7 +1444,7 @@ def jobList(request, mode=None, param=None):
     elif eventservice:
         values = 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime'
     else:
-        values = 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem'
+        values = 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxrss'
     
     JOB_LIMITS=request.session['JOB_LIMIT']
     totalJobs = 0
@@ -1647,6 +1647,7 @@ def jobList(request, mode=None, param=None):
                     if type(job['maxvmem']) is int and job['maxvmem'] > 0:
                        job['maxvmemmb'] = "%0.2f" % (job['maxvmem']/1000.)
                        job['avgvmemmb'] = "%0.2f" % (job['avgvmem']/1000.)
+
 
     testjobs = False
     if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams']['prodsourcelabel'].lower().find('test') >= 0:
@@ -3920,6 +3921,7 @@ def taskInfo(request, jeditaskid=0):
     colnames = []
     columns = []
     jobsummary = []
+    maxpss = []
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid != 0:
         query = {'jeditaskid' : jeditaskid}
@@ -3928,20 +3930,28 @@ def taskInfo(request, jeditaskid=0):
 
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
         if eventservice:
-            jobsummary = jobSummary2(query, mode='eventservice')
+            jobsummary,maxpss = jobSummary2(query, mode='eventservice')
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
             exclude = {'processingtype' : 'pmerge' }
             mode='drop'
             if 'mode' in request.session['requestParams']:
                 mode= request.session['requestParams']['mode']
-            jobsummary = jobSummary2(query, exclude=exclude, mode=mode)
+            jobsummary,maxpss = jobSummary2(query, exclude=exclude, mode=mode)
     elif 'taskname' in request.session['requestParams']:
         querybyname = {'taskname' : request.session['requestParams']['taskname'] }
         tasks = JediTasks.objects.filter(**querybyname).values()
         if len(tasks) > 0:
             jeditaskid = tasks[0]['jeditaskid']
         query = {'jeditaskid' : jeditaskid}
+
+    maxpssave = 0
+    maxpsscount = 0
+    for maxpssjob in maxpss:
+        if maxpssjob > 0:
+            maxpssave += maxpssjob
+            maxpsscount += 1
+    maxpssave = maxpssave/maxpsscount
 
     tasks = cleanTaskList(request,tasks)
     try:
@@ -4047,6 +4057,7 @@ def taskInfo(request, jeditaskid=0):
             dsinfo['pctfailed'] = int(100.*nfailed/nfiles)
 
     if taskrec: taskrec['dsinfo'] = dsinfo
+
 
     ## get dataset types
     dstypesd = {}
@@ -4156,6 +4167,7 @@ def taskInfo(request, jeditaskid=0):
         taskrec['pctfinished'] = (100*taskrec['totevproc']/taskrec['totev']) if (taskrec['totev'] > 0) else ''
         taskrec['totevremhs06'] = (neventsTot-neventsUsedTot)*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsTot > 0) else None
         taskrec['totevprochs06'] = neventsUsedTot*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsUsedTot > 0) else None
+        taskrec['maxpssave'] = maxpssave
 
     specsFailed = []
     tquery = {}
@@ -4173,10 +4185,6 @@ def taskInfo(request, jeditaskid=0):
     if taskrec:
         taskrec['failedevprochs06'] = failedSpecsCount
 
-
-
-
-
     tquery = {}
     tquery['jeditaskid'] = jeditaskid
     tquery['storagetoken__isnull'] = False
@@ -4184,7 +4192,6 @@ def taskInfo(request, jeditaskid=0):
     if storagetoken:
         if taskrec:
            taskrec['destination']=storagetoken[0]['storagetoken']
-
 
     if (('HTTP_ACCEPT' in request.META) and(request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
 
@@ -4262,22 +4269,24 @@ def taskInfo(request, jeditaskid=0):
 def jobSummary2(query, exclude={}, mode='drop'):
     jobs = []
     jobs.extend(Jobsdefined4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss'))
     jobs.extend(Jobswaiting4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss'))
     jobs.extend(Jobsactive4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss'))
     jobs.extend(Jobsarchived4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss'))
     jobs.extend(Jobsarchived.objects.filter(**query).exclude(**exclude).\
-            values('pandaid','jobstatus','jeditaskid','processingtype'))
+            values('pandaid','jobstatus','jeditaskid','processingtype','maxpss'))
     
     jobsSet = set()
     newjobs = []
+    maxpss = []
     for job in jobs:
         if not job['pandaid'] in jobsSet:
             jobsSet.add(job['pandaid'])
             newjobs.append(job)
+            maxpss.append(job['maxpss'])
     jobs = newjobs
     
     if mode == 'drop' and len(jobs) < 100000:
@@ -4322,9 +4331,7 @@ def jobSummary2(query, exclude={}, mode='drop'):
                         droplist.append( { 'pandaid' : pandaid, 'newpandaid' : dropJob } )
             jobs = newjobs
         print 'done filtering'
-    
-    
-    
+
     jobstates = []
     global statelist
     for state in statelist:
@@ -4338,7 +4345,7 @@ def jobSummary2(query, exclude={}, mode='drop'):
                 statecount['count'] += 1
                 continue
         jobstates.append(statecount)
-    return jobstates
+    return jobstates, maxpss
 
 def jobStateSummary(jobs):
     global statelist
