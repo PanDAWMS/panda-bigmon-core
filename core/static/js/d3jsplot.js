@@ -2,7 +2,7 @@
  * Created by spadolski on 12/22/15.
  */
 
-function pandamonplotFunc(values, divToShow, title) {
+function pandamonplotFunc(values, divToShow, title, numberofbins) {
 
 
     // A formatter for counts.
@@ -16,7 +16,7 @@ function pandamonplotFunc(values, divToShow, title) {
     var upperBand = Math.max.apply(Math, values);
     var x = d3.scale.linear().domain([lowerBand, upperBand]).range([0, width]);
     var data = d3.layout.histogram()
-        .bins(x.ticks(50))
+        .bins(x.ticks(numberofbins))
         (values);
 
     var y = d3.scale.linear()
@@ -45,7 +45,7 @@ function pandamonplotFunc(values, divToShow, title) {
 
     bar.append("rect")
         .attr("x", 1)
-        .attr("width", x(data[0].dx) - 2)
+        .attr("width", width/numberofbins -2)
         .attr("height", function (d) {
             return height - y(d.y);
         });

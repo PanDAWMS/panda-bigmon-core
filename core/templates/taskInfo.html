@@ -62,16 +62,15 @@
 </table>
 
 
-
-<div class="d3splot" id="plot1" style="float:left;"></div>
-<div class="d3splot" id="plot2" style="float:left;"></div>
+{% if  maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;"></div> {% endif %}
+{% if  maxrss|length > 0 %} <div class="d3splot" id="plot2" style="float:left;"></div> {% endif %}
 
 <script src="/static/js/d3jsplot.js"></script>
 <script>
     var values = {{ maxpss|safe }};
-    pandamonplotFunc(values,"#plot1", "maxpss");
+    pandamonplotFunc(values,"#plot1", "maxpss", {% if  maxpss|length < 100 %} 10 {% else %} 100 {% endif %});
     var values1 = {{ maxrss|safe }};
-    pandamonplotFunc(values1,"#plot2", "maxrss");
+    pandamonplotFunc(values1,"#plot2", "maxrss", {% if  maxrss|length < 100 %} 10 {% else %} 100 {% endif %});
 
 </script>
 
