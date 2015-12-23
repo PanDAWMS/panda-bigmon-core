@@ -62,6 +62,8 @@
 </table>
 
 
+{% comment %}
+
 {% if  maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;"></div> {% endif %}
 {% if  maxrss|length > 0 %} <div class="d3splot" id="plot2" style="float:left;"></div> {% endif %}
 
@@ -73,6 +75,8 @@
     pandamonplotFunc(values1,"#plot2", "maxrss", {% if  maxrss|length < 100 %} 10 {% else %} 100 {% endif %});
 
 </script>
+
+{% endcomment %}
 
 
 
