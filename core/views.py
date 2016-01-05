@@ -518,6 +518,17 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                 val = escapeInput(request.session['requestParams'][param])
                                 values = val.split('|')
                                 query['superstatus__in'] = values
+
+                            elif param == 'reqid':
+                                val = escapeInput(request.session['requestParams'][param])
+                                if val.find('|') >= 0:
+                                    values = val.split('|')
+                                    values = [int(val) for val in values]
+                                    query['reqid__in'] = values
+                                else:
+                                    query['reqid'] = int(val)
+
+
                             else:
                                 query[param] = request.session['requestParams'][param]
                         if param == 'eventservice':
@@ -3680,6 +3691,8 @@ def dashTasks(request, hours, view='production'):
             'remainingWeightedEvents':remainingEventsSet,
         }
         return  HttpResponse(json.dumps(data), mimetype='text/html')
+
+
 
 @csrf_exempt
 @cache_page(60*6)
