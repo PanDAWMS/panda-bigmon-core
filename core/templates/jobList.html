@@ -170,9 +170,7 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 	<th>{% if viewParams.MON_VO == 'ATLAS' %}Cloud {% endif%}Site</th>
 	<th>Priority</th>
     {% if requestParams.jeditaskid  %}
-    <th>Average <br>VMEM (KB)</th>
-    <th>Maximum <br>VMEM (KB)</th>
-    <th>Maximum <br>PSS</th>
+        <th>Maximum <br>PSS</th>
     {% endif %}
 	<th>Job info</th>
 </tr>
@@ -193,9 +191,7 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a></font></td>
 		<td>{{ job.currentpriority }}</td>
         {% if requestParams.jeditaskid  %}
-        <td><font size=-1>{% if job.avgvmem and job.avgvmem != 'None' and job.avgvmem != -1 %}{{ job.avgvmemmb }}{% endif %}</font></td>
-        <td><font size=-1>{% if job.maxvmem and job.maxvmem != 'None' and job.maxvmem != -1 %}{{ job.maxvmemmb }}{% endif %}</font></td>
-        <td><font size=-1>{% if job.maxrss and job.maxrss != 'None' and job.maxrss != -1 %}{{ job.maxrss }}{% endif %}</font></td>
+        <td><font size=-1>{% if job.maxpss and job.maxpss != 'None' and job.maxpss != -1 %}{{ job.maxpss }}{% endif %}</font></td>
          {% endif %}
 		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
 		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}

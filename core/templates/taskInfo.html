@@ -62,10 +62,21 @@
 </table>
 
 
-{% comment %}
+<script type="text/javascript">
+function toggleDetailDisplay(className) {
+   el = document.getElementsByClassName(className)
+   for (i=0; i<el.length; i++) {
+     el[i].style.display = (el[i].style.display=="none") ? "" : "none";
+   }
+}
+</script>
 
-{% if  maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;"></div> {% endif %}
-{% if  maxrss|length > 0 %} <div class="d3splot" id="plot2" style="float:left;"></div> {% endif %}
+
+<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('d3splot');"><br>Click to show/hide plots</a><p>
+
+
+{% if  maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
+{% if  maxrss|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
 
 <script src="/static/js/d3jsplot.js"></script>
 <script>
@@ -76,7 +87,6 @@
 
 </script>
 
-{% endcomment %}
 
 
 
