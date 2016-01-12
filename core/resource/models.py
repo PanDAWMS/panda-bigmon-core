@@ -107,6 +107,8 @@ class Schedconfig(models.Model):
     celist = models.CharField(max_length=12000, db_column='CELIST', blank=True)
     minmemory = models.IntegerField(null=True, db_column='MINMEMORY', blank=True)
     maxmemory = models.IntegerField(null=True, db_column='MAXMEMORY', blank=True)
+    minrss = models.IntegerField(null=True, db_column='MINRSS', blank=True)
+    maxrss = models.IntegerField(null=True, db_column='MAXRSS', blank=True)
     mintime = models.IntegerField(null=True, db_column='MINTIME', blank=True)
     allowjem = models.CharField(null=True, max_length=64, db_column='ALLOWJEM', blank=True)
     catchall = models.CharField(null=True, max_length=512, db_column='CATCHALL', blank=True)

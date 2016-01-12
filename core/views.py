@@ -2696,7 +2696,8 @@ def siteInfo(request, site=''):
                 attrs.append({'name' : 'Multicloud', 'value' : siterec.multicloud })
             attrs.append({'name' : 'Tier', 'value' : siterec.tier })
             attrs.append({'name' : 'DDM endpoint', 'value' : siterec.ddm })
-            attrs.append({'name' : 'Maximum memory', 'value' : "%.1f GB" % (float(siterec.maxmemory)/1000.) })
+            attrs.append({'name' : 'Max rss', 'value' : "%.1f GB" % (float(siterec.maxrss)/1000.) })
+            attrs.append({'name' : 'Min rss', 'value' : "%.1f GB" % (float(siterec.minrss)/1000.) })
             if siterec.maxtime > 0:
                 attrs.append({'name' : 'Maximum time', 'value' : "%.1f hours" % (float(siterec.maxtime)/3600.) })
             attrs.append({'name' : 'Space', 'value' : "%d TB as of %s" % ((float(siterec.space)/1000.), siterec.tspace.strftime('%m-%d %H:%M')) })
