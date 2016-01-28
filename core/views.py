@@ -4321,7 +4321,7 @@ def jobSummary2(query, exclude={}, mode='drop'):
                 maxpss.append(job['maxpss']/1024)
                 cloudspss.append(job['cloud'])
             if job['maxwalltime'] is not None:
-                maxwalltime.append(job['maxwalltime']/60)
+                maxwalltime.append(job['maxwalltime'])
                 cloudswalltime.append(job['cloud'])
 
     jobs = newjobs
