@@ -3941,7 +3941,7 @@ def taskInfo(request, jeditaskid=0):
     columns = []
     jobsummary = []
     maxpss = []
-    maxrss = []
+    maxwalltime = []
 
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid != 0:
@@ -3951,14 +3951,14 @@ def taskInfo(request, jeditaskid=0):
 
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
         if eventservice:
-            jobsummary,maxpss,maxrss,cloudspss,cloudsrss  = jobSummary2(query, mode='eventservice')
+            jobsummary,maxpss,maxwalltime,cloudspss,cloudswalltime  = jobSummary2(query, mode='eventservice')
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
             exclude = {'processingtype' : 'pmerge' }
             mode='drop'
             if 'mode' in request.session['requestParams']:
                 mode= request.session['requestParams']['mode']
-            jobsummary,maxpss,maxrss,cloudspss,cloudsrss = jobSummary2(query, exclude=exclude, mode=mode)
+            jobsummary,maxpss,maxwalltime,cloudspss,cloudswalltime = jobSummary2(query, exclude=exclude, mode=mode)
     elif 'taskname' in request.session['requestParams']:
         querybyname = {'taskname' : request.session['requestParams']['taskname'] }
         tasks = JediTasks.objects.filter(**querybyname).values()
@@ -4261,9 +4261,9 @@ def taskInfo(request, jeditaskid=0):
         del request.session['TLAST']
         data = {
             'maxpss' : maxpss,
-            'maxrss' : maxrss,
+            'maxwalltime' : maxwalltime,
             'cloudspss': json.dumps(cloudspss),
-            'cloudsrss': json.dumps(cloudsrss),
+            'cloudswalltime': json.dumps(cloudswalltime),
             'request' : request,
             'viewParams' : request.session['viewParams'],
             'requestParams' : request.session['requestParams'],
@@ -4297,22 +4297,22 @@ def taskInfo(request, jeditaskid=0):
 def jobSummary2(query, exclude={}, mode='drop'):
     jobs = []
     jobs.extend(Jobsdefined4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxrss', 'cloud'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxwalltime', 'cloud'))
     jobs.extend(Jobswaiting4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxrss', 'cloud'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxwalltime', 'cloud'))
     jobs.extend(Jobsactive4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxrss', 'cloud'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxwalltime', 'cloud'))
     jobs.extend(Jobsarchived4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxrss', 'cloud'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxwalltime', 'cloud'))
     jobs.extend(Jobsarchived.objects.filter(**query).exclude(**exclude).\
-            values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxrss', 'cloud'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxwalltime', 'cloud'))
     
     jobsSet = set()
     newjobs = []
     maxpss = []
-    maxrss = []
+    maxwalltime = []
     cloudspss = []
-    cloudsrss = []
+    cloudswalltime = []
     for job in jobs:
         if not job['pandaid'] in jobsSet:
             jobsSet.add(job['pandaid'])
@@ -4320,9 +4320,9 @@ def jobSummary2(query, exclude={}, mode='drop'):
             if job['maxpss'] is not None and job['maxpss'] != -1:
                 maxpss.append(job['maxpss']/1024)
                 cloudspss.append(job['cloud'])
-            if job['maxrss'] is not None and job['maxrss'] != -1:
-                maxrss.append(job['maxrss']/1024)
-                cloudsrss.append(job['cloud'])
+            if job['maxwalltime'] is not None:
+                maxwalltime.append(job['maxwalltime']/60)
+                cloudswalltime.append(job['cloud'])
 
     jobs = newjobs
     
@@ -4382,7 +4382,7 @@ def jobSummary2(query, exclude={}, mode='drop'):
                 statecount['count'] += 1
                 continue
         jobstates.append(statecount)
-    return jobstates, maxpss, maxrss, cloudspss, cloudsrss
+    return jobstates, maxpss, maxwalltime, cloudspss, cloudswalltime
 
 def jobStateSummary(jobs):
     global statelist

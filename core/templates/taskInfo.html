@@ -76,16 +76,16 @@ function toggleDetailDisplay(className) {
 
 
 {% if  maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
-{% if  maxrss|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
+{% if  maxwalltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
 
 <script src="/static/js/d3jsplot.js"></script>
 <script>
     var values1 = {{ maxpss|safe }};
-    var values2 = {{ maxrss|safe }};
+    var values2 = {{ maxwalltime|safe }};
     var clouds1 = {{ cloudspss|safe }};
-    var clouds2 = {{ cloudsrss|safe }};
+    var clouds2 = {{ cloudswalltime|safe }};
     pandamonplotFunc(values1, clouds1, "#plot1", "Maximum PSS histogram", {% if  maxpss|length < 100 %} 10 {% else %} 100 {% endif %});
-    pandamonplotFunc(values2, clouds2, "#plot2", "Maximum RSS histogram", {% if  maxrss|length < 100 %} 10 {% else %} 100 {% endif %});
+    pandamonplotFunc(values2, clouds2, "#plot2", "Maximum walltime histogram", {% if  maxwalltime|length < 100 %} 5 {% else %} 20 {% endif %});
  </script>
 
 

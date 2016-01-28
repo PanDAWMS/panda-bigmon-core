@@ -22,9 +22,9 @@ function pandamonplotFunc(values, clouds, divToShow, title, numberofbins) {
 
     var formatCount = d3.format(",.0f");
 
-    var margin = {top: 10, right: 60, bottom: 50, left: 30},
+    var margin = {top: 30, right: 70, bottom: 60, left: 30},
         width = 600 - margin.left - margin.right,
-        height = 300 - margin.top - margin.bottom;
+        height = 350 - margin.top - margin.bottom;
 
     var lowerBand = d3.min(values);
     var upperBand = d3.max(values);
@@ -43,6 +43,12 @@ function pandamonplotFunc(values, clouds, divToShow, title, numberofbins) {
         .values(function(d) {
             return d.values;
         });
+
+    if (lowerBand == upperBand) {
+        numberofbins=2;
+        x.domain([lowerBand-1,upperBand+1]);
+        xAxis.ticks(1);
+    }
 
     var color = d3.scale.ordinal()
         .domain(colorsName)
@@ -112,7 +118,11 @@ function pandamonplotFunc(values, clouds, divToShow, title, numberofbins) {
             .attr("height", function(d) {
                 return y(d.y0) - y(d.y0 + d.y);
             });
-
+    if (lowerBand == upperBand) {
+        cloud.selectAll(".bar")
+            .attr("x",width/4)
+            .attr("width",width/2);
+    }
     svg.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height + ")")
@@ -123,7 +133,7 @@ function pandamonplotFunc(values, clouds, divToShow, title, numberofbins) {
             .call(yAxis);
 
     svg.append("g")
-            .attr("transform", "translate(" + (width / 2 - margin.right) + ", 1)")
+            .attr("transform", "translate(" + (width/2) + ", -10)")
             .append("text")
             .attr("class", "title")
             .text(title);
