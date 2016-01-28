@@ -1,13 +1,13 @@
 {% extends "_base_core.html" %}{% load url from future %}
 
-{% block page_title %} {{ viewParams.MON_VO }} PanDA task {{ jeditaskid }} {% endblock %}
-{% block subtitle %}PanDA task {% if jeditaskid > 0 %}{{ jeditaskid }}:{% endif %} <b>{{ task.taskname }}</b>{% endblock %}
+{% block page_title %} {{ jeditaskid }} task  {% endblock %}
+{% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <b>{{ task.taskname }}</b>{% endblock %}
 
 {% block body %}
 
 {% if columns %}
 <table>
-<tr bgcolor='lightcyan'><th colspan=20> Task {{ jeditaskid }}: {{ taskname }} </th></tr>
+<tr bgcolor='lightcyan'><th colspan=20> {{ jeditaskid }} task: {{ taskname }} </th></tr>
 <tr bgcolor='lightcyan'>
 	<th>Task ID</th>
     {% if task.deftreqid %} <th> Request </th> {% endif %}
