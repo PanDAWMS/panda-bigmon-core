@@ -2,29 +2,15 @@
  * Created by spadolski on 12/22/15.
  */
 
-function pandamonplotFunc(values, clouds, divToShow, title, numberofbins) {
+function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
 
-    var colorPool = {US: "#00006B",
-                DE: "#000000",
-                CERN: "#AE3C51",
-                UK: "#356C20",
-                FR: "#0055A5",
-                IT: "#009246",
-                NL: "#D97529",
-                CA: "#FF1F1F",
-                ND: "#6998FF",
-                ES: "#EDBF00",
-                RU: "#66008D",
-                TW: "#89000F"
-        };
-    var colors = Object.keys(colorPool).map(function (k) { return colorPool[k]; });
-    var colorsName = Object.keys(colorPool).map(function (k) { return k; });
+    colors= ["#116aff", "#fe8504", "#1ff7fe", "#f701ff", "#2e4a02", "#ffaad5", "#f1ff8d", "#1eff06", "#700111", "#1586c3", "#ff067d", "#0e02fb", "#1bffa1", "#921e8f", "#c49565", "#fd0128", "#4ea105", "#158279", "#c8fe0a", "#fdcc0b", "#834969", "#ff7673", "#05018b", "#c591fe", "#a6d8ab", "#948c01", "#484ba1", "#fe22c0", "#06a05d", "#694002", "#8e39e9", "#bdc6ff","#030139",  "#b33802", "#85fa60", "#a2025b", "#3e021b", "#ffcd6d", "#4a92ff", "#e564b6", "#43cfff", "#7e9051", "#e768fc", "#09406b", "#b17005", "#8fd977", "#c1063e", "#a7594f", "#14e3b8", "#bccb1e", "#53064f", "#fff1b7", "#997dba", "#fe965c", "#ffb0a7", "#046c04", "#8451ce", "#d46585", "#fef70c", "#1003c3", "#024a2e", "#0fc551", "#1f025d", "#fd5302", "#5bbfc4", "#481903", "#bfc066", "#ad04bb", "#efa425", "#06c709", "#9701ff", "#84468e", "#018da8", "#88cf01", "#6d6412", "#658a1d", "#0d3cb4", "#144cfe", "#fe5d43", "#33753e", "#4cb28f", "#e6b4ff", "#a5feef", "#caff68", "#d80f8a", "#79193a", "#97fdba", "#a85726", "#fe8cf9", "#8bfe01", "#4a315d", "#ff0155", "#02ff5e", "#6b0199", "#bc7e9f", "#fde75c"];
 
     var formatCount = d3.format(",.0f");
 
-    var margin = {top: 30, right: 70, bottom: 60, left: 30},
-        width = 600 - margin.left - margin.right,
-        height = 350 - margin.top - margin.bottom;
+    var margin = {top: 30, right: 50, bottom: 220, left: 70},
+        width = 650 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
 
     var lowerBand = d3.min(values);
     var upperBand = d3.max(values);
@@ -33,6 +19,7 @@ function pandamonplotFunc(values, clouds, divToShow, title, numberofbins) {
         .domain([lowerBand, upperBand])
         .range([0, width])
         .nice();
+
     var xAxis = d3.svg.axis()
         .scale(x)
         .orient("bottom");
@@ -50,14 +37,10 @@ function pandamonplotFunc(values, clouds, divToShow, title, numberofbins) {
         xAxis.ticks(1);
     }
 
-    var color = d3.scale.ordinal()
-        .domain(colorsName)
-        .range(colors);
-
-    var data = [{'value': 0, 'cloud': ''}];
+    var data = [{'value': 0, 'site': ''}];
 
     for(var i = 0, ii = values.length; i<ii; i++) {
-        data[i]={'value': values[i], 'cloud': clouds[i]}
+        data[i]={'value': values[i], 'site': sites[i]}
     }
 
     var svg = d3.select(divToShow)
@@ -67,42 +50,45 @@ function pandamonplotFunc(values, clouds, divToShow, title, numberofbins) {
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    var binByCloud = d3.layout.histogram()
+    var binBySite = d3.layout.histogram()
         .value(function(d) { return d.value; })
         .bins(x.ticks(numberofbins));
 
-    var dataGroupedByCloud = d3.nest()
-        .key(function(d) { return d['cloud']; })
+    var dataGroupedBySite = d3.nest()
+        .key(function(d) { return d['site']; })
         .map(data, d3.map);
 
-    var histDataByCloud = [];
-    dataGroupedByCloud.forEach(function(key, value) {
+    var histDataBySite = [];
+    dataGroupedBySite.forEach(function(key, value) {
             // Bin the data for each borough by month
-            var histData = binByCloud(value);
-            histDataByCloud.push({
-                cloud: key,
+            var histData = binBySite(value);
+            histDataBySite.push({
+                site: key,
                 values: histData
             });
         });
 
-    var stackedHistData = stack(histDataByCloud);
+    var stackedHistData = stack(histDataBySite);
+
+    var color = d3.scale.ordinal().range(colors);
 
     y.domain([0, d3.max(stackedHistData[stackedHistData.length - 1].values, function(d) {
             return d.y + d.y0;
         })]);
 
-    var cloud = svg.selectAll(".cloud")
+    var bin = svg.selectAll(".site")
             .data(stackedHistData)
           .enter().append("g")
-            .attr("class", "cloud")
+            .attr("class", "site")
             .style("fill", function(d, i) {
-                return color(d.cloud);
+                return color(d.site);
             })
             .style("stroke", function(d, i) {
-                return d3.rgb(color(d.cloud)).darker();
-            });
+                return d3.rgb(color(d.site)).darker();
+            })
+            .style("stroke-width", 0.4);
 
-    cloud.selectAll(".bar")
+    bin.selectAll(".bar")
             .data(function(d) {
                 return d.values;
             })
@@ -111,7 +97,7 @@ function pandamonplotFunc(values, clouds, divToShow, title, numberofbins) {
             .attr("x", function(d) {
                 return x(d.x);
             })
-            .attr("width", width/ (x.ticks(numberofbins).length))
+            .attr("width",width/ (x.ticks(numberofbins).length))
             .attr("y", function(d) {
                 return y(d.y0 + d.y);
             })
@@ -119,14 +105,20 @@ function pandamonplotFunc(values, clouds, divToShow, title, numberofbins) {
                 return y(d.y0) - y(d.y0 + d.y);
             });
     if (lowerBand == upperBand) {
-        cloud.selectAll(".bar")
+        bin.selectAll(".bar")
             .attr("x",width/4)
             .attr("width",width/2);
     }
     svg.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height + ")")
-            .call(xAxis);
+            .call(xAxis)
+            .selectAll("text")
+                .attr("dx", -32)
+                .attr("dy", 5)
+                .attr("transform", function(d) {
+                    return "rotate(-45)"
+                });
 
     svg.append("g")
             .attr("class", "y axis")
@@ -138,27 +130,27 @@ function pandamonplotFunc(values, clouds, divToShow, title, numberofbins) {
             .attr("class", "title")
             .text(title);
 
-    var maxLegendWidth = 30;
-    var maxLegendHeight = (height/12);
-    var xStart = 8;
-    var squareside = 12;
+
+    var squareside = 10;
     var legend = svg.selectAll(".legend")
             .data(color.domain().slice())
           .enter().append("g")
             .attr("class", "legend")
             .attr("transform", function(d, i) {
-                return "translate(" + width + ", " + (i * maxLegendHeight + 10) + ")";
+                maxLegendWidth = (i % 4) * (width+3*(margin.left+margin.right)/4)/4;
+                maxLegendHeight = Math.floor(i  / 4) * 12;
+                return "translate(" + (maxLegendWidth - 3*margin.left/4) + ", " + (height + margin.top + 30 + maxLegendHeight) + ")";
             });
 
     legend.append("rect")
-            .attr("x", xStart)
+            .attr("x", 0)
             .attr("width", squareside)
             .attr("height", squareside)
             .style("fill", color)
-            .style({"stroke":d3.rgb(color).darker(),'stroke-width':0.5});
+            .style({"stroke":d3.rgb(color).darker(),'stroke-width':0.4});
 
     legend.append("text")
-            .attr("x", xStart+squareside+5)
+            .attr("x", squareside+5)
             .attr("y", 10)
             .text(function(d) {
                 return d;
