@@ -1,0 +1,55 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} World Jobs{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA {{view}} {{ requestParams.mode }} World Jobs dashboard{{ viewParams.selection|safe }}
+{% endblock %}
+{% block body %}
+
+<p>
+<table id="cloudsitesummary">
+
+{% for nucleus, nuclval in nucleuses.items %}
+
+<tr height=10 colspan=12></tr>
+<tr>
+<td class="tablesection"> <a name="cloud_{{ nucleus }}">{{ nucleus }} Nucleus</a>, Satellites </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=defined">defined</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=waiting">waiting</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=pending">pending</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=assigned">assigned</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=throttled">throttled</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=activated">activated</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=sent">sent</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=starting">starting</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=running">running</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=holding">holding</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=transferring">transferring</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=finished">finished</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=failed">failed</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=cancelled">cancelled</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=merging">merging</a> </td>
+<td class="tablesection"> <a href="{{nosorturl}}sortby=closed">closed</a> </td>
+</tr>
+
+
+    {% for computingsite, computingsiteval in nuclval.items %}
+        <tr>
+            <td>{{ computingsite }}</td>
+            {%  for jobstatus in statelist %}
+                <td  {% if computingsiteval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}  > <a href="{% url 'jobList' %}?jobstatus={{ jobstatus }}&destinationse=nucleus:{{nucleus}}&computingsite={{ computingsite }}&cloud=WORLD&hours=24&display_limit=100"> {{ computingsiteval|get_item:jobstatus }} </a> </td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+
+
+{% endfor %}
+
+</table>
+</p>
+
+
+
+{% endblock %}
+
