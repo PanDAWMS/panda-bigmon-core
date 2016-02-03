@@ -4291,6 +4291,9 @@ def taskInfo(request, jeditaskid=0):
         if taskrec:
            taskrec['destination']=storagetoken[0]['storagetoken']
 
+    if (taskrec['cloud'] == 'WORLD'):
+        taskrec['destination'] = taskrec['nucleus']
+
     if (('HTTP_ACCEPT' in request.META) and(request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
 
         del tasks
