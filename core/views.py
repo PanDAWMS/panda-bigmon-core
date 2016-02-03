@@ -30,7 +30,7 @@ from django.db import connection, transaction
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
-    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, Getfailedjobshspecarch, Getfailedjobshspec
+    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, Getfailedjobshspecarch, Getfailedjobshspec, JobsWorldView
 from resource.models import Schedconfig
 from core.common.models import Filestable4
 from core.common.models import Datasets
@@ -65,6 +65,12 @@ import ErrorCodes
 errorFields = []
 errorCodes = {}
 errorStages = {}
+
+from django.template.defaulttags import register
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
+
 
 try:
     hostname = commands.getoutput('hostname')
@@ -2231,7 +2237,6 @@ def userList(request):
         query = { 'latestjob__range' : [startdate, enddate] }
         #viewParams['selection'] = ", last %d days" % (float(nhours)/24.)
         ## Use the users table
-        userdb = Users.objects.filter(**query).order_by('name')
         if 'sortby' in request.session['requestParams']:
             sortby = request.session['requestParams']['sortby']
             if sortby == 'name':
@@ -3435,8 +3440,75 @@ def calculateRWwithPrio_JEDI(query):
     for cloudName, rwValue in retRWMap.iteritems():
         retRWMap[cloudName] = int(rwValue/24/3600)
     return retRWMap, retNREMJMap
-        
-        
+
+
+
+def worldjobs(request):
+    valid, response = initRequest(request)
+    query = {}
+    values = [ 'nucleus', 'computingsite', 'jobstatus', 'countjobsinstate' ]
+    worldTasksSummary = []
+    worldTasksSummary.extend(JobsWorldView.objects.filter(**query).values(*values))
+    nucleus = {}
+    statelist1 = statelist
+#    del statelist1[statelist1.index('closed')]
+#    del statelist1[statelist1.index('pending')]
+
+
+
+    if len(worldTasksSummary) > 0:
+        for jobs in worldTasksSummary:
+            if jobs['nucleus'] in nucleus:
+                if jobs['computingsite'] in nucleus[jobs['nucleus']]:
+                    nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
+                else:
+                    nucleus[jobs['nucleus']][jobs['computingsite']] = {}
+                    for state in statelist1:
+                        nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
+                    nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
+
+            else:
+                nucleus[jobs['nucleus']]={}
+                nucleus[jobs['nucleus']][jobs['computingsite']] = {}
+                for state in statelist1:
+                    nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
+                nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
+
+
+    if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
+        xurl = extensibleURL(request)
+        nosorturl = removeParam(xurl, 'sortby',mode='extensible')
+#        del request.session['TFIRST']
+#        del request.session['TLAST']
+        data = {
+            'request' : request,
+            'viewParams' : request.session['viewParams'],
+            'requestParams' : request.session['requestParams'],
+            'url' : request.path,
+            'nucleuses': nucleus,
+            'statelist':statelist1,
+            'xurl' : xurl,
+            'nosorturl' : nosorturl,
+            'user' : None,
+        }
+        ##self monitor
+        endSelfMonitor(request)
+        response = render_to_response('worldjobs.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
+        return response
+    else:
+#        del request.session['TFIRST']
+#        del request.session['TLAST']
+
+        data = {
+        }
+
+        return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+
+
+
+
+
 @cache_page(60*6) 
 def dashboard(request, view='production'):
     valid, response = initRequest(request)
@@ -3595,11 +3667,6 @@ def dashboard(request, view='production'):
 
         return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
 
-
-from django.template.defaulttags import register
-@register.filter
-def get_item(dictionary, key):
-    return dictionary.get(key)
 
 
 def dashAnalysis(request):
@@ -4219,6 +4286,7 @@ def taskInfo(request, jeditaskid=0):
     tquery['jeditaskid'] = jeditaskid
     tquery['storagetoken__isnull'] = False
     storagetoken = JediDatasets.objects.filter(**tquery).values('storagetoken')
+
     if storagetoken:
         if taskrec:
            taskrec['destination']=storagetoken[0]['storagetoken']

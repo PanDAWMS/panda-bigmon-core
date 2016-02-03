@@ -89,6 +89,7 @@ Too many to list
 	<th><a href="{{nosorturl}}sortby=time-descending">Modified</a></th>
 	<th><a href="{{nosorturl}}sortby=statetime-descending">State changed</a></th>
 	<th><a href="{{nosorturl}}sortby=priority">Priority</a></th>
+	<th><a href="{{nosorturl}}sortby=nucleus">Nucleus</a></th>
 	<th><a href="{{nosorturl}}sortby=cloud">Cloud</a></th>
 
 </tr>
@@ -113,6 +114,7 @@ Too many to list
 		<td><font size=-1>{{ task.modificationtime|date:"Y-m-d H:i" }}</font></td>
 		<td><font size=-1>{{ task.statechangetime|date:"m-d H:i" }}</font></td>
 		<td>{{ task.taskpriority }}</td>
+		<td>{{ task.nucleus }}</td>
 		<td>{{ task.cloud }}</td>
 
 	</tr>

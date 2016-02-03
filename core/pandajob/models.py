@@ -112,6 +112,16 @@ class RemainedEventsPerCloud3dayswind(models.Model):
         db_table = u'"ATLAS_PANDABIGMON"."REMEVPCL3DAYSWIND"'
 
 
+class JobsWorldView(models.Model):
+    nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
+    computingsite = models.CharField(max_length=384, db_column='COMPUTINGSITE', blank=True) # Field name made lowercase.
+    jobstatus = models.CharField(max_length=45, db_column='JOBSTATUS') # Field name made lowercase.
+    countjobsinstate = models.IntegerField(db_column='COUNTJOBSINSTATE')
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEW"'
+
+
+
 class PandaJob(models.Model):
     pandaid = models.BigIntegerField(primary_key=True, db_column='PANDAID') # Field name made lowercase.
     jobdefinitionid = models.BigIntegerField(db_column='JOBDEFINITIONID') # Field name made lowercase.
