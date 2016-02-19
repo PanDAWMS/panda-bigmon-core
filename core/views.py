@@ -3976,7 +3976,211 @@ def getTaskScoutingInfo(tasks,nmax):
 
     return tasks
 
+@cache_page(60*6)
+def runningTasks(request):
+    valid, response = initRequest(request)
+    xurl = extensibleURL(request)
+    nosorturl = removeParam(xurl, 'sortby',mode='extensible')
+    processingtypelist=[ 'evgen' , 'pile', 'simul', 'recon' ]
+    tquery = { 'tasktype' : 'prod', 'prodsourcelabel':'managed', 'processingtype__in': processingtypelist }
+    # variables = ['campaign','jeditaskid','reqid','datasetname','status','username','workinggroup','currentpriority','processingtype','type','corecount','creationdate','taskname']
+    tasks = JediTasks.objects.filter(**tquery).extra(where=["WORKINGGROUP NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT') AND STATUS NOT IN ('cancelled', 'failed','broken','aborted', 'finished', 'done')"]).values('campaign','jeditaskid','reqid','status','username','workinggroup','currentpriority','processingtype','corecount','creationdate','taskname','splitrule')
+    # tasks = cleanTaskList(request, tasks)
+    ntasks = len(tasks)
+    slots=0
+    ages=[]
+    simtypes=[]
+    datasets=[]
+    neventsAFIItasksSum={'evgen':0 , 'pile':0, 'simul':0, 'recon':0}
+    neventsFStasksSum={'evgen':0 , 'pile':0, 'simul':0, 'recon':0}
 
+
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+    else:
+        tmpTableName = "TMP_IDS1"
+
+
+    ## Get status of input processing as indicator of task progress
+    dsquery = {}
+    dsquery['type__in'] = ['input', 'pseudo_input' ]
+    dsquery['masterid__isnull'] = True
+    taskl = []
+    for t in tasks:
+        taskl.append(t['jeditaskid'])
+    jquery={'jobstatus':'running'}
+    random.seed()
+    transactionKey = random.randrange(1000000)
+    connection.enter_transaction_management()
+    new_cur = connection.cursor()
+    for id in taskl:
+        new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,id,transactionKey)) # Backend dependable
+    connection.commit()
+    datasets = JediDatasets.objects.filter(**dsquery).extra(where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid','nfiles','nfilesfinished','nfilesfailed','nevents', 'neventsused','type', 'masterid','datasetname')
+    dsinfo = {}
+    if len(datasets) > 0:
+        for ds in datasets:
+            taskid = ds['jeditaskid']
+            if taskid not in dsinfo:
+                dsinfo[taskid] = []
+            dsinfo[taskid].append(ds)
+    rjobslist = Jobsactive4.objects.filter(**jquery).extra(where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid').annotate(count=Count('jeditaskid'))
+    rjobs={}
+    if len(rjobslist)>0:
+        for rjob in rjobslist:
+            taskid = rjob['jeditaskid']
+            if taskid not in rjobs:
+                rjobs[taskid] = []
+            rjobs[taskid].append(rjob['count'])
+    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+    connection.commit()
+    connection.leave_transaction_management()
+    neventsTotSum=0
+    neventsUsedTotSum=0
+    rjobs1coreTot=0
+    rjobs8coreTot=0
+    for task in tasks:
+        neventsTot=0
+        neventsUsedTot=0
+        nfailed=0
+        if (task['jeditaskid'] in dsinfo):
+            for ds in dsinfo[task['jeditaskid']]:
+                    if int(ds['nevents'])>0:
+                        neventsTot += ds['nevents']
+                        neventsUsedTot += ds['neventsused']
+                    if int(ds['nfiles'])>0:
+                        nfailed+=ds['nfilesfailed']
+            task['nevents']=neventsTot
+            task['neventsused']=neventsUsedTot
+            task['nfilesfailed']=nfailed
+            if neventsTot>0:
+                task['percentage']=int(100.*neventsUsedTot/neventsTot)
+            else:
+                task['percentage']=0
+            neventsTotSum+=neventsTot
+            neventsUsedTotSum+=neventsUsedTot
+        if (task['jeditaskid'] in rjobs):
+            task['rjobs']=rjobs[task['jeditaskid']][0]
+            slots+=int(rjobs[task['jeditaskid']][0])*task['corecount']
+        else:
+            task['rjobs']=0
+        if task['corecount']==1:
+            rjobs1coreTot+=task['rjobs']
+        if task['corecount']==8:
+            rjobs8coreTot+=task['rjobs']
+        task['age']=(datetime.now()-task['creationdate']).days
+        ages.append(task['age'])
+        task['datasetname']=task['taskname'].split('.')[1]+'.'+task['taskname'].split('.')[2]
+        ltag = len(task['taskname'].split("_"))
+        rtag=task['taskname'].split("_")[ltag-1]
+        if "." in rtag :
+            rtag = rtag.split(".")[len(rtag.split("."))-1]
+        if 'a' in rtag:
+            task['simtype']='AFII'
+            neventsAFIItasksSum[task['processingtype']]+=neventsTot
+        else:
+            task['simtype']='FS'
+            neventsFStasksSum[task['processingtype']]+=neventsTot
+
+    sumd=taskSummaryDict(request, tasks, ['status','processingtype','simtype'])
+
+    if 'sortby' in request.session['requestParams']:
+        sortby = request.session['requestParams']['sortby']
+        if sortby == 'campaign-asc':
+            tasks = sorted(tasks, key=lambda x:x['campaign'])
+        elif sortby == 'campaign-desc':
+            tasks = sorted(tasks, key=lambda x:x['campaign'],reverse=True)
+        elif sortby == 'reqid-asc':
+            tasks = sorted(tasks, key=lambda x:x['reqid'])
+        elif sortby == 'reqid-desc':
+            tasks = sorted(tasks, key=lambda x:x['reqid'], reverse=True)
+        elif sortby == 'jeditaskid-asc':
+            tasks = sorted(tasks, key=lambda x:x['jeditaskid'])
+        elif sortby == 'jeditaskid-desc':
+            tasks = sorted(tasks, key=lambda x:x['jeditaskid'],reverse=True)
+        elif sortby == 'rjobs-asc':
+            tasks = sorted(tasks, key=lambda x:x['rjobs'])
+        elif sortby == 'rjobs-desc':
+            tasks = sorted(tasks, key=lambda x:x['rjobs'], reverse=True)
+        elif sortby == 'status-asc':
+            tasks = sorted(tasks, key=lambda x:x['status'])
+        elif sortby == 'status-desc':
+            tasks = sorted(tasks, key=lambda x:x['status'],reverse=True)
+        elif sortby == 'processingtype-asc':
+            tasks = sorted(tasks, key=lambda x:x['processingtype'])
+        elif sortby == 'processingtype-desc':
+            tasks = sorted(tasks, key=lambda x:x['processingtype'],reverse=True)
+        elif sortby == 'nevents-asc':
+            tasks = sorted(tasks, key=lambda x:x['nevents'])
+        elif sortby == 'nevents-desc':
+            tasks = sorted(tasks, key=lambda x:x['nevents'], reverse=True)
+        elif sortby == 'neventsused-asc':
+            tasks = sorted(tasks, key=lambda x:x['neventsused'])
+        elif sortby == 'neventsused-desc':
+            tasks = sorted(tasks, key=lambda x:x['neventsused'], reverse=True)
+        elif sortby == 'percentage-asc':
+            tasks = sorted(tasks, key=lambda x:x['percentage'])
+        elif sortby == 'percentage-desc':
+            tasks = sorted(tasks, key=lambda x:x['percentage'], reverse=True)
+        elif sortby == 'nfilesfailed-asc':
+            tasks = sorted(tasks, key=lambda x:x['nfilesfailed'])
+        elif sortby == 'nfilesfailed-desc':
+            tasks = sorted(tasks, key=lambda x:x['nfilesfailed'], reverse=True)
+        elif sortby == 'priority-asc':
+            tasks = sorted(tasks, key=lambda x:x['currentpriority'])
+        elif sortby == 'priority-desc':
+            tasks = sorted(tasks, key=lambda x:x['currentpriority'], reverse=True)
+        elif sortby == 'simtype-asc':
+            tasks = sorted(tasks, key=lambda x:x['simtype'])
+        elif sortby == 'simtype-desc':
+            tasks = sorted(tasks, key=lambda x:x['simtype'], reverse=True)
+        elif sortby == 'age-asc':
+            tasks = sorted(tasks, key=lambda x:x['age'])
+        elif sortby == 'age-desc':
+            tasks = sorted(tasks, key=lambda x:x['age'], reverse=True)
+        elif sortby == 'corecount-asc':
+            tasks = sorted(tasks, key=lambda x:x['corecount'])
+        elif sortby == 'corecount-desc':
+            tasks = sorted(tasks, key=lambda x:x['corecount'], reverse=True)
+        elif sortby == 'datasetname-asc':
+            tasks = sorted(tasks, key=lambda x:x['datasetname'])
+        elif sortby == 'datasetname-desc':
+            tasks = sorted(tasks, key=lambda x:x['datasetname'], reverse=True)
+    else:
+        sortby = 'age-asc'
+        tasks = sorted(tasks, key=lambda x:x['age'])
+
+
+    if (('HTTP_ACCEPT' in request.META) and(request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
+
+        dump = json.dumps(tasks, cls=DateEncoder)
+        return  HttpResponse(dump, mimetype='text/html')
+    else:
+        data = {
+            'request' : request,
+            'viewParams' : request.session['viewParams'],
+            'requestParams' : request.session['requestParams'],
+            'xurl' : xurl,
+            'nosorturl' : nosorturl,
+            'tasks': tasks,
+            'ntasks' : ntasks,
+            'sortby' : sortby,
+            'ages': ages,
+            'simtypes': simtypes,
+            'slots': slots,
+            'sumd': sumd,
+            'neventsUsedTotSum': neventsUsedTotSum/1000000,
+            'neventsTotSum': neventsTotSum/1000000,
+            'rjobs1coreTot': rjobs1coreTot,
+            'rjobs8coreTot': rjobs8coreTot,
+            'neventsAFIItasksSum': neventsAFIItasksSum,
+            'neventsFStasksSum': neventsFStasksSum,
+        }
+        ##self monitor
+        #endSelfMonitor(request)
+        response = render_to_response('runningTasks.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
+        return response
 
 def getBrokerageLog(request):
     iquery = {}
