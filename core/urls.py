@@ -52,8 +52,6 @@ urlpatterns = patterns('',
     url(r'^g4exceptions/$', coremon_views.g4exceptions, name='g4exceptions'),
     url(r'^worldjobs/$', coremon_views.worldjobs, name='worldjobs'),
 
-    url(r'^runningtasks/$', coremon_views.runningTasks, name='runningTasks'),
-
 
 
 #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),

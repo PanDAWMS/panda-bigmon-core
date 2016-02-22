@@ -3,6 +3,7 @@
 #
 # Prototyping for Data Product Catalog and associated functionality
 #
+from __future__ import unicode_literals
 import logging, re, json, commands, os, copy
 from datetime import datetime, timedelta
 from datetime import tzinfo
@@ -144,7 +145,9 @@ def doRequest(request):
     indatasets = []
     thisProject = None
     if mode in ('request', 'reqid'):
-        reqs = TRequest.objects.using('deft_adcr').filter(**query).order_by('reqid').reverse().values()
+        reqs = TRequest.objects.using('deft_adcr').filter(**query).order_by('reqid').reverse().values("reqid", "project_id", "ref_link")
+        #values is a hack to remove the DjangoUnicodeDecodeError issue
+        
 
     for r in reqs:
         if 'project_id' in r and r['project_id']:

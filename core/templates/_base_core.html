@@ -264,7 +264,7 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
     text-anchor: start;
 }
 .bar rect {
-    fill: #116aff;
+    fill: steelblue;
     shape-rendering: crispEdges;
 }
 .bar text {
@@ -322,7 +322,6 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
                     <li><a href="{% url 'taskList' %}?tasktype=analy&display_limit=300">Analysis</a></li>
                     <li><a href="{% url 'taskList' %}?tasktype=prod&display_limit=300">Production</a></li>
                     <li><a href="{% url 'taskList' %}?eventservice=1&display_limit=300">Event service</a></li>
-                    <li><a href="{% url 'runningTasks' %}">All running production</a></li>
                 {% endif %}
             </ul>
             </li>
