@@ -4049,15 +4049,15 @@ def runningProdTasks(request):
                         neventsUsedTot += ds['neventsused']
                     if int(ds['nfiles'])>0:
                         nfailed+=ds['nfilesfailed']
-            task['nevents']=neventsTot
-            task['neventsused']=neventsUsedTot
-            task['nfilesfailed']=nfailed
-            if neventsTot>0:
-                task['percentage']=int(100.*neventsUsedTot/neventsTot)
-            else:
-                task['percentage']=0
-            neventsTotSum+=neventsTot
-            neventsUsedTotSum+=neventsUsedTot
+        if neventsTot>0:
+            task['percentage']=round(100.*neventsUsedTot/neventsTot,1)
+        else:
+            task['percentage']=0.
+        neventsTotSum+=neventsTot
+        neventsUsedTotSum+=neventsUsedTot
+        task['nevents']=neventsTot
+        task['neventsused']=neventsUsedTot
+        task['nfilesfailed']=nfailed
         if (task['jeditaskid'] in rjobs):
             task['rjobs']=rjobs[task['jeditaskid']][0]
             slots+=int(rjobs[task['jeditaskid']][0])*task['corecount']
