@@ -147,7 +147,7 @@ def doRequest(request):
     if mode in ('request', 'reqid'):
         reqs = TRequest.objects.using('deft_adcr').filter(**query).order_by('reqid').reverse().values("reqid", "project_id", "ref_link")
         #values is a hack to remove the DjangoUnicodeDecodeError issue
-        
+
 
     for r in reqs:
         if 'project_id' in r and r['project_id']:
