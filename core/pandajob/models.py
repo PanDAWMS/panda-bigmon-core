@@ -216,6 +216,7 @@ class PandaJob(models.Model):
     jobstatus = models.CharField(null=True, max_length=80, db_column='JOBSTATUS', blank=True)
     actualcorecount = models.IntegerField(null=True, db_column='ACTUALCORECOUNT', blank=True)
     reqid = models.BigIntegerField(null=True, db_column='REQID', blank=True) # Field name made lowercase.
+    nucleus = models.CharField(max_length=200, db_column='nucleus', blank=True) # Field name made lowercase.
 
     maxrss = models.BigIntegerField(null=True, db_column='maxrss', blank=True) # Field name made lowercase.
     maxvmem = models.BigIntegerField(null=True, db_column='maxvmem', blank=True) # Field name made lowercase.
@@ -226,7 +227,6 @@ class PandaJob(models.Model):
     avgswap = models.BigIntegerField(null=True, db_column='avgswap', blank=True) # Field name made lowercase.
     avgpss = models.BigIntegerField(null=True, db_column='avgpss', blank=True) # Field name made lowercase.
     maxwalltime = models.BigIntegerField(null=True, db_column='maxwalltime', blank=True) # Field name made lowercase.
-
 
 
 

@@ -38,7 +38,7 @@
         <tr>
             <td>{{ computingsite }}</td>
             {%  for jobstatus in statelist %}
-                <td  {% if computingsiteval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}  > <a href="{% url 'jobList' %}?jobstatus={{ jobstatus }}&destinationse=nucleus:{{nucleus}}&computingsite={{ computingsite }}&cloud=WORLD&hours=24&display_limit=100"> {{ computingsiteval|get_item:jobstatus }} </a> </td>
+                <td  {% if computingsiteval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}  > <a href="{% url 'jobList' %}?jobstatus={{ jobstatus }}&nucleus={{nucleus}}&computingsite={{ computingsite }}&cloud=WORLD&days=3&display_limit=100"> {{ computingsiteval|get_item:jobstatus }} </a> </td>
             {% endfor %}
         </tr>
     {% endfor %}
