@@ -1493,9 +1493,9 @@ def jobList(request, mode=None, param=None):
         if ('jobstatus' not in request.session['requestParams'] or len(queryFrozenStates) > 0):
             
             totalJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].count()
-            if ('limit' not in request.session['requestParams']) & (int(totalJobs)>50000):
-               request.session['JOB_LIMIT'] = 50000
-               JOB_LIMITS = 50000
+            if ('limit' not in request.session['requestParams']) & (int(totalJobs)>20000):
+               request.session['JOB_LIMIT'] = 20000
+               JOB_LIMITS = 20000
                showTop = 1
             jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
              
