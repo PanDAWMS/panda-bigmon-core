@@ -1556,13 +1556,13 @@ def jobList(request, mode=None, param=None):
         jobtype = 'production'
 
     if u'display_limit' in request.session['requestParams']:
-        if int(request.session['requestParams']['display_limit']) < njobs:
+        if int(request.session['requestParams']['display_limit']) > njobs:
             display_limit = njobs
         else:
             display_limit = int(request.session['requestParams']['display_limit'])
         url_nolimit = removeParam(request.get_full_path(), 'display_limit')
     else:
-        display_limit = 3000
+        display_limit = 1000
         url_nolimit = request.get_full_path()
     njobsmax = display_limit
 
