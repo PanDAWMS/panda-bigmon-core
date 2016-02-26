@@ -3960,7 +3960,7 @@ def runningProdTasks(request):
     processingtypelist=[ 'evgen' , 'pile', 'simul', 'recon' ]
     tquery = { 'tasktype' : 'prod', 'prodsourcelabel':'managed', 'processingtype__in': processingtypelist }
     # variables = ['campaign','jeditaskid','reqid','datasetname','status','username','workinggroup','currentpriority','processingtype','type','corecount','creationdate','taskname']
-    tasks = JediTasks.objects.filter(**tquery).extra(where=["WORKINGGROUP NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT') AND STATUS NOT IN ('cancelled', 'failed','broken','aborted', 'finished', 'done')"]).values('campaign','jeditaskid','reqid','status','username','workinggroup','currentpriority','processingtype','corecount','creationdate','taskname','splitrule')
+    tasks = JediTasks.objects.filter(**tquery).extra(where=["WORKINGGROUP NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT') AND STATUS NOT IN ('cancelled', 'failed','broken','aborted', 'finished', 'done')"]).values('campaign','jeditaskid','reqid','status','username','workinggroup','currentpriority','processingtype','corecount','creationdate','taskname','splitrule','username')
     # tasks = cleanTaskList(request, tasks)
     ntasks = len(tasks)
     slots=0
@@ -4117,6 +4117,10 @@ def runningProdTasks(request):
             tasks = sorted(tasks, key=lambda x:x['corecount'])
         elif sortby == 'corecount-desc':
             tasks = sorted(tasks, key=lambda x:x['corecount'], reverse=True)
+        elif sortby == 'username-asc':
+            tasks = sorted(tasks, key=lambda x:x['username'])
+        elif sortby == 'username-desc':
+            tasks = sorted(tasks, key=lambda x:x['username'], reverse=True)
         elif sortby == 'datasetname-asc':
             tasks = sorted(tasks, key=lambda x:x['datasetname'])
         elif sortby == 'datasetname-desc':

@@ -162,8 +162,8 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title){
 
     var formatCount = d3.format(",.0f");
 
-    var margin = {top: 30, right: 30, bottom: 40, left: 40},
-        width = 500 - margin.left - margin.right,
+    var margin = {top: 30, right: 30, bottom: 40, left: 60},
+        width = 700 - margin.left - margin.right,
         height = 300 - margin.top - margin.bottom;
 
     var lowerBand = d3.min(values);

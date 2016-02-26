@@ -2,7 +2,7 @@
 {% load url from future %}
 
 {% block page_title %} PanDA tasks{% endblock %}
-{% block subtitle %}Running production task list
+{% block subtitle %}Running MC production task list
 {% endblock %}
 {% block body %}
 
@@ -33,19 +33,19 @@
 <script src="/static/js/d3jsplot.js"></script>
 <script>
 var ages = {{ ages|safe }};
-var slots = {{ slots|safe }};
-var gauges = [];
 pandamonProdRunTaskSumPlotFunc(ages,"#sumPlot",'Task age histogram');
- $(document).ready(function() {
-createGauge("slots", "Slots");
-gauges['slots'].redraw(slots);});
 var neventsFStasksSum={{ neventsFStasksSum|safe }};
 var neventsAFIItasksSum={{ neventsAFIItasksSum|safe }};
 pandamonPieChartFunc(neventsFStasksSum,"#pieChartFS",'FS');
 pandamonPieChartFunc(neventsAFIItasksSum,"#pieChartAFII",'AFII');
+var slots = {{ slots|safe }};
+var gauges = [];
+$(document).ready(function() {
+createGauge("slots", "Slots");
+gauges['slots'].redraw(slots);});
 </script>
 <table>
-<tr class='tablesection'><th colspan=20> Running tasks</th></tr>
+<tr class='tablesection'><th colspan=20> {{ ntasks }} tasks</th></tr>
 <tr class='tablesection'>
     {% if sortby == 'campaign-desc' %}<th>Campaign<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=campaign-asc" class="headerSortUp"></a></th>
     {% elif sortby == 'campaign-asc' %}<th>Campaign<br><a href="{{nosorturl}}sortby=campaign-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
@@ -89,10 +89,12 @@ pandamonPieChartFunc(neventsAFIItasksSum,"#pieChartAFII",'AFII');
     {% if sortby == 'corecount-desc' %}<th>Cores<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=corecount-asc" class="headerSortUp"></a></th>
     {% elif sortby == 'corecount-asc' %}<th>Cores<br><a href="{{nosorturl}}sortby=corecount-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
     {% else %}<th>Cores<br><a href="{{nosorturl}}sortby=corecount-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=corecount-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'username-desc' %}<th>User<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=username-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'username-asc' %}<th>User<br><a href="{{nosorturl}}sortby=username-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>User<br><a href="{{nosorturl}}sortby=username-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=username-asc" class="headerSortUp"></a></th>{% endif %}
     {% if sortby == 'datasetname-desc' %}<th>Dataset name<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=datasetname-asc" class="headerSortUp"></a></th>
     {% elif sortby == 'datasetname-asc' %}<th>Dataset name<br><a href="{{nosorturl}}sortby=datasetname-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
     {% else %}<th>Dataset name<br><a href="{{nosorturl}}sortby=datasetname-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=datasetname-asc" class="headerSortUp"></a></th>{% endif %}
-
 </tr>
 {% for task in tasks %}
     <tr>
@@ -110,6 +112,7 @@ pandamonPieChartFunc(neventsAFIItasksSum,"#pieChartAFII",'AFII');
     <td>{{ task.simtype }}</td>
     <td>{{ task.age }}</td>
     <td>{{ task.corecount }}</td>
+    <td>{{ task.username }}</td>
     <td>{{ task.datasetname }}</td>
     </tr>
 {% endfor %}
