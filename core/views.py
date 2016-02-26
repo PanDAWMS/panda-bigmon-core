@@ -314,11 +314,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     LAST_N_HOURS_MAX = 0
     
     wildSearchFields = []
-    for field in Jobsactive4._meta.get_all_field_names():
-        if (Jobsactive4._meta.get_field(field).get_internal_type() == 'CharField'):
-            if not (field == 'jobstatus' or field == 'modificationhost'):
-                wildSearchFields.append(field)
-    
+    if querytype=='job':
+        for field in Jobsactive4._meta.get_all_field_names():
+            if (Jobsactive4._meta.get_field(field).get_internal_type() == 'CharField'):
+                if not (field == 'jobstatus' or field == 'modificationhost'):
+                    wildSearchFields.append(field)
+    if querytype=='task':
+        for field in JediTasks._meta.get_all_field_names():
+            if (JediTasks._meta.get_field(field).get_internal_type() == 'CharField'):
+                if not (field == 'status' or field == 'modificationhost'):
+                    wildSearchFields.append(field)
     deepquery = False
     fields = standard_fields
     if 'limit' in request.session['requestParams']:
@@ -444,10 +449,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 query['jobsetid__gte'] = plo
                 query['jobsetid__lte'] = phi 
         elif param == 'user' or param == 'username':
-            if querytype == 'task':
-                query['username__icontains'] = request.session['requestParams'][param].strip()
-            else:
-                query['produsername__icontains'] = request.session['requestParams'][param].strip()
+            if querytype == 'job':
+               query['produsername__icontains'] = request.session['requestParams'][param].strip()
         elif param in ( 'project', ) and querytype == 'task':
             val = request.session['requestParams'][param]
             query['taskname__istartswith'] = val
@@ -491,29 +494,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                     query[param] = int(request.session['requestParams'][param])
                             elif param == 'transpath':
                                 query['%s__endswith' % param] = request.session['requestParams'][param]
-                            elif param in ( 'taskname', ):
-                                ## support wildcarding
-                                if request.session['requestParams'][param][1:-1].find('*') > 0:
-                                    ## If there are embedded wildcards...
-                                    tokens = request.session['requestParams'][param].split('*')
-                                    for t in tokens:
-                                        if len(t) == 0: continue
-                                        if t == tokens[0]:
-                                            query['%s__istartswith' % param] = t
-                                        elif t == tokens[-1]:
-                                            query['%s__iendswith' % param] = t
-                                        else:
-                                            query['%s__icontains' % param] = t
-                                elif request.session['requestParams'][param].startswith('*') and request.session['requestParams'][param].endswith('*'):
-                                    query['%s__icontains' % param] = request.session['requestParams'][param].replace('*','')
-                                elif request.session['requestParams'][param].endswith('*'):
-                                    query['%s__istartswith' % param] = request.session['requestParams'][param].replace('*','')                                    
-                                    #query['%s__icontains' % param] = [ requestParams[param].replace('*',''), ]
-                                elif request.session['requestParams'][param].startswith('*'):
-                                    query['%s__iendswith' % param] = request.session['requestParams'][param].replace('*','')
-                                    #query['%s__icontains' % param] = requestParams[param].replace('*','')
-                                else:
-                                    query[param] = request.session['requestParams'][param]
                             elif param == 'tasktype':
                                 ttype = request.session['requestParams'][param]
                                 if ttype.startswith('anal'): ttype='anal'
@@ -532,10 +512,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                     query['reqid__in'] = values
                                 else:
                                     query['reqid'] = int(val)
-
-
                             else:
-                                query[param] = request.session['requestParams'][param]
+                                if (param not in wildSearchFields):
+                                    query[param] = request.session['requestParams'][param]
                         if param == 'eventservice':
                             query['eventservice'] = 1
         else:
@@ -3785,11 +3764,11 @@ def taskList(request):
     eventservice = False
     if 'eventservice' in request.session['requestParams']: eventservice = True
     if eventservice: hours = 7*24
-    query = setupView(request, hours=hours, limit=9999999, querytype='task')
+    query, wildCardExtension,LAST_N_HOURS_MAX  = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     if 'statenotupdated' in request.session['requestParams']:
-        tasks = taskNotUpdated(request, query)
+        tasks = taskNotUpdated(request, query, wildCardExtension)
     else:
-        tasks = JediTasks.objects.filter(**query)[:limit].values()
+        tasks = JediTasks.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
     tasks = cleanTaskList(request, tasks)
     ntasks = len(tasks)
     nmax = ntasks
@@ -5845,7 +5824,7 @@ def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values =
         jobs.extend(Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension]).values(*values))
         return jobs
 
-def taskNotUpdated(request, query, state='submitted', hoursSinceUpdate=36, values = [], count = False):
+def taskNotUpdated(request, query, state='submitted', hoursSinceUpdate=36, values = [], count = False, wildCardExtension='(1=1)'):
     valid, response = initRequest(request)
     if not valid: return response
     #query = setupView(request, opmode='notime', limit=99999999)
@@ -5860,7 +5839,7 @@ def taskNotUpdated(request, query, state='submitted', hoursSinceUpdate=36, value
     query['status'] = state
 
     if count:
-        tasks = JediTasks.objects.filter(**query).values('name','status').annotate(Count('status'))
+        tasks = JediTasks.objects.filter(**query).extra(where=[wildCardExtension]).values('name','status').annotate(Count('status'))
         statecounts = {}
         for s in taskstatelist:
             statecounts[s] = {}
@@ -5873,7 +5852,7 @@ def taskNotUpdated(request, query, state='submitted', hoursSinceUpdate=36, value
             ncount += job['status__count']
         return ncount, statecounts
     else:
-        tasks = JediTasks.objects.filter(**query).values()
+        tasks = JediTasks.objects.filter(**query).extra(where=[wildCardExtension]).values()
         return tasks
 
 def getErrorDescription(job, mode='html'):
