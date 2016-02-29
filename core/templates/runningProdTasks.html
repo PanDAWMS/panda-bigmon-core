@@ -15,8 +15,8 @@
 </tr>
 <tr>
 <td>
-    <div class="d3splot" id="pieChartFS" style="float:left"></div>
-    <div class="d3splot" id="pieChartAFII" style="float:left"></div>
+    {% if neneventsFStasksSum|length > 0 %}<div class="d3splot" id="pieChartFS" style="float:left"></div>{% endif %}
+    {% if neneventsAFIItasksSum|length > 0 %}<div class="d3splot" id="pieChartAFII" style="float:left"></div>{% endif %}
     <br>
     Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in <b>{{ ntasks }}</b> tasks <br>
     Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs
@@ -27,13 +27,15 @@
     <th colspan=20> Task age</th>
 </tr>
 <tr>
-<td colspan=20><div class="d3splot" id="sumPlot" style="float:left"></div></td>
+<td colspan=20>{% if plotageshistogram == 1 %}<div class="d3splot" id="sumPlot" style="float:left"></div>{% else %} <p> All tasks age is 0 days</p> {% endif %}</td>
 </tr>
 </table>
 <script src="/static/js/d3jsplot.js"></script>
 <script>
 var ages = {{ ages|safe }};
-pandamonProdRunTaskSumPlotFunc(ages,"#sumPlot",'Task age histogram');
+var plotageshistogram = {{ plotageshistogram }};
+if (plotageshistogram == 1){
+pandamonProdRunTaskSumPlotFunc(ages,"#sumPlot",'Task age histogram');}
 var neventsFStasksSum={{ neventsFStasksSum|safe }};
 var neventsAFIItasksSum={{ neventsAFIItasksSum|safe }};
 pandamonPieChartFunc(neventsFStasksSum,"#pieChartFS",'FS');
@@ -98,12 +100,12 @@ gauges['slots'].redraw(slots);});
 </tr>
 {% for task in tasks %}
     <tr>
-    <td><a href="/tasks/?campaign={{ task.campaign }}">{{ task.campaign }}</a></td>
+    <td><a href="{% url 'runningProdTasks' %}?campaign={{ task.campaign }}">{{ task.campaign }}</a></td>
     <td><a href="http://bigpanda.cern.ch/prodsys/prodtask/inputlist_with_request/{{task.reqid}}/">{{ task.reqid }}</a></td>
     <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a></td>
     <td>{{ task.rjobs }}</td>
     <td class='{{task.status}}_fill'>{{ task.status }}</td>
-    <td>{{ task.processingtype }}</td>
+    <td><a href="{% url 'runningProdTasks' %}?processingtype={{ task.processingtype }}"> {{ task.processingtype }} </a></td>
     <td>{{ task.nevents }}</td>
     <td>{{ task.neventsused }}</td>
     <td>{{ task.percentage }}</td>
@@ -111,8 +113,8 @@ gauges['slots'].redraw(slots);});
     <td>{{ task.currentpriority }}</td>
     <td>{{ task.simtype }}</td>
     <td>{{ task.age }}</td>
-    <td>{{ task.corecount }}</td>
-    <td>{{ task.username }}</td>
+    <td><a href="{% url 'runningProdTasks' %}?corecount={{ task.corecount }}">{{ task.corecount }}</a></td>
+    <td><a href="{% url 'runningProdTasks' %}?username={{ task.username }}">{{ task.username }} </a></td>
     <td>{{ task.datasetname }}</td>
     </tr>
 {% endfor %}
