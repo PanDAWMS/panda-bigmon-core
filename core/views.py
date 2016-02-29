@@ -257,7 +257,7 @@ def preprocessWildCardString(strToProcess, fieldToLookAt):
     if (len(strToProcess)==0):
         return '(1=1)'
     cardParametersRaw = strToProcess.split('*')
-    cardRealParameters = [s for s in cardParametersRaw if len(s) > 1]
+    cardRealParameters = [s for s in cardParametersRaw if len(s) >= 1]
     countRealParameters = len(cardRealParameters)
     countParameters = len(cardParametersRaw)
 
