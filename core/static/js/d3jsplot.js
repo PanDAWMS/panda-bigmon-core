@@ -161,7 +161,7 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
 function pandamonProdRunTaskSumPlotFunc(values,divToShow,title){
 
     var formatCount = d3.format(",.0f");
-
+	var numberofbins=40;
     var margin = {top: 30, right: 30, bottom: 40, left: 60},
         width = 700 - margin.left - margin.right,
         height = 300 - margin.top - margin.bottom;
@@ -179,7 +179,7 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title){
         .orient("bottom");
 
     var data = d3.layout.histogram()
-        .bins(x.ticks(40))
+        .bins(x.ticks(numberofbins))
         (values);
 
 
@@ -207,7 +207,7 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title){
 
     bar.append("rect")
         .attr("x", 1)
-        .attr("width", x(data[0].dx) - 1)
+        .attr("width", width/ (x.ticks(numberofbins).length)-1)
         .attr("height", function (d) {
             return height - y(d.y);
         });
@@ -222,7 +222,7 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title){
         .call(yAxis);
 
     svg.append("g")
-        .attr("transform", "translate(" + (width / 2) + ", 15)")
+        .attr("transform", "translate(" + (width / 2) + ", 0)")
         .append("text")
         .attr("class", "title")
         .text(title);

@@ -3959,6 +3959,9 @@ def runningProdTasks(request):
     nosorturl = removeParam(xurl, 'sortby',mode='extensible')
     processingtypelist=[]
     tquery={}
+    extraquery="WORKINGGROUP NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')"
+    # if 'simtype' in request.session['requestParams']:
+    #     tasks=[task for task in tasks if task['simtype']==request.session['requestParams']['simtype']]
     if 'processingtype' in request.session['requestParams']:
          tquery['processingtype']=request.session['requestParams']['processingtype']
     else:
@@ -3969,11 +3972,14 @@ def runningProdTasks(request):
         tquery['campaign']=request.session['requestParams']['campaign']
     if 'corecount' in request.session['requestParams']:
         tquery['corecount']=request.session['requestParams']['corecount']
+    if 'status' in request.session['requestParams']:
+        tquery['status']=request.session['requestParams']['status']
+    else:
+        extraquery+=" AND STATUS NOT IN ('cancelled', 'failed','broken','aborted', 'finished', 'done')"
     tquery['tasktype'] = 'prod'
     tquery['prodsourcelabel']='managed'
     # variables = ['campaign','jeditaskid','reqid','datasetname','status','username','workinggroup','currentpriority','processingtype','type','corecount','creationdate','taskname']
-    tasks = JediTasks.objects.filter(**tquery).extra(where=["WORKINGGROUP NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT') AND STATUS NOT IN ('cancelled', 'failed','broken','aborted', 'finished', 'done')"]).values('campaign','jeditaskid','reqid','status','username','workinggroup','currentpriority','processingtype','corecount','creationdate','taskname','splitrule','username')
-    # tasks = cleanTaskList(request, tasks)
+    tasks = JediTasks.objects.filter(**tquery).extra(where=[extraquery]).values('campaign','jeditaskid','reqid','status','username','workinggroup','currentpriority','processingtype','corecount','creationdate','taskname','splitrule','username')
     ntasks = len(tasks)
     slots=0
     ages=[]
@@ -4070,8 +4076,6 @@ def runningProdTasks(request):
             neventsFStasksSum[task['processingtype']]+=neventsTot
     plotageshistogram=1
     if sum(ages)==0: plotageshistogram=0
-    # if 'simtype' in request.session['requestParams']:
-    #     tasks=[task for task in tasks if task['simtype']==request.session['requestParams']['simtype']]
     sumd=taskSummaryDict(request, tasks, ['status','processingtype','simtype'])
 
     if 'sortby' in request.session['requestParams']:
