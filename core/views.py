@@ -5381,7 +5381,7 @@ def pandaLogger(request):
         return response
     if (('HTTP_ACCEPT' in request.META) and(request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
         resp = data
-        return  HttpResponse(json.dumps(resp), mimetype='text/html')
+        return  HttpResponse(json.dumps(resp, cls=DateEncoder), mimetype='text/html')
 
 @cache_page(60*6)
 def workingGroups(request):
