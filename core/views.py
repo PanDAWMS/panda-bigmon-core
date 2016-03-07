@@ -5701,9 +5701,20 @@ def fileList(request):
             datasetname = dsets[0]['datasetname']
 
     files = []
+    limit = 100
+    if 'limit' in request.session['requestParams']:
+        limit = int(request.session['requestParams']['limit'])
+
+
     if datasetid > 0:
         query['datasetid'] = datasetid
-        files = JediDatasetContents.objects.filter(**query).values()
+        files = JediDatasetContents.objects.filter(**query)[:limit+1].values()
+        if len(files) > limit:
+            limitexceeded = True
+        else:
+            limitexceeded = False
+        files = files[:limit]
+
         for f in files:
             f['fsizemb'] = "%0.2f" % (f['fsize']/1000000.)
 
@@ -5778,6 +5789,7 @@ def fileList(request):
             'nfiles' : nfiles,
             'nosorturl' : nosorturl,
             'sortby' : sortby,
+            'limitexceeded':limitexceeded
         }
         ##self monitor
         endSelfMonitor(request)

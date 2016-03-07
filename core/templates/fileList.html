@@ -11,7 +11,7 @@
 {% if requestParams.datasetname %}<br>Files in dataset <b>{{ requestParams.datasetname }}</b> {% endif %}
 {% if requestParams.datasetid %}<br>Files in dataset ID = <b>{{ requestParams.datasetid }}</b> {% endif %}
 <p>
-<b>{{ files|length }} listed files</b>
+<b>{{ files|length }} listed files {% if limitexceeded %} but some files are excluded due to DB retrieval limit. To see more files please add &limit=<i>some number</i> to request{% endif %} </b>
 {% if nfiles != files|length %} <br> <b>{{ nfiles }} unique files</b> {% endif %}
 
 <p>
