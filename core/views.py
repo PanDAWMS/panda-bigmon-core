@@ -1470,14 +1470,21 @@ def jobList(request, mode=None, param=None):
             queryFrozenStates =  filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__, [ 'finished', 'failed', 'cancelled' ])
         ##hard limit is set to 2K
         if ('jobstatus' not in request.session['requestParams'] or len(queryFrozenStates) > 0):
-            
-            totalJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].count()
-            if ('limit' not in request.session['requestParams']) & (int(totalJobs)>20000):
+
+            if ('limit' not in request.session['requestParams']):
                request.session['JOB_LIMIT'] = 20000
                JOB_LIMITS = 20000
                showTop = 1
-            jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
-             
+            else:
+               request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
+               JOB_LIMITS = int(request.session['requestParams']['limit'])
+
+            archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values)
+            totalJobs = len(archJobs)
+            jobs.extend(archJobs)
+
+
+
     ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
     taskids = {}
 
@@ -3445,13 +3452,25 @@ def worldjobs(request):
                     for state in statelist1:
                         nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
                     nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
-
             else:
                 nucleus[jobs['nucleus']]={}
                 nucleus[jobs['nucleus']][jobs['computingsite']] = {}
                 for state in statelist1:
                     nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
                 nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
+
+
+    nucleusSummary = {}
+    for nucleusInfo in nucleus:
+        nucleusSummary[nucleusInfo] = {}
+        for site in nucleus[nucleusInfo]:
+            for state in nucleus[nucleusInfo][site]:
+                if state in nucleusSummary[nucleusInfo]:
+                    nucleusSummary[nucleusInfo][state] += nucleus[nucleusInfo][site][state]
+                else:
+                    nucleusSummary[nucleusInfo][state] = nucleus[nucleusInfo][site][state]
+
+
 
 
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
@@ -3465,6 +3484,7 @@ def worldjobs(request):
             'requestParams' : request.session['requestParams'],
             'url' : request.path,
             'nucleuses': nucleus,
+            'nucleussummary': nucleusSummary,
             'statelist':statelist1,
             'xurl' : xurl,
             'nosorturl' : nosorturl,
