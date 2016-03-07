@@ -3846,8 +3846,11 @@ def taskList(request):
         transactionKey = random.randrange(1000000)
         connection.enter_transaction_management()
         new_cur = connection.cursor()
+        executionData = []
         for id in esjobs:
-            new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,id,transactionKey)) # Backend dependable
+            executionData.append((id,transactionKey))
+        query = """INSERT INTO """+tmpTableName+"""(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+        new_cur.executemany(query, executionData)
         connection.commit()
         new_cur.execute("SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
         evtable = dictfetchall(new_cur)
@@ -4436,8 +4439,11 @@ def taskInfo(request, jeditaskid=0):
 
         connection.enter_transaction_management()
         new_cur = connection.cursor()
-        for pandaid in esjobs:
-            new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,pandaid,transactionKey)) # Backend dependable
+        executionData = []
+        for id in esjobs:
+            executionData.append((id,transactionKey))
+        query = """INSERT INTO """+tmpTableName+"""(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+        new_cur.executemany(query, executionData)
         connection.commit()
 
         new_cur.execute("SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
