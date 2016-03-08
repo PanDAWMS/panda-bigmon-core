@@ -1428,7 +1428,9 @@ def jobList(request, mode=None, param=None):
         eventservice = True
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         eventservice = True
-        
+    noarchjobs=False
+    if ('noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs']=='1'):
+        noarchjobs=True
     query,wildCardExtension,LAST_N_HOURS_MAX  = setupView(request, wildCardExt=True)
 
     if 'batchid' in request.session['requestParams']:
@@ -1465,24 +1467,24 @@ def jobList(request, mode=None, param=None):
         
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
 
-        queryFrozenStates = []
-        if 'jobstatus' in request.session['requestParams']:
-            queryFrozenStates =  filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__, [ 'finished', 'failed', 'cancelled' ])
-        ##hard limit is set to 2K
-        if ('jobstatus' not in request.session['requestParams'] or len(queryFrozenStates) > 0):
+        if not noarchjobs:
+            queryFrozenStates = []
+            if 'jobstatus' in request.session['requestParams']:
+                queryFrozenStates =  filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__, [ 'finished', 'failed', 'cancelled' ])
+            ##hard limit is set to 2K
+            if ('jobstatus' not in request.session['requestParams'] or len(queryFrozenStates) > 0):
 
-            if ('limit' not in request.session['requestParams']):
-               request.session['JOB_LIMIT'] = 20000
-               JOB_LIMITS = 20000
-               showTop = 1
-            else:
-               request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
-               JOB_LIMITS = int(request.session['requestParams']['limit'])
+                if ('limit' not in request.session['requestParams']):
+                   request.session['JOB_LIMIT'] = 20000
+                   JOB_LIMITS = 20000
+                   showTop = 1
+                else:
+                   request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
+                   JOB_LIMITS = int(request.session['requestParams']['limit'])
 
-            archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values)
-            totalJobs = len(archJobs)
-            jobs.extend(archJobs)
-
+                archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values)
+                totalJobs = len(archJobs)
+                jobs.extend(archJobs)
 
 
     ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
