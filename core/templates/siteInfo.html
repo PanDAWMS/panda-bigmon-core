@@ -19,7 +19,10 @@
 <span {% if att.name == 'Status' %} class='{{att.value}}' {% endif %}>
 {% if att.name == 'GOC name' %} <a href="{% url 'siteList' %}?gocname={{ att.value }}">{{ att.value }}</a>
 {% else %}
+{% if att.name == 'Queue (nickname)' %} <a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{ att.value }}/full/">{{ att.value }}</a>
+{% else %}
 {% if att.value != 'None' %} {{ att.value }} {% endif %}
+{% endif %}
 {% endif %}
 </span>
 </td></tr>
@@ -39,7 +42,7 @@
 
 {% for queue in queues %}
 <tr>
-<td> {{ queue.nickname }} </td><td> <span class='{{ queue.status }}'>{{ queue.status }}</span> </td>
+<td> <a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{ queue.nickname }}/full/">{{ queue.nickname }}</a></td><td> <span class='{{ queue.status }}'>{{ queue.status }}</span> </td>
 <td> {{ queue.lastmod|date:"Y-m-d H:i" }} </td> <td> {{ queue.comment_field }} </td>
 </tr>
 {% endfor %}
@@ -81,13 +84,8 @@ DDM
 </td>
 
 <td> 
-<a href=" https://atlas-install.roma1.infn.it/atlas_install/list.php?resource={{site.siteid}}">SW install status</a>
+<a href=" https://atlas-install.roma1.infn.it/atlas_install/list.php?resource={{site.gocname}}">SW install status</a>
 </td>
-
-<td>
-<a href=" http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{site.siteid}}/full/">Agis link</a>
-</td>
-
 
 
 {% endif %}
