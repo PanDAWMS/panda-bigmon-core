@@ -573,7 +573,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         query['prodsourcelabel'] = 'managed'
         query['workinggroup__isnull'] = False
     elif jobtype == 'eventservice':
-        query['specialhandling__in'] = ( 'eventservice', 'esmerge' )
+        extraQueryString = "((specialhandling LIKE ('%%eventservice%%')) OR (specialhandling LIKE ('%%esmerge%%')))"
     elif jobtype.find('test') >= 0:
         query['prodsourcelabel__icontains'] = jobtype
 
@@ -630,6 +630,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             pandaIDs.append(values['pandaid'])
         
         query['pandaid__in'] = pandaIDs
+
+    if extraQueryString.endswith(' AND '):
+        extraQueryString=extraQueryString[:-5]
+
     if (len(extraQueryString) < 2):
         extraQueryString = '1=1'        
     
