@@ -989,8 +989,11 @@ def jobSummaryDict(request, jobs, fieldlist = None):
 
         connection.enter_transaction_management()
         new_cur = connection.cursor()
-        for pandaid in esjobs:
-            new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,pandaid,transactionKey)) # Backend dependable
+        executionData = []
+        for id in esjobs:
+            executionData.append((id,transactionKey))
+        query = """INSERT INTO """+tmpTableName+"""(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+        new_cur.executemany(query, executionData)
         connection.commit()
 
         new_cur.execute("SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
@@ -3859,6 +3862,8 @@ def taskList(request):
             executionData.append((id,transactionKey))
         query = """INSERT INTO """+tmpTableName+"""(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
+
+
         connection.commit()
         new_cur.execute("SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
         evtable = dictfetchall(new_cur)
