@@ -18,6 +18,7 @@
 <tr class='tablesection'>
     <th> Global status</th>
     <th> Total slots</th>
+    <th> Task age</th>
 </tr>
 <tr>
 <td>
@@ -28,12 +29,7 @@
     Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs
 </td>
 <td><div class="d3splot" id="slots" style="float:left"></div></td>
-</tr>
-<tr class='tablesection'>
-    <th colspan=20> Task age</th>
-</tr>
-<tr>
-<td colspan=20>{% if plotageshistogram == 1 %}<div class="d3splot" id="sumPlot" style="float:left"></div>{% else %} <p> All tasks age is 0 days</p> {% endif %}</td>
+<td colspan=20>{% if plotageshistogram == 1 %}<div class="d3splot" id="sumPlot" style="float:left"></div>{% else %} <p> All tasks age is 0 days</p> {% endif %} </td>
 </tr>
 </table>
 <script src="/static/js/d3jsplot.js"></script>
@@ -102,13 +98,13 @@ gauges['slots'].redraw(slots);});
     {% else %}<th>User<br><a href="{{nosorturl}}sortby=username-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=username-asc" class="headerSortUp"></a></th>{% endif %}
     {% if sortby == 'datasetname-desc' %}<th>Dataset name<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=datasetname-asc" class="headerSortUp"></a></th>
     {% elif sortby == 'datasetname-asc' %}<th>Dataset name<br><a href="{{nosorturl}}sortby=datasetname-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}<th>Dataset name<br><a href="{{nosorturl}}sortby=datasetname-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=datasetname-asc" class="headerSortUp"></a></th>{% endif %}
+    {% else %}<th>Dataset ID<br><a href="{{nosorturl}}sortby=datasetname-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=datasetname-asc" class="headerSortUp"></a></th>{% endif %}
 </tr>
 {% for task in tasks %}
     <tr>
-    <td><a href="{% url 'runningProdTasks' %}?campaign={{ task.campaign }}">{{ task.campaign }}</a></td>
-    <td><a href="http://bigpanda.cern.ch/prodsys/prodtask/inputlist_with_request/{{task.reqid}}/">{{ task.reqid }}</a></td>
-    <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a></td>
+    <td><a href="{% url 'runningProdTasks' %}?campaign={{ task.cutcampaign }}">{{ task.cutcampaign }}</a></td>
+    <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.reqid}}/">{{ task.reqid }}</a></td>
+    <td><a href=" https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}">{{ task.jeditaskid }}</a></td>
     <td>{{ task.rjobs }}</td>
     <td class='{{task.status}}_fill'><a href="{% url 'runningProdTasks' %}?status={{ task.status }}">{{ task.status }}</a></td>
     <td><a href="{% url 'runningProdTasks' %}?processingtype={{ task.processingtype }}"> {{ task.processingtype }} </a></td>
