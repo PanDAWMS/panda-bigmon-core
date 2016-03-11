@@ -4011,7 +4011,7 @@ def runningProdTasks(request):
     if 'username' in request.session['requestParams']:
         tquery['username']=request.session['requestParams']['username']
     if 'campaign' in request.session['requestParams']:
-        tquery['campaign']=request.session['requestParams']['campaign']
+        tquery['campaign__contains']=request.session['requestParams']['campaign']
     if 'corecount' in request.session['requestParams']:
         tquery['corecount']=request.session['requestParams']['corecount']
     if 'status' in request.session['requestParams']:
@@ -4105,7 +4105,8 @@ def runningProdTasks(request):
             rjobs8coreTot+=task['rjobs']
         task['age']=(datetime.now()-task['creationdate']).days
         ages.append(task['age'])
-        task['datasetname']=task['taskname'].split('.')[1]+'.'+task['taskname'].split('.')[2]
+        task['cutcampaign']=task['campaign'].split(':')[1]
+        task['datasetname']=task['taskname'].split('.')[1]
         ltag = len(task['taskname'].split("_"))
         rtag=task['taskname'].split("_")[ltag-1]
         if "." in rtag :

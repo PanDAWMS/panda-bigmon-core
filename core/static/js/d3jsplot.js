@@ -163,7 +163,7 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title){
     var formatCount = d3.format(",.0f");
 	var numberofbins=40;
     var margin = {top: 30, right: 30, bottom: 40, left: 60},
-        width = 700 - margin.left - margin.right,
+        width = 500 - margin.left - margin.right,
         height = 300 - margin.top - margin.bottom;
 
     var lowerBand = d3.min(values);
@@ -232,7 +232,7 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title){
 function createGauge(divToShow, label) {
     var config =
 			{
-				size: 250,
+				size: 180,
 				label: label,
 				minorTicks: 5
 			};
@@ -254,9 +254,9 @@ function Gauge(placeholderName, configuration){
 	{
 		this.config = configuration;
 
-		this.config.size = this.config.size * 0.9;
+		this.config.size = this.config.size * 0.95;
 
-		this.config.raduis = this.config.size * 0.8 / 2;
+		this.config.raduis = this.config.size * 0.9 / 2;
 		this.config.cx = this.config.size / 2;
 		this.config.cy = this.config.size / 2;
 
@@ -281,7 +281,7 @@ function Gauge(placeholderName, configuration){
 							.attr("class", "gauge")
 							.attr("width", this.config.size)
 							.attr("height", this.config.size)
-                            .attr("transform", "translate(" + 0 + "," + (0.09*this.config.size) + ")");
+                            .attr("transform", "translate(" + 0 + "," + 0 + ")");
 
 		this.body.append("svg:circle")
 					.attr("cx", this.config.cx)
@@ -328,7 +328,7 @@ function Gauge(placeholderName, configuration){
 						.style("stroke-width", "0px");
 		}
 
-		var fontSize = Math.round(this.config.size / 18);
+		var fontSize = Math.round(this.config.size / 16);
 		var majorDelta = this.config.range / (this.config.majorTicks - 1);
 		for (var major = this.config.min; major <= this.config.max; major += majorDelta)
 		{
@@ -408,7 +408,7 @@ function Gauge(placeholderName, configuration){
 							.enter()
 								.append("svg:text")
 									.attr("x", this.config.cx)
-									.attr("y", this.config.size - this.config.cy / 3 - fontSize)
+									.attr("y", this.config.size - this.config.cy / 4 - fontSize)
 									.attr("dy", fontSize / 2)
 									.attr("text-anchor", "middle")
 									.style("font-size", fontSize + "px")
