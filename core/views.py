@@ -4263,7 +4263,7 @@ def taskInfo(request, jeditaskid=0):
     columns = []
     jobsummary = []
     maxpss = []
-    maxwalltime = []
+    walltime = []
 
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid != 0:
@@ -4273,14 +4273,14 @@ def taskInfo(request, jeditaskid=0):
 
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
         if eventservice:
-            jobsummary,maxpss,maxwalltime,sitepss,sitewalltime,maxpssf,maxwalltimef,sitepssf,sitewalltimef  = jobSummary2(query, mode='eventservice')
+            jobsummary,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef  = jobSummary2(query, mode='eventservice')
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
             exclude = {'processingtype' : 'pmerge' }
             mode='drop'
             if 'mode' in request.session['requestParams']:
                 mode= request.session['requestParams']['mode']
-            jobsummary,maxpss,maxwalltime,sitepss,sitewalltime,maxpssf,maxwalltimef,sitepssf,sitewalltimef = jobSummary2(query, exclude=exclude, mode=mode)
+            jobsummary,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef = jobSummary2(query, exclude=exclude, mode=mode)
     elif 'taskname' in request.session['requestParams']:
         querybyname = {'taskname' : request.session['requestParams']['taskname'] }
         tasks = JediTasks.objects.filter(**querybyname).values()
@@ -4590,11 +4590,11 @@ def taskInfo(request, jeditaskid=0):
         del request.session['TLAST']
         data = {
             'maxpss' : maxpss,
-            'maxwalltime' : maxwalltime,
+            'walltime' : walltime,
             'sitepss': json.dumps(sitepss),
             'sitewalltime': json.dumps(sitewalltime),
             'maxpssf' : maxpssf,
-            'maxwalltimef' : maxwalltimef,
+            'walltimef' : walltimef,
             'sitepssf': json.dumps(sitepssf),
             'sitewalltimef': json.dumps(sitewalltimef),
             'request' : request,
@@ -4630,24 +4630,24 @@ def taskInfo(request, jeditaskid=0):
 def jobSummary2(query, exclude={}, mode='drop'):
     jobs = []
     jobs.extend(Jobsdefined4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxwalltime', 'computingsite'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
     jobs.extend(Jobswaiting4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxwalltime', 'computingsite'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
     jobs.extend(Jobsactive4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxwalltime', 'computingsite'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
     jobs.extend(Jobsarchived4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxwalltime', 'computingsite'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
     jobs.extend(Jobsarchived.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'maxwalltime', 'computingsite'))
+        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
     
     jobsSet = set()
     newjobs = []
     maxpss = []
-    maxwalltime = []
+    walltime = []
     sitepss = []
     sitewalltime = []
     maxpssf = []
-    maxwalltimef = []
+    walltimef = []
     sitepssf = []
     sitewalltimef = []
     for job in jobs:
@@ -4660,13 +4660,16 @@ def jobSummary2(query, exclude={}, mode='drop'):
                 if job['jobstatus'] == 'failed':
                     maxpssf.append(job['maxpss']/1024)
                     sitepssf.append(job['computingsite'])
-            if job['maxwalltime'] is not None:
-                maxwalltime.append(job['maxwalltime'])
+            if 'endtime' in job and 'starttime' in job and job['starttime'] and job['endtime']:
+                starttime = job['starttime']
+                endtime=job['endtime']
+                duration = max(endtime - starttime, timedelta(seconds=0))
+                ndays = duration.days
+                walltime.append(ndays*24*3600+duration.seconds)
                 sitewalltime.append(job['computingsite'])
                 if job['jobstatus'] == 'failed':
-                    maxwalltimef.append(job['maxwalltime'])
+                    walltimef.append(ndays*24*3600+duration.seconds)
                     sitewalltimef.append(job['computingsite'])
-
 
 
 
@@ -4728,7 +4731,7 @@ def jobSummary2(query, exclude={}, mode='drop'):
                 statecount['count'] += 1
                 continue
         jobstates.append(statecount)
-    return jobstates, maxpss, maxwalltime, sitepss, sitewalltime, maxpssf, maxwalltimef, sitepssf, sitewalltimef
+    return jobstates, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef
 
 def jobStateSummary(jobs):
     global statelist
