@@ -519,7 +519,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                 else:
                                     query['reqid'] = int(val)
                             elif param == 'eventservice':
-                                if request.session['requestParams'][param]=='eventservice':
+                                if request.session['requestParams'][param]=='eventservice' or request.session['requestParams'][param]=='1':
                                     query['eventservice'] = 1
                                 else:
                                     query['eventservice'] = 0
@@ -567,9 +567,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         values = val.split('|')
                         query['jobstatus__in'] = values
                     elif param == 'eventservice':
-                        if request.session['requestParams'][param]=='esmerge':
+                        if request.session['requestParams'][param]=='esmerge' or request.session['requestParams'][param]== '2':
                             query['eventservice'] = 2
-                        elif request.session['requestParams'][param]=='eventservice':
+                        elif request.session['requestParams'][param]=='eventservice' or request.session['requestParams'][param]== '1':
                             query['eventservice'] = 1
                         else:
                             query['eventservice__isnull']=True
@@ -1465,7 +1465,7 @@ def jobList(request, mode=None, param=None):
         eventservice = True
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         eventservice = True
-    if 'eventservice' in request.session['requestParams'] and request.session['requestParams']['eventservice'] == 'eventservice':
+    if 'eventservice' in request.session['requestParams'] and (request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams']['eventservice'] == '1'):
         eventservice = True
     noarchjobs=False
     if ('noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs']=='1'):
@@ -3823,7 +3823,7 @@ def taskList(request):
     else:
         hours = 7*24
     eventservice = False
-    if 'eventservice' in request.session['requestParams'] and request.session['requestParams']['eventservice']=='eventservice': eventservice = True
+    if 'eventservice' in request.session['requestParams'] and ( request.session['requestParams']['eventservice']=='eventservice' or request.session['requestParams']['eventservice']=='1'): eventservice = True
     if eventservice: hours = 7*24
     query, wildCardExtension,LAST_N_HOURS_MAX  = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     if 'statenotupdated' in request.session['requestParams']:
