@@ -8,14 +8,16 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
 
     var formatCount = d3.format(",.0f");
 
-    var margin = {top: 30, right: 50, bottom: 220, left: 70},
+    var margin = {top: 30, right: 50, bottom: 100, left: 70},
         width = 650 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom;
+        height = 400 - margin.top - margin.bottom;
 
     var lowerBand = d3.min(values);
     var upperBand = d3.max(values);
 
-    var x = d3.scale.linear()
+	var ave = values.reduce(function(a,b){return (a+b);})/values.length;
+
+	var x = d3.scale.linear()
         .domain([lowerBand, upperBand])
         .range([0, width])
         .nice();
@@ -43,12 +45,6 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
         data[i]={'value': values[i], 'site': sites[i]}
     }
 
-    var svg = d3.select(divToShow)
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     var binBySite = d3.layout.histogram()
         .value(function(d) { return d.value; })
@@ -76,6 +72,16 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
             return d.y + d.y0;
         })]);
 
+    if (stackedHistData.length>4){
+        margin.bottom+=Math.floor(stackedHistData.length/4)*12;
+    }
+
+    var svg = d3.select(divToShow)
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     var bin = svg.selectAll(".site")
             .data(stackedHistData)
           .enter().append("g")
@@ -130,6 +136,14 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
             .attr("class", "title")
             .text(title);
 
+    if (title.indexOf('Walltime')>=0) {
+        svg.append("line")
+            .attr("x1", x(ave))
+            .attr("y1", height)
+            .attr("x2", x(ave))
+            .attr("y2", 0)
+            .attr("class", "averageline");
+    }
 
     var squareside = 10;
     var legend = svg.selectAll(".legend")
