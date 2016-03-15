@@ -600,6 +600,9 @@ def get_copycmd(fname, guid):
                     'capath': get_capath(), \
                     'url': fname, \
                 }
+        #download xrootd file
+        elif fname.startswith('root:'):
+             copycmd += 'gfal-copy "%s" file://$PWD/%s' % (fname, base)        
         # For non-SRM SURLS this will probably require debugging for CERN...
         elif fname.startswith('/pnfs/usatlas.bnl.gov'):
             ## replacing dccp with srmcp ##
