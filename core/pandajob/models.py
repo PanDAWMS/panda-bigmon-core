@@ -218,6 +218,7 @@ class PandaJob(models.Model):
     reqid = models.BigIntegerField(null=True, db_column='REQID', blank=True) # Field name made lowercase.
     nucleus = models.CharField(max_length=200, db_column='nucleus', blank=True) # Field name made lowercase.
     jobsubstatus = models.CharField(null=True, max_length=80, db_column='JOBSUBSTATUS', blank=True)
+    eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True) # Field name made lowercase.
 
     maxrss = models.BigIntegerField(null=True, db_column='maxrss', blank=True) # Field name made lowercase.
     maxvmem = models.BigIntegerField(null=True, db_column='maxvmem', blank=True) # Field name made lowercase.
