@@ -4563,6 +4563,8 @@ def taskInfo(request, jeditaskid=0):
     tquery['storagetoken__isnull'] = False
     storagetoken = JediDatasets.objects.filter(**tquery).values('storagetoken')
 
+    taskbrokerage = 'prod_brokerage' if (taskrec['tasktype'] == 'prod') else 'analy_brokerage'
+
     if storagetoken:
         if taskrec:
            taskrec['destination']=storagetoken[0]['storagetoken']
@@ -4614,6 +4616,7 @@ def taskInfo(request, jeditaskid=0):
         del request.session['TLAST']
         data = {
             'maxpss' : maxpss,
+            'taskbrokerage':taskbrokerage,
             'walltime' : walltime,
             'sitepss': json.dumps(sitepss),
             'sitewalltime': json.dumps(sitewalltime),
@@ -5299,6 +5302,7 @@ def incidentList(request):
         jsonResp = json.dumps(clearedInc)
         return  HttpResponse(jsonResp, mimetype='text/html')
 
+
 @cache_page(60*6)
 def pandaLogger(request):
     valid, response = initRequest(request)
@@ -5335,9 +5339,18 @@ def pandaLogger(request):
     else:
         hours = int(request.session['requestParams']['hours'])
     setupView(request, hours=hours, limit=9999999)
-    startdate = timezone.now() - timedelta(hours=hours)
-    startdate = startdate.strftime(defaultDatetimeFormat)
-    enddate = timezone.now().strftime(defaultDatetimeFormat)
+
+    if 'startdate' in request.session['requestParams']:
+        startdate = request.session['requestParams']['startdate']
+    else:
+        startdate = timezone.now() - timedelta(hours=hours)
+        startdate = startdate.strftime(defaultDatetimeFormat)
+
+    if 'enddate' in request.session['requestParams']:
+        enddate = request.session['requestParams']['enddate']
+    else:
+        enddate = timezone.now().strftime(defaultDatetimeFormat)
+
     iquery['bintime__range'] = [startdate, enddate]
     print iquery
     counts = Pandalog.objects.filter(**iquery).values('name','type','levelname').annotate(Count('levelname')).order_by('name','type','levelname')
