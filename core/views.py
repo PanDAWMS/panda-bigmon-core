@@ -118,9 +118,9 @@ LAST_N_HOURS_MAX = 0
 PLOW = 1000000
 PHIGH = -1000000
 
-standard_fields = [ 'processingtype', 'computingsite', 'destinationse', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid', 'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount' ]
+standard_fields = [ 'processingtype', 'computingsite', 'destinationse', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid', 'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount' , 'eventservice']
 standard_sitefields = [ 'region', 'gocname', 'nickname', 'status', 'tier', 'comment_field', 'cloud', 'allowdirectaccess', 'allowfax', 'copytool', 'faxredirector', 'retry', 'timefloor' ]
-standard_taskfields = [ 'tasktype', 'superstatus', 'corecount', 'taskpriority', 'username', 'transuses', 'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag', 'reqid', 'ramcount', 'nucleus']
+standard_taskfields = [ 'tasktype', 'superstatus', 'corecount', 'taskpriority', 'username', 'transuses', 'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag', 'reqid', 'ramcount', 'nucleus', 'eventservice']
 
 VOLIST = [ 'atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = { 'atlas' : 'ATLAS', 'bigpanda' : 'BigPanDA', 'htcondor' : 'HTCondor', 'core' : 'LSST', '' : '' }
@@ -518,11 +518,14 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                     query['reqid__in'] = values
                                 else:
                                     query['reqid'] = int(val)
+                            elif param == 'eventservice':
+                                if request.session['requestParams'][param]=='eventservice':
+                                    query['eventservice'] = 1
+                                else:
+                                    query['eventservice'] = 0
                             else:
                                 if (param not in wildSearchFields):
                                     query[param] = request.session['requestParams'][param]
-                        if param == 'eventservice':
-                            query['eventservice'] = 1
         else:
             for field in Jobsactive4._meta.get_all_field_names():
                 if param == field:
@@ -563,6 +566,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         val = escapeInput(request.session['requestParams'][param])
                         values = val.split('|')
                         query['jobstatus__in'] = values
+                    elif param == 'eventservice':
+                        if request.session['requestParams'][param]=='esmerge':
+                            query['eventservice'] = 2
+                        elif request.session['requestParams'][param]=='eventservice':
+                            query['eventservice'] = 1
+                        else:
+                            query['eventservice__isnull']=True
                     else:
                         if (param not in wildSearchFields):
                             query[param] = request.session['requestParams'][param]
@@ -579,7 +589,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         query['prodsourcelabel'] = 'managed'
         query['workinggroup__isnull'] = False
     elif jobtype == 'eventservice':
-        extraQueryString = "((specialhandling LIKE ('%%eventservice%%')) OR (specialhandling LIKE ('%%esmerge%%')))"
+        query['eventservice']=1
+    elif jobtype == 'esmerge':
+        query['eventservice']=2
     elif jobtype.find('test') >= 0:
         query['prodsourcelabel__icontains'] = jobtype
 
@@ -696,7 +708,13 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
                     job['corecount'] = mat.group(1)
             if 'jobsubstatus' in job and job['jobstatus']=='closed' and job['jobsubstatus']=='toreassign':
                 job['jobstatus']+= ':' + job['jobsubstatus']
-
+        if 'eventservice' in job:
+            if job['eventservice'] == 1 :
+                job['eventservice']= 'eventservice'
+            elif job['eventservice'] == 2:
+                job['eventservice']= 'esmerge'
+            else:
+                job['eventservice']= 'ordinary'
         if 'destinationdblock' in job:
             ddbfields = job['destinationdblock'].split('.')
             if len(ddbfields) == 6:
@@ -885,7 +903,11 @@ def cleanTaskList(request, tasks):
     for task in tasks:
         if 'totevrem' not in task:
             task['totevrem'] = None
-        
+        if 'eventservice' in task:
+            if task['eventservice']==1:
+                task['eventservice']='eventservice'
+            else:
+                task['eventservice']='ordinary'
         if 'errordialog' in task:
             if len(task['errordialog']) > 100: task['errordialog'] = task['errordialog'][:90]+'...'
         if 'reqid' in task and task['reqid'] < 100000 and task['reqid'] > 100 and task['reqid'] != 300 and ( ('tasktype' in task) and (not task['tasktype'].startswith('anal'))):
@@ -982,7 +1004,7 @@ def jobSummaryDict(request, jobs, fieldlist = None):
             for s in eventservicestatelist:
                 esjobdict[job['pandaid']][s] = 0
     if len(esjobs) > 0:
-        sumd['eventservice'] = {}
+        sumd['eventservicestatus'] = {}
 
 
         if dbaccess['default']['ENGINE'].find('oracle') >= 0:
@@ -1012,9 +1034,9 @@ def jobSummaryDict(request, jobs, fieldlist = None):
         for ev in evtable:
 
             evstat = eventservicestatelist[ev['STATUS']]
-            if evstat not in sumd['eventservice']:
-                sumd['eventservice'][evstat] = 0
-            sumd['eventservice'][evstat] += 1
+            if evstat not in sumd['eventservicestatus']:
+                sumd['eventservicestatus'][evstat] = 0
+            sumd['eventservicestatus'][evstat] += 1
             esjobdict[ev['PANDAID']][evstat] += 1
 
     ## convert to ordered lists
@@ -1443,6 +1465,8 @@ def jobList(request, mode=None, param=None):
         eventservice = True
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         eventservice = True
+    if 'eventservice' in request.session['requestParams'] and request.session['requestParams']['eventservice'] == 'eventservice':
+        eventservice = True
     noarchjobs=False
     if ('noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs']=='1'):
         noarchjobs=True
@@ -1455,9 +1479,9 @@ def jobList(request, mode=None, param=None):
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
         values = Jobsactive4._meta.get_all_field_names()
     elif eventservice:
-        values = 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus'
+        values = 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice'
     else:
-        values = 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss' , 'maxrss', 'nucleus'
+        values = 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss' , 'maxrss', 'nucleus', 'eventservice'
     
     JOB_LIMITS=request.session['JOB_LIMIT']
     totalJobs = 0
@@ -3799,7 +3823,7 @@ def taskList(request):
     else:
         hours = 7*24
     eventservice = False
-    if 'eventservice' in request.session['requestParams']: eventservice = True
+    if 'eventservice' in request.session['requestParams'] and request.session['requestParams']['eventservice']=='eventservice': eventservice = True
     if eventservice: hours = 7*24
     query, wildCardExtension,LAST_N_HOURS_MAX  = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     if 'statenotupdated' in request.session['requestParams']:
@@ -3938,7 +3962,7 @@ def taskList(request):
         }
         ##self monitor
         endSelfMonitor(request)
-        if 'eventservice' in request.session['requestParams']:
+        if eventservice:
             response = render_to_response('taskListES.html', data, RequestContext(request))
         else:
             response = render_to_response('taskList.html', data, RequestContext(request))
