@@ -5302,8 +5302,15 @@ def incidentList(request):
         jsonResp = json.dumps(clearedInc)
         return  HttpResponse(jsonResp, mimetype='text/html')
 
+def esPandaLogger(request):
+    valid, response = initRequest(request)
+    if not valid: return response
 
-@cache_page(60*6)
+    if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
+        response = render_to_response('esPandaLogger.html', '', RequestContext(request))
+        return response
+
+cache_page(60*6)
 def pandaLogger(request):
     valid, response = initRequest(request)
     if not valid: return response
