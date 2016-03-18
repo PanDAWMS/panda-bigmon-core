@@ -21,7 +21,9 @@
 	{% if task.campaign %} <th> Campaign </th> {% endif %}
 	<th>Task status </th>{% if task.superstatus %} {% if task.superstatus != task.status %}<th> Detailed JEDI status </th>{% endif %} {% endif %}
 {% if task.dsinfo %}
-    <th> Event dispatches </th>
+    <th> Nevents | <span class='finished'>used</span> </th>
+    <th> HS06*sec expected | <span class='done'>done</span> | <span class='failed'>failed</span></th>
+    <th> Ninputfiles | <span class='finished'>finished</span> | <span class='failed'>failed</span> </th>
 {% endif %}
 	<th>Created</th>
 	<th>Modified</th>
@@ -40,7 +42,15 @@
 		{% if task.campaign %} <td><a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a></td> {% endif %}
 		<td class='{{task.status}}_fill'>{% if task.superstatus %}<b><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.superstatus }}</a></b> {% if task.superstatus != task.status %}<td class='{{task.status}}'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.status }}</a></td>{% endif %} {% else %}<a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.status }}</a>{% endif %}</td>
 
-        <td> {{task.estaskstr}} </td>
+{% if task.dsinfo %}
+        <td> {{task.totev}} |
+            <span class='finished'>{{task.totevproc}} ({{task.pctfinished}}%)</span></td>
+        <td> {{task.totevremhs06}} |
+            <span class='finished'>{{task.totevprochs06}}</span> | <span class='failed'>{{task.failedevprochs06}}</span></td>
+        <td> {{task.dsinfo.nfiles}} |
+            <span class='finished'>{{task.dsinfo.nfilesfinished}} ({{task.dsinfo.pctfinished}}%)</span> {% if task.dsinfo.nfilesfailed > 0 %} | <span class='failed'>{{task.dsinfo.nfilesfailed}} ({{task.dsinfo.pctfailed}}%)</span>  {% endif %} </td>
+{% endif %}
+
 		<td>{{ task.creationdate|date:"Y-m-d H:i" }}</td>
 		<td>{{ task.modificationtime|date:"m-d H:i" }}</td>
 		<td>{{ task.corecount }}</td>
