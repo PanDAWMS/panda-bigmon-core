@@ -2123,7 +2123,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         esjobdict = {}
         for s in eventservicestatelist:
             esjobdict[s] = 0
-        evtable = JediEvents.objects.filter(pandaid=job['pandaid']).order_by('-def_min_eventid').values('def_min_eventid','def_max_eventid','processed_upto_eventid','status','job_processid','attemptnr')
+        evtable = JediEvents.objects.filter(pandaid=job['pandaid']).order_by('-def_min_eventid').values('fileid', 'datasetid', 'objstore_id', 'def_min_eventid','def_max_eventid','processed_upto_eventid','status','job_processid','attemptnr')
         fileids = {}
         datasetids = {}
         #for evrange in evtable:

@@ -461,6 +461,8 @@ class JediEvents(models.Model):
     datasetid = models.BigIntegerField(db_column='DATASETID', blank=True)
     status = models.IntegerField(db_column='STATUS', blank=True)
     attemptnr = models.IntegerField(db_column='ATTEMPTNR', blank=True)
+    objstore_id = models.IntegerField(db_column='OBJSTORE_ID', blank=True)
+
     class Meta:
         db_table = u'jedi_events'
         unique_together = ('jeditaskid', 'pandaid', 'fileid', 'job_processid')

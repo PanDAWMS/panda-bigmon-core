@@ -310,19 +310,27 @@ pinkpanda</a> <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name=
 
 <table>
 <tr>
+<th> File ID </th>
 <th> Min event </th>
 <th> Max </th>
 <th> Status </th>
 <th> ProcessID </th>
 <th> Attempt </th>
+<th> DataSet ID </th>
+<th> ObjectStore ID </th>
+
 </tr>
 {% for ev in evtable %}
 <tr>
+<td> {{ ev.fileid }} </td>
 <td> {{ ev.def_min_eventid }} </td>
 <td> {{ ev.def_max_eventid }} </td>
 <td> <span class="{{ ev.status }}">{{ ev.status }}</span> </td>
 <td> {{ ev.job_processid }} </td>
 <td> {{ ev.attemptnr }} </td>
+<td> {{ ev.datasetid }} </td>
+<td> {{ ev.objstore_id }} </td>
+
 </tr>
 {% endfor %}
 </table>
