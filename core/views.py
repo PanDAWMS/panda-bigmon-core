@@ -4129,7 +4129,10 @@ def runningProdTasks(request):
             rjobs8coreTot+=task['rjobs']
         task['age']=(datetime.now()-task['creationdate']).days
         ages.append(task['age'])
-        task['cutcampaign']=task['campaign'].split(':')[1]
+        if len(task['campaign'].split(':'))>1:
+            task['cutcampaign']=task['campaign'].split(':')[1]
+        else:
+            task['cutcampaign']=task['campaign'].split(':')[0]
         task['datasetname']=task['taskname'].split('.')[1]
         ltag = len(task['taskname'].split("_"))
         rtag=task['taskname'].split("_")[ltag-1]
