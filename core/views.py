@@ -4669,36 +4669,10 @@ def jobSummary2(query, exclude={}, mode='drop'):
     
     jobsSet = set()
     newjobs = []
-    maxpss = []
-    walltime = []
-    sitepss = []
-    sitewalltime = []
-    maxpssf = []
-    walltimef = []
-    sitepssf = []
-    sitewalltimef = []
     for job in jobs:
         if not job['pandaid'] in jobsSet:
             jobsSet.add(job['pandaid'])
             newjobs.append(job)
-            if job['maxpss'] is not None and job['maxpss'] != -1:
-                maxpss.append(job['maxpss']/1024)
-                sitepss.append(job['computingsite'])
-                if job['jobstatus'] == 'failed':
-                    maxpssf.append(job['maxpss']/1024)
-                    sitepssf.append(job['computingsite'])
-            if 'endtime' in job and 'starttime' in job and job['starttime'] and job['endtime']:
-                starttime = job['starttime']
-                endtime=job['endtime']
-                duration = max(endtime - starttime, timedelta(seconds=0))
-                ndays = duration.days
-                walltime.append(ndays*24*3600+duration.seconds)
-                sitewalltime.append(job['computingsite'])
-                if job['jobstatus'] == 'failed':
-                    walltimef.append(ndays*24*3600+duration.seconds)
-                    sitewalltimef.append(job['computingsite'])
-
-
 
     jobs = newjobs
     
@@ -4744,6 +4718,34 @@ def jobSummary2(query, exclude={}, mode='drop'):
                         droplist.append( { 'pandaid' : pandaid, 'newpandaid' : dropJob } )
             jobs = newjobs
         print 'done filtering'
+
+    maxpss = []
+    walltime = []
+    sitepss = []
+    sitewalltime = []
+    maxpssf = []
+    walltimef = []
+    sitepssf = []
+    sitewalltimef = []
+    for job in jobs:
+        if job['maxpss'] is not None and job['maxpss'] != -1:
+            if job['jobstatus']== 'finished':
+                maxpss.append(job['maxpss']/1024)
+                sitepss.append(job['computingsite'])
+            if job['jobstatus'] == 'failed':
+                maxpssf.append(job['maxpss']/1024)
+                sitepssf.append(job['computingsite'])
+        if 'endtime' in job and 'starttime' in job and job['starttime'] and job['endtime']:
+            starttime = job['starttime']
+            endtime=job['endtime']
+            duration = max(endtime - starttime, timedelta(seconds=0))
+            ndays = duration.days
+            if job['jobstatus']== 'finished':
+                walltime.append(ndays*24*3600+duration.seconds)
+                sitewalltime.append(job['computingsite'])
+            if job['jobstatus'] == 'failed':
+                walltimef.append(ndays*24*3600+duration.seconds)
+                sitewalltimef.append(job['computingsite'])
 
     jobstates = []
     global statelist
