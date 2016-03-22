@@ -819,7 +819,7 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True):
             _logger.error(msg)
 
     ### urlbase
-    urlbase = get_filebrowser_directory() + '/' + guid.lower()
+    urlbase = get_filebrowser_directory() +'/'+ guid.lower()+'/'+scope
 
     ### return list of files
     return files, errtxt, urlbase, tardir
