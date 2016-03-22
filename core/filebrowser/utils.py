@@ -774,4 +774,53 @@ def fetch_file(pfn, guid, unpack=True, listfiles=True):
     ### return list of files
     return files, errtxt, urlbase, tardir
 
+def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True):
+
+    errtxt = ''
+    files = []
+
+    ### logdir
+    logdir = get_fullpath_filebrowser_directory() + '/' + guid.lower()
+    #### basename for the file
+    #base = os.path.basename(lfn)
+    fname = '%s/%s/%s' % (logdir,scope,lfn)
+
+    ### create directory for files of guid
+    dir, err = create_directory(fname)
+    if not len(err):
+        errtxt += err
+
+    ### get command to copy file
+    cmd = 'export RUCIO_ACCOUNT=atlpan; export X509_USER_PROXY=%s; rucio download --dir=%s %s:%s' % (get_x509_proxy(),logdir,scope,lfn)
+    if not len(cmd):
+        _logger.warning('Command to fetch the file is empty!')
+
+    ### download the file
+    status, err = execute_cmd(cmd)
+    if status != 0:
+        msg = 'File download failed with command [%s]. Output: [%s].' % (cmd, err)
+        _logger.error(msg)
+        errtxt += msg
+
+    if unpack:
+        ### untar the file
+        status, err = unpack_file(fname)
+        if status != 0:
+            msg = 'File unpacking failed for file [%s].' % (fname)
+            _logger.error(msg)
+
+    tardir = ''
+    files = ''
+    if listfiles:
+        ### list the files
+        files, err, tardir = list_file_directory(dir)
+        if len(err):
+            msg = 'File listing failed for file [%s]: [%s].' % (fname, err)
+            _logger.error(msg)
+
+    ### urlbase
+    urlbase = get_filebrowser_directory() + '/' + guid.lower()
+
+    ### return list of files
+    return files, errtxt, urlbase, tardir
 

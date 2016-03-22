@@ -12,7 +12,7 @@ from django.template.loader import get_template
 from django.conf import settings
 #from django.core.urlresolvers import reverse
 #from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
-from .utils import get_rucio_pfns_from_guids, fetch_file, get_filebrowser_vo, \
+from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_filebrowser_vo, \
 get_filebrowser_hostname
 
 from core.common.models import Filestable4
@@ -89,31 +89,20 @@ def index(request):
     except:
         pass
 
-    if 'missingparameter' not in errors.keys() and \
-       'improperformat' not in errors.keys():
-        pfns, errtxt = get_rucio_pfns_from_guids(guids=[guid], site=[site], \
-                    lfns=[lfn], scopes=[scope])
-        if len(errtxt):
-            if 'lookup' not in errors:
-                errors['lookup'] = ''
-            errors['lookup'] += errtxt
-
     ### download the file
     files = []
     dirprefix = ''
     tardir = ''
-    if len(pfns):
-        pfn = pfns[0]
-        files, errtxt, dirprefix, tardir = fetch_file(pfn, guid)
-        if not len(pfns):
-            msg = 'File download failed. [pfn=%s guid=%s, site=%s, scope=%s, lfn=%s]' % \
-                (pfn, guid, site, scope, lfn)
-            _logger.warning(msg)
-            errors['download'] = msg
-        if len(errtxt):
-            if 'download' not in errors:
-                errors['download'] = ''
-            errors['download'] += errtxt
+    files, errtxt, dirprefix, tardir = get_rucio_file(scope,lfn, guid)
+    if not len(files):
+        msg = 'File download failed. [guid=%s, site=%s, scope=%s, lfn=%s]' % \
+            (guid, site, scope, lfn)
+        _logger.warning(msg)
+        errors['download'] = msg
+    if len(errtxt):
+        if 'download' not in errors:
+            errors['download'] = ''
+        errors['download'] += errtxt
 
     ### return the file page
 
