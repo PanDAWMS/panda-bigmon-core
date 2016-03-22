@@ -330,6 +330,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             if (JediTasks._meta.get_field(field).get_internal_type() == 'CharField'):
                 if not (field == 'status' or field == 'modificationhost'):
                     wildSearchFields.append(field)
+
     deepquery = False
     fields = standard_fields
     if 'limit' in request.session['requestParams']:
@@ -538,6 +539,14 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query[param] = int(request.session['requestParams'][param])
                     elif param == 'specialhandling':
                         query['specialhandling__contains'] = request.session['requestParams'][param]
+                    elif param == 'reqid':
+                        val = escapeInput(request.session['requestParams'][param])
+                        if val.find('|') >= 0:
+                            values = val.split('|')
+                            values = [int(val) for val in values]
+                            query['reqid__in'] = values
+                        else:
+                            query['reqid'] = int(val)
                     elif param == 'transformation' or param == 'transpath':
                         query['%s__endswith' % param] = request.session['requestParams'][param]
                     elif param == 'modificationhost' and request.session['requestParams'][param].find('@') < 0:
