@@ -118,7 +118,7 @@ LAST_N_HOURS_MAX = 0
 PLOW = 1000000
 PHIGH = -1000000
 
-standard_fields = [ 'processingtype', 'computingsite', 'destinationse', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid', 'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount' , 'eventservice']
+standard_fields = [ 'processingtype', 'computingsite', 'destinationse', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid', 'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount' , 'eventservice', 'jobsubstatus']
 standard_sitefields = [ 'region', 'gocname', 'nickname', 'status', 'tier', 'comment_field', 'cloud', 'allowdirectaccess', 'allowfax', 'copytool', 'faxredirector', 'retry', 'timefloor' ]
 standard_taskfields = [ 'tasktype', 'superstatus', 'corecount', 'taskpriority', 'username', 'transuses', 'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag', 'reqid', 'ramcount', 'nucleus', 'eventservice']
 
@@ -4300,6 +4300,7 @@ def taskInfo(request, jeditaskid=0):
     jobsummary = []
     maxpss = []
     walltime = []
+    jobsummaryESMerge = []
 
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid != 0:
@@ -4310,6 +4311,8 @@ def taskInfo(request, jeditaskid=0):
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
         if eventservice:
             jobsummary,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef  = jobSummary2(query, mode='eventservice')
+            jobsummaryESMerge, maxpssESM,walltimeESM,sitepssESM,sitewalltimeESM,maxpssfESM,walltimefESM,sitepssfESM,sitewalltimefESM = jobSummary2(query, mode='eventservice', substatusfilter='es_merge')
+
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
             exclude = {'processingtype' : 'pmerge' }
@@ -4627,6 +4630,7 @@ def taskInfo(request, jeditaskid=0):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
+            'jobsummaryESMerge': jobsummaryESMerge,
             'maxpss' : maxpss,
             'taskbrokerage':taskbrokerage,
             'walltime' : walltime,
@@ -4666,18 +4670,25 @@ def taskInfo(request, jeditaskid=0):
         return response
 
 
-def jobSummary2(query, exclude={}, mode='drop'):
+def jobSummary2(query, exclude={}, mode='drop', substatusfilter = ''):
     jobs = []
-    jobs.extend(Jobsdefined4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
-    jobs.extend(Jobswaiting4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
-    jobs.extend(Jobsactive4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
-    jobs.extend(Jobsarchived4.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
-    jobs.extend(Jobsarchived.objects.filter(**query).exclude(**exclude).\
-        values('pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
+    newquery = copy.deepcopy(query)
+    if substatusfilter != '':
+        if (substatusfilter == 'es_merge'):
+            newquery['jobsubstatus'] = 'es_merge'
+        else:
+            exclude['jobsubstatus'] = 'es_merge'
+
+    jobs.extend(Jobsdefined4.objects.filter(**newquery).exclude(**exclude).\
+        values('jobsubstatus', 'pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
+    jobs.extend(Jobswaiting4.objects.filter(**newquery).exclude(**exclude).\
+        values('jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
+    jobs.extend(Jobsactive4.objects.filter(**newquery).exclude(**exclude).\
+        values('jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
+    jobs.extend(Jobsarchived4.objects.filter(**newquery).exclude(**exclude).\
+        values('jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
+    jobs.extend(Jobsarchived.objects.filter(**newquery).exclude(**exclude).\
+        values('jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
     
     jobsSet = set()
     newjobs = []
