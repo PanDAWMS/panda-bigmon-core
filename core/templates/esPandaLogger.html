@@ -25,6 +25,24 @@
 
 {% if log %}
 <p>
+
+<table>
+  <tr class='tablesection'><th colspan=20>Job Broker Logs Linked to Task</th></tr>
+  <tr>
+    <td> Jedi TaskID: <input type="text" id="jediTaskID" value=""> <input type="button" value="Search"  onclick="searchJedi()"></td>
+  </tr>
+</table>
+
+  <script>
+function searchJedi() {
+    input = document.getElementById("jediTaskID").value;
+    taskid = input.replace(/\s/g, '');
+    url = "https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@message.msg'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi%20AND%20@message.msg:%22jediTaskID%3D"+taskid+"%22')),sort:!('@timestamp',desc))";
+        window.location.href=url;
+}
+</script>
+
+
 <table>
 <tr class='tablesection'><th colspan=20>logger entries</th></tr>
 <tr class='tablesection'><th> Category </th> <th> Type </th> <th> Level(count) </th> </tr>
