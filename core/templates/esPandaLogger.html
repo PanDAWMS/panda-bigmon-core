@@ -10,6 +10,7 @@
 {% endblock %}
 {% block body %}
 
+{{ res }}
 {{ viewParams.header }}
 
 <p>
@@ -22,238 +23,31 @@
 {% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
 </p>
 
-
+{% if log %}
 <p>
 <table>
-  <tr class='tablesection'><th colspan=20>Job Broker Logs Linked to Task</th></tr>
-  <tr>
-    <th class='tablesection'> Jedi TaskID: <input type="text" id="jediTaskID" value=""> <input type="button" value="Search"  onclick="searchJedi()"></th>
-  </tr>
+<tr class='tablesection'><th colspan=20>logger entries</th></tr>
+<tr class='tablesection'><th> Category </th> <th> Type </th> <th> Level(count) </th> </tr>
+{% for name,types in log.items %}
+{% for type,levels in types.items %}
+<tr bgcolor="#FCFCFC">
+
+<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%22{{name}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ name }}</a> </th>
+
+<td> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%22{{name}}%22AND%20@message.Type:%22{{type}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ type }}</a> </td><td>
+
+{% for key,level in levels.items %}
+<a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%22{{name}}%22AND%20@message.Type:%22{{type}}%22AND%20@message.levelname:%22{{level.levelname}}%22')),sort:!('@timestamp',desc))" target="_blank">
+<span class="{{ level.levelname|lower }}">{{ level.levelname }}</span>({{ level.lcount }})
+</a> &nbsp;
+{% endfor %}
+</td></tr>
+{% endfor %}
+<tr height=20></tr>
+{% endfor %}
 </table>
-
-  <script>
-function searchJedi() {
-    input = document.getElementById("jediTaskID").value;
-    taskid = input.replace(/\s/g, '');
-    url = "https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@message.msg'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi%20AND%20@message.msg:%22jediTaskID%3D"+taskid+"%22')),sort:!('@timestamp',desc))";
-        window.location.href=url;
-}
-</script>
-
-<table>
-<tr class='tablesection'><th colspan=20>Logger Entries</th></tr>
-<tr class='tablesection'>
-<th> Category </th> <th> Type </th> <th> Level(count) </th> 
-</tr>
-
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fw,mode:quick,to:now%2Fw))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.bamboo')),sort:!('@timestamp',desc))" target="_blank">panda.mon.bamboo</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.bambooAND%20@message.Type:%22taskbrokerage%22')),sort:!('@timestamp',desc))" target="_blank">taskbrokerage</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fw,mode:quick,to:now%2Fw))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.bambooAND%20@message.Type:%22taskbrokerage%22AND%20@message.levelname:%22DEBUG%22')),sort:!('@timestamp',desc))" target="_blank"><span class="debug">debug</span></a> &nbsp;
-   <a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fw,mode:quick,to:now%2Fw))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.bambooAND%20@message.Type:%22taskbrokerage%22AND%20@message.levelname:%22WARNING%22')),sort:!('@timestamp',desc))" target="_blank"><span class="warning">warning</span></a> &nbsp;
-</td>
-</tr>
-<tr height=20>
-</tr>
-<!--BAMBOO-->
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.deftcore')),sort:!('@timestamp',desc))" target="_blank">panda.mon.deftcore</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.deftcoreAND%20@message.Type:%22action%22')),sort:!('@timestamp',desc))" target="_blank">action</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.deftcoreAND%20@message.Type:%22action%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-<!--DEFTCORE-->
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.deftcore')),sort:!('@timestamp',desc))" target="_blank">panda.mon.deftcore</a> </th>
-<td> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.deftcoreAND%20@message.Type:%22service%22')),sort:!('@timestamp',desc))" target="_blank">service</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.deftcoreAND%20@message.Type:%22service%22AND%20@message.levelname:%22ERROR%22')),sort:!('@timestamp',desc))" target="_blank"><span class="error">error</span></a> 
-</td>
-</tr>
-<tr height=20>
-</tr>
-<!--DEV-->
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.dev')),sort:!('@timestamp',desc))" target="_blank">panda.mon.dev</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.devAND%20@message.Type:%22pilotLog%22')),sort:!('@timestamp',desc))" target="_blank">pilotLog</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.devAND%20@message.Type:%22pilotLog%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-</tr>
-<tr height=20>
-</tr>
-
-<!--JEDI 1-->
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedi</a></th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22analy_brokerage%22')),sort:!('@timestamp',desc))" target="_blank">analy_brokerage</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22analy_brokerage%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-<!--JEDI 2-->
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedi</a></th>
-
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22contentsfeeder%22')),sort:!('@timestamp',desc))" target="_blank">contentsfeeder</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22contentsfeeder%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<!--JEDI 3-->
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedi</a></th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22jobgenerator%22')),sort:!('@timestamp',desc))" target="_blank">jobgenerator</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22jobgenerator%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<!--JEDI 4-->
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedi</a></th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22jobthrottler%22')),sort:!('@timestamp',desc))" target="_blank">jobthrottler</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22jobthrottler%22AND%20@message.levelname:%22WARNING%22')),sort:!('@timestamp',desc))" target="_blank"><span class="warning">warning</span></a> 
-</td>
-</tr>
-
-<!--JEDI 5-->
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedi</a></th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22pandasrv%22')),sort:!('@timestamp',desc))" target="_blank">pandasrv</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22pandasrv%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<!--JEDI 6-->
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedi</a></th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22postprocessor%22')),sort:!('@timestamp',desc))" target="_blank">postprocessor</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22postprocessor%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<!--JEDI 7-->
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedi</a></th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22prod_brokerage%22')),sort:!('@timestamp',desc))" target="_blank">prod_brokerage</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22prod_brokerage%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<!--JEDI 8-->
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedi</a></th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22taskcommando%22')),sort:!('@timestamp',desc))" target="_blank">taskcommando</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22taskcommando%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<!--JEDI 9-->
-<tr bgcolor="#FCFCFC">
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedi</a></th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22taskrefiner%22')),sort:!('@timestamp',desc))" target="_blank">taskrefiner</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jediAND%20@message.Type:%22taskrefiner%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<tr height=20>
-</tr>
-
-<!--panda.mon.jedidev 1-->
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidev')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedidev</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidevAND%20@message.Type:%22analy_brokerage%22')),sort:!('@timestamp',desc))" target="_blank">analy_brokerage</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidevAND%20@message.Type:%22analy_brokerage%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<!--panda.mon.jedidev 2-->
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidev')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedidev</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidevAND%20@message.Type:%22contentsfeeder%22')),sort:!('@timestamp',desc))" target="_blank">contentsfeeder</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidevAND%20@message.Type:%22contentsfeeder%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<!--panda.mon.jedidev 3-->
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidev')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedidev</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidevAND%20@message.Type:%22jobgenerator%22')),sort:!('@timestamp',desc))" target="_blank">jobgenerator</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidevAND%20@message.Type:%22jobgenerator%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<!--panda.mon.jedidev 4-->
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidev')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedidev</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidevAND%20@message.Type:%22prod_brokerage%22')),sort:!('@timestamp',desc))" target="_blank">prod_brokerage</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidevAND%20@message.Type:%22prod_brokerage%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<!--panda.mon.jedidev 5-->
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidev')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedidev</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidevAND%20@message.Type:%22retryModule%22')),sort:!('@timestamp',desc))" target="_blank">retryModule</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidevAND%20@message.Type:%22retryModule%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<!--panda.mon.jedidev 6-->
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidev')),sort:!('@timestamp',desc))" target="_blank">panda.mon.jedidev</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidevAND%20@message.Type:%22taskrefiner%22')),sort:!('@timestamp',desc))" target="_blank">taskrefiner</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedidevAND%20@message.Type:%22taskrefiner%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))" target="_blank"><span class="info">info</span></a> 
-</td>
-</tr>
-
-<tr height=20>
-</tr>
-
-<!--panda.mon.prod 1-->
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.prod')),sort:!('@timestamp',desc))" target="_blank">panda.mon.prod</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.prodAND%20@message.Type:%22broker_util%22')),sort:!('@timestamp',desc))" target="_blank">broker_util</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.prodAND%20@message.Type:%22broker_util%22AND%20@message.levelname:%22ERROR%22')),sort:!('@timestamp',desc))"><span class="error">error</span></a> 
-</td>
-</tr>
-<!--panda.mon.prod 2-->
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.prod')),sort:!('@timestamp',desc))" target="_blank">panda.mon.prod</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.prodAND%20@message.Type:%22pd2p%22')),sort:!('@timestamp',desc))" target="_blank">pd2p</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.prodAND%20@message.Type:%22pd2p%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))"><span class="info">info</span></a> 
-</td>
-</tr>
-<!--panda.mon.prod 3-->
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.prod')),sort:!('@timestamp',desc))" target="_blank">panda.mon.prod</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.prodAND%20@message.Type:%22pilotLog%22')),sort:!('@timestamp',desc))" target="_blank">pilotLog</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.prodAND%20@message.Type:%22pilotLog%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))"><span class="info">info</span></a> 
-</td>
-</tr>
-<!--panda.mon.prod 4-->
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.prod')),sort:!('@timestamp',desc))" target="_blank">panda.mon.prod</a> </th>
-<td><a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.prodAND%20@message.Type:%22retryModule%22')),sort:!('@timestamp',desc))" target="_blank">retryModule</a></td>
-<td>
-   <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.prodAND%20@message.Type:%22retryModule%22AND%20@message.levelname:%22INFO%22')),sort:!('@timestamp',desc))"><span class="info">info</span></a> 
-</td>
-</tr>
-
-
-</table>
-
 </p>
+{% endif %}
 
 
 {% endblock %}

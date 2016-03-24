@@ -5331,8 +5331,63 @@ def esPandaLogger(request):
     valid, response = initRequest(request)
     if not valid: return response
 
+    from elasticsearch import Elasticsearch
+    from elasticsearch_dsl import Search, Q
+
+    es = Elasticsearch(
+        hosts=[{'host': 'aianalytics01.cern.ch', 'port': 9200}],
+        use_ssl=False,
+        retry_on_timeout=True,
+        max_retries=3
+    )
+
+    today = time.strftime("%Y-%m-%d")
+    logindex = 'pandalogger-'+str(today)
+    logindexdev = 'pandaloggerdev-'+str(today)
+    res =  es.search(index=[logindex], fields=['@message.name', '@message.Type', '@message.levelname'], body={
+           "aggs": {
+                "name": {
+                    "terms": {"field": "@message.name"},
+                    "aggs": {
+                        "type": {
+                           "terms": {"field": "@message.Type"},
+                           "aggs": {
+                               "levelname":{
+                               "terms": {"field": "@message.levelname"}
+                                }
+                           }
+                        }
+                    }
+                }
+
+           }
+      }
+    )
+    #res = json.dumps(res, sort_keys = False, indent = 4)
+
+    log={}
+    for agg in res['aggregations']['name']['buckets']:
+        name = agg['key']
+        log[name] = {}
+        for types in agg['type']['buckets']:
+            type = types['key']
+            log[name][type]={}
+            for levelnames in types['levelname']['buckets']:
+                 levelname = levelnames['key']
+                 log[name][type][levelname]={}
+                 log[name][type][levelname]['levelname'] = levelname
+                 log[name][type][levelname]['lcount'] = str(levelnames['doc_count'])
+    #print log
+    data = {
+        'request' : request,
+        'viewParams' : request.session['viewParams'],
+        'requestParams' : request.session['requestParams'],
+        'user' : None,
+        'log' : log,
+    }
+
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
-        response = render_to_response('esPandaLogger.html', '', RequestContext(request))
+        response = render_to_response('esPandaLogger.html', data, RequestContext(request))
         return response
 
 cache_page(60*6)
