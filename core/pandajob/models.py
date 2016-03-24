@@ -121,6 +121,15 @@ class JobsWorldView(models.Model):
         db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEW"'
 
 
+class HS06sWorldView(models.Model):
+    nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
+    ntaskspernucleus = models.IntegerField(db_column='NTASKSPERNUCLEUS') # Field name made lowercase.
+    toths06spernucleus = models.IntegerField(db_column='TOTHS06SPERNUCLEUS')
+    usedhs06spernucleus = models.IntegerField(db_column='USEDHS06SPERNUCLEUS') # Field name made lowercase.
+    failedhs06spernucleus = models.IntegerField(db_column='FAILEDHS06SPERNUCLEUS')
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."WORLDHS06SSUMMARYVIEW"'
+
 
 class PandaJob(models.Model):
     pandaid = models.BigIntegerField(primary_key=True, db_column='PANDAID') # Field name made lowercase.
