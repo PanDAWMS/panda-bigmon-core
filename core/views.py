@@ -5758,6 +5758,18 @@ def datasetList(request):
         return  HttpResponse(json.dumps(dsrec), mimetype='text/html')
 
 def fileInfo(request):
+
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        JediDatasetsTableName = "ATLAS_PANDA.JEDI_DATASETS"
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+    else:
+        JediDatasetsTableName = "JEDI_DATASETS"
+        tmpTableName = "TMP_IDS1"
+
+
+    random.seed()
+    transactionKey = random.randrange(1000000)
+
     valid, response = initRequest(request)
     if not valid: return response
     setupView(request, hours=365*24, limit=999999999)
@@ -5781,6 +5793,22 @@ def fileInfo(request):
     else:
         file = None
 
+    startdate = None
+    if 'date_from' in request.session['requestParams']:
+        time_from_struct = time.strptime(request.session['requestParams']['date_from'],'%Y-%m-%d')
+        startdate = datetime.utcfromtimestamp(time.mktime(time_from_struct))
+    if not startdate:
+        startdate = timezone.now() - timedelta(hours=365*24)
+#        startdate = startdate.strftime(defaultDatetimeFormat)
+    enddate = None
+    if 'date_to' in request.session['requestParams']:
+        time_from_struct = time.strptime(request.session['requestParams']['date_to'],'%Y-%m-%d')
+        enddate = datetime.utcfromtimestamp(time.mktime(time_from_struct))
+    if enddate == None:
+        enddate = timezone.now()  # .strftime(defaultDatetimeFormat)
+
+    query['creationdate__range'] = [startdate.strftime(defaultDatetimeFormat), enddate.strftime(defaultDatetimeFormat)]
+
     if 'pandaid' in request.session['requestParams'] and request.session['requestParams']['pandaid'] != '':
         query['pandaid'] = request.session['requestParams']['pandaid']
     if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid'] != '':
@@ -5791,9 +5819,12 @@ def fileInfo(request):
     if file or (query['pandaid'] is not None) or (query['jeditaskid'] is not None):
         files = JediDatasetContents.objects.filter(**query).values()
         if len(files) == 0:
+            del query['creationdate__range']
+            query['modificationtime__range'] = [startdate.strftime(defaultDatetimeFormat),
+                                            enddate.strftime(defaultDatetimeFormat)]
             morefiles = Filestable4.objects.filter(**query).values()
             if len(morefiles) == 0:
-                morefiles.extend(FilestableArch.objects.filter(**query).values())
+                morefiles = FilestableArch.objects.filter(**query).values()
             if len(morefiles) > 0:
                 files = morefiles
                 for f in files:
@@ -5802,11 +5833,29 @@ def fileInfo(request):
                     f['datasetname'] = f['dataset']
                     f['oldfiletable'] = 1
 
+        connection.enter_transaction_management()
+        new_cur = connection.cursor()
+        executionData = []
+        for id in files:
+            executionData.append((id['datasetid'],transactionKey))
+        query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+        new_cur.executemany(query, executionData)
+        connection.commit()
+
+        new_cur.execute(
+            "SELECT DATASETNAME,DATASETID FROM %s WHERE DATASETID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
+                JediDatasetsTableName, tmpTableName, transactionKey))
+        mrecs = dictfetchall(new_cur)
+        mrecsDict = {}
+        for mrec in mrecs:
+            mrecsDict[mrec['DATASETID']] = mrec['DATASETNAME']
+
+
         for f in files:
-            f['fsizemb'] = "%0.2f" % (f['fsize']/1000000.)
-            dsets = JediDatasets.objects.filter(datasetid=f['datasetid']).values()
-            if len(dsets) > 0:
-                f['datasetname'] = dsets[0]['datasetname']
+            f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
+            if mrecsDict[f['datasetid']]:
+                f['datasetname'] = mrecsDict[f['datasetid']]
+
 
     if len(files) > 0:
         files = sorted(files, key=lambda x:x['pandaid'], reverse=True)
@@ -5832,7 +5881,7 @@ def fileInfo(request):
             if (file_['endevent'] != None):
                 file_['endevent'] += 1
 
-    if ((len(files) > 0) & ('jeditaskid' in files[0]) & (files[0]['jeditaskid'] != None)):
+    if ((len(files) > 0) and ('jeditaskid' in files[0]) and (files[0]['jeditaskid'] != None)):
             files = sorted(files, key=lambda k: (-k['jeditaskid'], k['startevent']))
 
 
