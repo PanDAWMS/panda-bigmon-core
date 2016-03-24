@@ -29,7 +29,7 @@ from django.db import connection, transaction
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
-    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, Getfailedjobshspecarch, Getfailedjobshspec, JobsWorldView
+    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, Getfailedjobshspecarch, Getfailedjobshspec, JobsWorldView, HS06sWorldView
 from resource.models import Schedconfig
 from core.common.models import Filestable4
 from core.common.models import Datasets
@@ -3555,6 +3555,45 @@ def worldjobs(request):
         return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
 
 
+def worldhs06s(request):
+    valid, response = initRequest(request)
+    query = {}
+    values = [ 'nucleus', 'ntaskspernucleus', 'toths06spernucleus', 'usedhs06spernucleus', 'failedhs06spernucleus' ]
+
+    worldHS06sSummary = []
+    worldHS06sSummary.extend(HS06sWorldView.objects.filter(**query).values(*values))
+    nucleus = {}
+    for nuclei in worldHS06sSummary:
+        nuclei['failedpct']=round(100.*nuclei['failedhs06spernucleus']/nuclei['usedhs06spernucleus'],2)
+
+    if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
+        xurl = extensibleURL(request)
+        nosorturl = removeParam(xurl, 'sortby',mode='extensible')
+#        del request.session['TFIRST']
+#        del request.session['TLAST']
+        data = {
+            'request' : request,
+            'viewParams' : request.session['viewParams'],
+            'requestParams' : request.session['requestParams'],
+            'url' : request.path,
+            'xurl' : xurl,
+            'nosorturl' : nosorturl,
+            'user' : None,
+            'sumhs' : worldHS06sSummary,
+        }
+        ##self monitor
+        endSelfMonitor(request)
+        response = render_to_response('worldHS06s.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
+        return response
+    else:
+#        del request.session['TFIRST']
+#        del request.session['TLAST']
+
+        data = {
+        }
+
+        return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
 
 
 

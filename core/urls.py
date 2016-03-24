@@ -53,7 +53,7 @@ urlpatterns = patterns('',
     url(r'^g4exceptions/$', coremon_views.g4exceptions, name='g4exceptions'),
     url(r'^worldjobs/$', coremon_views.worldjobs, name='worldjobs'),
     url(r'^runningprodtasks/$', coremon_views.runningProdTasks, name='runningProdTasks'),
-
+    url(r'^worldhs06s/$', coremon_views.worldhs06s, name='worldHS06s'),
 
 #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
 
