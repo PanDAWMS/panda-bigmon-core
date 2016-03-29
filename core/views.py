@@ -5327,6 +5327,7 @@ def incidentList(request):
         jsonResp = json.dumps(clearedInc)
         return  HttpResponse(jsonResp, mimetype='text/html')
 
+cache_page(60*6)
 def esPandaLogger(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -5344,7 +5345,15 @@ def esPandaLogger(request):
     today = time.strftime("%Y-%m-%d")
     logindex = 'pandalogger-'+str(today)
     logindexdev = 'pandaloggerdev-'+str(today)
-    res =  es.search(index=[logindex], fields=['@message.name', '@message.Type', '@message.levelname'], body={
+
+    #check if dev index exists
+    indexdev = es.indices.exists(index=logindexdev)
+   
+    if indexdev:
+       indices = [logindex,logindexdev]
+    else:
+       indices = [logindex]
+    res =  es.search(index=indices, fields=['@message.name', '@message.Type', '@message.levelname'], body={
            "aggs": {
                 "name": {
                     "terms": {"field": "@message.name"},
@@ -5359,11 +5368,9 @@ def esPandaLogger(request):
                         }
                     }
                 }
-
            }
       }
     )
-    #res = json.dumps(res, sort_keys = False, indent = 4)
 
     log={}
     for agg in res['aggregations']['name']['buckets']:

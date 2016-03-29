@@ -36,9 +36,11 @@
   <script>
 function searchJedi() {
     input = document.getElementById("jediTaskID").value;
-    taskid = input.replace(/\s/g, '');
-    url = "https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@message.msg'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi%20AND%20@message.msg:%22jediTaskID%3D"+taskid+"%22')),sort:!('@timestamp',desc))";
+    if (input){
+        taskid = input.replace(/\s/g, '');
+        url = "https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@message.msg'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi%20AND%20@message.msg:%22jediTaskID%3D"+taskid+"%22')),sort:!('@timestamp',desc))";
         window.location.href=url;
+    }
 }
 </script>
 
@@ -50,12 +52,12 @@ function searchJedi() {
 {% for type,levels in types.items %}
 <tr bgcolor="#FCFCFC">
 
-<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%22{{name}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ name }}</a> </th>
+<th> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5B{% if "dev" in name %}pandaloggerdev{% else %}pandalogger{% endif %}-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%22{{name}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ name }}</a> </th>
 
-<td> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%22{{name}}%22AND%20@message.Type:%22{{type}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ type }}</a> </td><td>
+<td> <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5B{% if "dev" in name %}pandaloggerdev{% else %}pandalogger{% endif %}-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%22{{name}}%22AND%20@message.Type:%22{{type}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ type }}</a> </td><td>
 
 {% for key,level in levels.items %}
-<a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%22{{name}}%22AND%20@message.Type:%22{{type}}%22AND%20@message.levelname:%22{{level.levelname}}%22')),sort:!('@timestamp',desc))" target="_blank">
+<a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!(_source),index:%5B{% if "dev" in name %}pandaloggerdev{% else %}pandalogger{% endif %}-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%22{{name}}%22AND%20@message.Type:%22{{type}}%22AND%20@message.levelname:%22{{level.levelname}}%22')),sort:!('@timestamp',desc))" target="_blank">
 <span class="{{ level.levelname|lower }}">{{ level.levelname }}</span>({{ level.lcount }})
 </a> &nbsp;
 {% endfor %}
