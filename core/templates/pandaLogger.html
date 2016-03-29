@@ -22,6 +22,8 @@
 {% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
 </p>
 
+<p> <span class="error"> Note: this page will be decommissioned. New Logger monitoring is available at <a  href="{% url 'esPandaLogger' %}"> here. </a></span></p>
+
 {% if requestParams|length == 0 %}
 <p><b>View recent <a href="{% url 'pandaLogger' %}?level=error&limit=2000"><span class="error">errors</span></a>, <a href="{% url 'pandaLogger' %}?level=warning&limit=2000"><span class="warning">warnings</span></a></b>
 </p>
