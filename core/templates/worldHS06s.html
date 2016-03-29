@@ -1,0 +1,38 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} {{ viewParams.MON_VO }} World HS06s summary{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA {{view}} {{ requestParams.mode }} World HS06s dashboard, last 7 days{{ viewParams.selection|safe }}
+{% endblock %}
+{% block body %}
+
+<p>
+<table id="summary">
+<tr class='tablesection'><th colspan=20> World HS06s Summary</th></tr>
+<tr class="tablesection">
+<th>Nucleus</th>
+<th>nTasks</th>
+<th>Total</th>
+<th>Used</th>
+<th><span class="failed">Failed</span></th>
+<th><span class="failed">Percentage</span></th>
+</tr>
+
+{% for nucleus in sumhs %}
+        <tr>
+            <td>{{ nucleus.nucleus }}</td>
+            <td>{{ nucleus.ntaskspernucleus }}</td>
+            <td>{{ nucleus.toths06spernucleus  }}</td>
+            <td>{{ nucleus.usedhs06spernucleus }}</td>
+            <td class="failed">{{ nucleus.failedhs06spernucleus }}</td>
+            <td class="failed">{{ nucleus.failedpct }}</td>
+        </tr>
+{% endfor %}
+
+</table>
+
+
+
+{% endblock %}
+
