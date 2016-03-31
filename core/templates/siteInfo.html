@@ -60,7 +60,11 @@
 </td>
 
 <td>
-<a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@message.module','@message.Type','@message.name','@message.levelname','@message.message'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.msg:%22{{site.siteid}}%22AND@message.Type:%22analy_brokerage%22OR@message.Type:%22prod_brokerage%22AND@message.name:%22panda.mon.jedi%22')),sort:!('@timestamp',desc))">brokerage actions</a>
+<a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&type=prod_brokerage|analy_brokerage&site={{ site.siteid }}&hours={{njobhours}}">brokerage actions</a>
+</td>
+
+<td>
+<a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@message.module','@message.Type','@message.name','@message.levelname','@message.message'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.msg:%22{{site.siteid}}%22AND@message.Type:%22analy_brokerage%22OR@message.Type:%22prod_brokerage%22AND@message.name:%22panda.mon.jedi%22')),sort:!('@timestamp',desc))">brokerage actions (es) </a>
 </td>
 
 {% if site.nickname %}
