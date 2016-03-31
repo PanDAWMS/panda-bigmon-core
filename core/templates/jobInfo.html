@@ -213,9 +213,10 @@ job <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{
 <a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">pilot records</a>
 </td>
 
-<td>
-<a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&jeditaskid={{ job.jeditaskid }}">JEDI action logger</a>
+<td><a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@message.module','@message.Type','@message.name','@message.levelname','@message.message'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms
+:!f,query:'@message.msg:%22jediTaskID%3D{{job.jeditaskid}}%22AND@message.name:%22panda.mon.jedi%22')),sort:!('@timestamp',desc))">JEDI action logger</a>
 </td>
+
 
 <td>
 <a href="{% url 'jobList' %}?parentid={{ job.pandaid }}">child jobs</a>
