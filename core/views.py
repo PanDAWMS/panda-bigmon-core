@@ -4349,8 +4349,8 @@ def taskInfo(request, jeditaskid=0):
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
 
         if eventservice:
-            jobsummary,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef  = jobSummary2(query, mode='eventservice')
-            jobsummaryESMerge, maxpssESM,walltimeESM,sitepssESM,sitewalltimeESM,maxpssfESM,walltimefESM,sitepssfESM,sitewalltimefESM = jobSummary2(query, mode='eventservice', substatusfilter='es_merge')
+            jobsummary,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef  = jobSummary2(query, exclude={}, mode='eventservice', substatusfilter='non_es_merge')
+            jobsummaryESMerge, maxpssESM,walltimeESM,sitepssESM,sitewalltimeESM,maxpssfESM,walltimefESM,sitepssfESM,sitewalltimefESM = jobSummary2(query, exclude={}, mode='eventservice', substatusfilter='es_merge')
 
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
