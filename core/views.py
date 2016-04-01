@@ -1824,7 +1824,7 @@ def getSequentialRetries(pandaid, jeditaskid):
     newretries = []
     newretries.extend(retries)
     for retry in retries:
-        if retry['relationtype'] == 'merge':
+        if retry['relationtype'] in ['merge','retry']:
             jsquery = {}
             jsquery['jeditaskid'] = jeditaskid
             jsquery['pandaid'] = retry['oldpandaid']

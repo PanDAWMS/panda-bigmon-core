@@ -108,12 +108,13 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 </p>
 {% endif %}
 
+
 {% if pretries %}
 <table width=900><tr><td>
-<div class="section">This job is a descendent of upstream job(s)</div>
+<div class="section">This job is a descendent of upstream job(s), with relationship shown</div>
 <font size=-1>
 {% for pretry in pretries %}
-<a href="{% url 'jobInfo' pretry.oldpandaid %}">{{ pretry.oldpandaid }}</a> &nbsp; 
+<a href="{% url 'jobInfo' pretry.oldpandaid %}">{{ pretry.oldpandaid }}</a>:{% if pretry.relationtype %}{{ pretry.relationtype }}{% else %}retry{% endif %} &nbsp;
 {% endfor %}
 </font>
 </td></tr></table>
@@ -122,15 +123,18 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 
 {% if retries %}
 <table width=900><tr><td>
-<div class="section">This job has descendents downstream</div>
+<div class="section">This job has descendents downstream, with relationship shown</div>
 <font size=-1>
 {% for retry in retries %}
-<a href="{% url 'jobInfo' retry.newpandaid %}">{{ retry.newpandaid }}</a> &nbsp;
+<a href="{% url 'jobInfo' retry.newpandaid %}">{{ retry.newpandaid }}</a>:{% if retry.relationtype %}{{ retry.relationtype }}{% else %}retry{% endif %} &nbsp;
 {% endfor %}
 </font>
 </td></tr></table>
 <p>
 {% endif %}
+
+
+
 
 {% if coreData %}
 <p>
