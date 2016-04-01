@@ -3480,7 +3480,7 @@ def calculateRWwithPrio_JEDI(query):
     return retRWMap, retNREMJMap
 
 
-
+@cache_page(60*6)
 def worldjobs(request):
     valid, response = initRequest(request)
     query = {}
