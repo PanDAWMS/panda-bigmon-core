@@ -92,7 +92,7 @@
 {% endfor %}
 </tr><tr>
 {% for state in jobsummaryESMerge %}
-<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&mode=eventservice&display_limit=100&jobsubstatus=es_merge"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&mode=eventservice&display_limit=100&eventservice=2"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
 {% endfor %}
 </table>
 {% endif %}

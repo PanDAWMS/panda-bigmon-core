@@ -4346,8 +4346,8 @@ def taskInfo(request, jeditaskid=0):
         query = {'jeditaskid' : jeditaskid}
         tasks = JediTasks.objects.filter(**query).values()
         if len(tasks) > 0:
-
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
+
         if eventservice:
             jobsummary,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef  = jobSummary2(query, mode='eventservice')
             jobsummaryESMerge, maxpssESM,walltimeESM,sitepssESM,sitewalltimeESM,maxpssfESM,walltimefESM,sitepssfESM,sitewalltimefESM = jobSummary2(query, mode='eventservice', substatusfilter='es_merge')
@@ -4714,9 +4714,9 @@ def jobSummary2(query, exclude={}, mode='drop', substatusfilter = ''):
     newquery = copy.deepcopy(query)
     if substatusfilter != '':
         if (substatusfilter == 'es_merge'):
-            newquery['jobsubstatus'] = 'es_merge'
+            newquery['eventservice'] = 2
         else:
-            exclude['jobsubstatus'] = 'es_merge'
+            exclude['eventservice'] = 2
 
     jobs.extend(Jobsdefined4.objects.filter(**newquery).exclude(**exclude).\
         values('jobsubstatus', 'pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'computingsite'))
