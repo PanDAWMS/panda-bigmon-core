@@ -166,7 +166,7 @@ def setupSiteInfo(request):
 
 def initRequest(request):
     global VOMODE, ENV, hostname
-    
+
     viewParams = {}
     #if not 'viewParams' in request.session:
     request.session['viewParams'] = viewParams
@@ -233,7 +233,8 @@ def initRequest(request):
         for p in request.GET:
             pval = request.GET[p]
             pval = pval.replace('+',' ')
-            pval = pval.replace('#','')
+            if p.lower() != 'batchid': # Special requester exception
+                pval = pval.replace('#','')
             ## is it int, if it's supposed to be?
             if p.lower() in ( 'days', 'hours', 'limit', 'display_limit', 'taskid', 'jeditaskid', 'jobsetid', 'corecount', 'taskpriority', 'priority', 'attemptnr', 'statenotupdated', 'tasknotupdated', ):
                 try:
@@ -323,7 +324,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     if querytype=='job':
         for field in Jobsactive4._meta.get_all_field_names():
             if (Jobsactive4._meta.get_field(field).get_internal_type() == 'CharField'):
-                if not (field == 'jobstatus' or field == 'modificationhost' or ( excludeJobNameFromWildCard and field == 'jobname') ):
+                if not (field == 'jobstatus' or field == 'modificationhost' or field=='batchid' or ( excludeJobNameFromWildCard and field == 'jobname') ):
                     wildSearchFields.append(field)
     if querytype=='task':
         for field in JediTasks._meta.get_all_field_names():
@@ -1463,7 +1464,7 @@ def jobParamList(request):
     
 @cache_page(60*6)
 def jobList(request, mode=None, param=None):
-    
+
     valid, response = initRequest(request)
     if not valid: return response
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
