@@ -687,10 +687,10 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
                 job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
 #                job['jobstatus'] = 'finished'
             if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 112:
-                job['taskbuffererrordiag'] = 'All events processed, merge job created'
+#                job['taskbuffererrordiag'] = 'All events processed, merge job created'
                 job['piloterrorcode'] = 0
                 job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-                job['jobstatus'] = 'finished'
+#                job['jobstatus'] = 'finished'
             if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 114:
                 job['taskbuffererrordiag'] = 'No rerun to pick up unprocessed, at max attempts'
                 job['piloterrorcode'] = 0
