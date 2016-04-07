@@ -4875,6 +4875,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
             jobs = newjobs
         print 'done filtering'
 
+
     maxpss = []
     walltime = []
     sitepss = []
