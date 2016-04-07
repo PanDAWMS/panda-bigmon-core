@@ -4844,7 +4844,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
             for task in taskids:
                 retryquery = {}
                 retryquery['jeditaskid'] = task
-                retries = JediJobRetryHistory.objects.filter(**retryquery).extra(where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge')"]).order_by('newpandaid').values()
+                retries = JediJobRetryHistory.objects.filter(**retryquery).extra(where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', 'jobset_retry')"]).order_by('newpandaid').values()
                 print 'got the retries', len(jobs), len(retries)
 
             hashRetries = {}
@@ -4862,9 +4862,8 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
                                 job['processingtype'] == 'pmerge' and retry['relationtype'] == 'merge'):
                             dropJob = retry['newpandaid']
                     else:
-                        mergeCand = [x['jobsetid'] for x in jobs if x['pandaid'] == retry['newpandaid']]
-
-                        if (len(mergeCand) > 0) and (job['jobsetid'] == mergeCand[0]):
+                        if (job['jobsetid'] in hashRetries) and (
+                            hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
                             dropJob = 1
 
                 if (dropJob == 0):
