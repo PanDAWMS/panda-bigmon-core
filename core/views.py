@@ -29,7 +29,7 @@ from django.db import connection, transaction
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
-    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, Getfailedjobshspecarch, Getfailedjobshspec, JobsWorldView, HS06sWorldView
+    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, Getfailedjobshspecarch, Getfailedjobshspec, JobsWorldView
 from resource.models import Schedconfig
 from core.common.models import Filestable4
 from core.common.models import Datasets
@@ -3633,20 +3633,84 @@ def worldjobs(request):
 
 def worldhs06s(request):
     valid, response = initRequest(request)
-    query = {}
-    values = [ 'nucleus', 'ntaskspernucleus', 'toths06spernucleus', 'usedhs06spernucleus', 'failedhs06spernucleus' ]
+    roundflag=False
+    condition=''
+    for param in request.session['requestParams']:
+        if param=='reqid':
+            condition+= ('t.reqid=' + str(request.session['requestParams']['reqid']))
+        if param=='jeditaskid':
+            condition+= ('t.jeditaskid=' + str(request.session['requestParams']['jeditaskid']))
+    if len(condition) < 1:
+        condition = '(1=1)'
+        roundflag=True
 
-    worldHS06sSummary = []
-    worldHS06sSummary.extend(HS06sWorldView.objects.filter(**query).values(*values))
-    nucleus = {}
-    for nuclei in worldHS06sSummary:
-        nuclei['failedpct']=round(100.*nuclei['failedhs06spernucleus']/nuclei['usedhs06spernucleus'],2)
+    cur = connection.cursor()
+    cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.GETHS06SSUMMARY('%s'))" % condition)
+    hspersite = cur.fetchall()
+    cur.close()
+
+    newcur = connection.cursor()
+    newcur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.GETHS06STOTSUMMARY('%s'))" % condition)
+    hspernucleus = newcur.fetchall()
+    newcur.close()
+
+    keys = [ 'nucleus', 'computingsite', 'usedhs06spersite', 'failedhs06spersite' ]
+    totkeys = [ 'nucleus', 'ntaskspernucleus', 'toths06spernucleus' ]
+
+    worldHS06sSummary = [dict(zip(keys,row)) for row in hspersite]
+    worldHS06sTotSummary = [dict(zip(totkeys,row)) for row in hspernucleus]
+    worldHS06sSummaryByNucleus = {}
+    nucleus={}
+    totnucleus={}
+
+    for nucl in worldHS06sTotSummary:
+        totnucleus[nucl['nucleus']]={}
+        totnucleus[nucl['nucleus']]['ntaskspernucleus']=nucl['ntaskspernucleus']
+        if roundflag:
+            totnucleus[nucl['nucleus']]['toths06spernucleus']=round(nucl['toths06spernucleus']/1000./3600/24,2)
+        else:
+            totnucleus[nucl['nucleus']]['toths06spernucleus']=nucl['toths06spernucleus']
+
+    for site in worldHS06sSummary:
+        if site['nucleus'] not in nucleus:
+            nucleus[site['nucleus']]={}
+        nucleus[site['nucleus']][site['computingsite']]={}
+        if site['usedhs06spersite']:
+            nucleus[site['nucleus']][site['computingsite']]['usedhs06spersite']=site['usedhs06spersite']
+        else:
+            nucleus[site['nucleus']][site['computingsite']]['usedhs06spersite']=0
+        if site['failedhs06spersite']:
+            nucleus[site['nucleus']][site['computingsite']]['failedhs06spersite']=site['failedhs06spersite']
+        else:
+            nucleus[site['nucleus']][site['computingsite']]['failedhs06spersite']=0
+        if nucleus[site['nucleus']][site['computingsite']]['usedhs06spersite'] and nucleus[site['nucleus']][site['computingsite']]['usedhs06spersite']>0:
+            nucleus[site['nucleus']][site['computingsite']]['failedhs06spersitepct']=100*nucleus[site['nucleus']][site['computingsite']]['failedhs06spersite']/nucleus[site['nucleus']][site['computingsite']]['usedhs06spersite']
+
+    for nuc in nucleus:
+        worldHS06sSummaryByNucleus[nuc]={}
+        for site in nucleus[nuc]:
+            if 'usedhs06spernucleus' not in worldHS06sSummaryByNucleus[nuc]:
+                worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus'] = nucleus[nuc][site]['usedhs06spersite']
+            else:
+                worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus'] += nucleus[nuc][site]['usedhs06spersite']
+            if 'failedhs06spernucleus' not in worldHS06sSummaryByNucleus[nuc]:
+                worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus'] = nucleus[nuc][site]['failedhs06spersite']
+            else:
+                worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus'] += nucleus[nuc][site]['failedhs06spersite']
+        if roundflag:
+            worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus'] = round(worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus']/1000./3600/24,2)
+            worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus'] = round(worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus']/1000./3600/24,2)
+        if worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus'] and worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus']>0:
+            worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleuspct']=int(100*worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus']/worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus'])
+        if nuc in totnucleus:
+            worldHS06sSummaryByNucleus[nuc]['ntaskspernucleus']=totnucleus[nuc]['ntaskspernucleus']
+            worldHS06sSummaryByNucleus[nuc]['toths06spernucleus']=totnucleus[nuc]['toths06spernucleus']
+            worldHS06sSummaryByNucleus[nuc]['donehs06spernucleus']=worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus']-worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus']
+            worldHS06sSummaryByNucleus[nuc]['donehs06spernucleuspct']=int(100*worldHS06sSummaryByNucleus[nuc]['donehs06spernucleus']/totnucleus[nuc]['toths06spernucleus'])
 
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby',mode='extensible')
-#        del request.session['TFIRST']
-#        del request.session['TLAST']
         data = {
             'request' : request,
             'viewParams' : request.session['viewParams'],
@@ -3655,7 +3719,9 @@ def worldhs06s(request):
             'xurl' : xurl,
             'nosorturl' : nosorturl,
             'user' : None,
-            'sumhs' : worldHS06sSummary,
+            'hssitesum' : nucleus,
+            'hsnucleussum' : worldHS06sSummaryByNucleus,
+            'roundflag':roundflag,
         }
         ##self monitor
         endSelfMonitor(request)
@@ -3663,8 +3729,6 @@ def worldhs06s(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
     else:
-#        del request.session['TFIRST']
-#        del request.session['TLAST']
 
         data = {
         }
