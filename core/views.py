@@ -1820,7 +1820,7 @@ def jobList(request, mode=None, param=None):
         return  HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
 
 def isEventService(job):
-    if 'specialhandling' in job and job['specialhandling'] and ( job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0  or job['eventservice'] > 0 ):
+    if 'specialhandling' in job and job['specialhandling'] and ( job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0  or (job['eventservice'] != 'ordinary' and job['eventservice'] > 0)  ):
         return True
     else:
         return False
