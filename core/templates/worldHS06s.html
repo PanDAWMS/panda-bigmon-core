@@ -3,36 +3,68 @@
 
 {% block page_title %} {{ viewParams.MON_VO }} World HS06s summary{% endblock %}
 {% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
-{% block subtitle %}PanDA {{view}} {{ requestParams.mode }} World HS06s dashboard, last 7 days{{ viewParams.selection|safe }}
+{% block subtitle %}PanDA {{view}} {{ requestParams.mode }} World HS06s dashboard, last 3 days{{ viewParams.selection|safe }}
 {% endblock %}
 {% block body %}
 
+{% if requestParams.reqid %}<br><b>Request ID: {{ requestParams.reqid }}</b> {% endif %}
+{% if requestParams.jeditaskid %}<br><b>Task: {{ requestParams.jeditaskid }}</b> {% endif %}
+
+{% if hsnucleussum %}
+
 <p>
 <table id="summary">
-<tr class='tablesection'><th colspan=20> World HS06s Summary</th></tr>
+<tr class='tablesection'><th colspan=20> Nucleus summary of {% if roundflag %}kHS06d {% else %} HS06s {% endif %} </th></tr>
 <tr class="tablesection">
 <th>Nucleus</th>
-<th>nTasks</th>
+<th>NTasks</th>
 <th>Total</th>
 <th>Used</th>
 <th><span class="failed">Failed</span></th>
 <th><span class="failed">Percentage</span></th>
 </tr>
 
-{% for nucleus in sumhs %}
+{% for nucleus, nucval  in hsnucleussum.items %}
+    {% if nucleus %}
         <tr>
-            <td>{{ nucleus.nucleus }}</td>
-            <td>{{ nucleus.ntaskspernucleus }}</td>
-            <td>{{ nucleus.toths06spernucleus  }}</td>
-            <td>{{ nucleus.usedhs06spernucleus }}</td>
-            <td class="failed">{{ nucleus.failedhs06spernucleus }}</td>
-            <td class="failed">{{ nucleus.failedpct }}</td>
+            <td><a href="#nucleus_{{ nucleus }}">{{ nucleus }}</a></td>
+            <td>{{ nucval.ntaskspernucleus }}</td>
+            <td>{{ nucval.toths06spernucleus }}</td>
+            <td>{{ nucval.usedhs06spernucleus }}</td>
+            <td class="failed">{{ nucval.failedhs06spernucleus }}</td>
+            <td class="failed">{{ nucval.failedhs06spernucleuspct }}</td>
         </tr>
+    {% endif %}
 {% endfor %}
 
 </table>
 
+<p>
+<table id="summary">
+<tr class='tablesection'><th colspan=20> Salellite summary of HS06s</th></tr>
+{% for nucleus, nucval  in hssitesum.items %}
+<tr height=10 colspan=12></tr>
+<tr class="tablesection">
+<th><a name="nucleus_{{ nucleus }}">{{ nucleus }} Nucleus</a>, Satellites</th>
+<th>Used</th>
+<th><span class="failed">Failed</span></th>
+<th><span class="failed">Percentage</span></th>
+</tr>
 
+{% for computingsite, computingsiteval in nucval.items %}
+        <tr>
+            <td>{{ computingsite }}</td>
+            <td>{{ computingsiteval.usedhs06spersite }}</td>
+            <td class="failed">{{ computingsiteval.failedhs06spersite }}</td>
+            <td class="failed">{{ computingsiteval.failedhs06spersitepct }}</td>
+        </tr>
 
+{% endfor %}
+{% endfor %}
+</table>
+
+{% else %}
+    <p> No maches to query</p>
+{% endif %}
 {% endblock %}
 
