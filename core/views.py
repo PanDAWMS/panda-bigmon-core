@@ -3995,6 +3995,73 @@ def dashTasks(request, hours, view='production'):
         return  HttpResponse(json.dumps(data), mimetype='text/html')
 
 
+def taskESExtendedInfo(request):
+
+    if 'jeditaskid' in request.REQUEST:
+        jeditaskid = int(request.REQUEST['jeditaskid'])
+    else:
+        return HttpResponse("Not jeditaskid supplied", mimetype='text/html')
+
+    jquery = {}
+    jquery['jeditaskid'] = jeditaskid
+    jobs = []
+    jobs.extend(Jobsactive4.objects.filter(**jquery).values('pandaid', 'jeditaskid'))
+    jobs.extend(Jobsarchived4.objects.filter(**jquery).values('pandaid', 'jeditaskid'))
+    taskdict = {}
+    for job in jobs:
+        taskdict[job['pandaid']] = job['jeditaskid']
+    estaskdict = {}
+    esjobs = []
+    for job in jobs:
+        esjobs.append(job['pandaid'])
+
+    random.seed()
+
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+    else:
+        tmpTableName = "TMP_IDS1"
+
+    transactionKey = random.randrange(1000000)
+    connection.enter_transaction_management()
+    new_cur = connection.cursor()
+    executionData = []
+    for id in esjobs:
+        executionData.append((id, transactionKey))
+    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    new_cur.executemany(query, executionData)
+
+    connection.commit()
+    new_cur.execute(
+        "SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
+        tmpTableName, transactionKey))
+    evtable = dictfetchall(new_cur)
+
+    #        esquery = {}
+    #        esquery['pandaid__in'] = esjobs
+    #        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
+
+    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+    connection.commit()
+    connection.leave_transaction_management()
+
+    for ev in evtable:
+        taskid = taskdict[ev['PANDAID']]
+        if taskid not in estaskdict:
+            estaskdict[taskid] = {}
+            for s in eventservicestatelist:
+                estaskdict[taskid][s] = 0
+        evstat = eventservicestatelist[ev['STATUS']]
+        estaskdict[taskid][evstat] += 1
+
+    estaskstr = ''
+
+    if jeditaskid in estaskdict:
+        for s in estaskdict[taskid]:
+            if estaskdict[taskid][s] > 0:
+                estaskstr += " %s(%s) " % (s, estaskdict[taskid][s])
+    return HttpResponse(estaskstr, mimetype='text/html')
+
 
 @csrf_exempt
 @cache_page(60*6)

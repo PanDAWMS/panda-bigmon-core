@@ -55,7 +55,9 @@ urlpatterns = patterns('',
     url(r'^runningprodtasks/$', coremon_views.runningProdTasks, name='runningProdTasks'),
     url(r'^worldhs06s/$', coremon_views.worldhs06s, name='worldHS06s'),
 
-#    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
+    url(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),
+
+                       #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
 
     ### data product catalog prototyping                                                                                                                                                         
     url(r'^dp/$', dpviews.doRequest, name='doRequest'),
