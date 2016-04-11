@@ -1,4 +1,5 @@
 {% extends "_base_core.html" %}
+{% load staticfiles %}
 {% load url from future %}
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA ES tasks{% endblock %}
@@ -34,6 +35,7 @@
 
 function loadESData(jeditaskid) {
 
+    $('#div-'+jeditaskid).html("<img src='{% static "images/load.gif" %}'>  ");
     $.ajax({
         url: {% url 'taskESExtendedInfo' %},
         data: 'jeditaskid='+jeditaskid,
