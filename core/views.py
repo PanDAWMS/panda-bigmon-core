@@ -3994,7 +3994,7 @@ def dashTasks(request, hours, view='production'):
         }
         return  HttpResponse(json.dumps(data), mimetype='text/html')
 
-
+@cache_page(60*6)
 def taskESExtendedInfo(request):
 
     if 'jeditaskid' in request.REQUEST:
