@@ -465,9 +465,14 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         elif param in ( 'outputfiletype', ) and querytype != 'task':
             val = request.session['requestParams'][param]
             query['destinationdblock__icontains'] = val
-        elif param in ( 'stream', 'tag') and querytype == 'task':
+        elif param in ( 'stream', ) and querytype == 'task':
             val = request.session['requestParams'][param]
             query['taskname__icontains'] = val
+
+        elif param in ( 'tag', ) and querytype == 'task':
+            val = request.session['requestParams'][param]
+            query['taskname__endswith'] = val
+
         elif param == 'reqid_from':
             val = int(request.session['requestParams'][param])
             query['reqid__gte'] = val
@@ -1235,9 +1240,15 @@ def taskSummaryDict(request, tasks, fieldlist = None):
                         tags = task['taskname'].split('.')[4]
                         if not tags.startswith('job_'):
                             tagl = tags.split('_')
-                            for tag in tagl:
-                                if not tag in sumd[f]: sumd[f][tag] = 0
-                                sumd[f][tag] += 1
+                            tag = tagl[-1]
+                            if not tag in sumd[f]: sumd[f][tag] = 0
+                            sumd[f][tag] += 1
+
+
+
+                        #                            for tag in tagl:
+#                                if not tag in sumd[f]: sumd[f][tag] = 0
+#                                sumd[f][tag] += 1
                     except:
                         pass
             if f in task and task[f]:
@@ -5077,8 +5088,8 @@ def errorSummaryDict(request,jobs, tasknamedict, testjobs):
         if not testjobs:
             if job['jobstatus'] not in [ 'failed', 'holding' ]: continue
         site = job['computingsite']
-        if 'cloud' in request.session['requestParams']:
-            if site in homeCloud and homeCloud[site] != request.session['requestParams']['cloud']: continue
+#        if 'cloud' in request.session['requestParams']:
+#            if site in homeCloud and homeCloud[site] != request.session['requestParams']['cloud']: continue
         user = job['produsername']
         taskname = ''
         if job['jeditaskid'] > 0:
