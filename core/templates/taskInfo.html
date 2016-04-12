@@ -61,6 +61,14 @@
 	</tr>
 </table>
 
+<p>
+
+{% if requestParams.mode and requestParams.mode == 'nodrop' %}
+    <a style="cursor: pointer;" href="{{nomodeurl}}?mode=drop">Switch to drop mode</a>
+{% else %}
+    <a style="cursor: pointer;" href="{{xurl}}?mode=nodrop">Switch to nodrop mode</a>
+{% endif %}
+
 
 <script type="text/javascript">
 function toggleDetailDisplay(className) {
@@ -71,8 +79,8 @@ function toggleDetailDisplay(className) {
 }
 </script>
 
-
-<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('d3splot');"><br>Click to show/hide plots</a><p>
+<p>
+<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('d3splot');">Click to show/hide plots</a><p>
 
 
 {% if  maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
