@@ -2257,7 +2257,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         if len(errorinfo) > 0:
             job['errorinfo'] = errorinfo
 
-    job['attemptnr'] = 10-job['attemptnr']
 
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
         del request.session['TFIRST']
