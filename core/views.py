@@ -6186,10 +6186,77 @@ def fileList(request):
     if 'limit' in request.session['requestParams']:
         limit = int(request.session['requestParams']['limit'])
 
+    sortOrder = None
+    reverse = None
+    sortby = ''
+    if 'sortby' in request.session['requestParams']:
+        sortby = request.session['requestParams']['sortby']
+        if sortby == 'lfn-asc':
+            sortOrder = 'lfn'
+        elif sortby == 'lfn-desc':
+            sortOrder = 'lfn'
+            reverse = True
+        elif sortby == 'scope-asc':
+            sortOrder = 'scope'
+        elif sortby == 'scope-desc':
+            sortOrder = 'scope'
+            reverse = True
+        elif sortby == 'type-asc':
+            sortOrder = 'type'
+        elif sortby == 'type-desc':
+            sortOrder = 'type'
+            reverse = True
+        elif sortby == 'fsizemb-asc':
+            sortOrder = 'fsize'
+        elif sortby == 'fsizemb-desc':
+            sortOrder = 'fsize'
+            reverse = True
+        elif sortby == 'nevents-asc':
+            sortOrder = 'nevents'
+        elif sortby == 'nevents-desc':
+            sortOrder = 'nevents'
+            reverse = True
+        elif sortby == 'jeditaskid-asc':
+            sortOrder = 'jeditaskid'
+        elif sortby == 'jeditaskid-desc':
+            sortOrder = 'jeditaskid'
+            reverse = True
+        elif sortby == 'fileid-asc':
+            sortOrder = 'fileid'
+        elif sortby == 'fileid-desc':
+            sortOrder = 'jeditaskid'
+            reverse = True
+        elif sortby == 'attemptnr-asc':
+            sortOrder = 'attemptnr'
+        elif sortby == 'attemptnr-desc':
+            sortOrder = 'attemptnr'
+            reverse = True
+        elif sortby == 'status-asc':
+            sortOrder = 'status'
+        elif sortby == 'status-desc':
+            sortOrder = 'status'
+            reverse = True
+        elif sortby == 'creationdate-asc':
+            sortOrder = 'creationdate'
+        elif sortby == 'creationdate-desc':
+            sortOrder = 'creationdate'
+            reverse = True
+
+        elif sortby == 'pandaid-asc':
+            sortOrder = 'pandaid'
+        elif sortby == 'pandaid-desc':
+            sortOrder = 'pandaid'
+            reverse = True
+    else:
+        sortOrder = 'lfn'
 
     if datasetid > 0:
         query['datasetid'] = datasetid
-        files = JediDatasetContents.objects.filter(**query)[:limit+1].values()
+        if (reverse):
+            files = JediDatasetContents.objects.filter(**query).values().order_by(sortOrder).reverse()[:limit+1]
+        else:
+            files = JediDatasetContents.objects.filter(**query).values().order_by(sortOrder)[:limit+1]
+
         if len(files) > limit:
             limitexceeded = True
         else:
@@ -6204,58 +6271,7 @@ def fileList(request):
     for f in files:
         filed[f['lfn']] = 1
     nfiles = len(filed)
-    if nfiles > 0:
-        files = sorted(files, key=lambda x:x['lfn'])
 
-    if 'sortby' in request.session['requestParams']:
-        sortby = request.session['requestParams']['sortby']
-        if sortby == 'lfn-asc':
-            files = sorted(files, key=lambda x:x['lfn'])
-        elif sortby == 'lfn-desc':
-            files = sorted(files, key=lambda x:x['lfn'],reverse=True)
-        elif sortby == 'scope-asc':
-            files = sorted(files, key=lambda x:x['scope'])
-        elif sortby == 'scope-desc':
-            files = sorted(files, key=lambda x:x['scope'], reverse=True)
-        elif sortby == 'type-asc':
-            files = sorted(files, key=lambda x:x['type'])
-        elif sortby == 'type-desc':
-            files = sorted(files, key=lambda x:x['type'],reverse=True)
-        elif sortby == 'fsizemb-asc':
-            files = sorted(files, key=lambda x:x['fsize'])
-        elif sortby == 'fsizemb-desc':
-            files = sorted(files, key=lambda x:x['fsize'], reverse=True)
-        elif sortby == 'nevents-asc':
-            files = sorted(files, key=lambda x:x['nevents'])
-        elif sortby == 'nevents-desc':
-            files = sorted(files, key=lambda x:x['nevents'],reverse=True)
-        elif sortby == 'jeditaskid-asc':
-            files = sorted(files, key=lambda x:x['jeditaskid'])
-        elif sortby == 'jeditaskid-desc':
-            files = sorted(files, key=lambda x:x['jeditaskid'],reverse=True)
-        elif sortby == 'fileid-asc':
-            files = sorted(files, key=lambda x:x['fileid'])
-        elif sortby == 'fileid-desc':
-            files = sorted(files, key=lambda x:x['fileid'], reverse=True)
-        elif sortby == 'attemptnr-asc':
-            files = sorted(files, key=lambda x:x['attemptnr'])
-        elif sortby == 'attemptnr-desc':
-            files = sorted(files, key=lambda x:x['attemptnr'], reverse=True)
-        elif sortby == 'status-asc':
-            files = sorted(files, key=lambda x:x['status'])
-        elif sortby == 'status-desc':
-            files = sorted(files, key=lambda x:x['status'], reverse=True)
-        elif sortby == 'creationdate-asc':
-            files = sorted(files, key=lambda x:x['creationdate'])
-        elif sortby == 'creationdate-desc':
-            files = sorted(files, key=lambda x:x['creationdate'], reverse=True)
-        elif sortby == 'pandaid-asc':
-            files = sorted(files, key=lambda x:x['pandaid'])
-        elif sortby == 'pandaid-desc':
-            files = sorted(files, key=lambda x:x['pandaid'], reverse=True)
-    else:
-        sortby='lfn'
-        files = sorted(files, key=lambda x:x['lfn'])
 
     del request.session['TFIRST']
     del request.session['TLAST']
