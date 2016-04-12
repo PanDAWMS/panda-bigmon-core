@@ -64,7 +64,9 @@
 <p>
 
 {% if requestParams.mode and requestParams.mode == 'nodrop' %}
-    <a style="cursor: pointer;" href="{{nomodeurl}}?mode=drop">Switch to drop mode</a>
+    <a style="cursor: pointer;" href="{{nomodeurl}}mode=drop">Switch to drop mode</a>
+{% elif requestParams.mode and requestParams.mode == 'drop' %}
+    <a style="cursor: pointer;" href="{{nomodeurl}}mode=nodrop">Switch to nodrop mode</a>
 {% else %}
     <a style="cursor: pointer;" href="{{nomodeurl}}?mode=nodrop">Switch to nodrop mode</a>
 {% endif %}
