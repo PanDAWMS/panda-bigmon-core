@@ -4546,8 +4546,8 @@ def getBrokerageLog(request):
 def taskInfo(request, jeditaskid=0):
     jeditaskid = int(jeditaskid)
     valid, response = initRequest(request)
-    xurl = extensibleURL(request)
-    nomodeurl = removeParam(xurl, 'mode',mode='extensible')
+    furl = request.get_full_path()
+    nomodeurl = removeParam(furl, 'mode',mode='extensible')
     if not valid: return response
     if 'taskname' in request.session['requestParams'] and request.session['requestParams']['taskname'].find('*') >= 0:
         return taskList(request)
