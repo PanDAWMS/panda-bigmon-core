@@ -2257,7 +2257,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         if len(errorinfo) > 0:
             job['errorinfo'] = errorinfo
 
-    job['attemptnr'] = 10-job['attemptnr']
 
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
         del request.session['TFIRST']
@@ -4536,6 +4535,8 @@ def getBrokerageLog(request):
 def taskInfo(request, jeditaskid=0):
     jeditaskid = int(jeditaskid)
     valid, response = initRequest(request)
+    xurl = extensibleURL(request)
+    nomodeurl = removeParam(xurl, 'mode',mode='extensible')
     if not valid: return response
     if 'taskname' in request.session['requestParams'] and request.session['requestParams']['taskname'].find('*') >= 0:
         return taskList(request)
@@ -4884,6 +4885,7 @@ def taskInfo(request, jeditaskid=0):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
+            'nomodeurl': nomodeurl,
             'jobsummaryESMerge': jobsummaryESMerge,
             'maxpss' : maxpss,
             'taskbrokerage':taskbrokerage,
