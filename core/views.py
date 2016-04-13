@@ -4123,6 +4123,14 @@ def taskList(request):
 
     tasks=getTaskScoutingInfo(tasks,nmax)
 
+    totals={'totev':0, 'totevrem':0, 'nfilesfinished':0, 'nfilesfailed':0 }
+    for task in tasks:
+        totals['totev']+=task['totev']
+        totals['totevrem']+=task['totevrem']
+        totals['nfilesfinished']+=task['dsinfo']['nfilesfinished']
+        totals['nfilesfailed']+=task['dsinfo']['nfilesfailed']
+
+
 
     ## For event service, pull the jobs and event ranges
 
@@ -4227,6 +4235,7 @@ def taskList(request):
             'url_nolimit' : url_nolimit,
             'display_limit' : display_limit,
             'flowstruct' : flowstruct,
+            'totals': totals,
         }
         ##self monitor
         endSelfMonitor(request)

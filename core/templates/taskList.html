@@ -119,6 +119,15 @@ Too many to list
 
 	</tr>
     {% endfor %}
+{% if totals %}
+
+<tr>
+    <td colspan="3"><b>Total:</b></td>
+    <td> <span class='finished'>{{ totals.nfilesfinished }}</span> <br> <span class='failed'> {{totals.nfilesfailed}}</span></td>
+    <td>{{ totals.totev }} / {{totals.totevrem}}</td>
+    <td colspan="5"></td>
+</tr>
+{% endif %}
 </table>
 
 {% else %}
