@@ -146,13 +146,12 @@ gger</a>
 </td>
 
 <td>
-<a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@message.module','@message.Type','@message.name','@message.levelname','@message.message'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.msg:%22jediTaskID%3D{{jed
-itaskid}}%20%22AND@message.Type:%22{{taskbrokerage}}%22')),sort:!('@timestamp',desc))">brokerage logger (es)</a>
+<a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-2d%2Fd,mode:relative,to:now))&_a=(columns:!('@message.module','@message.Type','@message.name','@message.levelname','@message.message'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.msg:%22jediTaskID%3D{{jeditaskid}}%20%22%20AND%20@message.Type:%22{{taskbrokerage}}%22')),sort:!('@timestamp',desc))">brokerage logger (es)</a>
 </td>
 
 <a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&jeditaskid={{ jeditaskid }}">JEDI action logger</a>
-<td><a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@message.module','@message.Type','@message.name','@message.levelname','@message.message'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms
-:!f,query:'@message.msg:%22jediTaskID%3D{{jeditaskid}}%22AND@message.name:%22panda.mon.jedi%22')),sort:!('@timestamp',desc))">JEDI action logger (es)</a>
+<td><a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-2d%2Fd,mode:relative,to:now))&_a=(columns:!('@message.module','@message.Type','@message.name','@message.levelname','@message.message'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms
+:!f,query:'@message.msg:%22jediTaskID%3D{{jeditaskid}}%22%20AND%20@message.name:%22panda.mon.jedi%22')),sort:!('@timestamp',desc))">JEDI action logger (es)</a>
 </td>
 
 
