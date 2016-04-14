@@ -109,6 +109,9 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 {% endif %}
 
 
+{% if countOfInvocations > 300 %}
+    <div class="section">Looking into retries exceeds a limit</div>
+{% endif %}
 
 {% if pretries %}
 <table width=900><tr><td>

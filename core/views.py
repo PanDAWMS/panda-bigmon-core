@@ -1887,34 +1887,38 @@ def getSequentialRetries(pandaid, jeditaskid):
 
 
 
-def getSequentialRetries_ES(pandaid, jobsetid, jeditaskid):
+def getSequentialRetries_ES(pandaid, jobsetid, jeditaskid, countOfInvocations, recurse = 0):
     retryquery = {}
     retryquery['jeditaskid'] = jeditaskid
     retryquery['newpandaid'] = jobsetid
     retryquery['relationtype'] = 'jobset_retry'
-
-    retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
+    countOfInvocations.append(1)
     newretries = []
-    newretries.extend(retries)
-    for retry in retries:
-        jsquery = {}
-        jsquery['jeditaskid'] = jeditaskid
-        jsquery['jobsetid'] = retry['oldpandaid']
-        values = [ 'pandaid', 'jobstatus', 'jobsetid', 'jeditaskid' ]
-        jsjobs = []
-        jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
-        jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
-        jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
-        jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
-        jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
-        for job in jsjobs:
-            if job['jobstatus'] == 'failed':
-                for retry in newretries:
-                    if (retry['oldpandaid'] == job['jobsetid']):
-                        retry['relationtype'] = 'retry'
-                        retry['jobid'] = job['pandaid']
 
-                newretries.extend(getSequentialRetries_ES(job['pandaid'], jobsetid, job['jeditaskid']))
+    if (len(countOfInvocations) < 300 ):
+        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
+        newretries.extend(retries)
+        for retry in retries:
+            jsquery = {}
+            jsquery['jeditaskid'] = jeditaskid
+            jsquery['jobstatus'] = 'failed'
+            jsquery['jobsetid'] = retry['oldpandaid']
+            values = [ 'pandaid', 'jobstatus', 'jobsetid', 'jeditaskid' ]
+            jsjobs = []
+            jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
+            for job in jsjobs:
+                if job['jobstatus'] == 'failed':
+                    for retry in newretries:
+                        if (retry['oldpandaid'] == job['jobsetid']):
+                            retry['relationtype'] = 'retry'
+                            retry['jobid'] = job['pandaid']
+
+                        newretries.extend(getSequentialRetries_ES(job['pandaid'],
+                                                                  jobsetid, job['jeditaskid'], countOfInvocations, recurse+1))
     outlist=[]
     added_keys = set()
     for row in newretries:
@@ -2158,6 +2162,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     #        jobparams = jobparamrec[0].jobparameters
 
     dsfiles = []
+    countOfInvocations = []
     ## If this is a JEDI job, look for job retries
     if 'jeditaskid' in job and job['jeditaskid'] > 0:
         print "looking for retries"
@@ -2176,16 +2181,12 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             retryquery['oldpandaid'] = job['jobsetid']
             retryquery['relationtype'] = 'jobset_retry'
             retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
-            pretries = getSequentialRetries_ES(job['pandaid'], job['jobsetid'], job['jeditaskid'])
-
-
-
-
-
-
+            pretries = getSequentialRetries_ES(job['pandaid'], job['jobsetid'], job['jeditaskid'], countOfInvocations)
     else:
         retries = None
         pretries = None
+
+    countOfInvocations = len(countOfInvocations)
 
     ## jobset info
     libjob = None
@@ -2294,6 +2295,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'logextract' : logextract,
             'retries' : retries,
             'pretries' : pretries,
+            'countOfInvocations':countOfInvocations,
             'eventservice' : isEventService(job),
             'evtable' : evtable[:100],
             'debugmode' : debugmode,
