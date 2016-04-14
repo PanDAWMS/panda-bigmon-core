@@ -18,10 +18,10 @@
 <tr class="tablesection">
 <th>Nucleus</th>
 <th>NTasks</th>
-<th>Total</th>
-<th>Used</th>
-<th><span class="failed">Failed</span></th>
-<th><span class="failed">Percentage</span></th>
+<th>Total, {% if roundflag %}kHS06d{% else %}HS06s{% endif %}</th>
+<th>Used, {% if roundflag %}kHS06d{% else %}HS06s{% endif %}</th>
+<th><span class="failed">Failed, {% if roundflag %}kHS06d{% else %}HS06s{% endif %}</span></th>
+<th><span class="failed">Percentage, %</span></th>
 </tr>
 
 {% for nucleus, nucval  in hsnucleussum.items %}
@@ -45,15 +45,23 @@
 {% for nucleus, nucval  in hssitesum.items %}
 <tr height=10 colspan=12></tr>
 <tr class="tablesection">
-<th><a name="nucleus_{{ nucleus }}">{{ nucleus }} Nucleus</a>, Satellites</th>
-<th>Used</th>
-<th><span class="failed">Failed</span></th>
-<th><span class="failed">Percentage</span></th>
+    {% if sortby == 'satellite-desc' %}<th><a name="nucleus_{{ nucleus }}">{{ nucleus }} Nucleus</a>, Satellites<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=satellite-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'satellite-asc' %}<th><a name="nucleus_{{ nucleus }}">{{ nucleus }} Nucleus</a>, Satellites<br><a href="{{nosorturl}}sortby=satellite-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th><a name="nucleus_{{ nucleus }}">{{ nucleus }} Nucleus</a>, Satellites<br><a href="{{nosorturl}}sortby=satellite-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=satellite-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'used-desc' %}<th>Used, HS06s<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=used-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'used-asc' %}<th>Used, HS06s<br><a href="{{nosorturl}}sortby=used-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Used, HS06s<br><a href="{{nosorturl}}sortby=used-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=used-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'failed-desc' %}<th>Failed, HS06s<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=failed-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'failed-asc' %}<th>Failed, HS06s<br><a href="{{nosorturl}}sortby=failed-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Failed, HS06s<br><a href="{{nosorturl}}sortby=failed-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=failed-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'failedpct-desc' %}<th>Percentage, %<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=failedpct-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'failedpct-asc' %}<th>Percentage, %<br><a href="{{nosorturl}}sortby=failedpct-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Percentage, %<br><a href="{{nosorturl}}sortby=failedpct-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=failedpct-asc" class="headerSortUp"></a></th>{% endif %}
 </tr>
 
-{% for computingsite, computingsiteval in nucval.items %}
+{% for computingsiteval in nucval %}
         <tr>
-            <td>{{ computingsite }}</td>
+            <td>{{ computingsiteval.computingsite }}</td>
             <td>{{ computingsiteval.usedhs06spersite }}</td>
             <td class="failed">{{ computingsiteval.failedhs06spersite }}</td>
             <td class="failed">{{ computingsiteval.failedhs06spersitepct }}</td>
