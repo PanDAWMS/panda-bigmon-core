@@ -3640,7 +3640,7 @@ def worldjobs(request):
 
         return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
 
-
+@cache_page(60*6)
 def worldhs06s(request):
     valid, response = initRequest(request)
     roundflag=False
@@ -3683,30 +3683,25 @@ def worldhs06s(request):
 
     for site in worldHS06sSummary:
         if site['nucleus'] not in nucleus:
-            nucleus[site['nucleus']]={}
-        nucleus[site['nucleus']][site['computingsite']]={}
+            nucleus[site['nucleus']]=[]
+        dictsite={}
+        dictsite['computingsite']=site['computingsite']
         if site['usedhs06spersite']:
-            nucleus[site['nucleus']][site['computingsite']]['usedhs06spersite']=site['usedhs06spersite']
+            dictsite['usedhs06spersite']=site['usedhs06spersite']
         else:
-            nucleus[site['nucleus']][site['computingsite']]['usedhs06spersite']=0
+            dictsite['usedhs06spersite']=0
         if site['failedhs06spersite']:
-            nucleus[site['nucleus']][site['computingsite']]['failedhs06spersite']=site['failedhs06spersite']
+           dictsite['failedhs06spersite']=site['failedhs06spersite']
         else:
-            nucleus[site['nucleus']][site['computingsite']]['failedhs06spersite']=0
-        if nucleus[site['nucleus']][site['computingsite']]['usedhs06spersite'] and nucleus[site['nucleus']][site['computingsite']]['usedhs06spersite']>0:
-            nucleus[site['nucleus']][site['computingsite']]['failedhs06spersitepct']=100*nucleus[site['nucleus']][site['computingsite']]['failedhs06spersite']/nucleus[site['nucleus']][site['computingsite']]['usedhs06spersite']
+            dictsite['failedhs06spersite']=0
+        if site['usedhs06spersite'] and site['usedhs06spersite']>0:
+            dictsite['failedhs06spersitepct']=100*dictsite['failedhs06spersite']/dictsite['usedhs06spersite']
+        nucleus[site['nucleus']].append(dictsite)
 
     for nuc in nucleus:
         worldHS06sSummaryByNucleus[nuc]={}
-        for site in nucleus[nuc]:
-            if 'usedhs06spernucleus' not in worldHS06sSummaryByNucleus[nuc]:
-                worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus'] = nucleus[nuc][site]['usedhs06spersite']
-            else:
-                worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus'] += nucleus[nuc][site]['usedhs06spersite']
-            if 'failedhs06spernucleus' not in worldHS06sSummaryByNucleus[nuc]:
-                worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus'] = nucleus[nuc][site]['failedhs06spersite']
-            else:
-                worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus'] += nucleus[nuc][site]['failedhs06spersite']
+        worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus']=sum([site['usedhs06spersite'] for site in nucleus[nuc]])
+        worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus']=sum([site['failedhs06spersite'] for site in nucleus[nuc]])
         if roundflag:
             worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus'] = round(worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus']/1000./3600/24,2)
             worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus'] = round(worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus']/1000./3600/24,2)
@@ -3717,6 +3712,34 @@ def worldhs06s(request):
             worldHS06sSummaryByNucleus[nuc]['toths06spernucleus']=totnucleus[nuc]['toths06spernucleus']
             worldHS06sSummaryByNucleus[nuc]['donehs06spernucleus']=worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus']-worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus']
             worldHS06sSummaryByNucleus[nuc]['donehs06spernucleuspct']=int(100*worldHS06sSummaryByNucleus[nuc]['donehs06spernucleus']/totnucleus[nuc]['toths06spernucleus'])
+
+
+    if 'sortby' in request.session['requestParams']:
+        reverseflag=False
+        if  request.session['requestParams']['sortby']=='used-desc':
+            sortcol='usedhs06spersite'
+            reverseflag=True
+        elif request.session['requestParams']['sortby']=='used-asc':
+            sortcol='usedhs06spersite'
+        elif  request.session['requestParams']['sortby']=='failed-desc':
+            sortcol='failedhs06spersite'
+            reverseflag=True
+        elif request.session['requestParams']['sortby']=='failed-asc':
+            sortcol='failedhs06spersite'
+        elif  request.session['requestParams']['sortby']=='failedpct-desc':
+            sortcol='failedhs06spersitepct'
+            reverseflag=True
+        elif request.session['requestParams']['sortby']=='failedpct-asc':
+            sortcol='failedhs06spersitepct'
+        elif  request.session['requestParams']['sortby']=='satellite-desc':
+            sortcol='computingsite'
+            reverseflag=True
+        else:
+            sortcol='computingsite'
+        for nuc in nucleus:
+            nucleus[nuc]=sorted(nucleus[nuc],key=lambda x:x[sortcol],reverse=reverseflag)
+
+
 
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
         xurl = extensibleURL(request)
