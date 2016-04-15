@@ -3650,7 +3650,9 @@ def worldhs06s(request):
     for param in request.session['requestParams']:
         if param=='reqid':
             condition+= ('t.reqid=' + str(request.session['requestParams']['reqid']))
-        if param=='jeditaskid':
+        if param=='jeditaskid' and len(condition)>1:
+            condition+= (' AND t.jeditaskid=' + str(request.session['requestParams']['jeditaskid']))
+        elif param=='jeditaskid':
             condition+= ('t.jeditaskid=' + str(request.session['requestParams']['jeditaskid']))
     if len(condition) < 1:
         condition = '(1=1)'
@@ -3712,8 +3714,6 @@ def worldhs06s(request):
         if nuc in totnucleus:
             worldHS06sSummaryByNucleus[nuc]['ntaskspernucleus']=totnucleus[nuc]['ntaskspernucleus']
             worldHS06sSummaryByNucleus[nuc]['toths06spernucleus']=totnucleus[nuc]['toths06spernucleus']
-            worldHS06sSummaryByNucleus[nuc]['donehs06spernucleus']=worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus']-worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus']
-            worldHS06sSummaryByNucleus[nuc]['donehs06spernucleuspct']=int(100*worldHS06sSummaryByNucleus[nuc]['donehs06spernucleus']/totnucleus[nuc]['toths06spernucleus'])
 
 
     if 'sortby' in request.session['requestParams']:
