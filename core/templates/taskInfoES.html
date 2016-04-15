@@ -61,6 +61,56 @@
 	</tr>
 </table>
 
+<p>
+{% if requestParams.mode and requestParams.mode == 'nodrop' %}
+    <a style="cursor: pointer;" href="{{nomodeurl}}mode=drop">Switch to drop mode</a>
+{% elif requestParams.mode and requestParams.mode == 'drop' %}
+    <a style="cursor: pointer;" href="{{nomodeurl}}mode=nodrop">Switch to nodrop mode</a>
+{% else %}
+    <a style="cursor: pointer;" href="{{nomodeurl}}?mode=nodrop">Switch to nodrop mode</a>
+{% endif %}
+
+
+
+<script type="text/javascript">
+function toggleDetailDisplay(className) {
+   el = document.getElementsByClassName(className)
+   for (i=0; i<el.length; i++) {
+     el[i].style.display = (el[i].style.display=="none") ? "" : "none";
+   }
+}
+</script>
+
+<p>
+<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('d3splot');">Click to show/hide plots</a><p>
+
+
+{% if  maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
+{% if  walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
+{% if  maxpssf|length > 0 %} <div class="d3splot" id="plot3" style="float:left;display:none"></div> {% endif %}
+{% if  walltimef|length > 0 %} <div class="d3splot" id="plot4" style="float:left;display:none"></div> {% endif %}
+
+<script src="/static/js/d3jsplot.js"></script>
+<script>
+    var values1 = {{ maxpss|safe }};
+    var values2 = {{ walltime|safe }};
+    var sites1 = {{ sitepss|safe }};
+    var sites2 = {{ sitewalltime|safe }};
+    var values3 = {{ maxpssf|safe }};
+    var values4 = {{ walltimef|safe }};
+    var sites3 = {{ sitepssf|safe }};
+    var sites4 = {{ sitewalltimef|safe }};
+    pandamonplotFunc(values1, sites1, "#plot1", "Maximum PSS histogram", {% if  maxpss|length < 100 %} 10 {% else %} 100 {% endif %});
+    pandamonplotFunc(values2, sites2, "#plot2", "Walltime histogram", {% if  walltime|length < 100 %} 5 {% else %} 40 {% endif %});
+    pandamonplotFunc(values3, sites3, "#plot3", "Maximum PSS histogram (failed jobs)", {% if  maxpss|length < 20 %} 10 {% else %} 50 {% endif %});
+    pandamonplotFunc(values4, sites4, "#plot4", "Walltime histogram (failed jobs)", {% if  walltime|length < 20 %} 5 {% else %} 20 {% endif %});
+ </script>
+
+
+
+
+
+
 {% if jobsummary %}
 
 <table>
