@@ -4150,8 +4150,10 @@ def taskList(request):
 
     totals={'totev':0, 'totevrem':0, 'nfilesfinished':0, 'nfilesfailed':0 }
     for task in tasks:
-        totals['totev']+=task['totev']
-        totals['totevrem']+=task['totevrem']
+        if 'totev' in task:
+            totals['totev']+=task['totev']
+        if ('totevrem' in task) and (task['totevrem'] > 0):
+            totals['totevrem']+=task['totevrem']
         totals['nfilesfinished']+=task['dsinfo']['nfilesfinished']
         totals['nfilesfailed']+=task['dsinfo']['nfilesfailed']
 
