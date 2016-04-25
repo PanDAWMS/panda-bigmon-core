@@ -1922,10 +1922,11 @@ def getSequentialRetries_ES(pandaid, jobsetid, jeditaskid, countOfInvocations, r
     outlist=[]
     added_keys = set()
     for row in newretries:
-        lookup = row['jobid']
-        if lookup not in added_keys:
-            outlist.append(row)
-            added_keys.add(lookup)
+        if 'jobid' in row:
+            lookup = row['jobid']
+            if lookup not in added_keys:
+                outlist.append(row)
+                added_keys.add(lookup)
     return outlist
 
 
