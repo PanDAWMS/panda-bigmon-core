@@ -89,6 +89,8 @@ function toggleDetailDisplay(className) {
 {% if  walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
 {% if  maxpssf|length > 0 %} <div class="d3splot" id="plot3" style="float:left;display:none"></div> {% endif %}
 {% if  walltimef|length > 0 %} <div class="d3splot" id="plot4" style="float:left;display:none"></div> {% endif %}
+{% if  maxpsspercore|length > 0 %} <div class="d3splot" id="plot5" style="float:left;display:none"></div> {% endif %}
+{% if  maxpssfpercore|length > 0 %} <div class="d3splot" id="plot6" style="float:left;display:none"></div> {% endif %}
 
 <script src="/static/js/d3jsplot.js"></script>
 <script>
@@ -100,10 +102,15 @@ function toggleDetailDisplay(className) {
     var values4 = {{ walltimef|safe }};
     var sites3 = {{ sitepssf|safe }};
     var sites4 = {{ sitewalltimef|safe }};
+    {#Maxpsspercore, sites is the same as for maxpss#}
+    var values5 = {{ maxpsspercore|safe }};
+    var values6 = {{ maxpssfpercore|safe }};
     pandamonplotFunc(values1, sites1, "#plot1", "Maximum PSS histogram", {% if  maxpss|length < 100 %} 10 {% else %} 100 {% endif %});
     pandamonplotFunc(values2, sites2, "#plot2", "Walltime histogram", {% if  walltime|length < 100 %} 5 {% else %} 40 {% endif %});
     pandamonplotFunc(values3, sites3, "#plot3", "Maximum PSS histogram (failed jobs)", {% if  maxpss|length < 20 %} 10 {% else %} 50 {% endif %});
     pandamonplotFunc(values4, sites4, "#plot4", "Walltime histogram (failed jobs)", {% if  walltime|length < 20 %} 5 {% else %} 20 {% endif %});
+    pandamonplotFunc(values5, sites1, "#plot5", "Maximum PSS per core histogram", {% if  maxpsspercore|length < 100 %} 10 {% else %} 100 {% endif %});
+    pandamonplotFunc(values6, sites3, "#plot6", "Maximum PSS per core histogram (failed jobs)", {% if  maxpssfpercore|length < 20 %} 5 {% else %} 20 {% endif %});
  </script>
 
 

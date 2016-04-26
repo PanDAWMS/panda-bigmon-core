@@ -1,14 +1,13 @@
 /**
  * Created by spadolski on 12/22/15.
  */
-
 function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
 
     colors= ["#116aff", "#fe8504", "#1ff7fe", "#f701ff", "#2e4a02", "#ffaad5", "#f1ff8d", "#1eff06", "#700111", "#1586c3", "#ff067d", "#0e02fb", "#1bffa1", "#921e8f", "#c49565", "#fd0128", "#4ea105", "#158279", "#c8fe0a", "#fdcc0b", "#834969", "#ff7673", "#05018b", "#c591fe", "#a6d8ab", "#948c01", "#484ba1", "#fe22c0", "#06a05d", "#694002", "#8e39e9", "#bdc6ff","#030139",  "#b33802", "#85fa60", "#a2025b", "#3e021b", "#ffcd6d", "#4a92ff", "#e564b6", "#43cfff", "#7e9051", "#e768fc", "#09406b", "#b17005", "#8fd977", "#c1063e", "#a7594f", "#14e3b8", "#bccb1e", "#53064f", "#fff1b7", "#997dba", "#fe965c", "#ffb0a7", "#046c04", "#8451ce", "#d46585", "#fef70c", "#1003c3", "#024a2e", "#0fc551", "#1f025d", "#fd5302", "#5bbfc4", "#481903", "#bfc066", "#ad04bb", "#efa425", "#06c709", "#9701ff", "#84468e", "#018da8", "#88cf01", "#6d6412", "#658a1d", "#0d3cb4", "#144cfe", "#fe5d43", "#33753e", "#4cb28f", "#e6b4ff", "#a5feef", "#caff68", "#d80f8a", "#79193a", "#97fdba", "#a85726", "#fe8cf9", "#8bfe01", "#4a315d", "#ff0155", "#02ff5e", "#6b0199", "#bc7e9f", "#fde75c"];
 
     var formatCount = d3.format(",.0f");
 
-    var margin = {top: 30, right: 50, bottom: 100, left: 70},
+    var margin = {top: 30, right: 60, bottom: 100, left: 70},
         width = 650 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
@@ -125,10 +124,31 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
                 .attr("transform", function(d) {
                     return "rotate(-45)"
                 });
-
+    if (title.indexOf('PSS')>=0) {
+        svg.append("g")
+            .attr("transform", "translate(" + (width+5) + " ," + (height + 15) + ")")
+            .append("text")
+            .style("text-anchor", "left")
+            .text("PSS, MB");
+    }
+    if (title.indexOf('Walltime')>=0) {
+        svg.append("g")
+            .attr("transform", "translate(" + (width+5) + " ," + (height + 15) + ")")
+            .append("text")
+            .style("text-anchor", "left")
+            .text("Time, s");
+    }
     svg.append("g")
             .attr("class", "y axis")
             .call(yAxis);
+	svg.append("g")
+        .attr("transform", "rotate(-90)")
+		.append("text")
+        .attr("y", 0 - margin.left)
+        .attr("x",0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("N jobs");
 
     svg.append("g")
             .attr("transform", "translate(" + (width/2) + ", -10)")
