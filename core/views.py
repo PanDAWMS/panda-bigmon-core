@@ -3682,25 +3682,18 @@ def worldhs06s(request):
         totnucleus[nucl['nucleus']]={}
         totnucleus[nucl['nucleus']]['ntaskspernucleus']=nucl['ntaskspernucleus']
         if roundflag:
-            totnucleus[nucl['nucleus']]['toths06spernucleus']=round(nucl['toths06spernucleus']/1000./3600/24,2)
+            totnucleus[nucl['nucleus']]['toths06spernucleus']=round(nucl['toths06spernucleus']/1000./3600/24,2) if nucl['toths06spernucleus'] is not None else 0
         else:
-            totnucleus[nucl['nucleus']]['toths06spernucleus']=nucl['toths06spernucleus']
+            totnucleus[nucl['nucleus']]['toths06spernucleus']=nucl['toths06spernucleus'] if nucl['toths06spernucleus'] is not None else 0
 
     for site in worldHS06sSummary:
         if site['nucleus'] not in nucleus:
             nucleus[site['nucleus']]=[]
         dictsite={}
         dictsite['computingsite']=site['computingsite']
-        if site['usedhs06spersite']:
-            dictsite['usedhs06spersite']=site['usedhs06spersite']
-        else:
-            dictsite['usedhs06spersite']=0
-        if site['failedhs06spersite']:
-           dictsite['failedhs06spersite']=site['failedhs06spersite']
-        else:
-            dictsite['failedhs06spersite']=0
-        if site['usedhs06spersite'] and site['usedhs06spersite']>0:
-            dictsite['failedhs06spersitepct']=100*dictsite['failedhs06spersite']/dictsite['usedhs06spersite']
+        dictsite['usedhs06spersite']=site['usedhs06spersite'] if site['usedhs06spersite'] else 0
+        dictsite['failedhs06spersite']=site['failedhs06spersite'] if site['failedhs06spersite'] else 0
+        dictsite['failedhs06spersitepct']=100*dictsite['failedhs06spersite']/dictsite['usedhs06spersite'] if (site['usedhs06spersite'] and site['usedhs06spersite']>0) else 0
         nucleus[site['nucleus']].append(dictsite)
 
     for nuc in nucleus:
@@ -3710,14 +3703,14 @@ def worldhs06s(request):
         if roundflag:
             worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus'] = round(worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus']/1000./3600/24,2)
             worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus'] = round(worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus']/1000./3600/24,2)
-        if worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus'] and worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus']>0:
-            worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleuspct']=int(100*worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus']/worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus'])
+        worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleuspct']=int(100*worldHS06sSummaryByNucleus[nuc]['failedhs06spernucleus']/worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus']) if worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus'] and worldHS06sSummaryByNucleus[nuc]['usedhs06spernucleus']>0 else 0
         if nuc in totnucleus:
             worldHS06sSummaryByNucleus[nuc]['ntaskspernucleus']=totnucleus[nuc]['ntaskspernucleus']
             worldHS06sSummaryByNucleus[nuc]['toths06spernucleus']=totnucleus[nuc]['toths06spernucleus']
 
 
     if 'sortby' in request.session['requestParams']:
+        sortby=request.session['requestParams']['sortby']
         reverseflag=False
         if  request.session['requestParams']['sortby']=='used-desc':
             sortcol='usedhs06spersite'
@@ -3758,6 +3751,7 @@ def worldhs06s(request):
             'hssitesum' : nucleus,
             'hsnucleussum' : worldHS06sSummaryByNucleus,
             'roundflag':roundflag,
+            'sortby' : sortby,
         }
         ##self monitor
         endSelfMonitor(request)
