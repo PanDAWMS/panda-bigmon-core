@@ -3734,6 +3734,8 @@ def worldhs06s(request):
             sortcol='computingsite'
         for nuc in nucleus:
             nucleus[nuc]=sorted(nucleus[nuc],key=lambda x:x[sortcol],reverse=reverseflag)
+    else:
+        sortby = 'satellite-asc'
 
 
 
