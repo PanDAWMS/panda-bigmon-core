@@ -5067,6 +5067,8 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
     sitewalltimef = []
     for job in jobs:
         if job['maxpss'] is not None and job['maxpss'] != -1:
+            if job['corecount'] is None:
+               job['corecount'] = 1
             if job['jobstatus']== 'finished':
                 maxpss.append(job['maxpss']/1024)
                 maxpsspercore.append(job['maxpss']/1024/job['corecount'])
