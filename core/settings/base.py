@@ -25,7 +25,6 @@ USE_TZ = True
 # Site ID
 SITE_ID = 1
 
-
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
@@ -41,6 +40,7 @@ TEMPLATE_LOADERS = (
 
 
 MIDDLEWARE_CLASSES = (
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',  # for AJAX POST protection with csrf
@@ -96,7 +96,7 @@ INSTALLED_APPS_BIGPANDAMON_CORE = (
     'core.common',
     'core.table',
     'core.pandajob',
-    'core.resource',
+    'core.schedresource',
     'core.htcondor',
     'core.datatables',
     'core.filebrowser',
@@ -104,6 +104,8 @@ INSTALLED_APPS_BIGPANDAMON_CORE = (
     'core.pbm.templatetags',
 #    'core.graphic', #NOT-IMPLEMENTED
     'core.gspread',
+    'django.contrib.staticfiles',
+    'debug_toolbar',
 )
 COMMON_INSTALLED_APPS = \
     INSTALLED_APPS_DJANGO_FRAMEWORK + \
@@ -115,12 +117,9 @@ INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_CORE
 JS_I18N_APPS = ()
 JS_I18N_APPS_EXCLUDE = INSTALLED_APPS_BIGPANDAMON_CORE
 
-
-
 VERSIONS = {
     'core': core.__versionstr__,
 }
-
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -130,8 +129,29 @@ TEMPLATE_DIRS = (
     join(dirname(common.__file__), 'templates'),
     join(dirname(core.filebrowser.__file__), 'templates'),
     join(dirname(core.pbm.__file__), 'templates'),
+    join(dirname(core.pbm.__file__), 'templates'),
 
 )
+
+
+
+DEBUG_TOOLBAR_PATCH_SETTINGS = False
+INTERNAL_IPS =('127.0.0.1', '192.168.0.1')
+#DEBUG = True
+DEBUG_TOOLBAR_CONFIG = {'INTERCEPT_REDIRECTS': False,}
+DEBUG_TOOLBAR_PANELS = (
+    'debug_toolbar.panels.versions.VersionsPanel',
+    # Throwing AttributeError: 'module' object has no attribute 'getrusage'
+    'debug_toolbar.panels.timer.TimerPanel',
+    #'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
+    'debug_toolbar.panels.headers.HeadersPanel',
+    'debug_toolbar.panels.request.RequestPanel',
+    'debug_toolbar.panels.templates.TemplatesPanel',
+    'debug_toolbar.panels.sql.SQLPanel',
+    'debug_toolbar.panels.signals.SignalsPanel',
+    #'debug_toolbar.panels.logger.LoggingPanel',
+)
+
 
 INSTALLED_APPS_BIGPANDAMON_core = (
     ### BigPanDAmon core
@@ -139,7 +159,7 @@ INSTALLED_APPS_BIGPANDAMON_core = (
 #    'core.table',
 #    'core.graphics', #NOT-IMPLEMENTED
     'core.pandajob',
-    'core.resource',
+    'core.schedresource',
     'core.status_summary',
 #    'core.htcondor', #NOT-NEEDED-IN-core
 #    'core.task', #NOT-IMPLEMENTED
