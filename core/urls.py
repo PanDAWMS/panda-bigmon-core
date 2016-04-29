@@ -6,6 +6,7 @@ from django.views.generic import TemplateView
 #import core.settings
 from django.conf import settings
 
+
 from core import views as coremon_views
 from core import dpviews as dpviews
 #import core.views as coremon_views
@@ -89,6 +90,13 @@ urlpatterns = patterns('',
     url('^robots\.txt$', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
 
 ) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += patterns('',
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    )
 
 #urlpatterns += common_patterns
 #urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

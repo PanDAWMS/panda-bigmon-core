@@ -30,7 +30,7 @@ from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
     GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, Getfailedjobshspecarch, Getfailedjobshspec, JobsWorldView
-from resource.models import Schedconfig
+from schedresource.models import Schedconfig
 from core.common.models import Filestable4
 from core.common.models import Datasets
 from core.common.models import Sitedata
@@ -166,6 +166,8 @@ def setupSiteInfo(request):
 
 def initRequest(request):
     global VOMODE, ENV, hostname
+
+    print("IP Address for debug-toolbar: " + request.META['REMOTE_ADDR'])
 
     viewParams = {}
     #if not 'viewParams' in request.session:
@@ -4710,6 +4712,7 @@ def taskInfo(request, jeditaskid=0):
 
     dsquery = {}
     dsquery['jeditaskid'] = jeditaskid
+
     dsets = JediDatasets.objects.filter(**dsquery).values()
     dsinfo = None
     nfiles = 0
@@ -4742,6 +4745,7 @@ def taskInfo(request, jeditaskid=0):
     if taskrec: taskrec['dsinfo'] = dsinfo
 
 
+
     ## get dataset types
     dstypesd = {}
     for ds in dsets:
@@ -4754,6 +4758,7 @@ def taskInfo(request, jeditaskid=0):
     for dst in dstkeys:
         dstd = { 'type' : dst, 'count' : dstypesd[dst] }
         dstypes.append(dstd)
+
 
     ## get input containers
     inctrs = []
@@ -4787,13 +4792,14 @@ def taskInfo(request, jeditaskid=0):
         for job in jobs:
             esjobs.append(job['pandaid'])
         esquery = {}
-
+        '''
         if dbaccess['default']['ENGINE'].find('oracle') >= 0:
             tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
         else:
             tmpTableName = "TMP_IDS1"
 
         transactionKey = random.randrange(1000000)
+
 
         connection.enter_transaction_management()
         new_cur = connection.cursor()
@@ -4803,6 +4809,7 @@ def taskInfo(request, jeditaskid=0):
         query = """INSERT INTO """+tmpTableName+"""(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
         connection.commit()
+
 
         new_cur.execute("SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
         evtable = dictfetchall(new_cur)
@@ -4830,20 +4837,8 @@ def taskInfo(request, jeditaskid=0):
                 if estaskdict[jeditaskid][s] > 0:
                     estaskstr += " %s(%s) " % ( s, estaskdict[jeditaskid][s] )
             taskrec['estaskstr'] = estaskstr
+        '''
 
-    '''
-    tquery = {}
-    tquery['jeditaskid'] = jeditaskid
-    tasksEventInfo = GetEventsForTask.objects.filter(**tquery).values('jeditaskid','totevrem', 'totev')
-    if len(tasksEventInfo) > 0:
-        taskrec['totev'] = tasksEventInfo[0]['totev']
-        taskrec['totevproc'] = tasksEventInfo[0]['totev'] - tasksEventInfo[0]['totevrem']
-        taskrec['pctfinished'] = (100*taskrec['totevproc']/taskrec['totev']) if (taskrec['totev'] > 0) else ''
-    else:
-        taskrec['totev'] = ''
-        taskrec['totevproc'] = ''
-        taskrec['pctfinished'] = ''
-    '''
 
     #neventsTot = 0
     #neventsUsedTot = 0
@@ -4855,6 +4850,7 @@ def taskInfo(request, jeditaskid=0):
         taskrec['totevremhs06'] = (neventsTot-neventsUsedTot)*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsTot > 0) else None
         taskrec['totevprochs06'] = neventsUsedTot*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsUsedTot > 0) else None
         taskrec['maxpssave'] = maxpssave
+
 
     specsFailed = []
     tquery = {}

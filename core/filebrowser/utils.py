@@ -236,7 +236,7 @@ def get_rucio_pfns_from_guids_with_rucio_metalink_file(guids, site, lfns, scopes
             ... Get the Rucio replica dictionary from Rucio metalink file
         @params
             guids ... list of GUIDs
-            site ... PanDA resource (siteID)
+            site ... PanDA schedresource (siteID)
             lfns ... list of LFNs
             scopes ... list of scopes for the LFNs
         

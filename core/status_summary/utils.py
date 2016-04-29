@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from django.db.models import Count, Sum
 
-from ..resource.models import Schedconfig
+from ..schedresource.models import Schedconfig
 from core.views import statelist as STATELIST
 
 
@@ -286,7 +286,7 @@ def sort_data_by_cloud(data):
         sort_data_by_cloud
         
         data: list of dictionaries
-                    one dictionary per PanDA resource (computingsite)
+                    one dictionary per PanDA schedresource (computingsite)
                     keys: 
                         cloud
                         computingsite
@@ -308,7 +308,7 @@ def summarize_data(data, query, exclude_query, schedconfig_query, \
             [{'njobs': 1, 'computingsite': u'CERN-PROD', 'jobstatus': u'holding'}]
         
         returns: list of dictionaries
-                    one dictionary per PanDA resource (computingsite)
+                    one dictionary per PanDA schedresource (computingsite)
                     keys: 
                         cloud
                         computingsite

@@ -51,7 +51,7 @@ def index_data(request):
                 ?computingsite ... computingsite field of the jobs tables
                 ?jobstatus ... PanDA job status, list delimited by comma
             
-            * filtering on PanDA resource properties
+            * filtering on PanDA schedresource properties
                 ?corecount .. corecount field of the schedconfig table
                 ?cloud .. cloud field of the schedconfig table
                 ?atlas_site .. gstat field of the schedconfig table
