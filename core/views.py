@@ -939,6 +939,8 @@ def cleanTaskList(request, tasks):
             if len(task['errordialog']) > 100: task['errordialog'] = task['errordialog'][:90]+'...'
         if 'reqid' in task and task['reqid'] < 100000 and task['reqid'] > 100 and task['reqid'] != 300 and ( ('tasktype' in task) and (not task['tasktype'].startswith('anal'))):
             task['deftreqid'] = task['reqid']
+        if task['corecount'] is None:
+            task['corecount']=1
         #if task['status'] == 'running' and task['jeditaskid'] in dsinfo:
         dstotals = {}
         dstotals['nfiles'] = 0
