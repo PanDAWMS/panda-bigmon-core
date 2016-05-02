@@ -339,7 +339,7 @@ No datasets were found for this task
 <table>
 <tr bgcolor='lightcyan'><th colspan=20> PanDA/JEDI task parameters </th></tr>
 {% for col in columns %}
-<tr><th {% if col.name == 'cputime' or col.name == 'cputimeunit' or col.name == 'cpuefficiency' or col.name == 'basewalltime' or col.name == 'outdiskcount' or col.name == 'outdiskunit' or col.name == 'workdiskcount' or col.name == 'workdiskunit' %} bgcolor='HoneyDew' {% endif %}>{{ col.name }} </th><td> {% if col.value != 'None' %} {{ col.value }} {% endif %}</td></tr>
+<tr><th {% if col.name == 'cputime' or col.name == 'cputimeunit' or col.name == 'cpuefficiency' or col.name == 'basewalltime' or col.name == 'outdiskcount' or col.name == 'outdiskunit' or col.name == 'workdiskcount' or col.name == 'workdiskunit' %} bgcolor='HoneyDew' {% endif %}>{{ col.name }} </th><td> {% if col.value != 'None' %}{% if col.name == 'cputimescoutjob' %} <a href="{% url 'jobInfo' %}?pandaid={{ col.value }}">{{ col.value }}</a> {% else %} {{ col.value }} {% endif %} {% endif %}</td></tr>
 {% endfor %}
 </table>
 {% else %}

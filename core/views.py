@@ -807,7 +807,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
             plo = int(job['jobsetid'])-int(job['jobsetid'])%100
             phi = plo+99
             job['jobsetrange'] = "%d:%d" % ( plo, phi )
-        if job['corecount'] is None:
+        if 'corecount' in job and job['corecount'] is None:
            job['corecount']=1
     ## drop duplicate jobs
     droplist = []
@@ -940,7 +940,7 @@ def cleanTaskList(request, tasks):
             if len(task['errordialog']) > 100: task['errordialog'] = task['errordialog'][:90]+'...'
         if 'reqid' in task and task['reqid'] < 100000 and task['reqid'] > 100 and task['reqid'] != 300 and ( ('tasktype' in task) and (not task['tasktype'].startswith('anal'))):
             task['deftreqid'] = task['reqid']
-        if task['corecount'] is None:
+        if 'corecount' in task and task['corecount'] is None:
             task['corecount']=1
         #if task['status'] == 'running' and task['jeditaskid'] in dsinfo:
         dstotals = {}
@@ -4613,8 +4613,8 @@ def taskInfo(request, jeditaskid=0):
             if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': mode = 'drop'
             if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'nodrop': mode = 'nodrop'
 
-            jobsummary,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef, maxpsspercore, maxpssfpercore  = jobSummary2(query, exclude={}, mode=mode, isEventService=True, substatusfilter='non_es_merge')
-            jobsummaryESMerge, maxpssESM,walltimeESM,sitepssESM,sitewalltimeESM,maxpssfESM,walltimefESM,sitepssfESM,sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM = jobSummary2(query, exclude={}, mode=mode, isEventService=True, substatusfilter='es_merge')
+            jobsummary,jobcpuTimeScoutID,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef, maxpsspercore, maxpssfpercore  = jobSummary2(query, exclude={}, mode=mode, isEventService=True, substatusfilter='non_es_merge')
+            jobsummaryESMerge,jobcpuTimeScoutIDESM,maxpssESM,walltimeESM,sitepssESM,sitewalltimeESM,maxpssfESM,walltimefESM,sitepssfESM,sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM = jobSummary2(query, exclude={}, mode=mode, isEventService=True, substatusfilter='es_merge')
 
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
@@ -4622,7 +4622,8 @@ def taskInfo(request, jeditaskid=0):
             mode='drop'
             if 'mode' in request.session['requestParams']:
                 mode= request.session['requestParams']['mode']
-            jobsummary,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef, maxpsspercore, maxpssfpercore = jobSummary2(query, exclude=exclude, mode=mode)
+            jobsummary,jobcpuTimeScoutID,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef, maxpsspercore, maxpssfpercore = jobSummary2(query, exclude=exclude, mode=mode)
+
     elif 'taskname' in request.session['requestParams']:
         querybyname = {'taskname' : request.session['requestParams']['taskname'] }
         tasks = JediTasks.objects.filter(**querybyname).values()
@@ -4644,6 +4645,8 @@ def taskInfo(request, jeditaskid=0):
     tasks = cleanTaskList(request,tasks)
     try:
         taskrec = tasks[0]
+        if jobcpuTimeScoutID > 0:
+            taskrec['cputimescoutjob']=jobcpuTimeScoutID
         colnames = taskrec.keys()
         colnames.sort()
         for k in colnames:
@@ -4973,6 +4976,7 @@ def taskInfo(request, jeditaskid=0):
 
 def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatusfilter = ''):
     jobs = []
+    jobcpuTimeScoutID=0
     newquery = copy.deepcopy(query)
     if substatusfilter != '':
         if (substatusfilter == 'es_merge'):
@@ -4985,16 +4989,16 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
     #Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
 
     jobs.extend(Jobsarchived.objects.filter(**newquery).exclude(**exclude).\
-        values('modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid'))
+        values('modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics'))
 
     jobs.extend(Jobsdefined4.objects.filter(**newquery).exclude(**exclude).\
-        values('modificationtime', 'jobsubstatus', 'pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid'))
+        values('modificationtime', 'jobsubstatus', 'pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics'))
     jobs.extend(Jobswaiting4.objects.filter(**newquery).exclude(**exclude).\
-        values('modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid'))
+        values('modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics'))
     jobs.extend(Jobsactive4.objects.filter(**newquery).exclude(**exclude).\
-        values('modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid'))
+        values('modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics'))
     jobs.extend(Jobsarchived4.objects.filter(**newquery).exclude(**exclude).\
-        values('modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid'))
+        values('modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics'))
 
     jobsSet = {}
     newjobs = []
@@ -5007,6 +5011,8 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
         elif jobsSet[job['pandaid']] == 'closed' and job['jobstatus'] == 'finished':
             jobsSet[job['pandaid']] = job['jobstatus']
             newjobs.append(job)
+        if 'scout=cpuTime' in job['jobmetrics']:
+            jobcpuTimeScoutID=job['pandaid']
 
     jobs = newjobs
 
@@ -5087,7 +5093,6 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
             if job['jobstatus'] == 'failed':
                 walltimef.append(ndays*24*3600+duration.seconds)
                 sitewalltimef.append(job['computingsite'])
-
     jobstates = []
     global statelist
     for state in statelist:
@@ -5101,7 +5106,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
                 statecount['count'] += 1
                 continue
         jobstates.append(statecount)
-    return jobstates, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore
+    return jobstates, jobcpuTimeScoutID, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore
 
 def jobStateSummary(jobs):
     global statelist
