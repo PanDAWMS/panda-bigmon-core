@@ -807,7 +807,8 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
             plo = int(job['jobsetid'])-int(job['jobsetid'])%100
             phi = plo+99
             job['jobsetrange'] = "%d:%d" % ( plo, phi )
-
+        if job['corecount'] is None:
+           job['corecount']=1
     ## drop duplicate jobs
     droplist = []
     job1 = {}
