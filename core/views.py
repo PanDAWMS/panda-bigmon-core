@@ -1661,9 +1661,9 @@ def jobList(request, mode=None, param=None):
         elif sortby == 'PandaID':
             jobs = sorted(jobs, key=lambda x:x['pandaid'], reverse=True)
     else:
-        sortby = "statetime"
-        if 'statechangetime' in jobs:
-            jobs = sorted(jobs, key=lambda x:x['statechangetime'], reverse=True)
+        sortby = "time-descending"
+        if 'modificationtime' in jobs[0]:
+            jobs = sorted(jobs, key=lambda x:x['modificationtime'], reverse=True)
 
     taskname = ''
     if 'jeditaskid' in request.session['requestParams']:
