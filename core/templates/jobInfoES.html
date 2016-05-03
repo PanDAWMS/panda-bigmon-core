@@ -1,4 +1,6 @@
-{% extends "_base_core.html" %}{% load url from future %}
+{% extends "_base_core.html" %}
+{% load url from future %}
+{% load staticfiles %}
 
 {% block page_title %}PanDA job {{ pandaid }}{% endblock %}
 {% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
@@ -7,6 +9,25 @@
 {% block body %}
 
 {% if job %}
+
+<script type="text/javascript">
+function loadExtendedErrorData(jeditaskid, pandaid) {
+
+    $('#div-exterrorsinfo').html("<img src='{% static "images/load.gif" %}'>  ");
+    $.ajax({
+        url: {% url 'descendentjoberrsinfo' %},
+        data: 'jeditaskid='+jeditaskid+'&pandaid='+pandaid,
+        async: true,
+    }).done(function (response) {
+       $('#div-exterrorsinfo').html(response);
+    });
+
+};
+</script>
+
+
+
+
 <table width="100%">
 <tr bgcolor='lightcyan'>
 	<th>PandaID {% if not job.jeditaskid %} <br>Attempt# {% endif %}</th>
@@ -137,6 +158,13 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 <p>
 {% endif %}
 
+{% if pretries or retries %}
+<p>
+<div id="div-exterrorsinfo">
+   <a onclick="javascript:loadExtendedErrorData('{{ job.jeditaskid }}','{{ job.pandaid }}');">Show descendents jobs errors</a>
+</div>
+<p>
+{% endif %}
 
 
 
@@ -281,36 +309,49 @@ But if you want, you can check.
 <table>
 <tr><th colspan=20 bgcolor='lightcyan'> {{ nfiles }} job files </th></tr>
 <tr><th>Filename (Type)</th><th>Scope</th><th>Size (MB)</th><th>Status</th><th>Attempt (max)</th><th>Dataset</th></tr>
+
+{% if "esmerge" in job.specialhandling %}
+<tr><td colspan="6">Merge events list created on the fly</tr>
+{% endif %}
+
 {% for file in files %}
-<tr><td>
-<font size=-1>
-{% if viewParams.MON_VO == 'ATLAS' %}
-   {% if file.type != 'pseudo_input' %}
-       <a href="{% url 'fileInfo' %}?lfn={{file.lfn}}&scope={{file.scope}}&pandaid={{pandaid}}">{{ file.lfn}}</a>
+
+    {% if "esmerge" in job.specialhandling and file.type == 'input' %}
+
     {% else %}
-    {{ file.lfn }}
+
+        <tr><td>
+        <font size=-1>
+        {% if viewParams.MON_VO == 'ATLAS' %}
+           {% if file.type != 'pseudo_input' %}
+               <a href="{% url 'fileInfo' %}?lfn={{file.lfn}}&scope={{file.scope}}&pandaid={{pandaid}}">{{ file.lfn}}</a>
+            {% else %}
+            {{ file.lfn }}
+            {% endif %}
+        {% else %}
+        {{ file.lfn}}
+        {% endif %} ({{ file.type }})
+        {% if file.type == 'input' %} &nbsp;  <a href="{% url 'jobInfo' %}?creator={{file.lfn}}">Find creator job</a> {% endif %}
+        </font>
+        </td>
+        <td> <font size=-1>{{ file.scope }}</font> </td>
+        <td> {{ file.fsize }} </td>
+        <td class='{{file.status}}'> {{ file.status }} </td>
+        <td> {% if file.attemptnr %} {{ file.attemptnr }} ({{ file.maxattempt }}){% endif %} </td>
+        <td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{file.datasetname}}"> {{ file.datasetname }}</a>
+        {% if file.dispatchdblock %}
+        <br />(dispatch block: {{ file.dispatchdblock }} <a href="http://panda.cern.ch/server/pandamon/query?dataset={{ file.dispatchdblock }}">pinkpanda</a> <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.dispatchdblock }}">rucio</a>)
+        {% endif %}
+        {% if file.destinationdblock %}
+        <br />(destination block: {% if file.destinationdblock_vis %}{{ file.destinationdblock_vis }}{% else %}{{ file.destinationdblock }}{% endif %} <a href="http://panda.cern.ch/server/pandamon/query?dataset={{ file.destinationdblock }}">
+        pinkpanda</a> <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.destinationdblock }}">rucio</a>)
+        {% endif %}
+        </font>
+        </td>
+        </tr>
+
     {% endif %}
-{% else %}
-{{ file.lfn}}
-{% endif %} ({{ file.type }})
-{% if file.type == 'input' %} &nbsp;  <a href="{% url 'jobInfo' %}?creator={{file.lfn}}">Find creator job</a> {% endif %}
-</font>
-</td>
-<td> <font size=-1>{{ file.scope }}</font> </td>
-<td> {{ file.fsize }} </td>
-<td class='{{file.status}}'> {{ file.status }} </td>
-<td> {% if file.attemptnr %} {{ file.attemptnr }} ({{ file.maxattempt }}){% endif %} </td>
-<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{file.datasetname}}"> {{ file.datasetname }}</a>
-{% if file.dispatchdblock %}
-<br />(dispatch block: {{ file.dispatchdblock }} <a href="http://panda.cern.ch/server/pandamon/query?dataset={{ file.dispatchdblock }}">pinkpanda</a> <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.dispatchdblock }}">rucio</a>)
-{% endif %}
-{% if file.destinationdblock %}
-<br />(destination block: {% if file.destinationdblock_vis %}{{ file.destinationdblock_vis }}{% else %}{{ file.destinationdblock }}{% endif %} <a href="http://panda.cern.ch/server/pandamon/query?dataset={{ file.destinationdblock }}">
-pinkpanda</a> <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.destinationdblock }}">rucio</a>)
-{% endif %}
-</font>
-</td>
-</tr>
+
 {% endfor %}
 </table>
 </div>
