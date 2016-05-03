@@ -1,0 +1,6 @@
+{% load url from future %}
+<table>
+    {% for job, value in errors.items %}
+    	<tr><th class="tablesection"><a href="{% url 'jobInfo' %}?pandaid={{ job }}"> {{ job }} </a></th><td class="alarm">{{ value }}</td></tr>
+    {% endfor %}
+</table>

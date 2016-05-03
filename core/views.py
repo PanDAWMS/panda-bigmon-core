@@ -1940,8 +1940,84 @@ def getSequentialRetries_ES(pandaid, jobsetid, jeditaskid, countOfInvocations, r
 
 
 
+def descendentjoberrsinfo(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+    data = {}
+
+    job_pandaid = job_jeditaskid = -1
+    if 'pandaid' in request.session['requestParams']:
+        job_pandaid = int(request.session['requestParams']['pandaid'])
+    if 'jeditaskid' in request.session['requestParams']:
+        job_jeditaskid = int(request.session['requestParams']['jeditaskid'])
+
+    if (job_pandaid==-1) or (job_jeditaskid==-1):
+        data = {"error":"no pandaid or jeditaskid supplied"}
+        del request.session['TFIRST']
+        del request.session['TLAST']
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+
+    query = setupView(request, hours=365*24)
+    jobs = []
+    jobs.extend(Jobsdefined4.objects.filter(**query).values())
+    jobs.extend(Jobsactive4.objects.filter(**query).values())
+    jobs.extend(Jobswaiting4.objects.filter(**query).values())
+    jobs.extend(Jobsarchived4.objects.filter(**query).values())
+    if len(jobs) == 0:
+        jobs.extend(Jobsarchived.objects.filter(**query).values())
+
+    if len(jobs) == 0:
+        del request.session['TFIRST']
+        del request.session['TLAST']
+        data = {"error":"job not found"}
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+
+    job = jobs[0]
+
+    countOfInvocations = []
+    if not isEventService(job):
+        retryquery = {}
+        retryquery['jeditaskid'] = job['jeditaskid']
+        retryquery['oldpandaid'] = job['pandaid']
+        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
+        pretries = getSequentialRetries(job['pandaid'], job['jeditaskid'])
+    else:
+        retryquery = {}
+        retryquery['jeditaskid'] = job['jeditaskid']
+        retryquery['oldpandaid'] = job['jobsetid']
+        retryquery['relationtype'] = 'jobset_retry'
+        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
+        pretries = getSequentialRetries_ES(job['pandaid'], job['jobsetid'], job['jeditaskid'], countOfInvocations)
 
 
+
+    query = {'jeditaskid':job_jeditaskid}
+    jobslist = []
+    for retry in pretries:
+        jobslist.append(retry['oldpandaid'])
+    for retry in retries:
+        jobslist.append(retry['oldpandaid'])
+    query['pandaid__in'] = jobslist
+
+    jobs = []
+    jobs.extend(Jobsdefined4.objects.filter(**query).values())
+    jobs.extend(Jobsactive4.objects.filter(**query).values())
+    jobs.extend(Jobswaiting4.objects.filter(**query).values())
+    jobs.extend(Jobsarchived4.objects.filter(**query).values())
+    jobs.extend(Jobsarchived.objects.filter(**query).values())
+    jobs = cleanJobList(request, jobs, mode='nodrop')
+
+    errors = {}
+
+    for job in jobs:
+        errors[job['pandaid']] = getErrorDescription(job)
+
+    endSelfMonitor(request)
+    del request.session['TFIRST']
+    del request.session['TLAST']
+    response = render_to_response('descentJobsErrors.html', {'errors':errors}, RequestContext(request))
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
 
 
 @csrf_exempt

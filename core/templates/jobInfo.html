@@ -1,4 +1,6 @@
-{% extends "_base_core.html" %}{% load url from future %}
+{% extends "_base_core.html" %}
+{% load url from future %}
+{% load staticfiles %}
 
 {% block page_title %}PanDA job {{ pandaid }}{% endblock %}
 {% block subtitle %}Job details for PanDA job <b>{{ jobid }}</b>{% endblock %}
@@ -6,6 +8,26 @@
 {% block body %}
 
 {% if job %}
+
+<script type="text/javascript">
+
+function loadExtendedErrorData(jeditaskid, pandaid) {
+
+    $('#div-exterrorsinfo').html("<img src='{% static "images/load.gif" %}'>  ");
+    $.ajax({
+        url: {% url 'descendentjoberrsinfo' %},
+        data: 'jeditaskid='+jeditaskid+'&pandaid='+pandaid,
+        async: true,
+    }).done(function (response) {
+        $('#div-exterrorsinfo').html(response);
+    });
+
+};
+
+</script>
+
+
+
 <table width="100%">
 <tr bgcolor='lightcyan'>
 	<th>PandaID {% if not job.jeditaskid %} <br>Attempt# {% endif %}</th>
@@ -140,6 +162,17 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 </td></tr></table>
 <p>
 {% endif %}
+
+
+{% if pretries or retries %}
+<p>
+<div id="div-exterrorsinfo">
+   <a onclick="javascript:loadExtendedErrorData('{{ job.jeditaskid }}','{{ job.pandaid }}');">Show descendents jobs errors</a>
+</div>
+<p>
+{% endif %}
+
+
 
 {% if coreData %}
 <p>

@@ -55,8 +55,8 @@ urlpatterns = patterns('',
     url(r'^worldjobs/$', coremon_views.worldjobs, name='worldjobs'),
     url(r'^runningprodtasks/$', coremon_views.runningProdTasks, name='runningProdTasks'),
     url(r'^worldhs06s/$', coremon_views.worldhs06s, name='worldHS06s'),
-
     url(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),
+    url(r'^descendentjoberrsinfo/$', coremon_views.descendentjoberrsinfo, name='descendentjoberrsinfo'),
 
                        #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
 
