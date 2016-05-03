@@ -2010,7 +2010,7 @@ def descendentjoberrsinfo(request):
     errors = {}
 
     for job in jobs:
-        errors[job['pandaid']] = getErrorDescription(job)
+        errors[job['pandaid']] = getErrorDescription(job, mode='txt')
 
     endSelfMonitor(request)
     del request.session['TFIRST']
