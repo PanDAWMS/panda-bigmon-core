@@ -2139,6 +2139,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         npseudo_input = 0
         if len(files) > 0:
             for f in files:
+                f['destination'] = ' '
                 if f['type'] == 'input':
                     ninput += 1
                     inputFilesSize += f['fsize']/1048576.
@@ -2146,12 +2147,22 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     typeFiles[f['type']] += 1
                 else:
                     typeFiles[f['type']] = 1
-                if f['type'] == 'output': noutput += 1
+                if f['type'] == 'output':
+                    noutput += 1
+                    if len(jobs[0]['jobmetrics'])  > 0:
+                        jobmetrics = dict(s.split('=') for s in jobs[0]['jobmetrics'].split(' '))
+                        if 'logBucketID' in jobmetrics:
+                            if int(jobmetrics['logBucketID']) in [3, 21, 45, 46, 104, 41, 105, 106, 42, 61, 21, 102, 103, 2, 82, 81, 82, 101]: #Bucket Codes for S3 destination
+                                f['destination'] = 'S3'
                 if f['type'] == 'pseudo_input': npseudo_input += 1
                 f['fsizemb'] = "%0.2f" % (f['fsize']/1000000.)
                 dsets = JediDatasets.objects.filter(datasetid=f['datasetid']).values()
                 if len(dsets) > 0:
                     f['datasetname'] = dsets[0]['datasetname']
+
+            files = [x for x in files if x['destination'] != 'S3']
+
+
         if len(typeFiles) > 0:
             inputFilesSize =  "%0.2f" % inputFilesSize
             for i in typeFiles:
@@ -6249,7 +6260,7 @@ def fileInfo(request):
             if (file_['endevent'] != None):
                 file_['endevent'] += 1
 
-    if ((len(files) > 0) and ('jeditaskid' in files[0]) and (files[0]['jeditaskid'] != None)):
+    if ((len(files) > 0) and ('jeditaskid' in files[0]) and ('startevent' in files[0]) and (files[0]['jeditaskid'] != None)):
             files = sorted(files, key=lambda k: (-k['jeditaskid'], k['startevent']))
 
 
