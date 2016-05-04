@@ -118,7 +118,7 @@ LAST_N_HOURS_MAX = 0
 PLOW = 1000000
 PHIGH = -1000000
 
-standard_fields = [ 'processingtype', 'computingsite', 'destinationse', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid', 'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount' , 'eventservice', 'jobsubstatus']
+standard_fields = [ 'processingtype', 'computingsite', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid', 'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount' , 'eventservice', 'jobsubstatus', 'nucleus']
 standard_sitefields = [ 'region', 'gocname', 'nickname', 'status', 'tier', 'comment_field', 'cloud', 'allowdirectaccess', 'allowfax', 'copytool', 'faxredirector', 'retry', 'timefloor' ]
 standard_taskfields = [ 'workqueue_id', 'tasktype', 'superstatus', 'corecount', 'taskpriority', 'username', 'transuses', 'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag', 'reqid', 'ramcount', 'nucleus', 'eventservice']
 
@@ -1008,6 +1008,7 @@ def jobSummaryDict(request, jobs, fieldlist = None):
         for f in flist:
             if f in job and job[f]:
                 if f == 'taskid' and int(job[f]) < 1000000 and 'produsername' not in request.session['requestParams']: continue
+                if f == 'nucleus' and job[f] is None: continue
                 if f == 'specialhandling':
                     if not 'specialhandling' in sumd: sumd['specialhandling'] = {}
                     shl = job['specialhandling'].split()
