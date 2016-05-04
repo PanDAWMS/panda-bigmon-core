@@ -1663,7 +1663,7 @@ def jobList(request, mode=None, param=None):
             jobs = sorted(jobs, key=lambda x:x['pandaid'], reverse=True)
     else:
         sortby = "time-descending"
-        if 'modificationtime' in jobs[0]:
+        if len(jobs)>0 and 'modificationtime' in jobs[0]:
             jobs = sorted(jobs, key=lambda x:x['modificationtime'], reverse=True)
 
     taskname = ''
