@@ -2939,12 +2939,13 @@ def siteInfo(request, site=''):
             attrs.append({'name' : 'Last modified', 'value' : "%s" % (siterec.lastmod.strftime('%Y-%m-%d %H:%M')) })
 
             iquery = {}
+
             startdate = timezone.now() - timedelta(hours=24*30)
             startdate = startdate.strftime(defaultDatetimeFormat)
             enddate = timezone.now().strftime(defaultDatetimeFormat)
             iquery['at_time__range'] = [startdate, enddate]
-            iquery['description__contains'] = 'queue=%s' % siterec.nickname
-            incidents = Incidents.objects.filter(**iquery).order_by('at_time').reverse().values()
+            cloudQuery = Q(description__contains='queue=%s' % siterec.nickname) | Q(description__contains='queue=%s' % siterec.siteid)
+            incidents = Incidents.objects.filter(**iquery).filter(cloudQuery).order_by('at_time').reverse().values()
         else:
             incidents = []
         del request.session['TFIRST']
