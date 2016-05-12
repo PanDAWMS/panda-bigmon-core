@@ -1031,9 +1031,9 @@ def jobSummaryDict(request, jobs, fieldlist = None):
     for job in jobs:
         if isEventService(job):
             esjobs.append(job['pandaid'])
-            esjobdict[job['pandaid']] = {}
-            for s in eventservicestatelist:
-                esjobdict[job['pandaid']][s] = 0
+            #esjobdict[job['pandaid']] = {}
+            #for s in eventservicestatelist:
+            #    esjobdict[job['pandaid']][s] = 0
     if len(esjobs) > 0:
         sumd['eventservicestatus'] = {}
 
@@ -1055,7 +1055,9 @@ def jobSummaryDict(request, jobs, fieldlist = None):
         new_cur.executemany(query, executionData)
         connection.commit()
 
-        new_cur.execute("SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
+        new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM "
+                        " (SELECT DISTINCT PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i))t1 "
+                        "GROUP BY STATUS" % (tmpTableName, transactionKey))
         evtable = dictfetchall(new_cur)
 
         new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
@@ -1063,12 +1065,14 @@ def jobSummaryDict(request, jobs, fieldlist = None):
         connection.leave_transaction_management()
 
         for ev in evtable:
-
             evstat = eventservicestatelist[ev['STATUS']]
-            if evstat not in sumd['eventservicestatus']:
-                sumd['eventservicestatus'][evstat] = 0
-            sumd['eventservicestatus'][evstat] += 1
-            esjobdict[ev['PANDAID']][evstat] += 1
+            sumd['eventservicestatus'][evstat] = ev['COUNTSTAT']
+        #for ev in evtable:
+        #    evstat = eventservicestatelist[ev['STATUS']]
+        #    if evstat not in sumd['eventservicestatus']:
+        #        sumd['eventservicestatus'][evstat] = 0
+        #    sumd['eventservicestatus'][evstat] += 1
+        #    #esjobdict[ev['PANDAID']][evstat] += 1
 
     ## convert to ordered lists
     suml = []
@@ -1755,6 +1759,8 @@ def jobList(request, mode=None, param=None):
     errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request,jobs, tasknamedict, testjobs)
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
 
+        # It was not find where esjobdict used
+        '''
         if esjobdict and len(esjobdict) > 0:
             for job in jobs:
                 if job['pandaid'] in esjobdict and job['specialhandling'].find('esmerge') < 0:
@@ -1762,7 +1768,9 @@ def jobList(request, mode=None, param=None):
                     for s in esjobdict[job['pandaid']]:
                         if esjobdict[job['pandaid']][s] > 0:
                             esjobstr += " %s(%s) " % ( s, esjobdict[job['pandaid']][s] )
-                    job['esjobstr'] = esjobstr
+                    job['esjobdict'] = esjobstr
+        '''
+
         xurl = extensibleURL(request)
         print xurl
         nosorturl = removeParam(xurl, 'sortby',mode='extensible')
