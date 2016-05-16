@@ -120,6 +120,7 @@ class Schedconfig(models.Model):
     allowhttp = models.CharField(null=True, max_length=64, db_column='ALLOWHTTP', blank=True)
     httpredirector = models.CharField(null=True, max_length=256, db_column='HTTPREDIRECTOR', blank=True)
     multicloud_append = models.CharField(null=True, max_length=64, db_column='MULTICLOUD_APPEND', blank=True)
+    corepower = models.IntegerField(null=True, db_column='COREPOWER', blank=True)
 
     def __str__(self):
         return 'Schedconfig:' + str(self.nickname)

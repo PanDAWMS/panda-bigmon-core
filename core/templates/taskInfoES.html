@@ -22,7 +22,7 @@
 	<th>Task status </th>{% if task.superstatus %} {% if task.superstatus != task.status %}<th> Detailed JEDI status </th>{% endif %} {% endif %}
 {% if task.dsinfo %}
     <th> Nevents | <span class='finished'>used</span> </th>
-    <th> HS06*sec expected | <span class='done'>done</span> | <span class='failed'>failed</span></th>
+    <th> HS06*sec total | <span class='done'>done</span> | <span class='failed'>failed</span></th>
     <th> Ninputfiles | <span class='finished'>finished</span> | <span class='failed'>failed</span> </th>
 {% endif %}
 	<th>Created</th>
@@ -45,7 +45,7 @@
 {% if task.dsinfo %}
         <td> {{task.totev}} |
             <span class='finished'>{{task.totevproc}} ({{task.pctfinished}}%)</span></td>
-        <td> {{task.totevremhs06}} |
+        <td> {{task.totevhs06}} |
             <span class='finished'>{{task.totevprochs06}}</span> | <span class='failed'>{{task.failedevprochs06}}</span></td>
         <td> {{task.dsinfo.nfiles}} |
             <span class='finished'>{{task.dsinfo.nfilesfinished}} ({{task.dsinfo.pctfinished}}%)</span> {% if task.dsinfo.nfilesfailed > 0 %} | <span class='failed'>{{task.dsinfo.nfilesfailed}} ({{task.dsinfo.pctfailed}}%)</span>  {% endif %} </td>
@@ -86,11 +86,13 @@ function toggleDetailDisplay(className) {
 
 
 {% if  maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
-{% if  walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
 {% if  maxpssf|length > 0 %} <div class="d3splot" id="plot3" style="float:left;display:none"></div> {% endif %}
+{% if  walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
 {% if  walltimef|length > 0 %} <div class="d3splot" id="plot4" style="float:left;display:none"></div> {% endif %}
 {% if  maxpsspercore|length > 0 %} <div class="d3splot" id="plot5" style="float:left;display:none"></div> {% endif %}
 {% if  maxpssfpercore|length > 0 %} <div class="d3splot" id="plot6" style="float:left;display:none"></div> {% endif %}
+{% if  hs06s|length > 0 %} <div class="d3splot" id="plot7" style="float:left;display:none"></div> {% endif %}
+{% if  hs06sf|length > 0 %} <div class="d3splot" id="plot8" style="float:left;display:none"></div> {% endif %}
 
 <script src="/static/js/d3jsplot.js"></script>
 <script>
@@ -105,12 +107,17 @@ function toggleDetailDisplay(className) {
     {#Maxpsspercore, sites is the same as for maxpss#}
     var values5 = {{ maxpsspercore|safe }};
     var values6 = {{ maxpssfpercore|safe }};
+    {#HS06s, sites is the same as for walltime#}
+    var values7 = {{ hs06s|safe }};
+    var values8 = {{ hs06sf|safe }};
     if (values1.length > 0) {pandamonplotFunc(values1, sites1, "#plot1", "Maximum PSS histogram", {% if  maxpss|length < 100 %} 10 {% else %} 100 {% endif %});}
+    if (values3.length > 0) {pandamonplotFunc(values3, sites3, "#plot3", "Maximum PSS histogram (failed jobs)", {% if  maxpss|length < 20 %} 5 {% else %} 20 {% endif %});}
     if (values2.length > 0) {pandamonplotFunc(values2, sites2, "#plot2", "Walltime histogram", {% if  walltime|length < 100 %} 5 {% else %} 40 {% endif %});}
-    if (values3.length > 0) {pandamonplotFunc(values3, sites3, "#plot3", "Maximum PSS histogram (failed jobs)", {% if  maxpss|length < 20 %} 10 {% else %} 50 {% endif %});}
     if (values4.length > 0) {pandamonplotFunc(values4, sites4, "#plot4", "Walltime histogram (failed jobs)", {% if  walltime|length < 20 %} 5 {% else %} 20 {% endif %});}
     if (values5.length > 0) {pandamonplotFunc(values5, sites1, "#plot5", "Maximum PSS per core histogram", {% if  maxpsspercore|length < 100 %} 10 {% else %} 100 {% endif %});}
     if (values6.length > 0) {pandamonplotFunc(values6, sites3, "#plot6", "Maximum PSS per core histogram (failed jobs)", {% if  maxpssfpercore|length < 20 %} 5 {% else %} 20 {% endif %});}
+    if (values7.length > 0) {pandamonplotFunc(values7, sites2, "#plot7", "HS06s histogram", {% if  hs06s|length < 100 %} 10 {% else %} 100 {% endif %});}
+    if (values8.length > 0) {pandamonplotFunc(values8, sites4, "#plot8", "HS06s histogram (failed jobs)", {% if  hs06sf|length < 20 %} 5 {% else %} 20 {% endif %});}
  </script>
 
 
