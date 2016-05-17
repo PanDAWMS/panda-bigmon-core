@@ -144,11 +144,11 @@ def setupSiteInfo(request):
     global homeCloud, objectStores, pandaSites, callCount
     callCount += 1
     if len(homeCloud) > 0 and callCount%100 != 1 and 'refresh' not in request.session['requestParams']: return
-    sflist = ('siteid','status','cloud','tier','comment_field','objectstore','catchall')
+    sflist = ('siteid','status','cloud','tier','comment_field','objectstore','catchall','corepower')
     sites = Schedconfig.objects.filter().exclude(cloud='CMS').values(*sflist)
     for site in sites:
         pandaSites[site['siteid']] = {}
-        for f in ( 'siteid', 'status', 'tier', 'comment_field', 'cloud' ):
+        for f in ( 'siteid', 'status', 'tier', 'comment_field', 'cloud', 'corepower' ):
             pandaSites[site['siteid']][f] = site[f]
         homeCloud[site['siteid']] = site['cloud']
         if (site['catchall'] != None) and (site['catchall'].find('log_to_objectstore') >= 0 or site['objectstore'] != ''):
@@ -4439,6 +4439,8 @@ def runningProdTasks(request):
         tquery['username']=request.session['requestParams']['username']
     if 'campaign' in request.session['requestParams']:
         tquery['campaign__contains']=request.session['requestParams']['campaign']
+    else:
+        tquery['campaign__contains']='MC'
     if 'corecount' in request.session['requestParams']:
         tquery['corecount']=request.session['requestParams']['corecount']
     if 'status' in request.session['requestParams']:
@@ -5090,12 +5092,6 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
     jobsSet = {}
     newjobs = []
 
-    sites=[]
-    siteCorePowerDict={}
-    sites.extend(Schedconfig.objects.values('siteid','corepower'))
-    for site in sites:
-        siteCorePowerDict[site['siteid']]=float(site['corepower'])
-
     hs06sSum={'finished':0,'failed':0, 'total':0}
     cpuTimeCurrent=[]
     for job in jobs:
@@ -5112,7 +5108,10 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
         if job['jobstatus'] in ['finished','failed'] and 'endtime' in job and 'starttime' in job and job['starttime'] and job['endtime']:
             duration=max(job['endtime'] - job['starttime'], timedelta(seconds=0))
             job['duration']= duration.days*24*3600+duration.seconds
-            job['hs06s']=(job['duration'])*siteCorePowerDict[job['computingsite']]*job['corecount']
+            if job['computingsite'] in pandaSites:
+                job['hs06s']=(job['duration'])*pandaSites[job['computingsite']]['corepower']*job['corecount']
+            else:
+                job['hs06s']=0
             if job['nevents'] and job['nevents']>0:
                 cpuTimeCurrent.append(job['hs06s']/job['nevents'])
             hs06sSum['finished']+=job['hs06s'] if job['jobstatus']=='finished' else 0
