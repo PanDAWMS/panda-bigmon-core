@@ -197,7 +197,7 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title){
     var formatCount = d3.format(",.0f");
 	var numberofbins=40;
     var margin = {top: 30, right: 30, bottom: 40, left: 60},
-        width = 500 - margin.left - margin.right,
+        width = 550 - margin.left - margin.right,
         height = 300 - margin.top - margin.bottom;
 
     var lowerBand = d3.min(values);
@@ -250,13 +250,26 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title){
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis);
+	svg.append("g")
+    	.attr("transform", "translate(" + (width/2) + " ," + (height + margin.bottom-5) + ")")
+        .append("text")
+        .style("text-anchor", "middle")
+        .text("Time, days");
 
     svg.append("g")
         .attr("class", "y axis")
         .call(yAxis);
+	svg.append("g")
+        .attr("transform", "rotate(-90)")
+		.append("text")
+        .attr("y", 0 - margin.left)
+        .attr("x",0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("N tasks");
 
     svg.append("g")
-        .attr("transform", "translate(" + (width / 2) + ", 0)")
+        .attr("transform", "translate(" + (width / 2) + ", -10)")
         .append("text")
         .attr("class", "title")
         .text(title);
