@@ -4439,6 +4439,8 @@ def runningProdTasks(request):
         tquery['username']=request.session['requestParams']['username']
     if 'campaign' in request.session['requestParams']:
         tquery['campaign__contains']=request.session['requestParams']['campaign']
+    else:
+        tquery['campaign__contains']='MC'
     if 'corecount' in request.session['requestParams']:
         tquery['corecount']=request.session['requestParams']['corecount']
     if 'status' in request.session['requestParams']:
