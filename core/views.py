@@ -5109,7 +5109,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
             duration=max(job['endtime'] - job['starttime'], timedelta(seconds=0))
             job['duration']= duration.days*24*3600+duration.seconds
             if job['computingsite'] in pandaSites:
-                job['hs06s']=(job['duration'])*pandaSites[job['computingsite']]['corepower']*job['corecount']
+                job['hs06s']=(job['duration'])*float(pandaSites[job['computingsite']]['corepower'])*job['corecount']
             else:
                 job['hs06s']=0
             if job['nevents'] and job['nevents']>0:
