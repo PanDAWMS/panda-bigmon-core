@@ -1542,7 +1542,6 @@ def jobList(request, mode=None, param=None):
         jobs.extend(Jobsdefined4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
         jobs.extend(Jobsactive4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
         jobs.extend(Jobswaiting4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
-
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
 
         if not noarchjobs:
@@ -1594,19 +1593,21 @@ def jobList(request, mode=None, param=None):
         for job in jobs:
             dropJob = 0
             pandaid = job['pandaid']
-
             if not isEventService(job):
                 if hashRetries.has_key(pandaid):
                     retry = hashRetries[pandaid]
-                    if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or ( job['processingtype'] == 'pmerge' and retry['relationtype'] == 'merge'):
+                    if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or (
+                            job['processingtype'] == 'pmerge' and retry['relationtype'] == 'merge'):
                         dropJob = retry['newpandaid']
-
+                else:
+                    if (job['jobsetid'] in hashRetries) and ( hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
+                        dropJob = 1
             else:
-
-                if (job['jobsetid'] in hashRetries) and ( hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
+                if (job['jobsetid'] in hashRetries) and (
+                            hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
                     dropJob = 1
 
-#               if 'jobstatus' in request.session['requestParams'] and request.session['requestParams'][
+                #               if 'jobstatus' in request.session['requestParams'] and request.session['requestParams'][
 #                   'jobstatus'] == 'cancelled' and job['jobstatus'] != 'cancelled':
 #                   dropJob = 1
 
@@ -1944,6 +1945,43 @@ def getSequentialRetries_ES(pandaid, jobsetid, jeditaskid, countOfInvocations, r
     return outlist
 
 
+def getSequentialRetries_ESupstream(pandaid, jobsetid, jeditaskid, countOfInvocations, recurse = 0):
+    retryquery = {}
+    retryquery['jeditaskid'] = jeditaskid
+    retryquery['oldpandaid'] = jobsetid
+    retryquery['relationtype'] = 'jobset_retry'
+    countOfInvocations.append(1)
+    newretries = []
+
+    if (len(countOfInvocations) < 300 ):
+        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').values()
+        newretries.extend(retries)
+        for retry in retries:
+            jsquery = {}
+            jsquery['jeditaskid'] = jeditaskid
+            jsquery['jobsetid'] = retry['newpandaid']
+            values = [ 'pandaid', 'jobstatus', 'jobsetid', 'jeditaskid' ]
+            jsjobs = []
+            jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
+            for job in jsjobs:
+                for retry in newretries:
+                    if (retry['newpandaid'] == job['jobsetid']):
+                        retry['relationtype'] = 'retry'
+                        retry['jobid'] = job['pandaid']
+
+    outlist=[]
+    added_keys = set()
+    for row in newretries:
+        if 'jobid' in row:
+            lookup = row['jobid']
+            if lookup not in added_keys:
+                outlist.append(row)
+                added_keys.add(lookup)
+    return outlist
 
 
 
@@ -2282,7 +2320,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             retryquery['jeditaskid'] = job['jeditaskid']
             retryquery['oldpandaid'] = job['jobsetid']
             retryquery['relationtype'] = 'jobset_retry'
-            retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
+            #retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
+            retries = getSequentialRetries_ESupstream(job['pandaid'], job['jobsetid'], job['jeditaskid'], countOfInvocations)
             pretries = getSequentialRetries_ES(job['pandaid'], job['jobsetid'], job['jeditaskid'], countOfInvocations)
     else:
         retries = None
@@ -4712,8 +4751,8 @@ def taskInfo(request, jeditaskid=0):
             if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': mode = 'drop'
             if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'nodrop': mode = 'nodrop'
 
-            jobsummary,jobcpuTimeScoutID,hs06sSum,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf  = jobSummary2(query, exclude={}, mode=mode, isEventService=True, substatusfilter='non_es_merge')
-            jobsummaryESMerge,jobcpuTimeScoutIDESM,hs06sSumESM,maxpssESM,walltimeESM,sitepssESM,sitewalltimeESM,maxpssfESM,walltimefESM,sitepssfESM,sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM, hs06sESM, hs06sfESM = jobSummary2(query, exclude={}, mode=mode, isEventService=True, substatusfilter='es_merge')
+            jobsummary,jobcpuTimeScoutID,hs06sSum,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf  = jobSummary2(query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge')
+            jobsummaryESMerge,jobcpuTimeScoutIDESM,hs06sSumESM,maxpssESM,walltimeESM,sitepssESM,sitewalltimeESM,maxpssfESM,walltimefESM,sitepssfESM,sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM, hs06sESM, hs06sfESM = jobSummary2(query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
 
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
@@ -5063,7 +5102,7 @@ def taskInfo(request, jeditaskid=0):
         return response
 
 
-def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatusfilter = ''):
+def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  substatusfilter = ''):
     jobs = []
     jobcpuTimeScoutID=0
     newquery = copy.deepcopy(query)
@@ -5078,16 +5117,16 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
     #Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
 
     jobs.extend(Jobsarchived.objects.filter(**newquery).exclude(**exclude).\
-        values('modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
+        values('eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
 
     jobs.extend(Jobsdefined4.objects.filter(**newquery).exclude(**exclude).\
-        values('modificationtime', 'jobsubstatus', 'pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
+        values('eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
     jobs.extend(Jobswaiting4.objects.filter(**newquery).exclude(**exclude).\
-        values('modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
+        values('eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
     jobs.extend(Jobsactive4.objects.filter(**newquery).exclude(**exclude).\
-        values('modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
+        values('eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
     jobs.extend(Jobsarchived4.objects.filter(**newquery).exclude(**exclude).\
-        values('modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
+        values('eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
 
     jobsSet = {}
     newjobs = []
@@ -5133,7 +5172,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
             for task in taskids:
                 retryquery = {}
                 retryquery['jeditaskid'] = task
-                retries = JediJobRetryHistory.objects.filter(**retryquery).extra(where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', 'jobset_retry')"]).order_by('newpandaid').values()
+                retries = JediJobRetryHistory.objects.filter(**retryquery).extra(where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', 'jobset_retry', 'jobset_id')"]).order_by('newpandaid').values()
                 print 'got the retries', len(jobs), len(retries)
 
             hashRetries = {}
@@ -5144,19 +5183,23 @@ def jobSummary2(query, exclude={}, mode='drop', isEventService=False,  substatus
             for job in jobs:
                 dropJob = 0
                 pandaid = job['pandaid']
-                if hashRetries.has_key(pandaid):
-                    retry = hashRetries[pandaid]
-                    if not isEventService:
+                if not isEventServiceFlag:
+                #if not isEventService(job):
+                    if hashRetries.has_key(pandaid):
+                        retry = hashRetries[pandaid]
+    #                    if not isEventServiceFlag:
                         if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or (
                                 job['processingtype'] == 'pmerge' and retry['relationtype'] == 'merge'):
                             dropJob = retry['newpandaid']
-                    else:
-                        if (job['jobsetid'] in hashRetries) and (
-                            hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
+                else:
+                    if (job['jobsetid'] in hashRetries) and (
+                        hashRetries[job['jobsetid']]['relationtype'] in ('jobset_retry')):
                             dropJob = 1
 
+
                 if (dropJob == 0):
-                    newjobs.append(job)
+                    if not (job['processingtype'] == 'pmerge'):
+                        newjobs.append(job)
                 else:
                     if not pandaid in droppedIDs:
                         droppedIDs.add(pandaid)
