@@ -58,6 +58,8 @@ urlpatterns = patterns('',
     url(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),
     url(r'^descendentjoberrsinfo/$', coremon_views.descendentjoberrsinfo, name='descendentjoberrsinfo'),
 
+    url(r'^taskssummary/$', coremon_views.getSummaryForTaskList, name='taskListSummary'),
+
                        #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
 
     ### data product catalog prototyping                                                                                                                                                         
