@@ -6,7 +6,7 @@
 
 
 {% load url from future %}
-
+{% load staticfiles %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA tasks{% endblock %}
 {% block subtitle %}PanDA {% if viewParams.MON_VO == 'ATLAS' %} JEDI {% endif %} task list{{viewParams.selection|safe }}
 {% if vo %} &nbsp; for VO {{ vo }}
@@ -71,6 +71,34 @@ Too many to list
 </table>
 {% endif %}
 
+<p>
+<script src="/static/js/d3jsplot.js"></script>
+<script type="text/javascript">
+function loadSummaryData(nosorturl) {
+
+    $('#div-sum').html("<img src='{% static "images/load.gif" %}'>  ");
+    $.ajax({
+        url: {% url 'taskListSummary' %},
+        data: nosorturl.replace('/tasks/?',''),
+        async: true
+    })
+    .done(function (response) {
+        $('#div-sum').html(response);
+    });
+
+}
+</script>
+
+
+
+
+<p>
+<div id="div-sum">
+   <a onclick="javascript:loadSummaryData('{{ nosorturl }}');">Show events summary</a>
+</div>
+<p>
+
+
 <table>
 <tr class='tablesection'><th colspan=20> {{ ntasks }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
 {% if display_limit %} {% if tasks|length > display_limit %}
@@ -119,15 +147,6 @@ Too many to list
 
 	</tr>
     {% endfor %}
-{% if totals %}
-
-<tr>
-    <td colspan="3"><b>Total:</b></td>
-    <td> <span class='finished'>{{ totals.nfilesfinished }}</span> <br> <span class='failed'> {{totals.nfilesfailed}}</span></td>
-    <td>{{ totals.totev }} / {{totals.totevrem}}</td>
-    <td colspan="5"></td>
-</tr>
-{% endif %}
 </table>
 
 {% else %}

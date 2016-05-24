@@ -4286,17 +4286,6 @@ def taskList(request):
 
     tasks=getTaskScoutingInfo(tasks,nmax)
 
-    totals={'totev':0, 'totevrem':0, 'nfilesfinished':0, 'nfilesfailed':0 }
-    for task in tasks:
-        if 'totev' in task:
-            totals['totev']+=task['totev']
-        if ('totevrem' in task) and (task['totevrem'] > 0):
-            totals['totevrem']+=task['totevrem']
-        totals['nfilesfinished']+=task['dsinfo']['nfilesfinished']
-        totals['nfilesfailed']+=task['dsinfo']['nfilesfailed']
-
-
-
     ## For event service, pull the jobs and event ranges
 
     doESCalc = False
@@ -4400,7 +4389,6 @@ def taskList(request):
             'url_nolimit' : url_nolimit,
             'display_limit' : display_limit,
             'flowstruct' : flowstruct,
-            'totals': totals,
         }
         ##self monitor
         endSelfMonitor(request)
@@ -4459,6 +4447,68 @@ def getTaskScoutingInfo(tasks,nmax):
             task['scoutinghasnoncritfailures'] = True
 
     return tasks
+
+def getSummaryForTaskList(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+    data = {}
+
+    if 'limit' in request.session['requestParams']:
+        limit = int(request.session['requestParams']['limit'])
+    else:
+        limit = 5000
+
+    if not valid: return response
+    if 'tasktype' in request.session['requestParams'] and request.session['requestParams']['tasktype'].startswith(
+            'anal'):
+        hours = 3 * 24
+    else:
+        hours = 7 * 24
+    eventservice = False
+    if 'eventservice' in request.session['requestParams'] and (
+            request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams']['eventservice'] == '1'): eventservice = True
+    if eventservice: hours = 7 * 24
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task',wildCardExt=True)
+    if 'statenotupdated' in request.session['requestParams']:
+        tasks = taskNotUpdated(request, query, wildCardExtension)
+    else:
+        tasks = JediTasks.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values('jeditaskid','status','creationdate','modificationtime')
+    taskl = []
+    for t in tasks:
+        taskl.append(t['jeditaskid'])
+
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+    else:
+        tmpTableName = "TMP_IDS1"
+    taskEvents=[]
+    random.seed()
+    transactionKey = random.randrange(1000000)
+    connection.enter_transaction_management()
+    new_cur = connection.cursor()
+    for id in taskl:
+        new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName, id, transactionKey))  # Backend dependable
+    connection.commit()
+    taske = GetEventsForTask.objects.extra(where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values()
+    for task in taske:
+        taskEvents.append(task)
+    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+    connection.commit()
+    connection.leave_transaction_management()
+
+    nevents={'neventstot':0, 'neventsrem':0}
+    for task in taskEvents:
+        if 'totev' in task and task['totev'] is not None:
+            nevents['neventstot']+=task['totev']
+        if 'totevrem' in task and task['totevrem'] is not None:
+            nevents['neventsrem']+=task['totevrem']
+
+    endSelfMonitor(request)
+    del request.session['TFIRST']
+    del request.session['TLAST']
+    response = render_to_response('taskListSummary.html', {'nevents': nevents}, RequestContext(request))
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
 
 @cache_page(60*20)
 def runningProdTasks(request):
