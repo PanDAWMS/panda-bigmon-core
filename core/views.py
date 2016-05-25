@@ -5059,6 +5059,13 @@ def taskInfo(request, jeditaskid=0):
         taskrec['failedevprochs06'] = int(hs06sSum['failed'])
         taskrec['maxpssave'] = maxpssave
 
+    taskrec['kibanatimefrom'] = taskrec['creationdate'].strftime("%Y-%m-%dT%H:%M:%SZ")
+    if taskrec['status'] in ['cancelled', 'failed','broken','aborted', 'finished', 'done']:
+        taskrec['kibanatimeto']=taskrec['modificationtime'].strftime("%Y-%m-%dT%H:%M:%SZ")
+    else:
+        taskrec['kibanatimeto']=datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
     tquery = {}
     tquery['jeditaskid'] = jeditaskid
     tquery['storagetoken__isnull'] = False
