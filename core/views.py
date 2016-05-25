@@ -708,11 +708,11 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
                 job['piloterrorcode'] = 0
                 job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
 #                job['jobstatus'] = 'finished'
-            if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 115:
-                job['taskbuffererrordiag'] = 'No events remaining, other jobs still processing'
-                job['piloterrorcode'] = 0
-                job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-                #job['jobstatus'] = 'finished'
+            #if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 115:
+            #    job['taskbuffererrordiag'] = 'No events remaining, other jobs still processing'
+            #    job['piloterrorcode'] = 0
+            #    job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
+            #    #job['jobstatus'] = 'finished'
             if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 116:
                 job['taskbuffererrordiag'] = 'No remaining event ranges to allocate'
                 job['piloterrorcode'] = 0
@@ -1547,7 +1547,7 @@ def jobList(request, mode=None, param=None):
         if not noarchjobs:
             queryFrozenStates = []
             if 'jobstatus' in request.session['requestParams']:
-                queryFrozenStates =  filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__, [ 'finished', 'failed', 'cancelled' ])
+                queryFrozenStates =  filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__, [ 'finished', 'failed', 'cancelled', 'closed' ])
             ##hard limit is set to 2K
             if ('jobstatus' not in request.session['requestParams'] or len(queryFrozenStates) > 0):
 
