@@ -55,7 +55,11 @@
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
 {% for item in fdict.list %}
 {% if fdict.field == 'jobstatus' %} <span {% if item.kname == 'closed:toreassign' %} class="reassign" {% else %} class='{{item.kname}}' {% endif %}> {% else %} <span> {% endif %}  {{ item.kname }} </span>
-<a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign" {% else %} href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a> &nbsp;
+
+{% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
+    <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
+                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a> &nbsp;
+{% endif %}
 {% endfor %}
 </td></tr>
 {% endfor %}
