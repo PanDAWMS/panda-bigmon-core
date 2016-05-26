@@ -60,6 +60,8 @@ urlpatterns = patterns('',
 
     url(r'^taskssummary/$', coremon_views.getSummaryForTaskList, name='taskListSummary'),
 
+    url(r'^ttc/$', coremon_views.ttc, name='ttc'),
+
                        #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
 
     ### data product catalog prototyping                                                                                                                                                         

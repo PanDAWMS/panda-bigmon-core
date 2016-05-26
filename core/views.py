@@ -5260,9 +5260,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
                         if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or (
                                 job['processingtype'] == 'pmerge' and retry['relationtype'] == 'merge'):
                             dropJob = retry['newpandaid']
-
                 else:
-
                     if (job['pandaid'] in hashRetries):
                         if (hashRetries[job['pandaid']]['relationtype'] == ('retry')):
                             dropJob = 1
@@ -6089,6 +6087,21 @@ def pandaLogger(request):
     if (('HTTP_ACCEPT' in request.META) and(request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
         resp = data
         return  HttpResponse(json.dumps(resp, cls=DateEncoder), mimetype='text/html')
+
+
+
+
+def ttc(request):
+
+    data = {
+               'request': request,
+    }
+    response = render_to_response('ttc.html', data, RequestContext(request))
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
+
+
 
 @cache_page(60*20)
 def workingGroups(request):
