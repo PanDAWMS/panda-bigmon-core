@@ -96,6 +96,7 @@ function toggleDetailDisplay(className) {
 {% if  maxpssfpercore|length > 0 %} <div class="d3splot" id="plot6" style="float:left;display:none"></div> {% endif %}
 {% if  hs06s|length > 0 %} <div class="d3splot" id="plot7" style="float:left;display:none"></div> {% endif %}
 {% if  hs06sf|length > 0 %} <div class="d3splot" id="plot8" style="float:left;display:none"></div> {% endif %}
+{% if  walltimeperevent|length > 0 %} <div class="d3splot" id="plot9" style="float:left;display:none"></div> {% endif %}
 
 <script src="/static/js/d3jsplot.js"></script>
 <script>
@@ -110,9 +111,10 @@ function toggleDetailDisplay(className) {
     {#Maxpsspercore, sites is the same as for maxpss#}
     var values5 = {{ maxpsspercore|safe }};
     var values6 = {{ maxpssfpercore|safe }};
-    {#HS06s, sites is the same as for walltime#}
+    {#HS06s, Walltime per event, sites is the same as for walltime#}
     var values7 = {{ hs06s|safe }};
     var values8 = {{ hs06sf|safe }};
+    var values9 = {{ walltimeperevent|safe }};
     if (values1.length > 0) {pandamonplotFunc(values1, sites1, "#plot1", "Maximum PSS histogram", {% if  maxpss|length < 100 %} 10 {% else %} 100 {% endif %});}
     if (values3.length > 0) {pandamonplotFunc(values3, sites3, "#plot3", "Maximum PSS histogram (failed jobs)", {% if  maxpss|length < 20 %} 5 {% else %} 20 {% endif %});}
     if (values2.length > 0) {pandamonplotFunc(values2, sites2, "#plot2", "Walltime histogram", {% if  walltime|length < 100 %} 5 {% else %} 40 {% endif %});}
@@ -121,6 +123,7 @@ function toggleDetailDisplay(className) {
     if (values6.length > 0) {pandamonplotFunc(values6, sites3, "#plot6", "Maximum PSS per core histogram (failed jobs)", {% if  maxpssfpercore|length < 20 %} 5 {% else %} 20 {% endif %});}
     if (values7.length > 0) {pandamonplotFunc(values7, sites2, "#plot7", "HS06s histogram", {% if  hs06s|length < 100 %} 5 {% else %} 40 {% endif %});}
     if (values8.length > 0) {pandamonplotFunc(values8, sites4, "#plot8", "HS06s histogram (failed jobs)", {% if  hs06sf|length < 20 %} 5 {% else %} 20 {% endif %});}
+    if (values9.length > 0) {pandamonplotFunc(values9, sites2, "#plot9", "Walltime per event histogram", {% if  walltimeperevent|length < 100 %} 5 {% else %} 40 {% endif %});}
  </script>
 
 

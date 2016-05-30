@@ -4813,8 +4813,8 @@ def taskInfo(request, jeditaskid=0):
             if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': mode = 'drop'
             if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'nodrop': mode = 'nodrop'
 
-            jobsummary,jobcpuTimeScoutID,hs06sSum,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf  = jobSummary2(query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge')
-            jobsummaryESMerge,jobcpuTimeScoutIDESM,hs06sSumESM,maxpssESM,walltimeESM,sitepssESM,sitewalltimeESM,maxpssfESM,walltimefESM,sitepssfESM,sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM, hs06sESM, hs06sfESM = jobSummary2(query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
+            jobsummary,jobcpuTimeScoutID,hs06sSum,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent  = jobSummary2(query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge')
+            jobsummaryESMerge,jobcpuTimeScoutIDESM,hs06sSumESM,maxpssESM,walltimeESM,sitepssESM,sitewalltimeESM,maxpssfESM,walltimefESM,sitepssfESM,sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM, hs06sESM, hs06sfESM, walltimepereventESM = jobSummary2(query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
 
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
@@ -4822,7 +4822,7 @@ def taskInfo(request, jeditaskid=0):
             mode='drop'
             if 'mode' in request.session['requestParams']:
                 mode= request.session['requestParams']['mode']
-            jobsummary,jobcpuTimeScoutID,hs06sSum,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf = jobSummary2(query, exclude=exclude, mode=mode)
+            jobsummary,jobcpuTimeScoutID,hs06sSum,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(query, exclude=exclude, mode=mode)
 
     elif 'taskname' in request.session['requestParams']:
         querybyname = {'taskname' : request.session['requestParams']['taskname'] }
@@ -5141,6 +5141,7 @@ def taskInfo(request, jeditaskid=0):
             'maxpssfpercore': maxpssfpercore,
             'hs06s': hs06s,
             'hs06sf': hs06sf,
+            'walltimeperevent': walltimeperevent,
             'request' : request,
             'viewParams' : request.session['viewParams'],
             'requestParams' : request.session['requestParams'],
@@ -5222,6 +5223,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
                 job['hs06s']=0
             if job['nevents'] and job['nevents']>0:
                 cpuTimeCurrent.append(job['hs06s']/job['nevents'])
+                job['walltimeperevent']=job['duration']*job['corecount']/job['nevents']
             hs06sSum['finished']+=job['hs06s'] if job['jobstatus']=='finished' else 0
             hs06sSum['failed']+=job['hs06s'] if job['jobstatus']=='failed' else 0
     if len(cpuTimeCurrent)>0:
@@ -5299,6 +5301,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
     sitewalltimef = []
     hs06s=[]
     hs06sf=[]
+    walltimeperevent = []
     for job in jobs:
         if job['corecount'] is None:
             job['corecount'] = 1
@@ -5316,6 +5319,8 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
                 walltime.append(job['duration'])
                 sitewalltime.append(job['computingsite'])
                 hs06s.append(job['hs06s'])
+                if 'walltimeperevent' in job:
+                    walltimeperevent.append(job['walltimeperevent'])
             if job['jobstatus']== 'failed':
                 walltimef.append(job['duration'])
                 sitewalltimef.append(job['computingsite'])
@@ -5334,7 +5339,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
                 statecount['count'] += 1
                 continue
         jobstates.append(statecount)
-    return jobstates, jobcpuTimeScoutID, hs06sSum, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf
+    return jobstates, jobcpuTimeScoutID, hs06sSum, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent
 
 def jobStateSummary(jobs):
     global statelist
