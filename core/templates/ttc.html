@@ -3,10 +3,22 @@
 {% block subtitle %}PanDA user <b>{{ user }}</b>{{ viewParams.selection|safe }}{% endblock %}
 
 {% block body %}
-
 <p>
-
+<span class="failed"> !!! WARNING !!! <br> This page is under development. </span>
 </p>
+<p>
+Task ID: {{ task.jeditaskid }} <br>
+Predicted time to complete: {{ task.ttc|date:"Y-m-d H:i" }} <br>
+{% if task.status == 'running' %}
+Completed percentage: {% if task.ttcbasedpercentage <= task.percentage %} <span class="finished">{{ task.percentage }}%</span>
+    {% elif task.ttcbasedpercentage <= task.percentageok %} <span class="ok">{{ task.percentage }}%</span>
+    {% else %} <span class="failed">{{ task.percentage }}%</span>
+    {% endif %} <br>
 
-
+Based on time to complete percentage: {{ task.ttcbasedpercentage }}% <br>
+{% endif %}
+{% if task.status == 'finished' or task.status == 'done' %}
+Real end time: {{ task.endtime|date:"Y-m-d H:i" }}
+{% endif %}
+</p>
 {% endblock %}

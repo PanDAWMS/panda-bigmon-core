@@ -5,7 +5,7 @@ import json
 import copy
 import itertools, random
 import string as strm
-
+import math
 from urllib import urlencode
 from urlparse import urlparse, urlunparse, parse_qs
 
@@ -6093,13 +6093,85 @@ def pandaLogger(request):
         resp = data
         return  HttpResponse(json.dumps(resp, cls=DateEncoder), mimetype='text/html')
 
-
+# def percentile(N, percent, key=lambda x:x):
+#     """
+#     Find the percentile of a list of values.
+#
+#     @parameter N - is a list of values. Note N MUST BE already sorted.
+#     @parameter percent - a float value from 0.0 to 1.0.
+#     @parameter key - optional key function to compute value from each element of N.
+#
+#     @return - the percentile of the values
+#     """
+#     if not N:
+#         return None
+#     k = (len(N)-1) * percent
+#     f = math.floor(k)
+#     c = math.ceil(k)
+#     if f == c:
+#         return key(N[int(k)])
+#     d0 = key(N[int(f)]) * (c-k)
+#     d1 = key(N[int(c)]) * (k-f)
+#     return d0+d1
 
 
 def ttc(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+    data = {}
+
+    jeditaskid = -1
+    if 'jeditaskid' in request.session['requestParams']:
+        jeditaskid = int(request.session['requestParams']['jeditaskid'])
+    if  jeditaskid==-1:
+        data = {"error":"no jeditaskid supplied"}
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+
+    query = {'jeditaskid':jeditaskid}
+    task=JediTasks.objects.filter(**query).values('jeditaskid', 'taskname','workinggroup', 'tasktype', 'processingtype', 'ttcrequested', 'starttime', 'endtime', 'creationdate', 'status')
+    if  len(task)==0:
+        data = {"error": ("jeditaskid " + str(jeditaskid) + " does not exist") }
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+    taskrec=task[0]
+
+    if  taskrec['tasktype']!='prod' or taskrec['ttcrequested'] == None:
+        data = {"error":"TTC for this type of task has not implemented yet"}
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+
+    taskev = GetEventsForTask.objects.filter(**query).values('jeditaskid', 'totev', 'totevrem')[0]
+    taskrec['percentage']=((taskev['totev']-taskev['totevrem'])*100/taskev['totev'])
+    taskrec['percentageok']=taskrec['percentage']-5
+    if taskrec['status']=='running':
+        taskrec['ttcbasedpercentage'] = ((datetime.now() - taskrec['starttime']).days * 24 * 3600 + (datetime.now() - taskrec['starttime']).seconds) * 100 / ((taskrec['ttcrequested'] - taskrec['creationdate']).days * 24 * 3600 + (taskrec['ttcrequested'] - taskrec['creationdate']).seconds)
+    taskrec['ttc']=taskrec['starttime']+timedelta(seconds=((taskrec['ttcrequested']-taskrec['creationdate']).days*24*3600+(taskrec['ttcrequested']-taskrec['creationdate']).seconds))
+
+    # tasksetquery={}
+    # tasksetquery['workinggroup__startswith']='AP' if str(taskrec['workinggroup']).startswith('AP') else 'GP'
+    # tasksetquery['taskname__startswith']=taskrec['taskname'].split('.')[0]
+    # tasksetquery['processingtype']=taskrec['processingtype']
+    # tasksetquery['tasktype']='prod'
+    # tasksetquery['status__in']=( 'done' , 'finished' )
+    #
+    # values=['jeditaskid','starttime']
+    # taskset = JediTasks.objects.filter(**tasksetquery)[:50].values(*values)
+    #
+    # newcur = connection.cursor()
+    # for task in taskset:
+    #     newcur.execute("select endtime from (SELECT endtime, njobs/totnjobs*100 as percentage from (select endtime, njobs,  MAX(njobs) OVER (PARTITION BY jeditaskid) as totnjobs from (select jeditaskid, endtime, row_number() over (PARTITION BY jeditaskid order by endtime ) as njobs from ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID=%s and JOBSTATUS='finished'))) where percentage>=%s and rownum<=1", [task['jeditaskid'],taskrec['percentage']])
+    #     tasktime = newcur.fetchone()
+    #     task['percentagetime']=tasktime[0]
+    # newcur.close()
+    # duration=[]
+    # for task in taskset:
+    #     task['durationh']=(task['percentagetime']-task['starttime']).days*24+(task['percentagetime']-task['starttime']).seconds//3600
+    #     duration.append(task['durationh'])
+    #
+    # flag='good' if (taskrec['starttime']+ timedelta(hours=round(percentile(sorted(duration),0.95))))>=datetime.now() else 'bad'
+    # ttcPredicted=taskrec['starttime']+timedelta(hours=((taskrec['ttcrequested']-taskrec['creationdate']).days*24+(taskrec['ttcrequested']-taskrec['creationdate']).seconds//3600))
 
     data = {
                'request': request,
+               'task': taskrec,
     }
     response = render_to_response('ttc.html', data, RequestContext(request))
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
