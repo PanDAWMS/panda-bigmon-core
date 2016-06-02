@@ -191,6 +191,12 @@ This is an event service task<p>
 
 {% endif %}
 
+{% if task.ttcrequested != None %}
+<td>
+<a href="{% url 'ttc' %}?jeditaskid={{jeditaskid}}" target="_blank">Show TTC</a>
+</td>
+{% endif %}
+
 {% if task.parent_tid != task.jeditaskid and task.parent_tid != None %}
 <td>
 parent task<a href="{% url 'taskInfo' task.parent_tid %}"> {{ task.parent_tid }}</a>
