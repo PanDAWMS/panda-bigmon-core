@@ -103,8 +103,8 @@ gauges['slots'].redraw(slots);});
 {% for task in tasks %}
     <tr>
     <td><a href="{% url 'runningProdTasks' %}?campaign={{ task.cutcampaign }}">{{ task.cutcampaign }}</a></td>
-    <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.reqid}}/">{{ task.reqid }}</a></td>
-    <td><a href=" https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}">{{ task.jeditaskid }}</a></td>
+    <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.reqid}}/" target="_blank">{{ task.reqid }}</a></td>
+    <td><a href=" https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}" target="_blank">{{ task.jeditaskid }}</a></td>
     <td>{{ task.rjobs }}</td>
     <td class='{{task.status}}_fill'><a href="{% url 'runningProdTasks' %}?status={{ task.status }}">{{ task.status }}</a></td>
     <td><a href="{% url 'runningProdTasks' %}?processingtype={{ task.processingtype }}"> {{ task.processingtype }} </a></td>
