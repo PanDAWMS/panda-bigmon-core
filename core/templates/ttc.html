@@ -10,7 +10,7 @@
 <table>
 <tr>
 <td bgcolor='lightcyan'><b> Task ID: </b></td>
-<td>{{ task.jeditaskid }}</td>
+<td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a></td>
 </tr>
 <tr>
 <td bgcolor='lightcyan'><b> Creation time: </b></td>
