@@ -7,18 +7,42 @@
 <span class="failed"> !!! WARNING !!! <br> This page is under development. </span>
 </p>
 <p>
-Task ID: {{ task.jeditaskid }} <br>
-Predicted time to complete: {{ task.ttc|date:"Y-m-d H:i" }} <br>
+<table>
+<tr>
+<td bgcolor='lightcyan'><b> Task ID: </b></td>
+<td>{{ task.jeditaskid }}</td>
+</tr>
+<tr>
+<td bgcolor='lightcyan'><b> Creation time: </b></td>
+<td> {{ task.creationdate|date:"Y-m-d H:i" }} </td>
+</tr>
+<tr>
+<td bgcolor='lightcyan'><b> Start time: </b></td>
+<td> {{ task.starttime|date:"Y-m-d H:i" }} </td>
+</tr>
+<tr>
+<td bgcolor='lightcyan'><b> Predicted time to complete: </b></td>
+<td> {{ task.ttc|date:"Y-m-d H:i" }} </td>
+</tr>
 {% if task.status == 'running' %}
-Current progress: {% if task.ttcbasedpercentage <= task.percentage %} <span class="finished">{{ task.percentage }}%</span>
+<tr>
+<td bgcolor='lightcyan'><b> Current progress: </b></td>
+<td>{% if task.ttcbasedpercentage <= task.percentage %} <span class="finished">{{ task.percentage }}%</span>
     {% elif task.ttcbasedpercentage <= task.percentageok %} <span class="ok">{{ task.percentage }}%</span>
     {% else %} <span class="failed">{{ task.percentage }}%</span>
-    {% endif %} <br>
-
-Forecasted progress: {{ task.ttcbasedpercentage }}% <br>
+    {% endif %}</td>
+</tr>
+<tr>
+<td bgcolor='lightcyan'><b> Forecasted progress: </b></td>
+<td> {{ task.ttcbasedpercentage }}% </td>
+</tr>
 {% endif %}
 {% if task.status == 'finished' or task.status == 'done' %}
-Real end time: {{ task.endtime|date:"Y-m-d H:i" }}
+<tr>
+<td bgcolor='lightcyan'><b> Real end time: </b></td>
+<td> {{ task.endtime|date:"Y-m-d H:i" }} </td>
+</tr>
 {% endif %}
-</p>
+</table>
+
 {% endblock %}
