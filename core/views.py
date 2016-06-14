@@ -1541,6 +1541,7 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension):
     shkeys = summaryhash.keys()
     sumd = []
     jobsToList = set()
+    njobs = 0
     for shkey in shkeys:
         if shkey != 'pandaid':
             # check this condition
@@ -1551,6 +1552,8 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension):
                 subentry = {}
                 subentry['kname'] = subshkey
                 subentry['kvalue'] = summaryhash[shkey][subshkey]
+                if (shkey == 'COMPUTINGSITE'):
+                    njobs += summaryhash[shkey][subshkey]
                 entrlist.append(subentry)
             entry['list'] = entrlist
             sumd.append(entry)
@@ -1558,22 +1561,7 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension):
             for subshkey in shkey.keys():
                 jobsToList.add(subshkey)
 
-
-    #third checkpoint
-
-
-    '''
-    PANDA_ATTRIBUTE
-    ATTR_VALUE
-    NUM_OCCURRENCES
-        worldHS06sSummary = [dict(zip(keys,row)) for row in hspersite]
-
-    [{'field': 'atlasrelease', 'list': [{'kname': u'Atlas-17.2.11', 'kvalue': 106},
-
-    '''
-
-
-    return sumd, esjobdict, jobsToList
+    return sumd, esjobdict, jobsToList, njobs
 
 
 @cache_page(60*20)
@@ -1617,7 +1605,7 @@ def jobListProto(request, mode=None, param=None):
     if 'mode' in request.session['requestParams'] and request.session['requestParams'][
         'mode'] == 'nodrop': dropmode = False
 
-    sumd, esjobdict, jobsToList = jobSummaryDictProto(request, dropmode, query, wildCardExtension)
+    sumd, esjobdict, jobsToList, njobs = jobSummaryDictProto(request, dropmode, query, wildCardExtension)
 
     values = [int(val) for val in jobsToList]
     newquery = {}
@@ -1640,7 +1628,6 @@ def jobListProto(request, mode=None, param=None):
 
     jobs = cleanJobList(request, jobs)
 
-    njobs = len(jobs)
     jobtype = ''
     if 'jobtype' in request.session['requestParams']:
         jobtype = request.session['requestParams']['jobtype']
@@ -1753,7 +1740,6 @@ def jobListProto(request, mode=None, param=None):
         'tlast': TLAST,
         'plow': PLOW,
         'phigh': PHIGH,
-        'showwarn': showwarn,
         'joblimit': request.session['JOB_LIMIT'],
         'limit': 0,
         'totalJobs': totalJobs,
