@@ -21,6 +21,11 @@ urlpatterns = patterns('',
     url(r'^jobs/$', coremon_views.jobList, name='jobList'),
     url(r'^jobs/(.*)/$', coremon_views.jobList, name='jobList'),
     url(r'^jobs/(.*)/(.*)/$', coremon_views.jobList, name='jobList'),
+
+    url(r'^jobsss/$', coremon_views.jobListProto, name='jobListProto'),
+    url(r'^jobsss/(.*)/$', coremon_views.jobListProto, name='jobListProto'),
+    url(r'^jobsss/(.*)/(.*)/$', coremon_views.jobListProto, name='jobListProto'),
+
     url(r'^job$', coremon_views.jobInfo, name='jobInfo'),
     url(r'^job/(.*)/$', coremon_views.jobInfo, name='jobInfo'),
     url(r'^job/(.*)/(.*)/$', coremon_views.jobInfo, name='jobInfo'),
@@ -63,7 +68,6 @@ urlpatterns = patterns('',
     url(r'^ttc/$', coremon_views.ttc, name='ttc'),
 
                        #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
-
     ### data product catalog prototyping                                                                                                                                                         
     url(r'^dp/$', dpviews.doRequest, name='doRequest'),
 

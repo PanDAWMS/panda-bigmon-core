@@ -1493,6 +1493,290 @@ def jobParamList(request):
     else:
         return HttpResponse('not supported', mimetype='text/html')
 
+
+def jobSummaryDictProto(request, dropmode, query, wildCardExtension):
+    sumd = []
+    esjobdict = []
+
+    condition = ""
+    if dropmode:
+        condition += " WITH_RETRIALS => 'N',"
+    else:
+        condition += " WITH_RETRIALS => 'Y',"
+    for item in standard_fields:
+        if item in query:
+            condition += " "+item+" => '"+request[item]+"',"
+        else:
+            pos = wildCardExtension.find(item, 0)
+            if pos > 0:
+                firstc = wildCardExtension.find("'", pos) + 1
+                sec = wildCardExtension.find("'", firstc)
+                value =wildCardExtension[firstc: sec]
+                condition += " "+item+" => '"+value+"',"
+
+    condition = condition[:-1]
+    #WITH_RETRIALS => 'N', COMPUTINGSITE=>'INFN-T1', JOBSTATUS=>'failed')
+
+    sqlRequest = "SELECT * FROM table(ATLAS_PANDABIGMON.QUERY_PANDAMON_JOBSPAGE_ALL(%s))" % condition
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+    rawsummary = cur.fetchall()
+    # first checkpoint
+    cur.close()
+
+
+    summaryhash = {}
+    for row in rawsummary:
+        if row[0] in summaryhash:
+           if row[1] in summaryhash[row[0]]:
+               summaryhash[row[0]][row[1]] += row[2]
+           else:
+               summaryhash[row[0]][row[1]] = row[2]
+        else:
+            item = {}
+            item[row[1]] = row[2]
+            summaryhash[row[0]] = item
+    #second checkpoint
+
+    shkeys = summaryhash.keys()
+    sumd = []
+    jobsToList = set()
+    for shkey in shkeys:
+        if shkey != 'pandaid':
+            # check this condition
+            entry = {}
+            entry['field'] = shkey
+            entrlist = []
+            for subshkey in summaryhash[shkey].keys():
+                subentry = {}
+                subentry['kname'] = subshkey
+                subentry['kvalue'] = summaryhash[shkey][subshkey]
+                entrlist.append(subentry)
+            entry['list'] = entrlist
+            sumd.append(entry)
+        else:
+            for subshkey in shkey.keys():
+                jobsToList.add(subshkey)
+
+
+    #third checkpoint
+
+
+    '''
+    PANDA_ATTRIBUTE
+    ATTR_VALUE
+    NUM_OCCURRENCES
+        worldHS06sSummary = [dict(zip(keys,row)) for row in hspersite]
+
+    [{'field': 'atlasrelease', 'list': [{'kname': u'Atlas-17.2.11', 'kvalue': 106},
+
+    '''
+
+
+    return sumd, esjobdict, jobsToList
+
+
+@cache_page(60*20)
+def jobListProto(request, mode=None, param=None):
+    valid, response = initRequest(request)
+    if not valid: return response
+    if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
+        return jobParamList(request)
+
+    eventservice = False
+    if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
+        eventservice = True
+    if 'eventservice' in request.session['requestParams'] and (
+            request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
+        'eventservice'] == '1'):
+        eventservice = True
+    noarchjobs = False
+    if ('noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs'] == '1'):
+        noarchjobs = True
+
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
+
+    if 'batchid' in request.session['requestParams']:
+        query['batchid'] = request.session['requestParams']['batchid']
+    jobs = []
+
+    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+        'json' in request.session['requestParams']):
+        values = Jobsactive4._meta.get_all_field_names()
+    elif eventservice:
+        values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice'
+    else:
+        values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice'
+
+    totalJobs = 0
+    showTop = 0
+
+    dropmode = True
+    if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+        'mode'] == 'drop': dropmode = True
+    if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+        'mode'] == 'nodrop': dropmode = False
+
+    sumd, esjobdict, jobsToList = jobSummaryDictProto(request, dropmode, query, wildCardExtension)
+
+    values = [int(val) for val in jobsToList]
+    newquery = {}
+    newquery['pandaid__in'] = values
+
+    jobs.extend(Jobsdefined4.objects.filter(**newquery).values(*values))
+    jobs.extend(Jobsactive4.objects.filter(**newquery).values(*values))
+    jobs.extend(Jobswaiting4.objects.filter(**newquery).values(*values))
+    jobs.extend(Jobsarchived4.objects.filter(**newquery).values(*values))
+
+    ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
+    taskids = {}
+
+    for job in jobs:
+        if 'jeditaskid' in job: taskids[job['jeditaskid']] = 1
+
+    droplist = []
+    droppedIDs = set()
+    droppedPmerge = set()
+
+    jobs = cleanJobList(request, jobs)
+
+    njobs = len(jobs)
+    jobtype = ''
+    if 'jobtype' in request.session['requestParams']:
+        jobtype = request.session['requestParams']['jobtype']
+    elif '/analysis' in request.path:
+        jobtype = 'analysis'
+    elif '/production' in request.path:
+        jobtype = 'production'
+
+    if u'display_limit' in request.session['requestParams']:
+        if int(request.session['requestParams']['display_limit']) > njobs:
+            display_limit = njobs
+        else:
+            display_limit = int(request.session['requestParams']['display_limit'])
+        url_nolimit = removeParam(request.get_full_path(), 'display_limit')
+    else:
+        display_limit = 1000
+        url_nolimit = request.get_full_path()
+    njobsmax = display_limit
+
+    if 'sortby' in request.session['requestParams']:
+        sortby = request.session['requestParams']['sortby']
+        if sortby == 'time-ascending':
+            jobs = sorted(jobs, key=lambda x: x['modificationtime'])
+        if sortby == 'time-descending':
+            jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+        if sortby == 'statetime':
+            jobs = sorted(jobs, key=lambda x: x['statechangetime'], reverse=True)
+        elif sortby == 'priority':
+            jobs = sorted(jobs, key=lambda x: x['currentpriority'], reverse=True)
+        elif sortby == 'attemptnr':
+            jobs = sorted(jobs, key=lambda x: x['attemptnr'], reverse=True)
+        elif sortby == 'duration-ascending':
+            jobs = sorted(jobs, key=lambda x: x['durationsec'])
+        elif sortby == 'duration-descending':
+            jobs = sorted(jobs, key=lambda x: x['durationsec'], reverse=True)
+        elif sortby == 'duration':
+            jobs = sorted(jobs, key=lambda x: x['durationsec'])
+        elif sortby == 'PandaID':
+            jobs = sorted(jobs, key=lambda x: x['pandaid'], reverse=True)
+    else:
+        sortby = "time-descending"
+        if len(jobs) > 0 and 'modificationtime' in jobs[0]:
+            jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+
+    taskname = ''
+    if 'jeditaskid' in request.session['requestParams']:
+        taskname = getTaskName('jeditaskid', request.session['requestParams']['jeditaskid'])
+    if 'taskid' in request.session['requestParams']:
+        taskname = getTaskName('jeditaskid', request.session['requestParams']['taskid'])
+
+    if 'produsername' in request.session['requestParams']:
+        user = request.session['requestParams']['produsername']
+    elif 'user' in request.session['requestParams']:
+        user = request.session['requestParams']['user']
+    else:
+        user = None
+
+    ## set up google flow diagram
+    flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
+
+    # show warning or not
+    if njobs <= request.session['JOB_LIMIT']:
+        showwarn = 0
+    else:
+        showwarn = 1
+
+
+    if 'jeditaskid' in request.session['requestParams']:
+        if len(jobs) > 0:
+            for job in jobs:
+                if 'maxvmem' in job:
+                    if type(job['maxvmem']) is int and job['maxvmem'] > 0:
+                        job['maxvmemmb'] = "%0.2f" % (job['maxvmem'] / 1000.)
+                        job['avgvmemmb'] = "%0.2f" % (job['avgvmem'] / 1000.)
+                if 'maxpss' in job:
+                    if type(job['maxpss']) is int and job['maxpss'] > 0:
+                        job['maxpss'] = "%0.2f" % (job['maxpss'] / 1024.)
+
+
+#    errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
+#                                                                                          testjobs)
+
+    xurl = extensibleURL(request)
+    print xurl
+    nosorturl = removeParam(xurl, 'sortby', mode='extensible')
+    nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
+
+    TFIRST = request.session['TFIRST']
+    TLAST = request.session['TLAST']
+    del request.session['TFIRST']
+    del request.session['TLAST']
+    nodropPartURL = cleanURLFromDropPart(xurl)
+    data = {
+        'prefix': getPrefix(request),
+#        'errsByCount': errsByCount,
+#        'errdSumd': errdSumd,
+        'request': request,
+        'viewParams': request.session['viewParams'],
+        'requestParams': request.session['requestParams'],
+        'jobList': jobs[:njobsmax],
+        'jobtype': jobtype,
+        'njobs': njobs,
+        'user': user,
+        'sumd': sumd,
+        'xurl': xurl,
+        #'droplist': droplist,
+        #'ndrops': len(droplist) if len(droplist) > 0 else (- len(droppedPmerge)),
+        'ndrops': 0,
+        'tfirst': TFIRST,
+        'tlast': TLAST,
+        'plow': PLOW,
+        'phigh': PHIGH,
+        'showwarn': showwarn,
+        'joblimit': request.session['JOB_LIMIT'],
+        'limit': 0,
+        'totalJobs': totalJobs,
+        'showTop': showTop,
+        'url_nolimit': url_nolimit,
+        'display_limit': display_limit,
+        'sortby': sortby,
+        'nosorturl': nosorturl,
+        'taskname': taskname,
+        'flowstruct': flowstruct,
+        'nodropPartURL': nodropPartURL,
+    }
+    data.update(getContextVariables(request))
+    ##self monitor
+    endSelfMonitor(request)
+    if eventservice:
+        response = render_to_response('jobListESProto.html', data, RequestContext(request))
+    else:
+        response = render_to_response('jobListProto.html', data, RequestContext(request))
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
+
 @cache_page(60*20)
 def jobList(request, mode=None, param=None):
 
