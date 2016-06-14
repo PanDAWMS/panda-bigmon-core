@@ -1498,7 +1498,7 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension):
     sumd = []
     esjobdict = []
 
-    condition = ""
+    condition = " RANGE_DAYS=>'0.5', "
     if dropmode:
         condition += " WITH_RETRIALS => 'N',"
     else:
