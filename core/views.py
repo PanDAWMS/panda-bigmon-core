@@ -6411,9 +6411,10 @@ def ttc(request):
     taskev = GetEventsForTask.objects.filter(**query).values('jeditaskid', 'totev', 'totevrem')[0]
     taskrec['percentage']=((taskev['totev']-taskev['totevrem'])*100/taskev['totev'])
     taskrec['percentageok']=taskrec['percentage']-5
+    taskrec['ttc'] = taskrec['starttime'] + timedelta(seconds=((taskrec['ttcrequested'] - taskrec['creationdate']).days * 24 * 3600 + (taskrec['ttcrequested'] - taskrec['creationdate']).seconds))
     if taskrec['status']=='running':
-        taskrec['ttcbasedpercentage'] = ((datetime.now() - taskrec['starttime']).days * 24 * 3600 + (datetime.now() - taskrec['starttime']).seconds) * 100 / ((taskrec['ttcrequested'] - taskrec['creationdate']).days * 24 * 3600 + (taskrec['ttcrequested'] - taskrec['creationdate']).seconds)
-    taskrec['ttc']=taskrec['starttime']+timedelta(seconds=((taskrec['ttcrequested']-taskrec['creationdate']).days*24*3600+(taskrec['ttcrequested']-taskrec['creationdate']).seconds))
+        taskrec['ttcbasedpercentage'] = ((datetime.now() - taskrec['starttime']).days * 24 * 3600 + (datetime.now() - taskrec['starttime']).seconds) * 100 / ((taskrec['ttcrequested'] - taskrec['creationdate']).days * 24 * 3600 + (taskrec['ttcrequested'] - taskrec['creationdate']).seconds) if datetime.now()<taskrec['ttc'] else 100
+
 
     # tasksetquery={}
     # tasksetquery['workinggroup__startswith']='AP' if str(taskrec['workinggroup']).startswith('AP') else 'GP'
