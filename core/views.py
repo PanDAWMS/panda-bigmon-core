@@ -1893,11 +1893,13 @@ def jobList(request, mode=None, param=None):
 #                   'jobstatus'] == 'cancelled' and job['jobstatus'] != 'cancelled':
 #                   dropJob = 1
 
-            if dropJob == 0:
+            if dropJob == 0 and not ('processingtype' in request.session['requestParams'] and request.session['requestParams']['processingtype'] == 'pmerge') :
                 if not (job['processingtype'] == 'pmerge'):
                     newjobs.append(job)
                 else:
                     droppedPmerge.add(pandaid)
+            elif (dropJob == 0):
+                newjobs.append(job)
             else:
                 if not pandaid in droppedIDs:
                     droppedIDs.add(pandaid)
@@ -5070,6 +5072,7 @@ def taskInfo(request, jeditaskid=0):
     maxpss = []
     walltime = []
     jobsummaryESMerge = []
+    jobsummaryPMERGE = []
 
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid != 0:
@@ -5093,6 +5096,8 @@ def taskInfo(request, jeditaskid=0):
             if 'mode' in request.session['requestParams']:
                 mode= request.session['requestParams']['mode']
             jobsummary,jobcpuTimeScoutID,hs06sSum,maxpss,walltime,sitepss,sitewalltime,maxpssf,walltimef,sitepssf,sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(query, exclude=exclude, mode=mode)
+            jobsummaryPMERGE, jobcpuTimeScoutIDPMERGE, hs06sSumPMERGE, maxpssPMERGE, walltimePMERGE, sitepssPMERGE, sitewalltimePMERGE, maxpssfPMERGE, walltimefPMERGE, sitepssfPMERGE, sitewalltimefPMERGE, maxpsspercorePMERGE, maxpssfpercorePMERGE, hs06sPMERGE, hs06sfPMERGE, walltimepereventPMERGE = jobSummary2(query, exclude={}, mode=mode, processingtype='pmerge')
+
 
     elif 'taskname' in request.session['requestParams']:
         querybyname = {'taskname' : request.session['requestParams']['taskname'] }
@@ -5398,6 +5403,7 @@ def taskInfo(request, jeditaskid=0):
         data = {
             'nomodeurl': nomodeurl,
             'jobsummaryESMerge': jobsummaryESMerge,
+            'jobsummaryPMERGE' : jobsummaryPMERGE,
             'maxpss' : maxpss,
             'taskbrokerage':taskbrokerage,
             'walltime' : walltime,
@@ -5442,7 +5448,7 @@ def taskInfo(request, jeditaskid=0):
         return response
 
 
-def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  substatusfilter = ''):
+def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  substatusfilter = '', processingtype = ''):
     jobs = []
     jobcpuTimeScoutID=0
     newquery = copy.deepcopy(query)
@@ -5451,6 +5457,10 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
             newquery['eventservice'] = 2
         else:
             exclude['eventservice'] = 2
+
+    if processingtype != '':
+        newquery['processingtype'] = 'pmerge'
+
 
     #newquery['jobstatus'] = 'finished'
 
@@ -5551,6 +5561,9 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
                 if (dropJob == 0):
                     if not (job['processingtype'] == 'pmerge'):
                         newjobs.append(job)
+                    elif processingtype == 'pmerge':
+                        newjobs.append(job)
+
                 else:
                     if not pandaid in droppedIDs:
                         droppedIDs.add(pandaid)
