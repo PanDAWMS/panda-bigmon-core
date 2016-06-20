@@ -151,6 +151,28 @@ function toggleDetailDisplay(className) {
 </table>
 {% endif %}
 
+
+
+{% if jobsummaryPMERGE %}
+
+<table>
+<tr bgcolor="lightcyan"><th colspan=20>
+<b>States of pmerge jobs in this task</b>   &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&processingtype=pmerge&display_limit=100">Show jobs</a>
+</th></tr>
+<tr>
+{% for state in jobsummaryPMERGE %}
+<td class="{{ state.name}}"> <b> {{ state.name }} </b> </td>
+{% endfor %}
+</tr><tr>
+{% for state in jobsummaryPMERGE %}
+<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&display_limit=100&processingtype=pmerge"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+{% endfor %}
+</table>
+{% endif %}
+
+
+
+
 <p>
 {% if task.errordialog %}
 <table width=1000><tr><td bgcolor="#FFFBDA"><font color='brown'> <b>Logged status: {{ task.errordialog|safe }}</b></font></td></tr>
