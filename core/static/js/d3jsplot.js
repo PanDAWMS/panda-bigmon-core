@@ -556,7 +556,7 @@ function Gauge(placeholderName, configuration){
 
 function pandamonPieChartFunc(values,divToShow,title){
 
-var data = $.map(values, function(value, key) { if (value>0) {return value/1000000} });
+var data = $.map(values, function(value, key) { if (value>0) {return (value*1.0/1000000)} });
 var labels = $.map(values, function(value, key) { if (value>0) {return key} });
 var neventstot = 0;
 for (var i = 0; i < data.length; i++) { neventstot += data[i] << 0;}
@@ -610,8 +610,8 @@ vis.append("g")
 vis.append("g")
         .attr("transform", "translate(" + (w / 2 +  50) + "," + (w / 2 +  60) + ")")
         .append("text")
-        .attr("class", "title")
-        .text(neventstot+'M events ');
+        .attr("class", "legendpie")
+        .text(neventstot.toFixed(1)+'M events ');
 }
 
 function pandamonProgressBarFunc(values,divToShow,title){
