@@ -5106,6 +5106,15 @@ def taskInfo(request, jeditaskid=0):
             jeditaskid = tasks[0]['jeditaskid']
         query = {'jeditaskid' : jeditaskid}
 
+    nonzeroPMERGE = 0
+    for status in jobsummaryPMERGE:
+        if status['count'] > 0:
+            nonzeroPMERGE += 1
+            break
+
+    if nonzeroPMERGE == 0:
+        jobsummaryPMERGE = None
+
     maxpssave = 0
     maxpsscount = 0
     for maxpssjob in maxpss:
