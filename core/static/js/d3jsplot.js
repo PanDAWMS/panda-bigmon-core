@@ -556,7 +556,7 @@ function Gauge(placeholderName, configuration){
 
 function pandamonPieChartFunc(values,divToShow,title){
 
-var data = $.map(values, function(value, key) { if (value>0) {return value/1000000} });
+var data = $.map(values, function(value, key) { if (value>0) {return (value*1.0/1000000)} });
 var labels = $.map(values, function(value, key) { if (value>0) {return key} });
 var neventstot = 0;
 for (var i = 0; i < data.length; i++) { neventstot += data[i] << 0;}
@@ -610,6 +610,90 @@ vis.append("g")
 vis.append("g")
         .attr("transform", "translate(" + (w / 2 +  50) + "," + (w / 2 +  60) + ")")
         .append("text")
+        .attr("class", "legendpie")
+        .text(neventstot.toFixed(1)+'M events ');
+}
+
+function pandamonProgressBarFunc(values,divToShow,title){
+
+var margin = {top: 20, right: 20, bottom: 60, left: 10},
+    width = 400 - margin.left - margin.right,
+    height = 120 - margin.top - margin.bottom;
+var colors= ["#248F24", "#cccccc"];
+var x = d3.scale.linear()
+          .domain([0, d3.max(values)])
+          .range([0, width]);
+var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+var svg = d3.select(divToShow).append("svg")
+      .attr("class", "bullet")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+svg.append("rect")
+          .attr("class", "target")
+          .attr("width", x(values[0]))
+          .attr("height", height)
+          .attr("x", 0);
+if (values[1]>values[2]) {
+svg.append("rect")
+          .attr("class", "currentprogressg")
+          .attr("width", x(values[1]))
+          .attr("height", height-2 )
+          .attr("x", 1)
+          .attr("y", 1);}
+svg.append("rect")
+          .attr("class", "forecastedprogress")
+          .attr("width", x(values[2]))
+          .attr("height", height-2)
+          .attr("x", 1)
+          .attr("y", 1);
+if (values[1]<=values[2]){
+colors[0]="#FF0000";
+svg.append("rect")
+          .attr("class", "currentprogressb")
+          .attr("width", x(values[1]))
+          .attr("height", height-2 )
+          .attr("x", 0)
+          .attr("y", 1);
+}
+svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis);
+
+svg.append("g")
+        .attr("transform", "translate(" + (width / 2) + ", -10)")
+        .append("text")
         .attr("class", "title")
-        .text(neventstot+'M events ');
+        .text(title);
+var color = d3.scale.ordinal().range(colors).domain(['Current  progress', 'Forecasted  progress']);
+var squareside = 10;
+var legend = svg.selectAll(".legend")
+            .data(color.domain().slice())
+            .enter().append("g")
+            .attr("class", "legend")
+            .attr("transform", function(d, i) {
+                maxLegendWidth = (i % 2) * (width+(margin.left+margin.right)/2)/2;
+                maxLegendHeight = Math.floor(i  / 2) * 12;
+                return "translate(" + (maxLegendWidth - margin.left/2) + ", " + (height + margin.top + maxLegendHeight + 5) + ")";
+            });
+
+    legend.append("rect")
+            .attr("x", 0)
+            .attr("width", squareside)
+            .attr("height", squareside)
+            .style("fill", color)
+            .style({"stroke":d3.rgb(color).darker(),'stroke-width':0.4});
+
+    legend.append("text")
+            .attr("x", squareside+5)
+            .attr("y", 10)
+            .text(function(d) {
+                return d;
+            });
+
 }

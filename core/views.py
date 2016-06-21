@@ -5015,8 +5015,8 @@ def runningProdTasks(request):
             'simtypes': simtypes,
             'slots': slots,
             'sumd': sumd,
-            'neventsUsedTotSum': neventsUsedTotSum/1000000,
-            'neventsTotSum': neventsTotSum/1000000,
+            'neventsUsedTotSum': round(neventsUsedTotSum/1000000.,1),
+            'neventsTotSum': round(neventsTotSum/1000000.,1),
             'rjobs1coreTot': rjobs1coreTot,
             'rjobs8coreTot': rjobs8coreTot,
             'neventsAFIItasksSum': neventsAFIItasksSum,
@@ -6420,14 +6420,14 @@ def ttc(request):
     if  taskrec['tasktype']!='prod' or taskrec['ttcrequested'] == None:
         data = {"error":"TTC for this type of task has not implemented yet"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
-
+    progressForBar=[]
     taskev = GetEventsForTask.objects.filter(**query).values('jeditaskid', 'totev', 'totevrem')[0]
     taskrec['percentage']=((taskev['totev']-taskev['totevrem'])*100/taskev['totev'])
     taskrec['percentageok']=taskrec['percentage']-5
     taskrec['ttc'] = taskrec['starttime'] + timedelta(seconds=((taskrec['ttcrequested'] - taskrec['creationdate']).days * 24 * 3600 + (taskrec['ttcrequested'] - taskrec['creationdate']).seconds))
     if taskrec['status']=='running':
         taskrec['ttcbasedpercentage'] = ((datetime.now() - taskrec['starttime']).days * 24 * 3600 + (datetime.now() - taskrec['starttime']).seconds) * 100 / ((taskrec['ttcrequested'] - taskrec['creationdate']).days * 24 * 3600 + (taskrec['ttcrequested'] - taskrec['creationdate']).seconds) if datetime.now()<taskrec['ttc'] else 100
-
+        progressForBar=[100, taskrec['percentage'], taskrec['ttcbasedpercentage']]
 
     # tasksetquery={}
     # tasksetquery['workinggroup__startswith']='AP' if str(taskrec['workinggroup']).startswith('AP') else 'GP'
@@ -6456,6 +6456,7 @@ def ttc(request):
     data = {
                'request': request,
                'task': taskrec,
+                'progressForBar': progressForBar,
     }
     response = render_to_response('ttc.html', data, RequestContext(request))
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)

@@ -45,4 +45,12 @@
 {% endif %}
 </table>
 
+{% if task.status == 'running' %}<div class="d3splot" id="progressbar" style="float:left"></div>{% endif %}
+ <script src="/static/js/d3jsplot.js"></script>
+<script>
+var values = {{ progressForBar|safe }};
+if (values.length > 0) {pandamonProgressBarFunc(values,"#progressbar",'Task progress');}
+</script>
+
+
 {% endblock %}
