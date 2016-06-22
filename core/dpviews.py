@@ -41,6 +41,7 @@ from core.common.models import FilestableArch
 from core.common.models import JediDatasets
 from core.settings.config import ENV
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
+from django.utils.encoding import smart_unicode, DjangoUnicodeDecodeError
 
 import views as coreviews
 
@@ -200,6 +201,19 @@ def doRequest(request):
         slices = InputRequestList.objects.using('deft_adcr').filter(request_id=reqid).order_by('slice').reverse().values()
         jeditasks = JediTasks.objects.filter(reqid=reqid,tasktype='prod').values(*jeditask_fields)
         amitags = Ttrfconfig.objects.using('grisli').all().values()
+        amitags_utfcleared = []
+        i = 0
+        while True:
+            try:
+                amitags_utfcleared[i] = amitags[i]
+                i += 1
+            except IndexError:
+                i += 1
+                break
+            except DjangoUnicodeDecodeError:
+                pass
+        amitags = amitags_utfcleared
+
         amitagd = {}
         for t in amitags:
             t['params'] = ""
