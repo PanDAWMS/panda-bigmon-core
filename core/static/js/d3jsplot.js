@@ -638,27 +638,28 @@ svg.append("rect")
           .attr("width", x(values[0]))
           .attr("height", height)
           .attr("x", 0);
-if (values[1]>values[2]) {
-svg.append("rect")
-          .attr("class", "currentprogressg")
-          .attr("width", x(values[1]))
-          .attr("height", height-2 )
-          .attr("x", 1)
-          .attr("y", 1);}
 svg.append("rect")
           .attr("class", "forecastedprogress")
           .attr("width", x(values[2]))
           .attr("height", height-2)
           .attr("x", 1)
           .attr("y", 1);
-if (values[1]<=values[2]){
+if (values[1]>=values[2]){
+svg.append("rect")
+          .attr("class", "currentprogressg")
+          .attr("width", x(values[1])-2)
+          .attr("height", height/2-2 )
+          .attr("x", 1)
+          .attr("y", height/4);
+}
+else {
 colors[0]="#FF0000";
 svg.append("rect")
           .attr("class", "currentprogressb")
-          .attr("width", x(values[1]))
-          .attr("height", height-2 )
-          .attr("x", 0)
-          .attr("y", 1);
+          .attr("width", x(values[1]-2))
+          .attr("height", height/2-2 )
+          .attr("x", 1)
+          .attr("y", height/4);
 }
 svg.append("g")
             .attr("class", "x axis")
