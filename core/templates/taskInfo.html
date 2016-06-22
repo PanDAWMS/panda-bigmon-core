@@ -213,7 +213,7 @@ This is an event service task<p>
 
 {% endif %}
 
-{% if task.ttcrequested != None %}
+{% if task.ttcrequested != None and task.starttime != None%}
 <td>
 <a href="{% url 'ttc' %}?jeditaskid={{jeditaskid}}" target="_blank">Show TTC</a>
 </td>

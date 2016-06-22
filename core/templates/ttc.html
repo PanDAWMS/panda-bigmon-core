@@ -24,7 +24,7 @@
 <td bgcolor='lightcyan'><b> Predicted time to complete: </b></td>
 <td> {{ task.ttc|date:"Y-m-d H:i" }} </td>
 </tr>
-{% if task.status == 'running' %}
+{% if task.status == 'running' and task.percentage %}
 <tr>
 <td bgcolor='lightcyan'><b> Current progress: </b></td>
 <td>{% if task.ttcbasedpercentage <= task.percentage %} <span class="finished">{{ task.percentage }}%</span>
@@ -45,7 +45,7 @@
 {% endif %}
 </table>
 
-{% if task.status == 'running' %}<div class="d3splot" id="progressbar" style="float:left"></div>{% endif %}
+{% if task.status == 'running' and task.percentage %}<div class="d3splot" id="progressbar" style="float:left"></div>{% endif %}
  <script src="/static/js/d3jsplot.js"></script>
 <script>
 var values = {{ progressForBar|safe }};
