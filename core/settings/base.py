@@ -41,7 +41,6 @@ TEMPLATE_LOADERS = (
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.cache.UpdateCacheMiddleware',
-    'django.middleware.cache.FetchFromCacheMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -62,6 +61,7 @@ MIDDLEWARE_CLASSES = (
 #    'django.contrib.messages.middleware.MessageMiddleware',
 #    # Uncomment the next line for simple clickjacking protection:
 #    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
+     'django.middleware.cache.FetchFromCacheMiddleware',
 )
 
 ROOT_URLCONF = 'common.urls'
