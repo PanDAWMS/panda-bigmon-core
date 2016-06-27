@@ -1494,7 +1494,7 @@ def jobParamList(request):
         return HttpResponse('not supported', mimetype='text/html')
 
 
-def jobSummaryDictProto(request, dropmode, query, wildCardExtension):
+def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary):
     sumd = []
     esjobdict = []
 
@@ -1548,7 +1548,13 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension):
             entry = {}
             entry['field'] = shkey
             entrlist = []
-            for subshkey in summaryhash[shkey].keys():
+
+            if (cutsummary):
+                cutlen = 5
+            else:
+                cutlen = len(summaryhash[shkey].keys())
+
+            for subshkey in summaryhash[shkey].keys()[0:cutlen]:
                 subentry = {}
                 subentry['kname'] = subshkey
                 subentry['kvalue'] = summaryhash[shkey][subshkey]
@@ -1570,6 +1576,11 @@ def jobListProto(request, mode=None, param=None):
     if not valid: return response
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
         return jobParamList(request)
+
+    cutsummary = False
+    if 'cutsummary' in request.session['requestParams']:
+        cutsummary = True
+
 
     eventservice = False
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
@@ -1605,7 +1616,7 @@ def jobListProto(request, mode=None, param=None):
     if 'mode' in request.session['requestParams'] and request.session['requestParams'][
         'mode'] == 'nodrop': dropmode = False
 
-    sumd, esjobdict, jobsToList, njobs = jobSummaryDictProto(request, dropmode, query, wildCardExtension)
+    sumd, esjobdict, jobsToList, njobs = jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
 
     values = [int(val) for val in jobsToList]
     newquery = {}
