@@ -1554,6 +1554,7 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
             else:
                 cutlen = len(summaryhash[shkey].keys())
 
+
             for subshkey in summaryhash[shkey].keys()[0:cutlen]:
                 subentry = {}
                 subentry['kname'] = subshkey
