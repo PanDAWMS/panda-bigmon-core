@@ -1,3 +1,6 @@
+
+
+
 with tasks as (
 	SELECT ListAgg(parent_tid,';')
 	       within group(order by Level desc) as revPath

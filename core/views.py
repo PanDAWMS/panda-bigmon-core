@@ -5093,7 +5093,7 @@ def taskInfo(request, jeditaskid=0):
          # mgrigori 26/05/2016
         new_cur = connections["deft_adcr"].cursor()
         module_dir = os.path.dirname(__file__)
-        taskChainSQL = file(module_dir+"/static/templates/sql/taskChain.sql").read() % (jeditaskid)
+        taskChainSQL = file(module_dir+"/templates/chainguery.txt").read() % (jeditaskid)
         new_cur.execute(taskChainSQL)
         taskChain = new_cur.fetchall()
         results = ["".join(map(str, r)) for r in taskChain]
