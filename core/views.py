@@ -24,7 +24,7 @@ from django.core.cache import cache
 from django.utils import encoding
 from django.conf import settings as djangosettings
 from django.db import connection, transaction
-
+from django.db import connections
 
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
@@ -5086,6 +5086,19 @@ def taskInfo(request, jeditaskid=0):
     jobsummaryESMerge = []
     jobsummaryPMERGE = []
 
+
+    taskid = int((request.path).split("/")[2])
+    ## TASK CHAIN REQUEST
+    ## mgrigori 26/05/2016
+    new_cur = connections["deft_adcr"].cursor()
+    taskChainSQL = file("core/static/sql/taskChain.sql").read() % (taskid)
+    new_cur.execute(taskChainSQL)
+    taskChain = new_cur.fetchall()
+    results = ["".join(map(str, r)) for r in taskChain]
+    ts = "".join(results)
+    ## END OF TASK CHAIN REQUEST
+
+
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid != 0:
         query = {'jeditaskid' : jeditaskid}
@@ -5456,10 +5469,12 @@ def taskInfo(request, jeditaskid=0):
             'dstypes' : dstypes,
             'inctrs' : inctrs,
             'outctrs' : outctrs,
+            'taskChain': ts,
         }
         data.update(getContextVariables(request))
         ##self monitor
         endSelfMonitor(request)
+
 
         if eventservice:
             response = render_to_response('taskInfoES.html', data, RequestContext(request))
