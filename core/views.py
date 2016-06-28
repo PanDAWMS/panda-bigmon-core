@@ -5087,15 +5087,15 @@ def taskInfo(request, jeditaskid=0):
     jobsummaryPMERGE = []
 
 
-    taskid = int((request.path).split("/")[2])
-    ## TASK CHAIN REQUEST
+    #taskid = int((request.path).split("/")[2])
+    ### TASK CHAIN REQUEST
     ## mgrigori 26/05/2016
-    new_cur = connections["deft_adcr"].cursor()
-    taskChainSQL = file("core/static/sql/taskChain.sql").read() % (taskid)
-    new_cur.execute(taskChainSQL)
-    taskChain = new_cur.fetchall()
-    results = ["".join(map(str, r)) for r in taskChain]
-    ts = "".join(results)
+    #new_cur = connections["deft_adcr"].cursor()
+    #taskChainSQL = file("core/static/sql/taskChain.sql").read() % (taskid)
+    #new_cur.execute(taskChainSQL)
+    #taskChain = new_cur.fetchall()
+    #results = ["".join(map(str, r)) for r in taskChain]
+    #ts = "".join(results)
     ## END OF TASK CHAIN REQUEST
 
 
@@ -5469,7 +5469,7 @@ def taskInfo(request, jeditaskid=0):
             'dstypes' : dstypes,
             'inctrs' : inctrs,
             'outctrs' : outctrs,
-            'taskChain': ts,
+            #'taskChain': ts,
         }
         data.update(getContextVariables(request))
         ##self monitor
