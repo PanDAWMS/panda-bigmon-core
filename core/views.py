@@ -5086,21 +5086,22 @@ def taskInfo(request, jeditaskid=0):
     jobsummaryESMerge = []
     jobsummaryPMERGE = []
 
-
-    #taskid = int((request.path).split("/")[2])
-    ### TASK CHAIN REQUEST
-    ## mgrigori 26/05/2016
-    #new_cur = connections["deft_adcr"].cursor()
-    #taskChainSQL = file("core/static/sql/taskChain.sql").read() % (taskid)
-    #new_cur.execute(taskChainSQL)
-    #taskChain = new_cur.fetchall()
-    #results = ["".join(map(str, r)) for r in taskChain]
-    #ts = "".join(results)
-    ## END OF TASK CHAIN REQUEST
-
-
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid != 0:
+
+        ### TASK CHAIN REQUEST
+         # mgrigori 26/05/2016
+        new_cur = connections["deft_adcr"].cursor()
+        module_dir = os.path.dirname(__file__)
+        taskChainSQL = file(module_dir+"/static/sql/taskChain.sql").read() % (jeditaskid)
+        new_cur.execute(taskChainSQL)
+        taskChain = new_cur.fetchall()
+        results = ["".join(map(str, r)) for r in taskChain]
+        ts = "".join(results)
+        ## END OF TASK CHAIN REQUEST
+
+
+
         query = {'jeditaskid' : jeditaskid}
         tasks = JediTasks.objects.filter(**query).values()
         if len(tasks) > 0:
@@ -5469,7 +5470,7 @@ def taskInfo(request, jeditaskid=0):
             'dstypes' : dstypes,
             'inctrs' : inctrs,
             'outctrs' : outctrs,
-            #'taskChain': ts,
+            'taskChain': ts,
         }
         data.update(getContextVariables(request))
         ##self monitor
