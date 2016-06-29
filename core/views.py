@@ -5492,6 +5492,7 @@ def taskchain(request):
     ts = "".join(results)
 
     data = {
+        'viewParams': request.session['viewParams'],
         'taskChain': ts,
         'jeditaskid':jeditaskid
     }
