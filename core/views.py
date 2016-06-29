@@ -5089,19 +5089,6 @@ def taskInfo(request, jeditaskid=0):
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid != 0:
 
-        ### TASK CHAIN REQUEST
-         # mgrigori 26/05/2016
-        new_cur = connections["deft_adcr"].cursor()
-        module_dir = os.path.dirname(__file__)
-        taskChainSQL = file(module_dir+"/templates/chainguery.txt").read() % (jeditaskid)
-        new_cur.execute(taskChainSQL)
-        taskChain = new_cur.fetchall()
-        results = ["".join(map(str, r)) for r in taskChain]
-        ts = "".join(results)
-        ## END OF TASK CHAIN REQUEST
-
-
-
         query = {'jeditaskid' : jeditaskid}
         tasks = JediTasks.objects.filter(**query).values()
         if len(tasks) > 0:
@@ -5470,7 +5457,6 @@ def taskInfo(request, jeditaskid=0):
             'dstypes' : dstypes,
             'inctrs' : inctrs,
             'outctrs' : outctrs,
-            'taskChain': ts,
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -5483,6 +5469,35 @@ def taskInfo(request, jeditaskid=0):
             response = render_to_response('taskInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
+
+
+
+def taskchain(request):
+
+    valid, response = initRequest(request)
+
+    jeditaskid = -1
+    if 'jeditaskid' in request.session['requestParams']:
+        jeditaskid = int(request.session['requestParams']['jeditaskid'])
+    if  jeditaskid==-1:
+        data = {"error":"no jeditaskid supplied"}
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+
+    new_cur = connections["deft_adcr"].cursor()
+    module_dir = os.path.dirname(__file__)
+    taskChainSQL = file(module_dir + "/templates/chainguery.txt").read() % (jeditaskid)
+    new_cur.execute(taskChainSQL)
+    taskChain = new_cur.fetchall()
+    results = ["".join(map(str, r)) for r in taskChain]
+    ts = "".join(results)
+
+    data = {
+        'taskChain': ts,
+        'jeditaskid':jeditaskid
+    }
+    response = render_to_response('taskchain.html', data, RequestContext(request))
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
 
 
 def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  substatusfilter = '', processingtype = ''):
@@ -6446,6 +6461,7 @@ def ttc(request):
     if  jeditaskid==-1:
         data = {"error":"no jeditaskid supplied"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+
 
     query = {'jeditaskid':jeditaskid}
     task=JediTasks.objects.filter(**query).values('jeditaskid', 'taskname','workinggroup', 'tasktype', 'processingtype', 'ttcrequested', 'starttime', 'endtime', 'creationdate', 'status')

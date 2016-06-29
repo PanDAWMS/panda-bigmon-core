@@ -67,6 +67,10 @@ urlpatterns = patterns('',
 
     url(r'^ttc/$', coremon_views.ttc, name='ttc'),
 
+    url(r'^taskchain/$', coremon_views.taskchain, name='taskchain'),
+
+
+
                        #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
     ### data product catalog prototyping                                                                                                                                                         
     url(r'^dp/$', dpviews.doRequest, name='doRequest'),
