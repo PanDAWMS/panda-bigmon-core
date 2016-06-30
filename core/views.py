@@ -198,7 +198,7 @@ def initRequest(request):
         VOMODE = 'atlas'
 
     ## Set default page lifetime in the http header, for the use of the front end cache
-    request.session['max_age_minutes'] = 3
+    request.session['max_age_minutes'] = 10
 
     ## Is it an https connection with a legit cert presented by the user?
     if 'SSL_CLIENT_S_DN' in request.META or 'HTTP_X_SSL_CLIENT_S_DN' in request.META:
