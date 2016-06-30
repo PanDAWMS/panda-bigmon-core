@@ -5483,9 +5483,8 @@ def taskchain(request):
         data = {"error":"no jeditaskid supplied"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
 
-    new_cur = connections["deft_adcr"].cursor()
-    module_dir = os.path.dirname(__file__)
-    taskChainSQL = file(module_dir + "/templates/chainguery.txt").read() % (jeditaskid)
+    new_cur = connection.cursor()
+    taskChainSQL = "SELECT * FROM table(ATLAS_PANDABIGMON.GETTASKSCHAIN_TEST(%i))" % jeditaskid
     new_cur.execute(taskChainSQL)
     taskChain = new_cur.fetchall()
     results = ["".join(map(str, r)) for r in taskChain]

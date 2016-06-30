@@ -29,7 +29,7 @@
                 task = {{ jeditaskid }};
         var vis = d3.select("#taskChain");
         var width = vis[0][0].clientWidth - 50,
-                height = 400,
+                height = 500,
                 delta = 200;
         var task_table = d3.select("#task_table").select("tbody"),
                 datasets_table = d3.select("#datasets_table").select("tbody");
@@ -70,8 +70,34 @@
                     return "translate(" + (d.y + 40) + "," + d.x + ")";
                 });
 
-        var red_status = ["obsolete", "aborted", "broken"],
-                green_status = ["done", "finished"];
+        var task_status_colors = {
+                'registered' : '#EBF5E2',
+                'defined' : '#EBF5E2',
+                'assigning' : '#EBF5E2',
+                'ready' : '#C7E9A9',
+                'pending' : '#C7E9A9',
+                'scouting' : '#DBF1C6',
+                'scouted' : '#C7E9A9',
+                'running' : '#C7E9A9',
+                'prepared' : '#A0D670',
+                'done' : '#62AC21',
+                'failed' : '#FFABA2',
+                'finished' : '#A0D670',
+                'aborting' : '#FFABA2',
+                'aborted' : '#FFABA2',
+                'finishing' : '#C7E9A9',
+                'topreprocess' : '#DBF1C6',
+                'preprocessing' : '#DBF1C6',
+                'tobroken' : '#FF8174',
+                'broken' : '#FF8174',
+                'toretry' : '#A0D670',
+                'toincexec' : '#62AC21',
+                'rerefine' : '#62AC21',
+                'paused' : '#FFE38E',
+                'throttled' : '#FFE38E',
+                'exhausted' : 'FFE38E',
+                'passed' : '#FFE38E'
+        };
 
         var tooltip = d3.select("body")
                 .append("div")
@@ -86,12 +112,12 @@
                     else return 10;
                 })
                 .attr("fill", function (d) {
-                    return (red_status.indexOf(d.status) > -1 ? '#FFABA2' : '#A0D670');
+                    return task_status_colors[d.status];
                 })
                 .on("click", function (d) {
                     // make circle clickable
                     task_table.html("");
-                    datasets_table.html("");
+                   datasets_table.html("");
                     var taskname = d.taskname;
                     var datasets = d.datasets;
                     var task_params = {
@@ -104,10 +130,10 @@
                     var dataset_headers = ["timestamp", "status", "files", "events"];
                     task_table.append("tr")
                             .attr("bgcolor", function (item) {
-                                return (red_status.indexOf(d.status) > -1 ? '#FFABA2' : '#A0D670');
+                                return task_status_colors[d.status];
                             })
-                            .append("th")
-                            .attr("colspan", d3.keys(task_params).length)
+                           .append("th")
+                           .attr("colspan", d3.keys(task_params).length)
                             .append("span")
                             .text(taskname);
                     task_table.append("tr").selectAll("th")
@@ -167,42 +193,31 @@
                             .duration(200)
                             .style("left", (d3.event.pageX + 10) + "px")
                             .style("top", (d3.event.pageY - 10) + "px")
-                            .style("opacity", .9);
+                           .style("opacity", .9);
                     tooltip.html("<strong>project:</strong> " + d.taskname.split('.')[0] + "<br/>" +
-                            "<strong>username: </strong>" + d.username + "<br/>" +
+                           "<strong>username: </strong>" + d.username + "<br/>" +
                             "<strong>phys_group: </strong>" + d.phys_group + "<br/>" +
                             "<strong>production_step: </strong>" + d.taskname.split('.')[3] + "<br/>" +
                             "<strong>ami_tags: </strong>" + d.taskname.split('.')[4] + "<br/>" +
                             "<strong>timestamp: </strong>" + d.timestamp);
                 })
                 .on("mouseout", function (d) {
-                    tooltip.transition()
-                            .duration(500)
+                   tooltip.transition()
+                           .duration(500)
                             .style("opacity", 0);
                 });
 
         // add taskname to circles
-        node.append("text")
+        node.append("a")
+                .attr("xlink:href", function(d) {
+                    return "{% url 'taskInfo' %}" + d.name;})
+                .attr("target", "blank")
+                .append("text")
                 .attr("dy", -15)
                 .attr("dx", 15)
+                .attr("class", "clickable")
                 .text(function (d) {
                     return d.name;
-                });
-
-        // add task status to circles
-        node.append("text")
-                .attr("dy", 20)
-                .attr("dx", 15)
-                .style("font-weight", "bold")
-                .text(function (d) {
-                    return d.status;
-                });
-        // add production step name to circles
-        node.append("text")
-                .attr("dy", 40)
-                .attr("dx", 15)
-                .text(function (d) {
-                    return "[" + d.taskname.split('.')[3] + "]";
                 });
     </script>
 
