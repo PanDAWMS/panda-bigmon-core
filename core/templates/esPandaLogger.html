@@ -29,13 +29,21 @@
 <table>
   <tr class='tablesection'><th colspan=20>Job Broker Logs Linked to Task</th></tr>
   <tr>
-    <td> Jedi TaskID: <input type="text" id="jediTaskID" value=""> <input type="button" value="Search"  onclick="searchJedi()"></td>
+    <td> Jedi TaskID: <input type="text" id="jediTaskID0" value=""> <input type="button" value="Search"  onclick="searchJedi()"></td>
   </tr>
 </table>
 
-  <script>
+<table>
+  <tr class='tablesection'><th colspan=20>Task brokerage</th></tr>
+  <tr>
+    <td> Jedi TaskID: <input type="text" id="jediTaskID1" value=""> <input type="button" value="Search"  onclick="searchTaskBr()"></td>
+  </tr>
+</table>
+
+
+<script>
 function searchJedi() {
-    input = document.getElementById("jediTaskID").value;
+    input = document.getElementById("jediTaskID0").value;
     if (input){
         taskid = input.replace(/\s/g, '');
         url = "https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@message.module','@message.Type','@message.name','@message.levelname','@message.message'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%20panda.mon.jedi%20AND%20@message.msg:%22jediTaskID%3D"+taskid+"%22')),sort:!('@timestamp',desc))";
@@ -43,7 +51,16 @@ function searchJedi() {
     }
 }
 
+function searchTaskBr() {
+    input = document.getElementById("jediTaskID1").value;
+    if (input){
+        taskid = input.replace(/\s/g, '');
+        url = "https://aianalytics01.cern.ch/?#/discover?_g=%28refreshInterval:%28display:Off,pause:!f,section:0,value:0%29,time:%28from:now%2Fd,mode:quick,to:now%2Fd%29%29&_a=%28columns:!%28%27@message.module%27,%27@message.Type%27,%27@message.name%27,%27@message.levelname%27,%27@message.message%27%29,index:[pandalogger-]YYYY-MM-DD,interval:auto,query:%28query_string:%28analyze_wildcard:!t,lowercase_expanded_terms:!f,query:%27@message.name:%22panda.mon.bamboo%22AND%20@message.Type:%22taskbrokerage%22AND%20@message.levelname:%22INFO%22AND%20@message.msg:%22jediTaskID%3D"+taskid+"%22%27%29%29,sort:!%28%27@timestamp%27,desc%29%29";
+        window.location.href=url;
+    }
+}
 </script>
+
 
 
 <table>
