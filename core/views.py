@@ -2492,10 +2492,17 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 if f['type'] == 'output':
                     noutput += 1
                     if len(jobs[0]['jobmetrics'])  > 0:
-                        jobmetrics = dict(s.split('=') for s in jobs[0]['jobmetrics'].split(' '))
-                        if 'logBucketID' in jobmetrics:
-                            if int(jobmetrics['logBucketID']) in [3, 21, 45, 46, 104, 41, 105, 106, 42, 61, 21, 102, 103, 2, 82, 81, 82, 101]: #Bucket Codes for S3 destination
-                                f['destination'] = 'S3'
+                        for s in jobs[0]['jobmetrics'].split(' '):
+                            if 'logBucketID' in s:
+                                logBucketID=int(s.split('=')[1])
+                                if logBucketID in [3, 21, 45, 46, 104, 41, 105, 106, 42, 61, 21, 102, 103, 2, 82, 81, 82, 101]: #Bucket Codes for S3 destination
+                                   f['destination'] = 'S3'
+
+                    #if len(jobs[0]['jobmetrics'])  > 0:
+                    #    jobmetrics = dict(s.split('=') for s in jobs[0]['jobmetrics'].split(' '))
+                    #    if 'logBucketID' in jobmetrics:
+                    #        if int(jobmetrics['logBucketID']) in [3, 21, 45, 46, 104, 41, 105, 106, 42, 61, 21, 102, 103, 2, 82, 81, 82, 101]: #Bucket Codes for S3 destination
+                    #            f['destination'] = 'S3'
                 if f['type'] == 'pseudo_input': npseudo_input += 1
                 f['fsizemb'] = "%0.2f" % (f['fsize']/1000000.)
                 dsets = JediDatasets.objects.filter(datasetid=f['datasetid']).values()
