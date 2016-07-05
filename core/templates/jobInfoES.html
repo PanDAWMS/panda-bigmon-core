@@ -176,6 +176,18 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 <p>
 {% endif %}
 
+{% if pandaid%}
+<table width=900>
+<tr><td>
+<div class="section">Show script to re-create job for offline debugging:
+<font size=-1>
+<a href="http://pandaserver.cern.ch:25080//server/panda/getScriptOfflineRunning?pandaID={{pandaid}}">{{pandaid}}</a>
+</font>
+</div>
+</td></tr></table>
+{% endif %}
+
+
 <table>
 <tr><th bgcolor='lightcyan'>Job information</th>
 
