@@ -2054,6 +2054,24 @@ def jobList(request, mode=None, param=None):
         testjobs = True
     tasknamedict = taskNameDict(jobs)
     errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request,jobs, tasknamedict, testjobs)
+
+    # Here we getting extended data for site
+    jobsToShow = jobs[:njobsmax]
+    distinctComputingSites = []
+    for job in jobsToShow:
+        distinctComputingSites.append(job['computingsite'])
+    distinctComputingSites = list(set(distinctComputingSites))
+    query = {}
+    query['siteid__in'] = distinctComputingSites
+    siteres = Schedconfig.objects.filter(**query).exclude(cloud='CMS').extra().values('siteid','status','comment_field')
+    siteHash = {}
+    for site in siteres:
+        siteHash[site['siteid']] = (site['status'], site['comment_field'])
+    for job in jobsToShow:
+        if job['computingsite'] in siteHash.keys():
+            job['computingsitestatus'] = siteHash[job['computingsite']][0]
+            job['computingsitecomment'] = siteHash[job['computingsite']][1]
+
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
 
         # It was not find where esjobdict used
@@ -2085,7 +2103,7 @@ def jobList(request, mode=None, param=None):
             'request' : request,
             'viewParams' : request.session['viewParams'],
             'requestParams' : request.session['requestParams'],
-            'jobList': jobs[:njobsmax],
+            'jobList': jobsToShow,
             'jobtype' : jobtype,
             'njobs' : njobs,
             'user' : user,
