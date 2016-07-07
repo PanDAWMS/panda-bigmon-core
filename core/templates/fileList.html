@@ -96,6 +96,7 @@
     {% else %}
         <th>File ID<br><a href="{{nosorturl}}sortby=fileid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=fileid-asc" class="headerSortUp"></a></th>
     {% endif %}
+        <th>Rucio link</th>
 </tr>
 {% for frec in files %}
 	<tr><font size=-1>
@@ -111,6 +112,11 @@
 		<td><font size=-1>{{ frec.creationdate|date:"Y-m-d H:i" }}</font></td>
 		<td><font size=-1>{{ frec.guid }}</font></td>
 		<td><font size=-1>{{ frec.fileid }}</font></td>
+        <td>
+            {% if frec.rucio %}
+            <a href="{{ frec.rucio }}">Rucio link</a>
+            {% endif %}
+        </td>
 	</font></tr>
 {% endfor %}
 </table>

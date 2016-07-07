@@ -6997,11 +6997,36 @@ def fileList(request):
 
         for f in files:
             f['fsizemb'] = "%0.2f" % (f['fsize']/1000000.)
+    pandaids = []
+    for f in files:
+        pandaids.append(f['pandaid'])
+
+    query = {}
+    filesFromFileTable = []
+    filesFromFileTableDict = {}
+    query['pandaid__in'] = pandaids
+    #JEDITASKID, DATASETID, FILEID
+    filesFromFileTable.extend(Filestable4.objects.filter(**query).values('fileid', 'dispatchdblock', 'scope', 'destinationdblock'))
+    if len(filesFromFileTable) == 0:
+        filesFromFileTable.extend(FilestableArch.objects.filter(**query).values('fileid', 'dispatchdblock', 'scope', 'destinationdblock'))
+    if len(filesFromFileTable) > 0:
+        for f in filesFromFileTable:
+            filesFromFileTableDict[f['fileid']] = f
+
 
     ## Count the number of distinct files
     filed = {}
     for f in files:
         filed[f['lfn']] = 1
+        ruciolink = ""
+        if len(filesFromFileTableDict[f['fileid']]['dispatchdblock']) > 0:
+            ruciolink = 'https://rucio-ui.cern.ch/did?scope=panda&name='+ filesFromFileTableDict[f['fileid']]['dispatchdblock']
+        else:
+            if len(filesFromFileTableDict[f['fileid']]['destinationdblock']) > 0:
+                ruciolink = 'https://rucio-ui.cern.ch/did??scope='+ file['scope'] +'&name=' + file[
+                    'destinationdblock']
+        f['rucio'] =ruciolink
+
     nfiles = len(filed)
 
 
