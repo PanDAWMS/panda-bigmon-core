@@ -144,11 +144,11 @@ def setupSiteInfo(request):
     global homeCloud, objectStores, pandaSites, callCount
     callCount += 1
     if len(homeCloud) > 0 and callCount%100 != 1 and 'refresh' not in request.session['requestParams']: return
-    sflist = ('siteid','status','cloud','tier','comment_field','objectstore','catchall','corepower')
+    sflist = ('siteid', 'site','status','cloud','tier','comment_field','objectstore','catchall','corepower')
     sites = Schedconfig.objects.filter().exclude(cloud='CMS').values(*sflist)
     for site in sites:
         pandaSites[site['siteid']] = {}
-        for f in ( 'siteid', 'status', 'tier', 'comment_field', 'cloud', 'corepower' ):
+        for f in ( 'siteid', 'status', 'tier', 'site', 'comment_field', 'cloud', 'corepower' ):
             pandaSites[site['siteid']][f] = site[f]
         homeCloud[site['siteid']] = site['cloud']
         if (site['catchall'] != None) and (site['catchall'].find('log_to_objectstore') >= 0 or site['objectstore'] != ''):
@@ -2526,6 +2526,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 dsets = JediDatasets.objects.filter(datasetid=f['datasetid']).values()
                 if len(dsets) > 0:
                     f['datasetname'] = dsets[0]['datasetname']
+                    if job['computingsite'] in pandaSites.keys():
+                        f['ddmsite'] = pandaSites[job['computingsite']]['site']
 
             files = [x for x in files if x['destination'] != 'S3']
 
