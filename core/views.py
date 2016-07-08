@@ -7019,12 +7019,13 @@ def fileList(request):
     for f in files:
         filed[f['lfn']] = 1
         ruciolink = ""
-        if len(filesFromFileTableDict[f['fileid']]['dispatchdblock']) > 0:
-            ruciolink = 'https://rucio-ui.cern.ch/did?scope=panda&name='+ filesFromFileTableDict[f['fileid']]['dispatchdblock']
-        else:
-            if len(filesFromFileTableDict[f['fileid']]['destinationdblock']) > 0:
-                ruciolink = 'https://rucio-ui.cern.ch/did??scope='+ file['scope'] +'&name=' + file[
-                    'destinationdblock']
+        if f['fileid'] in filesFromFileTableDict:
+            if len(filesFromFileTableDict[f['fileid']]['dispatchdblock']) > 0:
+                ruciolink = 'https://rucio-ui.cern.ch/did?scope=panda&name='+ filesFromFileTableDict[f['fileid']]['dispatchdblock']
+            else:
+                if len(filesFromFileTableDict[f['fileid']]['destinationdblock']) > 0:
+                    ruciolink = 'https://rucio-ui.cern.ch/did??scope='+ file['scope'] +'&name=' + file[
+                        'destinationdblock']
         f['rucio'] =ruciolink
 
     nfiles = len(filed)
