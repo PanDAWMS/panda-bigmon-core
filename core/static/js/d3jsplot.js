@@ -3,11 +3,11 @@
  */
 function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
 
-    colors= ["#116aff", "#fe8504", "#1ff7fe", "#f701ff", "#2e4a02", "#ffaad5", "#f1ff8d", "#1eff06", "#700111", "#1586c3", "#ff067d", "#0e02fb", "#1bffa1", "#921e8f", "#c49565", "#fd0128", "#4ea105", "#158279", "#c8fe0a", "#fdcc0b", "#834969", "#ff7673", "#05018b", "#c591fe", "#a6d8ab", "#948c01", "#484ba1", "#fe22c0", "#06a05d", "#694002", "#8e39e9", "#bdc6ff","#030139",  "#b33802", "#85fa60", "#a2025b", "#3e021b", "#ffcd6d", "#4a92ff", "#e564b6", "#43cfff", "#7e9051", "#e768fc", "#09406b", "#b17005", "#8fd977", "#c1063e", "#a7594f", "#14e3b8", "#bccb1e", "#53064f", "#fff1b7", "#997dba", "#fe965c", "#ffb0a7", "#046c04", "#8451ce", "#d46585", "#fef70c", "#1003c3", "#024a2e", "#0fc551", "#1f025d", "#fd5302", "#5bbfc4", "#481903", "#bfc066", "#ad04bb", "#efa425", "#06c709", "#9701ff", "#84468e", "#018da8", "#88cf01", "#6d6412", "#658a1d", "#0d3cb4", "#144cfe", "#fe5d43", "#33753e", "#4cb28f", "#e6b4ff", "#a5feef", "#caff68", "#d80f8a", "#79193a", "#97fdba", "#a85726", "#fe8cf9", "#8bfe01", "#4a315d", "#ff0155", "#02ff5e", "#6b0199", "#bc7e9f", "#fde75c"];
+    var colors= ["#116aff", "#fe8504", "#1ff7fe", "#f701ff", "#2e4a02", "#ffaad5", "#f1ff8d", "#1eff06", "#700111", "#1586c3", "#ff067d", "#0e02fb", "#1bffa1", "#921e8f", "#c49565", "#fd0128", "#4ea105", "#158279", "#c8fe0a", "#fdcc0b", "#834969", "#ff7673", "#05018b", "#c591fe", "#a6d8ab", "#948c01", "#484ba1", "#fe22c0", "#06a05d", "#694002", "#8e39e9", "#bdc6ff","#030139",  "#b33802", "#85fa60", "#a2025b", "#3e021b", "#ffcd6d", "#4a92ff", "#e564b6", "#43cfff", "#7e9051", "#e768fc", "#09406b", "#b17005", "#8fd977", "#c1063e", "#a7594f", "#14e3b8", "#bccb1e", "#53064f", "#fff1b7", "#997dba", "#fe965c", "#ffb0a7", "#046c04", "#8451ce", "#d46585", "#fef70c", "#1003c3", "#024a2e", "#0fc551", "#1f025d", "#fd5302", "#5bbfc4", "#481903", "#bfc066", "#ad04bb", "#efa425", "#06c709", "#9701ff", "#84468e", "#018da8", "#88cf01", "#6d6412", "#658a1d", "#0d3cb4", "#144cfe", "#fe5d43", "#33753e", "#4cb28f", "#e6b4ff", "#a5feef", "#caff68", "#d80f8a", "#79193a", "#97fdba", "#a85726", "#fe8cf9", "#8bfe01", "#4a315d", "#ff0155", "#02ff5e", "#6b0199", "#bc7e9f", "#fde75c"];
 
     var formatCount = d3.format(",.0f");
 
-    var margin = {top: 30, right: 60, bottom: 100, left: 70},
+    var margin = {top: 30, right: 100, bottom: 100, left: 70},
         width = 650 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
@@ -15,7 +15,8 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
     var upperBand = d3.max(values);
 
 	var ave = values.reduce(function(a,b){return (a+b);})/values.length;
-
+	var diff = d3.deviation(values);
+	var statistics = [{type: "\u03BC", val:ave} , {type:"\u03C3", val:diff}];
 	var x = d3.scale.linear()
         .domain([lowerBand, upperBand])
         .range([0, width])
@@ -126,17 +127,24 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
                 });
     if (title.indexOf('PSS')>=0) {
         svg.append("g")
-            .attr("transform", "translate(" + (width+5) + " ," + (height + 15) + ")")
+            .attr("transform", "translate(" + (width+10) + " ," + (height + 15) + ")")
             .append("text")
             .style("text-anchor", "left")
             .text("PSS, MB");
     }
     if (title.indexOf('Walltime')>=0) {
         svg.append("g")
-            .attr("transform", "translate(" + (width+5) + " ," + (height + 15) + ")")
+            .attr("transform", "translate(" + (width+10) + " ," + (height + 15) + ")")
             .append("text")
             .style("text-anchor", "left")
             .text("Time, s");
+    }
+    if (title.indexOf('HS06')>=0) {
+        svg.append("g")
+            .attr("transform", "translate(" + (width+10) + " ," + (height + 15) + ")")
+            .append("text")
+            .style("text-anchor", "left")
+            .text("HS06s");
     }
     svg.append("g")
             .attr("class", "y axis")
@@ -188,6 +196,21 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
             .attr("y", 10)
             .text(function(d) {
                 return d;
+            });
+
+    var statlegend = svg.selectAll(".statlegend")
+		.data(statistics)
+		.enter()
+            .append("g")
+            .attr("class", "statlegend")
+            .attr("transform", function(d, i) {
+                return "translate(" + (width) + ", " + (margin.top + (i-1)*15) + ")";
+            });
+    statlegend.append("text")
+            .attr("x", 0)
+            .attr("y", 0)
+            .text(function(d) {
+                return d.type + "=" + d.val.toFixed(1);
             });
 
 }
