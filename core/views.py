@@ -5591,7 +5591,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
 
     jobs = newjobs
 
-    if mode == 'drop' and len(jobs) < 120000:
+    if mode == 'drop' and len(jobs) < 130000:
         print 'filtering retries'
         ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
         taskids = {}
