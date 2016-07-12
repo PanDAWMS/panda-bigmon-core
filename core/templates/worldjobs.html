@@ -33,7 +33,7 @@
     {% if nucleus %}
         <tr height=10 colspan=12></tr>
         <tr>
-            <td>{{ nucleus }}</td>
+            <td><a href="#nucleus_{{ nucleus }}">{{ nucleus }}</a></td>
             {%  for jobstatus in statelist %}
                     <td  {% if nuclval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}  > <a href="{% url 'jobList' %}?jobstatus={{ jobstatus }}&nucleus={{nucleus}}&cloud=WORLD&noarchjobs=1&days=5&display_limit=100"> {{ nuclval|get_item:jobstatus }} </a> </td>
             {% endfor %}
@@ -50,7 +50,7 @@
 {% for nucleus, nuclval in nucleuses.items %}
 <tr height=10 colspan=12></tr>
 <tr>
-<td class="tablesection"> <a name="cloud_{{ nucleus }}">{{ nucleus }} Nucleus</a>, Satellites </td>
+<td class="tablesection"> <a name="nucleus_{{ nucleus }}">{{ nucleus }} Nucleus</a>, Satellites </td>
 <td class="tablesection"> <a href="{{nosorturl}}sortby=defined">defined</a> </td>
 <td class="tablesection"> <a href="{{nosorturl}}sortby=waiting">waiting</a> </td>
 <td class="tablesection"> <a href="{{nosorturl}}sortby=pending">pending</a> </td>
