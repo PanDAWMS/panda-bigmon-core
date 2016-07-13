@@ -15,8 +15,8 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
     var upperBand = d3.max(values);
 
 	var ave = values.reduce(function(a,b){return (a+b);})/values.length;
-	var diff = d3.deviation(values);
-	var statistics = [{type: "\u03BC", val:ave} , {type:"\u03C3", val:diff}];
+	var statistics = [{type: "\u03BC", val:ave}];
+	if (values.length>1) {statistics.append({type:"\u03C3", val:d3.deviation(values)});}
 	var x = d3.scale.linear()
         .domain([lowerBand, upperBand])
         .range([0, width])
