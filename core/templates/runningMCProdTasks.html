@@ -102,21 +102,21 @@ gauges['slots'].redraw(slots);});
 </tr>
 {% for task in tasks %}
     <tr>
-    <td><a href="{% url 'runningProdTasks' %}?campaign={{ task.cutcampaign }}">{{ task.cutcampaign }}</a></td>
+    <td><a href="{% url 'runningMCProdTasks' %}?campaign={{ task.cutcampaign }}">{{ task.cutcampaign }}</a></td>
     <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.reqid}}/" target="_blank">{{ task.reqid }}</a></td>
     <td><a href=" https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}" target="_blank">{{ task.jeditaskid }}</a></td>
-    <td>{{ task.rjobs }}</td>
-    <td class='{{task.status}}_fill'><a href="{% url 'runningProdTasks' %}?status={{ task.status }}">{{ task.status }}</a></td>
-    <td><a href="{% url 'runningProdTasks' %}?processingtype={{ task.processingtype }}"> {{ task.processingtype }} </a></td>
-    <td>{{ task.nevents }}</td>
-    <td>{{ task.neventsused }}</td>
-    <td>{{ task.percentage }}</td>
-    <td>{% if task.nfilesfailed > 0 %}<a href="/jobs/?jeditaskid={{ task.jeditaskid }}&jobstatus=failed">{{ task.nfilesfailed }}</a> {% else %}{{ task.nfilesfailed }}{% endif %}</td>
+    <td>{% if task.rjobs > 0 %}<a href="/jobs/?jeditaskid={{ task.jeditaskid }}&jobstatus=running">{{ task.rjobs }}</a> {% else %}{{ task.rjobs }}{% endif %}</td>
+    <td class='{{task.status}}_fill'><a href="{% url 'runningMCProdTasks' %}?status={{ task.status }}">{{ task.status }}</a></td>
+    <td><a href="{% url 'runningMCProdTasks' %}?processingtype={{ task.processingtype }}"> {{ task.processingtype }} </a></td>
+    <td>{% if task.totev %}{{ task.totev }}{% else %}---{% endif %}</td>
+    <td>{% if task.totev %}{{ task.neventsused }}{% else %}---{% endif %}</td>
+    <td>{% if task.totev %}{{ task.percentage }}{% else %}---{% endif %}</td>
+    <td>{% if task.nfilesfailed %}{{ task.nfilesfailed }}{% else %}0{% endif %}</td>
     <td>{{ task.currentpriority }}</td>
     <td>{{ task.simtype }}</td>
     <td>{{ task.age }}</td>
-    <td><a href="{% url 'runningProdTasks' %}?corecount={{ task.corecount }}">{{ task.corecount }}</a></td>
-    <td><a href="{% url 'runningProdTasks' %}?username={{ task.username }}">{{ task.username }} </a></td>
+    <td><a href="{% url 'runningMCProdTasks' %}?corecount={{ task.corecount }}">{{ task.corecount }}</a></td>
+    <td><a href="{% url 'runningMCProdTasks' %}?username={{ task.username }}">{{ task.username }} </a></td>
     <td>{{ task.datasetname }}</td>
     </tr>
 {% endfor %}

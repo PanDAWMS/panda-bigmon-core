@@ -53,7 +53,7 @@ from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
 from core.common.models import RequestStat
 from core.settings.config import ENV
-
+from core.common.models import RunningMCProductionTasks
 
 from time import gmtime, strftime
 from settings.local import dbaccess
@@ -4834,112 +4834,40 @@ def getSummaryForTaskList(request):
     return response
 
 @cache_page(60*20)
-def runningProdTasks(request):
+def runningMCProdTasks(request):
     valid, response = initRequest(request)
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby',mode='extensible')
-    processingtypelist=[]
     tquery={}
-    extraquery="WORKINGGROUP NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')"
-    # if 'simtype' in request.session['requestParams']:
-    #     tasks=[task for task in tasks if task['simtype']==request.session['requestParams']['simtype']]
     if 'processingtype' in request.session['requestParams']:
          tquery['processingtype']=request.session['requestParams']['processingtype']
-    else:
-         tquery['processingtype__in']=[ 'evgen' , 'pile', 'simul', 'recon' ]
     if 'username' in request.session['requestParams']:
         tquery['username']=request.session['requestParams']['username']
     if 'campaign' in request.session['requestParams']:
         tquery['campaign__contains']=request.session['requestParams']['campaign']
-    else:
-        tquery['campaign__contains']='MC'
     if 'corecount' in request.session['requestParams']:
         tquery['corecount']=request.session['requestParams']['corecount']
     if 'status' in request.session['requestParams']:
         tquery['status']=request.session['requestParams']['status']
-    else:
-        extraquery+=" AND STATUS NOT IN ('cancelled', 'failed','broken','aborted', 'finished', 'done')"
-    tquery['tasktype'] = 'prod'
-    tquery['prodsourcelabel']='managed'
-    # variables = ['campaign','jeditaskid','reqid','datasetname','status','username','workinggroup','currentpriority','processingtype','type','corecount','creationdate','taskname']
-    tasks = JediTasks.objects.filter(**tquery).extra(where=[extraquery]).values('campaign','jeditaskid','reqid','status','username','workinggroup','currentpriority','processingtype','corecount','creationdate','taskname','splitrule','username')
+    tasks = RunningMCProductionTasks.objects.filter(**tquery).values()
     ntasks = len(tasks)
     slots=0
     ages=[]
-    simtypes=[]
-    datasets=[]
     neventsAFIItasksSum={'evgen':0 , 'pile':0, 'simul':0, 'recon':0}
     neventsFStasksSum={'evgen':0 , 'pile':0, 'simul':0, 'recon':0}
 
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
-
-
-    ## Get status of input processing as indicator of task progress
-    dsquery = {}
-    dsquery['type__in'] = ['input', 'pseudo_input' ]
-    dsquery['masterid__isnull'] = True
-    taskl = []
-    for t in tasks:
-        taskl.append(t['jeditaskid'])
-    jquery={'jobstatus':'running'}
-    random.seed()
-    transactionKey = random.randrange(1000000)
-    connection.enter_transaction_management()
-    new_cur = connection.cursor()
-    for id in taskl:
-        new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (tmpTableName,id,transactionKey)) # Backend dependable
-    connection.commit()
-    datasets = JediDatasets.objects.filter(**dsquery).extra(where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid','nfiles','nfilesfinished','nfilesfailed','nevents', 'neventsused','type', 'masterid','datasetname')
-    dsinfo = {}
-    if len(datasets) > 0:
-        for ds in datasets:
-            taskid = ds['jeditaskid']
-            if taskid not in dsinfo:
-                dsinfo[taskid] = []
-            dsinfo[taskid].append(ds)
-    rjobslist = Jobsactive4.objects.filter(**jquery).extra(where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid').annotate(count=Count('jeditaskid'))
-    rjobs={}
-    if len(rjobslist)>0:
-        for rjob in rjobslist:
-            taskid = rjob['jeditaskid']
-            if taskid not in rjobs:
-                rjobs[taskid] = []
-            rjobs[taskid].append(rjob['count'])
-    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-    connection.commit()
-    connection.leave_transaction_management()
     neventsTotSum=0
     neventsUsedTotSum=0
     rjobs1coreTot=0
     rjobs8coreTot=0
     for task in tasks:
-        neventsTot=0
-        neventsUsedTot=0
-        nfailed=0
-        if (task['jeditaskid'] in dsinfo):
-            for ds in dsinfo[task['jeditaskid']]:
-                    if int(ds['nevents'])>0:
-                        neventsTot += ds['nevents']
-                        neventsUsedTot += ds['neventsused']
-                    if int(ds['nfiles'])>0:
-                        nfailed+=ds['nfilesfailed']
-        if neventsTot>0:
-            task['percentage']=round(100.*neventsUsedTot/neventsTot,1)
-        else:
-            task['percentage']=0.
-        neventsTotSum+=neventsTot
-        neventsUsedTotSum+=neventsUsedTot
-        task['nevents']=neventsTot
-        task['neventsused']=neventsUsedTot
-        task['nfilesfailed']=nfailed
-        if (task['jeditaskid'] in rjobs):
-            task['rjobs']=rjobs[task['jeditaskid']][0]
-            slots+=int(rjobs[task['jeditaskid']][0])*task['corecount']
-        else:
-            task['rjobs']=0
+        if task['rjobs'] is None:
+            task['rjobs'] = 0
+        task['neventsused']=task['totev']-task['totevrem'] if task['totev'] is not None else 0
+        task['percentage']=round(100.*task['neventsused']/task['totev'],1) if task['totev']>0 else 0.
+        neventsTotSum+=task['totev'] if task['totev'] is not None else 0
+        neventsUsedTotSum+=task['neventsused']
+        slots += task['rjobs'] * task['corecount']
         if task['corecount']==1:
             rjobs1coreTot+=task['rjobs']
         if task['corecount']==8:
@@ -4957,10 +4885,10 @@ def runningProdTasks(request):
             rtag = rtag.split(".")[len(rtag.split("."))-1]
         if 'a' in rtag:
             task['simtype']='AFII'
-            neventsAFIItasksSum[task['processingtype']]+=neventsTot
+            neventsAFIItasksSum[task['processingtype']]+=task['totev'] if task['totev'] is not None else 0
         else:
             task['simtype']='FS'
-            neventsFStasksSum[task['processingtype']]+=neventsTot
+            neventsFStasksSum[task['processingtype']]+=task['totev'] if task['totev'] is not None else 0
     plotageshistogram=1
     if sum(ages)==0: plotageshistogram=0
     sumd=taskSummaryDict(request, tasks, ['status','processingtype','simtype'])
@@ -4992,9 +4920,9 @@ def runningProdTasks(request):
         elif sortby == 'processingtype-desc':
             tasks = sorted(tasks, key=lambda x:x['processingtype'],reverse=True)
         elif sortby == 'nevents-asc':
-            tasks = sorted(tasks, key=lambda x:x['nevents'])
+            tasks = sorted(tasks, key=lambda x:x['totev'])
         elif sortby == 'nevents-desc':
-            tasks = sorted(tasks, key=lambda x:x['nevents'], reverse=True)
+            tasks = sorted(tasks, key=lambda x:x['totev'], reverse=True)
         elif sortby == 'neventsused-asc':
             tasks = sorted(tasks, key=lambda x:x['neventsused'])
         elif sortby == 'neventsused-desc':
@@ -5051,7 +4979,6 @@ def runningProdTasks(request):
             'ntasks' : ntasks,
             'sortby' : sortby,
             'ages': ages,
-            'simtypes': simtypes,
             'slots': slots,
             'sumd': sumd,
             'neventsUsedTotSum': round(neventsUsedTotSum/1000000.,1),
@@ -5064,7 +4991,7 @@ def runningProdTasks(request):
         }
         ##self monitor
         endSelfMonitor(request)
-        response = render_to_response('runningProdTasks.html', data, RequestContext(request))
+        response = render_to_response('runningMCProdTasks.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
 

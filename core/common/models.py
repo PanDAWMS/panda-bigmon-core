@@ -567,6 +567,27 @@ class JediTasks(models.Model):
         db_table = u'jedi_tasks'
 
 
+class RunningMCProductionTasks(models.Model):
+    campaign = models.CharField(max_length=72, db_column='CAMPAIGN', blank=True)
+    reqid = models.IntegerField(null=True, db_column='REQID', blank=True)
+    jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
+    rjobs = models.IntegerField(null=True, db_column='RJOBS', blank=True)
+    status = models.CharField(max_length=192, db_column='STATUS')
+    totevrem = models.BigIntegerField(db_column='TOTEVREM')
+    totev = models.BigIntegerField(db_column='TOTEV')
+    nfilesfailed = models.IntegerField(null=True, db_column='NFILESFAILED', blank=True)
+    workinggroup = models.CharField(max_length=96, db_column='WORKINGGROUP', blank=True)
+    currentpriority = models.IntegerField(null=True, db_column='CURRENTPRIORITY', blank=True)
+    processingtype = models.CharField(max_length=192, db_column='PROCESSINGTYPE', blank=True)
+    corecount = models.IntegerField(null=True, db_column='CORECOUNT', blank=True)
+    creationdate = models.DateTimeField(db_column='CREATIONDATE')
+    taskname = models.CharField(max_length=384, db_column='TASKNAME', blank=True)
+    splitrule = models.CharField(max_length=300, db_column='SPLITRULE', blank=True)
+    username = models.CharField(max_length=384, db_column='USERNAME')
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."RUNNINGMCPRODUCTIONTASKS"'
+
+
 class GetEventsForTask(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
     totevrem = models.BigIntegerField(db_column='totevrem')
