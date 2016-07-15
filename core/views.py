@@ -4833,6 +4833,9 @@ def getSummaryForTaskList(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
+def runningProdTasks(request):
+    return redirect('runningMCProdTasks')
+
 @cache_page(60*20)
 def runningMCProdTasks(request):
     valid, response = initRequest(request)
