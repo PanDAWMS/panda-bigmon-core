@@ -54,6 +54,7 @@ from core.common.models import JediWorkQueue
 from core.common.models import RequestStat
 from core.settings.config import ENV
 from core.common.models import RunningMCProductionTasks
+from core.common.models import RunningDPDProductionTasks
 
 from time import gmtime, strftime
 from settings.local import dbaccess
@@ -4995,6 +4996,162 @@ def runningMCProdTasks(request):
         ##self monitor
         endSelfMonitor(request)
         response = render_to_response('runningMCProdTasks.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
+        return response
+
+@cache_page(60*20)
+def runningDPDProdTasks(request):
+    valid, response = initRequest(request)
+    xurl = extensibleURL(request)
+    nosorturl = removeParam(xurl, 'sortby',mode='extensible')
+    tquery={}
+    if 'username' in request.session['requestParams']:
+        tquery['username']=request.session['requestParams']['username']
+    if 'campaign' in request.session['requestParams']:
+        tquery['campaign__contains']=request.session['requestParams']['campaign']
+    if 'corecount' in request.session['requestParams']:
+        tquery['corecount']=request.session['requestParams']['corecount']
+    if 'status' in request.session['requestParams']:
+        tquery['status']=request.session['requestParams']['status']
+    tasks = RunningDPDProductionTasks.objects.filter(**tquery).values()
+    ntasks = len(tasks)
+    slots=0
+    ages=[]
+
+    neventsTotSum=0
+    neventsUsedTotSum=0
+    rjobs1coreTot=0
+    rjobs8coreTot=0
+    for task in tasks:
+        if task['rjobs'] is None:
+            task['rjobs'] = 0
+        task['neventsused']=task['totev']-task['totevrem'] if task['totev'] is not None else 0
+        task['percentage']=round(100.*task['neventsused']/task['totev'],1) if task['totev']>0 else 0.
+        neventsTotSum+=task['totev'] if task['totev'] is not None else 0
+        neventsUsedTotSum+=task['neventsused']
+        slots += task['rjobs'] * task['corecount']
+        if task['corecount']==1:
+            rjobs1coreTot+=task['rjobs']
+        if task['corecount']==8:
+            rjobs8coreTot+=task['rjobs']
+        task['age']=(datetime.now()-task['creationdate']).days
+        ages.append(task['age'])
+        if len(task['campaign'].split(':'))>1:
+            task['cutcampaign']=task['campaign'].split(':')[1]
+        else:
+            task['cutcampaign']=task['campaign'].split(':')[0]
+        task['datasetname']=task['taskname'].split('.')[1]
+        if task['datasetname'].startswith('00'):
+            task['datasetname']=task['datasetname'][2:]
+        task['tid']=task['outputtype'].split('_tid')[1].split('_')[0] if '_tid' in task['outputtype'] else None
+        task['outputtypes']=''
+        outputtypes=[]
+        outputtypes=task['outputtype'].split(',')
+        if len(outputtypes)>0:
+            for outputtype in outputtypes:
+                task['outputtypes']+=outputtype.split('_')[1].split('_p')[0] + ' ' if '_' in outputtype else ''
+        task['ptag']=task['outputtype'].split('_')[2] if '_' in task['outputtype'] else ''
+    plotageshistogram=1
+    if sum(ages)==0: plotageshistogram=0
+    sumd=taskSummaryDict(request, tasks, ['status'])
+
+    if 'sortby' in request.session['requestParams']:
+        sortby = request.session['requestParams']['sortby']
+        if sortby == 'campaign-asc':
+            tasks = sorted(tasks, key=lambda x:x['campaign'])
+        elif sortby == 'campaign-desc':
+            tasks = sorted(tasks, key=lambda x:x['campaign'],reverse=True)
+        elif sortby == 'reqid-asc':
+            tasks = sorted(tasks, key=lambda x:x['reqid'])
+        elif sortby == 'reqid-desc':
+            tasks = sorted(tasks, key=lambda x:x['reqid'], reverse=True)
+        elif sortby == 'jeditaskid-asc':
+            tasks = sorted(tasks, key=lambda x:x['jeditaskid'])
+        elif sortby == 'jeditaskid-desc':
+            tasks = sorted(tasks, key=lambda x:x['jeditaskid'],reverse=True)
+        elif sortby == 'rjobs-asc':
+            tasks = sorted(tasks, key=lambda x:x['rjobs'])
+        elif sortby == 'rjobs-desc':
+            tasks = sorted(tasks, key=lambda x:x['rjobs'], reverse=True)
+        elif sortby == 'status-asc':
+            tasks = sorted(tasks, key=lambda x:x['status'])
+        elif sortby == 'status-desc':
+            tasks = sorted(tasks, key=lambda x:x['status'],reverse=True)
+        elif sortby == 'nevents-asc':
+            tasks = sorted(tasks, key=lambda x:x['totev'])
+        elif sortby == 'nevents-desc':
+            tasks = sorted(tasks, key=lambda x:x['totev'], reverse=True)
+        elif sortby == 'neventsused-asc':
+            tasks = sorted(tasks, key=lambda x:x['neventsused'])
+        elif sortby == 'neventsused-desc':
+            tasks = sorted(tasks, key=lambda x:x['neventsused'], reverse=True)
+        elif sortby == 'percentage-asc':
+            tasks = sorted(tasks, key=lambda x:x['percentage'])
+        elif sortby == 'percentage-desc':
+            tasks = sorted(tasks, key=lambda x:x['percentage'], reverse=True)
+        elif sortby == 'nfilesfailed-asc':
+            tasks = sorted(tasks, key=lambda x:x['nfilesfailed'])
+        elif sortby == 'nfilesfailed-desc':
+            tasks = sorted(tasks, key=lambda x:x['nfilesfailed'], reverse=True)
+        elif sortby == 'priority-asc':
+            tasks = sorted(tasks, key=lambda x:x['currentpriority'])
+        elif sortby == 'priority-desc':
+            tasks = sorted(tasks, key=lambda x:x['currentpriority'], reverse=True)
+        elif sortby == 'ptag-asc':
+            tasks = sorted(tasks, key=lambda x:x['ptag'])
+        elif sortby == 'ptag-desc':
+            tasks = sorted(tasks, key=lambda x:x['ptag'], reverse=True)
+        elif sortby == 'outputtype-asc':
+            tasks = sorted(tasks, key=lambda x:x['outputtypes'])
+        elif sortby == 'output-desc':
+            tasks = sorted(tasks, key=lambda x:x['outputtypes'], reverse=True)
+        elif sortby == 'age-asc':
+            tasks = sorted(tasks, key=lambda x:x['age'])
+        elif sortby == 'age-desc':
+            tasks = sorted(tasks, key=lambda x:x['age'], reverse=True)
+        elif sortby == 'corecount-asc':
+            tasks = sorted(tasks, key=lambda x:x['corecount'])
+        elif sortby == 'corecount-desc':
+            tasks = sorted(tasks, key=lambda x:x['corecount'], reverse=True)
+        elif sortby == 'username-asc':
+            tasks = sorted(tasks, key=lambda x:x['username'])
+        elif sortby == 'username-desc':
+            tasks = sorted(tasks, key=lambda x:x['username'], reverse=True)
+        elif sortby == 'datasetname-asc':
+            tasks = sorted(tasks, key=lambda x:x['datasetname'])
+        elif sortby == 'datasetname-desc':
+            tasks = sorted(tasks, key=lambda x:x['datasetname'], reverse=True)
+    else:
+        sortby = 'age-asc'
+        tasks = sorted(tasks, key=lambda x:x['age'])
+
+
+    if (('HTTP_ACCEPT' in request.META) and(request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
+
+        dump = json.dumps(tasks, cls=DateEncoder)
+        return  HttpResponse(dump, mimetype='text/html')
+    else:
+        data = {
+            'request' : request,
+            'viewParams' : request.session['viewParams'],
+            'requestParams' : request.session['requestParams'],
+            'xurl' : xurl,
+            'nosorturl' : nosorturl,
+            'tasks': tasks,
+            'ntasks' : ntasks,
+            'sortby' : sortby,
+            'ages': ages,
+            'slots': slots,
+            'sumd': sumd,
+            'neventsUsedTotSum': round(neventsUsedTotSum/1000000.,1),
+            'neventsTotSum': round(neventsTotSum/1000000.,1),
+            'rjobs1coreTot': rjobs1coreTot,
+            'rjobs8coreTot': rjobs8coreTot,
+            'plotageshistogram': plotageshistogram,
+        }
+        ##self monitor
+        endSelfMonitor(request)
+        response = render_to_response('runningDPDProdTasks.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes']*60)
         return response
 

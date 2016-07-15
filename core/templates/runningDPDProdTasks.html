@@ -1,0 +1,121 @@
+{% extends "_base_core.html" %}
+{% load url from future %}
+
+{% block page_title %} PanDA tasks{% endblock %}
+{% block subtitle %}Running DPD production task list
+{% endblock %}
+{% block body %}
+
+{% if requestParams.campaign %}<br><b>Campaign:</b> {{ requestParams.campaign }} {% endif %}
+{% if requestParams.status %}<br><b>Status:</b> {{ requestParams.status }} {% endif %}
+{% if requestParams.corecount %}<br><b>Core count:</b> {{ requestParams.corecount }} {% endif %}
+{% if requestParams.username %}<br><b>User name:</b> {{ requestParams.username }} {% endif %}
+<p>
+{% if tasks %}
+
+<table>
+<tr class='tablesection'>
+    <th> Global status</th>
+    <th> Total slots</th>
+    <th> Task age</th>
+</tr>
+<tr>
+<td>
+    Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in <b>{{ ntasks }}</b> tasks <br>
+    Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs
+</td>
+{#<td><div class="d3splot" id="slots" style="float:left"></div></td>#}
+<td>Number of allocated slots: {{ slots }} </td>
+<td colspan=20>{% if plotageshistogram == 1 %}<div class="d3splot" id="sumPlot" style="float:left"></div>{% else %} <p> All tasks age is 0 days</p> {% endif %} </td>
+</tr>
+</table>
+<script src="/static/js/d3jsplot.js"></script>
+<script>
+var ages = {{ ages|safe }};
+var plotageshistogram = {{ plotageshistogram }};
+if (plotageshistogram == 1){
+pandamonProdRunTaskSumPlotFunc(ages,"#sumPlot",'Task age histogram');}
+{#var slots = {{ slots|safe }};#}
+{#var gauges = [];#}
+{#$(document).ready(function() {#}
+{#createGauge("slots", "Slots");#}
+{#gauges['slots'].redraw(slots);});#}
+</script>
+<table>
+<tr class='tablesection'><th colspan=20> {{ ntasks }} tasks</th></tr>
+<tr class='tablesection'>
+    {% if sortby == 'campaign-desc' %}<th>Campaign<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=campaign-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'campaign-asc' %}<th>Campaign<br><a href="{{nosorturl}}sortby=campaign-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Campaign<br><a href="{{nosorturl}}sortby=campaign-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=campaign-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'reqid-desc' %}<th>Request ID<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=reqid-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'reqid-asc' %}<th>Request ID<br><a href="{{nosorturl}}sortby=reqid-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Request ID<br><a href="{{nosorturl}}sortby=reqid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=reqid-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'jeditaskid-desc' %}<th>Task ID<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=jeditaskid-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'jeditaskid-asc' %}<th>Task ID<br><a href="{{nosorturl}}sortby=jeditaskid-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Task ID<br><a href="{{nosorturl}}sortby=jeditaskid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=jeditaskid-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'rjobs-desc' %}<th>RJobs<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=rjobs-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'rjobs-asc' %}<th>RJobs<br><a href="{{nosorturl}}sortby=rjobs-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>RJobs<br><a href="{{nosorturl}}sortby=rjobs-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=rjobs-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'status-desc' %}<th>Status<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=status-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'status-asc' %}<th>Status<br><a href="{{nosorturl}}sortby=status-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Status<br><a href="{{nosorturl}}sortby=status-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=status-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'nevents-desc' %}<th>Evtstotal<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=nevents-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'nevents-asc' %}<th>Evtstotal<br><a href="{{nosorturl}}sortby=nevents-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Evtstotal<br><a href="{{nosorturl}}sortby=nevents-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=nevents-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'neventsused-desc' %}<th>Evtsdone<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=neventsused-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'neventsused-asc' %}<th>Evtsdone<br><a href="{{nosorturl}}sortby=neventsused-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Evtsdone<br><a href="{{nosorturl}}sortby=neventsused-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=neventsused-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'percentage-desc' %}<th>Percentage<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=percentage-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'percentage-asc' %}<th>Percentage<br><a href="{{nosorturl}}sortby=percentage-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Percentage<br><a href="{{nosorturl}}sortby=percentage-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=percentage-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'nfilesfailed-desc' %}<th>Failed<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=nfilesfailed-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'nfilesfailed-asc' %}<th>Failed<br><a href="{{nosorturl}}sortby=nfilesfailed-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Failed<br><a href="{{nosorturl}}sortby=nfilesfailed-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=nfilesfailed-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'priority-desc' %}<th>Priority<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=priority-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'priority-asc' %}<th>Priority<br><a href="{{nosorturl}}sortby=priority-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Priority<br><a href="{{nosorturl}}sortby=priority-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=priority-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'ptag-desc' %}<th>pTag<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=ptag-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'ptag-asc' %}<th>pTag<br><a href="{{nosorturl}}sortby=ptag-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>pTag<br><a href="{{nosorturl}}sortby=ptag-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=ptag-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'outputtype-desc' %}<th>Output types<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=outputtype-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'outputtype-asc' %}<th>Output types<br><a href="{{nosorturl}}sortby=outputtype-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Output types<br><a href="{{nosorturl}}sortby=outputtype-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=outputtype-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'age-desc' %}<th>Age<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=age-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'age-asc' %}<th>Age<br><a href="{{nosorturl}}sortby=age-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Age<br><a href="{{nosorturl}}sortby=age-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=age-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'corecount-desc' %}<th>Cores<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=corecount-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'corecount-asc' %}<th>Cores<br><a href="{{nosorturl}}sortby=corecount-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Cores<br><a href="{{nosorturl}}sortby=corecount-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=corecount-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'datasetname-desc' %}<th>Dataset name<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=datasetname-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'datasetname-asc' %}<th>Dataset name<br><a href="{{nosorturl}}sortby=datasetname-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Dataset ID<br><a href="{{nosorturl}}sortby=datasetname-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=datasetname-asc" class="headerSortUp"></a></th>{% endif %}
+</tr>
+{% for task in tasks %}
+    <tr>
+    <td><a href="{% url 'runningDPDProdTasks' %}?campaign={{ task.campaign }}">{{ task.campaign }}</a></td>
+    <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.reqid}}/" target="_blank">{{ task.reqid }}</a></td>
+    <td><a href=" https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}" target="_blank">{{ task.jeditaskid }}</a></td>
+    <td>{% if task.rjobs > 0 %}<a href="/jobs/?jeditaskid={{ task.jeditaskid }}&jobstatus=running">{{ task.rjobs }}</a> {% else %}{{ task.rjobs }}{% endif %}</td>
+    <td class='{{task.status}}_fill'><a href="{% url 'runningDPDProdTasks' %}?status={{ task.status }}">{{ task.status }}</a></td>
+    <td>{% if task.totev %}{{ task.totev }}{% else %}---{% endif %}</td>
+    <td>{% if task.totev %}{{ task.neventsused }}{% else %}---{% endif %}</td>
+    <td>{% if task.totev %}{{ task.percentage }}{% else %}---{% endif %}</td>
+    <td>{% if task.nfilesfailed %}{{ task.nfilesfailed }}{% else %}0{% endif %}</td>
+    <td>{{ task.currentpriority }}</td>
+    <td>{{ task.ptag }}</td>
+    <td>{{ task.outputtypes }}</td>
+    <td>{{ task.age }}</td>
+    <td><a href="{% url 'runningDPDProdTasks' %}?corecount={{ task.corecount }}">{{ task.corecount }}</a></td>
+    <td>{{ task.datasetname }}</td>
+    </tr>
+{% endfor %}
+</table>
+
+
+
+
+{% else %}
+    <p>No matches to query.</p>
+{% endif %}
+
+{% endblock %}
