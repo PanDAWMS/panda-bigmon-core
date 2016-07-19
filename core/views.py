@@ -1834,10 +1834,13 @@ def jobList(request, mode=None, param=None):
             ##hard limit is set to 2K
             if ('jobstatus' not in request.session['requestParams'] or len(queryFrozenStates) > 0):
 
-                if ('limit' not in request.session['requestParams']):
+                if ('limit' not in request.session['requestParams'] and 'jeditaskid' not in request.session['requestParams']):
                    request.session['JOB_LIMIT'] = 20000
                    JOB_LIMITS = 20000
                    showTop = 1
+                elif ('limit' not in request.session['requestParams'] and 'jeditaskid' in request.session['requestParams']):
+                    request.session['JOB_LIMIT'] = 200000
+                    JOB_LIMITS = 200000
                 else:
                    request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
                    JOB_LIMITS = int(request.session['requestParams']['limit'])
