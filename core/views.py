@@ -6592,44 +6592,44 @@ def ttc(request):
         data = {"error":"TTC for this type of task has not implemented yet"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
     taskrec['ttc'] = taskrec['starttime'] + timedelta(seconds=((taskrec['ttcrequested'] - taskrec['creationdate']).days * 24 * 3600 + (taskrec['ttcrequested'] - taskrec['creationdate']).seconds))
-    progressForBar=[]
-    taskev = GetEventsForTask.objects.filter(**query).values('jeditaskid', 'totev', 'totevrem')
-    if len(taskev)>0:
-        taskev = taskev[0]
-        taskrec['percentage']=((taskev['totev']-taskev['totevrem'])*100/taskev['totev'])
-        taskrec['percentageok']=taskrec['percentage']-5
-        if taskrec['status']=='running':
-            taskrec['ttcbasedpercentage'] = ((datetime.now() - taskrec['starttime']).days * 24 * 3600 + (datetime.now() - taskrec['starttime']).seconds) * 100 / ((taskrec['ttcrequested'] - taskrec['creationdate']).days * 24 * 3600 + (taskrec['ttcrequested'] - taskrec['creationdate']).seconds) if datetime.now()<taskrec['ttc'] else 100
-            progressForBar=[100, taskrec['percentage'], taskrec['ttcbasedpercentage']]
 
-    # tasksetquery={}
-    # tasksetquery['workinggroup__startswith']='AP' if str(taskrec['workinggroup']).startswith('AP') else 'GP'
-    # tasksetquery['taskname__startswith']=taskrec['taskname'].split('.')[0]
-    # tasksetquery['processingtype']=taskrec['processingtype']
-    # tasksetquery['tasktype']='prod'
-    # tasksetquery['status__in']=( 'done' , 'finished' )
-    #
-    # values=['jeditaskid','starttime']
-    # taskset = JediTasks.objects.filter(**tasksetquery)[:50].values(*values)
-    #
-    # newcur = connection.cursor()
-    # for task in taskset:
-    #     newcur.execute("select endtime from (SELECT endtime, njobs/totnjobs*100 as percentage from (select endtime, njobs,  MAX(njobs) OVER (PARTITION BY jeditaskid) as totnjobs from (select jeditaskid, endtime, row_number() over (PARTITION BY jeditaskid order by endtime ) as njobs from ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID=%s and JOBSTATUS='finished'))) where percentage>=%s and rownum<=1", [task['jeditaskid'],taskrec['percentage']])
-    #     tasktime = newcur.fetchone()
-    #     task['percentagetime']=tasktime[0]
-    # newcur.close()
-    # duration=[]
-    # for task in taskset:
-    #     task['durationh']=(task['percentagetime']-task['starttime']).days*24+(task['percentagetime']-task['starttime']).seconds//3600
-    #     duration.append(task['durationh'])
-    #
-    # flag='good' if (taskrec['starttime']+ timedelta(hours=round(percentile(sorted(duration),0.95))))>=datetime.now() else 'bad'
-    # ttcPredicted=taskrec['starttime']+timedelta(hours=((taskrec['ttcrequested']-taskrec['creationdate']).days*24+(taskrec['ttcrequested']-taskrec['creationdate']).seconds//3600))
+    taskevents = GetEventsForTask.objects.filter(**query).values('jeditaskid', 'totev', 'totevrem')
+    if len(taskevents)>0:
+        taskev = taskevents[0]
+    cur = connection.cursor()
+    cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.GETTASKPROFILE('%s'))" % taskrec['jeditaskid'])
+    taskprofile = cur.fetchall()
+    cur.close()
+
+    keys = [ 'endtime', 'starttime', 'nevents', 'njob' ]
+
+    taskprofile = [dict(zip(keys, row)) for row in taskprofile]
+    taskprofile.insert(0,{'endtime':taskrec['starttime'], 'starttime':taskrec['starttime'], 'nevents':0, 'njob':0})
+    maxt=(taskrec['ttcrequested']-taskrec['starttime']).days*3600*24+(taskrec['ttcrequested']-taskrec['starttime']).seconds
+    neventsSum = 0
+    for job in taskprofile:
+        job['ttccoldline']=100-((job['endtime']-taskrec['starttime']).days*3600*24+(job['endtime']-taskrec['starttime']).seconds)*100/float(maxt)
+        job['endtime']=job['endtime'].strftime("%Y-%m-%d %H:%M:%S")
+        job['ttctime']=job['endtime']
+        job['starttime'] = job['starttime'].strftime("%Y-%m-%d %H:%M:%S")
+        neventsSum += job['nevents']
+        job['tobedonepct']=100.-neventsSum*100./taskev['totev']
+    if taskrec['status'] not in ['finished','done']:
+        taskprofile.insert(len(taskprofile), {'endtime':taskprofile[len(taskprofile)-1]['endtime'], 'starttime': taskprofile[len(taskprofile)-1]['starttime'],'ttctime': taskrec['ttcrequested'].strftime("%Y-%m-%d %H:%M:%S"), 'tobedonepct':taskprofile[len(taskprofile)-1]['tobedonepct'],'ttccoldline': 0})
+
+
+    progressForBar = []
+    taskrec['percentage']=((neventsSum)*100/taskev['totev'])
+    taskrec['percentageok']=taskrec['percentage']-5
+    if taskrec['status']=='running':
+        taskrec['ttcbasedpercentage'] = ((datetime.now() - taskrec['starttime']).days * 24 * 3600 + (datetime.now() - taskrec['starttime']).seconds) * 100 / ((taskrec['ttcrequested'] - taskrec['creationdate']).days * 24 * 3600 + (taskrec['ttcrequested'] - taskrec['creationdate']).seconds) if datetime.now()<taskrec['ttc'] else 100
+        progressForBar=[100, taskrec['percentage'], taskrec['ttcbasedpercentage']]
 
     data = {
                'request': request,
                'task': taskrec,
-                'progressForBar': progressForBar,
+               'progressForBar': progressForBar,
+               'profile': taskprofile,
     }
     response = render_to_response('ttc.html', data, RequestContext(request))
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
