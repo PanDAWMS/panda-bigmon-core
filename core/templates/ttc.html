@@ -6,11 +6,16 @@
 <p>
 <span class="failed"> !!! WARNING !!! <br> This page is under development. </span>
 </p>
+
 <p>
 <table>
 <tr>
 <td bgcolor='lightcyan'><b> Task ID: </b></td>
 <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a></td>
+</tr>
+<tr>
+<td bgcolor='lightcyan'><b> Status: </b></td>
+<td class='{{task.status}}_fill'>{{ task.status }}</td>
 </tr>
 <tr>
 <td bgcolor='lightcyan'><b> Creation time: </b></td>
@@ -24,7 +29,7 @@
 <td bgcolor='lightcyan'><b> Predicted time to complete: </b></td>
 <td> {{ task.ttc|date:"Y-m-d H:i" }} </td>
 </tr>
-{% if task.status == 'running' and task.percentage %}
+{% if task.status == 'running' and task.percentage >= 0 %}
 <tr>
 <td bgcolor='lightcyan'><b> Current progress: </b></td>
 <td>{% if task.ttcbasedpercentage <= task.percentage %} <span class="finished">{{ task.percentage }}%</span>
@@ -45,11 +50,16 @@
 {% endif %}
 </table>
 
-{% if task.status == 'running' and task.percentage %}<div class="d3splot" id="progressbar" style="float:left"></div>{% endif %}
  <script src="/static/js/d3jsplot.js"></script>
+<p>
+{% if task.status == 'running' and task.percentage >= 0 %}<div class="plot" id="progressbar" style="float:left"></div>{% endif %}
+{% if task.percentage >= 0 %}<div class="d3splot" id="taskprofile" style="float:left;display:none"></div>{% endif %}
+
 <script>
 var values = {{ progressForBar|safe }};
 if (values.length > 0) {pandamonProgressBarFunc(values,"#progressbar",'Task progress');}
+var profile = {{ profile|safe }};
+if (profile.length>0) {pandamonTaskProfile(profile, 1, "#taskprofile", 'Task profile');}
 </script>
 
 

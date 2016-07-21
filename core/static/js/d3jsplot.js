@@ -215,10 +215,9 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
 
 }
 
-function pandamonProdRunTaskSumPlotFunc(values,divToShow,title){
+function pandamonProdRunTaskSumPlotFunc(values,divToShow,title,numberofbins){
 
     var formatCount = d3.format(",.0f");
-	var numberofbins=40;
     var margin = {top: 30, right: 30, bottom: 40, left: 60},
         width = 550 - margin.left - margin.right,
         height = 300 - margin.top - margin.bottom;
@@ -720,4 +719,142 @@ var legend = svg.selectAll(".legend")
                 return d;
             });
 
+}
+
+function pandamonTaskProfile(values, ttcflag, divToShow, title) {
+
+
+var margin = {top: 40, right: 20, bottom: 80, left: 50},
+    width = 600 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+
+
+var parseDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse;
+values.forEach(function(d) {
+            d.endtime=parseDate(d.endtime);
+            d.starttime=parseDate(d.starttime);
+            d.ttctime=parseDate(d.ttctime);
+        });
+var data = values;
+
+var x = d3.time.scale().range([0, width]);
+var y = d3.scale.linear().range([height, 0]);
+
+var xAxis = d3.svg.axis().scale(x)
+    .orient("bottom").ticks(10);
+
+var yAxis = d3.svg.axis().scale(y)
+    .orient("left").ticks(10);
+y.domain([0, d3.max(data, function(d) { return d.tobedonepct; })]);
+
+var valueline = d3.svg.line()
+    .x(function(d) { return x(d.endtime); })
+    .y(function(d) { return y(d.tobedonepct); });
+
+
+if (ttcflag==1) {
+    var ttccoldline = d3.svg.line()
+        .x(function (d) {
+            return x(d.ttctime);
+        })
+        .y(function (d) {
+            return y(d.ttccoldline);
+        });
+}
+
+var svg = d3.select("body")
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+        .attr("transform",
+              "translate(" + margin.left + "," + margin.top + ")");
+
+var chart = svg.selectAll(".chart")
+        .data(data)
+        .enter().append("g");
+    
+if (ttcflag==1){
+    if (values[values.length-1].endtime < values[values.length-1].ttctime) {
+        x.domain(d3.extent(data, function(d) { return d.ttctime; }));
+    }
+    else {
+        x.domain(d3.extent(data, function(d) { return d.endtime; }));
+    }
+}
+    else {
+        x.domain(d3.extent(data, function(d) { return d.endtime; }));
+}
+
+if (ttcflag==1) {
+    chart.append("path")
+        .attr("class", "linetaskbad")
+        .attr("d", valueline(data.filter(function (d) {
+            if (d.ttccoldline!=0) {
+            return d.tobedonepct >= d.ttccoldline;}
+        })));
+    chart.append("path")
+        .attr("class", "linetaskgood")
+        .attr("d", valueline(data.filter(function (d) {
+            return d.tobedonepct <= d.ttccoldline;
+        })));
+    chart.append("path")
+        .attr("class", "linettccold")
+        .attr("d", ttccoldline(data));
+}
+    else {
+    chart.append("path")
+        .attr("class", "linetaskfrofile")
+        .attr("d", valueline(data));
+}
+
+    svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis)
+            .selectAll("text")
+                .attr("dx", -32)
+                .attr("dy", 5)
+                .attr("transform", function(d) {
+                    return "rotate(-45)"
+                });
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis);
+    svg.append("g")
+        .attr("transform", "translate(" + (width / 2) + ", -10)")
+        .append("text")
+        .attr("class", "title")
+        .text(title);
+
+if (ttcflag==1) {
+    var color = d3.scale.ordinal().range(['green', 'red', 'gray']).domain(['Task progress is faster than predicted', 'Task progress is slower than predicted',  'Forecasted  progress']);
+}
+else {
+    var color = d3.scale.ordinal().range(['#1E90FF', '#116aff']).domain(['Start time', 'Task  progress']);
+}
+var squareside = 10;
+var legend = svg.selectAll(".legend")
+            .data(color.domain().slice())
+            .enter().append("g")
+            .attr("class", "legend")
+            .attr("transform", function(d, i) {
+                maxLegendWidth = (i % 3) * (width+2*(margin.left+margin.right)/3)/3;
+                maxLegendHeight = Math.floor(i  / 3) * 12;
+                return "translate(" + (maxLegendWidth - 2*margin.left/3) + ", " + (height + margin.top + 25 + maxLegendHeight) + ")";
+            });
+
+    legend.append("rect")
+            .attr("x", 0)
+            .attr("width", squareside)
+            .attr("height", squareside)
+            .style("fill", color)
+            .style({"stroke":d3.rgb(color).darker(),'stroke-width':0.4});
+
+    legend.append("text")
+            .attr("x", squareside+5)
+            .attr("y", 10)
+            .text(function(d) {
+                return d;
+            });
 }
