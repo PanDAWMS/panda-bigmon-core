@@ -5005,17 +5005,24 @@ def runningMCProdTasks(request):
 @cache_page(60*20)
 def runningDPDProdTasks(request):
     valid, response = initRequest(request)
-    xurl = extensibleURL(request)
+    # xurl = extensibleURL(request)
+    xurl = request.get_full_path()
+    if xurl.find('?') > 0:
+        xurl += '&'
+    else:
+        xurl += '?'
     nosorturl = removeParam(xurl, 'sortby',mode='extensible')
     tquery={}
-    if 'username' in request.session['requestParams']:
-        tquery['username']=request.session['requestParams']['username']
     if 'campaign' in request.session['requestParams']:
         tquery['campaign__contains']=request.session['requestParams']['campaign']
     if 'corecount' in request.session['requestParams']:
         tquery['corecount']=request.session['requestParams']['corecount']
     if 'status' in request.session['requestParams']:
         tquery['status']=request.session['requestParams']['status']
+    if 'reqid' in request.session['requestParams']:
+        tquery['reqid']=request.session['requestParams']['reqid']
+    if 'inputdataset' in request.session['requestParams']:
+        tquery['taskname__contains']=request.session['requestParams']['inputdataset']
     tasks = RunningDPDProductionTasks.objects.filter(**tquery).values()
     ntasks = len(tasks)
     slots=0
@@ -5037,15 +5044,15 @@ def runningDPDProdTasks(request):
             rjobs1coreTot+=task['rjobs']
         if task['corecount']==8:
             rjobs8coreTot+=task['rjobs']
-        task['age']=(datetime.now()-task['creationdate']).days
+        task['age']=round((datetime.now()-task['creationdate']).days+(datetime.now()-task['creationdate']).seconds/3600./24,1)
         ages.append(task['age'])
         if len(task['campaign'].split(':'))>1:
             task['cutcampaign']=task['campaign'].split(':')[1]
         else:
             task['cutcampaign']=task['campaign'].split(':')[0]
-        task['datasetname']=task['taskname'].split('.')[1]
-        if task['datasetname'].startswith('00'):
-            task['datasetname']=task['datasetname'][2:]
+        task['inputdataset']=task['taskname'].split('.')[1]
+        if task['inputdataset'].startswith('00'):
+            task['inputdataset']=task['inputdataset'][2:]
         task['tid']=task['outputtype'].split('_tid')[1].split('_')[0] if '_tid' in task['outputtype'] else None
         task['outputtypes']=''
         outputtypes=[]
@@ -5120,10 +5127,10 @@ def runningDPDProdTasks(request):
             tasks = sorted(tasks, key=lambda x:x['username'])
         elif sortby == 'username-desc':
             tasks = sorted(tasks, key=lambda x:x['username'], reverse=True)
-        elif sortby == 'datasetname-asc':
-            tasks = sorted(tasks, key=lambda x:x['datasetname'])
-        elif sortby == 'datasetname-desc':
-            tasks = sorted(tasks, key=lambda x:x['datasetname'], reverse=True)
+        elif sortby == 'inputdataset-asc':
+            tasks = sorted(tasks, key=lambda x:x['inputdataset'])
+        elif sortby == 'inputdataset-desc':
+            tasks = sorted(tasks, key=lambda x:x['inputdataset'], reverse=True)
     else:
         sortby = 'age-asc'
         tasks = sorted(tasks, key=lambda x:x['age'])

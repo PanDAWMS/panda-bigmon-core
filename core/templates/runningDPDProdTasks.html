@@ -10,6 +10,9 @@
 {% if requestParams.status %}<br><b>Status:</b> {{ requestParams.status }} {% endif %}
 {% if requestParams.corecount %}<br><b>Core count:</b> {{ requestParams.corecount }} {% endif %}
 {% if requestParams.username %}<br><b>User name:</b> {{ requestParams.username }} {% endif %}
+{% if requestParams.inputdataset %}<br><b>Input dataset:</b> {{ requestParams.inputdataset }} {% endif %}
+{% if requestParams.reqid %}<br><b>Request ID:</b> {{ requestParams.reqid }} {% endif %}
+{% if requestParams.ptag %}<br><b>pTag:</b> {{ requestParams.ptag }} {% endif %}
 <p>
 {% if tasks %}
 
@@ -50,6 +53,9 @@ pandamonProdRunTaskSumPlotFunc(ages,"#sumPlot",'Task age histogram');}
     {% if sortby == 'reqid-desc' %}<th>Request ID<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=reqid-asc" class="headerSortUp"></a></th>
     {% elif sortby == 'reqid-asc' %}<th>Request ID<br><a href="{{nosorturl}}sortby=reqid-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
     {% else %}<th>Request ID<br><a href="{{nosorturl}}sortby=reqid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=reqid-asc" class="headerSortUp"></a></th>{% endif %}
+    {% if sortby == 'inputdataset-desc' %}<th>Input dataset<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=inputdataset-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'inputdataset-asc' %}<th>Input dataset<br><a href="{{nosorturl}}sortby=inputdataset-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}<th>Input dataset<br><a href="{{nosorturl}}sortby=inputdataset-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=inputdataset-asc" class="headerSortUp"></a></th>{% endif %}
     {% if sortby == 'jeditaskid-desc' %}<th>Task ID<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=jeditaskid-asc" class="headerSortUp"></a></th>
     {% elif sortby == 'jeditaskid-asc' %}<th>Task ID<br><a href="{{nosorturl}}sortby=jeditaskid-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
     {% else %}<th>Task ID<br><a href="{{nosorturl}}sortby=jeditaskid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=jeditaskid-asc" class="headerSortUp"></a></th>{% endif %}
@@ -86,17 +92,15 @@ pandamonProdRunTaskSumPlotFunc(ages,"#sumPlot",'Task age histogram');}
     {% if sortby == 'corecount-desc' %}<th>Cores<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=corecount-asc" class="headerSortUp"></a></th>
     {% elif sortby == 'corecount-asc' %}<th>Cores<br><a href="{{nosorturl}}sortby=corecount-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
     {% else %}<th>Cores<br><a href="{{nosorturl}}sortby=corecount-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=corecount-asc" class="headerSortUp"></a></th>{% endif %}
-    {% if sortby == 'datasetname-desc' %}<th>Dataset name<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=datasetname-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'datasetname-asc' %}<th>Dataset name<br><a href="{{nosorturl}}sortby=datasetname-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}<th>Dataset ID<br><a href="{{nosorturl}}sortby=datasetname-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=datasetname-asc" class="headerSortUp"></a></th>{% endif %}
 </tr>
 {% for task in tasks %}
     <tr>
-    <td><a href="{% url 'runningDPDProdTasks' %}?campaign={{ task.campaign }}">{{ task.campaign }}</a></td>
+    <td><a href="{{ xurl }}campaign={{ task.campaign }}">{{ task.campaign }}</a></td>
     <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.reqid}}/" target="_blank">{{ task.reqid }}</a></td>
+    <td><a href="{{ xurl }}inputdataset={{ task.inputdataset }}">{{ task.inputdataset }}</a></td>
     <td><a href=" https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}" target="_blank">{{ task.jeditaskid }}</a></td>
     <td>{% if task.rjobs > 0 %}<a href="/jobs/?jeditaskid={{ task.jeditaskid }}&jobstatus=running">{{ task.rjobs }}</a> {% else %}{{ task.rjobs }}{% endif %}</td>
-    <td class='{{task.status}}_fill'><a href="{% url 'runningDPDProdTasks' %}?status={{ task.status }}">{{ task.status }}</a></td>
+    <td class='{{task.status}}_fill'><a href="{{ xurl }}status={{ task.status }}">{{ task.status }}</a></td>
     <td>{% if task.totev %}{{ task.totev }}{% else %}---{% endif %}</td>
     <td>{% if task.totev %}{{ task.neventsused }}{% else %}---{% endif %}</td>
     <td>{% if task.totev %}{{ task.percentage }}{% else %}---{% endif %}</td>
@@ -105,8 +109,7 @@ pandamonProdRunTaskSumPlotFunc(ages,"#sumPlot",'Task age histogram');}
     <td>{{ task.ptag }}</td>
     <td>{{ task.outputtypes }}</td>
     <td>{{ task.age }}</td>
-    <td><a href="{% url 'runningDPDProdTasks' %}?corecount={{ task.corecount }}">{{ task.corecount }}</a></td>
-    <td>{{ task.datasetname }}</td>
+    <td><a href="{{ xurl }}corecount={{ task.corecount }}">{{ task.corecount }}</a></td>
     </tr>
 {% endfor %}
 </table>
