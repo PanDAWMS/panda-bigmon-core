@@ -9,6 +9,10 @@
         <link rel="stylesheet" href="/static/css/taskChain.css">
         <hr/>
         <h3 style="text-align:center;">Task Chain Visualization</h3>
+        <table id="task_status">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
         <div id="taskChain">
         </div>
         <div>
@@ -27,9 +31,23 @@
     <script>
         var treeData = {{ taskChain|safe }},
                 task = {{ jeditaskid }};
+
+        var counter = 0;
+
+        function childNodesCounter(n) {
+          if (n.children == undefined) return 1;
+          if (n.children.length > 1)
+            counter += n.children.length;
+          n.children.forEach(function(c){
+            childNodesCounter(c);
+          });
+          return counter;
+        }
+        var max = childNodesCounter(treeData);
+
         var vis = d3.select("#taskChain");
         var width = vis[0][0].clientWidth - 50,
-                height = 500,
+                height = max * 40 + 100,
                 delta = 200;
         var task_table = d3.select("#task_table").select("tbody"),
                 datasets_table = d3.select("#datasets_table").select("tbody");
@@ -74,30 +92,50 @@
                 'registered' : '#EBF5E2',
                 'defined' : '#EBF5E2',
                 'assigning' : '#EBF5E2',
-                'ready' : '#C7E9A9',
-                'pending' : '#C7E9A9',
                 'scouting' : '#DBF1C6',
-                'scouted' : '#C7E9A9',
-                'running' : '#C7E9A9',
-                'prepared' : '#A0D670',
-                'done' : '#62AC21',
-                'failed' : '#FFABA2',
-                'finished' : '#A0D670',
-                'aborting' : '#FFABA2',
-                'aborted' : '#FFABA2',
-                'finishing' : '#C7E9A9',
                 'topreprocess' : '#DBF1C6',
                 'preprocessing' : '#DBF1C6',
-                'tobroken' : '#FF8174',
-                'broken' : '#FF8174',
+                'ready' : '#C7E9A9',
+                'pending' : '#C7E9A9',
+                'scouted' : '#C7E9A9',
+                'running' : '#C7E9A9',
+                'finishing' : '#C7E9A9',
+                'prepared' : '#A0D670',
+                'finished' : '#A0D670',
                 'toretry' : '#A0D670',
+                'done' : '#62AC21',
                 'toincexec' : '#62AC21',
                 'rerefine' : '#62AC21',
                 'paused' : '#FFE38E',
                 'throttled' : '#FFE38E',
                 'exhausted' : 'FFE38E',
-                'passed' : '#FFE38E'
+                'passed' : '#FFE38E',
+                'failed' : '#FFABA2',
+                'aborting' : '#FFABA2',
+                'aborted' : '#FFABA2',
+                'tobroken' : '#FF8174',
+                'broken' : '#FF8174'
         };
+
+        var task_status = d3.select("#task_status");
+        task_status.select("thead")
+                   .selectAll("th")
+                   .data(d3.values(task_status_colors))
+                   .enter()
+                   .append("th")
+                   .attr("bgcolor", function (d) {
+                                return d;
+                            })
+                   .attr("height", "10px");
+        var tr = task_status.select("tbody")
+                            .append("tr");
+        var td = tr.selectAll("td")
+                   .data(d3.keys(task_status_colors))
+                   .enter().append("td")
+                   .style("font-size","0.775rem")
+                   .style("padding", "0.2625rem 0.225rem")
+                   .style("line-height", "0.5rem")
+                   .text(function(d) {return d});
 
         var tooltip = d3.select("body")
                 .append("div")
