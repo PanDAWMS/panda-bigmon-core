@@ -215,10 +215,9 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
 
 }
 
-function pandamonProdRunTaskSumPlotFunc(values,divToShow,title){
+function pandamonProdRunTaskSumPlotFunc(values,divToShow,title,numberofbins){
 
     var formatCount = d3.format(",.0f");
-	var numberofbins=40;
     var margin = {top: 30, right: 30, bottom: 40, left: 60},
         width = 550 - margin.left - margin.right,
         height = 300 - margin.top - margin.bottom;
