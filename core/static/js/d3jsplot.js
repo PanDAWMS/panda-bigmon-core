@@ -789,15 +789,15 @@ if (ttcflag==1){
 
 if (ttcflag==1) {
     chart.append("path")
-        .attr("class", "linetaskgood")
-        .attr("d", valueline(data.filter(function (d) {
-            return d.tobedonepct <= d.ttccoldline;
-        })));
-    chart.append("path")
         .attr("class", "linetaskbad")
         .attr("d", valueline(data.filter(function (d) {
             if (d.ttccoldline!=0) {
             return d.tobedonepct >= d.ttccoldline;}
+        })));
+    chart.append("path")
+        .attr("class", "linetaskgood")
+        .attr("d", valueline(data.filter(function (d) {
+            return d.tobedonepct <= d.ttccoldline;
         })));
     chart.append("path")
         .attr("class", "linettccold")
@@ -829,7 +829,7 @@ if (ttcflag==1) {
         .text(title);
 
 if (ttcflag==1) {
-    var color = d3.scale.ordinal().range(['green', 'red', 'gray']).domain(['Good task progress', 'Bad task progress',  'Forecasted  progress']);
+    var color = d3.scale.ordinal().range(['green', 'red', 'gray']).domain(['Task progress is faster than predicted', 'Task progress is slower than predicted',  'Forecasted  progress']);
 }
 else {
     var color = d3.scale.ordinal().range(['#1E90FF', '#116aff']).domain(['Start time', 'Task  progress']);
@@ -840,9 +840,9 @@ var legend = svg.selectAll(".legend")
             .enter().append("g")
             .attr("class", "legend")
             .attr("transform", function(d, i) {
-                maxLegendWidth = (i % 4) * (width+3*(margin.left+margin.right)/4)/4;
-                maxLegendHeight = Math.floor(i  / 4) * 12;
-                return "translate(" + (maxLegendWidth - 3*margin.left/4) + ", " + (height + margin.top + 25 + maxLegendHeight) + ")";
+                maxLegendWidth = (i % 3) * (width+2*(margin.left+margin.right)/3)/3;
+                maxLegendHeight = Math.floor(i  / 3) * 12;
+                return "translate(" + (maxLegendWidth - 2*margin.left/3) + ", " + (height + margin.top + 25 + maxLegendHeight) + ")";
             });
 
     legend.append("rect")

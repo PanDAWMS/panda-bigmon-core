@@ -14,6 +14,10 @@
 <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a></td>
 </tr>
 <tr>
+<td bgcolor='lightcyan'><b> Status: </b></td>
+<td class='{{task.status}}_fill'>{{ task.status }}</td>
+</tr>
+<tr>
 <td bgcolor='lightcyan'><b> Creation time: </b></td>
 <td> {{ task.creationdate|date:"Y-m-d H:i" }} </td>
 </tr>

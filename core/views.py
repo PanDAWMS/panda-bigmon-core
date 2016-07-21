@@ -6591,31 +6591,33 @@ def ttc(request):
     if  taskrec['tasktype']!='prod' or taskrec['ttcrequested'] == None:
         data = {"error":"TTC for this type of task has not implemented yet"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
-    taskrec['ttc'] = taskrec['starttime'] + timedelta(seconds=((taskrec['ttcrequested'] - taskrec['creationdate']).days * 24 * 3600 + (taskrec['ttcrequested'] - taskrec['creationdate']).seconds))
+    taskrec['ttc'] = taskrec['ttcrequested']
 
     taskevents = GetEventsForTask.objects.filter(**query).values('jeditaskid', 'totev', 'totevrem')
     if len(taskevents)>0:
         taskev = taskevents[0]
     cur = connection.cursor()
     cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.GETTASKPROFILE('%s'))" % taskrec['jeditaskid'])
-    taskprofile = cur.fetchall()
+    taskprofiled = cur.fetchall()
     cur.close()
 
     keys = [ 'endtime', 'starttime', 'nevents', 'njob' ]
-
-    taskprofile = [dict(zip(keys, row)) for row in taskprofile]
-    taskprofile.insert(0,{'endtime':taskrec['starttime'], 'starttime':taskrec['starttime'], 'nevents':0, 'njob':0})
-    maxt=(taskrec['ttcrequested']-taskrec['starttime']).days*3600*24+(taskrec['ttcrequested']-taskrec['starttime']).seconds
+    taskprofile=[{'endtime':taskrec['starttime'], 'starttime':taskrec['starttime'], 'nevents':0, 'njob':0}]
+    taskprofile=taskprofile + [dict(zip(keys, row)) for row in taskprofiled]
+    maxt=(taskrec['ttc']-taskrec['starttime']).days*3600*24+(taskrec['ttc']-taskrec['starttime']).seconds
     neventsSum = 0
     for job in taskprofile:
-        job['ttccoldline']=100-((job['endtime']-taskrec['starttime']).days*3600*24+(job['endtime']-taskrec['starttime']).seconds)*100/float(maxt)
+        job['ttccoldline']=100.-((job['endtime']-taskrec['starttime']).days*3600*24+(job['endtime']-taskrec['starttime']).seconds)*100/float(maxt)
         job['endtime']=job['endtime'].strftime("%Y-%m-%d %H:%M:%S")
         job['ttctime']=job['endtime']
         job['starttime'] = job['starttime'].strftime("%Y-%m-%d %H:%M:%S")
         neventsSum += job['nevents']
         job['tobedonepct']=100.-neventsSum*100./taskev['totev']
-    if taskrec['status'] not in ['finished','done']:
-        taskprofile.insert(len(taskprofile), {'endtime':taskprofile[len(taskprofile)-1]['endtime'], 'starttime': taskprofile[len(taskprofile)-1]['starttime'],'ttctime': taskrec['ttcrequested'].strftime("%Y-%m-%d %H:%M:%S"), 'tobedonepct':taskprofile[len(taskprofile)-1]['tobedonepct'],'ttccoldline': 0})
+    taskprofile.insert(len(taskprofile), {'endtime':taskprofile[len(taskprofile)-1]['endtime'],
+                                          'starttime': taskprofile[len(taskprofile)-1]['starttime'],
+                                          'ttctime': taskrec['ttc'].strftime("%Y-%m-%d %H:%M:%S"),
+                                          'tobedonepct':taskprofile[len(taskprofile)-1]['tobedonepct'],
+                                          'ttccoldline': 0})
 
 
     progressForBar = []
