@@ -762,7 +762,7 @@ if (ttcflag==1) {
         });
 }
 
-var svg = d3.select("body")
+var svg = d3.select(divToShow)
     .append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
@@ -821,6 +821,14 @@ if (ttcflag==1) {
     svg.append("g")
         .attr("class", "y axis")
         .call(yAxis);
+    svg.append("g")
+        .attr("transform", "rotate(-90)")
+		.append("text")
+        .attr("y", 0 - margin.left)
+        .attr("x",0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("to be done, %");
     svg.append("g")
         .attr("transform", "translate(" + (width / 2) + ", -10)")
         .append("text")

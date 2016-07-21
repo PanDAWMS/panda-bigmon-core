@@ -50,9 +50,21 @@
 {% endif %}
 </table>
 
- <script src="/static/js/d3jsplot.js"></script>
+<script type="text/javascript">
+function toggleDetailDisplay(className) {
+   el = document.getElementsByClassName(className)
+   for (i=0; i<el.length; i++) {
+     el[i].style.display = (el[i].style.display=="none") ? "" : "none";
+   }
+}
+</script>
+
+<script src="/static/js/d3jsplot.js"></script>
 <p>
-{% if task.status == 'running' and task.percentage >= 0 %}<div class="plot" id="progressbar" style="float:left"></div>{% endif %}
+{% if task.status == 'running' and task.percentage >= 0 %}<div class="plot" id="progressbar"></div>{% endif %}
+<a style="cursor: pointer" onclick="javascript:toggleDetailDisplay('d3splot');">Show/hide task progress plot</a>&emsp;
+
+<p>
 {% if task.percentage >= 0 %}<div class="d3splot" id="taskprofile" style="float:left;display:none"></div>{% endif %}
 
 <script>
