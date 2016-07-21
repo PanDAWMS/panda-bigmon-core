@@ -788,16 +788,16 @@ if (ttcflag==1){
 
 if (ttcflag==1) {
     chart.append("path")
-        .attr("class", "linetaskbad")
+        .attr("class", function () {
+            if (values[values.length-2].tobedonepct <= values[values.length-2].ttccoldline) {
+                return 'linetaskgood';
+            }
+            else {
+                return 'linetaskbad';
+            }
+        })
         .attr("d", valueline(data.filter(function (d) {
-            if (d.ttccoldline!=0) {
-            return d.tobedonepct >= d.ttccoldline;}
-        })));
-    chart.append("path")
-        .attr("class", "linetaskgood")
-        .attr("d", valueline(data.filter(function (d) {
-            return d.tobedonepct <= d.ttccoldline;
-        })));
+            return d.tobedonepct;})));
     chart.append("path")
         .attr("class", "linettccold")
         .attr("d", ttccoldline(data));
