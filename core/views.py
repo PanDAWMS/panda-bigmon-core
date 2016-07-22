@@ -6063,13 +6063,13 @@ def errorSummary(request):
         hours = int(request.session['requestParams']['hours'])
 
     #Preprocess request to cover all sites for cloud to view jobs assigned to the World
-    if ('cloud' in request.session['requestParams']) and ('computingsite' not in request.session['requestParams']):
+    if ('cloud' in request.session['requestParams']) and ('computingsite' not in request.session['requestParams']) and (request.session['requestParams']['cloud'] != 'WORLD') and ('|' not in request.session['requestParams']['cloud']):
         cloud = request.session['requestParams']['cloud']
         del request.session['requestParams']['cloud']
         sites = set([site['site'] for site in pandaSites.values() if site['cloud'] == cloud])
         siteStr = ""
         for site in sites:
-            siteStr += "|"+site
+            siteStr += "|" + site
         siteStr = siteStr[1:]
         request.session['requestParams']['computingsite'] = siteStr
 
