@@ -6073,6 +6073,15 @@ def errorSummary(request):
         siteStr = siteStr[1:]
         request.session['requestParams']['computingsite'] = siteStr
 
+        # this substitution is nessessary to propagate update in the xurl
+        updatedRequest = ""
+        for param in request.session['requestParams']:
+            if param != 'computingsite':
+                updatedRequest += '&'+param +'='+request.session['requestParams'][param]
+        updatedRequest = updatedRequest[1:] + '&cloud=' + cloud + '|WORLD'
+        request.META['QUERY_STRING'] = updatedRequest
+
+
     query,wildCardExtension, LAST_N_HOURS_MAX  = setupView(request, hours=hours, limit=limit, wildCardExt=True)
 
     if not testjobs: query['jobstatus__in'] = [ 'failed', 'holding' ]
