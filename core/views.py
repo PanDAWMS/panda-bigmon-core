@@ -6061,7 +6061,18 @@ def errorSummary(request):
 
     if 'hours' in request.session['requestParams']:
         hours = int(request.session['requestParams']['hours'])
-        
+
+    #Preprocess request to cover all sites for cloud to view jobs assigned to the World
+    if ('cloud' in request.session['requestParams']) and ('computingsite' not in request.session['requestParams']):
+        cloud = request.session['requestParams']['cloud']
+        del request.session['requestParams']['cloud']
+        sites = set([site['site'] for site in pandaSites.values() if site['cloud'] == cloud])
+        siteStr = ""
+        for site in sites:
+            siteStr += "|"+site
+        siteStr = siteStr[1:]
+        request.session['requestParams']['computingsite'] = siteStr
+
     query,wildCardExtension, LAST_N_HOURS_MAX  = setupView(request, hours=hours, limit=limit, wildCardExt=True)
 
     if not testjobs: query['jobstatus__in'] = [ 'failed', 'holding' ]
