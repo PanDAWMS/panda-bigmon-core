@@ -4934,6 +4934,10 @@ def runningMCProdTasks(request):
             tasks = sorted(tasks, key=lambda x:x['neventsused'])
         elif sortby == 'neventsused-desc':
             tasks = sorted(tasks, key=lambda x:x['neventsused'], reverse=True)
+        elif sortby == 'neventstobeused-asc':
+            tasks = sorted(tasks, key=lambda x:x['totevrem'])
+        elif sortby == 'neventstobeused-desc':
+            tasks = sorted(tasks, key=lambda x:x['totevrem'], reverse=True)
         elif sortby == 'percentage-asc':
             tasks = sorted(tasks, key=lambda x:x['percentage'])
         elif sortby == 'percentage-desc':
@@ -5095,6 +5099,10 @@ def runningDPDProdTasks(request):
             tasks = sorted(tasks, key=lambda x:x['neventsused'])
         elif sortby == 'neventsused-desc':
             tasks = sorted(tasks, key=lambda x:x['neventsused'], reverse=True)
+        elif sortby == 'neventstobeused-asc':
+            tasks = sorted(tasks, key=lambda x:x['totevrem'])
+        elif sortby == 'neventstobeused-desc':
+            tasks = sorted(tasks, key=lambda x:x['totevrem'], reverse=True)
         elif sortby == 'percentage-asc':
             tasks = sorted(tasks, key=lambda x:x['percentage'])
         elif sortby == 'percentage-desc':
