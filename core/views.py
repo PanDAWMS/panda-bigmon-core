@@ -6062,6 +6062,9 @@ def errorSummary(request):
     if 'hours' in request.session['requestParams']:
         hours = int(request.session['requestParams']['hours'])
 
+    xurlsubst = extensibleURL(request)
+    xurlsubstNoSite = xurlsubst
+
     #Preprocess request to cover all sites for cloud to view jobs assigned to the World
     if ('cloud' in request.session['requestParams']) and ('computingsite' not in request.session['requestParams']) and (request.session['requestParams']['cloud'] != 'WORLD') and ('|' not in request.session['requestParams']['cloud']):
         cloud = request.session['requestParams']['cloud']
@@ -6075,11 +6078,18 @@ def errorSummary(request):
 
         # this substitution is nessessary to propagate update in the xurl
         updatedRequest = ""
+        updatedRequestNoSite = ""
+
         for param in request.session['requestParams']:
+            updatedRequest += '&'+param +'='+request.session['requestParams'][param]
             if param != 'computingsite':
-                updatedRequest += '&'+param +'='+request.session['requestParams'][param]
-        updatedRequest = updatedRequest[1:] + '&cloud=' + cloud + '|WORLD'
-        request.META['QUERY_STRING'] = updatedRequest
+                updatedRequestNoSite  += '&'+param +'='+request.session['requestParams'][param]
+
+
+        updatedRequest = updatedRequest[1:]
+        updatedRequestNoSite = updatedRequestNoSite[1:]
+        xurlsubst = '/errors/?'+updatedRequest + '&'
+        xurlsubstNoSite = '/errors/?'+updatedRequestNoSite + '&'
 
 
     query,wildCardExtension, LAST_N_HOURS_MAX  = setupView(request, hours=hours, limit=limit, wildCardExt=True)
@@ -6179,8 +6189,10 @@ def errorSummary(request):
     if ( not ( ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json')))  and ('json' not in request.session['requestParams'])):
         nosorturl = removeParam(request.get_full_path(), 'sortby')
         xurl = extensibleURL(request)
-        jobsurl = xurl.replace('/errors/','/jobs/')
-        
+        jobsurl = xurlsubst.replace('/errors/','/jobs/')
+        jobsurlNoSite = xurlsubstNoSite.replace('/errors/','')
+
+
         TFIRST = request.session['TFIRST']
         TLAST = request.session['TLAST']
         del request.session['TFIRST']
@@ -6198,6 +6210,9 @@ def errorSummary(request):
             'limit' : request.session['JOB_LIMIT'],
             'user' : None,
             'xurl' : xurl,
+            'xurlsubst':xurlsubst,
+            'xurlsubstNoSite':xurlsubstNoSite,
+            'jobsurlNoSite':jobsurlNoSite,
             'jobsurl' : jobsurl,
             'nosorturl' : nosorturl,
             'errsByCount' : errsByCount,
