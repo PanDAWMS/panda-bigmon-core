@@ -584,6 +584,7 @@ class RunningMCProductionTasks(models.Model):
     taskname = models.CharField(max_length=384, db_column='TASKNAME', blank=True)
     splitrule = models.CharField(max_length=300, db_column='SPLITRULE', blank=True)
     username = models.CharField(max_length=384, db_column='USERNAME')
+    cputime = models.IntegerField(max_length=384, db_column='CPUTIME')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGMCPRODUCTIONTASKS"'
 
@@ -605,6 +606,7 @@ class RunningDPDProductionTasks(models.Model):
     splitrule = models.CharField(max_length=300, db_column='SPLITRULE', blank=True)
     username = models.CharField(max_length=384, db_column='USERNAME')
     outputtype = models.CharField(max_length=384, db_column='OUTPUTTYPE')
+    cputime = models.IntegerField(max_length=384, db_column='CPUTIME')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGDPDPRODUCTIONTASKS"'
 

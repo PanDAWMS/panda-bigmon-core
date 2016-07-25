@@ -203,6 +203,7 @@
                     {% else %}
                         <th>Cores<br><a href="{{ nosorturl }}sortby=corecount-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=corecount-asc" class="headerSortUp"></a></th>{% endif %}
+                    <th>CPU Time per Event<br>(HS06sPerEvent)</th>
                 </tr>
                 {% for task in tasks %}
                     <tr>
@@ -227,6 +228,7 @@
                         <td>{{ task.outputtypes }}</td>
                         <td>{{ task.age }}</td>
                         <td><a href="{{ xurl }}corecount={{ task.corecount }}">{{ task.corecount }}</a></td>
+                        <td>{{ task.cputime }}</td>
                     </tr>
                 {% endfor %}
             </table>

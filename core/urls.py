@@ -64,11 +64,8 @@ urlpatterns = patterns('',
     url(r'^worldhs06s/$', coremon_views.worldhs06s, name='worldHS06s'),
     url(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),
     url(r'^descendentjoberrsinfo/$', coremon_views.descendentjoberrsinfo, name='descendentjoberrsinfo'),
-
     url(r'^taskssummary/$', coremon_views.getSummaryForTaskList, name='taskListSummary'),
-
     url(r'^ttc/$', coremon_views.ttc, name='ttc'),
-
     url(r'^taskchain/$', coremon_views.taskchain, name='taskchain'),
 
 
