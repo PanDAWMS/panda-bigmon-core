@@ -2388,6 +2388,28 @@ def descendentjoberrsinfo(request):
     return response
 
 
+@cache_page(60*20)
+def eventsInfo(request, mode=None, param=None):
+    if not 'jeditaskid' in request.REQUEST:
+        data = {}
+        return  HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+
+    jeditaskid = request.REQUEST['jeditaskid']
+
+    cur = connection.cursor()
+    cur.execute("select sum(decode(c.startevent,NULL,c.nevents,endevent-startevent+1)) nevents,c.status from atlas_panda.jedi_datasets d,atlas_panda.jedi_dataset_contents c where d.jeditaskid=c.jeditaskid and d.datasetid=c.datasetid and d.jeditaskid=%s and d.type in ('input','pseudo_input') and d.masterid is null group by c.status;" % (jeditaskid))
+    events = cur.fetchall()
+    cur.close()
+    data = {}
+
+    for ev in events:
+        data[ev[1]] = ev[0]
+    data['jeditaskid'] = jeditaskid
+
+
+    return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+
+
 @csrf_exempt
 @cache_page(60*20)
 def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
