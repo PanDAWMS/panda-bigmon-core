@@ -8,6 +8,7 @@
 
     <script>
         var numberOfRunning = 0;
+        var numberOfWaiting = 0;
 
         function insertReply(content) {
             alert(content);
@@ -39,6 +40,8 @@
     Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in <b>{{ ntasks }}</b> tasks <br>
     Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs <br>
     Number of currently running events <b id="running"></b><b>M</b><br>
+    Number of waiting events <b id="waiting"></b><b>M</b><br>
+
 </td>
 <td><div class="d3splot" id="slots" style="float:left"></div></td>
 <td colspan=20>{% if plotageshistogram == 1 %}<div class="d3splot" id="sumPlot" style="float:left"></div>{% else %} <p> All tasks age is 0 days</p> {% endif %} </td>
@@ -246,7 +249,10 @@ gauges['slots'].redraw(slots);});
                 document.getElementById(response.jeditaskid).innerHTML = response.running;
                 if (response.running === parseInt(response.running, 10))
                     numberOfRunning = numberOfRunning + response.running;
+                    numberOfWaiting = numberOfWaiting + {{ task.totevrem }};
                 document.getElementById("running").innerHTML = Math.round(numberOfRunning/1000000);
+                document.getElementById("waiting").innerHTML = Math.round(numberOfWaiting/1000000);
+
             },
             error: function(xhr, status, error) {
                 console.log(status + '; ' + error);
