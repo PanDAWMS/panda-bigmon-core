@@ -2182,31 +2182,34 @@ def cleanURLFromDropPart(url):
         else:
             return url[0:posDropPart] + url[nextAmp+1:]
 
-def getSequentialRetries(pandaid, jeditaskid):
+def getSequentialRetries(pandaid, jeditaskid, countOfInvocations):
     retryquery = {}
+    countOfInvocations.append(1)
     retryquery['jeditaskid'] = jeditaskid
     retryquery['newpandaid'] = pandaid
-    retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
     newretries = []
-    newretries.extend(retries)
-    for retry in retries:
-        if retry['relationtype'] in ['merge','retry']:
-            jsquery = {}
-            jsquery['jeditaskid'] = jeditaskid
-            jsquery['pandaid'] = retry['oldpandaid']
-            values = [ 'pandaid', 'jobstatus', 'jeditaskid' ]
-            jsjobs = []
-            jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
-            for job in jsjobs:
-                if job['jobstatus'] == 'failed':
-                    for retry in newretries:
-                        if (retry['oldpandaid'] == job['pandaid']):
-                            retry['relationtype'] = 'retry'
-                    newretries.extend(getSequentialRetries(job['pandaid'], job['jeditaskid']))
+
+    if (len(countOfInvocations) < 100 ):
+        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
+        newretries.extend(retries)
+        for retry in retries:
+            if retry['relationtype'] in ['merge','retry']:
+                jsquery = {}
+                jsquery['jeditaskid'] = jeditaskid
+                jsquery['pandaid'] = retry['oldpandaid']
+                values = [ 'pandaid', 'jobstatus', 'jeditaskid' ]
+                jsjobs = []
+                jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
+                jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
+                jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
+                jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
+                jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
+                for job in jsjobs:
+                    if job['jobstatus'] == 'failed':
+                        for retry in newretries:
+                            if (retry['oldpandaid'] == job['pandaid']):
+                                retry['relationtype'] = 'retry'
+                        newretries.extend(getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations))
 
     outlist=[]
     added_keys = set()
@@ -2228,7 +2231,7 @@ def getSequentialRetries_ES(pandaid, jobsetid, jeditaskid, countOfInvocations, r
     countOfInvocations.append(1)
     newretries = []
 
-    if (len(countOfInvocations) < 300 ):
+    if (len(countOfInvocations) < 100 ):
         retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
         newretries.extend(retries)
         for retry in retries:
@@ -2271,7 +2274,7 @@ def getSequentialRetries_ESupstream(pandaid, jobsetid, jeditaskid, countOfInvoca
     countOfInvocations.append(1)
     newretries = []
 
-    if (len(countOfInvocations) < 300 ):
+    if (len(countOfInvocations) < 100 ):
         retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').values()
         newretries.extend(retries)
         for retry in retries:
@@ -2641,7 +2644,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             retryquery['jeditaskid'] = job['jeditaskid']
             retryquery['oldpandaid'] = job['pandaid']
             retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
-            pretries = getSequentialRetries(job['pandaid'], job['jeditaskid'])
+            pretries = getSequentialRetries(job['pandaid'], job['jeditaskid'],countOfInvocations)
         else:
             retryquery = {}
             retryquery['jeditaskid'] = job['jeditaskid']
