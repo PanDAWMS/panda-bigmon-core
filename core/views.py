@@ -2981,6 +2981,12 @@ def userInfo(request, user=''):
     else:
         days = 7
 
+
+    requestParams = {}
+    for param in request.session['requestParams']:
+        requestParams[escapeInput(param.strip())] = escapeInput(request.session['requestParams'][param.strip()].strip())
+    request.session['requestParams'] = requestParams
+
     ## Tasks owned by the user
     startdate = timezone.now() - timedelta(hours=days*24)
     startdate = startdate.strftime(defaultDatetimeFormat)
