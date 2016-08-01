@@ -5758,6 +5758,11 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
                         if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or (
                                 job['processingtype'] == 'pmerge' and retry['relationtype'] == 'merge'):
                             dropJob = retry['newpandaid']
+                    else:
+                        if (job['jobsetid'] in hashRetries) and (
+                            hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
+                            dropJob = 1
+
                 else:
                     if (job['pandaid'] in hashRetries):
                         if (hashRetries[job['pandaid']]['relationtype'] == ('retry')):
@@ -5777,6 +5782,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
                 if (dropJob == 0):
                     if not (job['processingtype'] == 'pmerge'):
                         newjobs.append(job)
+
                     elif processingtype == 'pmerge':
                         newjobs.append(job)
 
