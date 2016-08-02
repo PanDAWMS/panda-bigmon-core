@@ -5683,16 +5683,16 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
     #Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
 
     jobs.extend(Jobsarchived.objects.filter(**newquery).exclude(**exclude).\
-        values('eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
+        values('actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
 
     jobs.extend(Jobsdefined4.objects.filter(**newquery).exclude(**exclude).\
-        values('eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
+        values('actualcorecount','eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
     jobs.extend(Jobswaiting4.objects.filter(**newquery).exclude(**exclude).\
-        values('eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
+        values('actualcorecount','eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
     jobs.extend(Jobsactive4.objects.filter(**newquery).exclude(**exclude).\
-        values('eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
+        values('actualcorecount','eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
     jobs.extend(Jobsarchived4.objects.filter(**newquery).exclude(**exclude).\
-        values('eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
+        values('actualcorecount','eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
 
     jobsSet = {}
     newjobs = []
@@ -5700,6 +5700,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
     hs06sSum={'finished':0,'failed':0, 'total':0}
     cpuTimeCurrent=[]
     for job in jobs:
+
         if not job['pandaid'] in jobsSet:
             jobsSet[job['pandaid']] = job['jobstatus']
             newjobs.append(job)
@@ -5708,18 +5709,18 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
             newjobs.append(job)
         if 'scout=cpuTime' in job['jobmetrics']:
             jobcpuTimeScoutID=job['pandaid']
-        if 'corecount' in job and job['corecount'] is None:
-            job['corecount']=1
+        if 'actualcorecount' in job and job['actualcorecount'] is None:
+            job['actualcorecount']=1
         if job['jobstatus'] in ['finished','failed'] and 'endtime' in job and 'starttime' in job and job['starttime'] and job['endtime']:
             duration=max(job['endtime'] - job['starttime'], timedelta(seconds=0))
             job['duration']= duration.days*24*3600+duration.seconds
             if job['computingsite'] in pandaSites:
-                job['hs06s']=(job['duration'])*float(pandaSites[job['computingsite']]['corepower'])*job['corecount']
+                job['hs06s']=(job['duration'])*float(pandaSites[job['computingsite']]['corepower'])*job['actualcorecount']
             else:
                 job['hs06s']=0
             if job['nevents'] and job['nevents']>0:
                 cpuTimeCurrent.append(job['hs06s']/job['nevents'])
-                job['walltimeperevent']=job['duration']*job['corecount']/job['nevents']
+                job['walltimeperevent']=job['duration']*job['actualcorecount']/job['nevents']
             hs06sSum['finished']+=job['hs06s'] if job['jobstatus']=='finished' else 0
             hs06sSum['failed']+=job['hs06s'] if job['jobstatus']=='failed' else 0
     if len(cpuTimeCurrent)>0:
@@ -5808,16 +5809,16 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
     hs06sf=[]
     walltimeperevent = []
     for job in jobs:
-        if job['corecount'] is None:
-            job['corecount'] = 1
+        if job['actualcorecount'] is None:
+            job['actualcorecount'] = 1
         if job['maxpss'] is not None and job['maxpss'] != -1:
             if job['jobstatus']== 'finished':
                 maxpss.append(job['maxpss']/1024)
-                maxpsspercore.append(job['maxpss']/1024/job['corecount'])
+                maxpsspercore.append(job['maxpss']/1024/job['actualcorecount'])
                 sitepss.append(job['computingsite'])
             if job['jobstatus'] == 'failed':
                 maxpssf.append(job['maxpss']/1024)
-                maxpssfpercore.append(job['maxpss']/1024/job['corecount'])
+                maxpssfpercore.append(job['maxpss']/1024/job['actualcorecount'])
                 sitepssf.append(job['computingsite'])
         if 'duration' in job and job['duration']:
             if job['jobstatus']== 'finished':
