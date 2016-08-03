@@ -1518,7 +1518,7 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
     condition = condition[:-1]
     #WITH_RETRIALS => 'N', COMPUTINGSITE=>'INFN-T1', JOBSTATUS=>'failed')
 
-    sqlRequest = "SELECT * FROM table(ATLAS_PANDABIGMON.QUERY_PANDAMON_JOBSPAGE_ALL(%s))" % condition
+    sqlRequest = "SELECT * FROM table(ATLAS_PANDABIGMON.QUERY_JOBSPAGE(%s))" % condition
     cur = connection.cursor()
     cur.execute(sqlRequest)
     rawsummary = cur.fetchall()
@@ -1544,7 +1544,7 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
     jobsToList = set()
     njobs = 0
     for shkey in shkeys:
-        if shkey != 'pandaid':
+        if shkey != 'PANDAID':
             # check this condition
             entry = {}
             entry['field'] = shkey
@@ -1566,7 +1566,7 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
             entry['list'] = entrlist
             sumd.append(entry)
         else:
-            for subshkey in shkey.keys():
+            for subshkey in summaryhash[shkey]:
                 jobsToList.add(subshkey)
 
     return sumd, esjobdict, jobsToList, njobs
@@ -1620,9 +1620,9 @@ def jobListProto(request, mode=None, param=None):
 
     sumd, esjobdict, jobsToList, njobs = jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
 
-    values = [int(val) for val in jobsToList]
+    pandaIDVal = [int(val) for val in jobsToList]
     newquery = {}
-    newquery['pandaid__in'] = values
+    newquery['pandaid__in'] = pandaIDVal
 
     jobs.extend(Jobsdefined4.objects.filter(**newquery).values(*values))
     jobs.extend(Jobsactive4.objects.filter(**newquery).values(*values))

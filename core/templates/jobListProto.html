@@ -52,6 +52,8 @@
 {% include "googleFlowDiagram.html" with struct=flowstruct %}
 {% endif %}
 
+<script type="text/javascript" src="{{ STATIC_URL }}/js/jquery.shorten.1.0.js"></script>
+
 <script type="text/javascript">    
 
 function toggleDetailDisplay(className) {                                                                                                                                                                                    
@@ -60,6 +62,10 @@ function toggleDetailDisplay(className) {
      el[i].style.display = (el[i].style.display=="none") ? "" : "none";                                                                                           
    }
 }
+
+	$(document).ready(function() {
+	    $(".comment").shorten();
+	});
 
 </script>
 
@@ -93,18 +99,19 @@ function toggleDetailDisplay(className) {
 <table>
 <tr class='tablesection'><th colspan=20> Job attribute summary   &nbsp; Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
 {% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
-{% for item in fdict.list %}
-{% if fdict.field == 'jobstatus' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
+    <td><div class="comment more">
+        {% for item in fdict.list %}
+            {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
 
-{% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
-    <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
-                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a> &nbsp;
-{% endif %}
-
-
-{% endfor %}
-</td></tr>
+            {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
+                <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
+                                                              href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a> &nbsp;
+            {% endif %}
+        {% endfor %}
+        </div>
+    </td>
+</tr>
 {% endfor %}
 </table>
 
