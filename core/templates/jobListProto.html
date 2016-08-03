@@ -102,7 +102,7 @@ function toggleDetailDisplay(className) {
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
     <td><div class="comment more">
         {% for item in fdict.list %}
-            {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
+            {% if fdict.field == 'JOBSTATUS' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
 
             {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
                 <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
@@ -113,6 +113,7 @@ function toggleDetailDisplay(className) {
     </td>
 </tr>
 {% endfor %}
+</table>
 </table>
 
 {% if errsByCount %}
