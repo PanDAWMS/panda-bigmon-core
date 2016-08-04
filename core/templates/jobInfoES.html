@@ -236,6 +236,10 @@ job <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{
 <a href='{{stdlog}}'>batch log</a> </td>{% endif %}
 {% endif %}
 
+{% if job.jobstatus == 'closed' %}
+    <td><a href='{{stdout}}'>Pilot ID</a></td>
+{% endif %}
+
 <td>
 <a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">pilot records</a>
 </td>

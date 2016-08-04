@@ -1499,23 +1499,25 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
     sumd = []
     esjobdict = []
 
-    condition = " RANGE_DAYS=>'0.5', "
+    condition = ""
+    if 'jeditaskid' not in request.REQUEST:
+        condition = " RANGE_DAYS=>'0.5', "
     if dropmode:
-        condition += " WITH_RETRIALS => 'N',"
+        condition += " WITH_RETRIALS => 'N', "
     else:
-        condition += " WITH_RETRIALS => 'Y',"
+        condition += " WITH_RETRIALS => 'Y', "
     for item in standard_fields:
         if item in query:
-            condition += " "+item+" => '"+request[item]+"',"
+            condition += " "+item.upper()+" => '"+request.REQUEST[item]+"', "
         else:
             pos = wildCardExtension.find(item, 0)
             if pos > 0:
                 firstc = wildCardExtension.find("'", pos) + 1
                 sec = wildCardExtension.find("'", firstc)
                 value =wildCardExtension[firstc: sec]
-                condition += " "+item+" => '"+value+"',"
+                condition += " "+item.upper()+" => '"+value+"', "
 
-    condition = condition[:-1]
+    condition = condition[:-2]
     #WITH_RETRIALS => 'N', COMPUTINGSITE=>'INFN-T1', JOBSTATUS=>'failed')
 
     sqlRequest = "SELECT * FROM table(ATLAS_PANDABIGMON.QUERY_JOBSPAGE(%s))" % condition
