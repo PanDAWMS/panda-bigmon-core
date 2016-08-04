@@ -1658,7 +1658,7 @@ def jobListProto(request, mode=None, param=None):
             display_limit = int(request.session['requestParams']['display_limit'])
         url_nolimit = removeParam(request.get_full_path(), 'display_limit')
     else:
-        display_limit = 1000
+        display_limit = 100
         url_nolimit = request.get_full_path()
     njobsmax = display_limit
 
@@ -1709,6 +1709,7 @@ def jobListProto(request, mode=None, param=None):
     else:
         showwarn = 1
 
+    jobsToShow = jobs[:njobsmax]
 
     if 'jeditaskid' in request.session['requestParams']:
         if len(jobs) > 0:
@@ -1742,7 +1743,7 @@ def jobListProto(request, mode=None, param=None):
         'request': request,
         'viewParams': request.session['viewParams'],
         'requestParams': request.session['requestParams'],
-        'jobList': jobs[:njobsmax],
+        'jobList': jobsToShow[:njobsmax],
         'jobtype': jobtype,
         'njobs': njobs,
         'user': user,
