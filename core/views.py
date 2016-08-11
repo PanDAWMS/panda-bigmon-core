@@ -1527,7 +1527,7 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
     # first checkpoint
     cur.close()
 
-
+    errsByCount = []
     summaryhash = {}
     for row in rawsummary:
         if row[0] in summaryhash:
@@ -1546,7 +1546,7 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
     jobsToList = set()
     njobs = 0
     for shkey in shkeys:
-        if shkey != 'PANDAID':
+        if shkey!='PANDAID' and shkey!='ErrorCode':
             # check this condition
             entry = {}
             entry['field'] = shkey
@@ -1567,11 +1567,25 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
                 entrlist.append(subentry)
             entry['list'] = entrlist
             sumd.append(entry)
-        else:
+        elif shkey == 'PANDAID':
             for subshkey in summaryhash[shkey]:
                 jobsToList.add(subshkey)
 
-    return sumd, esjobdict, jobsToList, njobs
+        elif shkey == 'ErrorCode':
+            for subshkey in summaryhash[shkey]:
+                errval = {}
+                errval['codename'] = subshkey.split(':')[0]
+                errval['codeval'] = subshkey.split(':')[1]
+                errval['count'] = summaryhash[shkey][subshkey]
+                errval['error'] = subshkey
+                error = [it['error'] for it in errorcodelist if it['name']==errval['codename'].lower()]
+                if len(error) > 0 and error[0] in errorCodes and int(errval['codeval']) in errorCodes[error[0]]:
+                    errval['diag'] = errorCodes[error[0]][int(errval['codeval'])]
+                errsByCount.append(errval)
+
+    #errval.codename errval.codeval errval.count errval.diag
+
+    return sumd, esjobdict, jobsToList, njobs, errsByCount
 
 
 @cache_page(60*20)
@@ -1620,7 +1634,7 @@ def jobListProto(request, mode=None, param=None):
     if 'mode' in request.session['requestParams'] and request.session['requestParams'][
         'mode'] == 'nodrop': dropmode = False
 
-    sumd, esjobdict, jobsToList, njobs = jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
+    sumd, esjobdict, jobsToList, njobs, errsByCount = jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
 
     pandaIDVal = [int(val) for val in jobsToList]
     newquery = {}
@@ -1723,8 +1737,7 @@ def jobListProto(request, mode=None, param=None):
                         job['maxpss'] = "%0.2f" % (job['maxpss'] / 1024.)
 
 
-#    errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
-#                                                                                          testjobs)
+    #errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist =
 
     xurl = extensibleURL(request)
     print xurl
@@ -1738,7 +1751,7 @@ def jobListProto(request, mode=None, param=None):
     nodropPartURL = cleanURLFromDropPart(xurl)
     data = {
         'prefix': getPrefix(request),
-#        'errsByCount': errsByCount,
+        'errsByCount': errsByCount,
 #        'errdSumd': errdSumd,
         'request': request,
         'viewParams': request.session['viewParams'],
