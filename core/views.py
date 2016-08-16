@@ -61,6 +61,8 @@ from settings.local import dbaccess
 import string as strm
 from django.views.decorators.cache import cache_page
 
+import TaskProgressPlot
+
 import ErrorCodes
 errorFields = []
 errorCodes = {}
@@ -5243,6 +5245,25 @@ def getBrokerageLog(request):
         print message
 
 
+
+def taskprofileplot(request):
+    jeditaskid = 0
+    if 'jeditaskid' in request.REQUEST: jeditaskid = int(request.REQUEST['jeditaskid'])
+    image = None
+    if jeditaskid != 0:
+        dp = TaskProgressPlot.TaskProgressPlot()
+        image = dp.get_task_profile(taskid=jeditaskid)
+    if image is not None:
+        return HttpResponse(image, content_type="image/png")
+    else:
+        return HttpResponse('')
+        #response = HttpResponse(content_type="image/jpeg")
+        #red.save(response, "JPEG")
+        #return response
+
+
+
+
 @cache_page(60*20)
 def taskInfo(request, jeditaskid=0):
     jeditaskid = int(jeditaskid)
@@ -5559,6 +5580,11 @@ def taskInfo(request, jeditaskid=0):
     if (taskrec['cloud'] == 'WORLD'):
         taskrec['destination'] = taskrec['nucleus']
 
+    showtaskprof = False
+    countfailed = [val['count'] for val in jobsummary if val['name'] == 'finished']
+    if len(countfailed) > 0 and countfailed[0] > 0:
+        showtaskprof = True
+
     if (('HTTP_ACCEPT' in request.META) and(request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
 
         del tasks
@@ -5603,6 +5629,7 @@ def taskInfo(request, jeditaskid=0):
         del request.session['TLAST']
         data = {
             'nomodeurl': nomodeurl,
+            'showtaskprof': showtaskprof,
             'jobsummaryESMerge': jobsummaryESMerge,
             'jobsummaryPMERGE' : jobsummaryPMERGE,
             'maxpss' : maxpss,
