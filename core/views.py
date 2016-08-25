@@ -1506,16 +1506,33 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
     sumd = []
     esjobdict = []
 
+    listOfReqParNoWind = ['jeditaskid', 'inputfileproject', 'inputfiletype']
     condition = ""
-    if 'jeditaskid' not in request.REQUEST:
-        condition = " RANGE_DAYS=>'0.5', "
+    requestFields = {}
+    for item in request.REQUEST:
+        requestFields[item.lower()] = request.REQUEST[item]
+
+    if not any(i in listOfReqParNoWind for i in requestFields): #Here we should define field where we should not define short time window
+        condition = " RANGE_DAYS=>'0.125', "
+    else:
+        timeWindCheckCond = 'SELECT ROUND(sysdate - TRUNC(MIN(modificationtime))) time_window from ATLAS_PANDABIGMON.pandamon_jobspage_arch where '
+        for field in [i for i in requestFields if i in listOfReqParNoWind]:
+            timeWindCheckCond += ' '+field.upper()+'=\''+requestFields[field]+'\' AND';
+        timeWindCheckCond = timeWindCheckCond[:-3]
+        cur = connection.cursor()
+        cur.execute(timeWindCheckCond)
+        minDate = cur.fetchall()
+        cur.close()
+        if minDate is not None:
+            condition = " RANGE_DAYS=>\'"+str(minDate[0][0])+"\', "
+
     if dropmode:
         condition += " WITH_RETRIALS => 'N', "
     else:
         condition += " WITH_RETRIALS => 'Y', "
     for item in standard_fields:
         if item in query:
-            condition += " "+item.upper()+" => '"+request.REQUEST[item]+"', "
+            condition += " "+item.upper()+" => '"+requestFields[item]+"', "
         else:
             pos = wildCardExtension.find(item, 0)
             if pos > 0:
@@ -1527,12 +1544,17 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
     condition = condition[:-2]
     #WITH_RETRIALS => 'N', COMPUTINGSITE=>'INFN-T1', JOBSTATUS=>'failed')
 
-    sqlRequest = "SELECT * FROM table(ATLAS_PANDABIGMON.QUERY_JOBSPAGE(%s))" % condition
-    cur = connection.cursor()
-    cur.execute(sqlRequest)
-    rawsummary = cur.fetchall()
-    # first checkpoint
-    cur.close()
+    rawsummary = []
+    while len(rawsummary) == 0: # it is done to work with ORA-12801 error
+        try:
+            sqlRequest = "SELECT * FROM table(ATLAS_PANDABIGMON.QUERY_JOBSPAGE_ALL(%s))" % condition
+            cur = connection.cursor()
+            cur.execute(sqlRequest)
+            rawsummary = cur.fetchall()
+            cur.close()
+        except:
+            pass
+
 
     errsByCount = []
     summaryhash = {}
@@ -1593,6 +1615,13 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
     #errval.codename errval.codeval errval.count errval.diag
 
     return sumd, esjobdict, jobsToList, njobs, errsByCount
+
+
+
+def jobListP(request, mode=None, param=None):
+    response = render_to_response('jobListPLoading.html', RequestContext(request))
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
 
 
 @cache_page(60*20)
@@ -5730,6 +5759,8 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
 
     #Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
 
+    #print str(datetime.now())
+
     jobs.extend(Jobsarchived.objects.filter(**newquery).exclude(**exclude).\
         values('actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
 
@@ -5741,6 +5772,8 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
         values('actualcorecount','eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
     jobs.extend(Jobsarchived4.objects.filter(**newquery).exclude(**exclude).\
         values('actualcorecount','eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus','pandaid','jobstatus','jeditaskid','processingtype','maxpss', 'starttime', 'endtime', 'corecount', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents'))
+
+    #print str(datetime.now())
 
     jobsSet = {}
     newjobs = []
