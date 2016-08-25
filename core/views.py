@@ -1784,6 +1784,8 @@ def jobListProto(request, mode=None, param=None):
     TLAST = request.session['TLAST']
     del request.session['TFIRST']
     del request.session['TLAST']
+    if 'limit'  in request.session['viewParams']:
+        del request.session['viewParams']['limit']
     nodropPartURL = cleanURLFromDropPart(xurl)
     data = {
         'prefix': getPrefix(request),
@@ -2151,7 +2153,6 @@ def jobList(request, mode=None, param=None):
         TLAST = request.session['TLAST']
         del request.session['TFIRST']
         del request.session['TLAST']
-        del request.session['viewParams']['limit']
         nodropPartURL = cleanURLFromDropPart(xurl)
         data = {
             'prefix': getPrefix(request),
