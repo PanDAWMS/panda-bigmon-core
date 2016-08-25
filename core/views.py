@@ -1614,6 +1614,7 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
 
     #errval.codename errval.codeval errval.count errval.diag
 
+        #jobsToList = list(jobsToList)[:100]
     return sumd, esjobdict, jobsToList, njobs, errsByCount
 
 
@@ -1690,7 +1691,7 @@ def jobListProto(request, mode=None, param=None):
     droppedIDs = set()
     droppedPmerge = set()
 
-    jobs = cleanJobList(request, jobs)
+    #jobs = cleanJobList(request, jobs)
 
     jobtype = ''
     if 'jobtype' in request.session['requestParams']:
@@ -2150,6 +2151,7 @@ def jobList(request, mode=None, param=None):
         TLAST = request.session['TLAST']
         del request.session['TFIRST']
         del request.session['TLAST']
+        del request.session['viewParams']['limit']
         nodropPartURL = cleanURLFromDropPart(xurl)
         data = {
             'prefix': getPrefix(request),
