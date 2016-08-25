@@ -1620,7 +1620,6 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
 
 def jobListP(request, mode=None, param=None):
     response = render_to_response('jobListPLoading.html', RequestContext(request))
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
 
