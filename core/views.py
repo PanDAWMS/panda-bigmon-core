@@ -845,7 +845,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
             retryquery['jeditaskid'] = task
 
             retries = JediJobRetryHistory.objects.filter(**retryquery).extra(
-                where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', "  # 'merge', "
+                where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', "
                        "'jobset_retry', 'jobset_id', 'es_merge')"]).order_by('newpandaid').values()
 
         hashRetries = {}
@@ -860,7 +860,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
               if hashRetries.has_key(pandaid):
                     retry = hashRetries[pandaid]
                     if not isEventService(job):
-                        if retry['relationtype'] == '' or retry['relationtype'] == 'retry': # or ( job['processingtype'] == 'pmerge' and retry['relationtype'] == 'merge'):
+                        if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or (job['processingtype'] == 'pmerge' and job['jobstatus'] == 'failed' and retry['relationtype'] == 'merge'):
                              dropJob = retry['newpandaid']
                     else:
                         mergeCand = [x['jobsetid'] for x in jobs if x['pandaid']==retry['newpandaid'] ]
@@ -2284,7 +2284,7 @@ def jobList(request, mode=None, param=None):
         for task in taskids:
             retryquery = {}
             retryquery['jeditaskid'] = task
-            retries = JediJobRetryHistory.objects.filter(**retryquery).extra(where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', " #'merge',
+            retries = JediJobRetryHistory.objects.filter(**retryquery).extra(where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', "
                                                                                     "'jobset_retry', 'es_merge')"]).order_by('newpandaid').values()
 
         hashRetries = {}
@@ -2299,7 +2299,7 @@ def jobList(request, mode=None, param=None):
             if not isEventService(job):
                 if hashRetries.has_key(pandaid):
                     retry = hashRetries[pandaid]
-                    if retry['relationtype'] == '' or retry['relationtype'] == 'retry': #or (job['processingtype'] == 'pmerge' and retry['relationtype'] == 'merge'):
+                    if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or (job['processingtype'] == 'pmerge' and job['jobstatus'] == 'failed' and retry['relationtype'] == 'merge'):
                         dropJob = retry['newpandaid']
                 else:
                     if (job['jobsetid'] in hashRetries) and ( hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
@@ -6185,7 +6185,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
             for task in taskids:
                 retryquery = {}
                 retryquery['jeditaskid'] = task
-                retries = JediJobRetryHistory.objects.filter(**retryquery).extra(where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', " #'merge', "
+                retries = JediJobRetryHistory.objects.filter(**retryquery).extra(where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', "
                                                                                         "'jobset_retry', 'jobset_id', 'es_merge')"]).order_by('newpandaid').values()
                 print 'got the retries', len(jobs), len(retries)
 
@@ -6202,7 +6202,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False,  subst
                     if hashRetries.has_key(pandaid):
                         retry = hashRetries[pandaid]
     #                    if not isEventServiceFlag:
-                        if retry['relationtype'] == '' or retry['relationtype'] == 'retry': # or (job['processingtype'] == 'pmerge' and retry['relationtype'] == 'merge'):
+                        if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or (job['processingtype'] == 'pmerge' and job['jobstatus'] == 'failed' and retry['relationtype'] == 'merge'):
                             dropJob = retry['newpandaid']
                     else:
                         if (job['jobsetid'] in hashRetries) and (
