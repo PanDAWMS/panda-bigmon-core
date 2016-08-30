@@ -62,8 +62,10 @@ import string as strm
 from django.views.decorators.cache import cache_page
 
 import TaskProgressPlot
-
 import ErrorCodes
+
+from threading import Thread
+
 errorFields = []
 errorCodes = {}
 errorStages = {}
@@ -1622,8 +1624,366 @@ def jobSummaryDictProto(request, dropmode, query, wildCardExtension, cutsummary)
 
 
 
+#def jobListP(request, mode=None, param=None):
+#    response = render_to_response('jobListPLoading.html', RequestContext(request))
+#    return response
+
+
+def postpone(function):
+  def decorator(*args, **kwargs):
+    t = Thread(target = function, args=args, kwargs=kwargs)
+    t.daemon = True
+    t.start()
+  return decorator
+
+
+@postpone
+def startDataRetrieve(requestToken, condition, partition):
+    # Here we retreive data for jobs summary
+
+    rawsummary = []
+    while len(rawsummary) == 0: # it is done to work with ORA-12801 error
+        try:
+            sqlRequest = "INSERT into ATLAS_PANDABIGMON.JOBSPAGE_PART_AGGR_ALL(REQUEST_TOKEN, ATTR, ATTR_VALUE, NUM_OCCUR ) (select \'%d\' AS REQUEST_TOKEN, PANDA_ATTRIBUTE, ATTR_VALUE, NUM_OCCURRENCES FROM table(ATLAS_PANDABIGMON.QUERY_JOBSPAGE_ARCH_PARTITION(PARTITION_NAME=>\'%s\', %s)));" % (requestToken, partition, condition)
+            cur = connection.cursor()
+            cur.execute(sqlRequest)
+            cur.commit()
+            cur.close()
+        except:
+            pass
+    pass
+
+
+
 def jobListP(request, mode=None, param=None):
+    #Here We start Retreiving Summary and return almost empty template
+
+    #Get request token. This sheme of getting tokens should be more sophisticated (at least not use sequential numbers)
+    requestToken = -1
+    try:
+        sqlRequest = "SELECT ATLAS_PANDABIGMON.PANDAMON_REQUEST_TOKEN_SEQ.NEXTVAL as my_req_token FROM dual;"
+        cur = connection.cursor()
+        cur.execute(sqlRequest)
+        requestToken = cur.fetchall()
+        cur.close()
+    except:
+        pass
+
+    requestToken = requestToken[0][0]
+
+    if (requestToken == -1):
+        print "Error in getting reuest token"
+        return
+
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
+    dropmode = True
+    if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+        'mode'] == 'drop': dropmode = True
+    if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+        'mode'] == 'nodrop': dropmode = False
+
+    listOfReqParNoWind = ['jeditaskid', 'inputfileproject', 'inputfiletype']
+    condition = ""
+    requestFields = {}
+    for item in request.REQUEST:
+        requestFields[item.lower()] = request.REQUEST[item]
+
+    minDate = 0
+
+    #RANGE_DAYS is not supported currently
+
+    if not any(i in listOfReqParNoWind for i in
+               requestFields):  # Here we should define field where we should not define short time window
+        #condition = " RANGE_DAYS=>'0.125', "
+        pass
+    else:
+        timeWindCheckCond = 'SELECT ROUND(sysdate - TRUNC(MIN(modificationtime))) time_window from ATLAS_PANDABIGMON.pandamon_jobspage_arch where '
+        for field in [i for i in requestFields if i in listOfReqParNoWind]:
+            timeWindCheckCond += ' ' + field.upper() + '=\'' + requestFields[field] + '\' AND';
+        timeWindCheckCond = timeWindCheckCond[:-3]
+        cur = connection.cursor()
+        cur.execute(timeWindCheckCond)
+        minDate = cur.fetchall()
+        cur.close()
+        if minDate is not None:
+            #condition = " RANGE_DAYS=>\'" + str(minDate[0][0]) + "\', "
+            minDate = minDate[0][0]
+
+    if dropmode:
+        condition += " WITH_RETRIALS => 'N', "
+    else:
+        condition += " WITH_RETRIALS => 'Y', "
+    for item in standard_fields:
+        if item in query:
+            condition += " " + item.upper() + " => '" + requestFields[item] + "', "
+        else:
+            pos = wildCardExtension.find(item, 0)
+            if pos > 0:
+                firstc = wildCardExtension.find("'", pos) + 1
+                sec = wildCardExtension.find("'", firstc)
+                value = wildCardExtension[firstc: sec]
+                condition += " " + item.upper() + " => '" + value + "', "
+
+    condition = condition[:-2]
+    # Example: WITH_RETRIALS => 'N', COMPUTINGSITE=>'INFN-T1', JOBSTATUS=>'failed')
+
+    #We get needed partitions
+    while True:  # it is done to work with ORA-12801 error
+        try:
+            sqlRequest = "SELECT partition_name FROM ALL_TAB_PARTITIONS WHERE table_owner = 'ATLAS_PANDABIGMON' AND table_name = 'PANDAMON_JOBSPAGE_ARCH' " \
+                         "AND partition_position >= (SELECT MAX(partition_position) - %d FROM ALL_TAB_PARTITIONS " \
+                         "WHERE table_owner = 'ATLAS_PANDABIGMON' AND table_name = 'PANDAMON_JOBSPAGE_ARCH' ) order by PARTITION_POSITION;" % minDate
+            cur = connection.cursor()
+            cur.execute(sqlRequest)
+            partitions = cur.fetchall()
+            cur.close()
+            break
+        except:
+            pass
+
+    for part in partitions:
+        startDataRetrieve(requestToken, condition, part[0])
+
+    del request.session['TFIRST']
+    del request.session['TLAST']
     response = render_to_response('jobListPLoading.html', RequestContext(request))
+    return response
+
+
+def jobListPUpt(request, mode=None, param=None):
+    if 'requesttoken' not in request.session['requestParams']:
+        return
+
+    rawsummary = []
+    while len(rawsummary) == 0: # it is done to work with ORA-12801 error
+        try:
+            sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_PART_AGGR_ALL WHERE REQUEST_TOKEN=" % request.session['requestParams']['requesttoken']
+            cur = connection.cursor()
+            cur.execute(sqlRequest)
+            rawsummary = cur.fetchall()
+            cur.close()
+        except:
+            pass
+
+    errsByCount = []
+    summaryhash = {}
+    for row in rawsummary:
+        if row[0] in summaryhash:
+           if row[1] in summaryhash[row[0]]:
+               summaryhash[row[0]][row[1]] += row[2]
+           else:
+               summaryhash[row[0]][row[1]] = row[2]
+        else:
+            item = {}
+            item[row[1]] = row[2]
+            summaryhash[row[0]] = item
+    #second checkpoint
+
+    shkeys = summaryhash.keys()
+    sumd = []
+    jobsToList = set()
+    njobs = 0
+    for shkey in shkeys:
+        if shkey!='PANDAID' and shkey!='ErrorCode':
+            # check this condition
+            entry = {}
+            entry['field'] = shkey
+            entrlist = []
+            for subshkey in summaryhash[shkey].keys():
+                subentry = {}
+                subentry['kname'] = subshkey
+                subentry['kvalue'] = summaryhash[shkey][subshkey]
+                if (shkey == 'COMPUTINGSITE'):
+                    njobs += summaryhash[shkey][subshkey]
+                entrlist.append(subentry)
+            entry['list'] = entrlist
+            sumd.append(entry)
+        elif shkey == 'PANDAID':
+            for subshkey in summaryhash[shkey]:
+                jobsToList.add(subshkey)
+
+        elif shkey == 'ErrorCode':
+            for subshkey in summaryhash[shkey]:
+                errval = {}
+                errval['codename'] = subshkey.split(':')[0]
+                errval['codeval'] = subshkey.split(':')[1]
+                errval['count'] = summaryhash[shkey][subshkey]
+                errval['error'] = subshkey
+                error = [it['error'] for it in errorcodelist if it['name']==errval['codename'].lower()]
+                if len(error) > 0 and error[0] in errorCodes and int(errval['codeval']) in errorCodes[error[0]]:
+                    errval['diag'] = errorCodes[error[0]][int(errval['codeval'])]
+                errsByCount.append(errval)
+
+    pandaIDVal = [int(val) for val in jobsToList]
+    newquery = {}
+    newquery['pandaid__in'] = pandaIDVal
+
+    jobs = []
+    eventservice = False
+    if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
+        eventservice = True
+    if 'eventservice' in request.session['requestParams'] and (
+            request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
+        'eventservice'] == '1'):
+        eventservice = True
+    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+        'json' in request.session['requestParams']):
+        values = Jobsactive4._meta.get_all_field_names()
+    elif eventservice:
+        values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice'
+    else:
+        values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice'
+
+    jobs.extend(Jobsdefined4.objects.filter(**newquery).values(*values))
+    jobs.extend(Jobsactive4.objects.filter(**newquery).values(*values))
+    jobs.extend(Jobswaiting4.objects.filter(**newquery).values(*values))
+    jobs.extend(Jobsarchived4.objects.filter(**newquery).values(*values))
+
+    ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
+    taskids = {}
+
+    for job in jobs:
+        if 'jeditaskid' in job: taskids[job['jeditaskid']] = 1
+
+    droplist = []
+    droppedIDs = set()
+    droppedPmerge = set()
+
+    #jobs = cleanJobList(request, jobs)
+
+    jobtype = ''
+    if 'jobtype' in request.session['requestParams']:
+        jobtype = request.session['requestParams']['jobtype']
+    elif '/analysis' in request.path:
+        jobtype = 'analysis'
+    elif '/production' in request.path:
+        jobtype = 'production'
+
+    if u'display_limit' in request.session['requestParams']:
+        if int(request.session['requestParams']['display_limit']) > njobs:
+            display_limit = njobs
+        else:
+            display_limit = int(request.session['requestParams']['display_limit'])
+        url_nolimit = removeParam(request.get_full_path(), 'display_limit')
+    else:
+        display_limit = 100
+        url_nolimit = request.get_full_path()
+    njobsmax = display_limit
+
+    if 'sortby' in request.session['requestParams']:
+        sortby = request.session['requestParams']['sortby']
+        if sortby == 'time-ascending':
+            jobs = sorted(jobs, key=lambda x: x['modificationtime'])
+        if sortby == 'time-descending':
+            jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+        if sortby == 'statetime':
+            jobs = sorted(jobs, key=lambda x: x['statechangetime'], reverse=True)
+        elif sortby == 'priority':
+            jobs = sorted(jobs, key=lambda x: x['currentpriority'], reverse=True)
+        elif sortby == 'attemptnr':
+            jobs = sorted(jobs, key=lambda x: x['attemptnr'], reverse=True)
+        elif sortby == 'duration-ascending':
+            jobs = sorted(jobs, key=lambda x: x['durationsec'])
+        elif sortby == 'duration-descending':
+            jobs = sorted(jobs, key=lambda x: x['durationsec'], reverse=True)
+        elif sortby == 'duration':
+            jobs = sorted(jobs, key=lambda x: x['durationsec'])
+        elif sortby == 'PandaID':
+            jobs = sorted(jobs, key=lambda x: x['pandaid'], reverse=True)
+    else:
+        sortby = "time-descending"
+        if len(jobs) > 0 and 'modificationtime' in jobs[0]:
+            jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+
+    taskname = ''
+    if 'jeditaskid' in request.session['requestParams']:
+        taskname = getTaskName('jeditaskid', request.session['requestParams']['jeditaskid'])
+    if 'taskid' in request.session['requestParams']:
+        taskname = getTaskName('jeditaskid', request.session['requestParams']['taskid'])
+
+    if 'produsername' in request.session['requestParams']:
+        user = request.session['requestParams']['produsername']
+    elif 'user' in request.session['requestParams']:
+        user = request.session['requestParams']['user']
+    else:
+        user = None
+
+    ## set up google flow diagram
+    flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
+
+    # show warning or not
+    if njobs <= request.session['JOB_LIMIT']:
+        showwarn = 0
+    else:
+        showwarn = 1
+
+    jobsToShow = jobs[:njobsmax]
+
+    if 'jeditaskid' in request.session['requestParams']:
+        if len(jobs) > 0:
+            for job in jobs:
+                if 'maxvmem' in job:
+                    if type(job['maxvmem']) is int and job['maxvmem'] > 0:
+                        job['maxvmemmb'] = "%0.2f" % (job['maxvmem'] / 1000.)
+                        job['avgvmemmb'] = "%0.2f" % (job['avgvmem'] / 1000.)
+                if 'maxpss' in job:
+                    if type(job['maxpss']) is int and job['maxpss'] > 0:
+                        job['maxpss'] = "%0.2f" % (job['maxpss'] / 1024.)
+
+
+    #errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist =
+
+    xurl = extensibleURL(request)
+    print xurl
+    nosorturl = removeParam(xurl, 'sortby', mode='extensible')
+    nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
+
+    TFIRST = request.session['TFIRST']
+    TLAST = request.session['TLAST']
+    del request.session['TFIRST']
+    del request.session['TLAST']
+    if 'limit'  in request.session['viewParams']:
+        del request.session['viewParams']['limit']
+    nodropPartURL = cleanURLFromDropPart(xurl)
+    data = {
+        'errsByCount': errsByCount,
+#        'errdSumd': errdSumd,
+        'request': request,
+        'viewParams': request.session['viewParams'],
+        'requestParams': request.session['requestParams'],
+        'jobList': jobsToShow[:njobsmax],
+        'jobtype': jobtype,
+        'njobs': njobs,
+        'user': user,
+        'sumd': sumd,
+        'xurl': xurl,
+        #'droplist': droplist,
+        #'ndrops': len(droplist) if len(droplist) > 0 else (- len(droppedPmerge)),
+        'ndrops': 0,
+        'tfirst': TFIRST,
+        'tlast': TLAST,
+        'plow': PLOW,
+        'phigh': PHIGH,
+        'joblimit': request.session['JOB_LIMIT'],
+        'limit': 0,
+#        'totalJobs': totalJobs,
+#        'showTop': showTop,
+        'url_nolimit': url_nolimit,
+        'display_limit': display_limit,
+        'sortby': sortby,
+        'nosorturl': nosorturl,
+        'taskname': taskname,
+        'flowstruct': flowstruct,
+        'nodropPartURL': nodropPartURL,
+    }
+    data.update(getContextVariables(request))
+    ##self monitor
+    endSelfMonitor(request)
+    if eventservice:
+        response = render_to_response('jobListESProto.html', data, RequestContext(request))
+    else:
+        response = render_to_response('jobListProto.html', data, RequestContext(request))
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
 
@@ -2598,7 +2958,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                         for s in jobs[0]['jobmetrics'].split(' '):
                             if 'logBucketID' in s:
                                 logBucketID=int(s.split('=')[1])
-                                if logBucketID in [3, 21, 45, 46, 104, 41, 105, 106, 42, 61, 21, 102, 103, 2, 82, 81, 82, 101]: #Bucket Codes for S3 destination
+                                if logBucketID in [3, 21, 45, 46, 104, 41, 105, 106, 42, 61, 21, 102, 103, 2, 82, 101]: #Bucket Codes for S3 destination
                                    f['destination'] = 'S3'
 
                     #if len(jobs[0]['jobmetrics'])  > 0:
