@@ -2958,7 +2958,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                         for s in jobs[0]['jobmetrics'].split(' '):
                             if 'logBucketID' in s:
                                 logBucketID=int(s.split('=')[1])
-                                if logBucketID in [3, 21, 45, 46, 104, 41, 105, 106, 42, 61, 21, 102, 103, 2, 82, 101]: #Bucket Codes for S3 destination
+                                if logBucketID in [45, 41, 105, 106, 42, 61, 103, 2, 82, 101, 117, 115]: #Bucket Codes for S3 destination
                                    f['destination'] = 'S3'
 
                     #if len(jobs[0]['jobmetrics'])  > 0:
