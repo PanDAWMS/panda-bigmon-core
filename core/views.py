@@ -1572,16 +1572,7 @@ def jobSummaryDictProto(request, cutsummary, requestToken):
                     errval['diag'] = errorCodes[error[0]][int(errval['codeval'])]
                 errsByCount.append(errval)
 
-    #errval.codename errval.codeval errval.count errval.diag
-
-        #jobsToList = list(jobsToList)[:100]
     return sumd, esjobdict, jobsToList, njobs, errsByCount
-
-
-
-#def jobListP(request, mode=None, param=None):
-#    response = render_to_response('jobListPLoading.html', RequestContext(request))
-#    return response
 
 
 def postpone(function):
@@ -1594,34 +1585,43 @@ def postpone(function):
 
 @postpone
 def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension):
-    condition = []
-    condition.append("\" REQUEST_TOKEN => %d " % requestToken + "\"")
+    plsql = """BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE("""
+    condition = {}
+    plsql += """:REQUEST_TOKEN, """
+    condition['REQUEST_TOKEN'] = requestToken
     requestFields = {}
 
     for item in request.REQUEST:
         requestFields[item.lower()] = request.REQUEST[item]
-    if dropmode:
-        condition.append(" WITH_RETRIALS => 'N' ")
-    else:
-        condition.append(" WITH_RETRIALS => 'Y' ")
+    #if dropmode:
+    #    condition['WITH_RETRIALS'] = 'N'
+    #else:
+    #    condition['WITH_RETRIALS'] = 'Y'
+    #plsql += """:WITH_RETRIALS, """
+
+    condition['RANGE_DAYS'] = 1
+    plsql += """:RANGE_DAYS, """
+
     for item in standard_fields:
         if item in query:
-            condition.append(" "+item.upper()+" => '"+requestFields[item]+"' ")
+            condition[item.upper()] = requestFields[item]
         else:
             pos = wildCardExtension.find(item, 0)
             if pos > 0:
                 firstc = wildCardExtension.find("'", pos) + 1
                 sec = wildCardExtension.find("'", firstc)
                 value =wildCardExtension[firstc: sec]
-                condition.append(" "+item.upper()+" => '"+value+"'")
-
+                condition[item.upper()] = value
+    plsql = plsql[:-2]
+    plsql += """); END;;"""
     # Here we call stored proc to fill temporary data
     cursor = connection.cursor()
-    cursor.callproc("ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE", condition)
-
-    #plsql = """BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE(:REQUEST_TOKEN, :RANGE_DAYS); END;;"""
-    #cursor.execute(plsql, {'REQUEST_TOKEN': 54, 'RANGE_DAYS': 1})
+    cursor.execute(plsql, condition)
     cursor.close()
+
+
+# plsql = """BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE(:REQUEST_TOKEN, :RANGE_DAYS); END;;"""
+# cursor.execute(plsql, {'REQUEST_TOKEN': 54, 'RANGE_DAYS': 1})
 
 
 
@@ -1656,15 +1656,19 @@ def jobListP(request, mode=None, param=None):
 
     del request.session['TFIRST']
     del request.session['TLAST']
-    response = render_to_response('jobListWrapper.html', RequestContext(request))
+    data = {
+        'requesttoken' : requestToken,
+    }
+
+    response = render_to_response('jobListWrapper.html', data, RequestContext(request))
     return response
 
 
 def jobListPDiv(request, mode=None, param=None):
-    if 'requesttoken' not in request.session['requestParams']:
-        return
+    if 'requesttoken' not in request.REQUEST:
+        return HttpResponse('')
 
-    sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE ATTR_VALUE <> 'END' AND REQUEST_TOKEN=" % request.session['requestParams']['requesttoken']
+    sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.REQUEST['requesttoken']
     cur = connection.cursor()
     cur.execute(sqlRequest)
     rawsummary = cur.fetchall()
@@ -1672,17 +1676,20 @@ def jobListPDiv(request, mode=None, param=None):
 
     errsByCount = []
     summaryhash = {}
+    doRefresh = True
     for row in rawsummary:
-        if row[0] in summaryhash:
-           if row[1] in summaryhash[row[0]]:
-               summaryhash[row[0]][row[1]] += row[2]
-           else:
-               summaryhash[row[0]][row[1]] = row[2]
+        if row[2] == 'END':
+            doRefresh = False
         else:
-            item = {}
-            item[row[1]] = row[2]
-            summaryhash[row[0]] = item
-    #second checkpoint
+            if row[1] in summaryhash:
+               if row[1] in summaryhash[row[1]]:
+                   summaryhash[row[1]][row[2]] += row[3]
+               else:
+                   summaryhash[row[1]][row[2]] = row[3]
+            else:
+                item = {}
+                item[row[2]] = row[3]
+                summaryhash[row[1]] = item
 
     shkeys = summaryhash.keys()
     sumd = []
@@ -1843,10 +1850,15 @@ def jobListPDiv(request, mode=None, param=None):
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
 
-    TFIRST = request.session['TFIRST']
-    TLAST = request.session['TLAST']
-    del request.session['TFIRST']
-    del request.session['TLAST']
+    TFIRST = None
+    TLAST = None
+    if 'TFIRST' in request.session:
+        TFIRST = request.session['TFIRST']
+        del request.session['TFIRST']
+    if 'TLAST' in request.session:
+        TLAST = request.session['TLAST']
+        del request.session['TLAST']
+
     if 'limit'  in request.session['viewParams']:
         del request.session['viewParams']['limit']
     nodropPartURL = cleanURLFromDropPart(xurl)
@@ -1880,20 +1892,17 @@ def jobListPDiv(request, mode=None, param=None):
         'taskname': taskname,
         'flowstruct': flowstruct,
         'nodropPartURL': nodropPartURL,
+        'doRefresh': doRefresh,
     }
     data.update(getContextVariables(request))
     ##self monitor
     endSelfMonitor(request)
-    if eventservice:
-        response = render_to_response('jobListESProto.html', data, RequestContext(request))
-    else:
-        response = render_to_response('jobListProto.html', data, RequestContext(request))
+#    if eventservice:
+#        response = render_to_response('jobListESProto.html', data, RequestContext(request))
+#    else:
+    response = render_to_response('jobListContent.html', data, RequestContext(request))
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
-
-
-
-
 
 
 
