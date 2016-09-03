@@ -397,6 +397,7 @@ No datasets were found for this task
 <p>
 {% endif %}
 
+
 <table>
 <tr bgcolor='lightcyan'><th colspan=20> PanDA/JEDI task parameters </th></tr>
 {% for col in columns %}
@@ -413,9 +414,6 @@ PanDA task {% if jeditaskid > 0 %}{{ jeditaskid }}:{% endif %} <b>{{ taskname }}
  <p> Note that task info pages are currently only available for JEDI tasks in the new monitor.
  </p><p>
  You can however get a job listing for any task in quick search.
-</p><p>
-You can see the old monitor's task page for this task <a href="http://panda.cern.ch/server/pandamon/query?taskname={{ jeditaskid }}&overview=taskinfo">here</a>.
-</p>
 {% endif%}
 
 {% endif %}
