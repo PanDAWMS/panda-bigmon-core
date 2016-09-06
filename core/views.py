@@ -1097,7 +1097,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         connection.commit()
 
         new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM "
-                        " (SELECT DISTINCT PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i))t1 "
+                        " (SELECT PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i))t1 "
                         "GROUP BY STATUS" % (tmpTableName, transactionKey))
         evtable = dictfetchall(new_cur)
 
