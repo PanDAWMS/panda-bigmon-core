@@ -1648,8 +1648,8 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     #    condition['WITH_RETRIALS'] = 'Y'
     # plsql += """:WITH_RETRIALS, """
 
-    condition['RANGE_DAYS'] = 0.25
-    plsql += """:RANGE_DAYS, """
+    condition['RANGE_DAYS'] = 10
+    plsql += """ :RANGE_DAYS, """
 
     for item in standard_fields:
         if item in query:
@@ -1660,15 +1660,17 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
                 firstc = wildCardExtension.find("'", pos) + 1
                 sec = wildCardExtension.find("'", firstc)
                 value = wildCardExtension[firstc: sec]
-                condition[item.upper()] = value
+                plsql += """ """+item.upper()+"""=>'"""+value+"""', """
     plsql = plsql[:-2]
     plsql += """); END;;"""
     # Here we call stored proc to fill temporary data
     cursor = connection.cursor()
     noException = False
-    while (not noException):
+    countCalls = 0
+    while (not noException and countCalls < 10):
         try:
             cursor.execute(plsql, condition)
+            countCalls += 1
             noException = True
         except:
             pass
