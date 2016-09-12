@@ -205,6 +205,8 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 <p>
 No jobs matched the query. You can increase the time depth with a days=N parameter on the URL, but use judiciously, this is hard on the database. If you know the jobsetid or taskid/jeditaskid of the jobs you're interested in, you can add these to the URL, and the search will not be time limited (because these IDs give the DB enough indexing info that it isn't stressful on the DB to exclude the time constraint) and it will be fast also.
 </p>
+ <input type="hidden" id="findRows" value="False" />
+
 
 {% endif %}
 

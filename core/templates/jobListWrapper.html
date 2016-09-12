@@ -14,17 +14,11 @@
     <script src="{% static 'js/foundation/foundation.js' %}"></script>
     <script src="{% static 'js/foundation/foundation.topbar.js' %}"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}/js/jquery.shorten.1.0.js"></script>
-
-
     <link rel="stylesheet" href="{{ STATIC_URL }}css/loading.css">
     <script type="text/javascript">
-
-
         $(document).ready(
                 function () {
-
                     function doRequest() {
-
                             $.ajax({
                                 type: "GET",
                                 url: "{% url 'jobListPDiv' %}?requesttoken={{requesttoken}}",
@@ -32,37 +26,41 @@
                                 async: true,
                                 method: "GET",
                                 success: function (data) {
-
                                         var ele = document.getElementById("content");
                                         ele.innerHTML = data;
-
+                                        ele.style.display = 'none';
                                         var codes = ele.getElementsByTagName("script");
                                         for (var i = 0; i < codes.length; i++) {
                                             eval(codes[i].text);
                                         }
-
                                 },
                                 complete : function(data) {
-                                        if ( !(document.getElementById("doRefresh").value == "False"))
-                                        doRequest();
+                                        if ((document.getElementById("doRefresh")) && (document.getElementById("doRefresh").value == "True")) {
+                                            doRequest();
+                                            if (((document.getElementById("findRows")) && (document.getElementById("findRows").value == "False")))
+                                                document.getElementById("content").style.display = 'none';
+                                            else
+                                                document.getElementById("content").style.display = 'block';
+                                        } else {
+                                            if (!((document.getElementById("findRows")) && (document.getElementById("findRows").value == "False"))) {
+                                                document.getElementById("updateCaption").style.display = 'none';
+                                                document.getElementById("content").style.display = 'block';
+                                            }
+                                        }
                                 }
-
                             });
                     }
-
                     doRequest();
-
-
-
                 });
-
-
     </script>
+
+    <div id="updateCaption" style="padding-top: 50px;padding-bottom: 50px">
+        <h1><img src="{{ STATIC_URL }}/images/Preloader_2.gif">Data is being processed</h1>
+    </div>
 
 {% endblock %}
 
 {% block body %}
-
 {% endblock %}
 
 <!-- block body -->
