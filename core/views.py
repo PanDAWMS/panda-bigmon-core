@@ -1877,7 +1877,7 @@ def jobListPDiv(request, mode=None, param=None):
 
     if 'requestParams' in request.session and 'produsername' in request.session['requestParams']:
         user = request.session['requestParams']['produsername']
-    elif 'user' in request.session['requestParams']:
+    elif 'requestParams' in request.session and 'user' in request.session['requestParams']:
         user = request.session['requestParams']['user']
     else:
         user = None
