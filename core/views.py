@@ -1725,6 +1725,7 @@ def jobListP(request, mode=None, param=None):
 
 
 def jobListPDiv(request, mode=None, param=None):
+    initRequest(request)
     if 'requesttoken' not in request.REQUEST:
         return HttpResponse('')
 
@@ -1886,10 +1887,12 @@ def jobListPDiv(request, mode=None, param=None):
     flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
 
     # show warning or not
-    if njobs <= request.session['JOB_LIMIT']:
-        showwarn = 0
-    else:
-        showwarn = 1
+    showwarn = 0
+    if 'JOB_LIMIT' in request.session:
+        if njobs <= request.session['JOB_LIMIT']:
+            showwarn = 0
+        else:
+            showwarn = 1
 
     jobsToShow = jobs[:njobsmax]
 
@@ -1927,8 +1930,8 @@ def jobListPDiv(request, mode=None, param=None):
         'errsByCount': errsByCount,
         #        'errdSumd': errdSumd,
         'request': request,
-        'viewParams': request.session['viewParams'],
-        'requestParams': request.session['requestParams'],
+        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+        'requestParams': request.session['requestParams'] if 'requestParams' in request.session else None,
         'jobList': jobsToShow[:njobsmax],
         'jobtype': jobtype,
         'njobs': njobs,
@@ -1942,7 +1945,7 @@ def jobListPDiv(request, mode=None, param=None):
         'tlast': TLAST,
         'plow': PLOW,
         'phigh': PHIGH,
-        'joblimit': request.session['JOB_LIMIT'],
+        'joblimit': request.session['JOB_LIMIT'] if 'JOB_LIMIT' in request.session else None,
         'limit': 0,
         #        'totalJobs': totalJobs,
         #        'showTop': showTop,
@@ -8419,15 +8422,16 @@ def endSelfMonitor(request):
             request.session['qtime'], "%Y-%m-%d %H:%M:%S.%f")).seconds
     except:
         duration = 0
-    reqs = RequestStat(
-        server=request.session['hostname'],
-        qtime=request.session['qtime'],
-        load=request.session['load'],
-        mem=request.session['mem'],
-        qduration=request.session['qduration'],
-        duration=duration,
-        remote=request.session['remote'],
-        urls=request.session['urls'],
-        description=' '
-    )
-    reqs.save()
+    if 'hostname' in request.session:
+        reqs = RequestStat(
+            server=request.session['hostname'],
+            qtime=request.session['qtime'],
+            load=request.session['load'],
+            mem=request.session['mem'],
+            qduration=request.session['qduration'],
+            duration=duration,
+            remote=request.session['remote'],
+            urls=request.session['urls'],
+            description=' '
+        )
+        reqs.save()
