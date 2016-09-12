@@ -1795,7 +1795,7 @@ def jobListPDiv(request, mode=None, param=None):
     eventservice = False
     if 'requestParams' in request.session and 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         eventservice = True
-    if 'eventservice' in request.session['requestParams'] and (
+    if 'requestParams' in request.session and 'eventservice' in request.session['requestParams'] and (
                     request.session['requestParams']['eventservice'] == 'eventservice' or
                     request.session['requestParams'][
                         'eventservice'] == '1'):
