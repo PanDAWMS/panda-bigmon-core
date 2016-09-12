@@ -1648,7 +1648,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     #    condition['WITH_RETRIALS'] = 'Y'
     # plsql += """:WITH_RETRIALS, """
 
-    condition['RANGE_DAYS'] = 1
+    condition['RANGE_DAYS'] = 0.25
     plsql += """:RANGE_DAYS, """
 
     for item in standard_fields:
@@ -1665,7 +1665,14 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     plsql += """); END;;"""
     # Here we call stored proc to fill temporary data
     cursor = connection.cursor()
-    cursor.execute(plsql, condition)
+    noException = False
+    while (not noException):
+        try:
+            cursor.execute(plsql, condition)
+            noException = True
+        except:
+            pass
+
     cursor.close()
 
 
@@ -1675,6 +1682,8 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
 
 def jobListP(request, mode=None, param=None):
+    valid, response = initRequest(request)
+
     # Here We start Retreiving Summary and return almost empty template
 
     # Get request token. This sheme of getting tokens should be more sophisticated (at least not use sequential numbers)

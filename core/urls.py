@@ -26,9 +26,9 @@ urlpatterns = patterns('',
     #url(r'^jobsss/(.*)/$', coremon_views.jobListProto, name='jobListProto'),
     #url(r'^jobsss/(.*)/(.*)/$', coremon_views.jobListProto, name='jobListProto'),
 
-    url(r'^jobss/$', coremon_views.jobListP, name='jobListP'),
-    url(r'^jobss/(.*)/$', coremon_views.jobListP, name='jobListP'),
-    url(r'^jobss/(.*)/(.*)/$', coremon_views.jobListP, name='jobListP'),
+    url(r'^jobsss/$', coremon_views.jobListP, name='jobListP'),
+    url(r'^jobsss/(.*)/$', coremon_views.jobListP, name='jobListP'),
+    url(r'^jobsss/(.*)/(.*)/$', coremon_views.jobListP, name='jobListP'),
     url(r'^jobssupt/$', coremon_views.jobListPDiv, name='jobListPDiv'),
 
     url(r'^job$', coremon_views.jobInfo, name='jobInfo'),

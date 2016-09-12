@@ -38,7 +38,6 @@
 {% include "googleFlowDiagram.html" with struct=flowstruct %}
 {% endif %}
 
-<script type="text/javascript" src="{{ STATIC_URL }}/js/jquery.shorten.1.0.js"></script>
 
 <script type="text/javascript">
 
@@ -209,7 +208,5 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 
 {% endif %}
 
-<script>
-    doRefresh = {{ doRefresh }};
-</script>
+ <input type="hidden" id="doRefresh" value="{{ doRefresh }}" />
 

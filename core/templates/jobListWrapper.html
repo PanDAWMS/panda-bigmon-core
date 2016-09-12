@@ -1,4 +1,5 @@
 {% extends "_base_core.html" %}
+{% load staticfiles %}
 {% load url from future %}
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
@@ -8,33 +9,65 @@
 &nbsp;&nbsp;<font style="color:#FF8040; size=-1"><b>Warning: limit {{joblimit}} per job table</b> </font>
 {% endif %}
 {% if showTop %}&nbsp;&nbsp; <font style="color:#FF8040; size=-1"><b>Task has {{totalJobs}} jobs in table Jobsarchived, limit is set to {{limit}}</b> </font>{% endif %}
-{% endblock %}
-{% block body %}
-<div id="content">
-</div>
 
    	<script type="text/javascript" src="{{ STATIC_URL }}/js/jquery-1.9.1.min.js"></script>
+    <script src="{% static 'js/foundation/foundation.js' %}"></script>
+    <script src="{% static 'js/foundation/foundation.topbar.js' %}"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}/js/jquery.shorten.1.0.js"></script>
+
+
     <link rel="stylesheet" href="{{ STATIC_URL }}css/loading.css">
     <script type="text/javascript">
-        var doRefresh = true;
-        $(document).ready(function () {
-            refreshDiv();
-        });
 
-        function refreshDiv(){
-            $.ajax({
-                type: "GET",
-                url: "http://aipanda100.cern.ch:8080/jobssupt/?requesttoken={{requesttoken}}" ,
-                cache: false,
-                success: function(result) {
-                    document.getElementById('#content').innerHTML = result;
-                    setTimeout(refreshDiv, 2000);
-                }
-            });​
-        }
+
+        $(document).ready(
+                function () {
+
+                    function doRequest() {
+
+                            $.ajax({
+                                type: "GET",
+                                url: "{% url 'jobListPDiv' %}?requesttoken={{requesttoken}}",
+                                cache: false,
+                                async: true,
+                                method: "GET",
+                                success: function (data) {
+
+                                        var ele = document.getElementById("content");
+                                        ele.innerHTML = data;
+
+                                        var codes = ele.getElementsByTagName("script");
+                                        for (var i = 0; i < codes.length; i++) {
+                                            eval(codes[i].text);
+                                        }
+
+                                },
+                                complete : function(data) {
+                                        if ( !(document.getElementById("doRefresh").value == "False"))
+                                        doRequest();
+                                }
+
+                            });
+                    }
+
+                    doRequest();
+
+
+
+                });
+
+
     </script>
 
 {% endblock %}
+
+{% block body %}
+
+{% endblock %}
+
+<!-- block body -->
+
+
 
 {% block helptext %}
 {% include "jobListHelp.html" with helptitle="Job list help" %}
