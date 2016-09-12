@@ -1648,7 +1648,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     #    condition['WITH_RETRIALS'] = 'Y'
     # plsql += """:WITH_RETRIALS, """
 
-    condition['RANGE_DAYS'] = 10
+    condition['RANGE_DAYS'] = 0.5
     plsql += """ :RANGE_DAYS, """
 
     for item in standard_fields:
