@@ -1801,7 +1801,7 @@ def jobListPDiv(request, mode=None, param=None):
                         'eventservice'] == '1'):
         eventservice = True
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-                'json' in request.session['requestParams']):
+                'requestParams' in request.session and 'json' in request.session['requestParams']):
         values = Jobsactive4._meta.get_all_field_names()
     elif eventservice:
         values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice'
@@ -1826,14 +1826,14 @@ def jobListPDiv(request, mode=None, param=None):
     # jobs = cleanJobList(request, jobs)
 
     jobtype = ''
-    if 'jobtype' in request.session['requestParams']:
+    if 'requestParams' in request.session and 'jobtype' in request.session['requestParams']:
         jobtype = request.session['requestParams']['jobtype']
     elif '/analysis' in request.path:
         jobtype = 'analysis'
     elif '/production' in request.path:
         jobtype = 'production'
 
-    if u'display_limit' in request.session['requestParams']:
+    if 'requestParams' in request.session and u'display_limit' in request.session['requestParams']:
         if int(request.session['requestParams']['display_limit']) > njobs:
             display_limit = njobs
         else:
@@ -1844,7 +1844,7 @@ def jobListPDiv(request, mode=None, param=None):
         url_nolimit = request.get_full_path()
     njobsmax = display_limit
 
-    if 'sortby' in request.session['requestParams']:
+    if 'requestParams' in request.session and 'sortby' in request.session['requestParams']:
         sortby = request.session['requestParams']['sortby']
         if sortby == 'time-ascending':
             jobs = sorted(jobs, key=lambda x: x['modificationtime'])
@@ -1870,12 +1870,12 @@ def jobListPDiv(request, mode=None, param=None):
             jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
 
     taskname = ''
-    if 'jeditaskid' in request.session['requestParams']:
+    if 'requestParams' in request.session and 'jeditaskid' in request.session['requestParams']:
         taskname = getTaskName('jeditaskid', request.session['requestParams']['jeditaskid'])
-    if 'taskid' in request.session['requestParams']:
+    if 'requestParams' in request.session and 'taskid' in request.session['requestParams']:
         taskname = getTaskName('jeditaskid', request.session['requestParams']['taskid'])
 
-    if 'produsername' in request.session['requestParams']:
+    if 'requestParams' in request.session and 'produsername' in request.session['requestParams']:
         user = request.session['requestParams']['produsername']
     elif 'user' in request.session['requestParams']:
         user = request.session['requestParams']['user']
@@ -1893,7 +1893,7 @@ def jobListPDiv(request, mode=None, param=None):
 
     jobsToShow = jobs[:njobsmax]
 
-    if 'jeditaskid' in request.session['requestParams']:
+    if 'requestParams' in request.session and 'jeditaskid' in request.session['requestParams']:
         if len(jobs) > 0:
             for job in jobs:
                 if 'maxvmem' in job:
@@ -1920,7 +1920,7 @@ def jobListPDiv(request, mode=None, param=None):
         TLAST = request.session['TLAST']
         del request.session['TLAST']
 
-    if 'limit' in request.session['viewParams']:
+    if 'viewParams' in request.session and 'limit' in request.session['viewParams']:
         del request.session['viewParams']['limit']
     nodropPartURL = cleanURLFromDropPart(xurl)
     data = {
