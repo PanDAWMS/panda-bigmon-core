@@ -7966,7 +7966,7 @@ def getFilePathForObjectStore(objectstore, filetype="logs"):
 
 def buildGoogleFlowDiagram(request, jobs=[], tasks=[]):
     ## set up google flow diagram
-    if 'flow' not in request.session['requestParams']: return None
+    if 'requestParams' not in request.session or 'flow' not in request.session['requestParams']: return None
     flowstruct = {}
     if len(jobs) > 0:
         flowstruct['maxweight'] = len(jobs)
@@ -8101,8 +8101,10 @@ def buildGoogleJobFlow(jobs):
 
 
 def buildGoogleTaskFlow(request, tasks):
-    analysis = 'tasktype' in request.session['requestParams'] and request.session['requestParams'][
-        'tasktype'].startswith('anal')
+    analysis = False
+    if 'requestParams' in request.session:
+        analysis = 'tasktype' in request.session['requestParams'] and request.session['requestParams'][
+            'tasktype'].startswith('anal')
     ptyped = {}
     reqd = {}
     statd = {}
