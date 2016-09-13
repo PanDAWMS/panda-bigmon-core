@@ -1634,11 +1634,21 @@ def postpone(function):
 
 @postpone
 def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension):
-    plsql = """BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE("""
+    plsql = "BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE("
     condition = {}
-    plsql += """:REQUEST_TOKEN, """
-    condition['REQUEST_TOKEN'] = requestToken
+
+    #condition['RANGE_DAYS'] = '1'
+
+    plsql += " REQUEST_TOKEN=>"+str(requestToken)+", "
+    #condition['REQUEST_TOKEN'] = requestToken
     requestFields = {}
+
+    a = datetime.strptime(query['modificationtime__range'][0], defaultDatetimeFormat)
+    b = datetime.strptime(query['modificationtime__range'][1], defaultDatetimeFormat)
+    delta = b - a
+    range = delta.days-delta.seconds/86400
+
+    plsql += " RANGE_DAYS=>"+str(range)+", "
 
     for item in request.REQUEST:
         requestFields[item.lower()] = request.REQUEST[item]
@@ -1648,28 +1658,27 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     #    condition['WITH_RETRIALS'] = 'Y'
     # plsql += """:WITH_RETRIALS, """
 
-    condition['RANGE_DAYS'] = 0.5
-    plsql += """ :RANGE_DAYS, """
 
     for item in standard_fields:
         if item in query:
-            condition[item.upper()] = requestFields[item]
+            #condition[item.upper()] = requestFields[item]
+            plsql += " " + item.upper() + "=>'" + requestFields[item] + "', "
         else:
             pos = wildCardExtension.find(item, 0)
             if pos > 0:
                 firstc = wildCardExtension.find("'", pos) + 1
                 sec = wildCardExtension.find("'", firstc)
                 value = wildCardExtension[firstc: sec]
-                plsql += """ """+item.upper()+"""=>'"""+value+"""', """
+                plsql += " "+item.upper()+"=>'"+value+"', "
     plsql = plsql[:-2]
-    plsql += """); END;;"""
+    plsql += "); END;;"
     # Here we call stored proc to fill temporary data
     cursor = connection.cursor()
     noException = False
     countCalls = 0
     while (not noException and countCalls < 10):
         try:
-            cursor.execute(plsql, condition)
+            cursor.execute(plsql)
             countCalls += 1
             noException = True
         except:
