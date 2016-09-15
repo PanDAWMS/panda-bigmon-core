@@ -1918,7 +1918,7 @@ def jobListPDiv(request, mode=None, param=None):
 
     # errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist =
 
-    xurl = extensibleURL(request)
+    xurl = extensibleURL(request, request.META['HTTP_REFERER'])
     print xurl
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
