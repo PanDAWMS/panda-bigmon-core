@@ -1735,6 +1735,16 @@ def jobListP(request, mode=None, param=None):
 
 def jobListPDiv(request, mode=None, param=None):
     initRequest(request)
+
+    if 'requestParams' in request.session and u'display_limit' in request.session['requestParams']:
+        display_limit = int(request.session['requestParams']['display_limit'])
+        url_nolimit = removeParam(request.get_full_path(), 'display_limit')
+    else:
+        display_limit = 100
+        url_nolimit = request.get_full_path()
+    njobsmax = display_limit
+
+
     if 'requesttoken' not in request.REQUEST:
         return HttpResponse('')
 
@@ -1798,6 +1808,7 @@ def jobListPDiv(request, mode=None, param=None):
                 errsByCount.append(errval)
 
     pandaIDVal = [int(val) for val in jobsToList]
+    pandaIDVal = pandaIDVal[:njobsmax]
     newquery = {}
     newquery['pandaid__in'] = pandaIDVal
 
@@ -1843,16 +1854,6 @@ def jobListPDiv(request, mode=None, param=None):
     elif '/production' in request.path:
         jobtype = 'production'
 
-    if 'requestParams' in request.session and u'display_limit' in request.session['requestParams']:
-        if int(request.session['requestParams']['display_limit']) > njobs:
-            display_limit = njobs
-        else:
-            display_limit = int(request.session['requestParams']['display_limit'])
-        url_nolimit = removeParam(request.get_full_path(), 'display_limit')
-    else:
-        display_limit = 100
-        url_nolimit = request.get_full_path()
-    njobsmax = display_limit
 
     if 'requestParams' in request.session and 'sortby' in request.session['requestParams']:
         sortby = request.session['requestParams']['sortby']
