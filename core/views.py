@@ -2025,7 +2025,7 @@ def jobList(request, mode=None, param=None):
     else:
 
         excludedTimeQuery = copy.deepcopy(query)
-        if ('modificationtime__range' in excludedTimeQuery):
+        if ('modificationtime__range' in excludedTimeQuery and not 'date_to' in request.session['requestParams']):
             del excludedTimeQuery['modificationtime__range']
         jobs.extend(Jobsdefined4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
                     :request.session['JOB_LIMIT']].values(*values))
