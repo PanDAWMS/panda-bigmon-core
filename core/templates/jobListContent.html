@@ -59,7 +59,7 @@ function toggleDetailDisplay(className) {
 <b>{{ ndrops }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
 
 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('retries');"><br>Click to show/hide dropped jobs</a>
-<br><a href="{{xurl}}&mode=nodrop">Switch to nodrop mode</a>
+<br><a href="{{xurl}}mode=nodrop">Switch to nodrop mode</a>
 <div class="retries" style="display:none">
 <font size=-1>
 <br>Dropped (retry):<br>
@@ -74,14 +74,14 @@ function toggleDetailDisplay(className) {
 
 {% if ndrops < 0 %}
 <table width=900><tr><td class='highlightcell'>
-    <a href="{{xurl}}&mode=nodrop">Switch to nodrop mode</a>
+    <a href="{{xurl}}mode=nodrop">Switch to nodrop mode</a>
 </table>
 {% endif %}
 
 
 {% if sumd %}
 <table>
-<tr class='tablesection'><th colspan=20> Job attribute summary   &nbsp; Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{xurl}}">alpha</a> {% else %} <a href="{{xurl}}&sortby=count">count</a>, alpha {% endif %} </th></tr>
+<tr class='tablesection'><th colspan=20> Job attribute summary   &nbsp; Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{xurl}}">alpha</a> {% else %} <a href="{{xurl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
 {% for fdict in sumd %}
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
     <td><div class="comment more">
@@ -89,8 +89,8 @@ function toggleDetailDisplay(className) {
             {% if fdict.field == 'JOBSTATUS' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
 
             {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
-                <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}&{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
-                                                              href="{{xurl}}&{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a> &nbsp;
+                <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
+                                                              href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a> &nbsp;
             {% endif %}
         {% endfor %}
         </div>
@@ -106,7 +106,7 @@ function toggleDetailDisplay(className) {
 <tr class='tablesection'><th colspan=20> Overall error summary </th></tr>
 <tr><th>Category:code</th><th>Attempt list</th><th>Nerrors</th><th>Sample error description</th></tr>
 {% for errval in errsByCount %}
-<tr><th> <a href="{{xurl}}&jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </th><td> <a href="{{xurl}}&jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> jobs </a> </th> <td> {{ errval.count }} </td> <td> {{ errval.diag }} </td>  </tr>
+<tr><th> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </th><td> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> jobs </a> </th> <td> {{ errval.count }} </td> <td> {{ errval.diag }} </td>  </tr>
 {% endfor %}
 </table>
 {% endif %}
@@ -123,34 +123,34 @@ function toggleDetailDisplay(className) {
 {% if sortby == "PandaID" %}
 <b>PandaID</b>,
 {% else %}
-<a href="{{xurl}}&sortby=PandaID">PandaID</a>,
+<a href="{{xurl}}sortby=PandaID">PandaID</a>,
 {% endif %}
 {% else %}
 Sort by
 {% if sortby == "PandaID" %}
 <b>PandaID</b>,
 {% else %}
-<a href="{{xurl}}&sortby=PandaID">PandaID</a>,
+<a href="{{xurl}}sortby=PandaID">PandaID</a>,
 {% endif %}
 {% endif %}
 
 
 {% if sortby == "statetime" %}
-time since last state change, <a href="{{xurl}}&sortby=time-ascending">ascending mod time</a>, <a href="{{xurl}}&sortby=time-descending">descending mod time</a>, <a href="{{xurl}}&sortby=priority">priority</a>, <a href="{{xurl}}&sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}&sortby=duration-ascending">ascending duration</a>, <a href="{{xurl}}&sortby=duration-descending">descending duration</a>
+time since last state change, <a href="{{xurl}}sortby=time-ascending">ascending mod time</a>, <a href="{{xurl}}sortby=time-descending">descending mod time</a>, <a href="{{xurl}}sortby=priority">priority</a>, <a href="{{xurl}}sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}sortby=duration-ascending">ascending duration</a>, <a href="{{xurl}}sortby=duration-descending">descending duration</a>
 {% elif sortby == "time-ascending" %}
-<a href="{{xurl}}&sortby=statetime">time since last state change</a>, <b>ascending mod time</b>, <a href="{{xurl}}&sortby=time-descending">descending mod time</a>, <a href="{{xurl}}&sortby=priority">priority</a>, <a href="{{xurl}}&sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}&sortby=duration-ascending">ascending duration</a>, <a href="{{xurl}}&sortby=duration-descending">descending duration</a>
+<a href="{{xurl}}sortby=statetime">time since last state change</a>, <b>ascending mod time</b>, <a href="{{xurl}}sortby=time-descending">descending mod time</a>, <a href="{{xurl}}sortby=priority">priority</a>, <a href="{{xurl}}sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}sortby=duration-ascending">ascending duration</a>, <a href="{{xurl}}sortby=duration-descending">descending duration</a>
 {% elif sortby == "time-descending" %}
-<a href="{{xurl}}&sortby=statetime">time since last state change</a>, <a href="{{xurl}}&sortby=time-ascending">ascending mod time</a>, <b>descending mod time</b>, <a href="{{xurl}}&sortby=priority">priority</a>, <a href="{{xurl}}&sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}&sortby=duration-ascending">ascending duration</a>, <a href="{{xurl}}&sortby=duration-descending">descending duration</a>
+<a href="{{xurl}}sortby=statetime">time since last state change</a>, <a href="{{xurl}}sortby=time-ascending">ascending mod time</a>, <b>descending mod time</b>, <a href="{{xurl}}sortby=priority">priority</a>, <a href="{{xurl}}sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}sortby=duration-ascending">ascending duration</a>, <a href="{{xurl}}sortby=duration-descending">descending duration</a>
 {% elif sortby == "priority" %}
-<a href="{{xurl}}&sortby=statetime">time since last state change</a>, <a href="{{xurl}}&sortby=time-ascending">ascending mod time</a>, <a href="{{xurl}}&sortby=time-descending">descending mod time</a>, <b>priority</b>, <a href="{{xurl}}&sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}&sortby=duration-ascending">ascending duration</a>, <a href="{{xurl}}&sortby=duration-descending">descending duration</a>
+<a href="{{xurl}}sortby=statetime">time since last state change</a>, <a href="{{xurl}}sortby=time-ascending">ascending mod time</a>, <a href="{{xurl}}sortby=time-descending">descending mod time</a>, <b>priority</b>, <a href="{{xurl}}sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}sortby=duration-ascending">ascending duration</a>, <a href="{{xurl}}sortby=duration-descending">descending duration</a>
 {% elif sortby == "attemptnr" %}
-<a href="{{xurl}}&sortby=statetime">time since last state change</a>, <a href="{{xurl}}&sortby=time-ascending">ascending mod time</a>, <a href="{{xurl}}&sortby=time-descending">descending mod time</a>, <a href="{{xurl}}&sortby=priority">priority</a>, <b>attemptnr</b>, <a href="{{xurl}}&sortby=duration-ascending">ascending duration</a>, <a href="{{xurl}}&sortby=duration-descending">descending duration</a>
+<a href="{{xurl}}sortby=statetime">time since last state change</a>, <a href="{{xurl}}sortby=time-ascending">ascending mod time</a>, <a href="{{xurl}}sortby=time-descending">descending mod time</a>, <a href="{{xurl}}sortby=priority">priority</a>, <b>attemptnr</b>, <a href="{{xurl}}sortby=duration-ascending">ascending duration</a>, <a href="{{xurl}}sortby=duration-descending">descending duration</a>
 {% elif sortby == "duration-ascending" %}
-<a href="{{xurl}}&sortby=statetime">time since last state change</a>, <a href="{{xurl}}&sortby=time-ascending">ascending mod time</a>, <a href="{{xurl}}&sortby=time-descending">descending mod time</a>, <a href="{{xurl}}&sortby=priority">priority</a>, <a href="{{xurl}}&sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}&sortby=duration-descending">descending duration</a>
+<a href="{{xurl}}sortby=statetime">time since last state change</a>, <a href="{{xurl}}sortby=time-ascending">ascending mod time</a>, <a href="{{xurl}}sortby=time-descending">descending mod time</a>, <a href="{{xurl}}sortby=priority">priority</a>, <a href="{{xurl}}sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}sortby=duration-descending">descending duration</a>
 {% elif sortby == "duration-descending" %}
-<a href="{{xurl}}&sortby=statetime">time since last state change</a>, <a href="{{xurl}}&sortby=time-ascending">ascending mod time</a>, <a href="{{xurl}}&sortby=time-descending">descending mod time</a>, <a href="{{xurl}}&sortby=priority">priority</a>, <a href="{{xurl}}&sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}&sortby=duration-ascending">ascending duration</a>
+<a href="{{xurl}}sortby=statetime">time since last state change</a>, <a href="{{xurl}}sortby=time-ascending">ascending mod time</a>, <a href="{{xurl}}sortby=time-descending">descending mod time</a>, <a href="{{xurl}}sortby=priority">priority</a>, <a href="{{xurl}}sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}sortby=duration-ascending">ascending duration</a>
 {% else %}
-<a href="{{xurl}}&sortby=statetime">time since last state change</a>, <a href="{{xurl}}&sortby=time-ascending">ascending mod time</a>, <a href="{{xurl}}&sortby=time-descending">descending mod time</a>, <a href="{{xurl}}&sortby=priority">priority</a>, <a href="{{xurl}}&sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}&sortby=duration-ascending">ascending duration</a>, <a href="{{xurl}}&sortby=duration-descending">descending duration</a>
+<a href="{{xurl}}sortby=statetime">time since last state change</a>, <a href="{{xurl}}sortby=time-ascending">ascending mod time</a>, <a href="{{xurl}}sortby=time-descending">descending mod time</a>, <a href="{{xurl}}sortby=priority">priority</a>, <a href="{{xurl}}sortby=attemptnr">attemptnr</a>, <a href="{{xurl}}sortby=duration-ascending">ascending duration</a>, <a href="{{xurl}}sortby=duration-descending">descending duration</a>
 {% endif %}
 </font>
 </th></tr>
@@ -177,7 +177,7 @@ time since last state change, <a href="{{xurl}}&sortby=time-ascending">ascending
 		<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if job.workinggroup %}<br><a href="{{xurl}}workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }}{% endif %} {% endif %}
 		</td>
 		<td> {% if job.reqid %} <a href="{% url 'jobListP' %}?reqid={{ job.reqid }}&display_limit=300">{{ job.reqid }}</a> <br> {% endif %}
-		{% if job.jeditaskid  and job.jeditaskid != 'None' %}<a href="{{xurl}}jeditaskid={{job.jeditaskid}}">{{ job.jeditaskid }}</a> {% elif job.taskid and job.taskid != 'None' %} <a href="{{xurl}}&taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
+		{% if job.jeditaskid  and job.jeditaskid != 'None' %}<a href="{{xurl}}jeditaskid={{job.jeditaskid}}">{{ job.jeditaskid }}</a> {% elif job.taskid and job.taskid != 'None' %} <a href="{{xurl}}taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
 		<td><font size=-1><a href="{{xurl}}transformation={{job.transformation}}">{{ job.transformation }}</a></font></td>
 
 		<td class='{{job.jobstatus}}_fill'>{{ job.jobstatus }}</td>
@@ -185,7 +185,7 @@ time since last state change, <a href="{{xurl}}&sortby=time-ascending">ascending
 		<td><font size=-1>{{ job.waittime }}</font></td>
 		<td><font size=-1>{{ job.duration }}</font></td>
 		<td><font size=-1>{{ job.modificationtime|date:"m-d H:i" }}</font></td>
-		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}&cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a></font></td>
+		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a></font></td>
 		<td>{{ job.currentpriority }}</td>
         {% if requestParams.jeditaskid  %}
         <td><font size=-1>{% if job.maxpss and job.maxpss != 'None' and job.maxpss != -1 %}{{ job.maxpss }}{% endif %}</font></td>

@@ -1634,57 +1634,68 @@ def postpone(function):
 
 @postpone
 def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension):
-    plsql = "BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE("
-    condition = {}
 
-    #condition['RANGE_DAYS'] = '1'
+    if len(request.REQUEST.values()) == 0:
+        plsql = "INSERT INTO ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT (REQUEST_TOKEN, ATTR, ATTR_VALUE, NUM_OCCUR) " \
+                "SELECT "+str(requestToken)+", PANDA_ATTRIBUTE, ATTR_VALUE, NUM_OCCURRENCES FROM ATLAS_PANDABIGMON.PANDAMON_JOBSPAGE_INIT"
+        cursor = connection.cursor()
 
-    plsql += " REQUEST_TOKEN=>"+str(requestToken)+", "
-    #condition['REQUEST_TOKEN'] = requestToken
-    requestFields = {}
-
-    a = datetime.strptime(query['modificationtime__range'][0], defaultDatetimeFormat)
-    b = datetime.strptime(query['modificationtime__range'][1], defaultDatetimeFormat)
-    delta = b - a
-    range = delta.days-delta.seconds/86400
-
-    plsql += " RANGE_DAYS=>"+str(range)+", "
-
-    for item in request.REQUEST:
-        requestFields[item.lower()] = request.REQUEST[item]
-    # if dropmode:
-    #    condition['WITH_RETRIALS'] = 'N'
-    # else:
-    #    condition['WITH_RETRIALS'] = 'Y'
-    # plsql += """:WITH_RETRIALS, """
-
-
-    for item in standard_fields:
-        if item in query:
-            #condition[item.upper()] = requestFields[item]
-            plsql += " " + item.upper() + "=>'" + requestFields[item] + "', "
-        else:
-            pos = wildCardExtension.find(item, 0)
-            if pos > 0:
-                firstc = wildCardExtension.find("'", pos) + 1
-                sec = wildCardExtension.find("'", firstc)
-                value = wildCardExtension[firstc: sec]
-                plsql += " "+item.upper()+"=>'"+value+"', "
-    plsql = plsql[:-2]
-    plsql += "); END;;"
-    # Here we call stored proc to fill temporary data
-    cursor = connection.cursor()
-    noException = False
-    countCalls = 0
-    while (not noException and countCalls < 10):
         try:
             cursor.execute(plsql)
-            countCalls += 1
-            noException = True
+            cursor.execute("INSERT INTO ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT(REQUEST_TOKEN, ATTR, "
+                           "ATTR_VALUE, NUM_OCCUR) VALUES(" + str(requestToken) + ", \'END\', \'END\', 1)")
+
         except:
             pass
+        cursor.close()
 
-    cursor.close()
+    else:
+        plsql = "BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE("
+        plsql += " REQUEST_TOKEN=>"+str(requestToken)+", "
+        requestFields = {}
+
+        a = datetime.strptime(query['modificationtime__range'][0], defaultDatetimeFormat)
+        b = datetime.strptime(query['modificationtime__range'][1], defaultDatetimeFormat)
+        delta = b - a
+        range = delta.days+delta.seconds/86400.0
+
+        plsql += " RANGE_DAYS=>"+str(range)+", "
+
+        for item in request.REQUEST:
+            requestFields[item.lower()] = request.REQUEST[item]
+        # if dropmode:
+        #    condition['WITH_RETRIALS'] = 'N'
+        # else:
+        #    condition['WITH_RETRIALS'] = 'Y'
+        # plsql += """:WITH_RETRIALS, """
+
+
+        for item in standard_fields:
+            if (item in query) or ((item+'__in') in query):
+                #condition[item.upper()] = requestFields[item]
+                plsql += " " + item.upper() + "=>'" + requestFields[item] + "', "
+            else:
+                pos = wildCardExtension.find(item, 0)
+                if pos > 0:
+                    firstc = wildCardExtension.find("'", pos) + 1
+                    sec = wildCardExtension.find("'", firstc)
+                    value = wildCardExtension[firstc: sec]
+                    plsql += " "+item.upper()+"=>'"+value+"', "
+        plsql = plsql[:-2]
+        plsql += "); END;;"
+        # Here we call stored proc to fill temporary data
+        cursor = connection.cursor()
+        noException = False
+        countCalls = 0
+        while (not noException and countCalls < 10):
+            try:
+                cursor.execute(plsql)
+                countCalls += 1
+                noException = True
+            except:
+                pass
+
+        cursor.close()
 
 
 # plsql = """BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE(:REQUEST_TOKEN, :RANGE_DAYS); END;;"""
@@ -1786,7 +1797,7 @@ def jobListPDiv(request, mode=None, param=None):
                 subentry = {}
                 subentry['kname'] = subshkey
                 subentry['kvalue'] = summaryhash[shkey][subshkey]
-                if (shkey == 'COMPUTINGSITE'):
+                if (shkey == 'JOBSTATUS'):
                     njobs += summaryhash[shkey][subshkey]
                 entrlist.append(subentry)
             entry['list'] = entrlist
@@ -1919,7 +1930,10 @@ def jobListPDiv(request, mode=None, param=None):
 
     # errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist =
 
-    xurl = extensibleURL(request, request.META['HTTP_REFERER'])
+    if 'HTTP_REFERER' in request.META:
+        xurl = extensibleURL(request, request.META['HTTP_REFERER'])
+    else:
+        xurl = request.META['PATH_INFO'] + "?"+ request.META['QUERY_STRING']
     print xurl
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
@@ -1936,6 +1950,8 @@ def jobListPDiv(request, mode=None, param=None):
     if 'viewParams' in request.session and 'limit' in request.session['viewParams']:
         del request.session['viewParams']['limit']
     nodropPartURL = cleanURLFromDropPart(xurl)
+    #sumd = None
+    #errsByCount = None
     data = {
         'errsByCount': errsByCount,
         #        'errdSumd': errdSumd,
