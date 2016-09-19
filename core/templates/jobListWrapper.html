@@ -1,10 +1,10 @@
 {% extends "_base_core.html" %}
-{% load staticfiles %}
 {% load url from future %}
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
 {% block subtitle %}PanDA jobs<font size=-1>{{ viewParams.selection|safe }}
-</font>
+{% load staticfiles %}
+
 {% if showwarn and njobs%}
 &nbsp;&nbsp;<font style="color:#FF8040; size=-1"><b>Warning: limit {{joblimit}} per job table</b> </font>
 {% endif %}
@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="{{ STATIC_URL }}css/loading.css">
     <script type="text/javascript">
         $(document).ready(
+
                 function () {
                     function doRequest() {
                             $.ajax({
@@ -46,6 +47,8 @@
                                             {
                                                 document.getElementById("updateCaption").style.display = 'none';
                                                 document.getElementById("content").style.display = 'block';
+                                                if (document.getElementById("timerange"))
+                                                    document.getElementById("timerange").innerHTML = "Job <b>modification times</b> in this listing range from <b>{{ tfirst|date:"Y-m-d H:i" }}</b> to <b>{{ tlast|date:"Y-m-d H:i" }}</b>." + document.getElementById("timerange").innerHTML
                                             }
                                         }
                                 }

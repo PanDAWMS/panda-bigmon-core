@@ -1734,11 +1734,15 @@ def jobListP(request, mode=None, param=None):
 
     startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
-    del request.session['TFIRST']
-    del request.session['TLAST']
     data = {
         'requesttoken': requestToken,
+        'tfirst': request.session['TFIRST'],
+        'tlast': request.session['TLAST'],
+        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }
+
+    del request.session['TFIRST']
+    del request.session['TLAST']
 
     response = render_to_response('jobListWrapper.html', data, RequestContext(request))
     return response
@@ -1946,6 +1950,7 @@ def jobListPDiv(request, mode=None, param=None):
     if 'TLAST' in request.session:
         TLAST = request.session['TLAST']
         del request.session['TLAST']
+
 
     if 'viewParams' in request.session and 'limit' in request.session['viewParams']:
         del request.session['viewParams']['limit']
