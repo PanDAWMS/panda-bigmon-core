@@ -1659,11 +1659,14 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
         delta = b - a
         range = delta.days+delta.seconds/86400.0
 
-        plsql += " RANGE_DAYS=>"+str(range)+", "
+        if (range == 180.0):                #This is a temporary patch to avoid absence of pandaids
+            plsql += " RANGE_DAYS=>null, "
+        else:
+            plsql += " RANGE_DAYS=>"+str(range)+", "
 
         for item in request.REQUEST:
             requestFields[item.lower()] = request.REQUEST[item]
-        # if dropmode:
+        # if dropmode:.
         #    condition['WITH_RETRIALS'] = 'N'
         # else:
         #    condition['WITH_RETRIALS'] = 'Y'
@@ -1848,6 +1851,37 @@ def jobListPDiv(request, mode=None, param=None):
     jobs.extend(Jobsactive4.objects.filter(**newquery).values(*values))
     jobs.extend(Jobswaiting4.objects.filter(**newquery).values(*values))
     jobs.extend(Jobsarchived4.objects.filter(**newquery).values(*values))
+    if (len(jobs) < njobsmax):
+        jobs.extend(Jobsarchived.objects.filter(**newquery).values(*values))
+
+
+    if 'requestParams' in request.session and 'sortby' in request.session['requestParams']:
+        sortby = request.session['requestParams']['sortby']
+        if sortby == 'time-ascending':
+            jobs = sorted(jobs, key=lambda x: x['modificationtime'])
+        if sortby == 'time-descending':
+            jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+        if sortby == 'statetime':
+            jobs = sorted(jobs, key=lambda x: x['statechangetime'], reverse=True)
+        elif sortby == 'priority':
+            jobs = sorted(jobs, key=lambda x: x['currentpriority'], reverse=True)
+        elif sortby == 'attemptnr':
+            jobs = sorted(jobs, key=lambda x: x['attemptnr'], reverse=True)
+        elif sortby == 'duration-ascending':
+            jobs = sorted(jobs, key=lambda x: x['durationsec'])
+        elif sortby == 'duration-descending':
+            jobs = sorted(jobs, key=lambda x: x['durationsec'], reverse=True)
+        elif sortby == 'duration':
+            jobs = sorted(jobs, key=lambda x: x['durationsec'])
+        elif sortby == 'PandaID':
+            jobs = sorted(jobs, key=lambda x: x['pandaid'], reverse=True)
+    else:
+        sortby = "time-descending"
+        if len(jobs) > 0 and 'modificationtime' in jobs[0]:
+            jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+
+
+
 
     ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
     taskids = {}
