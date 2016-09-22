@@ -10,6 +10,7 @@
 
 {{ viewParams.header }}
 
+
 <b>{{ njobs }} jobs in this selection</b>
 {% if requestParams.transferringnotupdated %}<br><b>Jobs in transferring state for more than {{ requestParams.transferringnotupdated }} hours</b> {% endif %}
 {% if requestParams.statenotupdated %}<br><b>Jobs in <span class="{{ requestParams.jobstatus }}">{{ requestParams.jobstatus }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}
