@@ -1659,18 +1659,20 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
         delta = b - a
         range = delta.days+delta.seconds/86400.0
 
-        if (range == 180.0):                #This is a temporary patch to avoid absence of pandaids
-            plsql += " RANGE_DAYS=>null, "
-        else:
-            plsql += " RANGE_DAYS=>"+str(range)+", "
+        #if (range == 180.0):                #This is a temporary patch to avoid absence of pandaids
+        #    plsql += " RANGE_DAYS=>null, "
+        #else:
+        #    plsql += " RANGE_DAYS=>"+str(range)+", "
+
+        plsql += " RANGE_DAYS=>"+str(range)+", "
+
 
         for item in request.REQUEST:
             requestFields[item.lower()] = request.REQUEST[item]
-        # if dropmode:.
-        #    condition['WITH_RETRIALS'] = 'N'
-        # else:
-        #    condition['WITH_RETRIALS'] = 'Y'
-        # plsql += """:WITH_RETRIALS, """
+        if dropmode:
+            plsql += " WITH_RETRIALS=>'N', "
+        else:
+            plsql += " WITH_RETRIALS=>'Y', "
 
 
         for item in standard_fields:
