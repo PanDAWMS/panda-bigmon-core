@@ -14,6 +14,12 @@
 
 {{ viewParams.header }}
 
+    <div style="text-align: center; background:darkred; color: whitesmoke; font-size: 20px;" >
+    We propose to participate in testing a new much faster jobs page (<a href="http://bigpanda.cern.ch/jobsss">http://bigpanda.cern.ch/jobsss</a>)<br>
+    The new view might have differences with the current one, please inform developers about any issues you have.
+    </div>
+
+
 <b>{{ njobs }} jobs in this selection</b>
 {% if requestParams.transferringnotupdated %}<br><b>Jobs in transferring state for more than {{ requestParams.transferringnotupdated }} hours</b> {% endif %}
 {% if requestParams.statenotupdated %}<br><b>Jobs in <span class="{{ requestParams.jobstatus }}">{{ requestParams.jobstatus }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}
