@@ -1635,72 +1635,57 @@ def postpone(function):
 @postpone
 def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension):
 
-    if len(request.REQUEST.values()) == 0:
-        plsql = "INSERT INTO ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT (REQUEST_TOKEN, ATTR, ATTR_VALUE, NUM_OCCUR) " \
-                "SELECT "+str(requestToken)+", PANDA_ATTRIBUTE, ATTR_VALUE, NUM_OCCURRENCES FROM ATLAS_PANDABIGMON.PANDAMON_JOBSPAGE_INIT"
-        cursor = connection.cursor()
+    plsql = "BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE("
+    plsql += " REQUEST_TOKEN=>"+str(requestToken)+", "
+    requestFields = {}
 
+    a = datetime.strptime(query['modificationtime__range'][0], defaultDatetimeFormat)
+    b = datetime.strptime(query['modificationtime__range'][1], defaultDatetimeFormat)
+    delta = b - a
+    range = delta.days+delta.seconds/86400.0
+
+    #if (range == 180.0):                #This is a temporary patch to avoid absence of pandaids
+    #    plsql += " RANGE_DAYS=>null, "
+    #else:
+    #    plsql += " RANGE_DAYS=>"+str(range)+", "
+
+    plsql += " RANGE_DAYS=>"+str(range)+", "
+
+
+    for item in request.REQUEST:
+        requestFields[item.lower()] = request.REQUEST[item]
+    if not dropmode:
+        plsql += " WITH_RETRIALS=>'Y', "
+
+
+    for item in standard_fields:
+        if (item in query):
+            plsql += " " + item.upper() + "=>'" + str(query[item]) + "', "
+        if ((item + '__in') in query):
+            plsql += " " + item.upper() + "=>'" + str(query[item+'__in'][0]) + "', "
+
+        else:
+            pos = wildCardExtension.find(item, 0)
+            if pos > 0:
+                firstc = wildCardExtension.find("'", pos) + 1
+                sec = wildCardExtension.find("'", firstc)
+                value = wildCardExtension[firstc: sec]
+                plsql += " "+item.upper()+"=>'"+value+"', "
+    plsql = plsql[:-2]
+    plsql += "); END;;"
+    # Here we call stored proc to fill temporary data
+    cursor = connection.cursor()
+    noException = False
+    countCalls = 0
+    while (not noException and countCalls < 10):
         try:
             cursor.execute(plsql)
-            cursor.execute("INSERT INTO ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT(REQUEST_TOKEN, ATTR, "
-                           "ATTR_VALUE, NUM_OCCUR) VALUES(" + str(requestToken) + ", \'END\', \'END\', 1)")
-
+            countCalls += 1
+            noException = True
         except:
             pass
-        cursor.close()
 
-    else:
-        plsql = "BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE("
-        plsql += " REQUEST_TOKEN=>"+str(requestToken)+", "
-        requestFields = {}
-
-        a = datetime.strptime(query['modificationtime__range'][0], defaultDatetimeFormat)
-        b = datetime.strptime(query['modificationtime__range'][1], defaultDatetimeFormat)
-        delta = b - a
-        range = delta.days+delta.seconds/86400.0
-
-        #if (range == 180.0):                #This is a temporary patch to avoid absence of pandaids
-        #    plsql += " RANGE_DAYS=>null, "
-        #else:
-        #    plsql += " RANGE_DAYS=>"+str(range)+", "
-
-        plsql += " RANGE_DAYS=>"+str(range)+", "
-
-
-        for item in request.REQUEST:
-            requestFields[item.lower()] = request.REQUEST[item]
-        if not dropmode:
-            plsql += " WITH_RETRIALS=>'Y', "
-
-
-        for item in standard_fields:
-            if (item in query):
-                plsql += " " + item.upper() + "=>'" + str(query[item]) + "', "
-            if ((item + '__in') in query):
-                plsql += " " + item.upper() + "=>'" + str(query[item+'__in'][0]) + "', "
-
-            else:
-                pos = wildCardExtension.find(item, 0)
-                if pos > 0:
-                    firstc = wildCardExtension.find("'", pos) + 1
-                    sec = wildCardExtension.find("'", firstc)
-                    value = wildCardExtension[firstc: sec]
-                    plsql += " "+item.upper()+"=>'"+value+"', "
-        plsql = plsql[:-2]
-        plsql += "); END;;"
-        # Here we call stored proc to fill temporary data
-        cursor = connection.cursor()
-        noException = False
-        countCalls = 0
-        while (not noException and countCalls < 10):
-            try:
-                cursor.execute(plsql)
-                countCalls += 1
-                noException = True
-            except:
-                pass
-
-        cursor.close()
+    cursor.close()
 
 
 # plsql = """BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE(:REQUEST_TOKEN, :RANGE_DAYS); END;;"""
@@ -1714,15 +1699,19 @@ def jobListP(request, mode=None, param=None):
     # Here We start Retreiving Summary and return almost empty template
 
     # Get request token. This sheme of getting tokens should be more sophisticated (at least not use sequential numbers)
-    requestToken = -1
-    sqlRequest = "SELECT ATLAS_PANDABIGMON.PANDAMON_REQUEST_TOKEN_SEQ.NEXTVAL as my_req_token FROM dual;"
-    cur = connection.cursor()
-    cur.execute(sqlRequest)
-    requestToken = cur.fetchall()
-    cur.close()
-    requestToken = requestToken[0][0]
+    requestToken = 0
 
-    if (requestToken == -1):
+    if len(request.REQUEST.values()) == 0:
+        requestToken = -1
+    else:
+        sqlRequest = "SELECT ATLAS_PANDABIGMON.PANDAMON_REQUEST_TOKEN_SEQ.NEXTVAL as my_req_token FROM dual;"
+        cur = connection.cursor()
+        cur.execute(sqlRequest)
+        requestToken = cur.fetchall()
+        cur.close()
+        requestToken = requestToken[0][0]
+
+    if (requestToken == 0):
         print "Error in getting reuest token"
         return
 
@@ -1737,7 +1726,8 @@ def jobListP(request, mode=None, param=None):
     for item in request.REQUEST:
         requestFields[item.lower()] = request.REQUEST[item]
 
-    startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
+    if not (requestToken == -1):
+        startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
     data = {
         'requesttoken': requestToken,
