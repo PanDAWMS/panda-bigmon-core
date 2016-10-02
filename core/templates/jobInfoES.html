@@ -204,10 +204,6 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 <a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}">logfiles</a>
 </td>
 
-{% comment %}
-<td><a href="http://panda.cern.ch/?overview=viewlogfile&nocachemark=yes&guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}">logfiles</a>
-</td>
-{% endcomment %}
 
 {% endif %}
 
@@ -356,11 +352,10 @@ But if you want, you can check.
         <td> {% if file.attemptnr %} {{ file.attemptnr }} ({{ file.maxattempt }}){% endif %} </td>
         <td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{file.datasetname}}"> {{ file.datasetname }}</a>
         {% if file.dispatchdblock %}
-        <br />(dispatch block: {{ file.dispatchdblock }} <a href="http://panda.cern.ch/server/pandamon/query?dataset={{ file.dispatchdblock }}">pinkpanda</a> <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.dispatchdblock }}">rucio</a>)  <a href="http://dashb-atlas-ddm.cern.ch/ddm2/#d.dst.site={{file.ddmsite}}&d.name={{file.lfn}}&d.scope={{ file.scope }}&grouping.dst=(site,token)&tab=details">DDM Dashboard</a>
+        <br />(dispatch block: {{ file.dispatchdblock }} <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.dispatchdblock }}">rucio</a>)  <a href="http://dashb-atlas-ddm.cern.ch/ddm2/#d.dst.site={{file.ddmsite}}&d.name={{file.lfn}}&d.scope={{ file.scope }}&grouping.dst=(site,token)&tab=details">DDM Dashboard</a>
         {% endif %}
         {% if file.destinationdblock %}
-        <br />(destination block: {% if file.destinationdblock_vis %}{{ file.destinationdblock_vis }}{% else %}{{ file.destinationdblock }}{% endif %} <a href="http://panda.cern.ch/server/pandamon/query?dataset={{ file.destinationdblock }}">
-        pinkpanda</a> <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.destinationdblock }}">rucio</a>)  <a href="http://dashb-atlas-ddm.cern.ch/ddm2/#d.dst.site={{file.ddmsite}}&d.name={{file.lfn}}&d.scope={{ file.scope }}&grouping.dst=(site,token)&tab=details">DDM Dashboard</a>
+        <br />(destination block: {% if file.destinationdblock_vis %}{{ file.destinationdblock_vis }}{% else %}{{ file.destinationdblock }}{% endif %} <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.destinationdblock }}">rucio</a>)  <a href="http://dashb-atlas-ddm.cern.ch/ddm2/#d.dst.site={{file.ddmsite}}&d.name={{file.lfn}}&d.scope={{ file.scope }}&grouping.dst=(site,token)&tab=details">DDM Dashboard</a>
         {% endif %}
         </font>
         </td>
@@ -418,7 +413,7 @@ But if you want, you can check.
 	{% if job.atlasrelease %}<tr><th>Release</th><td>{{ job.atlasrelease }}</td></tr></tr>{% endif %}
 	{% if job.transexitcode != '0' and job.transexitcode != 'None' and job.transexitcode != '' %}<tr><th class="alarm">Transformation exit code</th><td class="alarm">{{ job.transexitcode }} (non-zero exit code from job payload)</td></tr></tr>{% endif %}
 	{% if job.parentid %}<tr><th>Parent job ID</th><td><a href="{% url 'jobInfo' job.parentid %}">{{ job.parentid }}</a></td></tr></tr>{% endif %}
-	{% if job.proddblock %}<tr><th>Proddblock</th><td><a href="http://panda.cern.ch/server/pandamon/query?dataset={{ job.proddblock }}">{{ job.proddblock }}</a></td></tr>{% endif %}
+	{% if job.proddblock %}<tr><th>Proddblock</th><td>{{ job.proddblock }}</td></tr>{% endif %}
 	{% if job.workinggroup %}<tr><th>Working group</th><td>{{ job.workinggroup }}</td></tr></tr>{% endif %}
 	{% if job.transfertype %}<tr><th>Transfer type</th><td>{{ job.transfertype }}</td></tr>{% endif %}
 	{% if job.specialhandling %}<tr><th>Special handling</th><td>{{ job.specialhandling }}</td></tr>{% endif %}

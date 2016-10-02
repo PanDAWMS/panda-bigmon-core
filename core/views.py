@@ -6056,10 +6056,6 @@ def taskInfo(request, jeditaskid=0):
                 do_redirect = True
         except:
             pass
-        if do_redirect:
-            del request.session['TFIRST']
-            del request.session['TLAST']
-            return redirect('http://panda.cern.ch/?taskname=%s&overview=taskinfo' % jeditaskid)
         if taskrec:
             attrs.append({'name': 'Status', 'value': taskrec['status']})
         del request.session['TFIRST']

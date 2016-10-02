@@ -73,25 +73,15 @@ No PanDA dataset <b>{{ datasetname }}</b> found.
 <tr><td class="doctextlight">
 
 {% if columns %}
-
-{% if dsrec.vuid %}
-
-<p>
-This is a 'pre-JEDI' old format dataset.
-</p>
-
-{% else %}
-
-<p>
-This is a PanDA JEDI dataset. 
-</p>
-
-{% endif %}
-
-{% else %}
-
-You can try looking up the dataset <a href="http://panda.cern.ch/server/pandamon/query?dataset={{ datasetname }}">in the old monitor</a> which will try to find it in DQ2.
-
+    {% if dsrec.vuid %}
+        <p>
+        This is a 'pre-JEDI' old format dataset.
+        </p>
+    {% else %}
+        <p>
+        This is a PanDA JEDI dataset.
+        </p>
+    {% endif %}
 {% endif %}
 
 </td>
