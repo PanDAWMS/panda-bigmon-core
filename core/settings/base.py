@@ -84,6 +84,7 @@ INSTALLED_APPS_DJANGO_FRAMEWORK = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
 #### django-debug-toolbar
 #    'debug_toolbar',
 )
