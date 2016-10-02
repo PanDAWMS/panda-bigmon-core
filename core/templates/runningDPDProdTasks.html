@@ -1,5 +1,6 @@
 {% extends "_base_core.html" %}
 {% load url from future %}
+{% load humanize %}
 
 {% block page_title %} PanDA tasks{% endblock %}
 {% block subtitle %}Running DPD production task list
@@ -218,9 +219,9 @@
                             {{ task.rjobs }}{% endif %}</td>
                         <td class='{{ task.status }}_fill'><a
                                 href="{{ xurl }}status={{ task.status }}">{{ task.status }}</a></td>
-                        <td>{% if task.totev %}{{ task.totev }}{% else %}---{% endif %}</td>
-                        <td>{% if task.totev %}{{ task.neventsused }}{% else %}---{% endif %}</td>
-                        <td>{% if task.totev %}{{ task.totevrem }}{% else %}---{% endif %}</td>
+                        <td>{% if task.totev %}{{ task.totev|intcomma }}{% else %}---{% endif %}</td>
+                        <td>{% if task.totev %}{{ task.neventsused|intcomma }}{% else %}---{% endif %}</td>
+                        <td>{% if task.totev %}{{ task.totevrem|intcomma }}{% else %}---{% endif %}</td>
                         <td>{% if task.totev %}{{ task.percentage }}{% else %}---{% endif %}</td>
                         <td>{% if task.nfilesfailed %}{{ task.nfilesfailed }}{% else %}0{% endif %}</td>
                         <td>{{ task.currentpriority }}</td>
