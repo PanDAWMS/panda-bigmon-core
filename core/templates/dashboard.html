@@ -403,7 +403,7 @@ of all jobs
 <th> Status</th>
 <th> nJobs </th>
 {% if cloudview == 'region' %}
-<th> nPilots </th>
+<th> nPilots (Sum(nojobabs)) </th>
 {% endif %}
 <th> <a href="{{nosorturl}}sortby=defined">defined</a> </th>
 <th> <a href="{{nosorturl}}sortby=waiting">waiting</a> </th>
@@ -429,7 +429,7 @@ of all jobs
 <th  bgcolor=whitesmoke> <span class="{{cloud.status}}">{{ cloud.status }}</span> </th>
 <th  bgcolor=whitesmoke align='right'><a href="{% url 'jobList' %}?cloud={{ cloud.name }}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100">{{ cloud.count }} </a></th>
 {% if cloudview == 'region' %}
-<th  bgcolor=whitesmoke align='right'> {{ cloud.pilots }} </th>
+<th  bgcolor=whitesmoke align='right'> {{ cloud.pilots }} ({{ cloud.nojobabs }}) </th>
 {% endif %}
 {% for state in cloud.statelist %}
 <th  {% if state.count > 0 %} class='{{ state.name }}_fill' {% else %} bgcolor=whitesmoke {% endif %} align='right'><a href="{% url 'jobList' %}?cloud={{ cloud.name }}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&jobstatus={{ state.name }}{% if state.name == "failed" %}&mode=nodrop{% endif %}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }}</span></a> </td>
@@ -449,7 +449,7 @@ of all jobs
 <td class="tablesection"> Status</td>
 <td class="tablesection"> nJobs </td>
 {% if cloudview == 'region' %}
-<td class="tablesection"> nPilots </td>
+<td class="tablesection"> nPilots (sum(nojobabs)) </td>
 {% endif %}
 <td class="tablesection"> <a href="{{nosorturl}}sortby=defined">defined</a> </td>
 <td class="tablesection"> <a href="{{nosorturl}}sortby=waiting">waiting</a> </td>
@@ -475,7 +475,7 @@ of all jobs
 <th bgcolor=whitesmoke> </th>
 <th bgcolor=whitesmoke align='right'> <a href="{% url 'jobList' %}?cloud={{ cloud.name }}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100">{{ cloud.count }}</a> </th>
 {% if cloudview == 'region' %}
-<th> {{ cloud.pilots }} </th>
+<th> {{ cloud.pilots }} ({{ cloud.nojobabs }}) </th>
 {% endif %}
 {% for state in cloud.statelist %}
 <th {% if state.count > 0 %} class='{{ state.name }}_fill' {% else %} bgcolor=whitesmoke {% endif %} align='right'> <a href="{% url 'jobList' %}?cloud={{ cloud.name }}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100"><span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}">{{ state.count }}</span></a> </th>
@@ -488,7 +488,7 @@ of all jobs
 <td><span class="{{site.status}}">{{ site.status  }}</span> </td>
 <td align='right'><a href="{% url 'jobList' %}?cloud={{cloud.name}}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&computingsite={{ site.name }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&hours={{hours}}&jobtype={{ view }}&display_limit=100">{{ site.count }} </a></td>
 {% if cloudview == 'region' %}
-<td> {{ site.pilots }} </td>
+<td> {{ site.pilots }} ({{ site.nojobabs }}) </td>
 {% endif %}
 {% for state in site.summary %}
 <td class='{{state.name}}{% if state.count > 0 %}_fill{% endif %}' align='right'><a href="{% url 'jobList' %}?computingsite={{ site.name }}{% if cloudview != 'region' and view != 'analysis' %}&cloud={{ cloud.name }}{% endif %}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }} </span></a> </td>

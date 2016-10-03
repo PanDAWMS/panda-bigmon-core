@@ -1602,6 +1602,7 @@ class Sitedata(models.Model):
     lastmod = models.DateTimeField(db_column='LASTMOD')
     ncpu = models.IntegerField(null=True, db_column='NCPU', blank=True)
     nslot = models.IntegerField(null=True, db_column='NSLOT', blank=True)
+    nojobabs = models.IntegerField(null=True, db_column='NOJOBABS', blank=True)
     class Meta:
         db_table = u'sitedata'
         unique_together = ('site', 'flag', 'hours')
