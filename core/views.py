@@ -13,7 +13,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, render, redirect
 from django.template import RequestContext, loader
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django import forms
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
@@ -4011,6 +4011,12 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         siteinfo[s['siteid']] = s['status']
 
     sitesummarydata = siteSummary(query, notime)
+    nojobabs = Sitedata.objects.filter(hours=3).values('site').annotate(dcount=Sum('nojobabs'))
+    nojobabshash = {}
+    for item in nojobabs:
+        nojobabshash[item['site']] = item['dcount']
+
+
     mismatchedSites = []
     clouds = {}
     totstates = {}
@@ -4043,6 +4049,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
             if cloud in cloudinfo: clouds[cloud]['status'] = cloudinfo[cloud]
             clouds[cloud]['count'] = 0
             clouds[cloud]['pilots'] = 0
+            clouds[cloud]['nojobabs'] = 0
             clouds[cloud]['sites'] = {}
             clouds[cloud]['states'] = {}
             clouds[cloud]['statelist'] = []
@@ -4062,6 +4069,13 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
                 clouds[cloud]['pilots'] += pilots[site]['count']
             else:
                 clouds[cloud]['sites'][site]['pilots'] = 0
+
+            if site in nojobabshash:
+                clouds[cloud]['sites'][site]['nojobabs'] = nojobabshash[site]
+                clouds[cloud]['nojobabs'] += nojobabshash[site]
+            else:
+                clouds[cloud]['sites'][site]['nojobabs'] = 0
+
             clouds[cloud]['sites'][site]['states'] = {}
             for state in sitestatelist:
                 clouds[cloud]['sites'][site]['states'][state] = {}
@@ -4088,11 +4102,19 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
                 if site in siteinfo: clouds[cloud]['sites'][site]['status'] = siteinfo[site]
                 clouds[cloud]['sites'][site]['count'] = 0
                 clouds[cloud]['sites'][site]['pctfail'] = 0
+
+                if site in nojobabshash:
+                    clouds[cloud]['sites'][site]['nojobabs'] = nojobabshash[site]
+                    clouds[cloud]['nojobabs'] += nojobabshash[site]
+                else:
+                    clouds[cloud]['sites'][site]['nojobabs'] = 0
+
                 if site in pilots:
                     clouds[cloud]['sites'][site]['pilots'] = pilots[site]['count']
                     clouds[cloud]['pilots'] += pilots[site]['count']
                 else:
                     clouds[cloud]['sites'][site]['pilots'] = 0
+
                 clouds[cloud]['sites'][site]['states'] = {}
                 for state in sitestatelist:
                     clouds[cloud]['sites'][site]['states'][state] = {}
@@ -4109,6 +4131,8 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
     allclouds['name'] = 'All'
     allclouds['count'] = totjobs
     allclouds['pilots'] = 0
+    allclouds['nojobabs'] = 0
+
     allclouds['sites'] = {}
     allclouds['states'] = totstates
     allclouds['statelist'] = []
@@ -4899,6 +4923,7 @@ def dashTasks(request, hours, view='production'):
         cloudview = 'N/A'
 
     fullsummary = dashSummary(request, hours=hours, view=view, cloudview=cloudview)
+
     jobsLeft = {}
     rw = {}
     rwData, nRemJobs = calculateRWwithPrio_JEDI(query)
