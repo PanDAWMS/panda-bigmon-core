@@ -5738,7 +5738,7 @@ def taskInfo(request, jeditaskid=0):
     walltime = []
     jobsummaryESMerge = []
     jobsummaryPMERGE = []
-
+    eventsdict=[]
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
         request.session['requestParams']['jeditaskid'])
     if jeditaskid != 0:
@@ -5753,6 +5753,17 @@ def taskInfo(request, jeditaskid=0):
                 'mode'] == 'drop': mode = 'drop'
             if 'mode' in request.session['requestParams'] and request.session['requestParams'][
                 'mode'] == 'nodrop': mode = 'nodrop'
+            if mode == 'nodrop':
+                equery= {'jeditaskid' : jeditaskid}
+                eventsdict.extend(JediEvents.objects.filter(**equery).values('status').annotate(count=Count('status')).order_by('status'))
+                for state in eventsdict: state['statusname']=eventservicestatelist[state['status']]
+                existedstates = dict((i['statusname'], i['count']) for i in eventsdict)
+                for state in eventservicestatelist:
+                    if not state in existedstates:
+                        eventstatus={}
+                        eventstatus['statusname']=state
+                        eventstatus['count']=0
+                        eventsdict.insert(eventservicestatelist.index(state),eventstatus)
 
             jobsummary, jobcpuTimeScoutID, hs06sSum, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
                 query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge')
@@ -6115,6 +6126,7 @@ def taskInfo(request, jeditaskid=0):
             'columns': columns,
             'attrs': attrs,
             'jobsummary': jobsummary,
+            'eventssummary': eventsdict,
             'jeditaskid': jeditaskid,
             'logtxt': logtxt,
             'datasets': dsets,

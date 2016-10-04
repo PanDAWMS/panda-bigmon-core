@@ -155,8 +155,6 @@ function toggleDetailDisplay(className) {
 </table>
 {% endif %}
 
-
-
 {% if jobsummaryESMerge %}
 
 <table>
@@ -170,6 +168,23 @@ function toggleDetailDisplay(className) {
 </tr><tr>
 {% for state in jobsummaryESMerge %}
 <td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&display_limit=100&eventservice=2"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+{% endfor %}
+</table>
+{% endif %}
+
+{% if eventssummary|length > 0 %}
+
+<table>
+<tr bgcolor="lightcyan"><th colspan=20>
+<b>States of events in this task</b>   &nbsp; &nbsp
+</th></tr>
+<tr>
+{% for state in eventssummary %}
+<td class="{{ state.statusname}}"> <b> {{ state.statusname }} </b> </td>
+{% endfor %}
+</tr><tr>
+{% for state in eventssummary %}
+<td {% if state.count > 0 %} class='{{state.statusname}}_fill' {% endif %}> {% if state.count > 0 %} <b> <span class='{{state.statusname}}_fill'>{{ state.count }}</span></b> {% endif %} </td>
 {% endfor %}
 </table>
 {% endif %}
