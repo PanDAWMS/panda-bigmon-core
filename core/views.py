@@ -1652,7 +1652,9 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     for item in request.REQUEST:
         requestFields[item.lower()] = request.REQUEST[item]
 
-    if not ('jeditaskid' in requestFields and range == 180.0): #This is a temporary patch to avoid absence of pandaids
+    if ('jeditaskid' in requestFields and range == 180.0): #This is a temporary patch to avoid absence of pandaids
+        plsql += " RANGE_DAYS=>null, "
+    else:
         plsql += " RANGE_DAYS=>" + str(range) + ", "
 
 
