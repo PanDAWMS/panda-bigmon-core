@@ -1628,7 +1628,6 @@ def postpone(function):
         t = Thread(target=function, args=args, kwargs=kwargs)
         t.daemon = True
         t.start()
-
     return decorator
 
 
@@ -1644,16 +1643,19 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     delta = b - a
     range = delta.days+delta.seconds/86400.0
 
-    #if (range == 180.0):                #This is a temporary patch to avoid absence of pandaids
+
+    #if (range == 180.0):
     #    plsql += " RANGE_DAYS=>null, "
     #else:
     #    plsql += " RANGE_DAYS=>"+str(range)+", "
 
-    plsql += " RANGE_DAYS=>"+str(range)+", "
-
-
     for item in request.REQUEST:
         requestFields[item.lower()] = request.REQUEST[item]
+
+    if not ('jeditaskid' in requestFields and range == 180.0): #This is a temporary patch to avoid absence of pandaids
+        plsql += " RANGE_DAYS=>" + str(range) + ", "
+
+
     if not dropmode:
         plsql += " WITH_RETRIALS=>'Y', "
 
