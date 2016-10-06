@@ -2387,6 +2387,7 @@ def jobList(request, mode=None, param=None):
             'user': user,
             'sumd': sumd,
             'xurl': xurl,
+            'xurlnopref': xurl[5:],
             'droplist': droplist,
             'ndrops': len(droplist) if len(droplist) > 0 else (- len(droppedPmerge)),
             'tfirst': TFIRST,
