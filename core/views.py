@@ -715,6 +715,48 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     return (query, extraQueryString, LAST_N_HOURS_MAX)
 
+def cleanJobListLite(request, jobl, mode='nodrop', doAddMeta=True):
+    for job in jobl:
+        job['duration'] = ""
+        job['durationsec'] = 0
+        # if job['jobstatus'] in ['finished','failed','holding']:
+        if 'endtime' in job and 'starttime' in job and job['starttime']:
+            starttime = job['starttime']
+            if job['endtime']:
+                endtime = job['endtime']
+            else:
+                endtime = timezone.now()
+
+            duration = max(endtime - starttime, timedelta(seconds=0))
+            ndays = duration.days
+            strduration = str(timedelta(seconds=duration.seconds))
+            job['duration'] = "%s:%s" % (ndays, strduration)
+            job['durationsec'] = ndays * 24 * 3600 + duration.seconds
+
+        job['waittime'] = ""
+        # if job['jobstatus'] in ['running','finished','failed','holding','cancelled','transferring']:
+        if 'creationtime' in job and 'starttime' in job and job['creationtime']:
+            creationtime = job['creationtime']
+            if job['starttime']:
+                starttime = job['starttime']
+            else:
+                starttime = timezone.now()
+            wait = starttime - creationtime
+            ndays = wait.days
+            strwait = str(timedelta(seconds=wait.seconds))
+            job['waittime'] = "%s:%s" % (ndays, strwait)
+        if 'currentpriority' in job:
+            plo = int(job['currentpriority']) - int(job['currentpriority']) % 100
+            phi = plo + 99
+            job['priorityrange'] = "%d:%d" % (plo, phi)
+        if 'jobsetid' in job and job['jobsetid']:
+            plo = int(job['jobsetid']) - int(job['jobsetid']) % 100
+            phi = plo + 99
+            job['jobsetrange'] = "%d:%d" % (plo, phi)
+    return jobl
+
+
+
 
 def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': mode = 'drop'
@@ -1660,6 +1702,8 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
     if not dropmode:
         plsql += " WITH_RETRIALS=>'Y', "
+    else:
+        plsql += " WITH_RETRIALS=>'N', "
 
 
     for item in standard_fields:
@@ -1679,16 +1723,16 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     plsql += "); END;;"
     # Here we call stored proc to fill temporary data
     cursor = connection.cursor()
-    noException = False
     countCalls = 0
-    while (not noException and countCalls < 10):
+    while (countCalls < 3):
         try:
             cursor.execute(plsql)
             countCalls += 1
-            noException = True
-        except:
-            pass
-
+        except Exception as ex:
+            if ex[0].code == 8103:
+                pass
+            else:
+                break
     cursor.close()
 
 
@@ -1889,7 +1933,7 @@ def jobListPDiv(request, mode=None, param=None):
     droppedIDs = set()
     droppedPmerge = set()
 
-    # jobs = cleanJobList(request, jobs)
+    jobs = cleanJobListLite(request, jobs)
 
     jobtype = ''
     if 'requestParams' in request.session and 'jobtype' in request.session['requestParams']:
