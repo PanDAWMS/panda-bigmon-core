@@ -58,18 +58,24 @@
 <table>
 <tr class='tablesection'><th colspan=20> Job attribute summary   &nbsp; Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
 {% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
-{% for item in fdict.list %}
-{% if fdict.field == 'jobstatus' %} <span {% if item.kname == 'closed:toreassign' %} class="reassign" {% else %} class='{{item.kname}}' {% endif %}> {% else %} <span> {% endif %}  {{ item.kname }} </span>
-
-{% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
-    <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
-                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a> &nbsp;
-{% endif %}
-{% endfor %}
-</td></tr>
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
+    <td><div class="comment more">
+        {% for item in fdict.list %}
+            {% if fdict.field == 'jeditaskid' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% else %}
+                {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
+                {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
+                    <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
+                                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a> &nbsp;
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+        </div>
+    </td>
+</tr>
 {% endfor %}
 </table>
+
 
 <table>
 <tr class='tablesection'><th colspan=20>

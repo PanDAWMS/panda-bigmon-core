@@ -24,11 +24,15 @@
 {% if requestParams.transformation %}<br><b>Transformation: {{ requestParams.transformation }}</b> {% endif %}
 <p>
 
+
+{% comment %}
 {% if jobList %}
 <p id="timerange">
 <br>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.
 </p>
 {% endif %}
+{% endcomment %}
+
 
 {% if flowstruct %}
 
@@ -82,16 +86,18 @@ function toggleDetailDisplay(className) {
 
 {% if sumd %}
 <table>
-<tr class='tablesection'><th colspan=20> Job attribute summary   &nbsp; Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{xurl}}">alpha</a> {% else %} <a href="{{xurl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
+<tr class='tablesection'><th colspan=20> Job attribute summary   &nbsp; Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
 {% for fdict in sumd %}
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
     <td><div class="comment more">
         {% for item in fdict.list %}
-            {% if fdict.field == 'JOBSTATUS' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
-
-            {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
-                <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
-                                                              href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a> &nbsp;
+            {% if fdict.field == 'JEDITASKID' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% else %}
+                {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
+                {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
+                    <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
+                                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a> &nbsp;
+                {% endif %}
             {% endif %}
         {% endfor %}
         </div>
@@ -99,7 +105,7 @@ function toggleDetailDisplay(className) {
 </tr>
 {% endfor %}
 </table>
-</table>
+
 
 {% if errsByCount %}
 <a name="summary"></a>

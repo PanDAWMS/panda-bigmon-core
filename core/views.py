@@ -1864,6 +1864,12 @@ def jobListPDiv(request, mode=None, param=None):
                     errval['diag'] = errorCodes[error[0]][int(errval['codeval'])]
                 errsByCount.append(errval)
 
+    if sumd:
+        for item in sumd:
+            if item['field'] == 'JEDITASKID':
+                item['list'] = sorted(item['list'], key=lambda k: k['kvalue'], reverse=True)
+
+
     pandaIDVal = [int(val) for val in jobsToList]
     pandaIDVal = pandaIDVal[:njobsmax]
     newquery = {}
@@ -2353,7 +2359,13 @@ def jobList(request, mode=None, param=None):
     else:
         showwarn = 1
 
+    # Sort in order to see the most important tasks
     sumd, esjobdict = jobSummaryDict(request, jobs)
+    if sumd:
+        for item in sumd:
+            if item['field'] == 'jeditaskid':
+                item['list'] = sorted(item['list'], key=lambda k: k['kvalue'], reverse=True)
+
 
     if 'jeditaskid' in request.session['requestParams']:
         if len(jobs) > 0:
@@ -6417,8 +6429,9 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
             tm = job['modificationtime']
             if tm is not None:
                 tm = tm - timedelta(minutes=tm.minute % 30, seconds=tm.second, microseconds=tm.microsecond)
-                if not tm in errHist: errHist[tm] = 0
-                errHist[tm] += 1
+                if not tm in errHist: errHist[tm] = 1
+                else:
+                    errHist[tm] += 1
 
         ## Overall summary
         for f in flist:
