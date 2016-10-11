@@ -1707,11 +1707,10 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
 
     for item in standard_fields:
-        if (item in query):
-            plsql += " " + item.upper() + "=>'" + str(query[item]) + "', "
         if ((item + '__in') in query):
             plsql += " " + item.upper() + "=>'" + str(query[item+'__in'][0]) + "', "
-
+        elif (item in query):
+            plsql += " " + item.upper() + "=>'" + str(query[item]) + "', "
         else:
             pos = wildCardExtension.find(item, 0)
             if pos > 0:
