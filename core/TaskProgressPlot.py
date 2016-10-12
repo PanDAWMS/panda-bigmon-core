@@ -78,11 +78,18 @@ class TaskProgressPlot:
         plt.xlabel("Job completion time", fontsize=18)
         plt.ylabel("Number of completed jobs", fontsize=18)
         plt.axvline(x=self.get_task_start(taskid)['starttime'], color='b', linewidth=4, label="Task start time")
+
+        min = frame.values[:,0:3].min()
+        max = frame.values[:,0:3].max()
+        plt.xlim(xmax=max)
+        plt.xlim(xmin=min)
         plt.xticks(rotation=25)
+
         ax = plt.gca()
         xfmt = md.DateFormatter('%m-%d %H:%M:%S')
         ax.xaxis.set_major_formatter(xfmt)
         #plt.xlim(daterange)
+
         plt.plot(frame.endtime, frame.njobs, '.r', label='Job ENDTIME')
         plt.plot(frame.starttime, frame.njobs, '.g', label='Job STARTTIME')
         plt.plot(frame.creationtime, frame.njobs, '.b', label='Job CREATIONTIME')
