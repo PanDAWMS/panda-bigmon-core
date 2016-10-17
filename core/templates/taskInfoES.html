@@ -150,7 +150,7 @@ function toggleDetailDisplay(className) {
 {% endfor %}
 </tr><tr>
 {% for state in jobsummary %}
-<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&eventservice=not2&display_limit=100"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&eventservice=not2&display_limit=100"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
 {% endfor %}
 </table>
 {% endif %}
@@ -167,7 +167,7 @@ function toggleDetailDisplay(className) {
 {% endfor %}
 </tr><tr>
 {% for state in jobsummaryESMerge %}
-<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&display_limit=100&eventservice=2"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&display_limit=100&eventservice=2"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
 {% endfor %}
 </table>
 {% endif %}
@@ -208,7 +208,7 @@ function toggleDetailDisplay(className) {
 
 {% if jobsummary %}
 <td>
-<a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&jobtype=eventservice&display_limit=100">job list (access to job details and logs)</a>
+<a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&jobtype=eventservice&display_limit=100">job list (access to job details and logs)</a>
 </td>
 {% endif %}
 

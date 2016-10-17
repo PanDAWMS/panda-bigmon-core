@@ -6144,7 +6144,7 @@ def taskInfo(request, jeditaskid=0):
             'dstypes': dstypes,
             'inctrs': inctrs,
             'outctrs': outctrs,
-            'vomode': VOMODE
+            'vomode': VOMODE,
         }
         data.update(getContextVariables(request))
         ##self monitor
