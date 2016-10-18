@@ -2093,8 +2093,17 @@ def cache_on_json(timeout):
             if (not (
                 ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                         'json' not in request.session['requestParams'])):
-                is_json = 'not_json'
-            return cache_page(timeout, key_prefix="%s_" % is_json)(view_func)(request, *args, **kwargs)
+                return cache_page(timeout, key_prefix="%s_" % is_json)(view_func)(request, *args, **kwargs)
+            else:
+                return view_func(request, *args, **kwargs)
+
+
+            #Not works in production invirowment
+            #if (not (
+            #    ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+            #            'json' not in request.session['requestParams'])):
+            #    is_json = 'not_json'
+            #return cache_page(timeout, key_prefix="%s_" % is_json)(view_func)(request, *args, **kwargs)
         return _wrapped_view
     return decorator
 
