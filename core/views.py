@@ -17,6 +17,7 @@ from django.db.models import Count, Sum
 from django import forms
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.vary import vary_on_headers
+from django.utils.cache import patch_vary_headers
 
 from django.utils import timezone
 from django.utils.cache import patch_cache_control, patch_response_headers
@@ -2083,6 +2084,7 @@ def jobListPDiv(request, mode=None, param=None):
 
 
 @cache_page(60 * 20)
+@vary_on_headers('Content-Type')
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
     if not valid: return response
@@ -2494,7 +2496,7 @@ def jobList(request, mode=None, param=None):
             "errsByCount": errsByCount,
         }
         response = HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
-        patch_cache_control(response, no_cache=True)
+        patch_vary_headers(response, ['Content-Type'])
         return response
 
 
