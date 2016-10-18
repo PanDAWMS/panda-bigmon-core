@@ -2083,7 +2083,6 @@ def jobListPDiv(request, mode=None, param=None):
 
 
 @cache_page(60 * 20)
-@vary_on_headers('Accept')
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
     if not valid: return response
@@ -2494,8 +2493,9 @@ def jobList(request, mode=None, param=None):
             "jobs": jobs,
             "errsByCount": errsByCount,
         }
-
-        return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+        response = HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+        patch_cache_control(response, no_cache=True)
+        return response
 
 
 def isEventService(job):
