@@ -2083,7 +2083,7 @@ def jobListPDiv(request, mode=None, param=None):
 
 
 @cache_page(60 * 20)
-@vary_on_headers('HTTP_ACCEPT')
+@vary_on_headers('Content-Type')
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
     if not valid: return response
