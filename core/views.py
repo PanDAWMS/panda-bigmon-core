@@ -8,7 +8,7 @@ import string as strm
 import math
 from urllib import urlencode
 from urlparse import urlparse, urlunparse, parse_qs
-
+from django.utils.decorators import available_attrs
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, render, redirect
@@ -18,6 +18,8 @@ from django import forms
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.vary import vary_on_headers
 from django.utils.cache import patch_vary_headers
+
+from functools import wraps
 
 from django.utils import timezone
 from django.utils.cache import patch_cache_control, patch_response_headers
@@ -2082,9 +2084,21 @@ def jobListPDiv(request, mode=None, param=None):
     return response
 
 
+def cache_on_json(timeout):
+    def decorator(view_func):
+        @wraps(view_func, assigned=available_attrs(view_func))
+        def _wrapped_view(request, *args, **kwargs):
+            is_json = 'not_json'
+            if (('HTTP_ACCEPT' in request.META) and (
+                request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+                        'json' in request.session['requestParams']):
+                is_json = 'json'
+            return cache_page(timeout, key_prefix="is_json%s_" % is_json)(view_func)(request, *args, **kwargs)
+        return _wrapped_view
+    return decorator
 
-@cache_page(60 * 20)
-@vary_on_headers('Content-Type')
+
+@cache_on_json(60 * 20)
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
     if not valid: return response
@@ -2496,7 +2510,6 @@ def jobList(request, mode=None, param=None):
             "errsByCount": errsByCount,
         }
         response = HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
-        patch_vary_headers(response, ['Content-Type'])
         return response
 
 
