@@ -60,9 +60,12 @@ urlpatterns = patterns('',
     url(r'^datasetList/$', coremon_views.datasetList, name='datasetList'),
     url(r'^workQueues/$', coremon_views.workQueues, name='workQueues'),
     url(r'^preprocess/$', coremon_views.preProcess, name='preprocess'),
-
     url(r'^g4exceptions/$', coremon_views.g4exceptions, name='g4exceptions'),
+
     url(r'^worldjobs/$', coremon_views.worldjobs, name='worldjobs'),
+#    url(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
+#    url(r'^worldjobs/production/$', coremon_views.dashWorldProduction, name='dashWorldProduction'),
+
     url(r'^runningmcprodtasks/$', coremon_views.runningMCProdTasks, name='runningMCProdTasks'),
     url(r'^runningprodtasks/$',coremon_views.runningProdTasks),
     url(r'^runningdpdprodtasks/$', coremon_views.runningDPDProdTasks, name='runningDPDProdTasks'),

@@ -16,6 +16,8 @@ from django.template import RequestContext, loader
 from django.db.models import Count, Sum
 from django import forms
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.vary import vary_on_headers
+
 from django.utils import timezone
 from django.utils.cache import patch_cache_control, patch_response_headers
 from django.db.models import Q
@@ -28,7 +30,7 @@ from django.db import connections
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
-    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, Getfailedjobshspecarch, Getfailedjobshspec, JobsWorldView
+    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, JobsWorldViewTaskType, Getfailedjobshspecarch, Getfailedjobshspec, JobsWorldView
 from schedresource.models import Schedconfig
 from core.common.models import Filestable4
 from core.common.models import Datasets
@@ -2079,7 +2081,9 @@ def jobListPDiv(request, mode=None, param=None):
     return response
 
 
+
 @cache_page(60 * 20)
+@vary_on_headers('http_accept')
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
     if not valid: return response
@@ -4569,13 +4573,27 @@ def calculateRWwithPrio_JEDI(query):
     return retRWMap, retNREMJMap
 
 
+def dashWorldAnalysis(request):
+    return worldjobs(request, view='analysis')
+
+
+def dashWorldProduction(request):
+    return worldjobs(request, view='production')
+
+
 @cache_page(60 * 20)
-def worldjobs(request):
+def worldjobs(request, view='production'):
     valid, response = initRequest(request)
     query = {}
     values = ['nucleus', 'computingsite', 'jobstatus', 'countjobsinstate']
     worldTasksSummary = []
-    worldTasksSummary.extend(JobsWorldView.objects.filter(**query).values(*values))
+
+    if view=='production':
+        query['tasktype'] = 'prod'
+    else:
+        query['tasktype'] = 'anal'
+
+    worldTasksSummary.extend(JobsWorldViewTaskType.objects.filter(**query).values(*values))
     nucleus = {}
     statelist1 = statelist
     #    del statelist1[statelist1.index('jclosed')]

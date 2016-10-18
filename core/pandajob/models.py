@@ -121,6 +121,15 @@ class JobsWorldView(models.Model):
         db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEW"'
 
 
+class JobsWorldViewTaskType(models.Model):
+    nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
+    computingsite = models.CharField(max_length=384, db_column='COMPUTINGSITE', blank=True) # Field name made lowercase.
+    jobstatus = models.CharField(max_length=45, db_column='JOBSTATUS') # Field name made lowercase.
+    countjobsinstate = models.IntegerField(db_column='COUNTJOBSINSTATE')
+    tasktype = models.CharField(max_length=64, db_column='TASKTYPE')
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEWTASKTYPE"'
+
 
 class PandaJob(models.Model):
     pandaid = models.BigIntegerField(primary_key=True, db_column='PANDAID') # Field name made lowercase.
