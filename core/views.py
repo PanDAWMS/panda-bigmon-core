@@ -2090,8 +2090,7 @@ def cache_on_json(timeout):
         def _wrapped_view(request, *args, **kwargs):
             initRequest(request)
             is_json = 'json'
-            if (not (
-                ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+            if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                         'json' not in request.session['requestParams'])):
                 return cache_page(timeout, key_prefix="%s_" % is_json)(view_func)(request, *args, **kwargs)
             else:
@@ -4895,89 +4894,163 @@ def dashboard(request, view='production'):
             errthreshold = 15
         vosummary = []
 
-    cloudview = 'cloud'
+    cloudview = 'region'
     if 'cloudview' in request.session['requestParams']:
         cloudview = request.session['requestParams']['cloudview']
     if view == 'analysis':
         cloudview = 'region'
     elif view != 'production':
         cloudview = 'N/A'
+    if view == 'production' and (cloudview == 'world' or cloudview == 'cloud'): #cloud view is the old way of jobs distributing;
+        # just to avoid redirecting
+        query = {}
+        values = ['nucleus', 'computingsite', 'jobstatus', 'countjobsinstate']
+        worldJobsSummary = []
 
-    fullsummary = dashSummary(request, hours=hours, view=view, cloudview=cloudview)
+        if view == 'production':
+            query['tasktype'] = 'prod'
+        else:
+            query['tasktype'] = 'anal'
 
-    cloudTaskSummary = wgTaskSummary(request, fieldname='cloud', view=view, taskdays=taskdays)
-    jobsLeft = {}
-    rw = {}
+        worldJobsSummary.extend(JobsWorldViewTaskType.objects.filter(**query).values(*values))
+        nucleus = {}
+        statelist1 = statelist
+        #    del statelist1[statelist1.index('jclosed')]
+        #    del statelist1[statelist1.index('pending')]
 
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        rwData, nRemJobs = calculateRWwithPrio_JEDI(query)
-        for cloud in fullsummary:
-            if cloud['name'] in nRemJobs.keys():
-                jobsLeft[cloud['name']] = nRemJobs[cloud['name']]
-            if cloud['name'] in rwData.keys():
-                rw[cloud['name']] = rwData[cloud['name']]
+        if len(worldJobsSummary) > 0:
+            for jobs in worldJobsSummary:
+                if jobs['nucleus'] in nucleus:
+                    if jobs['computingsite'] in nucleus[jobs['nucleus']]:
+                        nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
+                    else:
+                        nucleus[jobs['nucleus']][jobs['computingsite']] = {}
+                        for state in statelist1:
+                            nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
+                        nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
+                else:
+                    nucleus[jobs['nucleus']] = {}
+                    nucleus[jobs['nucleus']][jobs['computingsite']] = {}
+                    for state in statelist1:
+                        nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
+                    nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
 
-    request.session['max_age_minutes'] = 6
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
-        xurl = extensibleURL(request)
-        nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        data = {
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            'url': request.path,
-            'xurl': xurl,
-            'nosorturl': nosorturl,
-            'user': None,
-            'summary': fullsummary,
-            'vosummary': vosummary,
-            'view': view,
-            'mode': 'site',
-            'cloudview': cloudview,
-            'hours': hours,
-            'errthreshold': errthreshold,
-            'cloudTaskSummary': cloudTaskSummary,
-            'taskstates': taskstatedict,
-            'taskdays': taskdays,
-            'noldtransjobs': noldtransjobs,
-            'transclouds': transclouds,
-            'transrclouds': transrclouds,
-            'hoursSinceUpdate': hoursSinceUpdate,
-            'jobsLeft': jobsLeft,
-            'rw': rw
-        }
-        ##self monitor
-        endSelfMonitor(request)
-        response = render_to_response('dashboard.html', data, RequestContext(request))
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-    else:
-        del request.session['TFIRST']
-        del request.session['TLAST']
+        nucleusSummary = {}
+        for nucleusInfo in nucleus:
+            nucleusSummary[nucleusInfo] = {}
+            for site in nucleus[nucleusInfo]:
+                for state in nucleus[nucleusInfo][site]:
+                    if state in nucleusSummary[nucleusInfo]:
+                        nucleusSummary[nucleusInfo][state] += nucleus[nucleusInfo][site][state]
+                    else:
+                        nucleusSummary[nucleusInfo][state] = nucleus[nucleusInfo][site][state]
 
-        data = {
-            'summary': fullsummary,
-            'vosummary': vosummary,
-            'view': view,
-            'mode': 'site',
-            'cloudview': cloudview,
-            'hours': hours,
-            'errthreshold': errthreshold,
-            'cloudTaskSummary': cloudTaskSummary,
-            'taskstates': taskstatedict,
-            'taskdays': taskdays,
-            'noldtransjobs': noldtransjobs,
-            'transclouds': transclouds,
-            'transrclouds': transrclouds,
-            'hoursSinceUpdate': hoursSinceUpdate,
-            'jobsLeft': jobsLeft,
-            'rw': rw
-        }
-
+        if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+                    'json' not in request.session['requestParams'])):
+            xurl = extensibleURL(request)
+            nosorturl = removeParam(xurl, 'sortby', mode='extensible')
+            if 'TFIRST' in request.session: del request.session['TFIRST']
+            if 'TLAST' in request.session: del request.session['TLAST']
+            data = {
+                'request': request,
+                'viewParams': request.session['viewParams'],
+                'requestParams': request.session['requestParams'],
+                'url': request.path,
+                'nucleuses': nucleus,
+                'nucleussummary': nucleusSummary,
+                'statelist': statelist1,
+                'xurl': xurl,
+                'nosorturl': nosorturl,
+                'user': None,
+            }
+            ##self monitor
+            endSelfMonitor(request)
+            response = render_to_response('worldjobs.html', data, RequestContext(request))
+            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+            return response
+        else:
+            #        del request.session['TFIRST']
+            #        del request.session['TLAST']
+            data = {
+            }
         return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+
+    else:
+
+        fullsummary = dashSummary(request, hours=hours, view=view, cloudview=cloudview)
+        cloudTaskSummary = wgTaskSummary(request, fieldname='cloud', view=view, taskdays=taskdays)
+        jobsLeft = {}
+        rw = {}
+
+        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+            rwData, nRemJobs = calculateRWwithPrio_JEDI(query)
+            for cloud in fullsummary:
+                if cloud['name'] in nRemJobs.keys():
+                    jobsLeft[cloud['name']] = nRemJobs[cloud['name']]
+                if cloud['name'] in rwData.keys():
+                    rw[cloud['name']] = rwData[cloud['name']]
+
+        request.session['max_age_minutes'] = 6
+        if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+            'json' not in request.session['requestParams'])):
+            xurl = extensibleURL(request)
+            nosorturl = removeParam(xurl, 'sortby', mode='extensible')
+            del request.session['TFIRST']
+            del request.session['TLAST']
+            data = {
+                'request': request,
+                'viewParams': request.session['viewParams'],
+                'requestParams': request.session['requestParams'],
+                'url': request.path,
+                'xurl': xurl,
+                'nosorturl': nosorturl,
+                'user': None,
+                'summary': fullsummary,
+                'vosummary': vosummary,
+                'view': view,
+                'mode': 'site',
+                'cloudview': cloudview,
+                'hours': hours,
+                'errthreshold': errthreshold,
+                'cloudTaskSummary': cloudTaskSummary,
+                'taskstates': taskstatedict,
+                'taskdays': taskdays,
+                'noldtransjobs': noldtransjobs,
+                'transclouds': transclouds,
+                'transrclouds': transrclouds,
+                'hoursSinceUpdate': hoursSinceUpdate,
+                'jobsLeft': jobsLeft,
+                'rw': rw
+            }
+            ##self monitor
+            endSelfMonitor(request)
+            response = render_to_response('dashboard.html', data, RequestContext(request))
+            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+            return response
+        else:
+            del request.session['TFIRST']
+            del request.session['TLAST']
+
+            data = {
+                'summary': fullsummary,
+                'vosummary': vosummary,
+                'view': view,
+                'mode': 'site',
+                'cloudview': cloudview,
+                'hours': hours,
+                'errthreshold': errthreshold,
+                'cloudTaskSummary': cloudTaskSummary,
+                'taskstates': taskstatedict,
+                'taskdays': taskdays,
+                'noldtransjobs': noldtransjobs,
+                'transclouds': transclouds,
+                'transrclouds': transrclouds,
+                'hoursSinceUpdate': hoursSinceUpdate,
+                'jobsLeft': jobsLeft,
+                'rw': rw
+            }
+
+            return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
 
 
 def dashAnalysis(request):

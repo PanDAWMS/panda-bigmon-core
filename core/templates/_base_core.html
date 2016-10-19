@@ -337,12 +337,10 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
             <a href="#">Dash</a>
             <ul class="dropdown">
                 {% if viewParams.MON_VO == 'ATLAS' %}
-                    <li><a href="{% url 'dashboard' %}">All jobs</a></li>
-                    <li><a href="{% url 'dashAnalysis' %}">Analysis jobs</a></li>
-                    <li><a href="{% url 'dashProduction' %}">Production jobs - Cloud view</a></li>
+                    <li><a href="{% url 'dashAnalysis' %}">Analysis jobs - Region view</a></li>
+                    <li><a href="{% url 'dashProduction' %}?cloudview=world">Production jobs - World view</a></li>
                     <li><a href="{% url 'dashProduction' %}?cloudview=region">Production jobs - Region view</a></li>
                     <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
-                    <li><a href="{% url 'worldjobs' %}">World jobs</a></li>
                     <li><a href="{% url 'dashAnalysis' %}?mode=task">Analysis tasks</a></li>
                     <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
                     <li><a href="{% url 'worldHS06s' %}">World HS06s</a></li>
