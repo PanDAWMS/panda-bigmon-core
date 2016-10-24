@@ -1699,7 +1699,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     for item in request.REQUEST:
         requestFields[item.lower()] = request.REQUEST[item]
 
-    if ('jeditaskid' in requestFields and range == 180.0): #This is a temporary patch to avoid absence of pandaids
+    if (('jeditaskid' in requestFields) and range == 180.0): #This is a temporary patch to avoid absence of pandaids
         plsql += " RANGE_DAYS=>null, "
     else:
         plsql += " RANGE_DAYS=>" + str(range) + ", "
@@ -1787,11 +1787,10 @@ def jobListP(request, mode=None, param=None):
         'tlast': request.session['TLAST'],
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }
-
     del request.session['TFIRST']
     del request.session['TLAST']
-
     response = render_to_response('jobListWrapper.html', data, RequestContext(request))
+    endSelfMonitor(request)
     return response
 
 
@@ -2097,7 +2096,7 @@ def cache_on_json(timeout):
                 return view_func(request, *args, **kwargs)
 
 
-            #Not works in production invirowment
+            #Not works in production environment
             #if (not (
             #    ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
             #            'json' not in request.session['requestParams'])):
@@ -6541,7 +6540,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
                 taskname = tasknamedict[taskid]
             tasktype = 'taskid'
 
-        if 'modificationtime' in job:
+        if 'modificationtime' in job and job['jobstatus'] == 'failed':
             tm = job['modificationtime']
             if tm is not None:
                 tm = tm - timedelta(minutes=tm.minute % 30, seconds=tm.second, microseconds=tm.microsecond)
