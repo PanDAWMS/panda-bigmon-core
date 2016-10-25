@@ -2089,11 +2089,11 @@ def cache_filter(timeout):
     def decorator(view_func):
         @wraps(view_func, assigned=available_attrs(view_func))
         def _wrapped_view(request, *args, **kwargs):
-            is_json = True
+            is_json = False
             request._cache_update_cache = False
-            if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-                        'json' not in request.REQUEST)):
-                is_json = False
+            if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
+                        'json' in request.REQUEST)):
+                is_json = True
             return cache_page(timeout, key_prefix="%s_" % is_json)(view_func)(request, *args, **kwargs)
         return _wrapped_view
     return decorator
