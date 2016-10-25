@@ -18,6 +18,7 @@ from django import forms
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.vary import vary_on_headers
 from django.utils.cache import patch_vary_headers
+from django.views.decorators.cache import never_cache
 
 from functools import wraps
 
@@ -2083,30 +2084,22 @@ def jobListPDiv(request, mode=None, param=None):
     return response
 
 
-def cache_on_json(timeout):
+def cache_filter(timeout):
+    # This function provides splitting cache keys depending on conditions above the parameters specified in the URL
     def decorator(view_func):
         @wraps(view_func, assigned=available_attrs(view_func))
         def _wrapped_view(request, *args, **kwargs):
-            initRequest(request)
-            is_json = 'json'
+            is_json = True
+            request._cache_update_cache = False
             if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-                        'json' not in request.session['requestParams'])):
-                return cache_page(timeout, key_prefix="%s_" % is_json)(view_func)(request, *args, **kwargs)
-            else:
-                return view_func(request, *args, **kwargs)
-
-
-            #Not works in production environment
-            #if (not (
-            #    ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-            #            'json' not in request.session['requestParams'])):
-            #    is_json = 'not_json'
-            #return cache_page(timeout, key_prefix="%s_" % is_json)(view_func)(request, *args, **kwargs)
+                        'json' not in request.REQUEST)):
+                is_json = False
+            return cache_page(timeout, key_prefix="%s_" % is_json)(view_func)(request, *args, **kwargs)
         return _wrapped_view
     return decorator
 
 
-@cache_on_json(60 * 20)
+@cache_filter(60 * 20)
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
     if not valid: return response
@@ -2518,6 +2511,7 @@ def jobList(request, mode=None, param=None):
             "errsByCount": errsByCount,
         }
         response = HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
 
@@ -7164,8 +7158,6 @@ def esPandaLogger(request):
 
 
 cache_page(60 * 20)
-
-
 def pandaLogger(request):
     valid, response = initRequest(request)
     if not valid: return response
