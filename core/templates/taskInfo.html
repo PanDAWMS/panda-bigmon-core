@@ -33,7 +33,7 @@
 </tr>
 	<tr>
 		<td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a></td>
-        {% if task.deftreqid %} <td> <a href="http://bigpanda.cern.ch/prodsys/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a> </td> {% endif %}
+        {% if task.deftreqid %} <td> <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a> </td> {% endif %}
 		{% if task.reqid != task.jeditaskid and not task.deftreqid %}<td>{{ task.reqid }}</td>{% endif %}
 		<td>{% if task.tasktype == 'anal' %} analy {% else %} {{ task.tasktype }} {% endif %}</td>
 		<td>{% if task.workinggroup %} {{ task.workinggroup }} {% endif %} </td>
@@ -246,7 +246,7 @@ parent task<a href="{% url 'taskInfo' task.parent_tid %}"> {{ task.parent_tid }}
 
 {% if viewParams.MON_VO == 'ATLAS' %}
 <td>
-<a href="http://bigpanda.cern.ch/prodsys/prodtask/task/{{ task.jeditaskid }}/">prodsys task page</a>
+<a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">prodsys task page</a>
 </td>
 {% endif %}
 <td>

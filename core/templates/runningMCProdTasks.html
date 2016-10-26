@@ -229,7 +229,7 @@ gauges['slots'].redraw(slots);});
 {% for task in tasks %}
     <tr>
     <td><a href="{% url 'runningMCProdTasks' %}?campaign={{ task.cutcampaign }}">{{ task.cutcampaign }}</a></td>
-    <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.reqid}}/" target="_blank">{{ task.reqid }}</a></td>
+    <td><a href="https://prodtask-dev.cern.ch/reqtask/{{task.reqid}}" target="_blank">{{ task.reqid }}</a></td>
     <td><a href=" https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}" target="_blank">{{ task.jeditaskid }}</a></td>
     <td>{% if task.rjobs > 0 %}<a href="/jobs/?jeditaskid={{ task.jeditaskid }}&jobstatus=running">{{ task.rjobs }}</a> {% else %}{{ task.rjobs }}{% endif %}</td>
     <td class='{{task.status}}_fill'><a href="{% url 'runningMCProdTasks' %}?status={{ task.status }}">{{ task.status }}</a></td>

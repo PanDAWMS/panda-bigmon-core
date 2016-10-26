@@ -136,8 +136,11 @@ function toggleDetailDisplay(className) {
 
 
 {% if errsByCount %}
-   <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('failedjob');"><br>Click to show/hide failed jobs details</a><p>
+   <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('failedjob');"><br>Click to show/hide failed jobs details</a>
 {% endif %}
+
+ <a href="https://prodtask-dev.cern.ch/prodjob/{{ xurl|slice:"6:" }}">Prodsys Jobs Handling</a>
+<p>
 
 <table>
 <tr class='tablesection'><th colspan=20>

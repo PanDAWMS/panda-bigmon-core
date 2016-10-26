@@ -96,7 +96,7 @@ function loadESData(jeditaskid) {
 		</td>
 		{% if requestParams.tasktype == 'anal' %}<td>{{ task.reqid }}</td>{% endif %}
 		<td>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %} &nbsp; {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a> &nbsp; {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %} &nbsp; <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %} 
-{% if task.deftreqid %} &nbsp; RequestID:<a href="http://bigpanda.cern.ch/prodsys/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a> {% endif %}
+{% if task.deftreqid %} &nbsp; RequestID:<a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a> {% endif %}
 		<br><font color='brown'>{{ task.errordialog|safe }}</font></td>
 
         <td> <a href="{% url 'siteInfo' task.site %}">{{ task.site }}</a> </td>

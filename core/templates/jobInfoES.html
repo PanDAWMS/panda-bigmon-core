@@ -352,10 +352,10 @@ But if you want, you can check.
         <td> {% if file.attemptnr %} {{ file.attemptnr }} ({{ file.maxattempt }}){% endif %} </td>
         <td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{file.datasetname}}"> {{ file.datasetname }}</a>
         {% if file.dispatchdblock %}
-        <br />(dispatch block: {{ file.dispatchdblock }} <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.dispatchdblock }}">rucio</a>)  <a href="http://dashb-atlas-ddm.cern.ch/ddm2/#d.dst.site={{file.ddmsite}}&d.name={{file.lfn}}&d.scope={{ file.scope }}&grouping.dst=(site,token)&tab=details">DDM Dashboard</a>
+        <br />(dispatch block: {{ file.dispatchdblock }} <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.dispatchdblock }}">rucio</a>)  <a href="http://dashb-atlas-ddm.cern.ch/ddm2/#d.dst.site={{file.ddmsite}}{% if file.dsttoken %}&d.dst.token={{ file.dsttoken }}{% endif %}&d.name={{file.lfn}}&d.scope={{ file.scope }}&grouping.dst=(site,token)&tab=details">DDM Dashboard</a>
         {% endif %}
         {% if file.destinationdblock %}
-        <br />(destination block: {% if file.destinationdblock_vis %}{{ file.destinationdblock_vis }}{% else %}{{ file.destinationdblock }}{% endif %} <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.destinationdblock }}">rucio</a>)  <a href="http://dashb-atlas-ddm.cern.ch/ddm2/#d.dst.site={{file.ddmsite}}&d.name={{file.lfn}}&d.scope={{ file.scope }}&grouping.dst=(site,token)&tab=details">DDM Dashboard</a>
+        <br />(destination block: {% if file.destinationdblock_vis %}{{ file.destinationdblock_vis }}{% else %}{{ file.destinationdblock }}{% endif %} <a href="https://rucio-ui.cern.ch/did?scope={{ file.scope }}&name={{ file.destinationdblock }}">rucio</a>)  <a href="http://dashb-atlas-ddm.cern.ch/ddm2/#d.dst.site={{file.ddmsite}}{% if file.dsttoken %}&d.dst.token={{ file.dsttoken }}{% endif %}&d.name={{file.lfn}}&d.scope={{ file.scope }}&grouping.dst=(site,token)&tab=details">DDM Dashboard</a>
         {% endif %}
         </font>
         </td>

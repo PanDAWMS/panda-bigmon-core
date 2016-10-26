@@ -2930,6 +2930,11 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     if job['computingsite'] in pandaSites.keys():
                         f['ddmsite'] = pandaSites[job['computingsite']]['site']
 
+                if 'dst' in f['destinationdblocktoken']:
+                    parced = f['destinationdblocktoken'].split("_")
+                    f['ddmsite'] = parced[0][4:]
+                    f['dsttoken'] = parced[1]
+
             files = [x for x in files if x['destination'] != 'S3']
 
         if len(typeFiles) > 0:
