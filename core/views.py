@@ -20,6 +20,8 @@ from django.views.decorators.vary import vary_on_headers
 from django.utils.cache import patch_vary_headers
 from django.views.decorators.cache import never_cache
 
+import django.utils.cache as ucache
+
 from functools import wraps
 
 from django.utils import timezone
@@ -2091,10 +2093,27 @@ def cache_filter(timeout):
         def _wrapped_view(request, *args, **kwargs):
             is_json = False
             request._cache_update_cache = False
+
+            # here we can apply any conditions to separate cache streams
             if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
                         'json' in request.REQUEST)):
                 is_json = True
-            return cache_page(timeout, key_prefix="%s_" % is_json)(view_func)(request, *args, **kwargs)
+
+            key_prefix = "%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX)
+
+            cache_key = ucache.get_cache_key(request, key_prefix, 'GET', cache)
+            if cache_key is None:
+                # we should add saving result
+                responce = (view_func)(request, *args, **kwargs)
+                cache_key = ucache.learn_cache_key(request, responce, timeout, key_prefix, cache)
+                cache.set(cache_key, responce, timeout)
+                return responce
+            responce = cache.get(cache_key, None)
+            if responce is None:
+                responce = (view_func)(request, *args, **kwargs)
+                cache_key = ucache.learn_cache_key(request, responce, timeout, key_prefix, cache)
+                cache.set(cache_key, responce, timeout)
+            return responce
         return _wrapped_view
     return decorator
 
