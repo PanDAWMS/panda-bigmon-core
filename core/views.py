@@ -413,7 +413,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         hours = LAST_N_HOURS_MAX = 24 * 180
         request.session['JOB_LIMIT'] = 999999
     if opmode != 'notime':
-        if LAST_N_HOURS_MAX <= 72:
+        if LAST_N_HOURS_MAX <= 72 and not ('date_from' in request.session['requestParams'] or 'date_to' in request.session['requestParams']
+                                           or 'earlierthan' in request.session['requestParams'] or 'earlierthandays' in request.session['requestParams']):
             request.session['viewParams']['selection'] = ", last %s hours" % LAST_N_HOURS_MAX
         else:
             request.session['viewParams']['selection'] = ", last %d days" % (float(LAST_N_HOURS_MAX) / 24.)
@@ -456,6 +457,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     # enddate = enddate.strftime(defaultDatetimeFormat)
     if enddate == None:
         enddate = timezone.now()  # .strftime(defaultDatetimeFormat)
+        request.session['noenddate'] = True
+    else:
+        request.session['noenddate'] = False
+
 
     query = {
         'modificationtime__range': [startdate.strftime(defaultDatetimeFormat), enddate.strftime(defaultDatetimeFormat)]}
@@ -1707,11 +1712,13 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     else:
         plsql += " RANGE_DAYS=>" + str(range) + ", "
 
-
     if not dropmode:
         plsql += " WITH_RETRIALS=>'Y', "
     else:
         plsql += " WITH_RETRIALS=>'N', "
+
+    if ('noenddate' in request.session and request.session['noenddate'] == False):
+        plsql += " END_DATE=>'"+str(b.date().strftime('%d-%m-%Y'))+"', "
 
 
     for item in standard_fields:
@@ -1750,6 +1757,11 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
 def jobListP(request, mode=None, param=None):
     valid, response = initRequest(request)
+    #if 'JOB_LIMIT' in request.session:
+    #    del request.session['JOB_LIMIT']
+
+    # Hack to void limit caption in the params label
+    request.session['requestParams']['limit'] = 10000000
 
     # Here We start Retreiving Summary and return almost empty template
 
@@ -1783,6 +1795,8 @@ def jobListP(request, mode=None, param=None):
 
     if not (requestToken == -1):
         startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
+
+    #request.session['viewParams']['selection'] = request.session['viewParams']['selection'][:request.session['viewParams']['selection'].index('<b>limit=</b>')]
 
     data = {
         'requesttoken': requestToken,
