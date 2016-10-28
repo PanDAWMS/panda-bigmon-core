@@ -200,9 +200,9 @@ def initRequest(request):
     u = u._replace(query=urlencode(query, True))
     request.session['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
 
-    if 'USER' in os.environ and os.environ['USER'] != 'apache':
-        request.session['debug'] = True
-    elif 'debug' in request.GET and request.GET['debug'] == 'insider':
+    #if 'USER' in os.environ and os.environ['USER'] != 'apache':
+    #    request.session['debug'] = True
+    if 'debug' in request.GET and request.GET['debug'] == 'insider':
         request.session['debug'] = True
         djangosettings.DEBUG = True
     else:
