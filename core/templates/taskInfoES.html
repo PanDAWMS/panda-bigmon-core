@@ -185,7 +185,7 @@ function toggleDetailDisplay(className) {
 </tr><tr>
 {% for state in eventssummary %}
 <td {% if state.count > 0 %} class='{{state.statusname}}_fill' {% endif %}> {% if state.count > 0 %} <b> <span class='{{state.statusname}}_fill'>{{ state.count }}</span></b> {% endif %} </td>
-{% endfor %}
+{% endfor %}</tr>
 </table>
 {% endif %}
 

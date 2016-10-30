@@ -728,6 +728,92 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     return (query, extraQueryString, LAST_N_HOURS_MAX)
 
+
+def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
+    # dropping algorithm for jobs belong to single task
+    # !!! Necessary job's attributes:
+    # PANDAID
+    # JOBSTATUS
+    # PROCESSINGTYPE
+    # JOBSETID
+
+    droplist = []
+    droppedIDs = set()
+    droppedPmerge = set()
+
+
+
+    retryquery = {}
+    retryquery['jeditaskid'] = jeditaskid
+    retries = JediJobRetryHistory.objects.filter(**retryquery).extra(
+        where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', "
+               "'jobset_retry', 'es_merge', 'originpandaid')"]).order_by('newpandaid').values()
+    print 'got retriels %d %d' % (len(retries),len(jobs))
+    print 'doing the drop'
+    hashRetries = {}
+    for retry in retries:
+        hashRetries[retry['oldpandaid']] = retry
+
+    newjobs = []
+    for job in jobs:
+        dropJob = 0
+        pandaid = job['pandaid']
+        if not isEventService(job):
+            if hashRetries.has_key(pandaid):
+                retry = hashRetries[pandaid]
+                if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or (
+                            job['processingtype'] == 'pmerge' and (job['jobstatus'] == 'failed' or job['jobstatus'] == 'cancelled') and retry[
+                    'relationtype'] == 'merge'):
+                    dropJob = retry['newpandaid']
+            else:
+                if (job['jobsetid'] in hashRetries) and (
+                    hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
+                    dropJob = 1
+        else:
+
+            if (job['pandaid'] in hashRetries and job['jobstatus'] not in ('finished', 'merging')):
+                if (hashRetries[job['pandaid']]['relationtype'] == ('retry')):
+                    dropJob = 1
+
+            # if (hashRetries[job['pandaid']]['relationtype'] == 'es_merge' and (
+            #        job['jobsubstatus'] == 'es_merge')):
+            #        dropJob = 1
+
+            if (dropJob == 0):
+                if (job['jobsetid'] in hashRetries) and (
+                            hashRetries[job['jobsetid']]['relationtype'] in ('jobset_retry')):
+                    dropJob = 1
+
+                if (job['jobstatus'] == 'closed' and (job['jobsubstatus'] in ('es_unused', 'es_inaction'))):
+                    dropJob = 1
+
+                    #               if 'jobstatus' in request.session['requestParams'] and request.session['requestParams'][
+                    #                   'jobstatus'] == 'cancelled' and job['jobstatus'] != 'cancelled':
+                    #                   dropJob = 1
+
+        if dropJob == 0 and isReturnDroppedPMerge:
+            #     and not (
+            #     'processingtype' in request.session['requestParams'] and request.session['requestParams'][
+            # 'processingtype'] == 'pmerge')
+
+            if not (job['processingtype'] == 'pmerge'):
+                newjobs.append(job)
+            else:
+                droppedPmerge.add(pandaid)
+        elif (dropJob == 0):
+            newjobs.append(job)
+        else:
+            if not pandaid in droppedIDs:
+                droppedIDs.add(pandaid)
+                droplist.append({'pandaid': pandaid, 'newpandaid': dropJob})
+    print '%d jobs dropped' % (len(jobs) - len(newjobs))
+    droplist = sorted(droplist, key=lambda x: -x['pandaid'])
+    jobs = newjobs
+    
+    return jobs, droplist, droppedPmerge
+
+
+
 def cleanJobListLite(request, jobl, mode='nodrop', doAddMeta=True):
     for job in jobl:
         job['duration'] = ""
@@ -918,53 +1004,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
     if mode == 'nodrop':
         print 'job list cleaned'
         return jobs
-    ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
-    taskids = {}
-    for job in jobs:
-        if 'jeditaskid' in job: taskids[job['jeditaskid']] = 1
-    droplist = []
-    newjobs = []
-    if len(taskids) == 1:
-        for task in taskids:
-            retryquery = {}
-            retryquery['jeditaskid'] = task
 
-            retries = JediJobRetryHistory.objects.filter(**retryquery).extra(
-                where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', "
-                       "'jobset_retry', 'jobset_id', 'es_merge')"]).order_by('newpandaid').values()
-
-        hashRetries = {}
-        for retry in retries:
-            hashRetries[retry['oldpandaid']] = retry
-
-    for job in jobs:
-        dropJob = 0
-        pandaid = job['pandaid']
-        if len(taskids) == 1:
-            if hashRetries.has_key(pandaid):
-                retry = hashRetries[pandaid]
-                if not isEventService(job):
-                    if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or (
-                                    'processingtype' in job and job['processingtype'] == 'pmerge' and job[
-                            'jobstatus'] == 'failed' and retry['relationtype'] == 'merge'):
-                        dropJob = retry['newpandaid']
-                else:
-                    mergeCand = [x['jobsetid'] for x in jobs if x['pandaid'] == retry['newpandaid']]
-
-                    if (len(mergeCand) > 0) and (job['jobsetid'] == mergeCand[0]):
-                        dropJob = 1
-
-                    if 'jobstatus' in request.session['requestParams'] and request.session['requestParams'][
-                        'jobstatus'] == 'cancelled' and job['jobstatus'] != 'cancelled':
-                        dropJob = 1
-
-        if (dropJob == 0):
-            newjobs.append(job)
-        else:
-            droplist.append({'pandaid': pandaid, 'newpandaid': dropJob})
-
-    # droplist = sorted(droplist, key=lambda x:-x['modificationtime'], reverse=True)
-    jobs = newjobs
     global PLOW, PHIGH
     request.session['TFIRST'] = timezone.now()  # .strftime(defaultDatetimeFormat)
     request.session['TLAST'] = (timezone.now() - timedelta(hours=2400))  # .strftime(defaultDatetimeFormat)
@@ -2159,9 +2199,9 @@ def jobList(request, mode=None, param=None):
         'json' in request.session['requestParams']):
         values = Jobsactive4._meta.get_all_field_names()
     elif eventservice:
-        values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice'
+        values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents'
     else:
-        values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice'
+        values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents'
 
     JOB_LIMITS = request.session['JOB_LIMIT']
     totalJobs = 0
@@ -2225,76 +2265,13 @@ def jobList(request, mode=None, param=None):
         'mode'] == 'drop': dropmode = True
     if 'mode' in request.session['requestParams'] and request.session['requestParams'][
         'mode'] == 'nodrop': dropmode = False
-
+    isReturnDroppedPMerge=False
+    if 'processingtype' in request.session['requestParams'] and \
+        request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge=True
     droplist = []
-    droppedIDs = set()
     droppedPmerge = set()
-
     if dropmode and (len(taskids) == 1):
-        print 'doing the drop'
-        for task in taskids:
-            retryquery = {}
-            retryquery['jeditaskid'] = task
-            retries = JediJobRetryHistory.objects.filter(**retryquery).extra(
-                where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', "
-                       "'jobset_retry', 'es_merge', 'originpandaid')"]).order_by('newpandaid').values()
-
-        hashRetries = {}
-        for retry in retries:
-            hashRetries[retry['oldpandaid']] = retry
-
-        newjobs = []
-        for job in jobs:
-            dropJob = 0
-            pandaid = job['pandaid']
-            if not isEventService(job):
-                if hashRetries.has_key(pandaid):
-                    retry = hashRetries[pandaid]
-                    if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or (
-                                job['processingtype'] == 'pmerge' and (job['jobstatus'] == 'failed' or job['jobstatus'] == 'cancelled') and retry[
-                        'relationtype'] == 'merge'):
-                        dropJob = retry['newpandaid']
-                else:
-                    if (job['jobsetid'] in hashRetries) and (
-                        hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
-                        dropJob = 1
-            else:
-                if (job['pandaid'] in hashRetries):
-                    if (hashRetries[job['pandaid']]['relationtype'] == ('retry')):
-                        dropJob = 1
-
-                # if (hashRetries[job['pandaid']]['relationtype'] == 'es_merge' and (
-                #        job['jobsubstatus'] == 'es_merge')):
-                #        dropJob = 1
-
-                if (dropJob == 0):
-                    if (job['jobsetid'] in hashRetries) and (
-                                hashRetries[job['jobsetid']]['relationtype'] in ('jobset_retry')):
-                        dropJob = 1
-
-                    if (job['jobstatus'] == 'closed' and (job['jobsubstatus'] in ('es_unused', 'es_inaction'))):
-                        dropJob = 1
-
-                        #               if 'jobstatus' in request.session['requestParams'] and request.session['requestParams'][
-                        #                   'jobstatus'] == 'cancelled' and job['jobstatus'] != 'cancelled':
-                        #                   dropJob = 1
-
-            if dropJob == 0 and not (
-                    'processingtype' in request.session['requestParams'] and request.session['requestParams'][
-                'processingtype'] == 'pmerge'):
-                if not (job['processingtype'] == 'pmerge'):
-                    newjobs.append(job)
-                else:
-                    droppedPmerge.add(pandaid)
-            elif (dropJob == 0):
-                newjobs.append(job)
-            else:
-                if not pandaid in droppedIDs:
-                    droppedIDs.add(pandaid)
-                    droplist.append({'pandaid': pandaid, 'newpandaid': dropJob})
-
-        droplist = sorted(droplist, key=lambda x: -x['pandaid'])
-        jobs = newjobs
+        jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs,taskids.keys()[0],isReturnDroppedPMerge)
 
     jobs = cleanJobList(request, jobs)
 
@@ -2762,6 +2739,7 @@ def descendentjoberrsinfo(request):
     errors = {}
 
     for job in jobs:
+
         errors[job['pandaid']] = getErrorDescription(job, mode='txt')
 
     endSelfMonitor(request)
@@ -5911,22 +5889,18 @@ def taskInfo(request, jeditaskid=0):
                 'mode'] == 'drop': mode = 'drop'
             if 'mode' in request.session['requestParams'] and request.session['requestParams'][
                 'mode'] == 'nodrop': mode = 'nodrop'
-            if mode == 'nodrop':
-                equery= {'jeditaskid' : jeditaskid}
-                eventsdict.extend(JediEvents.objects.filter(**equery).values('status').annotate(count=Count('status')).order_by('status'))
-                for state in eventsdict: state['statusname']=eventservicestatelist[state['status']]
-                existedstates = dict((i['statusname'], i['count']) for i in eventsdict)
-                for state in eventservicestatelist:
-                    if not state in existedstates:
-                        eventstatus={}
-                        eventstatus['statusname']=state
-                        eventstatus['count']=0
-                        eventsdict.insert(eventservicestatelist.index(state),eventstatus)
 
-            jobsummary, jobcpuTimeScoutID, hs06sSum, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
+
+            jobsummary, eventssummary, jobcpuTimeScoutID, hs06sSum, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
                 query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge')
-            jobsummaryESMerge, jobcpuTimeScoutIDESM, hs06sSumESM, maxpssESM, walltimeESM, sitepssESM, sitewalltimeESM, maxpssfESM, walltimefESM, sitepssfESM, sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM, hs06sESM, hs06sfESM, walltimepereventESM = jobSummary2(
+            jobsummaryESMerge, eventssummaryESM, jobcpuTimeScoutIDESM, hs06sSumESM, maxpssESM, walltimeESM, sitepssESM, sitewalltimeESM, maxpssfESM, walltimefESM, sitepssfESM, sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM, hs06sESM, hs06sfESM, walltimepereventESM = jobSummary2(
                 query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
+            for state in eventservicestatelist:
+                eventstatus = {}
+                eventstatus['statusname'] = state
+                eventstatus['count'] = eventssummary[state]
+                eventsdict.append(eventstatus)
+
 
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
@@ -5934,9 +5908,9 @@ def taskInfo(request, jeditaskid=0):
             mode = 'drop'
             if 'mode' in request.session['requestParams']:
                 mode = request.session['requestParams']['mode']
-            jobsummary, jobcpuTimeScoutID, hs06sSum, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
+            jobsummary, eventssummary, jobcpuTimeScoutID, hs06sSum, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
                 query, exclude=exclude, mode=mode)
-            jobsummaryPMERGE, jobcpuTimeScoutIDPMERGE, hs06sSumPMERGE, maxpssPMERGE, walltimePMERGE, sitepssPMERGE, sitewalltimePMERGE, maxpssfPMERGE, walltimefPMERGE, sitepssfPMERGE, sitewalltimefPMERGE, maxpsspercorePMERGE, maxpssfpercorePMERGE, hs06sPMERGE, hs06sfPMERGE, walltimepereventPMERGE = jobSummary2(
+            jobsummaryPMERGE, eventssummaryPM,jobcpuTimeScoutIDPMERGE, hs06sSumPMERGE, maxpssPMERGE, walltimePMERGE, sitepssPMERGE, sitewalltimePMERGE, maxpssfPMERGE, walltimefPMERGE, sitepssfPMERGE, sitewalltimefPMERGE, maxpsspercorePMERGE, maxpssfpercorePMERGE, hs06sPMERGE, hs06sfPMERGE, walltimepereventPMERGE = jobSummary2(
                 query, exclude={}, mode=mode, processingtype='pmerge')
 
 
@@ -6102,73 +6076,6 @@ def taskInfo(request, jeditaskid=0):
         outctrs = None
 
     # getBrokerageLog(request)
-
-    ## For event service, pull the jobs and event ranges
-    if eventservice:
-        jquery = {}
-        jquery['jeditaskid'] = jeditaskid
-        jobs = []
-        jobs.extend(Jobsactive4.objects.filter(**jquery).values('pandaid', 'jeditaskid', 'transformation', 'jobstatus',
-                                                                'modificationtime', 'currentpriority'))
-        jobs.extend(
-            Jobsarchived4.objects.filter(**jquery).values('pandaid', 'jeditaskid', 'transformation', 'jobstatus',
-                                                          'modificationtime', 'currentpriority'))
-        taskdict = {}
-        for job in jobs:
-            taskdict[job['pandaid']] = job['jeditaskid']
-        estaskdict = {}
-        # esjobs = Set()
-        jobs = cleanJobList(request, jobs, mode='drop', doAddMeta=False)
-        esjobs = []
-        for job in jobs:
-            esjobs.append(job['pandaid'])
-        esquery = {}
-        '''
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-        else:
-            tmpTableName = "TMP_IDS1"
-
-        transactionKey = random.randrange(1000000)
-
-
-        connection.enter_transaction_management()
-        new_cur = connection.cursor()
-        executionData = []
-        for id in esjobs:
-            executionData.append((id,transactionKey))
-        query = """INSERT INTO """+tmpTableName+"""(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
-        new_cur.executemany(query, executionData)
-        connection.commit()
-
-
-        new_cur.execute("SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey))
-        evtable = dictfetchall(new_cur)
-
-        new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-        connection.commit()
-        connection.leave_transaction_management()
-
-#        esquery['pandaid__in'] = esjobs
-#        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
-
-
-        for ev in evtable:
-            taskid = taskdict[ev['PANDAID']]
-            if taskid not in estaskdict:
-                estaskdict[taskid] = {}
-                for s in eventservicestatelist:
-                    estaskdict[taskid][s] = 0
-            evstat = eventservicestatelist[ev['STATUS']]
-            estaskdict[taskid][evstat] += 1
-
-        if jeditaskid in estaskdict:
-            estaskstr = ''
-            for s in estaskdict[jeditaskid]:
-                if estaskdict[jeditaskid][s] > 0:
-                    estaskstr += " %s(%s) " % ( s, estaskdict[jeditaskid][s] )
-            taskrec['estaskstr'] = estaskstr
-        '''
 
     # neventsTot = 0
     # neventsUsedTot = 0
@@ -6336,14 +6243,17 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
     jobs = []
     jobcpuTimeScoutID = 0
     newquery = copy.deepcopy(query)
+    isESMerge = False
     if substatusfilter != '':
         if (substatusfilter == 'es_merge'):
             newquery['eventservice'] = 2
+            isESMerge = True
         else:
             exclude['eventservice'] = 2
-
+    isReturnDroppedPMerge=False
     if processingtype != '':
         newquery['processingtype'] = 'pmerge'
+        isReturnDroppedPMerge=True
 
     # newquery['jobstatus'] = 'finished'
 
@@ -6413,69 +6323,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
 
     if mode == 'drop' and len(jobs) < 300000:
         print 'filtering retries'
-        ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
-        taskids = {}
-        for job in jobs:
-            if 'jeditaskid' in job: taskids[job['jeditaskid']] = 1
-        droplist = []
-        droppedIDs = set()
-        if len(taskids) == 1:
-            for task in taskids:
-                retryquery = {}
-                retryquery['jeditaskid'] = task
-                retries = JediJobRetryHistory.objects.filter(**retryquery).extra(
-                    where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', "
-                           "'jobset_retry', 'jobset_id', 'es_merge', 'originpandaid')"]).order_by('newpandaid').values()
-                print 'got the retries', len(jobs), len(retries)
-
-            hashRetries = {}
-            for retry in retries:
-                hashRetries[retry['oldpandaid']] = retry
-
-            newjobs = []
-            for job in jobs:
-                dropJob = 0
-                pandaid = job['pandaid']
-                if not isEventServiceFlag:
-                    # if not isEventService(job):
-                    if hashRetries.has_key(pandaid):
-                        retry = hashRetries[pandaid]
-                        #                    if not isEventServiceFlag:
-                        if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or retry['relationtype'] == 'originpandaid' or (
-                                    job['processingtype'] == 'pmerge' and (job['jobstatus'] == 'failed' or job['jobstatus'] == 'cancelled') and retry[
-                            'relationtype'] == 'merge'):
-                            dropJob = retry['newpandaid']
-                    else:
-                        if (job['jobsetid'] in hashRetries) and (
-                                    hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
-                            dropJob = 1
-
-                else:
-                    if (job['pandaid'] in hashRetries):
-                        if (hashRetries[job['pandaid']]['relationtype'] == ('retry')):
-                            dropJob = 1
-
-                    if (dropJob == 0):
-                        if (job['jobsetid'] in hashRetries) and (
-                                    hashRetries[job['jobsetid']]['relationtype'] in ('jobset_retry')):
-                            dropJob = 1
-
-                    if (job['jobstatus'] == 'closed' and (job['jobsubstatus'] in ('es_unused', 'es_inaction'))):
-                        dropJob = 1
-
-                if (dropJob == 0):
-                    if not (job['processingtype'] == 'pmerge'):
-                        newjobs.append(job)
-
-                    elif processingtype == 'pmerge':
-                        newjobs.append(job)
-
-                else:
-                    if not pandaid in droppedIDs:
-                        droppedIDs.add(pandaid)
-                        droplist.append({'pandaid': pandaid, 'newpandaid': dropJob})
-            jobs = newjobs
-        print 'done filtering'
+        jobs, droplist, droppedPMerge = dropRetrielsJobs(jobs, newquery['jeditaskid'], isReturnDroppedPMerge)
 
     maxpss = []
     maxpsspercore = []
@@ -6527,7 +6375,54 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
                 statecount['count'] += 1
                 continue
         jobstates.append(statecount)
-    return jobstates, jobcpuTimeScoutID, hs06sSum, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent
+    essummary = dict((key, 0) for key in eventservicestatelist)
+    if isEventServiceFlag and not isESMerge:
+        print 'getting events states summary'
+        if mode == 'drop':
+            esjobs = []
+            for job in jobs:
+                esjobs.append(job['pandaid'])
+
+            random.seed()
+
+            if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+                tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+            else:
+                tmpTableName = "TMP_IDS1"
+
+            transactionKey = random.randrange(1000000)
+            connection.enter_transaction_management()
+            new_cur = connection.cursor()
+            executionData = []
+            for id in esjobs:
+                executionData.append((id, transactionKey))
+            query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+            new_cur.executemany(query, executionData)
+
+            connection.commit()
+            new_cur.execute(
+                "SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
+                    tmpTableName, transactionKey))
+            evtable = dictfetchall(new_cur)
+
+            #        esquery = {}
+            #        esquery['pandaid__in'] = esjobs
+            #        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
+
+            new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+            connection.commit()
+            connection.leave_transaction_management()
+            for ev in evtable:
+                essummary[eventservicestatelist[ev['STATUS']]] += 1
+        eventsdict=[]
+        if mode == 'nodrop':
+            equery = {'jeditaskid': newquery['jeditaskid']}
+            eventsdict.extend(
+                JediEvents.objects.filter(**equery).values('status').annotate(count=Count('status')).order_by('status'))
+            for state in eventsdict:
+                essummary[eventservicestatelist[state['status']]]=state['count']
+
+    return jobstates, essummary, jobcpuTimeScoutID, hs06sSum, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent
 
 
 def jobStateSummary(jobs):
