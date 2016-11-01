@@ -6443,11 +6443,11 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
                 executionData.append((id, transactionKey))
             query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
             new_cur.executemany(query, executionData)
-
             connection.commit()
             new_cur.execute(
-                "SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
-                    tmpTableName, transactionKey))
+                """SELECT /*+ index(ATLAS_PANDA.JEDI_EVENTS JEDI_EVENTS_PANDAID_STATUS_IDX) */  PANDAID,STATUS
+                    FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)""" % (
+                tmpTableName, transactionKey))
             evtable = dictfetchall(new_cur)
 
             #        esquery = {}
