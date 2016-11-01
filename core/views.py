@@ -5898,6 +5898,7 @@ def taskInfo(request, jeditaskid=0):
     jobsummaryESMerge = []
     jobsummaryPMERGE = []
     eventsdict=[]
+    objectStoreDict=[]
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
         request.session['requestParams']['jeditaskid'])
     if jeditaskid != 0:
@@ -5923,6 +5924,26 @@ def taskInfo(request, jeditaskid=0):
                 eventstatus['statusname'] = state
                 eventstatus['count'] = eventssummary[state]
                 eventsdict.append(eventstatus)
+            if mode=='nodrop':
+                sqlRequest = """select j.computingsite, j.COMPUTINGELEMENT,e.objstore_id,e.status,count(*) as nevents
+                                      from atlas_panda.jedi_events e
+                                        join
+                                            (select computingsite, computingelement,pandaid from ATLAS_PANDA.JOBSARCHIVED4 where jeditaskid=%s
+                                            UNION
+                                            select computingsite, computingelement,pandaid from ATLAS_PANDAARCH.JOBSARCHIVED where jeditaskid=%s
+                                            ) j
+                                        on (e.jeditaskid=%s and e.pandaid=j.pandaid)
+                                   group by j.computingsite, j.COMPUTINGELEMENT, objstore_id, status""" % (
+                jeditaskid, jeditaskid, jeditaskid)
+                cur = connection.cursor()
+                cur.execute(sqlRequest)
+                ossummary = cur.fetchall()
+                cur.close()
+
+                ossummarynames = ['computingsite', 'computingelement', 'objectstoreid', 'statusindex', 'nevents']
+                objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
+                for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
+
 
 
         else:
@@ -6215,6 +6236,7 @@ def taskInfo(request, jeditaskid=0):
             'attrs': attrs,
             'jobsummary': jobsummary,
             'eventssummary': eventsdict,
+            'ossummary': objectStoreDict,
             'jeditaskid': jeditaskid,
             'logtxt': logtxt,
             'datasets': dsets,

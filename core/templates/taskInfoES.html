@@ -173,19 +173,48 @@ function toggleDetailDisplay(className) {
 {% endif %}
 
 {% if eventssummary|length > 0 %}
-
+<script type="text/javascript">
+    $(document).ready(function() {
+        if ($(".showeventsdetailsrow").is(':visible'))
+                $(".showeventsdetailsrow").hide();
+    });
+    function showEventsDetails(){
+        if (!$(".showeventsdetailsrow").is(':visible')){
+            $(".showeventsdetailsrow").show()}
+        else {
+            $(".showeventsdetailsrow").hide()}
+    }
+</script>
 <table>
 <tr bgcolor="lightcyan"><th colspan=20>
-<b>States of events in this task</b>   &nbsp; &nbsp
+<b>States of events in this task</b>  {% if requestParams.mode and requestParams.mode == 'nodrop' %} <a style="cursor: pointer;" onclick="javascript:showEventsDetails();" href="#">  Show details</a> {% endif %} &nbsp
 </th></tr>
 <tr>
 {% for state in eventssummary %}
-<td class="{{ state.statusname}}"> <b> {{ state.statusname }} </b> </td>
+<td> <span class="{{ state.statusname}}"><b> {{ state.statusname }} </b></span>
+    <span class="showeventsdetailsrow">
+    <br>
+        {% if state.count > 0 %}
+        <b>ComputingElement, ObjectStoreID : Nevents</b>
+        {% endif %}
+    </span>
+</td>
 {% endfor %}
 </tr><tr>
 {% for state in eventssummary %}
 <td {% if state.count > 0 %} class='{{state.statusname}}_fill' {% endif %}> {% if state.count > 0 %} <b> <span class='{{state.statusname}}_fill'>{{ state.count }}</span></b> {% endif %} </td>
 {% endfor %}</tr>
+{% if ossummary|length > 0 %}
+<tr class="showeventsdetailsrow" >
+{% for state in eventssummary %}
+    <td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}>
+    {% for osrow in ossummary %}
+        {% if state.statusname == osrow.statusname %} {{ osrow.computingelement }}, {% if osrow.objectstoreid != None %} {{ osrow.objectstoreid }} {% else %} unknown {% endif %} : {{ osrow.nevents }} <br> {% endif %}
+    {% endfor %}
+    </td>
+{% endfor %}
+</tr>
+{% endif %}
 </table>
 {% endif %}
 
