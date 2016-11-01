@@ -110,7 +110,7 @@ def doRequest(request):
         formdata = request.GET.copy()
         request.session['requestParams'] = formdata
 
-        if request.user.is_authenticated():
+        if 'user' in request and request.user.is_authenticated():
             formdata['requester'] = request.user.get_full_name()
 
         for f in req_fields:

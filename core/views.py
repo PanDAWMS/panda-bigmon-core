@@ -1192,7 +1192,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         connection.commit()
 
         new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM "
-                        " (SELECT PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i))t1 "
+                        " (SELECT /*+ index(ATLAS_PANDA.JEDI_EVENTS JEDI_EVENTS_PANDAID_STATUS_IDX) */ PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i))t1 "
                         "GROUP BY STATUS" % (tmpTableName, transactionKey))
         evtable = dictfetchall(new_cur)
 
@@ -1930,35 +1930,36 @@ def jobListPDiv(request, mode=None, param=None):
             if item['field'] == 'JEDITASKID':
                 item['list'] = sorted(item['list'], key=lambda k: k['kvalue'], reverse=True)
 
-
-    pandaIDVal = [int(val) for val in jobsToList]
-    pandaIDVal = pandaIDVal[:njobsmax]
-    newquery = {}
-    newquery['pandaid__in'] = pandaIDVal
-
     jobs = []
-    eventservice = False
-    if 'requestParams' in request.session and 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
-        eventservice = True
-    if 'requestParams' in request.session and 'eventservice' in request.session['requestParams'] and (
-                    request.session['requestParams']['eventservice'] == 'eventservice' or
-                    request.session['requestParams'][
-                        'eventservice'] == '1'):
-        eventservice = True
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-                'requestParams' in request.session and 'json' in request.session['requestParams']):
-        values = Jobsactive4._meta.get_all_field_names()
-    elif eventservice:
-        values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice'
-    else:
-        values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice'
 
-    jobs.extend(Jobsdefined4.objects.filter(**newquery).values(*values))
-    jobs.extend(Jobsactive4.objects.filter(**newquery).values(*values))
-    jobs.extend(Jobswaiting4.objects.filter(**newquery).values(*values))
-    jobs.extend(Jobsarchived4.objects.filter(**newquery).values(*values))
-    if (len(jobs) < njobsmax):
-        jobs.extend(Jobsarchived.objects.filter(**newquery).values(*values))
+    if not doRefresh:
+        pandaIDVal = [int(val) for val in jobsToList]
+        pandaIDVal = pandaIDVal[:njobsmax]
+        newquery = {}
+        newquery['pandaid__in'] = pandaIDVal
+
+        eventservice = False
+        if 'requestParams' in request.session and 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
+            eventservice = True
+        if 'requestParams' in request.session and 'eventservice' in request.session['requestParams'] and (
+                        request.session['requestParams']['eventservice'] == 'eventservice' or
+                        request.session['requestParams'][
+                            'eventservice'] == '1'):
+            eventservice = True
+        if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+                    'requestParams' in request.session and 'json' in request.session['requestParams']):
+            values = Jobsactive4._meta.get_all_field_names()
+        elif eventservice:
+            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice'
+        else:
+            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice'
+
+        jobs.extend(Jobsdefined4.objects.filter(**newquery).values(*values))
+        jobs.extend(Jobsactive4.objects.filter(**newquery).values(*values))
+        jobs.extend(Jobswaiting4.objects.filter(**newquery).values(*values))
+        jobs.extend(Jobsarchived4.objects.filter(**newquery).values(*values))
+        if (len(jobs) < njobsmax):
+            jobs.extend(Jobsarchived.objects.filter(**newquery).values(*values))
 
 
     if 'requestParams' in request.session and 'sortby' in request.session['requestParams']:
@@ -5299,7 +5300,7 @@ def taskList(request):
 
         connection.commit()
         new_cur.execute(
-            "SELECT PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
+            "SELECT /*+ index(ATLAS_PANDA.JEDI_EVENTS JEDI_EVENTS_PANDAID_STATUS_IDX) */ PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
             tmpTableName, transactionKey))
         evtable = dictfetchall(new_cur)
 
