@@ -273,6 +273,14 @@ job <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{
 <td><a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&processingtype=usermerge">{{ mergejobs|length }} merge jobs</a></td>
 {% endif %}
 
+{% if runesjobs|length > 0 %}
+<td> JobSet ES jobs <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&eventservice=eventservice">({{ runesjobs|length }})</a></td>
+{% endif %}
+
+{% if mergeesjobs|length > 0 %}
+<td>JobSet ES Merge jobs <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&eventservice=esmerge">({{ mergeesjobs|length }})</a></td>
+{% endif %}
+
 {% endif %}
 
 </table>

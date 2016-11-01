@@ -3075,6 +3075,27 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 if j['processingtype'] == 'usermerge':
                     mergejobs.append(id)
 
+    runesjobs = []
+    mergeesjobs = []
+    if isEventService(job) and 'jobsetid' in job and job['jobsetid'] > 0:
+        print "jobset info"
+        esjsquery = {}
+        esjsquery['jobsetid'] = job['jobsetid']
+        esjsquery['produsername'] = job['produsername']
+        values = ['pandaid', 'eventservice']
+        esjsjobs = []
+        esjsjobs.extend(Jobsdefined4.objects.filter(**esjsquery).values(*values))
+        esjsjobs.extend(Jobsactive4.objects.filter(**esjsquery).values(*values))
+        esjsjobs.extend(Jobswaiting4.objects.filter(**esjsquery).values(*values))
+        esjsjobs.extend(Jobsarchived4.objects.filter(**esjsquery).values(*values))
+        esjsjobs.extend(Jobsarchived.objects.filter(**esjsquery).values(*values))
+        if len(esjsjobs) > 0:
+            for j in esjsjobs:
+                if j['eventservice'] == 1:
+                    runesjobs.append(j['pandaid'])
+                if j['eventservice'] == 2:
+                    mergeesjobs.append(j['pandaid'])
+
     esjobstr = ''
     if isEventService(job):
         ## for ES jobs, prepare the event table
@@ -3173,6 +3194,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'libjob': libjob,
             'runjobs': runjobs,
             'mergejobs': mergejobs,
+            'runesjobs': runesjobs,
+            'mergeesjobs': mergeesjobs,
             'esjobstr': esjobstr,
             'fileSummary': fileSummary,
         }
