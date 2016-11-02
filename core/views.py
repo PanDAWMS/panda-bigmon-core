@@ -6445,16 +6445,13 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
             query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
             new_cur.executemany(query, executionData)
             connection.commit()
+            maxpandaid = max(esjobs)
+            minpandaid = min(esjobs)
             new_cur.execute(
                 """SELECT /*+ index(ATLAS_PANDA.JEDI_EVENTS JEDI_EVENTS_PANDAID_STATUS_IDX) */  PANDAID,STATUS
-                    FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)""" % (
-                tmpTableName, transactionKey))
+                    FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID<=%i and PANDAID>=%i and PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)""" % (
+                    maxpandaid, minpandaid, tmpTableName, transactionKey))
             evtable = dictfetchall(new_cur)
-
-            #        esquery = {}
-            #        esquery['pandaid__in'] = esjobs
-            #        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
-
             new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
             connection.commit()
             connection.leave_transaction_management()
