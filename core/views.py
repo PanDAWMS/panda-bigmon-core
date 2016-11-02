@@ -1192,7 +1192,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         connection.commit()
 
         new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM "
-                        " (SELECT /*+ index(ATLAS_PANDA.JEDI_EVENTS JEDI_EVENTS_PANDAID_STATUS_IDX) */ PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i))t1 "
+                        " (SELECT /*+ index_rs_asc(ev JEDI_EVENTS_PANDAID_STATUS_IDX) no_index_ffs(ev JEDI_EVENTS_PK) no_index_ss(ev JEDI_EVENTS_PK) */ PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i))t1 "
                         "GROUP BY STATUS" % (tmpTableName, transactionKey))
         evtable = dictfetchall(new_cur)
 
@@ -5300,7 +5300,7 @@ def taskList(request):
 
         connection.commit()
         new_cur.execute(
-            "SELECT /*+ index(ATLAS_PANDA.JEDI_EVENTS JEDI_EVENTS_PANDAID_STATUS_IDX) */ PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
+            "SELECT /*+ index_rs_asc(ev JEDI_EVENTS_PANDAID_STATUS_IDX) no_index_ffs(ev JEDI_EVENTS_PK) no_index_ss(ev JEDI_EVENTS_PK) */ PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
             tmpTableName, transactionKey))
         evtable = dictfetchall(new_cur)
 
@@ -6448,8 +6448,8 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
             maxpandaid = max(esjobs)
             minpandaid = min(esjobs)
             new_cur.execute(
-                """SELECT /*+ index(ATLAS_PANDA.JEDI_EVENTS JEDI_EVENTS_PANDAID_STATUS_IDX) */  PANDAID,STATUS
-                    FROM ATLAS_PANDA.JEDI_EVENTS WHERE PANDAID<=%i and PANDAID>=%i and PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)""" % (
+                """SELECT /*+ index_rs_asc(ev JEDI_EVENTS_PANDAID_STATUS_IDX) no_index_ffs(ev JEDI_EVENTS_PK) no_index_ss(ev JEDI_EVENTS_PK) */  PANDAID,STATUS
+                    FROM ATLAS_PANDA.JEDI_EVENTS ev WHERE PANDAID<=%i and PANDAID>=%i and PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)""" % (
                     maxpandaid, minpandaid, tmpTableName, transactionKey))
             evtable = dictfetchall(new_cur)
             new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
