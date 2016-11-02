@@ -23,9 +23,8 @@ You can use wildcard search over different job descriptors such as schedulerid, 
 
 <p>
 To filter out fields in the JSON response use &fields= parameter like:
-<br><font size=-1><code>
-curl -H 'Accept: application/json' -H 'Content-Type: application/json' "http://bigpanda.cern.ch/jobs/?PandaID=2398201837&fields=pandaid,jobsetrange"</code></font>
-    
+<font size=-1><code>
+...bigpanda.cern.ch/jobs/?PandaID=2398201837&fields=pandaid,jobsetrange</code></font>
 <p>
 
 <p>
@@ -34,13 +33,17 @@ URL tricks: you can include hours=N or days=N on the URL to specify the time dep
 
 <p>
 Job data can be retrieved in json format with curl so that it can be used programmatically. <b>Use this carefully</b>, do not for example put scripts in crons that do heavy retrieval of job data this way. If you have systematic needs for PanDA job data, tell us what they are. Do not use web page scraping. An example curl command is as follows; it takes the same url parameters as the browser version.
+<p>If you are using lxplus:
 <br><font size=-1><code>
-curl -H 'Accept: application/json' -H 'Content-Type: application/json' "http://bigpanda.cern.ch/jobs/?transfertype=fax&hours=1"
+cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt
+<br>curl -b bigpanda.cookie.txt -H 'Accept: application/json' -H 'Content-Type: application/json' "https://bigpanda.cern.ch/jobs/?dump=parameters&pandaid=1234,1235,1236&json"
 </code></font>
-If it is job parameters you want, that is maintained in a separate table, and requires a different query:
+<p>If you are retrieving JSON outside of CERN:
 <br><font size=-1><code>
-curl -H 'Accept: application/json' -H 'Content-Type: application/json' "http://bigpanda.cern.ch/jobs/?dump=parameters&pandaid=1234,1235,1236"
+ssh username@lxplus.cern.ch "cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt;"
+<br>ssh username@lxplus.cern.ch 'curl -b ~/bigpanda.cookie.txt -H '"'"'Accept: application/json'"'"' -H '"'"'Content-Type: application/json'"'"' "https://bigpanda.cern.ch/jobs/?dump=parameters&pandaid=1234,1235,1236&json"'
 </code></font>
+<p>The first command performs SSO authentication, the second delivers needed information. You may reuse single cookie until it get expired.
 <br>By default the JSON response does not contain dataset information. If you need it, add <br><font size=-1><code>&datasets=true</code></font> to the URI (<a target=new href="https://its.cern.ch/jira/browse/ATLASPANDA-109">ATLASPANDA-109</a>).
 
 

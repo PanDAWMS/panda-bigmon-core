@@ -71,10 +71,18 @@ Tasks can be listed based on a substring of the taskname using the Search page. 
 
 <p>
 It is possible to retrieve task data in json format via curl so that it can be used programmatically. Do not use web page scraping; if you need info, ask how to get it. An example curl command is as follows; it takes the same url parameters as the browser version.
+<p>If you are using lxplus:
 <br><font size=-1><code>
-curl -H 'Accept: application/json' -H 'Content-Type: application/json' "http://bigpanda.cern.ch/tasks/?taskname=user.nacken*&days=3"
+cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt
+<br>curl -b bigpanda.cookie.txt -H 'Accept: application/json' -H 'Content-Type: application/json' "https://bigpanda.cern.ch/tasks/?taskname=user.nacken*&days=3&json"
 </code></font>
-What you get is a list with each element a dictionary with info for a task. If your request is for a single task (jeditaskid=N), you get additional info: an element 'datasets' in the task dictionary with input/output dataset info. 
+<p>If you are retrieving JSON outside of CERN:
+<br><font size=-1><code>
+ssh username@lxplus.cern.ch "cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt;"
+<br>ssh username@lxplus.cern.ch 'curl -b ~/bigpanda.cookie.txt -H '"'"'Accept: application/json'"'"' -H '"'"'Content-Type: application/json'"'"' "https://bigpanda.cern.ch/tasks/?taskname=user.nacken*&days=3&json"'
+</code></font>
+<p>The first command performs SSO authentication, the second delivers needed information. You may reuse single cookie until it get expired.
+<p>What you get is a list with each element a dictionary with info for a task. If your request is for a single task (jeditaskid=N), you get additional info: an element 'datasets' in the task dictionary with input/output dataset info.
 </p>
 
 <h3> Q&amp;A </h3>
