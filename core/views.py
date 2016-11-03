@@ -1191,11 +1191,10 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         new_cur.executemany(query, executionData)
         connection.commit()
 
-        new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM "
-                        " (SELECT /*+ INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID) t1 "
-                        "GROUP BY STATUS" % (tmpTableName, transactionKey))
-        evtable = dictfetchall(new_cur)
+        new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM (SELECT /*+ INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev"
+                        " JEDI_EVENTS_PK) */ PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY = %i AND  PANDAID = ID) t1 GROUP BY STATUS" % (tmpTableName, transactionKey))
 
+        evtable = dictfetchall(new_cur)
         new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
         connection.commit()
         connection.leave_transaction_management()
