@@ -791,7 +791,7 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
                     #                   'jobstatus'] == 'cancelled' and job['jobstatus'] != 'cancelled':
                     #                   dropJob = 1
 
-        if dropJob == 0 and isReturnDroppedPMerge:
+        if dropJob == 0 and not isReturnDroppedPMerge:
             #     and not (
             #     'processingtype' in request.session['requestParams'] and request.session['requestParams'][
             # 'processingtype'] == 'pmerge')
