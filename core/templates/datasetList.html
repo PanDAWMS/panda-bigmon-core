@@ -34,7 +34,7 @@
 		<td>{{ dsrec.datasetid }}</td>
 		<td>{{ dsrec.type }}</td>
 		<td>{{ dsrec.streamname }}</td>
-		<td><a href="{% url 'taskInfo' %}?jeditaskid={{ frec.jeditaskid }}">{{ dsrec.jeditaskid }}</a></td>
+		<td><a href="{% url 'taskInfo' %}?jeditaskid={{ dsrec.jeditaskid }}">{{ dsrec.jeditaskid }}</a></td>
 		<td>{{ dsrec.state }}</td>
 		<td class='{{dsrec.status}}'>{{ dsrec.status }}</td>
 		<td>{{ dsrec.nfiles }}</td>
