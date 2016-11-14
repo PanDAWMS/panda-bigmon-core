@@ -100,7 +100,7 @@ function loadSummaryData(nosorturl) {
 
 
 <table>
-<tr class='tablesection'><th colspan=20> {{ ntasks }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
+<tr class='tablesection'><th colspan=20> {{ display_limit }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
 {% if display_limit %} {% if tasks|length > display_limit %}
 &nbsp; &nbsp; <font size=-1>Only the most recent {{ display_limit }} tasks are shown. <a href="{{ url_nolimit }}">Remove the limit</a></font>
 {% endif %} {% endif %}

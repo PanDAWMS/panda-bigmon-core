@@ -2297,14 +2297,15 @@ def jobList(request, mode=None, param=None):
 
     if 'sortby' in request.session['requestParams']:
         sortby = request.session['requestParams']['sortby']
+
         if sortby == 'time-ascending':
-            jobs = sorted(jobs, key=lambda x: x['modificationtime'])
+            jobs = sorted(jobs, key=lambda x:x['modificationtime'] if not x['modificationtime'] is None else datetime(1900, 1, 1))
         if sortby == 'time-descending':
-            jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+            jobs = sorted(jobs, key=lambda x:x['modificationtime'] if not x['modificationtime'] is None else datetime(1900, 1, 1), reverse=True)
         if sortby == 'statetime':
-            jobs = sorted(jobs, key=lambda x: x['statechangetime'], reverse=True)
+            jobs = sorted(jobs, key=lambda x:x['statechangetime'] if not x['statechangetime'] is None else datetime(1900, 1, 1), reverse=True)
         elif sortby == 'priority':
-            jobs = sorted(jobs, key=lambda x: x['currentpriority'], reverse=True)
+            jobs = sorted(jobs, key=lambda x:x['currentpriority'] if not x['currentpriority'] is None else 0, reverse=True)
         elif sortby == 'attemptnr':
             jobs = sorted(jobs, key=lambda x: x['attemptnr'], reverse=True)
         elif sortby == 'duration-ascending':
@@ -2992,7 +2993,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 oslogpath = ospath + '/' + logfile['lfn']
 
     ## Check for debug info
-    if 'specialhandling' in job and job['specialhandling'].find('debug') >= 0:
+    if 'specialhandling' in job and not job['specialhandling'] is None and job['specialhandling'].find('debug') >= 0:
         debugmode = True
     else:
         debugmode = False
@@ -5213,7 +5214,7 @@ def taskList(request):
     if 'limit' in request.session['requestParams']:
         limit = int(request.session['requestParams']['limit'])
     else:
-        limit = 5000
+        limit = 1000
 
     if not valid: return response
     if 'tasktype' in request.session['requestParams'] and request.session['requestParams']['tasktype'].startswith(
@@ -5248,7 +5249,8 @@ def taskList(request):
 
 
     if 'display_limit' not in request.session['requestParams']:
-        display_limit = 300
+        display_limit = 100
+        nmax = display_limit
         url_nolimit = request.get_full_path() + "&display_limit=" + str(nmax)
     else:
         display_limit = int(request.session['requestParams']['display_limit'])
@@ -5364,7 +5366,7 @@ def taskList(request):
             'xurl': xurl,
             'nosorturl': nosorturl,
             'url_nolimit': url_nolimit,
-            'display_limit': display_limit,
+            'display_limit': nmax,
             'flowstruct': flowstruct,
         }
         ##self monitor
@@ -5381,10 +5383,35 @@ def getTaskScoutingInfo(tasks, nmax):
     taskslToBeDisplayed = tasks[:nmax]
     tasksIdToBeDisplayed = [task['jeditaskid'] for task in taskslToBeDisplayed]
     tquery = {}
-    tquery['jeditaskid__in'] = tasksIdToBeDisplayed
-    tasksEventInfo = GetEventsForTask.objects.filter(**tquery).values('jeditaskid', 'totevrem', 'totev')
-    failedInScouting = JediDatasets.objects.filter(**tquery).extra(where=['NFILESFAILED > NFILESTOBEUSED']).values(
-        'jeditaskid')
+
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+    else:
+        tmpTableName = "TMP_IDS1"
+
+    transactionKey = random.randrange(1000000)
+    new_cur = connection.cursor()
+    executionData = []
+    for id in tasksIdToBeDisplayed:
+        executionData.append((id, transactionKey))
+    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    new_cur.executemany(query, executionData)
+
+    tasksEventInfo = GetEventsForTask.objects.filter(**tquery).extra(
+        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid', 'totevrem', 'totev')
+
+    #We do it because we intermix raw and queryset queries. With next new_cur.execute tasksEventInfo cleares
+    tasksEventInfoList = []
+    for tasksEventInfoItem in tasksEventInfo:
+        listItem = {}
+        listItem["jeditaskid"] = tasksEventInfoItem["jeditaskid"]
+        listItem["totevrem"] = tasksEventInfoItem["totevrem"]
+        listItem["totev"] = tasksEventInfoItem["totev"]
+        tasksEventInfoList.append(listItem)
+
+    tasksEventInfoList.reverse()
+
+    failedInScouting = JediDatasets.objects.filter(**tquery).extra(where=["NFILESFAILED > NFILESTOBEUSED AND JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey) ]).values('jeditaskid')
 
     taskStatuses = dict((task['jeditaskid'], task['status']) for task in tasks)
 
@@ -5393,26 +5420,47 @@ def getTaskScoutingInfo(tasks, nmax):
 
     # scoutingHasCritFailures
     tquery['nfilesfailed__gt'] = 0
-    scoutingHasCritFailures = JediDatasets.objects.filter(**tquery).values('jeditaskid')
+    scoutingHasCritFailures = JediDatasets.objects.filter(**tquery).extra(
+        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid')
     scoutingHasCritFailures = [item['jeditaskid'] for item in scoutingHasCritFailures if
                                (taskStatuses[item['jeditaskid']] in ('scouting'))]
 
+    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+    transactionKey = random.randrange(1000000)
+    executionData = []
+    for id in scoutingHasCritFailures:
+        executionData.append((id, transactionKey))
+    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    new_cur.executemany(query, executionData)
+
     tquery = {}
     tquery['nfilesfailed'] = 0
-    tquery['jeditaskid__in'] = tasksIdToBeDisplayed
-    scoutingHasNonCritFailures = JediDatasets.objects.filter(**tquery).values('jeditaskid')
+    scoutingHasNonCritFailures = JediDatasets.objects.filter(**tquery).extra(
+        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid')
     scoutingHasNonCritFailures = [item['jeditaskid'] for item in scoutingHasNonCritFailures if (
     taskStatuses[item['jeditaskid']] == 'scouting' and item['jeditaskid'] not in scoutingHasCritFailures)]
 
+
+    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+    transactionKey = random.randrange(1000000)
+    executionData = []
+    for id in scoutingHasNonCritFailures:
+        executionData.append((id, transactionKey))
+    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    new_cur.executemany(query, executionData)
+
     tquery = {}
-    tquery['jeditaskid__in'] = scoutingHasNonCritFailures
     tquery['relationtype'] = 'retry'
-    scoutingHasNonCritFailures = JediJobRetryHistory.objects.filter(**tquery).values('jeditaskid')
+    scoutingHasNonCritFailures = JediJobRetryHistory.objects.filter(**tquery).extra(
+        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid')
     scoutingHasNonCritFailures = [item['jeditaskid'] for item in scoutingHasNonCritFailures]
 
+    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+
     for task in taskslToBeDisplayed:
-        correspondendEventInfo = filter(lambda n: n.get('jeditaskid') == task['jeditaskid'], tasksEventInfo)
-        if len(correspondendEventInfo) > 0:
+        if tasksEventInfoList and len(tasksEventInfoList) > 0:
+            correspondendEventInfo = [item for item in tasksEventInfoList if item["jeditaskid"]==task['jeditaskid']] #filter(lambda n: n.get('jeditaskid') == task['jeditaskid'], tasksEventInfo)
+        if correspondendEventInfo and len(correspondendEventInfo) > 0:
             task['totevrem'] = int(correspondendEventInfo[0]['totevrem'])
             task['totev'] = correspondendEventInfo[0]['totev']
         else:
@@ -6004,7 +6052,7 @@ def taskInfo(request, jeditaskid=0):
     except IndexError:
         taskrec = None
 
-    taskpars = JediTaskparams.objects.filter(**query).extra(where=['ROWNUM <= 1000']).values()
+    taskpars = JediTaskparams.objects.filter(**query).values()[:1000]
     jobparams = None
     taskparams = None
     taskparaml = None
