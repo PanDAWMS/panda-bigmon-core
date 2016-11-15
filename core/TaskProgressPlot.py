@@ -55,6 +55,25 @@ class TaskProgressPlot:
         else:
             None
 
+    def get_es_raw_task_profile_fresh(self,taskid):
+        cur = connection.cursor()
+
+        cur.execute("""select MODIFICATIONTIME, SUM(ESEVENTS_MERGED) over (PARTITION BY jeditaskid order by MODIFICATIONTIME ) as NEVENTS from
+                    (SELECT t1.ESEVENTS_MERGED, MODIFICATIONTIME, JEDITASKID FROM (SELECT SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS ESEVENTS_MERGED,PANDAID FROM ATLAS_PANDA.JEDI_EVENTS WHERE STATUS=9 GROUP BY PANDAID) t1
+                    JOIN JOBSARCHIVED4 ON t1.PANDAID = JOBSARCHIVED4.PANDAID AND JEDITASKID={0}
+                    UNION All
+                    SELECT t1.ESEVENTS_MERGED, MODIFICATIONTIME, JEDITASKID FROM (SELECT SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS ESEVENTS_MERGED,PANDAID FROM ATLAS_PANDA.JEDI_EVENTS WHERE STATUS=9 GROUP BY PANDAID) t1
+                    JOIN JOBSARCHIVED ON t1.PANDAID = JOBSARCHIVED.PANDAID AND JEDITASKID={0}) t3""".format(taskid))
+        rows = cur.fetchall()
+
+        if len(rows) > 0:
+            data = {'modificationtime': [row[0] for row in rows],
+                    'nevents': [row[1] for row in rows]}
+            return pd.DataFrame(data, columns=['modificationtime','nevents'])
+        else:
+            None
+
+
 
     def make_profile_graph(self,frame, taskid):
         fig = plt.figure(figsize=(20, 15))
@@ -96,6 +115,31 @@ class TaskProgressPlot:
         plt.legend(loc='lower right')
         return fig
 
+    def make_es_verbose_profile_graph(self,frame, taskid, status=None, daterange=None):
+        plt.style.use('fivethirtyeight')
+        fig = plt.figure(figsize=(20, 15))
+        plt.locator_params(axis='x', nbins=30)
+        plt.locator_params(axis='y', nbins=30)
+        plt.title('Execution profile for task {0}'.format(taskid), fontsize=24)
+        plt.xlabel("Job completion time", fontsize=18)
+        plt.ylabel("Number of merged events", fontsize=18)
+        starttime = self.get_task_start(taskid)['starttime']
+        plt.axvline(x=starttime, color='b', linewidth=4, label="Task start time")
+
+        min = starttime
+        max = frame.values[:,0].max()
+        plt.xlim(xmax=max)
+        plt.xlim(xmin=min)
+        plt.xticks(rotation=25)
+
+        ax = plt.gca()
+        xfmt = md.DateFormatter('%m-%d %H:%M:%S')
+        ax.xaxis.set_major_formatter(xfmt)
+
+        plt.plot(frame.modificationtime, frame.nevents, '.r', label='modificationtime')
+        plt.legend(loc='lower right')
+        return fig
+
 
     def save_task_profile(self,taskid):
         frame = self.get_raw_task_profile(taskid)
@@ -132,6 +176,16 @@ class TaskProgressPlot:
         frame = self.get_raw_task_profile_fresh(taskid)
         if frame is not None:
             fig = self.make_verbose_profile_graph(frame, taskid, self.get_task_status(taskid))
+            imgdata = StringIO.StringIO()
+            fig.savefig(imgdata, format='png')
+            imgdata.seek(0)
+            return imgdata.buf
+        return None
+
+    def get_es_task_profile(self,taskid):
+        frame = self.get_es_raw_task_profile_fresh(taskid)
+        if frame is not None:
+            fig = self.make_es_verbose_profile_graph(frame, taskid, self.get_task_status(taskid))
             imgdata = StringIO.StringIO()
             fig.savefig(imgdata, format='png')
             imgdata.seek(0)

@@ -5926,6 +5926,25 @@ def taskprofileplot(request):
         # return response
 
 
+def taskESprofileplot(request):
+    jeditaskid = 0
+    if 'jeditaskid' in request.REQUEST: jeditaskid = int(request.REQUEST['jeditaskid'])
+    image = None
+    if jeditaskid != 0:
+        dp = TaskProgressPlot.TaskProgressPlot()
+        image = dp.get_es_task_profile(taskid=jeditaskid)
+    if image is not None:
+        return HttpResponse(image, content_type="image/png")
+    else:
+        return HttpResponse('')
+        # response = HttpResponse(content_type="image/jpeg")
+        # red.save(response, "JPEG")
+        # return response
+
+
+
+
+
 @cache_page(60 * 20)
 def taskInfo(request, jeditaskid=0):
     jeditaskid = int(jeditaskid)
