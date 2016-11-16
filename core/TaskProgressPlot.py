@@ -59,10 +59,10 @@ class TaskProgressPlot:
         cur = connection.cursor()
 
         cur.execute("""select MODIFICATIONTIME, SUM(ESEVENTS_MERGED) over (PARTITION BY jeditaskid order by MODIFICATIONTIME ) as NEVENTS from
-                    (SELECT t1.ESEVENTS_MERGED, MODIFICATIONTIME, JEDITASKID FROM (SELECT SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS ESEVENTS_MERGED,PANDAID FROM ATLAS_PANDA.JEDI_EVENTS WHERE STATUS=9 GROUP BY PANDAID) t1
+                    (SELECT t1.ESEVENTS_MERGED, MODIFICATIONTIME, JEDITASKID FROM (SELECT SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS ESEVENTS_MERGED,PANDAID FROM ATLAS_PANDA.JEDI_EVENTS WHERE JEDITASKID={0} AND STATUS=9 GROUP BY PANDAID) t1
                     JOIN JOBSARCHIVED4 ON t1.PANDAID = JOBSARCHIVED4.PANDAID AND JEDITASKID={0}
                     UNION All
-                    SELECT t1.ESEVENTS_MERGED, MODIFICATIONTIME, JEDITASKID FROM (SELECT SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS ESEVENTS_MERGED,PANDAID FROM ATLAS_PANDA.JEDI_EVENTS WHERE STATUS=9 GROUP BY PANDAID) t1
+                    SELECT t1.ESEVENTS_MERGED, MODIFICATIONTIME, JEDITASKID FROM (SELECT SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS ESEVENTS_MERGED,PANDAID FROM ATLAS_PANDA.JEDI_EVENTS WHERE JEDITASKID={0} AND STATUS=9 GROUP BY PANDAID) t1
                     JOIN JOBSARCHIVED ON t1.PANDAID = JOBSARCHIVED.PANDAID AND JEDITASKID={0}) t3""".format(taskid))
         rows = cur.fetchall()
 
@@ -121,7 +121,7 @@ class TaskProgressPlot:
         plt.locator_params(axis='x', nbins=30)
         plt.locator_params(axis='y', nbins=30)
         plt.title('Execution profile for task {0}'.format(taskid), fontsize=24)
-        plt.xlabel("Job completion time", fontsize=18)
+        plt.xlabel("Event Merge time", fontsize=18)
         plt.ylabel("Number of merged events", fontsize=18)
         starttime = self.get_task_start(taskid)['starttime']
         plt.axvline(x=starttime, color='b', linewidth=4, label="Task start time")
@@ -136,7 +136,7 @@ class TaskProgressPlot:
         xfmt = md.DateFormatter('%m-%d %H:%M:%S')
         ax.xaxis.set_major_formatter(xfmt)
 
-        plt.plot(frame.modificationtime, frame.nevents, '.r', label='modificationtime')
+        plt.plot(frame.modificationtime, frame.nevents, '.r', label='# merged events')
         plt.legend(loc='lower right')
         return fig
 
