@@ -87,7 +87,7 @@ function toggleDetailDisplay(className) {
 
 {% if showtaskprof == True %}
     <a href="{% url 'taskprofileplot' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Open Task Profile</a>&emsp;
-    <a href="{% url 'taskesprofileplot' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Open Events Processing Profile</a>&emsp;
+    <a href="{% url 'taskesprofileplot' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Events Processing Profile (Not dropped finished jobs)</a>&emsp;
 
 {% endif %}
 
