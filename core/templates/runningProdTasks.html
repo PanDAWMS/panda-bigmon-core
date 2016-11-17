@@ -3,8 +3,9 @@
 {% load humanize %}
 
 {% block page_title %} PanDA tasks{% endblock %}
-{% block subtitle %}Running DPD production task list
+{% block subtitle %}Running production task list
 {% endblock %}
+<script type="text/javascript" src="{{ STATIC_URL }}/js/jquery-1.9.1.min.js"></script>
 {% block body %}
 
     {% if requestParams.campaign %}<br><b>Campaign:</b> {{ requestParams.campaign }} {% endif %}
@@ -15,6 +16,111 @@
     {% if requestParams.reqid %}<br><b>Request ID:</b> {{ requestParams.reqid }} {% endif %}
     {% if requestParams.ptag %}<br><b>pTag:</b> {{ requestParams.ptag }} {% endif %}
     <p>
+
+
+            <script>
+                function onPresetChoice () {
+                    var presetChoice = document.getElementById ("presetChoice");
+                    var workinggroup = document.getElementById ("workinggroup");
+                    var processingtype = document.getElementById ("processingtype");
+                    var campaign = document.getElementById ("campaign");
+
+                    if (presetChoice.value == 'mc') {
+                        workinggroup.selectedIndex = 0;
+                        processingtype.selectedIndex =0;
+                        campaign.selectedIndex =0;
+                    }
+
+                    if (presetChoice.value == 'dpd') {
+                        workinggroup.selectedIndex = 1;
+                        processingtype.selectedIndex =1;
+                        campaign.selectedIndex =1;
+                    }
+                }
+
+                function onSubElementChoice() {
+                    var presetChoice = document.getElementById ("presetChoice");
+                    presetChoice.selectedIndex = 2;
+
+                }
+                function go() {
+
+                    var workinggroupQ = "";
+                    var processingtypeQ = "";
+                    var campaignQ = "";
+                    var workinggroup = document.getElementById ("workinggroup");
+                    var processingtype = document.getElementById ("processingtype");
+                    var campaign = document.getElementById ("campaign");
+                    var query = {% url 'runningProdTasks' %}
+
+
+                    if (workinggroup.value.length > 0) workinggroupQ = "workinggroup="+workinggroup.value;
+                    if (processingtype.value.length > 0) processingtypeQ = "processingtype="+processingtype.value;
+                    if (campaign.value.length > 0) campaignQ = "campaign="+campaign.value;
+
+                    if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1)) {
+                        query += "?";
+                        if (workinggroupQ.length > 1) {
+                            query += workinggroupQ+"&";
+                        }
+                        if (processingtypeQ.length > 1) {
+                            query += processingtypeQ+"&";
+                        }
+                        if (campaignQ.length > 1) {
+                            query += campaignQ+"&";
+                        }
+                    }
+                    query = query.substring(0, query.length - 1);
+                    window.location = query;
+                }
+            </script>
+
+
+            <table>
+                <tr class='tablesection'>
+                    <th colspan=20>Tasks selection</th>
+                </tr>
+                <tr class='tablesection'>
+                    <th>Selection Preset</th>
+                    <th>WORKINGGROUP</th>
+                    <th>PROCESSINGTYPE</th>
+                    <th>CAMPAIGN</th>
+                    <th></th>
+                </tr>
+                <tr>
+                    <td>
+                        <select id="presetChoice" onchange="onPresetChoice()">
+                            <option value="mc">MC</option>
+                            <option value="dpd">DPD</option>
+                            <option value="" selected="selected"></option>
+                        </select>
+                    </td>
+                    <td>
+                        <select id="workinggroup" onchange="onSubElementChoice()">
+                            <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"> NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
+                            <option value="GP_PHYS">GP_PHYS</option>
+                            <option value=""  selected="selected"></option>
+                        </select>
+                    </td>
+                    <td>
+                        <select id="processingtype" onchange="onSubElementChoice()">
+                            <option value="evgen,pile,simul,recon"> IN ('evgen' , 'pile', 'simul', 'recon')</option>
+                            <option value=""  selected="selected"></option>
+                        </select>
+                    </td>
+                    <td>
+                        <select id="campaign" onchange="onSubElementChoice()">
+                            <option value="MC"> like 'MC%'</option>
+                            <option value=""  selected="selected"></option>
+                        </select>
+                    </td>
+                    <td>
+                         <button onclick="go()">Go!</button>
+                    </td>
+                </tr>
+            </table>
+
+
         {% if tasks %}
 
             <table>
@@ -48,7 +154,11 @@
                 {#$(document).ready(function() {#}
                 {#createGauge("slots", "Slots");#}
                 {#gauges['slots'].redraw(slots);});#}
+
+
             </script>
+
+
             <table>
                 <tr class='tablesection'>
                     <th colspan=20> {{ ntasks }} tasks</th>

@@ -5746,12 +5746,12 @@ def runningProdTasks(request):
 
     extraQueryString = ''
     if 'workinggroup' in request.session['requestParams']:
-        workinggroupQuery = request.session['requestParams']['workinggroupQuery']
+        workinggroupQuery = request.session['requestParams']['workinggroup']
         for card in workinggroupQuery.split(','):
             if card[0] == '!':
                 extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
             else:
-                extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
+                extraQueryString += ' workinggroup=\''+escapeInput(card[0:])+'\' OR '
 
     if 'processingtype' in request.session['requestParams']:
         val = escapeInput(request.session['requestParams']['processingtype'])
@@ -5764,7 +5764,7 @@ def runningProdTasks(request):
 
     #processingtype in ('evgen', 'pile', 'simul', 'recon')
 
-    tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[extraQueryString]).values()[:100]
+    tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[extraQueryString]).values()
     ntasks = len(tasks)
     slots = 0
     ages = []

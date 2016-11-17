@@ -67,7 +67,7 @@ urlpatterns = patterns('',
 #    url(r'^worldjobs/production/$', coremon_views.dashWorldProduction, name='dashWorldProduction'),
 
     url(r'^runningmcprodtasks/$', coremon_views.runningMCProdTasks, name='runningMCProdTasks'),
-    url(r'^runningprodtasks/$',coremon_views.runningProdTasks),
+    url(r'^runningprodtasks/$',coremon_views.runningProdTasks, name='runningProdTasks'),
     url(r'^runningdpdprodtasks/$', coremon_views.runningDPDProdTasks, name='runningDPDProdTasks'),
     url(r'^worldhs06s/$', coremon_views.worldhs06s, name='worldHS06s'),
     url(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),
