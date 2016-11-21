@@ -5458,20 +5458,21 @@ def getTaskScoutingInfo(tasks, nmax):
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
 
     for task in taskslToBeDisplayed:
+        correspondendEventInfo = []
         if tasksEventInfoList and len(tasksEventInfoList) > 0:
             correspondendEventInfo = [item for item in tasksEventInfoList if item["jeditaskid"]==task['jeditaskid']] #filter(lambda n: n.get('jeditaskid') == task['jeditaskid'], tasksEventInfo)
-            if correspondendEventInfo and len(correspondendEventInfo) > 0:
-                task['totevrem'] = int(correspondendEventInfo[0]['totevrem'])
-                task['totev'] = correspondendEventInfo[0]['totev']
-            else:
-                task['totevrem'] = 0
-                task['totev'] = 0
-            if (task['jeditaskid'] in failedInScouting):
-                task['failedscouting'] = True
-            if (task['jeditaskid'] in scoutingHasCritFailures):
-                task['scoutinghascritfailures'] = True
-            if (task['jeditaskid'] in scoutingHasNonCritFailures):
-                task['scoutinghasnoncritfailures'] = True
+        if len(correspondendEventInfo) > 0:
+            task['totevrem'] = int(correspondendEventInfo[0]['totevrem'])
+            task['totev'] = correspondendEventInfo[0]['totev']
+        else:
+            task['totevrem'] = 0
+            task['totev'] = 0
+        if (task['jeditaskid'] in failedInScouting):
+            task['failedscouting'] = True
+        if (task['jeditaskid'] in scoutingHasCritFailures):
+            task['scoutinghascritfailures'] = True
+        if (task['jeditaskid'] in scoutingHasNonCritFailures):
+            task['scoutinghasnoncritfailures'] = True
 
     return tasks
 
