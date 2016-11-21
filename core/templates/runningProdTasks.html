@@ -278,6 +278,7 @@
                     {% else %}
                         <th>Priority<br><a href="{{ nosorturl }}sortby=priority-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=priority-asc" class="headerSortUp"></a></th>{% endif %}
+                    {% comment %}
                     {% if sortby == 'ptag-desc' %}
                         <th>pTag<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=ptag-asc"
                                                                               class="headerSortUp"></a></th>
@@ -296,6 +297,7 @@
                     {% else %}
                         <th>Output types<br><a href="{{ nosorturl }}sortby=outputtype-desc" class="headerSortDown"></a>
                             <a href="{{ nosorturl }}sortby=outputtype-asc" class="headerSortUp"></a></th>{% endif %}
+                    {% endcomment %}
                     {% if sortby == 'age-desc' %}
                         <th>Age<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=age-asc"
                                                                              class="headerSortUp"></a></th>
@@ -335,8 +337,11 @@
                         <td>{% if task.totev %}{{ task.percentage }}{% else %}---{% endif %}</td>
                         <td>{% if task.nfilesfailed %}{{ task.nfilesfailed }}{% else %}0{% endif %}</td>
                         <td>{{ task.currentpriority }}</td>
+                        {% comment %}
                         <td>{{ task.ptag }}</td>
                         <td>{{ task.outputtypes }}</td>
+                        {% endcomment %}
+
                         <td>{{ task.age }}</td>
                         <td><a href="{{ xurl }}corecount={{ task.corecount }}">{{ task.corecount }}</a></td>
                         <td>{{ task.cputime }}</td>
