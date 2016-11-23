@@ -6410,6 +6410,8 @@ def taskInfo(request, jeditaskid=0):
         #     taskrec['totevhs06'] = int(hs06sSum['total']*neventsTot)
         taskrec['totevprochs06'] = int(hs06sSum['finished'])
         taskrec['failedevprochs06'] = int(hs06sSum['failed'])
+        taskrec['currenttotevhs06'] = int(hs06sSum['total'])
+
         taskrec['maxpssave'] = maxpssave
 
         if 'creationdate' in taskrec:
@@ -6635,8 +6637,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
                 job['walltimeperevent'] = job['duration'] * job['actualcorecount'] / job['nevents']
             hs06sSum['finished'] += job['hs06s'] if job['jobstatus'] == 'finished' else 0
             hs06sSum['failed'] += job['hs06s'] if job['jobstatus'] == 'failed' else 0
-    if len(cpuTimeCurrent) > 0:
-        hs06sSum['total'] = sum(cpuTimeCurrent) / len(cpuTimeCurrent)
+            hs06sSum['total'] += job['hs06s']
 
     jobs = newjobs
 
