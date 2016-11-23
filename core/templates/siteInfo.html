@@ -64,7 +64,7 @@
 </td>
 
 <td>
-<a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-2d%2Fd,mode:relative,to:now))&_a=(columns:!('@message.module','@message.Type','@message.name','@message.levelname','@message.message'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.msg:%22{{site.siteid}}%22%20AND%20@message.name:%22panda.mon.jedi%22%20OR%20@message.Type:%22prod_brokerage%22%20OR%20@message.Type:%22analy_brokerage%22')),sort:!('@timestamp',desc))">brokerage actions (es) </a>
+<a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-2d%2Fd,mode:relative,to:now))&_a=(columns:!(%27@message.message%27),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:%27(@message.message:%20%22{{ site.siteid }}%20%22%20OR%20@message.message:%20%22site%3D{{site.siteid}}%20%22%20OR%20@messsage.message:%20{{site.siteid}}*)%27)),sort:!(%27@timestamp%27,desc))">brokerage actions (es) </a> 
 </td>
 
 {% if site.nickname %}
