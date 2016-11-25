@@ -394,10 +394,14 @@ No datasets were found for this task
 {% if jobscoutids %}
 <table><tr>
 <td bgcolor='lightcyan'><b> Scout jobs: </b></td>
+    {% if jobscoutids.walltimescoutjob %}
+        <td>Walltime: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.walltimescoutjob }}">{{ jobscoutids.walltimescoutjob }}</a> </td>{% endif %}
     {% if jobscoutids.cputimescoutjob %}
         <td>CPU time: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.cputimescoutjob }}">{{ jobscoutids.cputimescoutjob }}</a> </td>{% endif %}
     {% if jobscoutids.ramcountscoutjob %}
         <td>RAM count: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.ramcountscoutjob }}">{{ jobscoutids.ramcountscoutjob }}</a> </td>{% endif %}
+    {% if jobscoutids.outdiskcountscoutjob %}
+        <td>Out disk count: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.outdiskcountscoutjob }}">{{ jobscoutids.outdiskcountscoutjob }}</a> </td>{% endif %}
     {% if jobscoutids.iointensityscoutjob %}
         <td>IO intensity: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.iointensityscoutjob }}">{{ jobscoutids.iointensityscoutjob }}</a> </td>{% endif %}
 </tr>

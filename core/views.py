@@ -6623,9 +6623,14 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
             jobScoutIDs['cputimescoutjob'] = job['pandaid']
         if 'scout=ioIntensity' in job['jobmetrics']:
             jobScoutIDs['iointensityscoutjob'] = job['pandaid']
+        if 'scout=outDiskCount' in job['jobmetrics']:
+            jobScoutIDs['outdiskcountscoutjob'] = job['pandaid']
         if 'scout=ramCount' in job['jobmetrics'] or (
                 'scout=' in job['jobmetrics'] and 'ramCount' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
             jobScoutIDs['ramcountscoutjob'] = job['pandaid']
+        if 'scout=walltime' in job['jobmetrics'] or (
+                'scout=' in job['jobmetrics'] and 'walltime' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
+            jobScoutIDs['walltimescoutjob'] = job['pandaid']
         if 'actualcorecount' in job and job['actualcorecount'] is None:
             job['actualcorecount'] = 1
         if job['jobstatus'] in ['finished', 'failed'] and 'endtime' in job and 'starttime' in job and job[
