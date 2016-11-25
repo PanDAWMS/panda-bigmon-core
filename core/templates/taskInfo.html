@@ -99,7 +99,7 @@ function toggleDetailDisplay(className) {
 
 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('d3splot');">Show/hide plots</a>&emsp;
 <a href="http://atlas-kibana.mwt2.org:5601/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))" target="_blank">Corresponding dashboard in Kibana</a>&emsp;
-    
+
 
 <p>
 
@@ -383,6 +383,19 @@ No datasets were found for this task
 <p>
 {% endif %}
 
+{% if jobscoutids %}
+<table><tr>
+<td bgcolor='lightcyan'><b> Scout jobs: </b></td>
+    {% if jobscoutids.cputimescoutjob %}
+        <td>CPU time: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.cputimescoutjob }}">{{ jobscoutids.cputimescoutjob }}</a> </td>{% endif %}
+    {% if jobscoutids.ramcountscoutjob %}
+        <td>RAM count: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.ramcountscoutjob }}">{{ jobscoutids.ramcountscoutjob }}</a> </td>{% endif %}
+    {% if jobscoutids.iointensityscoutjob %}
+        <td>IO intensity: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.iointensityscoutjob }}">{{ jobscoutids.iointensityscoutjob }}</a> </td>{% endif %}
+</tr>
+</table>
+{% endif %}
+
 <a name="taskparams"></a>
 {% if taskparaml %}
 <table>
@@ -400,7 +413,10 @@ No datasets were found for this task
 <table>
 <tr bgcolor='lightcyan'><th colspan=20> PanDA/JEDI task parameters </th></tr>
 {% for col in columns %}
-<tr><th {% if col.name == 'cputime' or col.name == 'cputimeunit' or col.name == 'cpuefficiency' or col.name == 'basewalltime' or col.name == 'outdiskcount' or col.name == 'outdiskunit' or col.name == 'workdiskcount' or col.name == 'workdiskunit' %} bgcolor='HoneyDew' {% endif %}>{{ col.name }} </th><td> {% if col.value != 'None' %}{% if col.name == 'cputimescoutjob' %} <a href="{% url 'jobInfo' %}?pandaid={{ col.value }}">{{ col.value }}</a> {% else %} {{ col.value }} {% endif %} {% endif %}</td></tr>
+<tr>
+    <th {% if col.name == 'cputime' or col.name == 'cputimeunit' or col.name == 'cpuefficiency' or col.name == 'basewalltime' or col.name == 'outdiskcount' or col.name == 'outdiskunit' or col.name == 'workdiskcount' or col.name == 'workdiskunit' %} bgcolor='HoneyDew' {% endif %}>{{ col.name }} </th>
+    <td> {% if col.value != 'None' %} {{ col.value }} {% endif %}</td>
+</tr>
 {% endfor %}
 </table>
 {% else %}

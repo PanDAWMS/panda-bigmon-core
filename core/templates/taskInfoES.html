@@ -391,6 +391,19 @@ No datasets were found for this task
 <p>
 {% endif %}
 
+{% if jobscoutids %}
+<table><tr>
+<td bgcolor='lightcyan'><b> Scout jobs: </b></td>
+    {% if jobscoutids.cputimescoutjob %}
+        <td>CPU time: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.cputimescoutjob }}">{{ jobscoutids.cputimescoutjob }}</a> </td>{% endif %}
+    {% if jobscoutids.ramcountscoutjob %}
+        <td>RAM count: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.ramcountscoutjob }}">{{ jobscoutids.ramcountscoutjob }}</a> </td>{% endif %}
+    {% if jobscoutids.iointensityscoutjob %}
+        <td>IO intensity: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.iointensityscoutjob }}">{{ jobscoutids.iointensityscoutjob }}</a> </td>{% endif %}
+</tr>
+</table>
+{% endif %}
+
 <a name="taskparams"></a>
 {% if taskparaml %}
 <table>
