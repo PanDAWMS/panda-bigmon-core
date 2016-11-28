@@ -133,7 +133,7 @@ Sort by
 	    <td>{{ job.jobmode }}</td>
 	    <td>{{ job.corecount }}</td>
 		<td {% if job.jobstatus == 'closed:toreassign' %} class='reassign_fill' {% else %} class='{{job.jobstatus}}_fill' {% endif %}>{{ job.jobstatus }}</td>
-	    <td>{{ job.substate }}</td>
+	    <td>{{ job.jobsubstatus }}</td>
 		<td><font size=-1>{{ job.creationtime|date:"Y-m-d H:i" }}</font></td>
 		<td><font size=-1>{{ job.waittime }}</font></td>
 		<td><font size=-1>{{ job.duration }}</font></td>
