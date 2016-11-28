@@ -53,7 +53,7 @@
 var ages = {{ ages|safe }};
 var plotageshistogram = {{ plotageshistogram }};
 if (plotageshistogram == 1){
-pandamonProdRunTaskSumPlotFunc(ages,"#sumPlot",'Task age histogram',40);}
+pandamonProdRunTaskSumPlotFunc(ages,"#sumPlot",'Task age histogram',40,'MC');}
 var neventsFStasksSum={{ neventsFStasksSum|safe }};
 var neventsAFIItasksSum={{ neventsAFIItasksSum|safe }};
 pandamonPieChartFunc(neventsFStasksSum,"#pieChartFS",'FS');

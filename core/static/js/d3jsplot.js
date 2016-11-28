@@ -215,12 +215,22 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
 
 }
 
-function pandamonProdRunTaskSumPlotFunc(values,divToShow,title,numberofbins){
+function pandamonProdRunTaskSumPlotFunc(values,divToShow,title,numberofbins,productiontype){
 
     var formatCount = d3.format(",.0f");
     var margin = {top: 30, right: 30, bottom: 40, left: 60},
         width = 550 - margin.left - margin.right,
         height = 300 - margin.top - margin.bottom;
+
+    var color = d3.scale.threshold();
+    if (productiontype == 'DPD') {
+        color.range(["#ffffff", "#248F24", "#ffff00", "#ff7f0e", "#d62728"]);
+        color.domain([0, 1.01, 2.01, 3.01]);
+        }
+    else {
+        color.range(["#116aff", "#116aff"]);
+        color.domain([0]);
+    }
 
     var lowerBand = d3.min(values);
     var upperBand = d3.max(values);
@@ -233,6 +243,12 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title,numberofbins){
     var xAxis = d3.svg.axis()
         .scale(x)
         .orient("bottom");
+
+    if (lowerBand == upperBand) {
+        numberofbins=2;
+        x.domain([lowerBand-1,upperBand+1]);
+        xAxis.ticks(1);
+    }
 
     var data = d3.layout.histogram()
         .bins(x.ticks(numberofbins))
@@ -266,7 +282,8 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title,numberofbins){
         .attr("width", width/ (x.ticks(numberofbins).length)-1)
         .attr("height", function (d) {
             return height - y(d.y);
-        });
+        })
+        .attr("fill", function(d) { return color(d.x+d.dx); });
 
     svg.append("g")
         .attr("class", "x axis")

@@ -145,9 +145,10 @@
             <script src="/static/js/d3jsplot.js"></script>
             <script>
                 var ages = {{ ages|safe }};
+                var productiontype = {{ productiontype | safe }};
                 var plotageshistogram = {{ plotageshistogram }};
                 if (plotageshistogram == 1) {
-                    pandamonProdRunTaskSumPlotFunc(ages, "#sumPlot", 'Task age histogram', 24);
+                    pandamonProdRunTaskSumPlotFunc(ages, "#sumPlot", 'Task age histogram', 24, productiontype);
                 }
                 {#var slots = {{ slots|safe }};#}
                 {#var gauges = [];#}

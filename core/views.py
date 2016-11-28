@@ -5744,7 +5744,7 @@ def runningProdTasks(request):
 
     if 'campaignstart' in request.session['requestParams']:
         tquery['campaign__startswith'] = request.session['requestParams']['campaignstart']
-
+    productionType = ''
     extraQueryString = ''
     if 'workinggroup' in request.session['requestParams']:
         workinggroupQuery = request.session['requestParams']['workinggroup']
@@ -5753,6 +5753,7 @@ def runningProdTasks(request):
                 extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
             else:
                 extraQueryString += ' workinggroup=\''+escapeInput(card[0:])+'\' OR '
+        productionType = 'DPD' if workinggroupQuery == 'GP_PHYS' else ''
 
     if 'processingtype' in request.session['requestParams']:
         val = escapeInput(request.session['requestParams']['processingtype'])
@@ -5912,6 +5913,7 @@ def runningProdTasks(request):
             'rjobs1coreTot': rjobs1coreTot,
             'rjobs8coreTot': rjobs8coreTot,
             'plotageshistogram': plotageshistogram,
+            'productiontype' : json.dumps(productionType),
         }
         ##self monitor
         endSelfMonitor(request)
