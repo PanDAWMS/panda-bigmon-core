@@ -1763,6 +1763,8 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     for item in standard_fields:
         if ((item + '__in') in query):
             plsql += " " + item.upper() + "=>'" + str(query[item+'__in'][0]) + "', "
+        if ((item + '__endswith') in query and item=='transformation'):
+            plsql += " " + item.upper() + "=>'" + str(query[item+'__endswith']) + "', "
         elif (item in query):
             plsql += " " + item.upper() + "=>'" + str(query[item]) + "', "
         else:
