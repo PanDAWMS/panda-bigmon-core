@@ -7953,7 +7953,7 @@ def fileInfo(request):
 
         for f in files:
             f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
-            if mrecsDict[f['datasetid']]:
+            if 'datasetid' in f and f['datasetid'] in mrecsDict and mrecsDict[f['datasetid']]:
                 f['datasetname'] = mrecsDict[f['datasetid']]
 
     if len(files) > 0:
