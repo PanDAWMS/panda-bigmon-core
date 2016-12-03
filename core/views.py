@@ -19,9 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.vary import vary_on_headers
 from django.utils.cache import patch_vary_headers
 from django.views.decorators.cache import never_cache
-
 import django.utils.cache as ucache
-
 from functools import wraps
 
 from django.utils import timezone
