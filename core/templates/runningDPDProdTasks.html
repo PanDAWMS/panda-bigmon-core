@@ -48,8 +48,23 @@
                 {#$(document).ready(function() {#}
                 {#createGauge("slots", "Slots");#}
                 {#gauges['slots'].redraw(slots);});#}
+                $(document).ready(function(){
+                    $('#tasklist-table tr td.age-color').each(function() {
+                        var age = $(this).text();
+                            if (age > 1 && age <= 2) {
+                                $(this).addClass('dpd_2days');
+                            }
+                            else if (age > 2 && age <= 3) {
+                                $(this).addClass('dpd_3days');
+                            }
+                            else if (age > 3) {
+                                $(this).addClass('dpd_ndays');
+                            }
+
+                    });
+                });
             </script>
-            <table>
+            <table id="tasklist-table">
                 <tr class='tablesection'>
                     <th colspan=20> {{ ntasks }} tasks</th>
                 </tr>
@@ -227,7 +242,7 @@
                         <td>{{ task.currentpriority }}</td>
                         <td>{{ task.ptag }}</td>
                         <td>{{ task.outputtypes }}</td>
-                        <td>{{ task.age }}</td>
+                        <td class="age-color" >{{ task.age }}</td>
                         <td><a href="{{ xurl }}corecount={{ task.corecount }}">{{ task.corecount }}</a></td>
                         <td>{{ task.cputime }}</td>
                     </tr>
