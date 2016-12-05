@@ -2964,7 +2964,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     logfile['site'] = logfilerec[0]['destinationse']
                     logfile['guid'] = logfilerec[0]['guid']
             logfile['scope'] = file['scope']
-        file['fsize'] = int(file['fsize'] / 1000000)
+        file['fsize'] = int(file['fsize'])
 
     if 'pilotid' in job and job['pilotid'] is not None and job['pilotid'].startswith('http'):
         stdout = job['pilotid'].split('|')[0]

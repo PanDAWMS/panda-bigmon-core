@@ -342,7 +342,7 @@ But if you want, you can check.
 </font>
 </td>
 <td> <font size=-1>{{ file.scope }}</font> </td>
-<td> {{ file.fsize }} </td>
+<td> {{ file.fsizemb}} </td>
 <td class='{{file.status}}'> {{ file.status }} </td>
 <td> {% if file.attemptnr %} {{ file.attemptnr }} ({{ file.maxattempt }}){% endif %} </td>
 <td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{file.datasetname}}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ file.datasetname }}</a>
