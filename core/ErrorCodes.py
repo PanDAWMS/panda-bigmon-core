@@ -259,7 +259,11 @@ class ErrorCodes:
         self.errorStages['piloterrorcode'][1212] = 'athena-during'
         self.errorCodes['piloterrorcode'][1220] = 'Job failed due to unknown reason (consult log file)'
         self.errorStages['piloterrorcode'][1220] = 'athena-end'
-        
+
+        self.errorCodes['piloterrorcode'][1187] = 'Payload metadata is not available'
+        #self.errorStages['piloterrorcode'][1187] = 'athena-end'
+
+
         self.errorCodes['exeerrorcode'][99] = 'Transformation error code mismatch'
         self.errorStages['exeerrorcode'][99] = 'athena-end'
         self.errorCodes['exeerrorcode'][100] = 'Transformation not found in run directory'
@@ -705,6 +709,7 @@ class ErrorCodes:
         self.errorCodes['transexitcode'][2101] = "MyProxyError 2101: voms attributes not specified"
         self.errorStages['transexitcode'][2101] = 'panda-start'
         self.errorCodes['transexitcode'][2102] = "MyProxyError 2102: user DN not specified"
+        self.errorStages['transexitcode'][2102] = 'panda-start'
         self.errorStages['transexitcode'][2102] = 'panda-start'
         self.errorCodes['transexitcode'][2103] = "MyProxyError 2103: pilot owner DN not specified"
         self.errorStages['transexitcode'][2103] = 'panda-start'
