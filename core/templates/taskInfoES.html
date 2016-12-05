@@ -94,11 +94,15 @@ function toggleDetailDisplay(className) {
 
 {% endif %}
 
+<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('nevents_plot');">Show number of events distribution plot</a>&emsp;
+
 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('d3splot');">Show/hide plots</a>&emsp;
 
 <a href="http://atlas-kibana.mwt2.org:5601/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))" target="_blank">  Corresponding dashboard in Kibana</a>&emsp;
 <p>
 
+
+{% if  maxpss|length > 0 %} <div class="nevents_plot" id="plot0" style="align:left;display:none;"></div><br> {% endif %}
 
 {% if  maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
 {% if  walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
@@ -112,6 +116,8 @@ function toggleDetailDisplay(className) {
 
 <script src="/static/js/d3jsplot.js"></script>
 <script>
+    var nevents = {{ nevents|safe }};
+    if (nevents.length > 0) {pandamonProdRunTaskSumPlotFunc(nevents, "#plot0", "Number of events histogram (finished non-merge jobs)", 40, 'ES');}
     var values1 = {{ maxpss|safe }};
     var values2 = {{ walltime|safe }};
     var sites1 = {{ sitepss|safe }};

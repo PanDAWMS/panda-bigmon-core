@@ -6191,9 +6191,9 @@ def taskInfo(request, jeditaskid=0):
                 'mode'] == 'nodrop': mode = 'nodrop'
 
 
-            jobsummary, eventssummary, jobScoutIDs, hs06sSum, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
+            jobsummary, eventssummary, jobScoutIDs, hs06sSum, nevents, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
                 query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge')
-            jobsummaryESMerge, eventssummaryESM, jobScoutIDsESM, hs06sSumESM, maxpssESM, walltimeESM, sitepssESM, sitewalltimeESM, maxpssfESM, walltimefESM, sitepssfESM, sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM, hs06sESM, hs06sfESM, walltimepereventESM = jobSummary2(
+            jobsummaryESMerge, eventssummaryESM, jobScoutIDsESM, hs06sSumESM, neventsESM, maxpssESM, walltimeESM, sitepssESM, sitewalltimeESM, maxpssfESM, walltimefESM, sitepssfESM, sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM, hs06sESM, hs06sfESM, walltimepereventESM = jobSummary2(
                 query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
             for state in eventservicestatelist:
                 eventstatus = {}
@@ -6228,9 +6228,9 @@ def taskInfo(request, jeditaskid=0):
             mode = 'drop'
             if 'mode' in request.session['requestParams']:
                 mode = request.session['requestParams']['mode']
-            jobsummary, eventssummary, jobScoutIDs, hs06sSum, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
+            jobsummary, eventssummary, jobScoutIDs, hs06sSum, nevents, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
                 query, exclude=exclude, mode=mode)
-            jobsummaryPMERGE, eventssummaryPM,jobScoutIDsPMERGE, hs06sSumPMERGE, maxpssPMERGE, walltimePMERGE, sitepssPMERGE, sitewalltimePMERGE, maxpssfPMERGE, walltimefPMERGE, sitepssfPMERGE, sitewalltimefPMERGE, maxpsspercorePMERGE, maxpssfpercorePMERGE, hs06sPMERGE, hs06sfPMERGE, walltimepereventPMERGE = jobSummary2(
+            jobsummaryPMERGE, eventssummaryPM,jobScoutIDsPMERGE, hs06sSumPMERGE, neventsPMERGE, maxpssPMERGE, walltimePMERGE, sitepssPMERGE, sitewalltimePMERGE, maxpssfPMERGE, walltimefPMERGE, sitepssfPMERGE, sitewalltimefPMERGE, maxpsspercorePMERGE, maxpssfpercorePMERGE, hs06sPMERGE, hs06sfPMERGE, walltimepereventPMERGE = jobSummary2(
                 query, exclude={}, mode=mode, processingtype='pmerge')
 
 
@@ -6486,6 +6486,7 @@ def taskInfo(request, jeditaskid=0):
             'showtaskprof': showtaskprof,
             'jobsummaryESMerge': jobsummaryESMerge,
             'jobsummaryPMERGE': jobsummaryPMERGE,
+            'nevents' : nevents,
             'maxpss': maxpss,
             'taskbrokerage': taskbrokerage,
             'walltime': walltime,
@@ -6657,6 +6658,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
         print 'filtering retries'
         jobs, droplist, droppedPMerge = dropRetrielsJobs(jobs, newquery['jeditaskid'], isReturnDroppedPMerge)
 
+    nevents = []
     maxpss = []
     maxpsspercore = []
     walltime = []
@@ -6678,6 +6680,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
                 maxpss.append(job['maxpss'] / 1024)
                 maxpsspercore.append(job['maxpss'] / 1024 / job['actualcorecount'])
                 sitepss.append(job['computingsite'])
+                nevents.append(job['nevents'])
             if job['jobstatus'] == 'failed':
                 maxpssf.append(job['maxpss'] / 1024)
                 maxpssfpercore.append(job['maxpss'] / 1024 / job['actualcorecount'])
@@ -6752,7 +6755,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
             for state in eventsdict:
                 essummary[eventservicestatelist[state['status']]]=state['count']
 
-    return jobstates, essummary, jobScoutIDs, hs06sSum, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent
+    return jobstates, essummary, jobScoutIDs, hs06sSum, nevents, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent
 
 
 def jobStateSummary(jobs):

@@ -218,7 +218,7 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
 function pandamonProdRunTaskSumPlotFunc(values,divToShow,title,numberofbins,productiontype){
 
     var formatCount = d3.format(",.0f");
-    var margin = {top: 30, right: 30, bottom: 40, left: 60},
+    var margin = {top: 30, right: 30, bottom: 50, left: 70},
         width = 550 - margin.left - margin.right,
         height = 300 - margin.top - margin.bottom;
 
@@ -231,7 +231,11 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title,numberofbins,prod
         color.range(["#116aff", "#116aff"]);
         color.domain([0]);
     }
-
+	var axislabels = {'x' : 'Time, days', 'y': 'N tasks'};
+    if ( productiontype = 'ES') {
+		axislabels.x = 'Number of events';
+		axislabels.y = 'N jobs';
+	}
     var lowerBand = d3.min(values);
     var upperBand = d3.max(values);
 
@@ -292,8 +296,8 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title,numberofbins,prod
 	svg.append("g")
     	.attr("transform", "translate(" + (width/2) + " ," + (height + margin.bottom-5) + ")")
         .append("text")
-        .style("text-anchor", "middle")
-        .text("Time, days");
+        .attr("class", "axislabel")
+        .text(axislabels.x);
 
     svg.append("g")
         .attr("class", "y axis")
@@ -304,8 +308,8 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title,numberofbins,prod
         .attr("y", 0 - margin.left)
         .attr("x",0 - (height / 2))
         .attr("dy", "1em")
-        .style("text-anchor", "middle")
-        .text("N tasks");
+        .attr("class", "axislabel")
+        .text(axislabels.y);
 
     svg.append("g")
         .attr("transform", "translate(" + (width / 2) + ", -10)")
@@ -314,7 +318,6 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title,numberofbins,prod
         .text(title);
 
 }
-
 function createGauge(divToShow, label) {
     var config =
 			{
