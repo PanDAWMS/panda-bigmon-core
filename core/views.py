@@ -19,9 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.vary import vary_on_headers
 from django.utils.cache import patch_vary_headers
 from django.views.decorators.cache import never_cache
-
 import django.utils.cache as ucache
-
 from functools import wraps
 
 from django.utils import timezone
@@ -1763,6 +1761,8 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     for item in standard_fields:
         if ((item + '__in') in query):
             plsql += " " + item.upper() + "=>'" + str(query[item+'__in'][0]) + "', "
+        if ((item + '__endswith') in query and item=='transformation'):
+            plsql += " " + item.upper() + "=>'" + str(query[item+'__endswith']) + "', "
         elif (item in query):
             plsql += " " + item.upper() + "=>'" + str(query[item]) + "', "
         else:
@@ -7954,7 +7954,7 @@ def fileInfo(request):
 
         for f in files:
             f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
-            if mrecsDict[f['datasetid']]:
+            if 'datasetid' in f and f['datasetid'] in mrecsDict and mrecsDict[f['datasetid']]:
                 f['datasetname'] = mrecsDict[f['datasetid']]
 
     if len(files) > 0:

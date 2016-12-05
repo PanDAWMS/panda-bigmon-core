@@ -18,7 +18,6 @@ def get_version_base__release_type__provides():
     provides = config.get("bdist_rpm", "provides")
     return (version_base, release_type, provides,)
 
-
 def get_git_version():
     """
         get version of this git commit
