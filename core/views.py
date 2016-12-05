@@ -66,8 +66,11 @@ from settings.local import dbaccess
 import string as strm
 from django.views.decorators.cache import cache_page
 
+
 import TaskProgressPlot
 import ErrorCodes
+
+import GlobalShares
 
 from threading import Thread
 
@@ -8910,3 +8913,168 @@ def endSelfMonitor(request):
             description=' '
         )
         reqs.save()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@cache_page(60 * 20)
+def globalshares(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+    setupView(request, hours=180 * 24, limit=9999999)
+    gs = __get_hs_leave_distribution()
+
+
+    del request.session['TFIRST']
+    del request.session['TLAST']
+    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+                'json' not in request.session['requestParams'])):
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'globalshares': gs,
+            'xurl': extensibleURL(request),
+        }
+        ##self monitor
+        endSelfMonitor(request)
+        response = render_to_response('globalshares.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+    else:
+        return HttpResponse(json.dumps(gs), mimetype='text/html')
+
+
+# taken from https://raw.githubusercontent.com/PanDAWMS/panda-server/master/pandaserver/taskbuffer/OraDBProxy.py
+# retrieve global shares
+def get_shares(parents=''):
+    comment = ' /* DBProxy.get_shares */'
+    methodName = comment.split(' ')[-2].split('.')[-1]
+
+    sql = """
+           SELECT NAME, VALUE, PARENT, PRODSOURCELABEL, WORKINGGROUP, CAMPAIGN, PROCESSINGTYPE
+           FROM ATLAS_PANDA.GLOBAL_SHARES
+           """
+    var_map = None
+
+    if parents == '':
+        # Get all shares
+        pass
+    elif parents is None:
+        # Get top level shares
+        sql += "WHERE parent IS NULL"
+
+    elif type(parents) == unicode:
+        # Get the children of a specific share
+        var_map = {':parent': parents}
+        sql += "WHERE parent = :parent"
+
+    elif type(parents) in (list, tuple):
+        # Get the children of a list of shares
+        i = 0
+        var_map = {}
+        for parent in parents:
+            key = ':parent{0}'.format(i)
+            var_map[key] = parent
+            i += 1
+
+        parentBindings = ','.join(':parent{0}'.format(i) for i in xrange(len(parents)))
+        sql += "WHERE parent IN ({0})".format(parentBindings)
+
+    cur = connection.cursor()
+    cur.execute(sql, var_map)
+    resList = cur.fetchall()
+    cur.close()
+
+    return resList
+
+# Taken from the Panda Server https://github.com/PanDAWMS/panda-server/blob/master/pandaserver/taskbuffer/OraDBProxy.py#L18378 with minor modifications
+def __load_branch(share):
+    """
+    Recursively load a branch
+    """
+    node = GlobalShares.Share(share.name, share.value, share.parent, share.prodsourcelabel,
+                              share.workinggroup, share.campaign, share.processingtype)
+
+    children = get_shares(parents=share.name)
+    if not children:
+        return node
+
+    for (name, value, parent, prodsourcelabel, workinggroup, campaign, processingtype) in children:
+        child = GlobalShares.Share(name, value, parent, prodsourcelabel, workinggroup, campaign, processingtype)
+        node.children.append(__load_branch(child))
+
+    return node
+
+
+# Taken from the Panda Server https://github.com/PanDAWMS/panda-server/blob/master/pandaserver/taskbuffer/OraDBProxy.py#L18378 with minor modifications
+def __get_hs_leave_distribution():
+    """
+    Get the current HS06 distribution for running and queued jobs
+    """
+
+    EXECUTING = 'executing'
+    QUEUED = 'queued'
+    PLEDGED = 'pledged'
+    IGNORE = 'ignore'
+
+    comment = ' /* DBProxy.get_hs_leave_distribution */'
+
+    tree = GlobalShares.Share('root', 100, None, None, None, None, None)
+    shares_top_level = get_shares(parents=None)
+    for (name, value, parent, prodsourcelabel, workinggroup, campaign, processingtype) in shares_top_level:
+        share = GlobalShares.Share(name, value, parent, prodsourcelabel, workinggroup, campaign, processingtype)
+        tree.children.append(__load_branch(share))
+
+    tree.normalize()
+    leave_shares = tree.get_leaves()
+
+    sql_hs_distribution = "SELECT gshare, jobstatus_grouped, SUM(HS) FROM (SELECT gshare, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing' ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP BY gshare, jobstatus_grouped"
+
+    cur = connection.cursor()
+    cur.execute(sql_hs_distribution)
+    hs_distribution_raw = cur.fetchall()
+    cur.close()
+
+    # get the hs distribution data into a dictionary structure
+    hs_distribution_dict = {}
+    hs_queued_total = 0
+    hs_executing_total = 0
+    hs_ignore_total = 0
+    for hs_entry in hs_distribution_raw:
+        gshare, status_group, hs = hs_entry
+        hs_distribution_dict.setdefault(gshare, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0})
+        hs_distribution_dict[gshare][status_group] = hs
+        # calculate totals
+        if status_group == QUEUED:
+            hs_queued_total += hs
+        elif status_group == EXECUTING:
+            hs_executing_total += hs
+        else:
+            hs_ignore_total += hs
+
+    # Calculate the ideal HS06 distribution based on shares.
+
+    import decimal
+    for share_node in leave_shares:
+        share_name, share_value = share_node.name, share_node.value
+        hs_pledged_share = hs_executing_total * decimal.Decimal(str(share_value)) / decimal.Decimal(str(100.0))
+
+        hs_distribution_dict.setdefault(share_name, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0})
+        # Pledged HS according to global share definitions
+        hs_distribution_dict[share_name]['pledged'] = hs_pledged_share
+    return hs_distribution_dict
+

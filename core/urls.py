@@ -78,6 +78,7 @@ urlpatterns = patterns('',
     url(r'^taskprofileplot/$', coremon_views.taskprofileplot, name='taskprofileplot'),
     url(r'^taskesprofileplot/$', coremon_views.taskESprofileplot, name='taskesprofileplot'),
     url(r'^eventsinfo/$', coremon_views.eventsInfo, name='eventsInfo'),
+    url(r'^globalshares/$', coremon_views.globalshares, name='globalshares'),
 
                        #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
     ### data product catalog prototyping                                                                                                                                                         

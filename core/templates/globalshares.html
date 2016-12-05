@@ -1,0 +1,30 @@
+{% extends "_base_core.html" %}
+
+{% load url from future %}
+{% load staticfiles %}
+{% block page_title %} {{ viewParams.MON_VO }} Global Shares{% endblock %}
+{% block subtitle %}Global Shares{% endblock %}
+
+{% block body %}
+<table>
+    <tr class='tablesection'>
+        <th>Share</th>
+        <th>Actual HS06</th>
+        <th>Target HS06</th>
+        <th>Delta</th>
+        <th>Queued</th>
+    </tr>
+
+    {% for key, values in globalshares.items %}
+            <tr>
+                <td>{{key}}</td>
+                <td>{% if values.executing %}{{ values.executing|floatformat:2 }} {% endif %}</td>
+                <td>{% if values.pledged %}{{ values.pledged|floatformat:2 }} {% endif %}</td>
+                <td>-</td>
+                <td>{% if values.queued %}{{ values.queued|floatformat:2 }} {% endif %}</td>
+
+            </tr>
+    {% endfor %}
+</table>
+{% endblock %}
+
