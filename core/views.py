@@ -1591,31 +1591,32 @@ def helpPage(request):
 def errorInfo(job, nchars=300, mode='html'):
     errtxt = ''
     err1 = ''
-    if int(job['brokerageerrorcode']) != 0:
+    desc, codesDescribed = getErrorDescription(job, provideProcessedCodes=True)
+
+    if int(job['brokerageerrorcode']) != 0 and int(job['brokerageerrorcode']) not in codesDescribed:
         errtxt += 'Brokerage error %s: %s <br>' % (job['brokerageerrorcode'], job['brokerageerrordiag'])
         if err1 == '': err1 = "Broker: %s" % job['brokerageerrordiag']
-    if int(job['ddmerrorcode']) != 0:
+    if int(job['ddmerrorcode']) != 0 and int(job['ddmerrorcode']) not in codesDescribed:
         errtxt += 'DDM error %s: %s <br>' % (job['ddmerrorcode'], job['ddmerrordiag'])
         if err1 == '': err1 = "DDM: %s" % job['ddmerrordiag']
-    if int(job['exeerrorcode']) != 0:
+    if int(job['exeerrorcode']) != 0 and int(job['exeerrorcode']) not in codesDescribed:
         errtxt += 'Executable error %s: %s <br>' % (job['exeerrorcode'], job['exeerrordiag'])
         if err1 == '': err1 = "Exe: %s" % job['exeerrordiag']
-    if int(job['jobdispatchererrorcode']) != 0:
+    if int(job['jobdispatchererrorcode']) != 0 and int(job['jobdispatchererrorcode']) not in codesDescribed:
         errtxt += 'Dispatcher error %s: %s <br>' % (job['jobdispatchererrorcode'], job['jobdispatchererrordiag'])
         if err1 == '': err1 = "Dispatcher: %s" % job['jobdispatchererrordiag']
-    if int(job['piloterrorcode']) != 0:
+    if int(job['piloterrorcode']) != 0 and int(job['piloterrorcode']) not in codesDescribed:
         errtxt += 'Pilot error %s: %s <br>' % (job['piloterrorcode'], job['piloterrordiag'])
         if err1 == '': err1 = "Pilot: %s" % job['piloterrordiag']
-    if int(job['superrorcode']) != 0:
+    if int(job['superrorcode']) != 0 and int(job['superrorcode']) not in codesDescribed:
         errtxt += 'Sup error %s: %s <br>' % (job['superrorcode'], job['superrordiag'])
         if err1 == '': err1 = job['superrordiag']
-    if int(job['taskbuffererrorcode']) != 0:
+    if int(job['taskbuffererrorcode']) != 0 and int(job['taskbuffererrorcode']) not in codesDescribed:
         errtxt += 'Task buffer error %s: %s <br>' % (job['taskbuffererrorcode'], job['taskbuffererrordiag'])
         if err1 == '': err1 = 'Taskbuffer: %s' % job['taskbuffererrordiag']
-    if job['transexitcode'] != '' and job['transexitcode'] is not None and int(job['transexitcode']) > 0:
+    if job['transexitcode'] != '' and job['transexitcode'] is not None and int(job['transexitcode']) > 0 and int(job['transexitcode']) not in codesDescribed:
         errtxt += 'Trf exit code %s.' % job['transexitcode']
         if err1 == '': err1 = 'Trf exit code %s' % job['transexitcode']
-    desc = getErrorDescription(job)
     if len(desc) > 0:
         errtxt += '%s<br>' % desc
         if err1 == '': err1 = getErrorDescription(job, mode='string')
@@ -8320,12 +8321,17 @@ def taskNotUpdated(request, query, state='submitted', hoursSinceUpdate=36, value
         return tasks
 
 
-def getErrorDescription(job, mode='html'):
+def getErrorDescription(job, mode='html', provideProcessedCodes = False):
     txt = ''
+    codesDescribed = []
+
     if 'metastruct' in job and job['metastruct']['exitCode'] != 0:
         meta = job['metastruct']
         txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])
-        return txt
+        if provideProcessedCodes:
+            return txt, codesDescribed
+        else:
+            return txt
 
     for errcode in errorCodes.keys():
         errval = 0
@@ -8336,6 +8342,7 @@ def getErrorDescription(job, mode='html'):
                     errval = int(errval)
                 except:
                     pass  # errval = -1
+                codesDescribed.append(errval)
                 errdiag = errcode.replace('errorcode', 'errordiag')
                 if errcode.find('errorcode') > 0:
                     diagtxt = job[errdiag]
@@ -8350,10 +8357,13 @@ def getErrorDescription(job, mode='html'):
                 errname = errcode.replace('errorcode', '')
                 errname = errname.replace('exitcode', '')
                 if mode == 'html':
-                    txt += " <b>%s:</b> %s" % (errname, desc)
+                    txt += " <b>%s, %d:</b> %s" % (errname, errval, desc)
                 else:
-                    txt = "%s: %s" % (errname, desc)
-    return txt
+                    txt = "%s, %d: %s" % (errname, errval, desc)
+    if provideProcessedCodes:
+        return txt, codesDescribed
+    else:
+        return txt
 
 
 def getPilotCounts(view):
