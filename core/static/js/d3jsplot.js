@@ -232,7 +232,7 @@ function pandamonProdRunTaskSumPlotFunc(values,divToShow,title,numberofbins,prod
         color.domain([0]);
     }
 	var axislabels = {'x' : 'Time, days', 'y': 'N tasks'};
-    if ( productiontype = 'ES') {
+    if ( productiontype == 'ES') {
 		axislabels.x = 'Number of events';
 		axislabels.y = 'N jobs';
 	}
