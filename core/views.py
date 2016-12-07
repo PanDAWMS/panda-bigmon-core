@@ -8925,28 +8925,17 @@ def endSelfMonitor(request):
         reqs.save()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @cache_page(60 * 20)
 def globalshares(request):
     valid, response = initRequest(request)
     if not valid: return response
     setupView(request, hours=180 * 24, limit=9999999)
     gs = __get_hs_leave_distribution()
+    gsPlotData = {}#{'Upgrade':130049 , 'Reprocessing default':568841, 'Data Derivations': 202962, 'Event Index': 143 }
 
+    for shareName, shareValue in gs.iteritems():
+        shareValue['delta'] = shareValue['executing'] - shareValue['pledged']
+        gsPlotData[str(shareName)] = int(shareValue['executing'])
 
     del request.session['TFIRST']
     del request.session['TLAST']
@@ -8958,6 +8947,7 @@ def globalshares(request):
             'requestParams': request.session['requestParams'],
             'globalshares': gs,
             'xurl': extensibleURL(request),
+            'gsPlotData':gsPlotData
         }
         ##self monitor
         endSelfMonitor(request)

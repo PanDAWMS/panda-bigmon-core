@@ -886,3 +886,73 @@ var legend = svg.selectAll(".legend")
                 return d;
             });
 }
+
+function globalSharesPieChartFunc(values,divToShow,title){
+
+var data = $.map(values, function(value, key) { if (value>0) {return value/1000000} });
+var labels = $.map(values, function(value, key) { if (value>0) {return key} });
+var neventstot = 0;
+for (var i = 0; i < data.length; i++) { neventstot += data[i] << 0;}
+var w = 300,
+    h = 300,
+    r = Math.min(w, h) / 2,
+    labelr = r + 10,
+    color = d3.scale.ordinal().range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00", "#ff7f0e", "#2ca02c", "#1f77b4", "#9467bd"]).domain(['Upgrade' , 'Reprocessing default', 'Data Derivations', 'Event Index', 'MC production', 'MC Derivations', 'Analysis', 'HLT Reprocessing', 'Heavy Ion', 'Test', 'Group production', 'Validation']),
+    donut = d3.layout.pie(),
+    arc = d3.svg.arc().innerRadius(r * .6).outerRadius(r);
+
+var vis = d3.select(divToShow)
+  .append("svg:svg")
+    .data([data])
+    .attr("width", w + 300)
+    .attr("height", h + 100).attr('transform', 'translate(' + 80 +  ',' + 0 +')');
+
+var arcs = vis.selectAll("g.arc")
+    .data(donut.value(function(d) { return d}))
+  .enter().append("svg:g")
+    .attr("class", "arc")
+    .attr("transform", "translate(" + (r + 50) + "," + (r + 50) + ")");
+
+var getAngle = function (d) {
+    return (180 / Math.PI * (d.startAngle + d.endAngle) / 2 - 90);
+};
+
+/*
+arcs.append("text")
+    .attr("transform", function(d) {
+            return "translate(" + pos.centroid(d) + ") " +
+                    "rotate(" + getAngle(d) + ")"; })
+    .attr("dy", 5)
+    .style("text-anchor", "start")
+    .text(function(d) { return d.data.label; });
+*/
+
+arcs.append("svg:path")
+    .attr("fill", function(d, i) { return color(labels[i]); })
+    .attr("d", arc);
+
+arcs.append("text")
+    .attr("transform", function(d) {
+        var c = arc.centroid(d),
+            x = c[0],
+            y = c[1],
+            // pythagorean theorem for hypotenuse
+            h = Math.sqrt(x*x + y*y);
+        return "translate(" + (x/h * labelr) +  ',' +
+           (y/h * labelr) +  ")" /*+ "rotate(" + getAngle(d) + ")"*/;
+    })
+    .attr("dy", ".35em")
+    .attr("text-anchor", function(d) {
+        // are we past the center?
+        return (d.endAngle + d.startAngle)/2 > Math.PI ?
+            "end" : "start";
+    })
+    .text(function(d, i) { return labels[i]; });
+
+vis.append("g")
+        .attr("transform", "translate(" + (w / 2 +  50) + "," + (w / 2 +  40) + ")")
+        .append("text")
+        .attr("class", "title")
+        .text(title);
+}
+

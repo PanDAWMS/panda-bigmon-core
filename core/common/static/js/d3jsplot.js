@@ -566,3 +566,59 @@ vis.append("g")
         .attr("class", "title")
         .text(neventstot+'M events ');
 }
+
+function globalSharesPieChartFunc(values,divToShow,title){
+
+var data = $.map(values, function(value, key) { if (value>0) {return value/1000000} });
+var labels = $.map(values, function(value, key) { if (value>0) {return key} });
+var neventstot = 0;
+for (var i = 0; i < data.length; i++) { neventstot += data[i] << 0;}
+var w = 250,
+    h = 250,
+    r = Math.min(w, h) / 2,
+    labelr = r + 10,
+    color = d3.scale.ordinal().range(["#ff7f0e", "#2ca02c", "#1f77b4", "#9467bd"]).domain(['evgen' , 'pile', 'simul', 'recon']),
+    donut = d3.layout.pie(),
+    arc = d3.svg.arc().innerRadius(r * .6).outerRadius(r);
+
+var vis = d3.select(divToShow)
+  .append("svg:svg")
+    .data([data])
+    .attr("width", w + 100)
+    .attr("height", h + 100);
+
+var arcs = vis.selectAll("g.arc")
+    .data(donut.value(function(d) { return d}))
+  .enter().append("svg:g")
+    .attr("class", "arc")
+    .attr("transform", "translate(" + (r + 50) + "," + (r + 50) + ")");
+
+arcs.append("svg:path")
+    .attr("fill", function(d, i) { return color(labels[i]); })
+    .attr("d", arc);
+
+arcs.append("text")
+    .attr("transform", function(d) {
+        var c = arc.centroid(d),
+            x = c[0],
+            y = c[1],
+            // pythagorean theorem for hypotenuse
+            h = Math.sqrt(x*x + y*y);
+        return "translate(" + (x/h * labelr) +  ',' +
+           (y/h * labelr) +  ")";
+    })
+    .attr("dy", ".35em")
+    .attr("text-anchor", function(d) {
+        // are we past the center?
+        return (d.endAngle + d.startAngle)/2 > Math.PI ?
+            "end" : "start";
+    })
+    .text(function(d, i) { return labels[i]; });
+
+vis.append("g")
+        .attr("transform", "translate(" + (w / 2 +  50) + "," + (w / 2 +  40) + ")")
+        .append("text")
+        .attr("class", "title")
+        .text(title);
+}
+
