@@ -503,7 +503,7 @@ class JediTaskparams(models.Model):
     class Meta:
         db_table = u'jedi_taskparams'
 
-class JediTasks(models.Model):
+class JediTasksBase(models.Model):
     jeditaskid = models.BigIntegerField(primary_key=True, db_column='JEDITASKID')
     taskname = models.CharField(max_length=384, db_column='TASKNAME', blank=True)
     status = models.CharField(max_length=192, db_column='STATUS')
@@ -562,10 +562,16 @@ class JediTasks(models.Model):
     cpuefficiency = models.IntegerField(null=True, db_column='cpuefficiency', blank=True)
     nucleus = models.CharField(max_length=72, db_column='NUCLEUS', blank=True)
     ttcrequested = models.DateTimeField(null=True, db_column='TTCREQUESTED', blank=True)
+    class Meta:
+        abstract = True
 
+class JediTasks(JediTasksBase):
     class Meta:
         db_table = u'jedi_tasks'
 
+class JediTasksOrdered(JediTasksBase):
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."JEDI_TASKS_ORDERED"'
 
 class RunningMCProductionTasks(models.Model):
     campaign = models.CharField(max_length=72, db_column='CAMPAIGN', blank=True)

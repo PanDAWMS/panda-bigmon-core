@@ -50,6 +50,7 @@ from core.common.models import Incidents
 from core.common.models import Pandalog
 from core.common.models import JediJobRetryHistory
 from core.common.models import JediTasks
+from core.common.models import JediTasksOrdered
 from core.common.models import GetEventsForTask
 from core.common.models import JediTaskparams
 from core.common.models import JediEvents
@@ -5231,12 +5232,11 @@ def taskList(request):
             request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
         'eventservice'] == '1'): eventservice = True
     if eventservice: hours = 7 * 24
-    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task',
-                                                           wildCardExt=True)
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     if 'statenotupdated' in request.session['requestParams']:
         tasks = taskNotUpdated(request, query, wildCardExtension)
     else:
-        tasks = JediTasks.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
+        tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
     tasks = cleanTaskList(request, tasks)
     ntasks = len(tasks)
     nmax = ntasks
