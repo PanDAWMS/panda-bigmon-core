@@ -1899,7 +1899,7 @@ def jobListPDiv(request, mode=None, param=None):
     jobsToList = set()
     njobs = 0
     for shkey in shkeys:
-        if shkey != 'PANDAID' and shkey != 'ErrorCode':
+        if not shkey in ['PANDAID', 'ErrorCode']:
             # check this condition
             entry = {}
             entry['field'] = shkey
@@ -1913,6 +1913,7 @@ def jobListPDiv(request, mode=None, param=None):
                 entrlist.append(subentry)
             entry['list'] = entrlist
             sumd.append(entry)
+
         elif shkey == 'PANDAID':
             for subshkey in summaryhash[shkey]:
                 jobsToList.add(subshkey)
