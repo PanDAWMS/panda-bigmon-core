@@ -5221,6 +5221,8 @@ def taskList(request):
         limit = int(request.session['requestParams']['limit'])
     else:
         limit = 1000
+        if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'pctfailed':
+            limit = 50000
 
     if not valid: return response
     if 'tasktype' in request.session['requestParams'] and request.session['requestParams']['tasktype'].startswith(
