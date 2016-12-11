@@ -889,70 +889,97 @@ var legend = svg.selectAll(".legend")
 
 function globalSharesPieChartFunc(values,divToShow,title){
 
-var data = $.map(values, function(value, key) { if (value>0) {return value/1000000} });
+var formatDecimal = d3.format(",.2f"),
+	formatPercent = d3.format(",.1%");
+var data = $.map(values, function(value, key) { if (value>0) {return value} });
 var labels = $.map(values, function(value, key) { if (value>0) {return key} });
-var neventstot = 0;
-for (var i = 0; i < data.length; i++) { neventstot += data[i] << 0;}
-var w = 300,
-    h = 300,
+var tot = 0;
+for (var i = 0; i < data.length; i++) { tot += data[i] << 0;}
+var margin = {top: 30, right: 170, bottom: 30, left: 30},
+    w = 600 - margin.left - margin.right,
+    h = 400 - margin.top - margin.bottom,
     r = Math.min(w, h) / 2,
-    labelr = r + 10,
-    color = d3.scale.ordinal().range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00", "#ff7f0e", "#2ca02c", "#1f77b4", "#9467bd"]).domain(['Upgrade' , 'Reprocessing default', 'Data Derivations', 'Event Index', 'MC production', 'MC Derivations', 'Analysis', 'HLT Reprocessing', 'Heavy Ion', 'Test', 'Group production', 'Validation']),
-    donut = d3.layout.pie(),
-    arc = d3.svg.arc().innerRadius(r * .6).outerRadius(r);
+    color = d3.scale.category20()
+		.domain(['Upgrade' , 'Reprocessing default', 'Data Derivations', 'Event Index', 'MC production', 'MC Derivations', 'Analysis', 'HLT Reprocessing', 'Heavy Ion', 'Test', 'Group production', 'Validation']);
 
-var vis = d3.select(divToShow)
-  .append("svg:svg")
-    .data([data])
-    .attr("width", w + 300)
-    .attr("height", h + 100).attr('transform', 'translate(' + 80 +  ',' + 0 +')');
+var svg = d3.select(divToShow);
+var vis = svg
+	.data([data])
+  .append("svg")
+    .attr("width", w + margin.left + margin.right )
+    .attr("height", h + margin.top + margin.bottom )
+	.append("g")
+	.attr("transform", "translate(" + (r + margin.left) + "," + (r + margin.top) + ")");
 
-var arcs = vis.selectAll("g.arc")
+var donut = d3.layout.pie();
+var arc = d3.svg.arc()
+		.innerRadius(r * .6)
+		.outerRadius(r);
+
+var tooltip = svg
+    .append("div")
+	.attr("class","tooltippiechart")
+	.style('opacity', 1);
+var tooltiplabel = tooltip.append('div')
+	.attr('class','tlabel')
+	.text('Total: ' + formatDecimal(tot));
+var tooltipcount = tooltip.append('div')
+	.attr('class','tcount');
+var tooltippercent = tooltip.append('div')
+	.attr('class','tpercent');
+
+var arcs = vis.selectAll("path")
     .data(donut.value(function(d) { return d}))
-  .enter().append("svg:g")
-    .attr("class", "arc")
-    .attr("transform", "translate(" + (r + 50) + "," + (r + 50) + ")");
-
-var getAngle = function (d) {
-    return (180 / Math.PI * (d.startAngle + d.endAngle) / 2 - 90);
-};
-
-/*
-arcs.append("text")
-    .attr("transform", function(d) {
-            return "translate(" + pos.centroid(d) + ") " +
-                    "rotate(" + getAngle(d) + ")"; })
-    .attr("dy", 5)
-    .style("text-anchor", "start")
-    .text(function(d) { return d.data.label; });
-*/
-
-arcs.append("svg:path")
-    .attr("fill", function(d, i) { return color(labels[i]); })
-    .attr("d", arc);
-
-arcs.append("text")
-    .attr("transform", function(d) {
-        var c = arc.centroid(d),
-            x = c[0],
-            y = c[1],
-            // pythagorean theorem for hypotenuse
-            h = Math.sqrt(x*x + y*y);
-        return "translate(" + (x/h * labelr) +  ',' +
-           (y/h * labelr) +  ")" /*+ "rotate(" + getAngle(d) + ")"*/;
-    })
-    .attr("dy", ".35em")
-    .attr("text-anchor", function(d) {
-        // are we past the center?
-        return (d.endAngle + d.startAngle)/2 > Math.PI ?
-            "end" : "start";
-    })
-    .text(function(d, i) { return labels[i]; });
+  	.enter()
+	.append("path")
+		.attr("d", arc)
+		.attr("class", "path")
+		.attr("fill", function(d, i) { return color(labels[i]); })
+		.on("mouseover", function(d,i){
+			d3.select(this).attr({"stroke":d3.rgb(color).darker(),'stroke-width':1});
+			// tooltip.text(labels[i]);
+			tooltiplabel.text(labels[i]);
+			tooltipcount.text(formatDecimal(d.value));
+			tooltippercent.text(formatPercent(d.value/tot));
+			})
+		.on("mouseout", function(){
+			d3.select(this).attr({"stroke":d3.rgb(color).darker(),'stroke-width':0});
+			tooltiplabel.text('Total: ' + formatDecimal(tot));
+			tooltipcount.text('');
+			tooltippercent.text('');
+			});
 
 vis.append("g")
-        .attr("transform", "translate(" + (w / 2 +  50) + "," + (w / 2 +  40) + ")")
+        .attr("transform", "translate(" + ( 0 ) + "," + ( -50 ) + ")")
         .append("text")
         .attr("class", "title")
         .text(title);
+
+    var squareside = 15;
+    var legend = vis.selectAll(".legend")
+            .data(color.domain().slice())
+          .enter().append("g")
+            .attr("class", "legendoutpie")
+            .attr("transform", function(d, i) {
+                maxLegendWidth = 200;
+                maxLegendHeight = Math.floor(i) * 20;
+                return "translate(" + (r + margin.left) + ", " + (- r/2 - margin.top  + maxLegendHeight) + ")";
+            });
+
+    legend.append("rect")
+            .attr("x", 0)
+            .attr("width", squareside)
+            .attr("height", squareside)
+            .style("fill", color)
+            .style({"stroke":d3.rgb(color).darker(),'stroke-width':0.4});
+
+    legend.append("text")
+            .attr("x", squareside+5)
+            .attr("y", 12)
+            .text(function(d) {
+                return d;
+            });
+
+
 }
 
