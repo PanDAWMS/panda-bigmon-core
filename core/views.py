@@ -1193,8 +1193,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         new_cur.executemany(query, executionData)
         connection.commit()
 
-        new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM (SELECT /*+ INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev"
-                        " JEDI_EVENTS_PK) */ PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY = %i AND  PANDAID = ID) t1 GROUP BY STATUS" % (tmpTableName, transactionKey))
+        new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM (SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */ PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY = %i AND  PANDAID = ID) t1 GROUP BY STATUS" % (tmpTableName, transactionKey))
 
         evtable = dictfetchall(new_cur)
         new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
@@ -5309,7 +5308,7 @@ def taskList(request):
         connection.commit()
         new_cur.execute(
             """
-            SELECT /*+ INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID
+            SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID
             """ % (tmpTableName, transactionKey)
         )
         evtable = dictfetchall(new_cur)
@@ -6744,7 +6743,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
 
             new_cur.execute(
                 """
-                SELECT /*+ INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS EVCOUNT, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID GROUP BY STATUS
+                SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS EVCOUNT, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID GROUP BY STATUS
                 """ % (tmpTableName, transactionKey)
             )
 
