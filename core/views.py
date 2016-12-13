@@ -6690,7 +6690,8 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
                 nevents.append(job['nevents'])
             if job['jobstatus'] == 'failed':
                 maxpssf.append(job['maxpss'] / 1024)
-                maxpssfpercore.append(job['maxpss'] / 1024 / job['actualcorecount'])
+                if job['actualcorecount'] and job['actualcorecount']>0:
+                    maxpssfpercore.append(job['maxpss'] / 1024 / job['actualcorecount'])
                 sitepssf.append(job['computingsite'])
         if 'duration' in job and job['duration']:
             if job['jobstatus'] == 'finished':
