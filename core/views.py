@@ -6420,7 +6420,6 @@ def taskInfo(request, jeditaskid=0):
         taskrec['currenttotevhs06'] = int(hs06sSum['total'])
 
         taskrec['maxpssave'] = maxpssave
-
         if 'creationdate' in taskrec:
             taskrec['kibanatimefrom'] = taskrec['creationdate'].strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
