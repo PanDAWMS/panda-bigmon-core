@@ -7015,13 +7015,16 @@ def errorSummary(request):
 
     if jobtype == '':
         hours = 3
-        limit = 6000
+        limit = 100000
     elif jobtype.startswith('anal'):
         hours = 6
-        limit = 6000
+        limit = 100000
+    elif 'JOB_LIMIT' in request.session:
+        hours = 6
+        limit = request.session['JOB_LIMIT']
     else:
         hours = 12
-        limit = 6000
+        limit = 100000
 
     if 'hours' in request.session['requestParams']:
         hours = int(request.session['requestParams']['hours'])
@@ -7066,24 +7069,24 @@ def errorSummary(request):
 
     if testjobs:
         jobs.extend(
-            Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
+            Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
                 *values))
         jobs.extend(
-            Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
+            Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
                 *values))
 
     jobs.extend(
-        Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
+        Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
             *values))
     jobs.extend(
-        Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
+        Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
             *values))
 
     if (((datetime.now() - datetime.strptime(query['modificationtime__range'][0], "%Y-%m-%d %H:%M:%S")).days > 1) or \
                 ((datetime.now() - datetime.strptime(query['modificationtime__range'][1],
                                                      "%Y-%m-%d %H:%M:%S")).days > 1)):
         jobs.extend(
-            Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
+            Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
                 *values))
 
     print "step3-1-0"
@@ -7178,7 +7181,7 @@ def errorSummary(request):
             'jobtype': jobtype,
             'njobs': njobs,
             'hours': LAST_N_HOURS_MAX,
-            'limit': request.session['JOB_LIMIT'],
+            'limit': limit,
             'user': None,
             'xurl': xurl,
             'xurlsubst': xurlsubst,
