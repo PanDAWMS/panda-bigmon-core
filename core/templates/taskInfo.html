@@ -386,10 +386,18 @@ No datasets were found for this task
 {% if jobscoutids %}
 <table><tr>
 <td bgcolor='lightcyan'><b> Scout jobs: </b></td>
-    {% if jobscoutids.walltimescoutjob %}
-        <td>Walltime: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.walltimescoutjob }}">{{ jobscoutids.walltimescoutjob }}</a> </td>{% endif %}
-    {% if jobscoutids.cputimescoutjob %}
-        <td>CPU time: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.cputimescoutjob }}">{{ jobscoutids.cputimescoutjob }}</a> </td>{% endif %}
+    {% if jobscoutids.walltimescoutjob|length > 0 %}
+        <td>Walltime:
+            {% for job in jobscoutids.walltimescoutjob %}
+            <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> <br>
+            {% endfor %}
+        </td>{% endif %}
+    {% if jobscoutids.cputimescoutjob|length %}
+        <td>CPU time:
+            {% for job in jobscoutids.cputimescoutjob %}
+            <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a><br>
+            {% endfor %}
+        </td>{% endif %}
     {% if jobscoutids.ramcountscoutjob %}
         <td>RAM count: <a href="{% url 'jobInfo' %}?pandaid={{ jobscoutids.ramcountscoutjob }}">{{ jobscoutids.ramcountscoutjob }}</a> </td>{% endif %}
     {% if jobscoutids.outdiskcountscoutjob %}
