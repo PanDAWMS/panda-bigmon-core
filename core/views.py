@@ -3506,18 +3506,7 @@ def userInfo(request, user=''):
         njobsetmax = 200
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-
-        # print len(tasks)
-        # print tasks[0].jeditaskid
-
-
-        # for task in tasks:
-        #    print task['reqid']
-        #    if 'reqid' in task:
-        #        print task.reqid
-        #
-        #
-
+        
         TFIRST = request.session['TFIRST']
         TLAST = request.session['TLAST']
         del request.session['TFIRST']
