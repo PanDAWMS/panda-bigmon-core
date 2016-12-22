@@ -194,7 +194,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 {% if logfile.lfn %}
 {% if viewParams.MON_VO == 'ATLAS' %}
 
-{% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'closed' %}
+{% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'closed' or job.jobstatus == 'merging' %}
 {% if oslogpath %}
 <td><a href="{{ oslogpath }}">log tarball</a>
 </td>
