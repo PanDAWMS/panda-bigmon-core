@@ -6667,12 +6667,13 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
     hs06sf = []
     walltimeperevent = []
     for job in jobs:
-        if job['actualcorecount'] is None or job['actualcorecount'] == 0:
+        if job['actualcorecount'] is None:
             job['actualcorecount'] = 1
         if job['maxpss'] is not None and job['maxpss'] != -1:
             if job['jobstatus'] == 'finished':
                 maxpss.append(job['maxpss'] / 1024)
-                maxpsspercore.append(job['maxpss'] / 1024 / job['actualcorecount'])
+                if job['actualcorecount'] and job['actualcorecount']>0:
+                    maxpsspercore.append(job['maxpss'] / 1024 / job['actualcorecount'])
                 sitepss.append(job['computingsite'])
                 nevents.append(job['nevents'])
             if job['jobstatus'] == 'failed':
