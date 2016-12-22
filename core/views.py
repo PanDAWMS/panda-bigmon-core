@@ -6678,7 +6678,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
     hs06sf = []
     walltimeperevent = []
     for job in jobs:
-        if job['actualcorecount'] is None:
+        if job['actualcorecount'] is None or job['actualcorecount'] == 0:
             job['actualcorecount'] = 1
         if job['maxpss'] is not None and job['maxpss'] != -1:
             if job['jobstatus'] == 'finished':
