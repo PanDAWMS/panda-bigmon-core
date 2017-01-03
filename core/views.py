@@ -70,8 +70,8 @@ from django.views.decorators.cache import cache_page
 
 import TaskProgressPlot
 import ErrorCodes
-
 import GlobalShares
+import hashlib
 
 from threading import Thread
 
@@ -2144,6 +2144,28 @@ def jobListPDiv(request, mode=None, param=None):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
+def getCacheEntry(request, viewType):
+    is_json = False
+    request._cache_update_cache = False
+    if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
+                'json' in request.REQUEST)):
+        is_json = True
+    key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
+    path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+    cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+    return cache.get(cache_key, None)
+
+def setCacheEntry(request, viewType, data, timeout):
+    is_json = False
+    request._cache_update_cache = False
+    if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
+                'json' in request.REQUEST)):
+        is_json = True
+    key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
+    path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+    cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+    cache.set(cache_key, data, timeout)
+
 
 def cache_filter(timeout):
     # This function provides splitting cache keys depending on conditions above the parameters specified in the URL
@@ -2177,9 +2199,22 @@ def cache_filter(timeout):
     return decorator
 
 
-@cache_filter(60 * 20)
+#@cache_filter(60 * 20)
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
+
+    #Here we try to get data from cache
+    data = getCacheEntry(request, "jobList")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        if data['eventservice'] == True:
+            response = render_to_response('jobListES.html', data, RequestContext(request))
+        else:
+            response = render_to_response('jobList.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
     if not valid: return response
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
         return jobParamList(request)
@@ -2443,18 +2478,6 @@ def jobList(request, mode=None, param=None):
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
 
-        # It was not find where esjobdict used
-        '''
-        if esjobdict and len(esjobdict) > 0:
-            for job in jobs:
-                if job['pandaid'] in esjobdict and job['specialhandling'].find('esmerge') < 0:
-                    esjobstr = 'Dispatched event states: '
-                    for s in esjobdict[job['pandaid']]:
-                        if esjobdict[job['pandaid']][s] > 0:
-                            esjobstr += " %s(%s) " % ( s, esjobdict[job['pandaid']][s] )
-                    job['esjobdict'] = esjobstr
-        '''
-
         xurl = extensibleURL(request)
         print xurl
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
@@ -2497,8 +2520,10 @@ def jobList(request, mode=None, param=None):
             'taskname': taskname,
             'flowstruct': flowstruct,
             'nodropPartURL': nodropPartURL,
+            'eventservice': eventservice,
         }
         data.update(getContextVariables(request))
+        setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
         ##self monitor
         endSelfMonitor(request)
         if eventservice:
