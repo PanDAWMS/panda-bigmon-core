@@ -4933,10 +4933,21 @@ def worldhs06s(request):
         return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
 
 
-@cache_page(60 * 20)
 def dashboard(request, view='production'):
     valid, response = initRequest(request)
     if not valid: return response
+
+    data = getCacheEntry(request, "dashboard")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        template = data['template']
+        response = render_to_response(template, data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
+
     taskdays = 3
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         VOMODE = 'atlas'
@@ -5078,10 +5089,12 @@ def dashboard(request, view='production'):
                 'xurl': xurl,
                 'nosorturl': nosorturl,
                 'user': None,
+                'template': 'worldjobs.html',
             }
             ##self monitor
             endSelfMonitor(request)
             response = render_to_response('worldjobs.html', data, RequestContext(request))
+            setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 20)
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
         else:
@@ -5136,11 +5149,13 @@ def dashboard(request, view='production'):
                 'transrclouds': transrclouds,
                 'hoursSinceUpdate': hoursSinceUpdate,
                 'jobsLeft': jobsLeft,
-                'rw': rw
+                'rw': rw,
+                'template': 'dashboard.html',
             }
             ##self monitor
             endSelfMonitor(request)
             response = render_to_response('dashboard.html', data, RequestContext(request))
+            setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 20)
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
         else:
@@ -5250,10 +5265,12 @@ def dashTasks(request, hours, view='production'):
             'taskJobSummary': taskJobSummary[:display_limit],
             'display_limit': display_limit,
             'jobsLeft': jobsLeft,
-            'rw': rw
+            'rw': rw,
+            'template': 'dashboard.html',
         }
         ##self monitor
         endSelfMonitor(request)
+        setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 20)
         response = render_to_response('dashboard.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
