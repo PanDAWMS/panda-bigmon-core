@@ -5846,9 +5846,20 @@ def runningMCProdTasks(request):
 
 
 
-@cache_page(60 * 20)
 def runningProdTasks(request):
     valid, response = initRequest(request)
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "runningProdTasks")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('runningProdTasks.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
+
     # xurl = extensibleURL(request)
     xurl = request.get_full_path()
     if xurl.find('?') > 0:
@@ -6045,6 +6056,7 @@ def runningProdTasks(request):
         ##self monitor
         endSelfMonitor(request)
         response = render_to_response('runningProdTasks.html', data, RequestContext(request))
+        setCacheEntry(request, "runningProdTasks", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
