@@ -4699,6 +4699,17 @@ def dashWorldProduction(request):
 @cache_page(60 * 20)
 def worldjobs(request, view='production'):
     valid, response = initRequest(request)
+
+    data = getCacheEntry(request, "worldjobs")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('worldjobs.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
+
     query = {}
     values = ['nucleus', 'computingsite', 'jobstatus', 'countjobsinstate']
     worldTasksSummary = []
@@ -4761,6 +4772,7 @@ def worldjobs(request, view='production'):
         }
         ##self monitor
         endSelfMonitor(request)
+        setCacheEntry(request, "worldjobs", json.dumps(data, cls=DateEncoder), 60 * 20)
         response = render_to_response('worldjobs.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -4777,6 +4789,18 @@ def worldjobs(request, view='production'):
 @cache_page(60 * 20)
 def worldhs06s(request):
     valid, response = initRequest(request)
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "worldhs06s")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('worldHS06s.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
+
     roundflag = False
     condition = ''
     for param in request.session['requestParams']:
@@ -4896,6 +4920,7 @@ def worldhs06s(request):
             'sortby': sortby,
         }
         ##self monitor
+        setCacheEntry(request, "worldhs06s", json.dumps(data, cls=DateEncoder), 60 * 20)
         endSelfMonitor(request)
         response = render_to_response('worldHS06s.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
