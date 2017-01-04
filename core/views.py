@@ -2781,7 +2781,6 @@ def descendentjoberrsinfo(request):
     return response
 
 
-@cache_page(60 * 20)
 def eventsInfo(request, mode=None, param=None):
     if not 'jeditaskid' in request.REQUEST:
         data = {}
@@ -3591,10 +3590,21 @@ def userInfo(request, user=''):
         return HttpResponse(json.dumps(resp), mimetype='text/html')
 
 
-@cache_page(60 * 20)
 def siteList(request):
     valid, response = initRequest(request)
     if not valid: return response
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "siteList")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('siteList.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
+
     for param in request.session['requestParams']:
         request.session['requestParams'][param] = escapeInput(request.session['requestParams'][param])
     setupView(request, opmode='notime')
@@ -3712,6 +3722,7 @@ def siteList(request):
             request.session['requestParams']['cloud']]
         # data.update(getContextVariables(request))
         ##self monitor
+        setCacheEntry(request, "siteList", json.dumps(data, cls=DateEncoder), 60 * 20)
         endSelfMonitor(request)
         response = render_to_response('siteList.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
