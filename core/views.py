@@ -6062,10 +6062,18 @@ def runningProdTasks(request):
 
 
 
-
-@cache_page(60 * 20)
 def runningDPDProdTasks(request):
     valid, response = initRequest(request)
+
+    data = getCacheEntry(request, "runningDPDProdTasks")
+    if data is not None:
+        data = json.loads(data)
+        response = render_to_response('runningDPDProdTasks.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
+
     # xurl = extensibleURL(request)
     xurl = request.get_full_path()
     if xurl.find('?') > 0:
@@ -6229,6 +6237,7 @@ def runningDPDProdTasks(request):
         ##self monitor
         endSelfMonitor(request)
         response = render_to_response('runningDPDProdTasks.html', data, RequestContext(request))
+        setCacheEntry(request, "runningDPDProdTasks", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
