@@ -3968,6 +3968,18 @@ def wnInfo(request, site, wnname='all'):
 
     valid, response = initRequest(request)
     if not valid: return response
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "wnInfo")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('wnInfo.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
+
     errthreshold = 15
 
     if wnname != 'all':
@@ -4136,6 +4148,7 @@ def wnInfo(request, site, wnname='all'):
         ##self monitor
         endSelfMonitor(request)
         response = render_to_response('wnInfo.html', data, RequestContext(request))
+        setCacheEntry(request, "wnInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
