@@ -3957,7 +3957,6 @@ def wnSummary(query):
     return summary
 
 
-@cache_page(60 * 20)
 def wnInfo(request, site, wnname='all'):
     """ Give worker node level breakdown of site activity. Spot hot nodes, error prone nodes. """
 
@@ -5288,7 +5287,6 @@ def dashTasks(request, hours, view='production'):
         return HttpResponse(json.dumps(data), mimetype='text/html')
 
 
-@cache_page(60 * 20)
 def taskESExtendedInfo(request):
     if 'jeditaskid' in request.REQUEST:
         jeditaskid = int(request.REQUEST['jeditaskid'])
@@ -5668,9 +5666,20 @@ def getSummaryForTaskList(request):
 #    return redirect('runningMCProdTasks')
 
 
-@cache_page(60 * 20)
 def runningMCProdTasks(request):
     valid, response = initRequest(request)
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "runningMCProdTasks")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('runningMCProdTasks.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
+
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     tquery = {}
@@ -5830,6 +5839,7 @@ def runningMCProdTasks(request):
         }
         ##self monitor
         endSelfMonitor(request)
+        setCacheEntry(request, "runningMCProdTasks", json.dumps(data, cls=DateEncoder), 60 * 20)
         response = render_to_response('runningMCProdTasks.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
