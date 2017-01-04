@@ -2809,6 +2809,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     valid, response = initRequest(request)
     if not valid: return response
 
+    # Here we try to get cached data
     data = getCacheEntry(request, "jobInfo")
     if data is not None:
         data = json.loads(data)
@@ -5241,9 +5242,22 @@ def taskESExtendedInfo(request):
 
 
 @csrf_exempt
-@cache_page(60 * 20)
 def taskList(request):
     valid, response = initRequest(request)
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "taskList")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        if data['eventservice'] == True:
+            response = render_to_response('taskListES.html', data, RequestContext(request))
+        else:
+            response = render_to_response('taskList.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
     if 'limit' in request.session['requestParams']:
         limit = int(request.session['requestParams']['limit'])
     else:
@@ -5402,7 +5416,10 @@ def taskList(request):
             'url_nolimit': url_nolimit,
             'display_limit': nmax,
             'flowstruct': flowstruct,
+            'eventservice': eventservice,
         }
+
+        setCacheEntry(request, "taskList", json.dumps(data, cls=DateEncoder), 60 * 20)
         ##self monitor
         endSelfMonitor(request)
         if eventservice:
