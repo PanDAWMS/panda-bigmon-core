@@ -1522,7 +1522,6 @@ def extensibleURL(request, xurl=''):
     return xurl
 
 
-@cache_page(60 * 20)
 def mainPage(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -2212,6 +2211,7 @@ def jobList(request, mode=None, param=None):
             response = render_to_response('jobListES.html', data, RequestContext(request))
         else:
             response = render_to_response('jobList.html', data, RequestContext(request))
+        endSelfMonitor(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -2805,10 +2805,23 @@ def eventsInfo(request, mode=None, param=None):
 
 
 @csrf_exempt
-@cache_page(60 * 20)
 def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     valid, response = initRequest(request)
     if not valid: return response
+
+    data = getCacheEntry(request, "jobInfo")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        if data['eventservice'] == True:
+            response = render_to_response('jobInfoES.html', data, RequestContext(request))
+        else:
+            response = render_to_response('jobInfo.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
+
     eventservice = False
     query = setupView(request, hours=365 * 24)
     jobid = ''
@@ -3231,6 +3244,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'fileSummary': fileSummary,
         }
         data.update(getContextVariables(request))
+        setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
         ##self monitor
         endSelfMonitor(request)
         if isEventService(job):
