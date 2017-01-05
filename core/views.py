@@ -189,7 +189,15 @@ def setupSiteInfo(request):
 def initRequest(request):
     global VOMODE, ENV, hostname
 
-    print("IP Address for debug-toolbar: " + request.META['REMOTE_ADDR'])
+    #print("IP Address for debug-toolbar: " + request.META['REMOTE_ADDR'])
+
+    if "ADFS_FULLNAME" in request.META:
+        request.session['ADFS_FULLNAME'] = request.META['ADFS_FULLNAME']
+    if "ADFS_EMAIL" in request.META:
+        request.session['ADFS_EMAIL'] = request.META['ADFS_EMAIL']
+    if "ADFS_LOGIN" in request.META:
+        request.session['ADFS_LOGIN'] = request.META['ADFS_LOGIN']
+
 
     viewParams = {}
     # if not 'viewParams' in request.session:
