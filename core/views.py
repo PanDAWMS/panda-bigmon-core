@@ -8322,9 +8322,16 @@ def fileList(request):
         return HttpResponse(json.dumps(files), mimetype='text/html')
 
 
-@cache_page(60 * 20)
+#@cache_page(60 * 20)
 def workQueues(request):
     valid, response = initRequest(request)
+    data = getCacheEntry(request, "workQueues")
+    if data is not None:
+        data = json.loads(data)
+        response = render_to_response('workQueues.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
     if not valid: return response
     setupView(request, hours=180 * 24, limit=9999999)
     query = {}
@@ -8349,6 +8356,7 @@ def workQueues(request):
         ##self monitor
         endSelfMonitor(request)
         response = render_to_response('workQueues.html', data, RequestContext(request))
+        setCacheEntry(request, "workQueues", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -9062,9 +9070,17 @@ def endSelfMonitor(request):
         reqs.save()
 
 
-@cache_page(60 * 20)
+#@cache_page(60 * 20)
 def globalshares(request):
     valid, response = initRequest(request)
+    data = getCacheEntry(request, "globalshares")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('globalshares.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
     if not valid: return response
     setupView(request, hours=180 * 24, limit=9999999)
     gs = __get_hs_leave_distribution()
@@ -9089,6 +9105,7 @@ def globalshares(request):
         ##self monitor
         endSelfMonitor(request)
         response = render_to_response('globalshares.html', data, RequestContext(request))
+        setCacheEntry(request, "globalshares", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
