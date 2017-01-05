@@ -6068,6 +6068,7 @@ def runningDPDProdTasks(request):
     data = getCacheEntry(request, "runningDPDProdTasks")
     if data is not None:
         data = json.loads(data)
+        data['request'] = request
         response = render_to_response('runningDPDProdTasks.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
@@ -6307,6 +6308,21 @@ def taskInfo(request, jeditaskid=0):
     furl = request.get_full_path()
     nomodeurl = removeParam(furl, 'mode', mode='extensible')
     if not valid: return response
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "taskInfo")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        if data['eventservice'] == True:
+            response = render_to_response('taskInfoES.html', data, RequestContext(request))
+        else:
+            response = render_to_response('taskInfo.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
+
     if 'taskname' in request.session['requestParams'] and request.session['requestParams']['taskname'].find('*') >= 0:
         return taskList(request)
     setupView(request, hours=365 * 24, limit=999999999, querytype='task')
@@ -6669,8 +6685,10 @@ def taskInfo(request, jeditaskid=0):
             'inctrs': inctrs,
             'outctrs': outctrs,
             'vomode': VOMODE,
+            'eventservice': eventservice,
         }
         data.update(getContextVariables(request))
+        setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
         ##self monitor
         endSelfMonitor(request)
 
@@ -7125,10 +7143,19 @@ def getTaskName(tasktype, taskid):
     return taskname
 
 
-@cache_page(60 * 20)
 def errorSummary(request):
     valid, response = initRequest(request)
     if not valid: return response
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "errorSummary")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('errorSummary.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
 
     testjobs = False
     if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams'][
@@ -7334,6 +7361,7 @@ def errorSummary(request):
             'flowstruct': flowstruct,
         }
         data.update(getContextVariables(request))
+        setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
         ##self monitor
         endSelfMonitor(request)
         response = render_to_response('errorSummary.html', data, RequestContext(request))
@@ -7366,10 +7394,20 @@ def removeParam(urlquery, parname, mode='complete'):
     return urlquery
 
 
-@cache_page(60 * 20)
 def incidentList(request):
     valid, response = initRequest(request)
     if not valid: return response
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "incidents")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('incidents.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
     if 'days' in request.session['requestParams']:
         hours = int(request.session['requestParams']['days']) * 24
     else:
@@ -7396,7 +7434,8 @@ def incidentList(request):
         sites = [site for site, cloud in homeCloud.items() if cloud == request.session['requestParams']['cloud']]
         for site in sites:
             cloudQuery = cloudQuery | Q(description__contains='queue=%s' % site)
-    incidents = Incidents.objects.filter(**iquery).filter(cloudQuery).order_by('at_time').reverse().values()
+    incidents = []
+    incidents.extend(Incidents.objects.filter(**iquery).filter(cloudQuery).order_by('at_time').reverse().values())
     sumd = {}
     pars = {}
     incHist = {}
@@ -7436,6 +7475,7 @@ def incidentList(request):
         if 'site' in pars:
             inc['description'] = re.sub('queue=[^\s]+', 'queue=<a href="%ssite=%s">%s</a>' % (
             extensibleURL(request), pars['site'], pars['site']), inc['description'])
+        inc['at_time'] = inc['at_time'].strftime(defaultDatetimeFormat)
 
     ## convert to ordered lists
     suml = []
@@ -7475,6 +7515,7 @@ def incidentList(request):
         }
         ##self monitor
         endSelfMonitor(request)
+        setCacheEntry(request, "incidents", json.dumps(data, cls=DateEncoder), 60 * 20)
         response = render_to_response('incidents.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -7490,13 +7531,9 @@ def incidentList(request):
         return HttpResponse(jsonResp, mimetype='text/html')
 
 
-cache_page(60 * 20)
-
-
 def esPandaLogger(request):
     valid, response = initRequest(request)
     if not valid: return response
-
     from elasticsearch import Elasticsearch
     from elasticsearch_dsl import Search, Q
 
@@ -7564,7 +7601,6 @@ def esPandaLogger(request):
         return response
 
 
-cache_page(60 * 20)
 def pandaLogger(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -7811,6 +7847,18 @@ def ttc(request):
 def workingGroups(request):
     valid, response = initRequest(request)
     if not valid: return response
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "workingGroups")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('workingGroups.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
+
     taskdays = 3
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         VOMODE = 'atlas'
@@ -7882,6 +7930,8 @@ def workingGroups(request):
             'days': days,
             'errthreshold': errthreshold,
         }
+        setCacheEntry(request, "workingGroups", json.dumps(data, cls=DateEncoder), 60 * 20)
+
         ##self monitor
         endSelfMonitor(request)
         response = render_to_response('workingGroups.html', data, RequestContext(request))

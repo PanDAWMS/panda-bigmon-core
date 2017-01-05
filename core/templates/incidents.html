@@ -63,7 +63,7 @@
 
 <table>
 {% for inc in incidents %}
-<tr><td> {{ inc.at_time|date:"Y-m-d H:i" }} </td>
+<tr><td> {{ inc.at_time }} </td>
 <td> <font size=-1>{{ inc.description|safe }}</font> </td>
 {% endfor %}
 </table>
