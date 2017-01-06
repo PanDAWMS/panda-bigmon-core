@@ -17,6 +17,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
 from django.db import connections
 from django.utils import timezone
+from django.contrib.auth.models import AbstractUser
 
 
 from django.db import models
@@ -645,6 +646,11 @@ class GetEventsForTask(models.Model):
     totev = models.BigIntegerField(db_column='totev')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."GETEVENTSFORTASK"'
+
+class BPUser(AbstractUser):
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."AUTH_USER"'
+
 
 
 class JediWorkQueue(models.Model):

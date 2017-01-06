@@ -45,6 +45,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',  # for AJAX POST protection with csrf
+
     #'django.contrib.auth.middleware.AuthenticationMiddleware',
 ### added
     #'django.contrib.auth.middleware.RemoteUserMiddleware',  # for APIs: htcondorapi
@@ -178,5 +179,7 @@ ROOT_URLCONF = 'core.urls'
 
 # email
 EMAIL_SUBJECT_PREFIX = 'bigpandamon-core: '
+
+AUTH_USER_MODEL = 'common.BPUser'
 
 

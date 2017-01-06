@@ -57,7 +57,7 @@ from core.common.models import JediEvents
 from core.common.models import JediDatasets
 from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
-from core.common.models import RequestStat
+from core.common.models import RequestStat, BPUser
 from core.settings.config import ENV
 from core.common.models import RunningMCProductionTasks
 from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel
@@ -66,7 +66,6 @@ from time import gmtime, strftime
 from settings.local import dbaccess
 import string as strm
 from django.views.decorators.cache import cache_page
-
 
 import TaskProgressPlot
 import ErrorCodes
@@ -189,14 +188,28 @@ def setupSiteInfo(request):
 def initRequest(request):
     global VOMODE, ENV, hostname
 
-    #print("IP Address for debug-toolbar: " + request.META['REMOTE_ADDR'])
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        VOMODE = 'atlas'
 
-    if "ADFS_FULLNAME" in request.META:
-        request.session['ADFS_FULLNAME'] = request.META['ADFS_FULLNAME']
-    if "ADFS_EMAIL" in request.META:
-        request.session['ADFS_EMAIL'] = request.META['ADFS_EMAIL']
-    if "ADFS_LOGIN" in request.META:
-        request.session['ADFS_LOGIN'] = request.META['ADFS_LOGIN']
+    if VOMODE == 'atlas':
+        if "ADFS_FULLNAME" in request.META:
+            request.session['ADFS_FULLNAME'] = request.META['ADFS_FULLNAME']
+        if "ADFS_EMAIL" in request.META:
+            request.session['ADFS_EMAIL'] = request.META['ADFS_EMAIL']
+        if "ADFS_FIRSTNAME" in request.META:
+            request.session['ADFS_FIRSTNAME'] = request.META['ADFS_FIRSTNAME']
+        if "ADFS_LASTNAME" in request.META:
+            request.session['ADFS_LASTNAME'] = request.META['ADFS_LASTNAME']
+        if "ADFS_LOGIN" in request.META:
+            request.session['ADFS_LOGIN'] = request.META['ADFS_LOGIN']
+
+            user = None
+            try:
+                user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
+            except BPUser.DoesNotExist:
+                user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'], first_name=request.session['ADFS_FIRSTNAME'], last_name=request.session['ADFS_LASTNAME'])
+                user.set_unusable_password()
+                user.save()
 
 
     viewParams = {}
@@ -222,9 +235,6 @@ def initRequest(request):
     if len(hostname) > 0: request.session['hostname'] = hostname
     ##self monitor
     initSelfMonitor(request)
-
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        VOMODE = 'atlas'
 
     ## Set default page lifetime in the http header, for the use of the front end cache
     request.session['max_age_minutes'] = 10
