@@ -9142,14 +9142,14 @@ def endSelfMonitor(request):
 #@cache_page(60 * 20)
 def globalshares(request):
     valid, response = initRequest(request)
-    data = getCacheEntry(request, "globalshares")
-    if data is not None:
-        data = json.loads(data)
-        data['request'] = request
-        response = render_to_response('globalshares.html', data, RequestContext(request))
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
-        return response
+    #data = getCacheEntry(request, "globalshares")
+    #if data is not None:
+    #    data = json.loads(data)
+    #    data['request'] = request
+    #    response = render_to_response('globalshares.html', data, RequestContext(request))
+    #    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    #    endSelfMonitor(request)
+    #    return response
     if not valid: return response
     setupView(request, hours=180 * 24, limit=9999999)
     gs = __get_hs_leave_distribution()
