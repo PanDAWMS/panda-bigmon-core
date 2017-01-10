@@ -8394,13 +8394,13 @@ def fileList(request):
 def workQueues(request):
     valid, response = initRequest(request)
     data = getCacheEntry(request, "workQueues")
-    #if data is not None:
-    #    data = json.loads(data)
-    #    data['request'] = request
-    #    response = render_to_response('workQueues.html', data, RequestContext(request))
-    #    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    #    endSelfMonitor(request)
-    #    return response
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('workQueues.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
     if not valid: return response
     setupView(request, hours=180 * 24, limit=9999999)
     query = {}
