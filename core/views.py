@@ -9142,7 +9142,7 @@ def endSelfMonitor(request):
 #@cache_page(60 * 20)
 def globalshares(request):
     valid, response = initRequest(request)
-    #data = getCacheEntry(request, "globalshares")
+    data = getCacheEntry(request, "globalshares")
     if data is not None:
         data = json.loads(data)
         data['request'] = request
