@@ -1,4 +1,7 @@
 core/settings/config.py
 core/settings/local.py
 core/settings/base.py
-
+# IntellijIdea files
+*.iml
+.idea
+out
