@@ -188,6 +188,7 @@ def setupSiteInfo(request):
 def initRequest(request):
     global VOMODE, ENV, hostname
 
+    VOMODE = ''
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         VOMODE = 'atlas'
 
@@ -202,7 +203,6 @@ def initRequest(request):
             request.session['ADFS_LASTNAME'] = request.META['ADFS_LASTNAME']
         if "ADFS_LOGIN" in request.META:
             request.session['ADFS_LOGIN'] = request.META['ADFS_LOGIN']
-
             user = None
             try:
                 user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
@@ -251,7 +251,6 @@ def initRequest(request):
 
     ENV['MON_VO'] = ''
     request.session['viewParams']['MON_VO'] = ''
-    VOMODE = ''
     for vo in VOLIST:
         if request.META['HTTP_HOST'].startswith(vo):
             VOMODE = vo
@@ -9146,6 +9145,11 @@ def globalshares(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
+        gsPlotData = {}
+        oldGsPlotData = data['gsPlotData']
+        for shareName, shareValue in oldGsPlotData.iteritems():
+            gsPlotData[str(shareName)] = int(shareValue)
+        data['gsPlotData'] = gsPlotData
         response = render_to_response('globalshares.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
