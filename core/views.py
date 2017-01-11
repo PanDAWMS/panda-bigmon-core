@@ -73,6 +73,7 @@ import GlobalShares
 import hashlib
 
 from threading import Thread
+import decimal
 
 errorFields = []
 errorCodes = {}
@@ -9150,13 +9151,13 @@ def globalshares(request):
         for shareName, shareValue in oldGsPlotData.iteritems():
             gsPlotData[str(shareName)] = int(shareValue)
         data['gsPlotData'] = gsPlotData
-        response = render_to_response('globalshares.html', data, RequestContext(request))
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
-        return response
+        #response = render_to_response('globalshares.html', data, RequestContext(request))
+        #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        #endSelfMonitor(request)
+        #return response
     if not valid: return response
     setupView(request, hours=180 * 24, limit=9999999)
-    gs = __get_hs_leave_distribution()
+    gs, tablerows = __get_hs_leave_distribution()
     gsPlotData = {}#{'Upgrade':130049 , 'Reprocessing default':568841, 'Data Derivations': 202962, 'Event Index': 143 }
 
     for shareName, shareValue in gs.iteritems():
@@ -9173,7 +9174,8 @@ def globalshares(request):
             'requestParams': request.session['requestParams'],
             'globalshares': gs,
             'xurl': extensibleURL(request),
-            'gsPlotData':gsPlotData
+            'gsPlotData':gsPlotData,
+            'tablerows':tablerows,
         }
         ##self monitor
         endSelfMonitor(request)
@@ -9295,7 +9297,6 @@ def __get_hs_leave_distribution():
 
     # Calculate the ideal HS06 distribution based on shares.
 
-    import decimal
     for share_node in leave_shares:
         share_name, share_value = share_node.name, share_node.value
         hs_pledged_share = hs_executing_total * decimal.Decimal(str(share_value)) / decimal.Decimal(str(100.0))
@@ -9303,5 +9304,56 @@ def __get_hs_leave_distribution():
         hs_distribution_dict.setdefault(share_name, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0})
         # Pledged HS according to global share definitions
         hs_distribution_dict[share_name]['pledged'] = hs_pledged_share
-    return hs_distribution_dict
 
+    getChildStat(tree, hs_distribution_dict, 0)
+    rows = []
+    stripTree(tree, rows)
+    return hs_distribution_dict, rows
+
+
+def stripTree(node, rows):
+    row = {}
+    if node.level > 0:
+        if node.level == 1:
+            row['level1'] = node.name + ' [' + ("%0.1f" % node.value) + '%]'
+            row['level2'] = ''
+            row['level3'] = ''
+        if node.level == 2:
+            row['level1'] = ''
+            row['level2'] = node.name + ' [' + ("%0.1f" % node.value) + '%]'
+            row['level3'] = ''
+        if node.level == 3:
+            row['level1'] = ''
+            row['level2'] = ''
+            row['level3'] = node.name + ' [' + ("%0.1f" % node.value) + '%]'
+        row['executing'] = node.executing
+        row['pledged'] = node.pledged
+        row['delta'] = node.delta
+        row['queued'] = node.queued
+        rows.append(row)
+    for item in node.children:
+        stripTree(item, rows)
+
+
+def getChildStat(node, hs_distribution_dict, level):
+    executing = 0
+    pledged = 0
+    delta = 0
+    queued = 0
+    if node.name in hs_distribution_dict:
+        executing = hs_distribution_dict[node.name]['executing']
+        pledged = hs_distribution_dict[node.name]['pledged']
+        delta = hs_distribution_dict[node.name]['executing'] - hs_distribution_dict[node.name]['pledged']
+        queued = hs_distribution_dict[node.name]['queued']
+    else:
+        for item in node.children:
+            getChildStat(item, hs_distribution_dict, level+1)
+            executing += item.executing
+            pledged += item.pledged
+            delta += item.delta
+            queued += item.queued
+    node.executing = executing
+    node.pledged = pledged
+    node.delta = delta
+    node.queued = queued
+    node.level = level
