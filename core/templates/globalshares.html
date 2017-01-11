@@ -13,22 +13,28 @@
 
 <table>
     <tr class='tablesection'>
-        <th>Share</th>
+        <th>L1 Share</th>
+        <th>L2 Share</th>
+        <th>L3 Share</th>
         <th>Actual HS06</th>
         <th>Target HS06</th>
         <th>Delta</th>
         <th>Queued</th>
     </tr>
-    {% for key, values in globalshares.items %}
+    {% for row in tablerows %}
             <tr>
-                <td>{{key}}</td>
-                <td style="text-align:right">{% if values.executing %}{{ values.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">{% if values.pledged %}{{ values.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">{% if values.delta %} {{ values.delta |floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">{% if values.queued %}{{ values.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td>{{row.level1}}</td>
+                <td>{{row.level2}}</td>
+                <td>{{row.level3}}</td>
+                <td style="text-align:right">{% if row.executing %}{{ row.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td style="text-align:right">{% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td style="text-align:right">{% if row.delta %} {{ row.delta |floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td style="text-align:right">{% if row.queued %}{{ row.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
             </tr>
     {% endfor %}
 </table>
+
+
 
 <script src="/static/js/d3jsplot.js"></script>
 <script>
