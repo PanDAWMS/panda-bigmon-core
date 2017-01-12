@@ -74,6 +74,7 @@ import hashlib
 
 from threading import Thread
 import decimal
+import base64
 
 errorFields = []
 errorCodes = {}
@@ -194,23 +195,24 @@ def initRequest(request):
         VOMODE = 'atlas'
 
     if VOMODE == 'atlas':
-        if "ADFS_FULLNAME" in request.META:
-            request.session['ADFS_FULLNAME'] = request.META['ADFS_FULLNAME']
-        if "ADFS_EMAIL" in request.META:
-            request.session['ADFS_EMAIL'] = request.META['ADFS_EMAIL']
-        if "ADFS_FIRSTNAME" in request.META:
-            request.session['ADFS_FIRSTNAME'] = request.META['ADFS_FIRSTNAME']
-        if "ADFS_LASTNAME" in request.META:
-            request.session['ADFS_LASTNAME'] = request.META['ADFS_LASTNAME']
-        if "ADFS_LOGIN" in request.META:
-            request.session['ADFS_LOGIN'] = request.META['ADFS_LOGIN']
-            user = None
-            try:
-                user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
-            except BPUser.DoesNotExist:
-                user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'], first_name=request.session['ADFS_FIRSTNAME'], last_name=request.session['ADFS_LASTNAME'])
-                user.set_unusable_password()
-                user.save()
+        if "MELLON_SAML_RESPONSE" in request.META and base64.b64decode(request.META['MELLON_SAML_RESPONSE']):
+            if "ADFS_FULLNAME" in request.META:
+                request.session['ADFS_FULLNAME'] = request.META['ADFS_FULLNAME']
+            if "ADFS_EMAIL" in request.META:
+                request.session['ADFS_EMAIL'] = request.META['ADFS_EMAIL']
+            if "ADFS_FIRSTNAME" in request.META:
+                request.session['ADFS_FIRSTNAME'] = request.META['ADFS_FIRSTNAME']
+            if "ADFS_LASTNAME" in request.META:
+                request.session['ADFS_LASTNAME'] = request.META['ADFS_LASTNAME']
+            if "ADFS_LOGIN" in request.META:
+                request.session['ADFS_LOGIN'] = request.META['ADFS_LOGIN']
+                user = None
+                try:
+                    user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
+                except BPUser.DoesNotExist:
+                    user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'], first_name=request.session['ADFS_FIRSTNAME'], last_name=request.session['ADFS_LASTNAME'])
+                    user.set_unusable_password()
+                    user.save()
 
 
     viewParams = {}
