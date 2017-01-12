@@ -7159,8 +7159,12 @@ def getTaskName(tasktype, taskid):
         if len(tasks) > 0:
             taskname = tasks[0]['taskname']
     return taskname
-
-
+ercount = []
+def errorsCount(panJobList, query, wildCardExtension):
+    print 'Thread started'
+    for panJob in panJobList:
+        ercount.append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
+    print 'Thread finished'
 def errorSummary(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -7251,6 +7255,7 @@ def errorSummary(request):
         jobs.extend(
             Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
                 *values))
+    listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4
 
     jobs.extend(
         Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
@@ -7265,6 +7270,10 @@ def errorSummary(request):
         jobs.extend(
             Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
                 *values))
+        listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4, Jobsarchived
+
+    thread = Thread(target=errorsCount, args=(listJobs, query, wildCardExtension))
+    thread.start()
 
     print "step3-1-0"
     print str(datetime.now())
@@ -7336,6 +7345,9 @@ def errorSummary(request):
     print "step3-3"
     print str(datetime.now())
 
+    thread.join()
+    jobsErrorsTotalCount = sum(ercount)
+    print jobsErrorsTotalCount
     request.session['max_age_minutes'] = 6
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
@@ -7377,6 +7389,7 @@ def errorSummary(request):
             'sortby': sortby,
             'taskname': taskname,
             'flowstruct': flowstruct,
+            'jobsErrorsTotalCount': jobsErrorsTotalCount,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
