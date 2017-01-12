@@ -7165,6 +7165,7 @@ def errorsCount(panJobList, query, wildCardExtension):
     for panJob in panJobList:
         ercount.append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
     print 'Thread finished'
+
 def errorSummary(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -7347,6 +7348,7 @@ def errorSummary(request):
 
     thread.join()
     jobsErrorsTotalCount = sum(ercount)
+    ercount[:]=[]
     print jobsErrorsTotalCount
     request.session['max_age_minutes'] = 6
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
