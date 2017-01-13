@@ -6573,7 +6573,8 @@ def taskInfo(request, jeditaskid=0):
     cquery = {}
     cquery['jeditaskid'] = jeditaskid
     cquery['type__in'] = ('output', 'log')
-    outctrs = JediDatasets.objects.filter(**cquery).values_list('containername', flat=True).distinct()
+    outctrs = []
+    outctrs.extend(JediDatasets.objects.filter(**cquery).values_list('containername', flat=True).distinct())
     if len(outctrs) == 0 or outctrs[0] == '':
         outctrs = None
 
