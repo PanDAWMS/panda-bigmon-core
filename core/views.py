@@ -6577,6 +6577,8 @@ def taskInfo(request, jeditaskid=0):
     outctrs.extend(JediDatasets.objects.filter(**cquery).values_list('containername', flat=True).distinct())
     if len(outctrs) == 0 or outctrs[0] == '':
         outctrs = None
+    if isinstance(outctrs, basestring):
+       outctrs = [outctrs]
 
     # getBrokerageLog(request)
 
