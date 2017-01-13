@@ -72,7 +72,7 @@ import ErrorCodes
 import GlobalShares
 import hashlib
 
-from threading import Thread
+from threading import Thread,Lock
 import decimal
 import base64
 
@@ -7165,10 +7165,15 @@ def getTaskName(tasktype, taskid):
             taskname = tasks[0]['taskname']
     return taskname
 ercount = []
+lock = Lock()
 def errorsCount(panJobList, query, wildCardExtension):
     print 'Thread started'
-    for panJob in panJobList:
-        ercount.append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
+    lock.acquire()
+    try:
+        for panJob in panJobList:
+            ercount.append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
+    finally:
+        lock.release()
     print 'Thread finished'
 
 def errorSummary(request):
