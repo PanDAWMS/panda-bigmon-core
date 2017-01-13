@@ -7359,6 +7359,14 @@ def errorSummary(request):
     jobsErrorsTotalCount = sum(ercount)
     ercount[:]=[]
     print jobsErrorsTotalCount
+
+    urlParametrs = str(request.META['QUERY_STRING']).split("&")
+    urlParametrsFix =''
+    for urlParametr in urlParametrs:
+        if ('limit' not in urlParametr and 'hours' not in urlParametr):
+            urlParametrsFix += urlParametr+"&"
+    print urlParametrsFix[:len(urlParametrsFix)-1]
+
     request.session['max_age_minutes'] = 6
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
@@ -7377,7 +7385,7 @@ def errorSummary(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
-            'requestString': request.META['QUERY_STRING'],
+            'requestString': urlParametrsFix,
             'jobtype': jobtype,
             'njobs': njobs,
             'hours': LAST_N_HOURS_MAX,
