@@ -7214,6 +7214,10 @@ def errorSummary(request):
     if 'hours' in request.session['requestParams']:
         hours = int(request.session['requestParams']['hours'])
 
+    if 'limit' in request.session['requestParams']:
+        limit = int(request.session['requestParams']['limit'])
+
+
     xurlsubst = extensibleURL(request)
     xurlsubstNoSite = xurlsubst
 
