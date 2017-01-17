@@ -7164,20 +7164,26 @@ def getTaskName(tasktype, taskid):
         if len(tasks) > 0:
             taskname = tasks[0]['taskname']
     return taskname
-ercount = []
+ercount = {}
 lock = Lock()
-def errorsCount(panJobList, query, wildCardExtension):
+def errorsCount(panJobList, query, wildCardExtension,digkey):
     print 'Thread started'
     lock.acquire()
     try:
+        ercount.setdefault(digkey,[])
         for panJob in panJobList:
-            ercount.append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
+            ercount[digkey].append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
     finally:
         lock.release()
     print 'Thread finished'
 
 def errorSummary(request):
     valid, response = initRequest(request)
+    sk = request.session.session_key
+    qt = request.session['qtime']
+    hashkey = hashlib.sha256(sk+' '+qt)
+    digkey = hashkey.hexdigest()
+    #print digkey
     if not valid: return response
 
     # Here we try to get cached data
@@ -7287,7 +7293,7 @@ def errorSummary(request):
                 *values))
         listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4, Jobsarchived
 
-    thread = Thread(target=errorsCount, args=(listJobs, query, wildCardExtension))
+    thread = Thread(target=errorsCount, args=(listJobs, query, wildCardExtension,digkey))
     thread.start()
 
     print "step3-1-0"
@@ -7361,16 +7367,20 @@ def errorSummary(request):
     print str(datetime.now())
 
     thread.join()
-    jobsErrorsTotalCount = sum(ercount)
-    ercount[:]=[]
+    jobsErrorsTotalCount = sum(ercount[digkey])
+    print digkey
+    print ercount[digkey]
+    del ercount[digkey]
+    print ercount
     print jobsErrorsTotalCount
 
-    urlParametrs = str(request.META['QUERY_STRING']).split("&")
-    urlParametrsFix =''
-    for urlParametr in urlParametrs:
-        if ('limit' not in urlParametr and 'hours' not in urlParametr):
-            urlParametrsFix += urlParametr+"&"
-    print urlParametrsFix[:len(urlParametrsFix)-1]
+    listPar =[]
+    for key, val in request.session['requestParams'].iteritems():
+        if (key!='limit' and key!='hours' and key!='mode' and key!='jobstatus'):
+            listPar.append(key + '=' + str(val))
+    urlParametrs = '&'.join(listPar)
+    print listPar
+    del listPar
 
     request.session['max_age_minutes'] = 6
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
@@ -7390,7 +7400,7 @@ def errorSummary(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
-            'requestString': urlParametrsFix,
+            'requestString': urlParametrs,
             'jobtype': jobtype,
             'njobs': njobs,
             'hours': LAST_N_HOURS_MAX,
