@@ -224,8 +224,8 @@
                 {% for task in tasks %}
                     <tr>
                         <td><a href="{{ xurl }}campaign={{ task.campaign }}">{{ task.campaign }}</a></td>
-                        <td><a href="https://prodtask-dev.cern.ch/reqtask/{{task.reqid}}/"
-                               target="_blank">{{ task.reqid }}</a></td>
+                        <td><a href="{{ xurl }}reqid={{ task.reqid }}">{{ task.reqid }}</a>  <a href="https://prodtask-dev.cern.ch/reqtask/{{task.reqid}}/"
+                               target="_blank"> &rArr;</a></td>
                         <td><a href="{{ xurl }}inputdataset={{ task.inputdataset }}">{{ task.inputdataset }}</a></td>
                         <td><a href=" https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}"
                                target="_blank">{{ task.jeditaskid }}</a></td>
