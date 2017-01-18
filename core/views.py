@@ -72,7 +72,7 @@ import ErrorCodes
 import GlobalShares
 import hashlib
 
-from threading import Thread
+from threading import Thread,Lock
 import decimal
 import base64
 
@@ -7171,10 +7171,26 @@ def getTaskName(tasktype, taskid):
         if len(tasks) > 0:
             taskname = tasks[0]['taskname']
     return taskname
-
+ercount = {}
+lock = Lock()
+def errorsCount(panJobList, query, wildCardExtension,digkey):
+    print 'Thread started'
+    lock.acquire()
+    try:
+        ercount.setdefault(digkey,[])
+        for panJob in panJobList:
+            ercount[digkey].append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
+    finally:
+        lock.release()
+    print 'Thread finished'
 
 def errorSummary(request):
     valid, response = initRequest(request)
+    sk = request.session.session_key
+    qt = request.session['qtime']
+    hashkey = hashlib.sha256(sk+' '+qt)
+    digkey = hashkey.hexdigest()
+    #print digkey
     if not valid: return response
 
     # Here we try to get cached data
@@ -7267,6 +7283,7 @@ def errorSummary(request):
         jobs.extend(
             Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
                 *values))
+    listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4
 
     jobs.extend(
         Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
@@ -7281,6 +7298,10 @@ def errorSummary(request):
         jobs.extend(
             Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
                 *values))
+        listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4, Jobsarchived
+
+    thread = Thread(target=errorsCount, args=(listJobs, query, wildCardExtension,digkey))
+    thread.start()
 
     print "step3-1-0"
     print str(datetime.now())
@@ -7352,6 +7373,22 @@ def errorSummary(request):
     print "step3-3"
     print str(datetime.now())
 
+    thread.join()
+    jobsErrorsTotalCount = sum(ercount[digkey])
+    print digkey
+    print ercount[digkey]
+    del ercount[digkey]
+    print ercount
+    print jobsErrorsTotalCount
+
+    listPar =[]
+    for key, val in request.session['requestParams'].iteritems():
+        if (key!='limit' and key!='hours' and key!='mode' and key!='jobstatus'):
+            listPar.append(key + '=' + str(val))
+    urlParametrs = '&'.join(listPar)
+    print listPar
+    del listPar
+
     request.session['max_age_minutes'] = 6
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
@@ -7370,7 +7407,7 @@ def errorSummary(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
-            'requestString': request.META['QUERY_STRING'],
+            'requestString': urlParametrs,
             'jobtype': jobtype,
             'njobs': njobs,
             'hours': LAST_N_HOURS_MAX,
@@ -7393,6 +7430,7 @@ def errorSummary(request):
             'sortby': sortby,
             'taskname': taskname,
             'flowstruct': flowstruct,
+            'jobsErrorsTotalCount': jobsErrorsTotalCount,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
