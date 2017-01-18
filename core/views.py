@@ -7187,8 +7187,10 @@ def errorsCount(panJobList, query, wildCardExtension,digkey):
 def errorSummary(request):
     valid, response = initRequest(request)
     sk = request.session.session_key
+    if sk is None:
+        sk = random.randrange(1000000)
     qt = request.session['qtime']
-    hashkey = hashlib.sha256(sk+' '+qt)
+    hashkey = hashlib.sha256(str(sk)+' '+qt)
     digkey = hashkey.hexdigest()
     #print digkey
     if not valid: return response
