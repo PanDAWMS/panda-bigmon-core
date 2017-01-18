@@ -5700,7 +5700,12 @@ def runningMCProdTasks(request):
         return response
 
 
-    xurl = extensibleURL(request)
+    # xurl = extensibleURL(request)
+    xurl = request.get_full_path()
+    if xurl.find('?') > 0:
+        xurl += '&'
+    else:
+        xurl += '?'
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     tquery = {}
     if 'processingtype' in request.session['requestParams']:
@@ -5709,6 +5714,8 @@ def runningMCProdTasks(request):
         tquery['username'] = request.session['requestParams']['username']
     if 'campaign' in request.session['requestParams']:
         tquery['campaign__contains'] = request.session['requestParams']['campaign']
+    if 'reqid' in request.session['requestParams']:
+        tquery['reqid'] = request.session['requestParams']['reqid']
     if 'corecount' in request.session['requestParams']:
         tquery['corecount'] = request.session['requestParams']['corecount']
     if 'status' in request.session['requestParams']:
