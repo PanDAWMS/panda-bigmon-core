@@ -1528,7 +1528,7 @@ def extensibleURL(request, xurl=''):
     """ Return a URL that is ready for p=v query extension(s) to be appended """
     if xurl == '': xurl = request.get_full_path()
     if xurl.endswith('/'):
-        if 'tag' in xurl:
+        if 'tag' or '/job/' or '/task/' in xurl:
             xurl = xurl[0:len(xurl)]
         else:
             xurl = xurl[0:len(xurl) - 1]
@@ -6333,7 +6333,8 @@ def taskInfo(request, jeditaskid=0):
     jeditaskid = int(jeditaskid)
     valid, response = initRequest(request)
     furl = request.get_full_path()
-    nomodeurl = removeParam(furl, 'mode', mode='extensible')
+    nomodeurl = removeParam(furl, 'mode')
+    nomodeurl = extensibleURL(request, nomodeurl)
     if not valid: return response
 
     # Here we try to get cached data
