@@ -7390,7 +7390,10 @@ def errorSummary(request):
     urlParametrs = '&'.join(listPar)
     print listPar
     del listPar
-
+    if (math.fabs(njobs-jobsErrorsTotalCount)<1000):
+        jobsErrorsTotalCount=None
+    else:
+        jobsErrorsTotalCount = int(math.ceil((jobsErrorsTotalCount+10000)/10000)*10000)
     request.session['max_age_minutes'] = 6
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
