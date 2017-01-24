@@ -254,9 +254,13 @@ def initRequest(request):
 
     ENV['MON_VO'] = ''
     request.session['viewParams']['MON_VO'] = ''
-    for vo in VOLIST:
-        if request.META['HTTP_HOST'].startswith(vo):
-            VOMODE = vo
+    if 'HTTP_HOST' in request.META:
+        for vo in VOLIST:
+            if request.META['HTTP_HOST'].startswith(vo):
+                VOMODE = vo
+    else:
+        VOMODE = 'atlas'
+
     ## If DB is Oracle, set vomode to atlas
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         VOMODE = 'atlas'
