@@ -2231,7 +2231,7 @@ def cache_filter(timeout):
 #@cache_filter(60 * 20)
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
-
+    dkey = digkey(request)
     #Here we try to get data from cache
     data = getCacheEntry(request, "jobList")
     if data is not None:
@@ -2298,7 +2298,7 @@ def jobList(request, mode=None, param=None):
                     :request.session['JOB_LIMIT']].values(*values))
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[
                     :request.session['JOB_LIMIT']].values(*values))
-
+        listJobs = [Jobsarchived4,Jobsactive4,Jobswaiting4,Jobsdefined4]
         if not noarchjobs:
             queryFrozenStates = []
             if 'jobstatus' in request.session['requestParams']:
@@ -2322,8 +2322,12 @@ def jobList(request, mode=None, param=None):
 
                 archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[
                            :request.session['JOB_LIMIT']].values(*values)
+                listJobs.append(Jobsarchived)
                 totalJobs = len(archJobs)
                 jobs.extend(archJobs)
+    print listJobs
+    thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
+    thread.start()
 
     ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
     taskids = {}
@@ -2505,6 +2509,30 @@ def jobList(request, mode=None, param=None):
             job['computingsitestatus'] = siteHash[job['computingsite']][0]
             job['computingsitecomment'] = siteHash[job['computingsite']][1]
 
+    thread.join()
+    jobsTotalCount = sum(tcount[dkey])
+    print dkey
+    print tcount[dkey]
+    del tcount[dkey]
+    print tcount
+    print jobsTotalCount
+
+    listPar =[]
+    for key, val in request.session['requestParams'].iteritems():
+        if (key!='limit' and key!='display_limit'):
+            listPar.append(key + '=' + str(val))
+    if len(listPar)>0:
+        urlParametrs = '&'.join(listPar)+'&'
+    else:
+        urlParametrs = None
+    print listPar
+    del listPar
+    if (math.fabs(njobs-jobsTotalCount)<1000):
+        jobsTotalCount=None
+    else:
+        jobsTotalCount = int(math.ceil((jobsTotalCount+10000)/10000)*10000)
+
+
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
 
@@ -2551,6 +2579,8 @@ def jobList(request, mode=None, param=None):
             'flowstruct': flowstruct,
             'nodropPartURL': nodropPartURL,
             'eventservice': eventservice,
+            'jobsTotalCount': jobsTotalCount,
+            'requestString': urlParametrs,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -5338,7 +5368,7 @@ def taskESExtendedInfo(request):
 @csrf_exempt
 def taskList(request):
     valid, response = initRequest(request)
-
+    dkey = digkey(request)
     # Here we try to get cached data
     data = getCacheEntry(request, "taskList")
     if data is not None:
@@ -5368,13 +5398,16 @@ def taskList(request):
     eventservice = False
     if 'eventservice' in request.session['requestParams'] and (
             request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
-        'eventservice'] == '1'): eventservice = True
-    if eventservice: hours = 7 * 24
+        'eventservice'] == '1'):
+        eventservice = True
+        hours = 7 * 24
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     if 'statenotupdated' in request.session['requestParams']:
         tasks = taskNotUpdated(request, query, wildCardExtension)
     else:
         tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
+        thread = Thread(target=totalCount, args=(JediTasksOrdered, query, wildCardExtension, dkey))
+        thread.start()
     tasks = cleanTaskList(request, tasks)
     ntasks = len(tasks)
     nmax = ntasks
@@ -7282,28 +7315,34 @@ def getTaskName(tasktype, taskid):
         if len(tasks) > 0:
             taskname = tasks[0]['taskname']
     return taskname
-ercount = {}
+
+tcount = {}
 lock = Lock()
-def errorsCount(panJobList, query, wildCardExtension,digkey):
+
+def totalCount(panJobList, query, wildCardExtension,dkey):
     print 'Thread started'
     lock.acquire()
     try:
-        ercount.setdefault(digkey,[])
+        tcount.setdefault(dkey,[])
         for panJob in panJobList:
-            ercount[digkey].append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
+            tcount[dkey].append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
     finally:
         lock.release()
     print 'Thread finished'
 
-def errorSummary(request):
-    valid, response = initRequest(request)
-    sk = request.session.session_key
+def digkey (rq):
+    sk = rq.session.session_key
+    qt = rq.session['qtime']
     if sk is None:
         sk = random.randrange(1000000)
-    qt = request.session['qtime']
-    hashkey = hashlib.sha256(str(sk)+' '+qt)
-    digkey = hashkey.hexdigest()
-    #print digkey
+    hashkey = hashlib.sha256(str(sk) + ' ' + qt)
+    return hashkey.hexdigest()
+
+def errorSummary(request):
+    valid, response = initRequest(request)
+
+    dkey = digkey(request)
+
     if not valid: return response
 
     # Here we try to get cached data
@@ -7413,7 +7452,7 @@ def errorSummary(request):
                 *values))
         listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4, Jobsarchived
 
-    thread = Thread(target=errorsCount, args=(listJobs, query, wildCardExtension,digkey))
+    thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
     thread.start()
 
     print "step3-1-0"
@@ -7487,18 +7526,21 @@ def errorSummary(request):
     print str(datetime.now())
 
     thread.join()
-    jobsErrorsTotalCount = sum(ercount[digkey])
-    print digkey
-    print ercount[digkey]
-    del ercount[digkey]
-    print ercount
+    jobsErrorsTotalCount = sum(tcount[dkey])
+    print dkey
+    print tcount[dkey]
+    del tcount[dkey]
+    print tcount
     print jobsErrorsTotalCount
 
     listPar =[]
     for key, val in request.session['requestParams'].iteritems():
-        if (key!='limit' and key!='hours' and key!='mode' and key!='jobstatus'):
+        if (key!='limit' and key!='display_limit'):
             listPar.append(key + '=' + str(val))
-    urlParametrs = '&'.join(listPar)
+    if len(listPar)>0:
+        urlParametrs = '&'.join(listPar)+'&'
+    else:
+        urlParametrs = None
     print listPar
     del listPar
     if (math.fabs(njobs-jobsErrorsTotalCount)<1000):
