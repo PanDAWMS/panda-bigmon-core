@@ -14,8 +14,8 @@
 {% if sumd %}
 
 <b>{{ njobs }} jobs found. Show jobs: </b>
-&nbsp;  <a href="{% url 'jobList' %}?{{ requestString }}&jobstatus=failed&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>Failed</b></a>
-&nbsp; &nbsp;  <a href="{% url 'jobList' %}?{{ requestString }}&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>All</b></a>
+&nbsp;  <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}jobstatus=failed&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>Failed</b></a>
+&nbsp; &nbsp;  <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{limit}}&mode=nodrop"><b>All</b></a>
 
 {% if sortby == "count" %}
 <p>Sort by <b>count</b>, <a href="{{nosorturl}}">alpha</a>
