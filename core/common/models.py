@@ -18,6 +18,10 @@ from django.db import connection
 from django.db import connections
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
+#from rest_framework.authtoken.models import Token
+#import uuid
+#from hashlib import sha1
+#import hmac
 
 
 from django.db import models
@@ -651,7 +655,24 @@ class BPUser(AbstractUser):
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."AUTH_USER"'
 
+#class BPToken(models.Model):
+#    key = models.CharField(max_length=40, primary_key=True)
+#    user = models.OneToOneField(BPUser)
+#    created = models.DateTimeField(auto_now_add=True)
 
+#    def save(self, *args, **kwargs):
+#        if not self.key:
+#            self.key = self.generate_key()
+#        return super(BPToken, self).save(*args, **kwargs)
+
+#    def generate_key(self):
+#        unique = uuid.uuid4()
+#        return hmac.new(unique.bytes, digestmod=sha1).hexdigest()
+
+#    def __unicode__(self):
+#        return self.key
+#    class Meta:
+#        db_table = u'"ATLAS_PANDABIGMON"."AUTHTOKEN_TOKEN"'
 
 class JediWorkQueue(models.Model):
     queue_id = models.IntegerField(primary_key=True, db_column='QUEUE_ID')

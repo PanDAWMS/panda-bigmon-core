@@ -563,7 +563,7 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
     <!-- bread-crumbs -->
     <div class="right">
       {% block header-nav-chain %}
-      <span class="hide-for-small"><font size=-1>{% if request.session.hostname %}{{ request.session.hostname }}{% endif %} Built  {% now "H:i" %}{% if request.session.max_age_minutes %}, cache {{ request.session.max_age_minutes }}'  <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i" %}">Reload</a> {% if request.session.ADFS_EMAIL %}&nbsp;You are logged as {{ request.session.ADFS_FULLNAME }}({% if request.session.ADFS_LOGIN %}{{request.session.ADFS_LOGIN}}{% endif %}, {% if request.session.ADFS_EMAIL %}{{request.session.ADFS_EMAIL}}{% endif %}) <a href="https://login.cern.ch/adfs/ls/?wa=wsignout1.0">Logout</a> &nbsp;{% endif %} {% endif %}</font></span>
+          <span class="hide-for-small"><font size=-1>{% if request.session.hostname %}{{ request.session.hostname }}{% endif %} Built  {% now "H:i" %}{% if request.session.max_age_minutes %}, cache {{ request.session.max_age_minutes }}'  <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i" %}">Reload</a> {% if request.session.ADFS_EMAIL %}&nbsp;You are logged as {{ request.session.ADFS_FULLNAME }}({% if request.session.ADFS_LOGIN %}{{request.session.ADFS_LOGIN}}{% endif %}, {% if request.session.ADFS_EMAIL %}{{request.session.ADFS_EMAIL}}{% endif %}) <a href="https://login.cern.ch/adfs/ls/?wa=wsignout1.0">Logout</a> &nbsp; {% else %} <a href="https://{{ request.get_host }}{{ request.path }}">Login</a>{% endif %} {% endif %}</font></span>
       {% endblock %}
     </div>
     <!-- End bread-crumbs -->
