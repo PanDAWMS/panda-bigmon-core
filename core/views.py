@@ -57,7 +57,7 @@ from core.common.models import JediEvents
 from core.common.models import JediDatasets
 from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
-from core.common.models import RequestStat, BPUser, BPToken
+from core.common.models import RequestStat, BPUser
 from core.settings.config import ENV
 from core.common.models import RunningMCProductionTasks
 from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel
