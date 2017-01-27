@@ -57,13 +57,14 @@ from core.common.models import JediEvents
 from core.common.models import JediDatasets
 from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
-from core.common.models import RequestStat, BPUser
+from core.common.models import RequestStat, BPUser, BPToken
 from core.settings.config import ENV
 from core.common.models import RunningMCProductionTasks
 from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel
 
 from time import gmtime, strftime
 from settings.local import dbaccess
+from settings.local import PRODSYS
 import string as strm
 from django.views.decorators.cache import cache_page
 
@@ -75,13 +76,14 @@ import hashlib
 from threading import Thread,Lock
 import decimal
 import base64
+import urllib3
+from django.views.decorators.cache import never_cache
 
 errorFields = []
 errorCodes = {}
 errorStages = {}
 
 from django.template.defaulttags import register
-
 
 @register.filter
 def get_item(dictionary, key):
@@ -5516,6 +5518,56 @@ def taskList(request):
             response = render_to_response('taskList.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
+@never_cache
+def killtasks(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+    taskid = -1
+    if 'task' in request.session['requestParams']:
+        taskid = int(request.session['requestParams']['task'])
+
+    prodsysHost = None
+    prodsysToken = None
+    prodsysUrl = None
+    username = None
+    fullname = None
+
+    if 'prodsysHost' in PRODSYS:
+        prodsysHost = PRODSYS['prodsysHost']
+    if 'prodsysToken' in PRODSYS:
+        prodsysToken = PRODSYS['prodsysToken']
+    if 'prodsysUrl' in PRODSYS:
+        prodsysUrl = PRODSYS['prodsysUrl']
+
+    if 'ADFS_FULLNAME' in request.session and 'ADFS_LOGIN' in request.session:
+        username = request.session['ADFS_LOGIN']
+        fullname = request.session['ADFS_FULLNAME']
+    else:
+        resp = {"detail": "User not authenticated. Please login to bigpanda mon"}
+        dump = json.dumps(resp, cls=DateEncoder)
+        response = HttpResponse(dump, mimetype='text/plain')
+        return response
+
+    postdata = {"username": username, "task": taskid, "parameters":[1], "userfullname":fullname}
+    headers = {'Accept': 'application/json', 'Authorization': 'Token '+prodsysToken}
+
+    conn = urllib3.HTTPSConnectionPool(prodsysHost, timeout=20)
+    #resp = conn.urlopen('POST', prodsysUrl, body=json.dumps(postdata, cls=DateEncoder), headers=headers, retries=1, assert_same_host=False)
+    resp = None
+
+    if resp and len(resp.data) > 0:
+        try:
+            resp = json.loads(resp.data)
+            if 'exception' in resp:
+                resp['detail'] = resp['exception']
+        except:
+            resp = {"detail":"prodsys responce could not be parced"}
+    else:
+        resp = {"detail": "Error with sending request to prodsys prodsys"}
+    dump = json.dumps(resp, cls=DateEncoder)
+    response = HttpResponse(dump, mimetype='text/plain')
+    return response
 
 
 def getTaskScoutingInfo(tasks, nmax):
