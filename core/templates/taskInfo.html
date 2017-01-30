@@ -1,6 +1,5 @@
 {% extends "_base_core.html" %}{% load url from future %}
 {% load staticfiles %}
-
 {% block page_title %} {{ jeditaskid }} task  {% endblock %}
 {% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <b>{{ task.taskname }}</b>{% endblock %}
 
@@ -110,6 +109,8 @@ function killtasks(taskID, action) {
 {% if showtaskprof == True %}
     <a href="{% url 'taskprofileplot' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Open Task Profile</a>&emsp;
 {% endif %}
+
+<a href="{% url 'ganttTaskChain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Open Task Chain</a>&emsp;
 
 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('d3splot');">Show/hide plots</a>&emsp;
 <a href="http://atlas-kibana.mwt2.org:5601/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))" target="_blank">Corresponding dashboard in Kibana</a>&emsp;

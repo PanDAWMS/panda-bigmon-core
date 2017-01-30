@@ -108,6 +108,8 @@ function killtasks(taskID, action) {
 
 {% endif %}
 
+<a href="{% url 'ganttTaskChain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Open Task Chain</a>&emsp;
+
 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('nevents_plot');">Show number of events distribution plot</a>&emsp;
 
 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('d3splot');">Show/hide plots</a>&emsp;
