@@ -6839,6 +6839,36 @@ def taskchain(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
+def ganttTaskChain(request):
+    import cx_Oracle
+    from django.db import connections
+
+    valid, response = initRequest(request)
+
+    jeditaskid = -1
+    if 'jeditaskid' in request.session['requestParams']:
+        jeditaskid = int(request.session['requestParams']['jeditaskid'])
+    if jeditaskid == -1:
+        data = {"error": "no jeditaskid supplied"}
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+
+    new_cur = connections["deft_adcr"].cursor()
+    sql_request_str = file("core/common/static/sql/gannt_request.sql").read().replace('%i', str(jeditaskid))
+    new_cur.execute(sql_request_str)
+    results = new_cur.fetchall()
+    results_list = ["".join(map(str, r)) for r in results]
+    results_str = results_list[0].replace("\n", "")
+    substr_end = results_str.index(">")
+
+    data = {
+        'viewParams': request.session['viewParams'],
+        'ganttTaskChain': results_str[substr_end+1:],
+        'jeditaskid': jeditaskid,
+        'request': request,
+    }
+    response = render_to_response('ganttTaskChain.html', data, RequestContext(request))
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
 
 def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype=''):
     jobs = []
