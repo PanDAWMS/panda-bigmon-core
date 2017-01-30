@@ -1,7 +1,7 @@
 with tasks as (
 	SELECT ListAgg(parent_tid,';') within group(order by Level desc) as revPath FROM t_production_task
 	START WITH taskid = %i CONNECT BY NOCYCLE PRIOR parent_tid = taskid
-	), 
+	),  
     current_task as (
 		select CASE WHEN ( INSTR(revPath,';') > 0 ) THEN substr(revPath,0,instr(revPath,';',1,1) - 1)
                ELSE revPath END as taskid from tasks
