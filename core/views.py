@@ -196,6 +196,8 @@ def initRequest(request):
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         VOMODE = 'atlas'
 
+    request.session['IS_TESTER'] = False
+
     if VOMODE == 'atlas':
         if "MELLON_SAML_RESPONSE" in request.META and base64.b64decode(request.META['MELLON_SAML_RESPONSE']):
             if "ADFS_FULLNAME" in request.META:
@@ -211,6 +213,7 @@ def initRequest(request):
                 user = None
                 try:
                     user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
+                    request.session['IS_TESTER'] = user.is_tester
                 except BPUser.DoesNotExist:
                     user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'], first_name=request.session['ADFS_FIRSTNAME'], last_name=request.session['ADFS_LASTNAME'])
                     user.set_unusable_password()
@@ -5524,8 +5527,11 @@ def killtasks(request):
     valid, response = initRequest(request)
     if not valid: return response
     taskid = -1
+    action = -1
     if 'task' in request.session['requestParams']:
         taskid = int(request.session['requestParams']['task'])
+    if 'action' in request.session['requestParams']:
+        action = int(request.session['requestParams']['action'])
 
     prodsysHost = None
     prodsysToken = None
@@ -5537,12 +5543,22 @@ def killtasks(request):
         prodsysHost = PRODSYS['prodsysHost']
     if 'prodsysToken' in PRODSYS:
         prodsysToken = PRODSYS['prodsysToken']
-    if 'prodsysUrl' in PRODSYS:
-        prodsysUrl = PRODSYS['prodsysUrl']
+
+    if action == 0:
+        prodsysUrl = '/prodtask/task_action_ext/finish/'
+    elif action == 1:
+        prodsysUrl = '/prodtask/task_action_ext/abort/'
+    else:
+        resp = {"detail": "Action is not recognized"}
+        dump = json.dumps(resp, cls=DateEncoder)
+        response = HttpResponse(dump, mimetype='text/plain')
+        return response
+
 
     if 'ADFS_FULLNAME' in request.session and 'ADFS_LOGIN' in request.session:
         username = request.session['ADFS_LOGIN']
         fullname = request.session['ADFS_FULLNAME']
+
     else:
         resp = {"detail": "User not authenticated. Please login to bigpanda mon"}
         dump = json.dumps(resp, cls=DateEncoder)
@@ -5553,8 +5569,16 @@ def killtasks(request):
     headers = {'Accept': 'application/json', 'Authorization': 'Token '+prodsysToken}
 
     conn = urllib3.HTTPSConnectionPool(prodsysHost, timeout=20)
-    #resp = conn.urlopen('POST', prodsysUrl, body=json.dumps(postdata, cls=DateEncoder), headers=headers, retries=1, assert_same_host=False)
     resp = None
+
+    if request.session['IS_TESTER']:
+        resp = conn.urlopen('POST', prodsysUrl, body=json.dumps(postdata, cls=DateEncoder), headers=headers, retries=1, assert_same_host=False)
+    else:
+        resp = {"detail": "You are not allowed to test. Sorry"}
+        dump = json.dumps(resp, cls=DateEncoder)
+        response = HttpResponse(dump, mimetype='text/plain')
+        return response
+
 
     if resp and len(resp.data) > 0:
         try:

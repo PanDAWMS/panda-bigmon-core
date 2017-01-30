@@ -83,16 +83,17 @@ function toggleDetailDisplay(className) {
    }
 }
 
-function killtasks(taskID) {
+function killtasks(taskID, action) {
     if (confirm('Are you sure you want to KILL this task?')) {
         $.ajax({
             url: {% url 'killtasks' %},
-            data: {'task': taskID},
+            data: {'task': taskID, 'action': action},
             async: true
         })
             .done(function (response) {
                 var parcedResponse = $.parseJSON(response);
                 alert(parcedResponse.detail);
+                location.reload();
             });
     } else {
         // Do nothing!
@@ -113,13 +114,14 @@ function killtasks(taskID) {
 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('d3splot');">Show/hide plots</a>&emsp;
 <a href="http://atlas-kibana.mwt2.org:5601/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))" target="_blank">Corresponding dashboard in Kibana</a>&emsp;
 
-{% comment %}
-{% with 'done finished failed ready broken aborted defined' as finalstatelist %}
-{% if not task.status in finalstatelist %}
-    <a onclick="javascript:killtasks({{ task.jeditaskid }});">Kill task</a>
+{% if request.session.is_tester == True %}
+    {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
+    {% if not task.status in finalstatelist %}
+        <a onclick="javascript:killtasks({{ task.jeditaskid }}, 0);">Finish task</a>
+        <a onclick="javascript:killtasks({{ task.jeditaskid }}, 1);">Abort task</a>
+    {% endif %}
+    {% endwith %}
 {% endif %}
-{% endwith %}
-{% endcomment %}
 
 <p>
 

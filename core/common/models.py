@@ -652,6 +652,7 @@ class GetEventsForTask(models.Model):
         db_table = u'"ATLAS_PANDABIGMON"."GETEVENTSFORTASK"'
 
 class BPUser(AbstractUser):
+    is_tester = models.NullBooleanField(db_column='IS_TESTER', null=True, blank=False)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."AUTH_USER"'
 
