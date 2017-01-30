@@ -1,0 +1,66 @@
+{% extends "_base_core.html" %}
+{% load staticfiles %}
+{% block page_title %} {{ viewParams.MON_VO }} Task chain for {{ jeditaskid }} {% endblock %}
+{% block subtitle %}Task chain for <b>{{ jeditaskid }}</b>{{ viewParams.selection|safe }}{% endblock %}
+
+
+{% block body %}
+
+<script type="text/javascript" src="/static/js/jsgantt.js"></script>
+<link rel="stylesheet" type="text/css" href="/static/css/jsgantt.css"/>
+<style type="text/css">
+<!--
+h3 { margin: 0px; font-size: 1em; }
+
+.roundedCornerfg{
+	padding: 5px 5px 5px 15px;
+	border-radius: 3px;
+	width:400px;
+	font-size: 1.4em;
+	font-family: "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
+	font-weight: normal;
+	font-style: normal;
+	text-rendering: optimizeLegibility;
+	background: rgb(135,206,250);
+	background: linear-gradient(to bottom, rgba(135,206,250,1) 0%,rgba(173,216,230,1) 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cccccc', endColorstr='#eeeeee',GradientType=0 );
+}
+
+</style>
+
+<h2 class="roundedCornerfg" id="tCredits">Task Chain Gantt Diagram</h2>
+<div style="position:relative; " class="gantt" id="GanttChartDIV" ></div>
+
+<script type="text/javascript">
+
+    var task = {{ jeditaskid }};
+
+	var g = new JSGantt.GanttChart(document.getElementById('GanttChartDIV'), 'day' );
+	if( g.getDivId() != null ) {
+		g.setCaptionType('Complete');  // Set to Show Caption (None,Caption,Resource,Duration,Complete)
+		g.setQuarterColWidth(36);
+		g.setDateTaskDisplayFormat('day dd month yyyy hh:mm'); // Shown in tool tip box
+		g.setHourMajorDateDisplayFormat('day dd month yyyy');
+		g.setDayMajorDateDisplayFormat('mon yyyy - Week ww'); // Set format to display dates in the "Major" header of the "Day" view
+		g.setWeekMinorDateDisplayFormat('dd/mm'); // Set format to display dates in the "Minor" header of the "Week" view
+		g.setShowTaskInfoLink(0); //Show link in tool tip (0/1)
+		g.setShowEndWeekDate(0); // Show/Hide the date for the last day of the week in header for daily view (1/0)
+		g.setUseSingleCell(10000); // Set the threshold at which we will only use one cell per table row (0 disables).  Helps with rendering performance for large charts.
+		g.setFormatArr('Hour', 'Day', 'Week', 'Month', 'Quarter'); // Even with setUseSingleCell using Hour format on such a large chart can cause issues in some browsers
+		g.setDateInputFormat('yyyy-mm-dd');
+		g.setShowTaskInfoNotes(0);
+        {% autoescape on %}
+                JSGantt.parseXMLString('{{ ganttTaskChain|safe }}', g);
+        {% endautoescape %}
+		g.Draw();
+	} else {
+		alert("Error, unable to create Gantt Chart");
+	}
+</script>
+
+<h3 id="tCredits">Credits</h2>
+<p>Based on jsGantt 1.2 developed by Shlomy Gantz and Brian Twidt<br/>
+Contributed: Paul Labuschagne, Kevin Badgett, Ilan Admon<br/>
+</p>
+
+{% endblock %}
