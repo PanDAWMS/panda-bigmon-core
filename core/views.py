@@ -64,7 +64,7 @@ from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel
 
 from time import gmtime, strftime
 from settings.local import dbaccess
-from settings.local import PRODSYS
+#from settings.local import PRODSYS
 import string as strm
 from django.views.decorators.cache import cache_page
 
@@ -2319,12 +2319,15 @@ def jobList(request, mode=None, param=None):
                 else:
                     request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
                     JOB_LIMITS = int(request.session['requestParams']['limit'])
-
-                archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[
+                if (((datetime.now() - datetime.strptime(query['modificationtime__range'][0],
+                                                         "%Y-%m-%d %H:%M:%S")).days > 1) or \
+                            ((datetime.now() - datetime.strptime(query['modificationtime__range'][1],
+                                                                 "%Y-%m-%d %H:%M:%S")).days > 1)):
+                    archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[
                            :request.session['JOB_LIMIT']].values(*values)
-                listJobs.append(Jobsarchived)
-                totalJobs = len(archJobs)
-                jobs.extend(archJobs)
+                    listJobs.append(Jobsarchived)
+                    totalJobs = len(archJobs)
+                    jobs.extend(archJobs)
     print listJobs
     thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
     thread.start()
@@ -5402,11 +5405,13 @@ def taskList(request):
         eventservice = True
         hours = 7 * 24
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
+    listTasks = []
     if 'statenotupdated' in request.session['requestParams']:
         tasks = taskNotUpdated(request, query, wildCardExtension)
     else:
         tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
-        thread = Thread(target=totalCount, args=(JediTasksOrdered, query, wildCardExtension, dkey))
+        listTasks.append(JediTasksOrdered)
+        thread = Thread(target=totalCount, args=(listTasks, query, wildCardExtension, dkey))
         thread.start()
     tasks = cleanTaskList(request, tasks)
     ntasks = len(tasks)
@@ -5511,6 +5516,30 @@ def taskList(request):
     flowstruct = buildGoogleFlowDiagram(request, tasks=tasks)
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
+
+    thread.join()
+    tasksTotalCount = sum(tcount[dkey])
+    print dkey
+    print tcount[dkey]
+    del tcount[dkey]
+    print tcount
+    print tasksTotalCount
+
+    listPar = []
+    for key, val in request.session['requestParams'].iteritems():
+        if (key != 'limit' and key != 'display_limit'):
+            listPar.append(key + '=' + str(val))
+    if len(listPar) > 0:
+        urlParametrs = '&'.join(listPar) + '&'
+    else:
+        urlParametrs = None
+    print listPar
+    del listPar
+    if (math.fabs(ntasks - tasksTotalCount) < 1000):
+        tasksTotalCount = None
+    else:
+        tasksTotalCount = int(math.ceil((tasksTotalCount + 10000) / 10000) * 10000)
+
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
         ## Add info to the json dump if the request is for a single task
@@ -5544,6 +5573,8 @@ def taskList(request):
             'display_limit': nmax,
             'flowstruct': flowstruct,
             'eventservice': eventservice,
+            'requestString': urlParametrs,
+            'tasksTotalCount': tasksTotalCount,
         }
 
         setCacheEntry(request, "taskList", json.dumps(data, cls=DateEncoder), 60 * 20)
