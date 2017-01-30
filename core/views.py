@@ -6853,7 +6853,7 @@ def ganttTaskChain(request):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
 
     new_cur = connections["deft_adcr"].cursor()
-    sql_request_str = file("core/common/static/sql/gannt_request.sql").read().replace('%i', str(jeditaskid))
+    sql_request_str = file("core/static/sql/gannt_request.sql").read().replace('%i', str(jeditaskid))
     new_cur.execute(sql_request_str)
     results = new_cur.fetchall()
     results_list = ["".join(map(str, r)) for r in results]
