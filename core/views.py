@@ -5583,12 +5583,14 @@ def killtasks(request):
     if resp and len(resp.data) > 0:
         try:
             resp = json.loads(resp.data)
-            if 'exception' in resp:
-                resp['detail'] = resp['exception']
+            if resp['result'] == "FAILED":
+                resp['detail'] = 'Result:' + resp['result'] + ' with reason:' + resp['exception']
+            elif resp['result'] == "OK":
+                resp['detail'] = 'Action peformed successfully, details: ' + resp['details']
         except:
             resp = {"detail":"prodsys responce could not be parced"}
     else:
-        resp = {"detail": "Error with sending request to prodsys prodsys"}
+        resp = {"detail": "Error with sending request to prodsys"}
     dump = json.dumps(resp, cls=DateEncoder)
     response = HttpResponse(dump, mimetype='text/plain')
     return response
