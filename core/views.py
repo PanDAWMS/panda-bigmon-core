@@ -78,6 +78,7 @@ import decimal
 import base64
 import urllib3
 from django.views.decorators.cache import never_cache
+import chainsql
 
 errorFields = []
 errorCodes = {}
@@ -6840,11 +6841,8 @@ def taskchain(request):
     return response
 
 def ganttTaskChain(request):
-    import cx_Oracle
     from django.db import connections
-
     valid, response = initRequest(request)
-
     jeditaskid = -1
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
@@ -6853,7 +6851,7 @@ def ganttTaskChain(request):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
 
     new_cur = connections["deft_adcr"].cursor()
-    sql_request_str = file("core/static/gannt_request.sql").read().replace('%i', str(jeditaskid))
+    sql_request_str = chainsql.query.replace('%i', str(jeditaskid))
     new_cur.execute(sql_request_str)
     results = new_cur.fetchall()
     results_list = ["".join(map(str, r)) for r in results]
