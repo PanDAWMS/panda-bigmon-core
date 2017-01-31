@@ -3489,9 +3489,15 @@ def userList(request):
 def userInfo(request, user=''):
     valid, response = initRequest(request)
     if not valid: return response
+    fullname = ''
+    login = ''
     if user == '':
         if 'user' in request.session['requestParams']: user = request.session['requestParams']['user']
         if 'produsername' in request.session['requestParams']: user = request.session['requestParams']['produsername']
+        if user == '':
+            if 'ADFS_LOGIN' in request.session:
+                login = user = request.session['ADFS_LOGIN']
+                fullname = request.session['ADFS_FULLNAME']
 
     if 'days' in request.session['requestParams']:
         days = int(request.session['requestParams']['days'])
@@ -3508,6 +3514,11 @@ def userInfo(request, user=''):
     startdate = startdate.strftime(defaultDatetimeFormat)
     enddate = timezone.now().strftime(defaultDatetimeFormat)
     query = {'modificationtime__range': [startdate, enddate]}
+
+    #
+    # TODO: if login we should set exact match
+    #
+
     query['username__icontains'] = user.strip()
     tasks = JediTasks.objects.filter(**query).values()
     tasks = sorted(tasks, key=lambda x: -x['jeditaskid'])
@@ -3520,6 +3531,11 @@ def userInfo(request, user=''):
     limit = 5000
     query = setupView(request, hours=72, limit=limit)
     #    query['produsername__icontains'] = user.strip()
+
+    #
+    # TODO:  if login we should set exact match
+    #
+
     query['produsername__startswith'] = user.strip()
     jobs = []
     values = 'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock',
@@ -3539,7 +3555,10 @@ def userInfo(request, user=''):
     #             query['produsername'] = user
     #             jobsetids = Jobsarchived.objects.filter(**query).values('jobsetid').distinct()
     jobs = cleanJobList(request, jobs)
-    query = {'name__icontains': user.strip()}
+    if fullname != '':
+        query = {'name': fullname}
+    else:
+        query = {'name__icontains': user.strip()}
     userdb = Users.objects.filter(**query).values()
     if len(userdb) > 0:
         userstats = userdb[0]
