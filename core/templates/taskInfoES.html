@@ -82,7 +82,12 @@ function toggleDetailDisplay(className) {
 }
 
 function killtasks(taskID, action) {
-    if (confirm('Are you sure you want to KILL this task?')) {
+    var message = ''
+    if (action == 0)
+        message = 'Are you sure you want to FINISH this task?'
+    else
+        message = 'Are you sure you want to ABORT this task?'
+    if (confirm(message)) {
         $.ajax({
             url: {% url 'killtasks' %},
             data: {'task': taskID, 'action': action},
