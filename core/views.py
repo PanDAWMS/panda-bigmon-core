@@ -64,7 +64,7 @@ from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel
 
 from time import gmtime, strftime
 from settings.local import dbaccess
-#from settings.local import PRODSYS
+from settings.local import PRODSYS
 import string as strm
 from django.views.decorators.cache import cache_page
 
