@@ -5649,7 +5649,12 @@ def killtasks(request):
         response = HttpResponse(dump, mimetype='text/plain')
         return response
 
-    postdata = {"username": username, "task": taskid, "parameters":[1], "userfullname":fullname}
+    if action == 1:
+        postdata = {"username": username, "task": taskid, "userfullname":fullname}
+    else:
+        postdata = {"username": username, "task": taskid, "parameters":[1], "userfullname":fullname}
+
+
     headers = {'Accept': 'application/json', 'Authorization': 'Token '+prodsysToken}
 
     conn = urllib3.HTTPSConnectionPool(prodsysHost, timeout=20)
