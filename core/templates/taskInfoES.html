@@ -110,7 +110,6 @@ function killtasks(taskID, action) {
 {% if showtaskprof == True %}
     <a href="{% url 'taskprofileplot' %}?jeditaskid=" target="_blank">Open Task Profile</a>&emsp;
     <a href="{% url 'taskesprofileplot' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Events Processing Profile (Not dropped finished jobs)</a>&emsp;
-
 {% endif %}
 
 <a href="{% url 'ganttTaskChain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Open Task Chain</a>&emsp;
@@ -124,8 +123,8 @@ function killtasks(taskID, action) {
 {% if request.session.IS_TESTER == True %}
     {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
     {% if not task.status in finalstatelist %}
-        <a onclick="javascript:killtasks({{ task.jeditaskid }}, 0);">Finish task</a>
-        <a onclick="javascript:killtasks({{ task.jeditaskid }}, 1);">Abort task</a>
+        <a style="margin-left: 10em;" onclick="javascript:killtasks({{ task.jeditaskid }}, 0);" class='failed'>Finish</a>
+        <a style="margin-left: 2em;" onclick="javascript:killtasks({{ task.jeditaskid }}, 1);" class='failed'>Abort</a>
     {% endif %}
     {% endwith %}
 {% endif %}
