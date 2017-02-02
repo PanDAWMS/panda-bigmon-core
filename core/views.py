@@ -64,7 +64,7 @@ from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel
 
 from time import gmtime, strftime
 from settings.local import dbaccess
-from settings.local import PRODSYS
+# from settings.local import PRODSYS
 import string as strm
 from django.views.decorators.cache import cache_page
 
@@ -5787,6 +5787,42 @@ def getTaskScoutingInfo(tasks, nmax):
 
     return tasks
 
+def getErrorSummaryForEvents(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+    data = {}
+    eventsErrors = []
+
+    if 'jeditaskid' in request.session['requestParams']:
+        jeditaskid = int(request.session['requestParams']['jeditaskid'])
+    else:
+        data = {"error": "no jeditaskid supplied"}
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+
+    equery = {}
+    equery['jeditaskid']=jeditaskid
+    equery['error_code__isnull'] = False
+
+
+    eventsErrors = JediEvents.objects.filter(**equery).values('error_code').annotate(njobs=Count('pandaid',distinct=True),nevents=Sum('def_max_eventid', field='def_max_eventid-def_min_eventid+1'))
+
+    for eventserror in eventsErrors:
+        try:
+            eventserror['error_code']=int(eventserror['error_code'])
+            if eventserror['error_code'] in errorCodes['piloterrorcode'].keys():
+                eventserror['error_description'] = errorCodes['piloterrorcode'][eventserror['error_code']]
+            else:
+                eventserror['error_description'] = ''
+        except:
+            eventserror['error_description'] = ''
+
+
+    data = {'errors' : eventsErrors}
+
+    response = render_to_response('eventsErrorSummary.html', data, RequestContext(request))
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
 
 def getSummaryForTaskList(request):
     valid, response = initRequest(request)
@@ -6852,6 +6888,7 @@ def taskInfo(request, jeditaskid=0):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
+            'furl': furl,
             'nomodeurl': nomodeurl,
             'showtaskprof': showtaskprof,
             'jobsummaryESMerge': jobsummaryESMerge,

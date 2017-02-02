@@ -1,0 +1,17 @@
+{% load url from future %}
+<table>
+    <tr class="tablesection">
+        <th> Error code </th>
+        <th> Nevents </th>
+        <th> N jobs</th>
+        <th> Error description</th>
+    </tr>
+    {% for error in errors %}
+    	<tr>
+            <td class="alarm"> {{ error.error_code }}</td>
+            <td class='failed_fill'> <b>{{ error.nevents }}</b></td>
+            <td class='failed_fill'><b>{{ error.njobs }}</b></td>
+            <td class="alarm">{{ error.error_description }}</td>
+        </tr>
+    {% endfor %}
+</table>

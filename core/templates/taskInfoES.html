@@ -1,5 +1,6 @@
 {% extends "_base_core.html" %}{% load url from future %}
 
+{% load staticfiles %}
 {% block page_title %} {{ jeditaskid }} ES task {% endblock %}
 {% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA Event Service task {{ jeditaskid }} at {{ task.site }} {% endblock %}
@@ -243,7 +244,15 @@ function killtasks(taskID, action) {
 {% endfor %}
 </tr><tr>
 {% for state in eventssummary %}
-<td {% if state.count > 0 %} class='{{state.statusname}}_fill' {% endif %}> {% if state.count > 0 %} <b> <span class='{{state.statusname}}_fill'>{{ state.count }}</span></b> {% endif %} </td>
+<td {% if state.count > 0 %} class='{{state.statusname}}_fill' {% endif %}> {% if state.count > 0 %}
+    <b> <span class='{{state.statusname}}_fill'>
+        {% if state.statusname == 'failed' and state.count > 0 %}
+            <a onclick="javascript:loadErrorSummaryData('{{ jeditaskid }}');"> {{ state.count }} </a>
+        {% else %} {{ state.count }}
+        {% endif %}
+    </span></b>
+    {% endif %}
+</td>
 {% endfor %}</tr>
 {% if ossummary|length > 0 %}
 <tr class="showeventsdetailsrow" >
@@ -259,6 +268,26 @@ function killtasks(taskID, action) {
 </table>
 {% endif %}
 
+<script type="text/javascript">
+   function loadErrorSummaryData(jeditaskid) {
+
+       $('#div-error-sum').html("<img src='{% static "images/load.gif" %}'>  ");
+       $.ajax({
+           url: {% url 'eventsErrorSummary' %},
+           data: 'jeditaskid='+jeditaskid,
+           async: true
+       })
+       .done(function (response) {
+           $('#div-error-sum').html(response);
+       });
+   }
+</script>
+
+<p>
+<div id="div-error-sum">
+
+</div>
+<p>
 
 <p>
 {% if task.errordialog %}

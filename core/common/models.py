@@ -467,6 +467,8 @@ class JediEvents(models.Model):
     status = models.IntegerField(db_column='STATUS', blank=True)
     attemptnr = models.IntegerField(db_column='ATTEMPTNR', blank=True)
     objstore_id = models.IntegerField(db_column='OBJSTORE_ID', blank=True)
+    file_not_deleted = models.CharField(max_length=48, db_column='FILE_NOT_DELETED')
+    error_code = models.IntegerField(db_column='ERROR_CODE', blank=True)
 
     class Meta:
         db_table = u'jedi_events'
