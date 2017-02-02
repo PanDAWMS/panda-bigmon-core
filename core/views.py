@@ -57,7 +57,7 @@ from core.common.models import JediEvents
 from core.common.models import JediDatasets
 from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
-from core.common.models import RequestStat, BPUser
+from core.common.models import RequestStat, BPUser, Visits
 from core.settings.config import ENV
 from core.common.models import RunningMCProductionTasks
 from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel
@@ -9446,6 +9446,32 @@ def endSelfMonitor(request):
             description=' '
         )
         reqs.save()
+
+@never_cache
+def statpixel(request):
+    valid, response = initRequest(request)
+
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+
+    url = request.META['HTTP_REFERER']
+    service = 0
+    userid = -1
+    if ('ADFS_LOGIN' in request.session):
+        userid = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
+    Visits.objects.create(url=url, service=service, remote=ip, time=str(timezone.now()), userid=userid)
+
+
+    #user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'],
+    #                                  first_name=request.session['ADFS_FIRSTNAME'],
+    #                                  last_name=request.session['ADFS_LASTNAME'])
+
+    #this is a transparent gif pixel
+    pixel_= "\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b"
+    return HttpResponse(pixel_, content_type='image/gif')
 
 
 #@cache_page(60 * 20)

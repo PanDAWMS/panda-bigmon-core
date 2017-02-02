@@ -80,7 +80,7 @@ urlpatterns = patterns('',
     url(r'^taskesprofileplot/$', coremon_views.taskESprofileplot, name='taskesprofileplot'),
     url(r'^eventsinfo/$', coremon_views.eventsInfo, name='eventsInfo'),
     url(r'^globalshares/$', coremon_views.globalshares, name='globalshares'),
-
+    url(r'^statpixel/$', coremon_views.statpixel, name='statpixel'),
     url(r'^killtasks/$', coremon_views.killtasks, name='killtasks'),
     url(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
 

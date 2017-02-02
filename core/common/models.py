@@ -1564,6 +1564,16 @@ class Redirect(models.Model):
     class Meta:
         db_table = u'redirect'
 
+class Visits(models.Model):
+    visitId = models.BigIntegerField(primary_key=True, db_column='VISITID')
+    url = models.CharField(null=True,db_column='URL', max_length=1000)
+    time = models.DateTimeField(db_column='TIME', null=False)
+    remote = models.CharField(null=True,db_column='REMOTE', max_length=20)
+    userid = models.IntegerField(null=True, db_column='USERID', blank=True)
+    service = models.IntegerField(null=True, db_column='SERVICE', blank=True)
+    class Meta:
+        db_table= u'"ATLAS_PANDABIGMON"."VISITS"'
+
 class RequestStat(models.Model):
     id = models.IntegerField(primary_key=True, db_column='ID')
     server = models.CharField(max_length=40, db_column='server')
