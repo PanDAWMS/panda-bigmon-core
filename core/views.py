@@ -2328,9 +2328,9 @@ def jobList(request, mode=None, param=None):
                     listJobs.append(Jobsarchived)
                     totalJobs = len(archJobs)
                     jobs.extend(archJobs)
-    print listJobs
-    thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
-    thread.start()
+        print listJobs
+        thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
+        thread.start()
 
     ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
     taskids = {}
@@ -2512,13 +2512,18 @@ def jobList(request, mode=None, param=None):
             job['computingsitestatus'] = siteHash[job['computingsite']][0]
             job['computingsitecomment'] = siteHash[job['computingsite']][1]
 
-    thread.join()
-    jobsTotalCount = sum(tcount[dkey])
-    print dkey
-    print tcount[dkey]
-    del tcount[dkey]
-    print tcount
-    print jobsTotalCount
+    jobsTotalCount = -1
+    try:
+        thread.join()
+        jobsTotalCount = sum(tcount[dkey])
+        print dkey
+        print tcount[dkey]
+        del tcount[dkey]
+        print tcount
+        print jobsTotalCount
+
+    except:
+            pass
 
     listPar =[]
     for key, val in request.session['requestParams'].iteritems():
