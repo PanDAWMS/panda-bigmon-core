@@ -9665,6 +9665,7 @@ def stripTree(node, rows):
         row['pledged'] = node.pledged
         row['delta'] = node.delta
         row['queued'] = node.queued
+        row['ratio'] = node.ratio
         rows.append(row)
     for item in node.children:
         stripTree(item, rows)
@@ -9675,6 +9676,7 @@ def getChildStat(node, hs_distribution_dict, level):
     pledged = 0
     delta = 0
     queued = 0
+    ratio = 0
     if node.name in hs_distribution_dict:
         executing = hs_distribution_dict[node.name]['executing']
         pledged = hs_distribution_dict[node.name]['pledged']
@@ -9687,8 +9689,17 @@ def getChildStat(node, hs_distribution_dict, level):
             pledged += item.pledged
             delta += item.delta
             queued += item.queued
+            #ratio = item.ratio if item.ratio!=None else 0
+
     node.executing = executing
     node.pledged = pledged
     node.delta = delta
     node.queued = queued
     node.level = level
+
+    if (pledged != 0):
+        ratio = executing / pledged *100
+    else:
+        ratio = None
+
+    node.ratio = ratio

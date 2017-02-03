@@ -18,7 +18,7 @@
         <th>L3 Share</th>
         <th>Actual HS06</th>
         <th>Target HS06</th>
-        <th>Delta</th>
+        <th>Ratio</th>
         <th>Queued</th>
     </tr>
     {% for row in tablerows %}
@@ -28,7 +28,7 @@
                 <td>{{row.level3}}</td>
                 <td style="text-align:right">{% if row.executing %}{{ row.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
                 <td style="text-align:right">{% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">{% if row.delta %} {{ row.delta |floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td style="text-align:right">{% if row.ratio %} {{ row.ratio |floatformat:2|intcomma }} % {% else %} --- {% endif %}</td>
                 <td style="text-align:right">{% if row.queued %}{{ row.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
             </tr>
     {% endfor %}
