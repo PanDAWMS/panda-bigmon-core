@@ -34,7 +34,7 @@
 </tr>
 	<tr>
 		<td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a></td>
-        {% if task.deftreqid %} <td> <a href="http://bigpanda.cern.ch/prodsys/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a> </td> {% endif %}
+        {% if task.deftreqid %} <td> <a href="https://prodtask-dev.cern.ch/prodsys/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a> </td> {% endif %}
 		{% if task.reqid != task.jeditaskid and not task.deftreqid %}<td>{{ task.reqid }}</td>{% endif %}
 		<td>{{ task.tasktype }}</td>
 		<td>{% if task.processingtype %} {{ task.processingtype }} {% endif %} </td>
