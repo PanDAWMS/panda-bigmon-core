@@ -2512,7 +2512,6 @@ def jobList(request, mode=None, param=None):
             job['computingsitestatus'] = siteHash[job['computingsite']][0]
             job['computingsitecomment'] = siteHash[job['computingsite']][1]
 
-    jobsTotalCount = -1
     try:
         thread.join()
         jobsTotalCount = sum(tcount[dkey])
@@ -2523,7 +2522,7 @@ def jobList(request, mode=None, param=None):
         print jobsTotalCount
 
     except:
-            pass
+        jobsTotalCount = -1
 
     listPar =[]
     for key, val in request.session['requestParams'].iteritems():
@@ -2535,7 +2534,7 @@ def jobList(request, mode=None, param=None):
         urlParametrs = None
     print listPar
     del listPar
-    if (math.fabs(njobs-jobsTotalCount)<1000):
+    if (math.fabs(njobs-jobsTotalCount)<1000 or jobsTotalCount == -1):
         jobsTotalCount=None
     else:
         jobsTotalCount = int(math.ceil((jobsTotalCount+10000)/10000)*10000)
@@ -5541,13 +5540,16 @@ def taskList(request):
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
 
-    thread.join()
-    tasksTotalCount = sum(tcount[dkey])
-    print dkey
-    print tcount[dkey]
-    del tcount[dkey]
-    print tcount
-    print tasksTotalCount
+    try:
+        thread.join()
+        tasksTotalCount = sum(tcount[dkey])
+        print dkey
+        print tcount[dkey]
+        del tcount[dkey]
+        print tcount
+        print tasksTotalCount
+    except:
+        tasksTotalCount = -1
 
     listPar = []
     for key, val in request.session['requestParams'].iteritems():
@@ -5559,7 +5561,7 @@ def taskList(request):
         urlParametrs = None
     print listPar
     del listPar
-    if (math.fabs(ntasks - tasksTotalCount) < 1000):
+    if (math.fabs(ntasks - tasksTotalCount) < 1000 or tasksTotalCount == -1):
         tasksTotalCount = None
     else:
         tasksTotalCount = int(math.ceil((tasksTotalCount + 10000) / 10000) * 10000)
