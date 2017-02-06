@@ -246,7 +246,7 @@ function killtasks(taskID, action) {
 {% for state in eventssummary %}
 <td {% if state.count > 0 %} class='{{state.statusname}}_fill' {% endif %}> {% if state.count > 0 %}
     <b> <span class='{{state.statusname}}_fill'>
-        {% if state.statusname == 'failed' and state.count > 0 %}
+        {% if requestParams.mode == 'nodrop' and state.statusname == 'failed' and state.count > 0 %}
             <a onclick="javascript:loadErrorSummaryData('{{ jeditaskid }}');"> {{ state.count }} </a>
         {% else %} {{ state.count }}
         {% endif %}
