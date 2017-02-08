@@ -13,6 +13,8 @@ query = '''with tasks as (
 			   substr(t.inputdataset, instrc(t.inputdataset,'.',1,4)+1,instrc(t.inputdataset,'.',1,5)-instrc(t.inputdataset,'.',1,4)-1) as input,
 			   (select ListAgg(substr(name, instrc(name,'.',1,4)+1,instrc(name,'.',1,5)-instrc(name,'.',1,4)-1),',') within group(order by name)
 	            from t_production_dataset where taskid = t.taskid and substr(name, instrc(name,'.',1,4)+1,instrc(name,'.',1,5)-instrc(name,'.',1,4)-1) != 'log') as output,
+			   (select ListAgg(name||':'||status,',') within group(order by status)
+	            from t_production_dataset where taskid = t.taskid and substr(name, instrc(name,'.',1,4)+1,instrc(name,'.',1,5)-instrc(name,'.',1,4)-1) != 'log') as aod_ds,
 			   substr(t.taskname, instrc(t.taskname,'.',1,3)+1,instrc(t.taskname,'.',1,4)-instrc(t.taskname,'.',1,3)-1) as prod_step,
 			   CASE WHEN t.parent_tid = t.taskid THEN NULL ELSE t.parent_tid END as parent,
 			   NVL(TO_CHAR(t.start_time, 'yyyy-mm-dd hh24:mi:ss'),'NA') as start_time,
@@ -34,7 +36,7 @@ query = '''with tasks as (
 		order siblings by t.taskid
 		),
 	task_chain_predicted_ms as (
-    	select id as pID, parent as pParent, taskname as pName, input as pInput, output as pOutput, '' as pLink, 0 as pMile, status as pStatus, 0 as pGroup, 1 as pOpen, '' as pCaption, '' as pNotes,
+    	select id as pID, parent as pParent, aod_ds as pAODds, taskname as pName, input as pInput, output as pOutput, '' as pLink, 0 as pMile, status as pStatus, 0 as pGroup, 1 as pOpen, '' as pCaption, '' as pNotes,
     		   CASE WHEN parent is not null and parent_step = 'evgen' THEN parent||'FS' ELSE parent||'SS' END as pDepend,
 		       CASE WHEN status IN ('running','finished','done','submitting','submitted') THEN 'gtaskgreen'
 		       	    WHEN status IN ('ready','paused','pending','waiting','toretry') THEN 'gtaskyellow'
@@ -72,6 +74,7 @@ query = '''with tasks as (
 	SELECT xmltype.getclobval(xmlroot(xmlelement("project",
 		   XMLAGG(XMLELEMENT ("task",
 		   	 	   XMLElement("pID", pID),
+		   	 	   XMLElement("pAODds", pAODds),
                    XMLElement("pName", pName),
                    XMLElement("pStart", pStart),
                    XMLElement("pEnd", pEnd),
