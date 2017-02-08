@@ -375,16 +375,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     wildSearchFields = []
     if querytype == 'job':
-        for field in Jobsactive4._meta.get_all_field_names():
-            if (Jobsactive4._meta.get_field(field).get_internal_type() == 'CharField'):
-                if not (field == 'jobstatus' or field == 'modificationhost' or field == 'batchid' or (
-                    excludeJobNameFromWildCard and field == 'jobname')):
-                    wildSearchFields.append(field)
+        for field in Jobsactive4._meta.get_fields():
+            if (field.get_internal_type() == 'CharField'):
+                if not (field.name == 'jobstatus' or field.name == 'modificationhost' or field.name == 'batchid' or (
+                    excludeJobNameFromWildCard and field.name == 'jobname')):
+                    wildSearchFields.append(field.name)
     if querytype == 'task':
-        for field in JediTasks._meta.get_all_field_names():
-            if (JediTasks._meta.get_field(field).get_internal_type() == 'CharField'):
-                if not (field == 'status' or field == 'modificationhost'):
-                    wildSearchFields.append(field)
+        for field in JediTasks._meta.get_fields():
+            if (field.get_internal_type() == 'CharField'):
+                if not (field.name == 'status' or field.name == 'modificationhost'):
+                    wildSearchFields.append(field.name)
 
     deepquery = False
     fields = standard_fields
@@ -564,9 +564,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 extraQueryString += ')'
 
         if querytype == 'task':
-            for field in JediTasks._meta.get_all_field_names():
+            for field in JediTasks._meta.get_fields():
                 # for param in requestParams:
-                if param == field:
+                if param == field.name:
                     if param == 'ramcount':
                         if 'GB' in request.session['requestParams'][param]:
                             leftlimit, rightlimit = (request.session['requestParams'][param]).split('-')
@@ -606,8 +606,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         if (param not in wildSearchFields):
                             query[param] = request.session['requestParams'][param]
         else:
-            for field in Jobsactive4._meta.get_all_field_names():
-                if param == field:
+            for field in Jobsactive4._meta.get_fields():
+                if param == field.name:
                     if param == 'minramcount':
                         if 'GB' in request.session['requestParams'][param]:
                             leftlimit, rightlimit = (request.session['requestParams'][param]).split('-')
@@ -1074,12 +1074,12 @@ def cleanTaskList(request, tasks):
 
     random.seed()
     transactionKey = random.randrange(1000000)
-    connection.enter_transaction_management()
+#    connection.enter_transaction_management()
     new_cur = connection.cursor()
     for id in taskl:
         new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
             tmpTableName, id, transactionKey))  # Backend dependable
-    connection.commit()
+#    connection.commit()
     dsets = JediDatasets.objects.filter(**dsquery).extra(
         where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values(
         'jeditaskid', 'nfiles', 'nfilesfinished', 'nfilesfailed')
@@ -1092,8 +1092,8 @@ def cleanTaskList(request, tasks):
             dsinfo[taskid].append(ds)
 
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-    connection.commit()
-    connection.leave_transaction_management()
+#    connection.commit()
+#   connection.leave_transaction_management()
 
     for task in tasks:
         if 'totevrem' not in task:
@@ -1214,21 +1214,21 @@ def jobSummaryDict(request, jobs, fieldlist=None):
 
         transactionKey = random.randrange(1000000)
 
-        connection.enter_transaction_management()
+ #       connection.enter_transaction_management()
         new_cur = connection.cursor()
         executionData = []
         for id in esjobs:
             executionData.append((id, transactionKey))
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
-        connection.commit()
+ #       connection.commit()
 
         new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM (SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */ PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY = %i AND  PANDAID = ID) t1 GROUP BY STATUS" % (tmpTableName, transactionKey))
 
         evtable = dictfetchall(new_cur)
         new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-        connection.commit()
-        connection.leave_transaction_management()
+#        connection.commit()
+ #       connection.leave_transaction_management()
 
         for ev in evtable:
             evstat = eventservicestatelist[ev['STATUS']]
@@ -1586,9 +1586,9 @@ def mainPage(request):
         return response
     elif (('HTTP_ACCEPT' in request.META) and request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or (
         'json' in request.session['requestParams']):
-        return HttpResponse('json', mimetype='text/html')
+        return HttpResponse('json', content_type='text/html')
     else:
-        return HttpResponse('not understood', mimetype='text/html')
+        return HttpResponse('not understood', content_type='text/html')
 
 
 def helpPage(request):
@@ -1612,9 +1612,9 @@ def helpPage(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
-        return HttpResponse('json', mimetype='text/html')
+        return HttpResponse('json', content_type='text/html')
     else:
-        return HttpResponse('not understood', mimetype='text/html')
+        return HttpResponse('not understood', content_type='text/html')
 
 
 def errorInfo(job, nchars=300, mode='html'):
@@ -1676,9 +1676,9 @@ def jobParamList(request):
     jobparams = Jobparamstable.objects.filter(**query).values()
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
-        return HttpResponse(json.dumps(jobparams, cls=DateEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(jobparams, cls=DateEncoder), content_type='text/html')
     else:
-        return HttpResponse('not supported', mimetype='text/html')
+        return HttpResponse('not supported', content_type='text/html')
 
 
 def jobSummaryDictProto(request, cutsummary, requestToken):
@@ -1774,8 +1774,8 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     #else:
     #    plsql += " RANGE_DAYS=>"+str(range)+", "
 
-    for item in request.REQUEST:
-        requestFields[item.lower()] = request.REQUEST[item]
+    for item in request.GET:
+        requestFields[item.lower()] = request.GET[item]
 
     if (('jeditaskid' in requestFields) and range == 180.0): #This is a temporary patch to avoid absence of pandaids
         plsql += " RANGE_DAYS=>null, "
@@ -1840,7 +1840,7 @@ def jobListP(request, mode=None, param=None):
     # Get request token. This sheme of getting tokens should be more sophisticated (at least not use sequential numbers)
     requestToken = 0
 
-    if len(request.REQUEST.values()) == 0:
+    if len(request.GET.values()) == 0:
         requestToken = -1
     else:
         sqlRequest = "SELECT ATLAS_PANDABIGMON.PANDAMON_REQUEST_TOKEN_SEQ.NEXTVAL as my_req_token FROM dual;"
@@ -1862,8 +1862,8 @@ def jobListP(request, mode=None, param=None):
         'mode'] == 'nodrop': dropmode = False
 
     requestFields = {}
-    for item in request.REQUEST:
-        requestFields[item.lower()] = request.REQUEST[item]
+    for item in request.GET:
+        requestFields[item.lower()] = request.GET[item]
 
     if not (requestToken == -1):
         startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
@@ -1895,10 +1895,10 @@ def jobListPDiv(request, mode=None, param=None):
     njobsmax = display_limit
 
 
-    if 'requesttoken' not in request.REQUEST:
+    if 'requesttoken' not in request.GET:
         return HttpResponse('')
 
-    sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.REQUEST[
+    sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.GET[
         'requesttoken']
     cur = connection.cursor()
     cur.execute(sqlRequest)
@@ -1981,7 +1981,7 @@ def jobListPDiv(request, mode=None, param=None):
             eventservice = True
         if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
                     'requestParams' in request.session and 'json' in request.session['requestParams']):
-            values = Jobsactive4._meta.get_all_field_names()
+            values = [f.name for f in Jobsactive4._meta.get_fields()]
         elif eventservice:
             values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice'
         else:
@@ -2177,7 +2177,7 @@ def getCacheEntry(request, viewType):
     is_json = False
     request._cache_update_cache = False
     if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
-                'json' in request.REQUEST)):
+                'json' in request.GET)):
         is_json = True
     key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
     path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
@@ -2188,7 +2188,7 @@ def setCacheEntry(request, viewType, data, timeout):
     is_json = False
     request._cache_update_cache = False
     if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
-                'json' in request.REQUEST)):
+                'json' in request.GET)):
         is_json = True
     key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
     path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
@@ -2206,7 +2206,7 @@ def cache_filter(timeout):
 
             # here we can apply any conditions to separate cache streams
             if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
-                        'json' in request.REQUEST)):
+                        'json' in request.GET)):
                 is_json = True
 
             key_prefix = "%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX)
@@ -2267,7 +2267,7 @@ def jobList(request, mode=None, param=None):
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
-        values = Jobsactive4._meta.get_all_field_names()
+        values = [f.name for f in Jobsactive4._meta.get_fields()]
     elif eventservice:
         values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents'
     else:
@@ -2618,7 +2618,7 @@ def jobList(request, mode=None, param=None):
             "jobs": jobs,
             "errsByCount": errsByCount,
         }
-        response = HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -2784,7 +2784,7 @@ def descendentjoberrsinfo(request):
         data = {"error": "no pandaid or jeditaskid supplied"}
         del request.session['TFIRST']
         del request.session['TLAST']
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
     query = setupView(request, hours=365 * 24)
     jobs = []
@@ -2799,7 +2799,7 @@ def descendentjoberrsinfo(request):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {"error": "job not found"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
     job = jobs[0]
 
@@ -2849,11 +2849,11 @@ def descendentjoberrsinfo(request):
 
 
 def eventsInfo(request, mode=None, param=None):
-    if not 'jeditaskid' in request.REQUEST:
+    if not 'jeditaskid' in request.GET:
         data = {}
-        return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
-    jeditaskid = request.REQUEST['jeditaskid']
+    jeditaskid = request.GET['jeditaskid']
 
     cur = connection.cursor()
     cur.execute(
@@ -2867,7 +2867,7 @@ def eventsInfo(request, mode=None, param=None):
         data[ev[1]] = ev[0]
     data['jeditaskid'] = jeditaskid
 
-    return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+    return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
 
 @csrf_exempt
@@ -3331,11 +3331,11 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 'dsfiles': dsfiles,
                 }
 
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
     else:
         del request.session['TFIRST']
         del request.session['TLAST']
-        return HttpResponse('not understood', mimetype='text/html')
+        return HttpResponse('not understood', content_type='text/html')
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -3486,7 +3486,7 @@ def userList(request):
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = sumd
-        return HttpResponse(json.dumps(resp), mimetype='text/html')
+        return HttpResponse(json.dumps(resp), content_type='text/html')
 
 
 @cache_page(60 * 20)
@@ -3673,7 +3673,7 @@ def userInfo(request, user=''):
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = sumd
-        return HttpResponse(json.dumps(resp), mimetype='text/html')
+        return HttpResponse(json.dumps(resp), content_type='text/html')
 
 
 def siteList(request):
@@ -3817,7 +3817,7 @@ def siteList(request):
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = sites
-        return HttpResponse(json.dumps(resp), mimetype='text/html')
+        return HttpResponse(json.dumps(resp), content_type='text/html')
 
 
 def siteInfo(request, site=''):
@@ -3926,7 +3926,7 @@ def siteInfo(request, site=''):
         for job in jobList:
             resp.append({'pandaid': job.pandaid, 'status': job.jobstatus, 'prodsourcelabel': job.prodsourcelabel,
                          'produserid': job.produserid})
-        return HttpResponse(json.dumps(resp), mimetype='text/html')
+        return HttpResponse(json.dumps(resp), content_type='text/html')
 
 
 def updateCacheWithListOfMismatchedCloudSites(mismatchedSites):
@@ -4046,8 +4046,8 @@ def wnSummary(query):
 def wnInfo(request, site, wnname='all'):
     """ Give worker node level breakdown of site activity. Spot hot nodes, error prone nodes. """
 
-    if 'hours' in request.REQUEST:
-        hours = int(request.REQUEST['hours'])
+    if 'hours' in request.GET:
+        hours = int(request.GET['hours'])
     else:
         hours = 12
 
@@ -4254,7 +4254,7 @@ def wnInfo(request, site, wnname='all'):
             'hours': hours,
             'errthreshold': errthreshold,
         }
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
@@ -4868,7 +4868,7 @@ def worldjobs(request, view='production'):
         data = {
         }
 
-        return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
 
 @cache_page(60 * 20)
@@ -5015,7 +5015,7 @@ def worldhs06s(request):
         data = {
         }
 
-        return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
 
 def dashboard(request, view='production'):
@@ -5187,7 +5187,7 @@ def dashboard(request, view='production'):
             #        del request.session['TLAST']
             data = {
             }
-        return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
     else:
 
@@ -5266,7 +5266,7 @@ def dashboard(request, view='production'):
                 'rw': rw
             }
 
-            return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+            return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
 
 def dashAnalysis(request):
@@ -5370,14 +5370,14 @@ def dashTasks(request, hours, view='production'):
             'jobsLeft': jobsLeft,
             'remainingWeightedEvents': remainingEventsSet,
         }
-        return HttpResponse(json.dumps(data), mimetype='text/html')
+        return HttpResponse(json.dumps(data), content_type='text/html')
 
 
 def taskESExtendedInfo(request):
-    if 'jeditaskid' in request.REQUEST:
-        jeditaskid = int(request.REQUEST['jeditaskid'])
+    if 'jeditaskid' in request.GET:
+        jeditaskid = int(request.GET['jeditaskid'])
     else:
-        return HttpResponse("Not jeditaskid supplied", mimetype='text/html')
+        return HttpResponse("Not jeditaskid supplied", content_type='text/html')
 
     eventsdict=[]
     equery = {'jeditaskid': jeditaskid}
@@ -5388,7 +5388,7 @@ def taskESExtendedInfo(request):
     estaskstr = ''
     for s in eventsdict:
         estaskstr += " %s(%s) " % (s['statusname'], s['count'])
-    return HttpResponse(estaskstr, mimetype='text/html')
+    return HttpResponse(estaskstr, content_type='text/html')
 
 
 @csrf_exempt
@@ -5494,7 +5494,7 @@ def taskList(request):
             tmpTableName = "TMP_IDS1"
 
         transactionKey = random.randrange(1000000)
-        connection.enter_transaction_management()
+#        connection.enter_transaction_management()
         new_cur = connection.cursor()
         executionData = []
         for id in esjobs:
@@ -5502,7 +5502,7 @@ def taskList(request):
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
 
-        connection.commit()
+#        connection.commit()
         new_cur.execute(
             """
             SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID
@@ -5515,8 +5515,8 @@ def taskList(request):
         #        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
 
         new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-        connection.commit()
-        connection.leave_transaction_management()
+ #       connection.commit()
+ #       connection.leave_transaction_management()
 
         for ev in evtable:
             taskid = taskdict[ev['PANDAID']]
@@ -5581,7 +5581,7 @@ def taskList(request):
         dump = json.dumps(tasks, cls=DateEncoder)
         del request.session['TFIRST']
         del request.session['TLAST']
-        return HttpResponse(dump, mimetype='text/html')
+        return HttpResponse(dump, content_type='text/html')
     else:
         sumd = taskSummaryDict(request, tasks)
         del request.session['TFIRST']
@@ -5642,7 +5642,7 @@ def killtasks(request):
     else:
         resp = {"detail": "Action is not recognized"}
         dump = json.dumps(resp, cls=DateEncoder)
-        response = HttpResponse(dump, mimetype='text/plain')
+        response = HttpResponse(dump, content_type='text/plain')
         return response
 
 
@@ -5653,7 +5653,7 @@ def killtasks(request):
     else:
         resp = {"detail": "User not authenticated. Please login to bigpanda mon"}
         dump = json.dumps(resp, cls=DateEncoder)
-        response = HttpResponse(dump, mimetype='text/plain')
+        response = HttpResponse(dump, content_type='text/plain')
         return response
 
     if action == 1:
@@ -5672,7 +5672,7 @@ def killtasks(request):
     else:
         resp = {"detail": "You are not allowed to test. Sorry"}
         dump = json.dumps(resp, cls=DateEncoder)
-        response = HttpResponse(dump, mimetype='text/plain')
+        response = HttpResponse(dump, content_type='text/plain')
         return response
 
 
@@ -5688,7 +5688,7 @@ def killtasks(request):
     else:
         resp = {"detail": "Error with sending request to prodsys"}
     dump = json.dumps(resp, cls=DateEncoder)
-    response = HttpResponse(dump, mimetype='text/plain')
+    response = HttpResponse(dump, content_type='text/plain')
     return response
 
 
@@ -5799,7 +5799,7 @@ def getErrorSummaryForEvents(request):
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
     else:
         data = {"error": "no jeditaskid supplied"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
     equery = {}
     equery['jeditaskid']=jeditaskid
@@ -5867,19 +5867,19 @@ def getSummaryForTaskList(request):
     taskEvents = []
     random.seed()
     transactionKey = random.randrange(1000000)
-    connection.enter_transaction_management()
+#    connection.enter_transaction_management()
     new_cur = connection.cursor()
     for id in taskl:
         new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
         tmpTableName, id, transactionKey))  # Backend dependable
-    connection.commit()
+#    connection.commit()
     taske = GetEventsForTask.objects.extra(
         where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values()
     for task in taske:
         taskEvents.append(task)
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-    connection.commit()
-    connection.leave_transaction_management()
+#    connection.commit()
+#    connection.leave_transaction_management()
 
     nevents = {'neventstot': 0, 'neventsrem': 0}
     for task in taskEvents:
@@ -6056,7 +6056,7 @@ def runningMCProdTasks(request):
         'json' in request.session['requestParams']):
 
         dump = json.dumps(tasks, cls=DateEncoder)
-        return HttpResponse(dump, mimetype='text/html')
+        return HttpResponse(dump, content_type='text/html')
     else:
         data = {
             'request': request,
@@ -6273,7 +6273,7 @@ def runningProdTasks(request):
         'json' in request.session['requestParams']):
 
         dump = json.dumps(tasks, cls=DateEncoder)
-        return HttpResponse(dump, mimetype='text/html')
+        return HttpResponse(dump, content_type='text/html')
     else:
         data = {
             'request': request,
@@ -6456,7 +6456,7 @@ def runningDPDProdTasks(request):
         'json' in request.session['requestParams']):
 
         dump = json.dumps(tasks, cls=DateEncoder)
-        return HttpResponse(dump, mimetype='text/html')
+        return HttpResponse(dump, content_type='text/html')
     else:
         data = {
             'request': request,
@@ -6509,7 +6509,7 @@ def getBrokerageLog(request):
 
 def taskprofileplot(request):
     jeditaskid = 0
-    if 'jeditaskid' in request.REQUEST: jeditaskid = int(request.REQUEST['jeditaskid'])
+    if 'jeditaskid' in request.GET: jeditaskid = int(request.GET['jeditaskid'])
     image = None
     if jeditaskid != 0:
         dp = TaskProgressPlot.TaskProgressPlot()
@@ -6525,7 +6525,7 @@ def taskprofileplot(request):
 
 def taskESprofileplot(request):
     jeditaskid = 0
-    if 'jeditaskid' in request.REQUEST: jeditaskid = int(request.REQUEST['jeditaskid'])
+    if 'jeditaskid' in request.GET: jeditaskid = int(request.GET['jeditaskid'])
     image = None
     if jeditaskid != 0:
         dp = TaskProgressPlot.TaskProgressPlot()
@@ -6876,7 +6876,7 @@ def taskInfo(request, jeditaskid=0):
 
         del request.session['TFIRST']
         del request.session['TLAST']
-        return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
     else:
         attrs = []
         do_redirect = False
@@ -6954,7 +6954,7 @@ def taskchain(request):
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid == -1:
         data = {"error": "no jeditaskid supplied"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
     new_cur = connection.cursor()
     taskChainSQL = "SELECT * FROM table(ATLAS_PANDABIGMON.GETTASKSCHAIN_TEST(%i))" % jeditaskid
@@ -6980,7 +6980,7 @@ def ganttTaskChain(request):
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid == -1:
         data = {"error": "no jeditaskid supplied"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
     new_cur = connections["deft_adcr"].cursor()
     sql_request_str = chainsql.query.replace('%i', str(jeditaskid))
@@ -7155,14 +7155,14 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
                 tmpTableName = "TMP_IDS1"
 
             transactionKey = random.randrange(1000000)
-            connection.enter_transaction_management()
+#            connection.enter_transaction_management()
             new_cur = connection.cursor()
             executionData = []
             for id in esjobs:
                 executionData.append((id, transactionKey))
             query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
             new_cur.executemany(query, executionData)
-            connection.commit()
+#            connection.commit()
 
             new_cur.execute(
                 """
@@ -7172,8 +7172,8 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
 
             evtable = dictfetchall(new_cur)
             new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-            connection.commit()
-            connection.leave_transaction_management()
+#            connection.commit()
+#            connection.leave_transaction_management()
             for ev in evtable:
                 essummary[eventservicestatelist[ev['STATUS']]] += ev['EVCOUNT']
         eventsdict=[]
@@ -7703,7 +7703,7 @@ def errorSummary(request):
         for job in jobs:
             resp.append({'pandaid': job.pandaid, 'status': job.jobstatus, 'prodsourcelabel': job.prodsourcelabel,
                          'produserid': job.produserid})
-        return HttpResponse(json.dumps(resp), mimetype='text/html')
+        return HttpResponse(json.dumps(resp), content_type='text/html')
 
 
 def removeParam(urlquery, parname, mode='complete'):
@@ -7857,7 +7857,7 @@ def incidentList(request):
             entry['description'] = inc['description']
             clearedInc.append(entry)
         jsonResp = json.dumps(clearedInc)
-        return HttpResponse(jsonResp, mimetype='text/html')
+        return HttpResponse(jsonResp, content_type='text/html')
 
 
 def esPandaLogger(request):
@@ -8071,7 +8071,7 @@ def pandaLogger(request):
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
         resp = data
-        return HttpResponse(json.dumps(resp, cls=DateEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(resp, cls=DateEncoder), content_type='text/html')
 
 
 # def percentile(N, percent, key=lambda x:x):
@@ -8106,7 +8106,7 @@ def ttc(request):
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid == -1:
         data = {"error": "no jeditaskid supplied"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
     query = {'jeditaskid': jeditaskid}
     task = JediTasks.objects.filter(**query).values('jeditaskid', 'taskname', 'workinggroup', 'tasktype',
@@ -8114,12 +8114,12 @@ def ttc(request):
                                                     'creationdate', 'status')
     if len(task) == 0:
         data = {"error": ("jeditaskid " + str(jeditaskid) + " does not exist")}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
     taskrec = task[0]
 
     if taskrec['tasktype'] != 'prod' or taskrec['ttcrequested'] == None:
         data = {"error": "TTC for this type of task has not implemented yet"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
     taskrec['ttc'] = taskrec['ttcrequested']
 
     taskevents = GetEventsForTask.objects.filter(**query).values('jeditaskid', 'totev', 'totevrem')
@@ -8270,7 +8270,7 @@ def workingGroups(request):
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = []
-        return HttpResponse(json.dumps(resp), mimetype='text/html')
+        return HttpResponse(json.dumps(resp), content_type='text/html')
 
 
 def datasetInfo(request):
@@ -8345,7 +8345,7 @@ def datasetInfo(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(dsrec), mimetype='text/html')
+        return HttpResponse(json.dumps(dsrec), content_type='text/html')
 
 
 def datasetList(request):
@@ -8378,7 +8378,7 @@ def datasetList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(dsrec), mimetype='text/html')
+        return HttpResponse(json.dumps(dsrec), content_type='text/html')
 
 
 def fileInfo(request):
@@ -8455,14 +8455,14 @@ def fileInfo(request):
                     f['datasetname'] = f['dataset']
                     f['oldfiletable'] = 1
 
-        connection.enter_transaction_management()
+#        connection.enter_transaction_management()
         new_cur = connection.cursor()
         executionData = []
         for id in files:
             executionData.append((id['datasetid'], transactionKey))
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
-        connection.commit()
+#        connection.commit()
 
         new_cur.execute(
             "SELECT DATASETNAME,DATASETID FROM %s WHERE DATASETID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
@@ -8529,7 +8529,7 @@ def fileInfo(request):
             'filename': file,
             'columns': columns,
         }
-        return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
 
 def fileList(request):
@@ -8698,7 +8698,7 @@ def fileList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(files), mimetype='text/html')
+        return HttpResponse(json.dumps(files), content_type='text/html')
 
 
 #@cache_page(60 * 20)
@@ -8740,7 +8740,7 @@ def workQueues(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(queues), mimetype='text/html')
+        return HttpResponse(json.dumps(queues), content_type='text/html')
 
 
 def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values=standard_fields, count=False,
@@ -9273,12 +9273,12 @@ def addJobMetadata(jobs, require=False):
         tmpTableName = "TMP_IDS1"
 
     transactionKey = random.randrange(1000000)
-    connection.enter_transaction_management()
+ #   connection.enter_transaction_management()
     new_cur = connection.cursor()
     for id in pids:
         new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
         tmpTableName, id, transactionKey))  # Backend dependable
-    connection.commit()
+ #   connection.commit()
     new_cur.execute(
         "SELECT METADATA,MODIFICATIONTIME,PANDAID FROM %s WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
         metaTableName, tmpTableName, transactionKey))
@@ -9298,8 +9298,8 @@ def addJobMetadata(jobs, require=False):
                 # job['metadata'] = mdict[job['pandaid']]
     print 'added metadata'
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-    connection.commit()
-    connection.leave_transaction_management()
+ #   connection.commit()
+ #   connection.leave_transaction_management()
     return jobs
 
 
@@ -9341,18 +9341,18 @@ def g4exceptions(request):
             tmpTableName = "TMP_IDS1"
 
         transactionKey = random.randrange(1000000)
-        connection.enter_transaction_management()
+#        connection.enter_transaction_management()
         new_cur = connection.cursor()
         for job in jobs:
             new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
             tmpTableName, job['pandaid'], transactionKey))  # Backend dependable
-        connection.commit()
+ #       connection.commit()
         new_cur.execute(
             "SELECT JOBPARAMETERS, PANDAID FROM ATLAS_PANDA.JOBPARAMSTABLE WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
             tmpTableName, transactionKey))
         mrecs = dictfetchall(new_cur)
-        connection.commit()
-        connection.leave_transaction_management()
+#        connection.commit()
+#        connection.leave_transaction_management()
         jobsToRemove = set()
         for rec in mrecs:
             acceptJob = True
@@ -9520,7 +9520,7 @@ def globalshares(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(gs), mimetype='text/html')
+        return HttpResponse(json.dumps(gs), content_type='text/html')
 
 
 # taken from https://raw.githubusercontent.com/PanDAWMS/panda-server/master/pandaserver/taskbuffer/OraDBProxy.py

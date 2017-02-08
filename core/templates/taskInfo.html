@@ -1,4 +1,4 @@
-{% extends "_base_core.html" %}{% load url from future %}
+{% extends "_base_core.html" %}
 {% load staticfiles %}
 {% block page_title %} {{ jeditaskid }} task  {% endblock %}
 {% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <b>{{ task.taskname }}</b>{% endblock %}

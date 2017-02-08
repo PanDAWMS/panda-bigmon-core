@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
@@ -14,7 +14,7 @@ import core.pandajob.views_support as core_coremon_support_views
 #import core.pandajob.views as core_coremon_views
 #import core.api.reprocessing.views as core_coremon_api_reprocessing_views
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', coremon_views.mainPage, name='mainPage'),
     url(r'^$', coremon_views.mainPage, name='index'),
     url(r'^help/$', coremon_views.helpPage, name='helpPage'),
@@ -114,14 +114,14 @@ urlpatterns = patterns('',
     ### robots.txt
     url('^robots\.txt$', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
 
-) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
 if settings.DEBUG:
     import debug_toolbar
-    urlpatterns += patterns('',
+    urlpatterns += [
         url(r'^__debug__/', include(debug_toolbar.urls)),
-    )
+    ]
 
 #urlpatterns += common_patterns
 #urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

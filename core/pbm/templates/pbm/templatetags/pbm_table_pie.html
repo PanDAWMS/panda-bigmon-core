@@ -1,4 +1,4 @@
-{% load url from future %}{% load pbm_extras %}
+{% load pbm_extras %}
 
 <a href="#sec.toc">[top]</a>&nbsp;
 <a name="sec.{{ divid }}" href="{% url 'pbm-detail' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}{% if plotid %}&amp;plotid={{ plotid }}{% endif %}#sec.toc">[permalink]</a>&nbsp;

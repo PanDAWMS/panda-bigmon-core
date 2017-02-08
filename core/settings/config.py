@@ -25,10 +25,10 @@ ALLOWED_HOSTS = [
 
 
 ### VIRTUALENV
-VIRTUALENV_PATH = '/data/wenaus/virtualenv/twrpm'
+VIRTUALENV_PATH = '/data/virtualenv2.7'
 
 ### WSGI
-WSGI_PATH = VIRTUALENV_PATH + '/pythonpath'
+#WSGI_PATH = VIRTUALENV_PATH + '/pythonpath'
 
 ### DB_ROUTERS for atlas's prodtask
 DATABASE_ROUTERS = [\
@@ -54,7 +54,33 @@ TEMPLATE_DIRS = (
     join(dirname(core.filebrowser.__file__), 'templates'),
     join(dirname(core.pbm.__file__), 'templates'),
 )
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            join(dirname(core.__file__), 'templates'),
+            join(dirname(admin.__file__), 'templates'),
+            join(dirname(core.__file__), 'templates'),
+            join(dirname(core.filebrowser.__file__), 'templates'),
+            join(dirname(core.pbm.__file__), 'templates'),
 
+        ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                # Insert your TEMPLATE_CONTEXT_PROCESSORS here or use this
+                # list if you haven't customized them:
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 STATIC_ROOT = join(dirname(core.__file__), 'static')
 #STATIC_ROOT = None
 MEDIA_ROOT = join(dirname(core.__file__), 'media')
@@ -114,10 +140,10 @@ FILTER_UI_ENV = {
                                 '/images/details_open.png' + '">' \
             }, \
 }
-
+#DEBUG=True
 #LOG_ROOT = '/data/bigpandamon_virtualhosts/core/logs'
 #LOG_ROOT = '/data/wenaus/logs'
-LOG_ROOT = '/data/wenaus/bigpandamon_virtualhosts/twrpm/logs'
+LOG_ROOT = '/afs/cern.ch/user/a/aaleksee/panda-bigmon-core/log'
 LOG_SIZE = 1000000000
 LOGGING = {
     'version': 1,
@@ -131,7 +157,7 @@ LOGGING = {
     'handlers': {
         'null': {
             'level':'DEBUG',
-            'class':'django.utils.log.NullHandler',
+            'class':'logging.NullHandler',
         },
         'logfile-bigpandamon': {
             'level':'DEBUG',
