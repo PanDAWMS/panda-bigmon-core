@@ -3719,8 +3719,8 @@ def siteList(request):
                 currentCardCount += 1
             extraParCondition += ')'
 
-        for field in Schedconfig._meta.get_all_field_names():
-            if param == field and not (param == 'catchall'):
+        for field in Schedconfig._meta.get_fields():
+            if param == field.name and not (param == 'catchall'):
                 query[param] = escapeInput(request.session['requestParams'][param])
 
     siteres = Schedconfig.objects.filter(**query).exclude(cloud='CMS').extra(where=[extraParCondition]).values()
@@ -8716,8 +8716,8 @@ def workQueues(request):
     setupView(request, hours=180 * 24, limit=9999999)
     query = {}
     for param in request.session['requestParams']:
-        for field in JediWorkQueue._meta.get_all_field_names():
-            if param == field:
+        for field in JediWorkQueue._meta.get_fields():
+            if param == field.name:
                 query[param] = request.session['requestParams'][param]
     queues = []
     queues.extend(JediWorkQueue.objects.filter(**query).order_by('queue_type', 'queue_order').values())
