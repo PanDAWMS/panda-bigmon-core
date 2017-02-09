@@ -72,6 +72,8 @@ Adaptation for BigPanDA Monitoring by Maria Grigorieva maria.grigorieva@cern.ch
 	* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+
+
 var JSGantt; if (!JSGantt) JSGantt={};
 
 var vBenchTime=new Date().getTime();
@@ -86,7 +88,7 @@ JSGantt.isIE=function ()
 	else return false;
 };
 
-JSGantt.TaskItem=function(pID, pName, pStart, pEnd, pClass, pLink, pMile, pRes, pComp, pGroup, pParent, pOpen, pDepend, pCaption, pNotes, pGantt, pStatus, pInput, pOutput)
+JSGantt.TaskItem=function(pID, pName, pStart, pEnd, pClass, pLink, pMile, pRes, pComp, pGroup, pParent, pOpen, pDepend, pCaption, pNotes, pGantt, pStatus, pInput, pOutput, pAODds)
 {
 
 	var vID=parseInt(document.createTextNode(pID).data);
@@ -127,6 +129,7 @@ JSGantt.TaskItem=function(pID, pName, pStart, pEnd, pClass, pLink, pMile, pRes, 
 	var vStatus=document.createTextNode(pStatus).data;
 	var vInput=document.createTextNode(pInput).data;
 	var vOutput=document.createTextNode(pOutput).data;
+	var vAODds=document.createTextNode(pAODds).data;
 	// --
 
 	vNotes=document.createElement('span');
@@ -207,6 +210,7 @@ JSGantt.TaskItem=function(pID, pName, pStart, pEnd, pClass, pLink, pMile, pRes, 
 	this.getStatus=function(){return vStatus;};
 	this.getInput=function(){return vInput;};
 	this.getOutput=function(){return vOutput;};
+	this.getAODds=function () {return vAODds;};
 	// --
 
 	this.getDuration=function(pFormat, pLang)
@@ -355,7 +359,7 @@ JSGantt.GanttChart=function(pDiv, pFormat)
 			 'feb':'Feb','mar':'Mar','apr':'Apr','may':'May','jun':'Jun','jul':'Jul','aug':'Aug','sep':'Sep','oct':'Oct','nov':'Nov',
 			 'dec':'Dec','sunday':'Sunday','monday':'Monday','tuesday':'Tuesday','wednesday':'Wednesday','thursday':'Thursday',
 			 'friday':'Friday','saturday':'Saturday','sun':'Sun','mon':'Mon','tue':'Tue','wed':'Wed','thu':'Thu','fri':'Fri','sat':'Sat',
-			 'status':'Status','input':'Input','output':'Output'} // added by m.grigorieva for bigpandamon
+			 'status':'Status','input':'Input','output':'Output', 'dsstatus': 'DataSet Status',} // added by m.grigorieva for bigpandamon
 		};
 	var vLang='en';
 	var vChartBody=null;
@@ -784,6 +788,8 @@ JSGantt.GanttChart=function(pDiv, pFormat)
 			if(vShowEndDate==1)this.newNode(vTmpRow, 'td', null, 'gspanning genddate', '\u00A0');
 			// added 23.01.2017 m.grigorieva for bigpandamon
 			this.newNode(vTmpRow, 'td', null, 'gspanning gstatus', '\u00A0');
+			// this.newNode(vTmpRow, 'td', null, 'gspanning dsstatus', '\u00A0');
+
 			// --
 
 			vTmpRow=this.newNode(vTmpTBody, 'tr');
@@ -796,6 +802,7 @@ JSGantt.GanttChart=function(pDiv, pFormat)
 			if(vShowEndDate==1)this.newNode(vTmpRow, 'td', null, 'gtaskheading genddate', vLangs[vLang]['enddate']);
 			// added 23.01.2017 m.grigorieva for bigpandamon
 			this.newNode(vTmpRow, 'td', null, 'gtaskheading gstatus', vLangs[vLang]['status']);
+			// this.newNode(vTmpRow, 'td', null, 'gtaskheading dsstatus', vLangs[vLang]['dsstatus']);
 			// --
 
 			vTmpDiv=this.newNode(vLeftHeader, 'div', null, 'glabelfooter');
@@ -869,6 +876,11 @@ JSGantt.GanttChart=function(pDiv, pFormat)
 					// added 23.01.2017 m.grigorieva for bigpandamon
 					vTmpCell=this.newNode(vTmpRow, 'td', null, 'gstatus ' + vTaskList[i].getStatus());
 					vTmpDiv=this.newNode(vTmpCell, 'div', null, null, vTaskList[i].getStatus());
+
+					// vTmpCell=this.newNode(vTmpRow, 'td', null, 'dsstatus');
+					// vTmpDiv=this.newNode(vTmpCell, 'div', null, null, vTaskList[i].getAODds());
+
+
 					// --
 					vNumRows++;
 				}
@@ -886,6 +898,8 @@ JSGantt.GanttChart=function(pDiv, pFormat)
 			if(vShowEndDate==1)this.newNode(vTmpRow, 'td', null, 'gspanning genddate', '\u00A0');
 			// added 23.01.2017 m.grigorieva for bigpandamon
 			this.newNode(vTmpRow, 'td', null, 'gspanning gstatus', '\u00A0');
+			this.newNode(vTmpRow, 'td', null, 'dsstatus', '\u00A0');
+
 			// --
 			// Add some white space so the vertical scroll distance should always be greater
 			// than for the right pane (keep to a minimum as it is seen in unconstrained height designs)
@@ -1325,6 +1339,8 @@ JSGantt.GanttChart=function(pDiv, pFormat)
 		var vTaskInfo=this.newNode(vTaskInfoBox, 'div', null, 'gTaskInfo');
 		this.newNode(vTaskInfo, 'span', null, 'gTtTitle', pTask.getID());
 		// added 23.01.2017 m.grigorieva for bigpandamon
+
+
 		var splitted_taskname = pTask.getName().split('.');
 		// var splitted_output = pTask.getOutput().split(',');
 		var taskname_nomenclature = {'Campaign' :  splitted_taskname[0],
@@ -1431,6 +1447,36 @@ JSGantt.GanttChart=function(pDiv, pFormat)
 			this.newNode(vTmpDiv, 'span', null, 'gTaskLabel', vLangs[vLang]['notes']+': ');
 			if(pTask.getNotes())vTmpDiv.appendChild(pTask.getNotes());
 		}
+
+		// This  weirdness is due to vertical box size problem
+		var array = pTask.getAODds().split(",");
+	    var dmp = new diff_match_patch();
+		for (i=0;i<array.length;i++){
+
+
+			if (i == 0) {
+
+				var diffstrstr = ' ';
+				if (array.length > 1)
+					diffstrstr = dmp.diff_main(array[0],array[1])[1][1];
+				var dsName = array[i].substr(0,5) + "..."+diffstrstr+"..."+array[i].substr(-15);
+		 		vTmpDiv=this.newNode(vTaskInfo, 'div', null, 'gTILine gTIsd');
+		 		this.newNode(vTmpDiv, 'span', null, 'gTaskLabel', vLangs[vLang]['dsstatus']+': ');
+				this.newNode(vTmpDiv, 'span', null, 'gTaskText', dsName);
+            }
+			else {
+
+				var diffstrstr = ' ';
+				if (array.length > 1)
+					diffstrstr = dmp.diff_main(array[0],array[i])[2][1];
+				var dsName = array[i].substr(0,5) + "..."+diffstrstr+"..."+array[i].substr(-15);
+
+		 		vTmpDiv=this.newNode(vTaskInfo, 'div', null, 'gTILine gTIsd');
+		 		this.newNode(vTmpDiv, 'span', null, 'gTaskLabel', ' ');
+                this.newNode(vTmpDiv, 'span', null, 'gTaskText', dsName);
+            }
+		}
+
 		return vTaskInfoBox;
 	};
 
@@ -1492,6 +1538,8 @@ JSGantt.GanttChart=function(pDiv, pFormat)
 			vTask+='<pStatus>'+vTaskList[vIdx].getStatus()+'</pStatus>';
 			vTask+='<pInput>'+vTaskList[vIdx].getInput()+'</pInput>';
 			vTask+='<pOutput>'+vTaskList[vIdx].getOutput()+'</pOutput>';
+			vTask+='<pAODds>'+vTaskList[vIdx].getAODds()+'</pAODds>';
+
 			// --
 			vTask+='</task>';
 		}
@@ -2461,6 +2509,7 @@ JSGantt.AddXMLTask=function(pGanttVar, pXmlDoc)
 				var pMile=JSGantt.getXMLNodeValue(Task[i],'Milestone',1,0);
 				var pComp=JSGantt.getXMLNodeValue(Task[i],'PercentWorkComplete',1,0);
 				var pGroup=JSGantt.getXMLNodeValue(Task[i],'Summary',1,0);
+				var pAODds=JSGantt.getXMLNodeValue(Task[i],'pAODds',1,0);
 
 				var pParent=0;
 
@@ -2537,7 +2586,7 @@ JSGantt.AddXMLTask=function(pGanttVar, pXmlDoc)
 						maxPID++;
 						vSplitEnd=JSGantt.getXMLNodeValue(splits[k],(k+1==j)?'Finish':'Start',2,'');
 						// modified 23.01.2017 m.grigorieva for bigpandamon
-						pGanttVar.AddTaskItem(new JSGantt.TaskItem(maxPID, pName, vSplitStart, vSplitEnd, 'gtaskblue', pLink, pMile, pRes, pComp, 0, pID, pOpen, vDepend, pCaption, pNotes, pGanttVar, pStatus, pInput, pOutput));
+						pGanttVar.AddTaskItem(new JSGantt.TaskItem(maxPID, pName, vSplitStart, vSplitEnd, 'gtaskblue', pLink, pMile, pRes, pComp, 0, pID, pOpen, vDepend, pCaption, pNotes, pGanttVar, pStatus, pInput, pOutput, pAODds));
 						vSubCreated=true;
 						vDepend='';
 					}
@@ -2551,7 +2600,7 @@ JSGantt.AddXMLTask=function(pGanttVar, pXmlDoc)
 
 				// Finally add the task
 				// modified 23.01.2017 m.grigorieva for bigpandamon
-				pGanttVar.AddTaskItem(new JSGantt.TaskItem(pID, pName, pStart, pEnd, pClass, pLink, pMile, pRes, pComp, pGroup, pParent, pOpen, pDepend, pCaption, pNotes, pGanttVar, pStatus, pInput, pOutput));
+				pGanttVar.AddTaskItem(new JSGantt.TaskItem(pID, pName, pStart, pEnd, pClass, pLink, pMile, pRes, pComp, pGroup, pParent, pOpen, pDepend, pCaption, pNotes, pGanttVar, pStatus, pInput, pOutput, pAODds));
 			}
 		}
 	}
@@ -2586,6 +2635,8 @@ JSGantt.AddXMLTask=function(pGanttVar, pXmlDoc)
 				pStatus=JSGantt.getXMLNodeValue(Task[i],'pStatus',2);
 				pInput=JSGantt.getXMLNodeValue(Task[i],'pInput',2);
 				pOutput=JSGantt.getXMLNodeValue(Task[i],'pOutput',2);
+				pAODds=JSGantt.getXMLNodeValue(Task[i],'pAODds',2);
+
 				// --
 				if (typeof pClass=='undefined')
 				{
@@ -2596,7 +2647,7 @@ JSGantt.AddXMLTask=function(pGanttVar, pXmlDoc)
 
 				// Finally add the task
 				// modified 23.01.2017 m.grigorieva for bigpandamon
-				pGanttVar.AddTaskItem(new JSGantt.TaskItem(pID, pName, pStart, pEnd, pClass, pLink, pMile, pRes, pComp, pGroup, pParent, pOpen, pDepend, pCaption, pNotes, pGanttVar, pStatus, pInput, pOutput));
+				pGanttVar.AddTaskItem(new JSGantt.TaskItem(pID, pName, pStart, pEnd, pClass, pLink, pMile, pRes, pComp, pGroup, pParent, pOpen, pDepend, pCaption, pNotes, pGanttVar, pStatus, pInput, pOutput, pAODds));
 			}
 		}
 	}
