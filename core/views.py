@@ -3630,7 +3630,7 @@ def userInfo(request, user=''):
         njobsetmax = 200
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-        
+
         TFIRST = request.session['TFIRST']
         TLAST = request.session['TLAST']
         del request.session['TFIRST']
@@ -5666,13 +5666,13 @@ def killtasks(request):
     conn = urllib3.HTTPSConnectionPool(prodsysHost, timeout=20)
     resp = None
 
-    if request.session['IS_TESTER']:
-        resp = conn.urlopen('POST', prodsysUrl, body=json.dumps(postdata, cls=DateEncoder), headers=headers, retries=1, assert_same_host=False)
-    else:
-        resp = {"detail": "You are not allowed to test. Sorry"}
-        dump = json.dumps(resp, cls=DateEncoder)
-        response = HttpResponse(dump, mimetype='text/plain')
-        return response
+#    if request.session['IS_TESTER']:
+    resp = conn.urlopen('POST', prodsysUrl, body=json.dumps(postdata, cls=DateEncoder), headers=headers, retries=1, assert_same_host=False)
+#    else:
+#        resp = {"detail": "You are not allowed to test. Sorry"}
+#        dump = json.dumps(resp, cls=DateEncoder)
+#        response = HttpResponse(dump, mimetype='text/plain')
+#        return response
 
 
     if resp and len(resp.data) > 0:
