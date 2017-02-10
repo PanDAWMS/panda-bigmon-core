@@ -246,8 +246,8 @@ function killtasks(taskID, action) {
 {% for state in eventssummary %}
 <td {% if state.count > 0 %} class='{{state.statusname}}_fill' {% endif %}> {% if state.count > 0 %}
     <b> <span class='{{state.statusname}}_fill'>
-        {% if requestParams.mode == 'nodrop' and state.statusname == 'failed' and state.count > 0 %}
-            <a onclick="javascript:loadErrorSummaryData('{{ jeditaskid }}');"> {{ state.count }} </a>
+        {% if state.statusname == 'failed' and state.count > 0 %}
+            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} </a>
         {% else %} {{ state.count }}
         {% endif %}
     </span></b>
@@ -269,12 +269,12 @@ function killtasks(taskID, action) {
 {% endif %}
 
 <script type="text/javascript">
-   function loadErrorSummaryData(jeditaskid) {
+   function loadErrorSummaryData(jeditaskid, mode, tk) {
 
        $('#div-error-sum').html("<img src='{% static "images/load.gif" %}'>  ");
        $.ajax({
            url: {% url 'eventsErrorSummary' %},
-           data: 'jeditaskid='+jeditaskid,
+           data: {'jeditaskid' : jeditaskid, 'mode': mode , 'tk': tk },
            async: true
        })
        .done(function (response) {

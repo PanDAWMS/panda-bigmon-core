@@ -220,7 +220,6 @@ def initRequest(request):
                     user.set_unusable_password()
                     user.save()
 
-
     viewParams = {}
     # if not 'viewParams' in request.session:
     request.session['viewParams'] = viewParams
@@ -5794,19 +5793,53 @@ def getErrorSummaryForEvents(request):
     if not valid: return response
     data = {}
     eventsErrors = []
-
+    print 'getting error summary for events'
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
     else:
         data = {"error": "no jeditaskid supplied"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
-
+    if 'mode' in request.session['requestParams']:
+        mode = request.session['requestParams']['mode']
+    else:
+        mode = 'drop'
+    if 'tk' in request.session['requestParams'] and request.session['requestParams']['tk'] > 0:
+        transactionKey = int(request.session['requestParams']['tk'])
+    else:
+        data = {"error": "no failed events found"}
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
     equery = {}
     equery['jeditaskid']=jeditaskid
     equery['error_code__isnull'] = False
 
+    if mode == 'drop':
+        eventsErrors = []
 
-    eventsErrors = JediEvents.objects.filter(**equery).values('error_code').annotate(njobs=Count('pandaid',distinct=True),nevents=Sum('def_max_eventid', field='def_max_eventid-def_min_eventid+1'))
+        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+        else:
+            tmpTableName = "TMP_IDS1DEBUG"
+
+        new_cur = connection.cursor()
+        new_cur.execute(
+            """select e.error_code, sum(e.neventsinjob) as nevents, count(distinct e.pandaid) as njobs
+                    from (select pandaid, error_code,  sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) as neventsinjob
+                            from ATLAS_PANDA.Jedi_events
+                            where jeditaskid=%i and ERROR_CODE is not null
+                            group by error_code, pandaid) e ,
+                         (select ID, TRANSACTIONKEY from %s ) j
+                    where j.TRANSACTIONKEY=%i and e.pandaid = j.ID
+                    group by e.error_code
+            """ % (jeditaskid, tmpTableName, transactionKey)
+        )
+        eventsErrorsUP = dictfetchall(new_cur)
+        for error in eventsErrorsUP:
+            line = dict()
+            for key, value in error.items():
+                line[key.lower()] = value
+            eventsErrors.append(line)
+    elif mode == 'nodrop':
+        eventsErrors = JediEvents.objects.filter(**equery).values('error_code').annotate(njobs=Count('pandaid',distinct=True),nevents=Sum('def_max_eventid', field='def_max_eventid-def_min_eventid+1'))
 
     for eventserror in eventsErrors:
         try:
@@ -6597,9 +6630,9 @@ def taskInfo(request, jeditaskid=0):
                 'mode'] == 'nodrop': mode = 'nodrop'
 
 
-            jobsummary, eventssummary, jobScoutIDs, hs06sSum, nevents, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
+            jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum, nevents, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
                 query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge')
-            jobsummaryESMerge, eventssummaryESM, jobScoutIDsESM, hs06sSumESM, neventsESM, maxpssESM, walltimeESM, sitepssESM, sitewalltimeESM, maxpssfESM, walltimefESM, sitepssfESM, sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM, hs06sESM, hs06sfESM, walltimepereventESM = jobSummary2(
+            jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM, neventsESM, maxpssESM, walltimeESM, sitepssESM, sitewalltimeESM, maxpssfESM, walltimefESM, sitepssfESM, sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM, hs06sESM, hs06sfESM, walltimepereventESM = jobSummary2(
                 query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
             for state in eventservicestatelist:
                 eventstatus = {}
@@ -6634,9 +6667,9 @@ def taskInfo(request, jeditaskid=0):
             mode = 'drop'
             if 'mode' in request.session['requestParams']:
                 mode = request.session['requestParams']['mode']
-            jobsummary, eventssummary, jobScoutIDs, hs06sSum, nevents, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
+            jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum, nevents, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
                 query, exclude=exclude, mode=mode)
-            jobsummaryPMERGE, eventssummaryPM,jobScoutIDsPMERGE, hs06sSumPMERGE, neventsPMERGE, maxpssPMERGE, walltimePMERGE, sitepssPMERGE, sitewalltimePMERGE, maxpssfPMERGE, walltimefPMERGE, sitepssfPMERGE, sitewalltimefPMERGE, maxpsspercorePMERGE, maxpssfpercorePMERGE, hs06sPMERGE, hs06sfPMERGE, walltimepereventPMERGE = jobSummary2(
+            jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE, neventsPMERGE, maxpssPMERGE, walltimePMERGE, sitepssPMERGE, sitewalltimePMERGE, maxpssfPMERGE, walltimefPMERGE, sitepssfPMERGE, sitewalltimefPMERGE, maxpsspercorePMERGE, maxpssfpercorePMERGE, hs06sPMERGE, hs06sfPMERGE, walltimepereventPMERGE = jobSummary2(
                 query, exclude={}, mode=mode, processingtype='pmerge')
 
 
@@ -6892,6 +6925,7 @@ def taskInfo(request, jeditaskid=0):
         data = {
             'furl': furl,
             'nomodeurl': nomodeurl,
+            'mode': mode,
             'showtaskprof': showtaskprof,
             'jobsummaryESMerge': jobsummaryESMerge,
             'jobsummaryPMERGE': jobsummaryPMERGE,
@@ -6932,6 +6966,7 @@ def taskInfo(request, jeditaskid=0):
             'outctrs': outctrs,
             'vomode': VOMODE,
             'eventservice': eventservice,
+            'tk': transactionKey,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -7140,6 +7175,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
                 continue
         jobstates.append(statecount)
     essummary = dict((key, 0) for key in eventservicestatelist)
+    transactionKey = -1
     if isEventServiceFlag and not isESMerge:
         print 'getting events states summary'
         if mode == 'drop':
@@ -7150,17 +7186,17 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
             random.seed()
 
             if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-                tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+                tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
             else:
-                tmpTableName = "TMP_IDS1"
+                tmpTableName = "TMP_IDS1DEBUG"
 
             transactionKey = random.randrange(1000000)
             connection.enter_transaction_management()
             new_cur = connection.cursor()
             executionData = []
             for id in esjobs:
-                executionData.append((id, transactionKey))
-            query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+                executionData.append((id, transactionKey, timezone.now().strftime(defaultDatetimeFormat) ))
+            query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
             new_cur.executemany(query, executionData)
             connection.commit()
 
@@ -7171,7 +7207,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
             )
 
             evtable = dictfetchall(new_cur)
-            new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+            # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
             connection.commit()
             connection.leave_transaction_management()
             for ev in evtable:
@@ -7184,7 +7220,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
             for state in eventsdict:
                 essummary[eventservicestatelist[state['status']]]=state['count']
 
-    return jobstates, essummary, jobScoutIDs, hs06sSum, nevents, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent
+    return jobstates, essummary, transactionKey, jobScoutIDs, hs06sSum, nevents, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent
 
 
 def jobStateSummary(jobs):
