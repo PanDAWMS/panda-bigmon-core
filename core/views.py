@@ -145,7 +145,7 @@ standard_fields = ['processingtype', 'computingsite', 'jobstatus', 'prodsourcela
                    'jobsubstatus', 'nucleus']
 standard_sitefields = ['region', 'gocname', 'nickname', 'status', 'tier', 'comment_field', 'cloud', 'allowdirectaccess',
                        'allowfax', 'copytool', 'faxredirector', 'retry', 'timefloor']
-standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'corecount', 'taskpriority', 'username', 'transuses',
+standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'username', 'transuses',
                        'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
                        'reqid', 'ramcount', 'nucleus', 'eventservice']
 

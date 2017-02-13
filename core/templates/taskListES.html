@@ -56,7 +56,7 @@ function loadESData(jeditaskid) {
 <table>
 <tr class='tablesection'><th colspan=20> Task attribute summary, {{ ntasks }} tasks </th></tr>
 {% for fdict in sumd %}
-<tr><th> {% if fdict.field == 'superstatus' %} status {% else %} {{ fdict.field }} {% endif %} ({{ fdict.list|length }}) </th><td>
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
 {% for item in fdict.list %}
 <span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
 <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
