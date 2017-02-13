@@ -36,8 +36,8 @@
 </tr>
 <tr>
 <td>
-    {% if neneventsFStasksSum|length > 0 %}<div class="d3splot" id="pieChartFS" style="float:left"></div>{% endif %}
-    {% if neneventsAFIItasksSum|length > 0 %}<div class="d3splot" id="pieChartAFII" style="float:left"></div>{% endif %}
+    {% if neventsFStasksSum|length > 0 %}<div class="d3splot" id="pieChartFS" style="float:left"></div>{% endif %}
+    {% if neventsAFIItasksSum|length > 0 %}<div class="d3splot" id="pieChartAFII" style="float:left"></div>{% endif %}
     <br>
     Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in <b>{{ ntasks }}</b> tasks <br>
     Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs <br>
