@@ -132,6 +132,9 @@ errorcodelist = [
 
 _logger = logging.getLogger('bigpandamon')
 
+notcachedRemoteAddress = ['188.184.185.129']
+
+
 LAST_N_HOURS_MAX = 0
 # JOB_LIMIT = 0
 # TFIRST = timezone.now()
@@ -145,7 +148,7 @@ standard_fields = ['processingtype', 'computingsite', 'jobstatus', 'prodsourcela
                    'jobsubstatus', 'nucleus']
 standard_sitefields = ['region', 'gocname', 'nickname', 'status', 'tier', 'comment_field', 'cloud', 'allowdirectaccess',
                        'allowfax', 'copytool', 'faxredirector', 'retry', 'timefloor']
-standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'corecount', 'taskpriority', 'username', 'transuses',
+standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'username', 'transuses',
                        'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
                        'reqid', 'ramcount', 'nucleus', 'eventservice']
 
@@ -2174,6 +2177,11 @@ def jobListPDiv(request, mode=None, param=None):
 
 def getCacheEntry(request, viewType):
     is_json = False
+
+    # We do this check to always rebuild cache for the page when it called from the crawler
+    if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress)):
+        return None
+
     request._cache_update_cache = False
     if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
                 'json' in request.GET)):
