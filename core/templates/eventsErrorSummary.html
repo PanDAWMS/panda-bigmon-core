@@ -1,16 +1,27 @@
 <table>
     <tr class="tablesection">
         <th> Error code </th>
-        <th> Nevents </th>
+        <th> N events </th>
         <th> N jobs</th>
+        <th> N errors</th>
         <th> Error description</th>
+        <th> Most affected jobs</th>
     </tr>
     {% for error in errors %}
     	<tr>
             <td class="alarm"> {{ error.error_code }}</td>
             <td class='failed_fill'> <b>{{ error.nevents }}</b></td>
             <td class='failed_fill'><b>{{ error.njobs }}</b></td>
+            <td class='failed_fill'><b>{{ error.nerrors }}</b></td>
             <td class="alarm">{{ error.error_description }}</td>
+            <td>
+            {% if error.pandaidlist|length > 0 %}
+                {% for pandaidin in error.pandaidlist %}
+                    <a href="{% url 'jobInfo' pandaidin %}" style="color:red">{{ pandaidin }}</a>
+                    {% if forloop.last %} {% else %} , {% endif %}
+                {% endfor %}
+            {% endif %}
+            </td>
         </tr>
     {% endfor %}
 </table>
