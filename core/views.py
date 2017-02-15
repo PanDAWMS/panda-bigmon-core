@@ -6607,10 +6607,6 @@ def taskESprofileplot(request):
         # return response
 
 
-
-
-
-@cache_page(60 * 20)
 def taskInfo(request, jeditaskid=0):
     jeditaskid = int(jeditaskid)
     valid, response = initRequest(request)
@@ -7004,7 +7000,7 @@ def taskInfo(request, jeditaskid=0):
             'tk': transactionKey,
         }
         data.update(getContextVariables(request))
-        setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
+        setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 60 * 30)
         ##self monitor
         endSelfMonitor(request)
 
