@@ -7000,7 +7000,7 @@ def taskInfo(request, jeditaskid=0):
             'tk': transactionKey,
         }
         data.update(getContextVariables(request))
-        setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 60 * 30)
+        setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
         ##self monitor
         endSelfMonitor(request)
 
