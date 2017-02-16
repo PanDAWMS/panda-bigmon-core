@@ -1578,7 +1578,8 @@ def mainPage(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
-            'debuginfo': debuginfo
+            'debuginfo': debuginfo,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -1606,6 +1607,7 @@ def helpPage(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -1877,6 +1879,7 @@ def jobListP(request, mode=None, param=None):
         'tfirst': request.session['TFIRST'],
         'tlast': request.session['TLAST'],
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+        'built': datetime.now().strftime("%H:%M:%S"),
     }
     del request.session['TFIRST']
     del request.session['TLAST']
@@ -2595,6 +2598,7 @@ def jobList(request, mode=None, param=None):
             'eventservice': eventservice,
             'jobsTotalCount': jobsTotalCount,
             'requestString': urlParametrs,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -2957,6 +2961,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'pandaid': pandaid,
             'job': None,
             'jobid': jobid,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -3316,6 +3321,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'mergeesjobs': mergeesjobs,
             'esjobstr': esjobstr,
             'fileSummary': fileSummary,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -3480,6 +3486,7 @@ def userList(request):
             'tlast': TLAST,
             'plow': PLOW,
             'phigh': PHIGH,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -3669,6 +3676,7 @@ def userInfo(request, user=''):
             'tasks': tasks,
             'ntasks': ntasks,
             'tasksumd': tasksumd,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -3810,6 +3818,7 @@ def siteList(request):
             'sumd': sumd,
             'xurl': xurl,
             'nosorturl': nosorturl,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         if 'cloud' in request.session['requestParams']: data['mcpsites'] = mcpsites[
             request.session['requestParams']['cloud']]
@@ -3919,6 +3928,7 @@ def siteInfo(request, site=''):
             'incidents': incidents,
             'name': site,
             'njobhours': njobhours,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -4236,6 +4246,7 @@ def wnInfo(request, site, wnname='all'):
             'wnPlotFinished': wnPlotFinishedL,
             'hours': hours,
             'errthreshold': errthreshold,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -4260,6 +4271,7 @@ def wnInfo(request, site, wnname='all'):
             'wnPlotFinished': wnPlotFinishedL,
             'hours': hours,
             'errthreshold': errthreshold,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
 
@@ -4861,6 +4873,7 @@ def worldjobs(request, view='production'):
             'xurl': xurl,
             'nosorturl': nosorturl,
             'user': None,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -5010,6 +5023,7 @@ def worldhs06s(request):
             'hsnucleussum': worldHS06sSummaryByNucleus,
             'roundflag': roundflag,
             'sortby': sortby,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         setCacheEntry(request, "worldhs06s", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -5182,6 +5196,7 @@ def dashboard(request, view='production'):
                 'nosorturl': nosorturl,
                 'user': None,
                 'template': 'worldjobs.html',
+                'built': datetime.now().strftime("%H:%M:%S"),
             }
             ##self monitor
             endSelfMonitor(request)
@@ -5243,6 +5258,7 @@ def dashboard(request, view='production'):
                 'jobsLeft': jobsLeft,
                 'rw': rw,
                 'template': 'dashboard.html',
+                'built': datetime.now().strftime("%H:%M:%S"),
             }
             ##self monitor
             endSelfMonitor(request)
@@ -5270,7 +5286,8 @@ def dashboard(request, view='production'):
                 'transrclouds': transrclouds,
                 'hoursSinceUpdate': hoursSinceUpdate,
                 'jobsLeft': jobsLeft,
-                'rw': rw
+                'rw': rw,
+                'built': datetime.now().strftime("%H:%M:%S"),
             }
 
             return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
@@ -5359,6 +5376,7 @@ def dashTasks(request, hours, view='production'):
             'jobsLeft': jobsLeft,
             'rw': rw,
             'template': 'dashboard.html',
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -5608,6 +5626,7 @@ def taskList(request):
             'eventservice': eventservice,
             'requestString': urlParametrs,
             'tasksTotalCount': tasksTotalCount,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
 
         setCacheEntry(request, "taskList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -6145,6 +6164,7 @@ def runningMCProdTasks(request):
             'neventsAFIItasksSum': neventsAFIItasksSum,
             'neventsFStasksSum': neventsFStasksSum,
             'plotageshistogram': plotageshistogram,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -6361,6 +6381,7 @@ def runningProdTasks(request):
             'rjobs8coreTot': rjobs8coreTot,
             'plotageshistogram': plotageshistogram,
             'productiontype' : json.dumps(productionType),
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -6543,6 +6564,7 @@ def runningDPDProdTasks(request):
             'rjobs1coreTot': rjobs1coreTot,
             'rjobs8coreTot': rjobs8coreTot,
             'plotageshistogram': plotageshistogram,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -6998,6 +7020,7 @@ def taskInfo(request, jeditaskid=0):
             'vomode': VOMODE,
             'eventservice': eventservice,
             'tk': transactionKey,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -7755,6 +7778,7 @@ def errorSummary(request):
             'taskname': taskname,
             'flowstruct': flowstruct,
             'jobsErrorsTotalCount': jobsErrorsTotalCount,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -7908,6 +7932,7 @@ def incidentList(request):
             'xurl': extensibleURL(request),
             'hours': hours,
             'ninc': len(incidents),
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -8127,6 +8152,7 @@ def pandaLogger(request):
         'xurl': extensibleURL(request),
         'hours': hours,
         'getrecs': getrecs,
+        'built': datetime.now().strftime("%H:%M:%S"),
     }
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
@@ -8233,6 +8259,7 @@ def ttc(request):
         'task': taskrec,
         'progressForBar': progressForBar,
         'profile': taskprofile,
+        'built': datetime.now().strftime("%H:%M:%S"),
     }
     response = render_to_response('ttc.html', data, RequestContext(request))
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -8325,6 +8352,7 @@ def workingGroups(request):
             'hours': hours,
             'days': days,
             'errthreshold': errthreshold,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         setCacheEntry(request, "workingGroups", json.dumps(data, cls=DateEncoder), 60 * 20)
 
@@ -8404,6 +8432,7 @@ def datasetInfo(request):
             'dsrec': dsrec,
             'datasetname': dataset,
             'columns': columns,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -8437,6 +8466,7 @@ def datasetList(request):
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'datasets': dsets,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -8582,6 +8612,7 @@ def fileInfo(request):
             'files': files,
             'filename': file,
             'columns': columns,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -8756,7 +8787,8 @@ def fileList(request):
             'nfiles': nfiles,
             'nosorturl': nosorturl,
             'sortby': sortby,
-            'limitexceeded': limitexceeded
+            'limitexceeded': limitexceeded,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -8799,6 +8831,7 @@ def workQueues(request):
             'requestParams': request.session['requestParams'],
             'queues': queues,
             'xurl': extensibleURL(request),
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -9579,6 +9612,7 @@ def globalshares(request):
             'xurl': extensibleURL(request),
             'gsPlotData':gsPlotData,
             'tablerows':tablerows,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
