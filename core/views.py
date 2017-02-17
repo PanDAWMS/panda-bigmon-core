@@ -1711,7 +1711,7 @@ def jobSummaryDictProto(request, cutsummary, requestToken):
     jobsToList = set()
     njobs = 0
     for shkey in shkeys:
-        if shkey != 'PANDAID' and shkey != 'ErrorCode':
+        if shkey != 'PANDAID' and shkey != 'ErrorCode' and shkey != 'MINRAMCOUNT':
             # check this condition
             entry = {}
             entry['field'] = shkey
@@ -1734,6 +1734,24 @@ def jobSummaryDictProto(request, cutsummary, requestToken):
         elif shkey == 'PANDAID':
             for subshkey in summaryhash[shkey]:
                 jobsToList.add(subshkey)
+
+        elif shkey == 'MINRAMCOUNT':
+            entry = {}
+            entry['field'] = shkey
+            entrlist = []
+            newvalues = {}
+
+            for subshkey in summaryhash[shkey].keys():
+                roundedval = int(subshkey / 1000)
+                if roundedval in newvalues:
+                    newvalues[roundedval] += summaryhash[shkey][subshkey]
+                else:
+                    newvalues[roundedval] = summaryhash[shkey][subshkey]
+            for ky in newvalues:
+                entrlist.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
+            entrlist = sorted(entrlist, key=lambda x: str(x['kname']).lower())
+            entry['list'] = entrlist
+            sumd.append(entry)
 
         elif shkey == 'ErrorCode':
             for subshkey in summaryhash[shkey]:
@@ -1800,6 +1818,8 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
             plsql += " " + item.upper() + "=>'" + str(query[item+'__endswith']) + "', "
         elif (item in query):
             plsql += " " + item.upper() + "=>'" + str(query[item]) + "', "
+        elif (((item + '__range') in query) and (item == 'minramcount')):
+            plsql += " " + item.upper() + "=>'" + str(query[item + '__range']) + "', "
         else:
             pos = wildCardExtension.find(item, 0)
             if pos > 0:
@@ -1947,7 +1967,7 @@ def getJobList(request,requesttoken=None):
     jobsToList = set()
     njobs = 0
     for shkey in shkeys:
-        if not shkey in ['PANDAID', 'ErrorCode']:
+        if not shkey in ['PANDAID', 'ErrorCode', 'MINRAMCOUNT']:
             # check this condition
             entry = {}
             entry['field'] = shkey
@@ -1961,6 +1981,26 @@ def getJobList(request,requesttoken=None):
                 entrlist.append(subentry)
             entry['list'] = entrlist
             sumd.append(entry)
+
+
+        elif shkey == 'MINRAMCOUNT':
+            entry = {}
+            entry['field'] = shkey
+            entrlist = []
+            newvalues = {}
+
+            for subshkey in summaryhash[shkey].keys():
+                roundedval = int( int(subshkey) / 1000)
+                if roundedval in newvalues:
+                    newvalues[roundedval] += summaryhash[shkey][subshkey]
+                else:
+                    newvalues[roundedval] = summaryhash[shkey][subshkey]
+            for ky in newvalues:
+                entrlist.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
+            entrlist = sorted(entrlist, key=lambda x: str(x['kname']).lower())
+            entry['list'] = entrlist
+            sumd.append(entry)
+
 
         elif shkey == 'PANDAID':
             for subshkey in summaryhash[shkey]:
