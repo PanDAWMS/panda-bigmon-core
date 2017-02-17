@@ -1578,8 +1578,7 @@ def mainPage(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
-            'debuginfo': debuginfo,
-            'built': datetime.now().strftime("%H:%M:%S"),
+            'debuginfo': debuginfo
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -1607,7 +1606,6 @@ def helpPage(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -1811,6 +1809,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
                 plsql += " "+item.upper()+"=>'"+value+"', "
     plsql = plsql[:-2]
     plsql += "); END;;"
+    print plsql
     # Here we call stored proc to fill temporary data
     cursor = connection.cursor()
     countCalls = 0
@@ -1819,6 +1818,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
             cursor.execute(plsql)
             countCalls += 1
         except Exception as ex:
+            print ex
             if ex[0].code == 8103:
                 pass
             else:
@@ -1835,16 +1835,18 @@ def jobListP(request, mode=None, param=None):
     valid, response = initRequest(request)
     #if 'JOB_LIMIT' in request.session:
     #    del request.session['JOB_LIMIT']
-
     # Hack to void limit caption in the params label
     request.session['requestParams']['limit'] = 10000000
-
+    #is_json = False
     # Here We start Retreiving Summary and return almost empty template
-
+    if ('requesttoken' in request.session):
+        print 'Existing'
     # Get request token. This sheme of getting tokens should be more sophisticated (at least not use sequential numbers)
     requestToken = 0
 
     if len(request.REQUEST.values()) == 0:
+        requestToken = -1
+    elif len(request.REQUEST.values()) == 1 and 'json' in request.REQUEST:
         requestToken = -1
     else:
         sqlRequest = "SELECT ATLAS_PANDABIGMON.PANDAMON_REQUEST_TOKEN_SEQ.NEXTVAL as my_req_token FROM dual;"
@@ -1871,26 +1873,31 @@ def jobListP(request, mode=None, param=None):
 
     if not (requestToken == -1):
         startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
-
+    # if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+    #  'json' in request.session['requestParams']):
+    #     is_json = True
     #request.session['viewParams']['selection'] = request.session['viewParams']['selection'][:request.session['viewParams']['selection'].index('<b>limit=</b>')]
+    if 'json' not in request.session['requestParams']:
+        data = {
+            'requesttoken': requestToken,
+            'tfirst': request.session['TFIRST'],
+            'tlast': request.session['TLAST'],
+            'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+        }
+        del request.session['TFIRST']
+        del request.session['TLAST']
+        response = render_to_response('jobListWrapper.html', data, RequestContext(request))
+        endSelfMonitor(request)
+        return response
+    else:
+        data = getJobList(request,requestToken)
+        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
 
-    data = {
-        'requesttoken': requestToken,
-        'tfirst': request.session['TFIRST'],
-        'tlast': request.session['TLAST'],
-        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
-        'built': datetime.now().strftime("%H:%M:%S"),
-    }
-    del request.session['TFIRST']
-    del request.session['TLAST']
-    response = render_to_response('jobListWrapper.html', data, RequestContext(request))
-    endSelfMonitor(request)
-    return response
-
-
-def jobListPDiv(request, mode=None, param=None):
-    initRequest(request)
-
+def getJobList(request,requesttoken=None):
+    data = {}
+    rawsummary={}
     if 'requestParams' in request.session and u'display_limit' in request.session['requestParams']:
         display_limit = int(request.session['requestParams']['display_limit'])
         url_nolimit = removeParam(request.get_full_path(), 'display_limit')
@@ -1898,16 +1905,24 @@ def jobListPDiv(request, mode=None, param=None):
         display_limit = 100
         url_nolimit = request.get_full_path()
     njobsmax = display_limit
-
-
-    if 'requesttoken' not in request.REQUEST:
-        return HttpResponse('')
-
-    sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.REQUEST[
-        'requesttoken']
     cur = connection.cursor()
-    cur.execute(sqlRequest)
-    rawsummary = cur.fetchall()
+    if 'requesttoken' in request.REQUEST:
+        sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.REQUEST[
+        'requesttoken']
+        cur.execute(sqlRequest)
+        rawsummary = cur.fetchall()
+        if 'requesttoken' not in request.session:
+            request.session['requesttoken'] = request.REQUEST[
+            'requesttoken']
+    else:
+        sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % int(requesttoken)
+        while len(rawsummary) == 0:
+            cur.execute(sqlRequest)
+            rawsummary = cur.fetchall()
+            time.sleep(10)
+        if 'requesttoken' not in request.session:
+            request.session['requesttoken'] = requesttoken
+
     cur.close()
 
     errsByCount = []
@@ -2129,54 +2144,366 @@ def jobListPDiv(request, mode=None, param=None):
     if 'TLAST' in request.session:
         TLAST = request.session['TLAST']
         del request.session['TLAST']
-
-
     if 'viewParams' in request.session and 'limit' in request.session['viewParams']:
         del request.session['viewParams']['limit']
-    nodropPartURL = cleanURLFromDropPart(xurl)
+    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+        'json' not in request.session['requestParams'])):
+        nodropPartURL = cleanURLFromDropPart(xurl)
     #sumd = None
     #errsByCount = None
-    data = {
-        'errsByCount': errsByCount,
-        #        'errdSumd': errdSumd,
-        'request': request,
-        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
-        'requestParams': request.session['requestParams'] if 'requestParams' in request.session else None,
-        'jobList': jobsToShow[:njobsmax],
-        'jobtype': jobtype,
-        'njobs': njobs,
-        'user': user,
-        'sumd': sumd,
-        'xurl': xurl,
-        # 'droplist': droplist,
-        # 'ndrops': len(droplist) if len(droplist) > 0 else (- len(droppedPmerge)),
-        'ndrops': 0,
-        'tfirst': TFIRST,
-        'tlast': TLAST,
-        'plow': PLOW,
-        'phigh': PHIGH,
-        'joblimit': request.session['JOB_LIMIT'] if 'JOB_LIMIT' in request.session else None,
-        'limit': 0,
-        #        'totalJobs': totalJobs,
-        #        'showTop': showTop,
-        'url_nolimit': url_nolimit,
-        'display_limit': display_limit,
-        'sortby': sortby,
-        'nosorturl': nosorturl,
-        'taskname': taskname,
-        'flowstruct': flowstruct,
-        'nodropPartURL': nodropPartURL,
-        'doRefresh': doRefresh,
-    }
+        data = {
+            'errsByCount': errsByCount,
+            #        'errdSumd': errdSumd,
+            'request': request,
+            'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+            'requestParams': request.session['requestParams'] if 'requestParams' in request.session else None,
+            'jobList': jobsToShow[:njobsmax],
+            'jobtype': jobtype,
+            'njobs': njobs,
+            'user': user,
+            'sumd': sumd,
+            'xurl': xurl,
+            # 'droplist': droplist,
+            # 'ndrops': len(droplist) if len(droplist) > 0 else (- len(droppedPmerge)),
+            'ndrops': 0,
+            'tfirst': TFIRST,
+            'tlast': TLAST,
+            'plow': PLOW,
+            'phigh': PHIGH,
+            'joblimit': request.session['JOB_LIMIT'] if 'JOB_LIMIT' in request.session else None,
+            'limit': 0,
+            #        'totalJobs': totalJobs,
+            #        'showTop': showTop,
+            'url_nolimit': url_nolimit,
+            'display_limit': display_limit,
+            'sortby': sortby,
+            'nosorturl': nosorturl,
+            'taskname': taskname,
+            'flowstruct': flowstruct,
+            'nodropPartURL': nodropPartURL,
+            'doRefresh': doRefresh,
+        }
+    else:
+        if (('fields' in request.session['requestParams']) and (len(jobs) > 0)):
+            fields = request.session['requestParams']['fields'].split(',')
+            fields = (set(fields) & set(jobs[0].keys()))
+
+            for job in jobs:
+                for field in list(job.keys()):
+                    if field in fields:
+                        pass
+                    else:
+                        del job[field]
+
+        data = {
+        "selectionsummary": sumd,
+        "jobs": jobs,
+        "errsByCount": errsByCount,
+        }
+    return data
+
+def jobListPDiv(request, mode=None, param=None):
+    initRequest(request)
+    data = getCacheEntry(request, "jobListWrapper")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('jobListWrapper.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+    # if 'requestParams' in request.session and u'display_limit' in request.session['requestParams']:
+    #     display_limit = int(request.session['requestParams']['display_limit'])
+    #     url_nolimit = removeParam(request.get_full_path(), 'display_limit')
+    # else:
+    #     display_limit = 100
+    #     url_nolimit = request.get_full_path()
+    # njobsmax = display_limit
+    #
+    # if 'requesttoken' not in request.REQUEST:
+    #     return HttpResponse('')
+    #
+    # sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.REQUEST[
+    #     'requesttoken']
+    # cur = connection.cursor()
+    # cur.execute(sqlRequest)
+    # rawsummary = cur.fetchall()
+    # cur.close()
+    #
+    # errsByCount = []
+    # summaryhash = {}
+    # doRefresh = True
+    # for row in rawsummary:
+    #     if row[2] == 'END':
+    #         doRefresh = False
+    #     else:
+    #         if row[1] in summaryhash:
+    #             if row[1] in summaryhash[row[1]]:
+    #                 summaryhash[row[1]][row[2]] += row[3]
+    #             else:
+    #                 summaryhash[row[1]][row[2]] = row[3]
+    #         else:
+    #             item = {}
+    #             item[row[2]] = row[3]
+    #             summaryhash[row[1]] = item
+    #
+    # shkeys = summaryhash.keys()
+    # sumd = []
+    # jobsToList = set()
+    # njobs = 0
+    # for shkey in shkeys:
+    #     if not shkey in ['PANDAID', 'ErrorCode']:
+    #         # check this condition
+    #         entry = {}
+    #         entry['field'] = shkey
+    #         entrlist = []
+    #         for subshkey in summaryhash[shkey].keys():
+    #             subentry = {}
+    #             subentry['kname'] = subshkey
+    #             subentry['kvalue'] = summaryhash[shkey][subshkey]
+    #             if (shkey == 'JOBSTATUS'):
+    #                 njobs += summaryhash[shkey][subshkey]
+    #             entrlist.append(subentry)
+    #         entry['list'] = entrlist
+    #         sumd.append(entry)
+    #
+    #     elif shkey == 'PANDAID':
+    #         for subshkey in summaryhash[shkey]:
+    #             jobsToList.add(subshkey)
+    #
+    #     elif shkey == 'ErrorCode':
+    #         for subshkey in summaryhash[shkey]:
+    #             errval = {}
+    #             errval['codename'] = subshkey.split(':')[0]
+    #             errval['codeval'] = subshkey.split(':')[1]
+    #             errval['count'] = summaryhash[shkey][subshkey]
+    #             errval['error'] = subshkey
+    #             error = [it['error'] for it in errorcodelist if it['name'] == errval['codename'].lower()]
+    #             if len(error) > 0 and error[0] in errorCodes and int(errval['codeval']) in errorCodes[error[0]]:
+    #                 errval['diag'] = errorCodes[error[0]][int(errval['codeval'])]
+    #             errsByCount.append(errval)
+    #
+    # if sumd:
+    #     for item in sumd:
+    #         if item['field'] == 'JEDITASKID':
+    #             item['list'] = sorted(item['list'], key=lambda k: k['kvalue'], reverse=True)
+    #
+    # jobs = []
+    #
+    # if not doRefresh:
+    #     pandaIDVal = [int(val) for val in jobsToList]
+    #     pandaIDVal = pandaIDVal[:njobsmax]
+    #     newquery = {}
+    #     newquery['pandaid__in'] = pandaIDVal
+    #
+    #     eventservice = False
+    #     if 'requestParams' in request.session and 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
+    #         eventservice = True
+    #     if 'requestParams' in request.session and 'eventservice' in request.session['requestParams'] and (
+    #                     request.session['requestParams']['eventservice'] == 'eventservice' or
+    #                     request.session['requestParams'][
+    #                         'eventservice'] == '1'):
+    #         eventservice = True
+    #     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+    #                 'requestParams' in request.session and 'json' in request.session['requestParams']):
+    #         values = Jobsactive4._meta.get_all_field_names()
+    #     elif eventservice:
+    #         values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice'
+    #     else:
+    #         values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice'
+    #
+    #     jobs.extend(Jobsdefined4.objects.filter(**newquery).values(*values))
+    #     jobs.extend(Jobsactive4.objects.filter(**newquery).values(*values))
+    #     jobs.extend(Jobswaiting4.objects.filter(**newquery).values(*values))
+    #     jobs.extend(Jobsarchived4.objects.filter(**newquery).values(*values))
+    #     if (len(jobs) < njobsmax):
+    #         jobs.extend(Jobsarchived.objects.filter(**newquery).values(*values))
+    #
+    #
+    # if 'requestParams' in request.session and 'sortby' in request.session['requestParams']:
+    #     sortby = request.session['requestParams']['sortby']
+    #     if sortby == 'time-ascending':
+    #         jobs = sorted(jobs, key=lambda x: x['modificationtime'])
+    #     if sortby == 'time-descending':
+    #         jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+    #     if sortby == 'statetime':
+    #         jobs = sorted(jobs, key=lambda x: x['statechangetime'], reverse=True)
+    #     elif sortby == 'priority':
+    #         jobs = sorted(jobs, key=lambda x: x['currentpriority'], reverse=True)
+    #     elif sortby == 'attemptnr':
+    #         jobs = sorted(jobs, key=lambda x: x['attemptnr'], reverse=True)
+    #     elif sortby == 'duration-ascending':
+    #         jobs = sorted(jobs, key=lambda x: x['durationsec'])
+    #     elif sortby == 'duration-descending':
+    #         jobs = sorted(jobs, key=lambda x: x['durationsec'], reverse=True)
+    #     elif sortby == 'duration':
+    #         jobs = sorted(jobs, key=lambda x: x['durationsec'])
+    #     elif sortby == 'PandaID':
+    #         jobs = sorted(jobs, key=lambda x: x['pandaid'], reverse=True)
+    # else:
+    #     sortby = "time-descending"
+    #     if len(jobs) > 0 and 'modificationtime' in jobs[0]:
+    #         jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+    #
+    #
+    #
+    #
+    # ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
+    # taskids = {}
+    #
+    # for job in jobs:
+    #     if 'jeditaskid' in job: taskids[job['jeditaskid']] = 1
+    #
+    # droplist = []
+    # droppedIDs = set()
+    # droppedPmerge = set()
+    #
+    # jobs = cleanJobListLite(request, jobs)
+    #
+    # jobtype = ''
+    # if 'requestParams' in request.session and 'jobtype' in request.session['requestParams']:
+    #     jobtype = request.session['requestParams']['jobtype']
+    # elif '/analysis' in request.path:
+    #     jobtype = 'analysis'
+    # elif '/production' in request.path:
+    #     jobtype = 'production'
+    #
+    #
+    # if 'requestParams' in request.session and 'sortby' in request.session['requestParams']:
+    #     sortby = request.session['requestParams']['sortby']
+    #     if sortby == 'time-ascending':
+    #         jobs = sorted(jobs, key=lambda x: x['modificationtime'])
+    #     if sortby == 'time-descending':
+    #         jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+    #     if sortby == 'statetime':
+    #         jobs = sorted(jobs, key=lambda x: x['statechangetime'], reverse=True)
+    #     elif sortby == 'priority':
+    #         jobs = sorted(jobs, key=lambda x: x['currentpriority'], reverse=True)
+    #     elif sortby == 'attemptnr':
+    #         jobs = sorted(jobs, key=lambda x: x['attemptnr'], reverse=True)
+    #     elif sortby == 'duration-ascending':
+    #         jobs = sorted(jobs, key=lambda x: x['durationsec'])
+    #     elif sortby == 'duration-descending':
+    #         jobs = sorted(jobs, key=lambda x: x['durationsec'], reverse=True)
+    #     elif sortby == 'duration':
+    #         jobs = sorted(jobs, key=lambda x: x['durationsec'])
+    #     elif sortby == 'PandaID':
+    #         jobs = sorted(jobs, key=lambda x: x['pandaid'], reverse=True)
+    # else:
+    #     sortby = "time-descending"
+    #     if len(jobs) > 0 and 'modificationtime' in jobs[0]:
+    #         jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+    #
+    # taskname = ''
+    # if 'requestParams' in request.session and 'jeditaskid' in request.session['requestParams']:
+    #     taskname = getTaskName('jeditaskid', request.session['requestParams']['jeditaskid'])
+    # if 'requestParams' in request.session and 'taskid' in request.session['requestParams']:
+    #     taskname = getTaskName('jeditaskid', request.session['requestParams']['taskid'])
+    #
+    # if 'requestParams' in request.session and 'produsername' in request.session['requestParams']:
+    #     user = request.session['requestParams']['produsername']
+    # elif 'requestParams' in request.session and 'user' in request.session['requestParams']:
+    #     user = request.session['requestParams']['user']
+    # else:
+    #     user = None
+    #
+    # ## set up google flow diagram
+    # flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
+    #
+    # # show warning or not
+    # showwarn = 0
+    # if 'JOB_LIMIT' in request.session:
+    #     if njobs <= request.session['JOB_LIMIT']:
+    #         showwarn = 0
+    #     else:
+    #         showwarn = 1
+    #
+    # jobsToShow = jobs[:njobsmax]
+    #
+    # if 'requestParams' in request.session and 'jeditaskid' in request.session['requestParams']:
+    #     if len(jobs) > 0:
+    #         for job in jobs:
+    #             if 'maxvmem' in job:
+    #                 if type(job['maxvmem']) is int and job['maxvmem'] > 0:
+    #                     job['maxvmemmb'] = "%0.2f" % (job['maxvmem'] / 1000.)
+    #                     job['avgvmemmb'] = "%0.2f" % (job['avgvmem'] / 1000.)
+    #             if 'maxpss' in job:
+    #                 if type(job['maxpss']) is int and job['maxpss'] > 0:
+    #                     job['maxpss'] = "%0.2f" % (job['maxpss'] / 1024.)
+    #
+    # # errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist =
+    #
+    # if 'HTTP_REFERER' in request.META:
+    #     xurl = extensibleURL(request, request.META['HTTP_REFERER'])
+    # else:
+    #     xurl = request.META['PATH_INFO'] + "?"+ request.META['QUERY_STRING']
+    # print xurl
+    # nosorturl = removeParam(xurl, 'sortby', mode='extensible')
+    # nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
+    #
+    # TFIRST = None
+    # TLAST = None
+    # if 'TFIRST' in request.session:
+    #     TFIRST = request.session['TFIRST']
+    #     del request.session['TFIRST']
+    # if 'TLAST' in request.session:
+    #     TLAST = request.session['TLAST']
+    #     del request.session['TLAST']
+    #
+    #
+    # if 'viewParams' in request.session and 'limit' in request.session['viewParams']:
+    #     del request.session['viewParams']['limit']
+    # if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+    #     'json' not in request.session['requestParams'])):
+    #     nodropPartURL = cleanURLFromDropPart(xurl)
+    # #sumd = None
+    # #errsByCount = None
+    #     data = {
+    #         'errsByCount': errsByCount,
+    #         #        'errdSumd': errdSumd,
+    #         'request': request,
+    #         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+    #         'requestParams': request.session['requestParams'] if 'requestParams' in request.session else None,
+    #         'jobList': jobsToShow[:njobsmax],
+    #         'jobtype': jobtype,
+    #         'njobs': njobs,
+    #         'user': user,
+    #         'sumd': sumd,
+    #         'xurl': xurl,
+    #         # 'droplist': droplist,
+    #         # 'ndrops': len(droplist) if len(droplist) > 0 else (- len(droppedPmerge)),
+    #         'ndrops': 0,
+    #         'tfirst': TFIRST,
+    #         'tlast': TLAST,
+    #         'plow': PLOW,
+    #         'phigh': PHIGH,
+    #         'joblimit': request.session['JOB_LIMIT'] if 'JOB_LIMIT' in request.session else None,
+    #         'limit': 0,
+    #         #        'totalJobs': totalJobs,
+    #         #        'showTop': showTop,
+    #         'url_nolimit': url_nolimit,
+    #         'display_limit': display_limit,
+    #         'sortby': sortby,
+    #         'nosorturl': nosorturl,
+    #         'taskname': taskname,
+    #         'flowstruct': flowstruct,
+    #         'nodropPartURL': nodropPartURL,
+    #         'doRefresh': doRefresh,
+    #     }
+
+    data = getJobList(request)
     data.update(getContextVariables(request))
-    ##self monitor
+    setCacheEntry(request, "jobListWrapper", json.dumps(data, cls=DateEncoder), 60 * 20)
+        ##self monitor
     endSelfMonitor(request)
+
     #    if eventservice:
     #        response = render_to_response('jobListESProto.html', data, RequestContext(request))
     #    else:
     response = render_to_response('jobListContent.html', data, RequestContext(request))
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
+
 
 def getCacheEntry(request, viewType):
     is_json = False
@@ -2598,7 +2925,6 @@ def jobList(request, mode=None, param=None):
             'eventservice': eventservice,
             'jobsTotalCount': jobsTotalCount,
             'requestString': urlParametrs,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -2961,7 +3287,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'pandaid': pandaid,
             'job': None,
             'jobid': jobid,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -3321,7 +3646,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'mergeesjobs': mergeesjobs,
             'esjobstr': esjobstr,
             'fileSummary': fileSummary,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -3486,7 +3810,6 @@ def userList(request):
             'tlast': TLAST,
             'plow': PLOW,
             'phigh': PHIGH,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -3676,7 +3999,6 @@ def userInfo(request, user=''):
             'tasks': tasks,
             'ntasks': ntasks,
             'tasksumd': tasksumd,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -3818,7 +4140,6 @@ def siteList(request):
             'sumd': sumd,
             'xurl': xurl,
             'nosorturl': nosorturl,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         if 'cloud' in request.session['requestParams']: data['mcpsites'] = mcpsites[
             request.session['requestParams']['cloud']]
@@ -3928,7 +4249,6 @@ def siteInfo(request, site=''):
             'incidents': incidents,
             'name': site,
             'njobhours': njobhours,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -4246,7 +4566,6 @@ def wnInfo(request, site, wnname='all'):
             'wnPlotFinished': wnPlotFinishedL,
             'hours': hours,
             'errthreshold': errthreshold,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -4271,7 +4590,6 @@ def wnInfo(request, site, wnname='all'):
             'wnPlotFinished': wnPlotFinishedL,
             'hours': hours,
             'errthreshold': errthreshold,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
 
@@ -4873,7 +5191,6 @@ def worldjobs(request, view='production'):
             'xurl': xurl,
             'nosorturl': nosorturl,
             'user': None,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -5023,7 +5340,6 @@ def worldhs06s(request):
             'hsnucleussum': worldHS06sSummaryByNucleus,
             'roundflag': roundflag,
             'sortby': sortby,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         setCacheEntry(request, "worldhs06s", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -5196,7 +5512,6 @@ def dashboard(request, view='production'):
                 'nosorturl': nosorturl,
                 'user': None,
                 'template': 'worldjobs.html',
-                'built': datetime.now().strftime("%H:%M:%S"),
             }
             ##self monitor
             endSelfMonitor(request)
@@ -5258,7 +5573,6 @@ def dashboard(request, view='production'):
                 'jobsLeft': jobsLeft,
                 'rw': rw,
                 'template': 'dashboard.html',
-                'built': datetime.now().strftime("%H:%M:%S"),
             }
             ##self monitor
             endSelfMonitor(request)
@@ -5286,8 +5600,7 @@ def dashboard(request, view='production'):
                 'transrclouds': transrclouds,
                 'hoursSinceUpdate': hoursSinceUpdate,
                 'jobsLeft': jobsLeft,
-                'rw': rw,
-                'built': datetime.now().strftime("%H:%M:%S"),
+                'rw': rw
             }
 
             return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
@@ -5376,7 +5689,6 @@ def dashTasks(request, hours, view='production'):
             'jobsLeft': jobsLeft,
             'rw': rw,
             'template': 'dashboard.html',
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -5626,7 +5938,6 @@ def taskList(request):
             'eventservice': eventservice,
             'requestString': urlParametrs,
             'tasksTotalCount': tasksTotalCount,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
 
         setCacheEntry(request, "taskList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -6164,7 +6475,6 @@ def runningMCProdTasks(request):
             'neventsAFIItasksSum': neventsAFIItasksSum,
             'neventsFStasksSum': neventsFStasksSum,
             'plotageshistogram': plotageshistogram,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -6381,7 +6691,6 @@ def runningProdTasks(request):
             'rjobs8coreTot': rjobs8coreTot,
             'plotageshistogram': plotageshistogram,
             'productiontype' : json.dumps(productionType),
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -6564,7 +6873,6 @@ def runningDPDProdTasks(request):
             'rjobs1coreTot': rjobs1coreTot,
             'rjobs8coreTot': rjobs8coreTot,
             'plotageshistogram': plotageshistogram,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -6629,6 +6937,10 @@ def taskESprofileplot(request):
         # return response
 
 
+
+
+
+@cache_page(60 * 20)
 def taskInfo(request, jeditaskid=0):
     jeditaskid = int(jeditaskid)
     valid, response = initRequest(request)
@@ -7020,7 +7332,6 @@ def taskInfo(request, jeditaskid=0):
             'vomode': VOMODE,
             'eventservice': eventservice,
             'tk': transactionKey,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -7778,7 +8089,6 @@ def errorSummary(request):
             'taskname': taskname,
             'flowstruct': flowstruct,
             'jobsErrorsTotalCount': jobsErrorsTotalCount,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -7932,7 +8242,6 @@ def incidentList(request):
             'xurl': extensibleURL(request),
             'hours': hours,
             'ninc': len(incidents),
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -8152,7 +8461,6 @@ def pandaLogger(request):
         'xurl': extensibleURL(request),
         'hours': hours,
         'getrecs': getrecs,
-        'built': datetime.now().strftime("%H:%M:%S"),
     }
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
@@ -8259,14 +8567,13 @@ def ttc(request):
         'task': taskrec,
         'progressForBar': progressForBar,
         'profile': taskprofile,
-        'built': datetime.now().strftime("%H:%M:%S"),
     }
     response = render_to_response('ttc.html', data, RequestContext(request))
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
 
-@cache_page(60 * 20)
+#@cache_page(60 * 20)
 def workingGroups(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -8352,7 +8659,6 @@ def workingGroups(request):
             'hours': hours,
             'days': days,
             'errthreshold': errthreshold,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         setCacheEntry(request, "workingGroups", json.dumps(data, cls=DateEncoder), 60 * 20)
 
@@ -8432,7 +8738,6 @@ def datasetInfo(request):
             'dsrec': dsrec,
             'datasetname': dataset,
             'columns': columns,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -8466,7 +8771,6 @@ def datasetList(request):
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'datasets': dsets,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -8612,7 +8916,6 @@ def fileInfo(request):
             'files': files,
             'filename': file,
             'columns': columns,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -8787,8 +9090,7 @@ def fileList(request):
             'nfiles': nfiles,
             'nosorturl': nosorturl,
             'sortby': sortby,
-            'limitexceeded': limitexceeded,
-            'built': datetime.now().strftime("%H:%M:%S"),
+            'limitexceeded': limitexceeded
         }
         ##self monitor
         endSelfMonitor(request)
@@ -8831,7 +9133,6 @@ def workQueues(request):
             'requestParams': request.session['requestParams'],
             'queues': queues,
             'xurl': extensibleURL(request),
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -9612,7 +9913,6 @@ def globalshares(request):
             'xurl': extensibleURL(request),
             'gsPlotData':gsPlotData,
             'tablerows':tablerows,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
