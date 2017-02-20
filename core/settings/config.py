@@ -40,7 +40,7 @@ STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    join(dirname(core.__file__), 'static'),
+    join(dirname(core.common.__file__), 'static'),
 #    join(dirname(core.__file__), 'static'),
 )
 
@@ -81,7 +81,7 @@ TEMPLATES = [
         },
     },
 ]
-#STATIC_ROOT = join(dirname(core.__file__), 'static')
+STATIC_ROOT = join(dirname(core.__file__), 'static')
 #STATIC_ROOT = None
 MEDIA_ROOT = join(dirname(core.__file__), 'media')
 STATIC_URL_BASE = '/static/'
