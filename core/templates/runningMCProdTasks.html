@@ -232,7 +232,9 @@ gauges['slots'].redraw(slots);});
     <td><a href="{{ xurl }}campaign={{ task.cutcampaign }}">{{ task.cutcampaign }}</a></td>
     <td><a href="{{ xurl }}reqid={{ task.reqid }}">{{ task.reqid }}</a>  <a href="https://prodtask-dev.cern.ch/reqtask/{{task.reqid}}/"
                                target="_blank"> &rArr;</a></td>
-    <td><a href=" https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}" target="_blank">{{ task.jeditaskid }}</a></td>
+    <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>
+        <a href=" https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
+                               target="_blank"> &rArr;</a></td>
     <td>{% if task.rjobs > 0 %}<a href="/jobs/?jeditaskid={{ task.jeditaskid }}&jobstatus=running">{{ task.rjobs }}</a> {% else %}{{ task.rjobs }}{% endif %}</td>
     <td class='{{task.status}}_fill'><a href="{{ xurl }}&status={{ task.status }}">{{ task.status }}</a></td>
     <td><a href="{{ xurl }}processingtype={{ task.processingtype }}"> {{ task.processingtype }} </a></td>
