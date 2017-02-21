@@ -1,4 +1,5 @@
 {% extends "_base_core.html" %}{% load pbm_extras %}
+{% load static %}
 {% block page_title %}{{ viewParams.MON_VO }} PanDA Brokerage Monitor{% endblock %}
 {% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA Brokerage Monitor {{ viewParams.selection|safe }}
@@ -6,9 +7,9 @@
 {% if enddate %} &nbsp; enddate={{ enddate }}{% endif %}
 {% endblock %}
 {% block extra_js %}
-	<script type="text/javascript" src="{{ STATIC_URL }}/js/jquery-1.9.1.min.js"></script>
-	<script type="text/javascript" src="{{ STATIC_URL }}/js/highcharts/highcharts.js"></script>
-	<script type="text/javascript" src="{{ STATIC_URL }}/js/highcharts/modules/exporting.js"></script>
+	<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js" %}"/>
+	<script type="text/javascript" src="{% static "/js/highcharts/highcharts.js"%}"/>
+	<script type="text/javascript" src="{% static "/js/highcharts/modules/exporting.js"%}"/>
 {% endblock %}
 {% block extra_js_hepsw %}
 	<script src="http://hepsoftware.org/static/js/vendor/modernizr.js"></script>
