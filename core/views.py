@@ -2001,6 +2001,7 @@ def getJobList(request,requesttoken=None):
             entry['list'] = entrlist
             sumd.append(entry)
 
+
         elif shkey == 'PANDAID':
             for subshkey in summaryhash[shkey]:
                 jobsToList.add(subshkey)
