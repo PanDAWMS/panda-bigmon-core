@@ -2327,7 +2327,6 @@ def cache_filter(timeout):
     return decorator
 
 
-#@cache_filter(60 * 20)
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
     dkey = digkey(request)
@@ -3591,7 +3590,6 @@ def userList(request):
         return HttpResponse(json.dumps(resp), mimetype='text/html')
 
 
-@cache_page(60 * 20)
 def userInfo(request, user=''):
     valid, response = initRequest(request)
     if not valid: return response
@@ -4888,7 +4886,6 @@ def dashWorldProduction(request):
     return worldjobs(request, view='production')
 
 
-@cache_page(60 * 20)
 def worldjobs(request, view='production'):
     valid, response = initRequest(request)
 
@@ -4979,7 +4976,6 @@ def worldjobs(request, view='production'):
         return HttpResponse(json.dumps(data, cls=DateEncoder), mimetype='text/html')
 
 
-@cache_page(60 * 20)
 def worldhs06s(request):
     valid, response = initRequest(request)
 
@@ -6717,10 +6713,6 @@ def taskESprofileplot(request):
         # return response
 
 
-
-
-
-@cache_page(60 * 20)
 def taskInfo(request, jeditaskid=0):
     jeditaskid = int(jeditaskid)
     valid, response = initRequest(request)
