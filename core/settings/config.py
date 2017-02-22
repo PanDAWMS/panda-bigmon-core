@@ -143,7 +143,7 @@ FILTER_UI_ENV = {
 #DEBUG=True
 #LOG_ROOT = '/data/bigpandamon_virtualhosts/core/logs'
 #LOG_ROOT = '/data/wenaus/logs'
-LOG_ROOT = '/afs/cern.ch/user/a/aaleksee/panda-bigmon-core/log'
+LOG_ROOT = '/data/wenaus/bigpandamon_virtualhosts/twrpm/logs'
 LOG_SIZE = 1000000000
 LOGGING = {
     'version': 1,
