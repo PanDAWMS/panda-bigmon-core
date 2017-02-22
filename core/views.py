@@ -90,7 +90,6 @@ from django.template.defaulttags import register
 def get_item(dictionary, key):
     return dictionary.get(key)
 
-
 try:
     hostname = commands.getoutput('hostname')
     if hostname.find('.') > 0: hostname = hostname[:hostname.find('.')]
