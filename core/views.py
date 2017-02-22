@@ -1812,6 +1812,20 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     if ('noenddate' in request.session and request.session['noenddate'] == False):
         plsql += " END_DATE=>'"+str(b.date().strftime('%d-%m-%Y'))+"', "
 
+    if ('pandaid' in requestFields):
+        plsql += " PANDAID=>("
+        pandaIdRequest = requestFields['pandaid'].split(',')
+        for pandaID in pandaIdRequest:
+            try:
+                pandaID = int(pandaID)
+                plsql += str(pandaID) + ','
+            except:
+                pass # it is better to add here wrong data handler
+        plsql = plsql[:-1] +'), '
+
+
+
+
 
     for item in standard_fields:
         if ((item + '__in') in query):
@@ -1831,6 +1845,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
                 plsql += " "+item.upper()+"=>'"+value+"', "
     plsql = plsql[:-2]
     plsql += "); END;;"
+    print plsql
     # Here we call stored proc to fill temporary data
     cursor = connection.cursor()
     countCalls = 0
@@ -1839,6 +1854,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
             cursor.execute(plsql)
             countCalls += 1
         except Exception as ex:
+            print ex
             if ex[0].code == 8103:
                 pass
             else:
@@ -1855,16 +1871,18 @@ def jobListP(request, mode=None, param=None):
     valid, response = initRequest(request)
     #if 'JOB_LIMIT' in request.session:
     #    del request.session['JOB_LIMIT']
-
     # Hack to void limit caption in the params label
     request.session['requestParams']['limit'] = 10000000
-
+    #is_json = False
     # Here We start Retreiving Summary and return almost empty template
-
+    if ('requesttoken' in request.session):
+        print 'Existing'
     # Get request token. This sheme of getting tokens should be more sophisticated (at least not use sequential numbers)
     requestToken = 0
 
     if len(request.GET.values()) == 0:
+        requestToken = -1
+    elif len(request.REQUEST.values()) == 1 and 'json' in request.REQUEST:
         requestToken = -1
     else:
         sqlRequest = "SELECT ATLAS_PANDABIGMON.PANDAMON_REQUEST_TOKEN_SEQ.NEXTVAL as my_req_token FROM dual;"
@@ -1893,24 +1911,27 @@ def jobListP(request, mode=None, param=None):
         startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
     #request.session['viewParams']['selection'] = request.session['viewParams']['selection'][:request.session['viewParams']['selection'].index('<b>limit=</b>')]
+    if 'json' not in request.session['requestParams']:
+        data = {
+            'requesttoken': requestToken,
+            'tfirst': request.session['TFIRST'],
+            'tlast': request.session['TLAST'],
+            'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+            'built': datetime.now().strftime("%H:%M:%S"),
+        }
+        del request.session['TFIRST']
+        del request.session['TLAST']
+        response = render_to_response('jobListWrapper.html', data, RequestContext(request))
+        endSelfMonitor(request)
+        return response
+    else:
+        data = getJobList(request,requestToken)
+        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
 
-    data = {
-        'requesttoken': requestToken,
-        'tfirst': request.session['TFIRST'],
-        'tlast': request.session['TLAST'],
-        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
-        'built': datetime.now().strftime("%H:%M:%S"),
-    }
-    del request.session['TFIRST']
-    del request.session['TLAST']
-    response = render_to_response('jobListWrapper.html', data, RequestContext(request))
-    endSelfMonitor(request)
-    return response
-
-
-def jobListPDiv(request, mode=None, param=None):
-    initRequest(request)
-
+def getJobList(request,requesttoken=None):
+    rawsummary={}
     if 'requestParams' in request.session and u'display_limit' in request.session['requestParams']:
         display_limit = int(request.session['requestParams']['display_limit'])
         url_nolimit = removeParam(request.get_full_path(), 'display_limit')
@@ -1918,6 +1939,23 @@ def jobListPDiv(request, mode=None, param=None):
         display_limit = 100
         url_nolimit = request.get_full_path()
     njobsmax = display_limit
+    cur = connection.cursor()
+    if 'requesttoken' in request.REQUEST:
+        sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.REQUEST[
+        'requesttoken']
+        cur.execute(sqlRequest)
+        rawsummary = cur.fetchall()
+        # if 'requesttoken' not in request.session:
+        #     request.session['requesttoken'] = request.REQUEST[
+        #     'requesttoken']
+    else:
+        sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % int(requesttoken)
+        while len(rawsummary) == 0:
+            cur.execute(sqlRequest)
+            rawsummary = cur.fetchall()
+            time.sleep(10)
+        # if 'requesttoken' not in request.session:
+        #     request.session['requesttoken'] = requesttoken
 
 
     if 'requesttoken' not in request.GET:
@@ -2169,54 +2207,88 @@ def jobListPDiv(request, mode=None, param=None):
     if 'TLAST' in request.session:
         TLAST = request.session['TLAST']
         del request.session['TLAST']
-
-
     if 'viewParams' in request.session and 'limit' in request.session['viewParams']:
         del request.session['viewParams']['limit']
-    nodropPartURL = cleanURLFromDropPart(xurl)
+    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+        'json' not in request.session['requestParams'])):
+        nodropPartURL = cleanURLFromDropPart(xurl)
     #sumd = None
     #errsByCount = None
-    data = {
-        'errsByCount': errsByCount,
-        #        'errdSumd': errdSumd,
-        'request': request,
-        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
-        'requestParams': request.session['requestParams'] if 'requestParams' in request.session else None,
-        'jobList': jobsToShow[:njobsmax],
-        'jobtype': jobtype,
-        'njobs': njobs,
-        'user': user,
-        'sumd': sumd,
-        'xurl': xurl,
-        # 'droplist': droplist,
-        # 'ndrops': len(droplist) if len(droplist) > 0 else (- len(droppedPmerge)),
-        'ndrops': 0,
-        'tfirst': TFIRST,
-        'tlast': TLAST,
-        'plow': PLOW,
-        'phigh': PHIGH,
-        'joblimit': request.session['JOB_LIMIT'] if 'JOB_LIMIT' in request.session else None,
-        'limit': 0,
-        #        'totalJobs': totalJobs,
-        #        'showTop': showTop,
-        'url_nolimit': url_nolimit,
-        'display_limit': display_limit,
-        'sortby': sortby,
-        'nosorturl': nosorturl,
-        'taskname': taskname,
-        'flowstruct': flowstruct,
-        'nodropPartURL': nodropPartURL,
-        'doRefresh': doRefresh,
-    }
+        data = {
+            'errsByCount': errsByCount,
+            #        'errdSumd': errdSumd,
+            'request': request,
+            'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+            'requestParams': request.session['requestParams'] if 'requestParams' in request.session else None,
+            'jobList': jobsToShow[:njobsmax],
+            'jobtype': jobtype,
+            'njobs': njobs,
+            'user': user,
+            'sumd': sumd,
+            'xurl': xurl,
+            # 'droplist': droplist,
+            # 'ndrops': len(droplist) if len(droplist) > 0 else (- len(droppedPmerge)),
+            'ndrops': 0,
+            'tfirst': TFIRST,
+            'tlast': TLAST,
+            'plow': PLOW,
+            'phigh': PHIGH,
+            'joblimit': request.session['JOB_LIMIT'] if 'JOB_LIMIT' in request.session else None,
+            'limit': 0,
+            #        'totalJobs': totalJobs,
+            #        'showTop': showTop,
+            'url_nolimit': url_nolimit,
+            'display_limit': display_limit,
+            'sortby': sortby,
+            'nosorturl': nosorturl,
+            'taskname': taskname,
+            'flowstruct': flowstruct,
+            'nodropPartURL': nodropPartURL,
+            'doRefresh': doRefresh,
+            'built': datetime.now().strftime("%H:%M:%S"),
+        }
+    else:
+        if (('fields' in request.session['requestParams']) and (len(jobs) > 0)):
+            fields = request.session['requestParams']['fields'].split(',')
+            fields = (set(fields) & set(jobs[0].keys()))
+
+            for job in jobs:
+                for field in list(job.keys()):
+                    if field in fields:
+                        pass
+                    else:
+                        del job[field]
+
+        data = {
+        "selectionsummary": sumd,
+        "jobs": jobs,
+        "errsByCount": errsByCount,
+        }
+    return data
+
+def jobListPDiv(request, mode=None, param=None):
+    initRequest(request)
+    data = getCacheEntry(request, "jobListWrapper")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('jobListWrapper.html', data, RequestContext(request))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+    data = getJobList(request)
     data.update(getContextVariables(request))
-    ##self monitor
+    setCacheEntry(request, "jobListWrapper", json.dumps(data, cls=DateEncoder), 60 * 20)
+        ##self monitor
     endSelfMonitor(request)
+
     #    if eventservice:
     #        response = render_to_response('jobListESProto.html', data, RequestContext(request))
     #    else:
     response = render_to_response('jobListContent.html', data, RequestContext(request))
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
+
 
 def getCacheEntry(request, viewType):
     is_json = False
@@ -2278,7 +2350,6 @@ def cache_filter(timeout):
     return decorator
 
 
-#@cache_filter(60 * 20)
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
     dkey = digkey(request)
@@ -3001,7 +3072,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'pandaid': pandaid,
             'job': None,
             'jobid': jobid,
-            'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
         endSelfMonitor(request)
@@ -3543,7 +3613,6 @@ def userList(request):
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
 
-@cache_page(60 * 20)
 def userInfo(request, user=''):
     valid, response = initRequest(request)
     if not valid: return response
@@ -4840,7 +4909,6 @@ def dashWorldProduction(request):
     return worldjobs(request, view='production')
 
 
-@cache_page(60 * 20)
 def worldjobs(request, view='production'):
     valid, response = initRequest(request)
 
@@ -4931,7 +4999,6 @@ def worldjobs(request, view='production'):
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
 
-@cache_page(60 * 20)
 def worldhs06s(request):
     valid, response = initRequest(request)
 
@@ -8306,7 +8373,7 @@ def ttc(request):
     return response
 
 
-@cache_page(60 * 20)
+#@cache_page(60 * 20)
 def workingGroups(request):
     valid, response = initRequest(request)
     if not valid: return response
