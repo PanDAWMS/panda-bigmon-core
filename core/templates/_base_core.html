@@ -1,4 +1,4 @@
-{% load staticfiles %}{% load url from future %}<!DOCTYPE html>
+{% load staticfiles %}<!DOCTYPE html>
 <!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
 <!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
@@ -560,11 +560,11 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
 
     <!-- sub-title -->
       <div class="left" id="div-subtitle"><font size=-1>{% block subtitle %}Subtitle goes here{% endblock %}
-          {% if jobsErrorsTotalCount != None%} <b> Total jobs found ≈ <a href="{% url 'errorSummary' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">
+          {% if jobsErrorsTotalCount != None%} <b> Total jobs found &asymp; <a href="{% url 'errorSummary' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">
               {{ jobsErrorsTotalCount }}</a></b> {% endif %}
-          {% if jobsTotalCount != None%} <b> Total jobs found ≈ <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{jobsTotalCount}}">
+          {% if jobsTotalCount != None%} <b> Total jobs found &asymp; <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{jobsTotalCount}}">
               {{ jobsTotalCount }}</a></b> {% endif %}
-          {% if tasksTotalCount != None%} <b> Total tasks found ≈ <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{tasksTotalCount}}">
+          {% if tasksTotalCount != None%} <b> Total tasks found &asymp; <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{tasksTotalCount}}">
               {{ tasksTotalCount }}</a></b> {% endif %}
       </font>
       </div>

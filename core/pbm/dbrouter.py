@@ -10,6 +10,6 @@ class PandaBrokerageMonDBRouter(object):
     def allow_relation(self, obj1, obj2, **hints):
         return None
 
-    def allow_migrate(self, db, model):
+    def allow_migrate(self, db, app_label, model_name=None, **hints):
         return None
 

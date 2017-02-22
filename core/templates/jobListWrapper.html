@@ -1,20 +1,19 @@
 {% extends "_base_core.html" %}
-{% load url from future %}
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
 {% block subtitle %}PanDA jobs<font size=-1>{{ viewParams.selection|safe }}
-{% load staticfiles %}
+{% load static %}
 
 {% if showwarn and njobs%}
 &nbsp;&nbsp;<font style="color:#FF8040; size=-1"><b>Warning: limit {{joblimit}} per job table</b> </font>
 {% endif %}
 {% if showTop %}&nbsp;&nbsp; <font style="color:#FF8040; size=-1"><b>Task has {{totalJobs}} jobs in table Jobsarchived, limit is set to {{limit}}</b> </font>{% endif %}
 
-   	<script type="text/javascript" src="{{ STATIC_URL }}/js/jquery-1.9.1.min.js"></script>
+   	<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js"%}"></script>
     <script src="{% static 'js/foundation/foundation.js' %}"></script>
     <script src="{% static 'js/foundation/foundation.topbar.js' %}"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}/js/jquery.shorten.1.0.js"></script>
-    <link rel="stylesheet" href="{{ STATIC_URL }}css/loading.css">
+    <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js"%}"></script>
+    <link rel="stylesheet" href="{% static "css/loading.css"%}">
     <script type="text/javascript">
 
         function preventDefault(e) {
@@ -69,7 +68,7 @@
     </script>
 
     <div id="updateCaption" style="padding-top: 50px;padding-bottom: 50px">
-        <h1><img src="{{ STATIC_URL }}/images/Preloader_2.gif">Data is being processed</h1>
+        <h1><img src="{% static "images/Preloader_2.gif"%}">Data is being processed</h1>
     </div>
 
 {% endblock %}

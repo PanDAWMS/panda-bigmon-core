@@ -2,12 +2,14 @@
 #import cx_Oracle
 import pandas as pd
 import matplotlib.dates as md
-from matplotlib import pyplot as plt
+
 import os
 from django.db import connection
 from core.common.models import JediTasks
 import StringIO
-
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 
 class TaskProgressPlot:
 

@@ -1,6 +1,5 @@
 {% extends "_base_core.html" %}
-{% load url from future %}
-
+{% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
 {% block subtitle %}PanDA jobs<font size=-1>{{ viewParams.selection|safe }}
 </font>
@@ -58,7 +57,7 @@
 {% include "googleFlowDiagram.html" with struct=flowstruct %}
 {% endif %}
 
-<script type="text/javascript" src="{{ STATIC_URL }}/js/jquery.shorten.1.0.js"></script>
+<script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
 
 <script type="text/javascript">    
 
@@ -89,7 +88,7 @@ function toggleDetailDisplay(className) {
 {% endfor %}
 </font>
 </div>
-</tr></td></table>
+</td></tr></table>
 <p>
 {% endif %}
 

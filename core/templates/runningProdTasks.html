@@ -1,11 +1,10 @@
 {% extends "_base_core.html" %}
-{% load url from future %}
 {% load humanize %}
-
+{% load static %}
 {% block page_title %} PanDA tasks{% endblock %}
 {% block subtitle %}Running production task list
 {% endblock %}
-<script type="text/javascript" src="{{ STATIC_URL }}/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js"%}"></script>
 {% block body %}
 
     {% if requestParams.campaign %}<br><b>Campaign:</b> {{ requestParams.campaign }} {% endif %}

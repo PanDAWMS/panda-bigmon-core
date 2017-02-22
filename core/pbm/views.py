@@ -534,21 +534,21 @@ def api_pbm_collector(request):
     if not len(errors):
         ### set request response data
 #        return render_to_response('pbm/api_pbm_collector.html', {'data': data}, RequestContext(request))
-        return  HttpResponse(json.dumps(data), mimetype='application/json')
+        return  HttpResponse(json.dumps(data), content_type='application/json')
     elif 'type' not in request.GET.keys() or logtype == None:
 #        t = get_template('pbm/api_pbm_collector.html')
 #        context = RequestContext(request, {'data':data})
 #        return HttpResponse(t.render(context), status=400)
-        return  HttpResponse(json.dumps(data), mimetype='application/json', status=400)
+        return  HttpResponse(json.dumps(data), content_type='application/json', status=400)
     elif not len(log_records):
 #        t = get_template('pbm/api_pbm_collector.html')
 #        context = RequestContext(request, {'data':data})
 #        return HttpResponse(t.render(context), status=404)
-        return  HttpResponse(json.dumps(data), mimetype='application/json', status=404)
+        return  HttpResponse(json.dumps(data), content_type='application/json', status=404)
     else:
 #        t = get_template('pbm/api_pbm_collector.html')
 #        context = RequestContext(request, {'data':data})
 #        return HttpResponse(t.render(context), status=400)
-        return  HttpResponse(json.dumps(data), mimetype='application/json', status=400)
+        return  HttpResponse(json.dumps(data), content_type='application/json', status=400)
 
 

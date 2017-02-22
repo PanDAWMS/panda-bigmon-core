@@ -1,4 +1,4 @@
-{% extends "_base_bigpandamon.html" %}{% load url from future %}{% load pbm_extras %}
+{% extends "_base_bigpandamon.html" %}{% load pbm_extras %}
 {% block title %}PanDA Brokerage Monitor{% endblock %}
 {% block page_title %}PanDA Brokerage Monitor{% endblock %}
 {% block bl_page_title %}PanDA Brokerage Monitor{% endblock %}
@@ -14,9 +14,9 @@
 {% block left_menu %}{% endblock %}
 {% block body_mobile %}{% endblock %}
 {% block extra_js %}
-	<script type="text/javascript" src="{{ STATIC_URL }}/js/jquery-1.9.1.min.js"></script>
-	<script type="text/javascript" src="{{ STATIC_URL }}/js/highcharts/highcharts.js"></script>
-	<script type="text/javascript" src="{{ STATIC_URL }}/js/highcharts/modules/exporting.js"></script>
+	<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js" %}"/>
+	<script type="text/javascript" src="{% static "/js/highcharts/highcharts.js"%}"/>
+	<script type="text/javascript" src="{% static "/js/highcharts/modules/exporting.js"%}"/>
 {% endblock %}
 {% block body %}
 <a name="sec.toc"></a>

@@ -4,7 +4,7 @@ import os
 
 #from django.utils import timezone
 from django.conf import settings
-from django.utils import unittest
+import unittest2
 from django.test.client import Client
 
 from .tests_data import TESTS_DATA
@@ -21,12 +21,12 @@ get_filebrowser_hostname
 
 
 
-class SimpleFileBrowserTest(unittest.TestCase):
+class SimpleFileBrowserTest(unittest2.TestCase):
     def setUp(self):
         # Every test needs a client.
         self.client = Client()
 
-    @unittest.skip('skipping on purpose')
+    @unittest2.skip('skipping on purpose')
     def test_settings_vo(self):
         """
             test_settings_vo
@@ -39,7 +39,7 @@ class SimpleFileBrowserTest(unittest.TestCase):
         self.assertEqual(vo, getattr(settings, "FILEBROWSER_VO", "atlas"))
 
 
-    @unittest.skip('skipping on purpose')
+    @unittest2.skip('skipping on purpose')
     def test_settings_hostname(self):
         """
             test_settings_hostname
@@ -53,7 +53,7 @@ class SimpleFileBrowserTest(unittest.TestCase):
                                            commands.getoutput('hostname')))
 
 
-    @unittest.skip('skipping on purpose')
+    @unittest2.skip('skipping on purpose')
     def test_settings_filebrowser_directory(self):
         """
             test_settings_filebrowser_directory
@@ -65,7 +65,7 @@ class SimpleFileBrowserTest(unittest.TestCase):
         self.assertEqual(dir, getattr(settings, "FILEBROWSER_DIRECTORY", "filebrowser"))
 
 
-    @unittest.skip('skipping on purpose')
+    @unittest2.skip('skipping on purpose')
     def test_settings_fullpath_filebrowser_directory(self):
         """
             test_settings_fullpath_filebrowser_directory
@@ -82,7 +82,7 @@ class SimpleFileBrowserTest(unittest.TestCase):
         self.assertEqual(os.path.isdir(full_dir), True)
 
 
-    @unittest.skip('skipping on purpose')
+    @unittest2.skip('skipping on purpose')
     def test_settings_x509_proxy(self):
         """
             test_settings_x509_proxy
@@ -96,7 +96,7 @@ class SimpleFileBrowserTest(unittest.TestCase):
                             "/data/atlpan/x509up_u25606"))
 
 
-    @unittest.skip('skipping on purpose')
+    @unittest2.skip('skipping on purpose')
     def test_settings_capath(self):
         """
             test_settings_capath
@@ -110,7 +110,7 @@ class SimpleFileBrowserTest(unittest.TestCase):
                             "/etc/grid-security/certificates"))
 
 
-    @unittest.skip('skipping on purpose')
+    @unittest2.skip('skipping on purpose')
     def test_settings_rucio_account(self):
         """
             test_settings_rucio_account
@@ -123,7 +123,7 @@ class SimpleFileBrowserTest(unittest.TestCase):
                     getattr(settings, "RUCIO_ACCOUNT", "atlpan"))
 
 
-    @unittest.skip('skipping on purpose')
+    @unittest2.skip('skipping on purpose')
     def test_settings_rucio_hosts(self):
         """
             test_settings_rucio_hosts
@@ -269,7 +269,7 @@ class SimpleFileBrowserTest(unittest.TestCase):
                 self.assertEqual(os.path.exists(f_path), fpath_exists)
                 self.assertEqual(os.path.getsize(f_path), f_size)
 
-    @unittest.skipUnless(os.path.exists(TESTS_DATA['cvmfs_path']), \
+    @unittest2.skipUnless(os.path.exists(TESTS_DATA['cvmfs_path']), \
             'You do not have ATLAS cvmfs available. ' + \
             'DQ2 client installation is missing.')
     def test_download_with_dq2client(self, \
@@ -352,7 +352,7 @@ class SimpleFileBrowserTest(unittest.TestCase):
                 fpath_exists)
 
 
-    @unittest.skipUnless(os.path.exists(TESTS_DATA['cvmfs_path']), \
+    @unittest2.skipUnless(os.path.exists(TESTS_DATA['cvmfs_path']), \
             'You do not have ATLAS cvmfs available. ' + \
             'DQ2 client installation is missing.')
     def test_download_with_dq2client_forcefailure(self, \

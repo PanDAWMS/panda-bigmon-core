@@ -1,4 +1,4 @@
-{% extends "pbm/index.html" %}{% load url from future %}{% load pbm_extras %}
+{% extends "pbm/index.html" %}{% load pbm_extras %}
 {% block header-nav-chain-1 %}<a href="{% url 'pbm-index' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}">PanDA Brokerage</a>{% endblock %}
 {% block header-nav-chain-1-separator %}&nbsp;&#187;&nbsp;{% endblock %}
 {% block header-nav-chain-2 %}<a href="{% url 'pbm-detail' %}{% if startdate %}?startdate={{ startdate }}{% endif %}{% if enddate %}&amp;enddate={{ enddate }}{% endif %}{% if plotid %}&amp;plotid={{ plotid }}{% endif %}{% endblock %}

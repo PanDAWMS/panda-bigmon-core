@@ -89,6 +89,7 @@ INSTALLED_APPS_DJANGO_FRAMEWORK = (
 #### django-debug-toolbar
 #    'debug_toolbar',
 )
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 INSTALLED_APPS_DJANGO_PLUGINS = (
     ### Django plugins
     'rest_framework',  #pip install djangorestframework, version 2.3.10
@@ -125,17 +126,16 @@ VERSIONS = {
     'core': core.__versionstr__,
 }
 
-TEMPLATE_DIRS = (
+#TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    join(dirname(core.__file__), 'templates'),
-    join(dirname(common.__file__), 'templates'),
-    join(dirname(core.filebrowser.__file__), 'templates'),
-    join(dirname(core.pbm.__file__), 'templates'),
-    join(dirname(core.pbm.__file__), 'templates'),
-
-)
+#    join(dirname(core.__file__), 'templates'),
+#    join(dirname(common.__file__), 'templates'),
+#    join(dirname(core.filebrowser.__file__), 'templates'),
+#    join(dirname(core.pbm.__file__), 'templates'),
+#    join(dirname(core.pbm.__file__), 'templates'),
+#)
 
 
 
