@@ -1812,6 +1812,20 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     if ('noenddate' in request.session and request.session['noenddate'] == False):
         plsql += " END_DATE=>'"+str(b.date().strftime('%d-%m-%Y'))+"', "
 
+    if ('pandaid' in requestFields):
+        plsql += " PANDAID=>("
+        pandaIdRequest = requestFields['pandaid'].split(',')
+        for pandaID in pandaIdRequest:
+            try:
+                pandaID = int(pandaID)
+                plsql += str(pandaID) + ','
+            except:
+                pass # it is better to add here wrong data handler
+        plsql = plsql[:-1] +'), '
+
+
+
+
 
     for item in standard_fields:
         if ((item + '__in') in query):

@@ -43,7 +43,7 @@
 <tr>
 <td>{{f.modification}}</td>
 <td align='right'>{{f.size}}</td>
-<td><a href="http://{{ HOSTNAME }}{{MEDIA_URL}}{{dirprefix}}/{{tardir}}{{f.dirname}}/{{f.name}}" >
+<td><a href="http://{{ HOSTNAME }}/{{MEDIA_URL}}{{dirprefix}}/{{tardir}}{{f.dirname}}/{{f.name}}" >
 {% if f.dirname %}{{f.dirname}}/{% endif %}{{f.name}}</a></td>
 </tr>
 {% endfor %}
