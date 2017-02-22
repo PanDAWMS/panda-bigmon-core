@@ -1882,7 +1882,7 @@ def jobListP(request, mode=None, param=None):
 
     if len(request.GET.values()) == 0:
         requestToken = -1
-    elif len(request.REQUEST.values()) == 1 and 'json' in request.REQUEST:
+    elif len(request.GET.values()) == 1 and 'json' in request.GET:
         requestToken = -1
     else:
         sqlRequest = "SELECT ATLAS_PANDABIGMON.PANDAMON_REQUEST_TOKEN_SEQ.NEXTVAL as my_req_token FROM dual;"
@@ -1940,8 +1940,8 @@ def getJobList(request,requesttoken=None):
         url_nolimit = request.get_full_path()
     njobsmax = display_limit
     cur = connection.cursor()
-    if 'requesttoken' in request.REQUEST:
-        sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.REQUEST[
+    if 'requesttoken' in request.GET:
+        sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.GET[
         'requesttoken']
         cur.execute(sqlRequest)
         rawsummary = cur.fetchall()
@@ -1956,17 +1956,10 @@ def getJobList(request,requesttoken=None):
             time.sleep(10)
         # if 'requesttoken' not in request.session:
         #     request.session['requesttoken'] = requesttoken
-
-
-    if 'requesttoken' not in request.GET:
-        return HttpResponse('')
-
-    sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.GET[
-        'requesttoken']
-    cur = connection.cursor()
-    cur.execute(sqlRequest)
-    rawsummary = cur.fetchall()
     cur.close()
+
+    #if 'requesttoken' not in request.GET:
+    #    return HttpResponse('')
 
     errsByCount = []
     summaryhash = {}
