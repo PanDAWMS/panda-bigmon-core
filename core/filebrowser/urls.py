@@ -11,6 +11,6 @@ from django.contrib import admin
 import views as filebrowser_views
 
 urlpatterns = [
-    url(r'^$', filebrowser_views.index, name='filebrowser'),
+    url(r'^', filebrowser_views.index, name='filebrowser'),
     url(r'^api/$', filebrowser_views.api_single_pandaid, name='filebrowser-api-single-pandaid'),
 ]
