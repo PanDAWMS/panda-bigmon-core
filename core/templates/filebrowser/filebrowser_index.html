@@ -11,7 +11,7 @@
 <div><br/>
 <table>
 {% if scope %}<tr><th>Scope</th><td>{{scope}}</td></tr>{% endif %}
-{% if lfn %}<tr><th>LFN</th><td>{% if errors %}{{lfn}}{% else %}<a href="http://{{ HOSTNAME }}{{MEDIA_URL}}{{dirprefix}}/{{lfn}}" >{{lfn}}</a>{% endif %}</td></tr>{% endif %}
+{% if lfn %}<tr><th>LFN</th><td>{% if errors %}{{lfn}}{% else %}<a href="http://{{ HOSTNAME }}/{{MEDIA_URL}}{{dirprefix}}/{{lfn}}" >{{lfn}}</a>{% endif %}</td></tr>{% endif %}
 {% if site %}<tr><th>Site</th><td>{{site}}</td></tr>{% endif %}
 {% if guid %}<tr><th>GUID</th><td>{{guid}}</td></tr>{% endif %}
 </table> 
