@@ -5304,8 +5304,6 @@ def dashboard(request, view='production'):
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
         else:
-            #        del request.session['TFIRST']
-            #        del request.session['TLAST']
             data = {
                 'nucleuses': nucleus,
                 'nucleussummary': nucleusSummary,
