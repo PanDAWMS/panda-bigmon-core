@@ -118,6 +118,7 @@ def index(request):
         'lfn': lfn, \
         'site': site, \
         'guid': guid, \
+        'MEDIA_URL': settings.MEDIA_URL, \
         'viewParams' : {'MON_VO': str(get_filebrowser_vo()).upper()}, \
         'HOSTNAME': get_filebrowser_hostname() \
 #        , 'new_contents': new_contents
