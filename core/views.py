@@ -5307,6 +5307,9 @@ def dashboard(request, view='production'):
             #        del request.session['TFIRST']
             #        del request.session['TLAST']
             data = {
+                'nucleuses': nucleus,
+                'nucleussummary': nucleusSummary,
+                'statelist': statelist1,
             }
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
