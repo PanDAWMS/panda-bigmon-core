@@ -6741,6 +6741,10 @@ def taskInfo(request, jeditaskid=0):
     data = getCacheEntry(request, "taskInfo")
     if data is not None:
         data = json.loads(data)
+
+        #done / finished / failed
+
+
         data['request'] = request
         if data['eventservice'] == True:
             response = render_to_response('taskInfoES.html', data, RequestContext(request))
@@ -7123,7 +7127,14 @@ def taskInfo(request, jeditaskid=0):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
-        setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
+        cacheexpiration = 60*20 #second/minute * minutes
+        if taskrec and 'status' in taskrec:
+            totaljobs = 0
+            for state in jobsummary:
+                totaljobs += state['count']
+            if taskrec['status'] in ['broken','aborted','done','finished','failed'] and totaljobs > 5000:
+                cacheexpiration = 3600*24*31 # we store such data a month
+        setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
         ##self monitor
         endSelfMonitor(request)
 
