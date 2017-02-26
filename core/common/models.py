@@ -655,11 +655,7 @@ class GetEventsForTask(models.Model):
 
 class BPUser(AbstractUser):
     is_tester = models.NullBooleanField(db_column='IS_TESTER', null=True, blank=False)
-    def save(self, *args, **kwargs):
-        if not self.last_login:
-            self.last_login = timezone.now()
-        return super(BPUser, self).save(*args, **kwargs)
-
+    last_login = models.DateTimeField(db_column='LAST_LOGIN', auto_now_add=True, blank=False)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."AUTH_USER"'
 
