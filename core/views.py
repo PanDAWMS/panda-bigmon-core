@@ -5295,7 +5295,7 @@ def dashboard(request, view='production'):
                 'nosorturl': nosorturl,
                 'user': None,
                 'template': 'worldjobs.html',
-                'built': datetime.now().strftime("%H:%M:%S"),
+                'built': datetime.now().strftime("%m-%d %H:%M:%S"),
             }
             ##self monitor
             endSelfMonitor(request)
@@ -6741,19 +6741,34 @@ def taskInfo(request, jeditaskid=0):
     data = getCacheEntry(request, "taskInfo")
     if data is not None:
         data = json.loads(data)
+        # we check here whether task status didn't changed
+        doRefresh = False
+        if data['task'] and data['task']['status'] and data['task']['status'] in ['done', 'finished', 'failed']:
+            if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
+                request.session['requestParams']['jeditaskid'])
+            if jeditaskid != 0:
+                query = {'jeditaskid': jeditaskid}
+                values = ['status','superstatus','modificationtime']
+                tasks = JediTasks.objects.filter(**query).values(*values)[:1]
+                if len(tasks) > 0:
+                    task = tasks[0]
+                    if (task['status'] == data['task']['status'] and task['superstatus'] == data['task']['superstatus'] and
+                                task['modificationtime'].isoformat() == data['task']['modificationtime']):
+                        doRefresh = False
+                    else:
+                        doRefresh = True
+                else:
+                    doRefresh = True
 
-        #done / finished / failed
-
-
-        data['request'] = request
-        if data['eventservice'] == True:
-            response = render_to_response('taskInfoES.html', data, RequestContext(request))
-        else:
-            response = render_to_response('taskInfo.html', data, RequestContext(request))
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
-        return response
-
+        if not doRefresh:
+            data['request'] = request
+            if data['eventservice'] == True:
+                response = render_to_response('taskInfoES.html', data, RequestContext(request))
+            else:
+                response = render_to_response('taskInfo.html', data, RequestContext(request))
+            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+            endSelfMonitor(request)
+            return response
 
     if 'taskname' in request.session['requestParams'] and request.session['requestParams']['taskname'].find('*') >= 0:
         return taskList(request)
@@ -7124,7 +7139,7 @@ def taskInfo(request, jeditaskid=0):
             'vomode': VOMODE,
             'eventservice': eventservice,
             'tk': transactionKey,
-            'built': datetime.now().strftime("%H:%M:%S"),
+            'built': datetime.now().strftime("%m-%d %H:%M:%S"),
         }
         data.update(getContextVariables(request))
         cacheexpiration = 60*20 #second/minute * minutes
