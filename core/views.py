@@ -2282,11 +2282,12 @@ def jobListPDiv(request, mode=None, param=None):
     return response
 
 
-def getCacheEntry(request, viewType):
+def getCacheEntry(request, viewType, skipCentralRefresh = False):
     is_json = False
 
     # We do this check to always rebuild cache for the page when it called from the crawler
-    if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress)):
+    if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
+                skipCentralRefresh == False):
         return None
 
     request._cache_update_cache = False
@@ -6737,12 +6738,18 @@ def taskInfo(request, jeditaskid=0):
     nomodeurl = extensibleURL(request, nomodeurl)
     if not valid: return response
 
-    # Here we try to get cached data
-    data = getCacheEntry(request, "taskInfo")
+    # Here we try to get cached data. We get any cached data is available
+    data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
     if data is not None:
         data = json.loads(data)
-        # we check here whether task status didn't changed
         doRefresh = False
+
+        #We still want to refresh tasks if request came from central crawler and task not in the frozen state
+        if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
+                data['task'] and data['task']['status'] not in ['broken', 'aborted']):
+            doRefresh = True
+
+        # we check here whether task status didn't changed for both (user or crawler request)
         if data['task'] and data['task']['status'] and data['task']['status'] in ['done', 'finished', 'failed']:
             if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
                 request.session['requestParams']['jeditaskid'])
