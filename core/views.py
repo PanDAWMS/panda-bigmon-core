@@ -2924,7 +2924,7 @@ def descendentjoberrsinfo(request):
         retryquery['jeditaskid'] = job['jeditaskid']
         retryquery['oldpandaid'] = job['pandaid']
         retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
-        pretries = getSequentialRetries(job['pandaid'], job['jeditaskid'])
+        pretries = getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations)
     else:
         retryquery = {}
         retryquery['jeditaskid'] = job['jeditaskid']
