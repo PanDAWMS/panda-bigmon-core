@@ -2917,7 +2917,6 @@ def descendentjoberrsinfo(request):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
     job = jobs[0]
-
     countOfInvocations = []
     if not isEventService(job):
         retryquery = {}
