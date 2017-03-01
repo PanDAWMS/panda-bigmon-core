@@ -1803,6 +1803,10 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     else:
         plsql += " RANGE_DAYS=>" + str(range) + ", "
 
+    if ('priorityrange' in requestFields): #This is a temporary patch to avoid absence of pandaids
+        plsql += " PRIORITYRANGE=>'"+escapeInput(requestFields['priorityrange'])+"', "
+
+
     if not dropmode:
         plsql += " WITH_RETRIALS=>'Y', "
     else:
