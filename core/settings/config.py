@@ -44,16 +44,7 @@ STATICFILES_DIRS = (
 #    join(dirname(core.__file__), 'static'),
 )
 
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    join(dirname(core.__file__), 'templates'),
-    join(dirname(admin.__file__), 'templates'),
-    join(dirname(core.__file__), 'templates'),
-    join(dirname(core.filebrowser.__file__), 'templates'),
-    join(dirname(core.pbm.__file__), 'templates'),
-)
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -65,7 +56,6 @@ TEMPLATES = [
             join(dirname(core.pbm.__file__), 'templates'),
 
         ],
-        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 # Insert your TEMPLATE_CONTEXT_PROCESSORS here or use this
@@ -78,6 +68,10 @@ TEMPLATES = [
                 'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
             ],
+            'loaders':[
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+            ]
         },
     },
 ]
