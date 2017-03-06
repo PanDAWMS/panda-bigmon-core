@@ -1957,6 +1957,7 @@ def getJobList(request,requesttoken=None):
             cur.execute(sqlRequest)
             rawsummary = cur.fetchall()
             time.sleep(10)
+        njobsmax = 1000000000
         # if 'requesttoken' not in request.session:
         #     request.session['requesttoken'] = requesttoken
     cur.close()
@@ -2254,6 +2255,8 @@ def getJobList(request,requesttoken=None):
                         pass
                     else:
                         del job[field]
+        if doRefresh == True:
+            getJobList(request, int(requesttoken))
 
         data = {
         "selectionsummary": sumd,
