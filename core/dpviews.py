@@ -399,7 +399,7 @@ def doRequest(request):
         ctagd = {}
         for st in steps:
             ctagd[st['step_template_id']] = 1
-        ctagl = ctagd.keys
+        ctagl = ctagd.keys()
         ctags = StepTemplate.objects.using('deft_adcr').filter(id__in=ctagl).order_by('ctag').values()
         for st in steps:
             ## add ctags to steps
@@ -794,8 +794,13 @@ def doRequest(request):
         query['reqid__gte'] = 920
         reqinfo = TRequest.objects.using('deft_adcr').filter(**query).order_by('reqid').reverse().values()
         reqinfod = {}
-        for r in reqinfo:
-            reqinfod[r['reqid']] = r
+        numrows = reqinfo.count()
+        for row in range(numrows):
+            try:
+                r = reqinfo[row]
+                reqinfod[r['reqid']] = r
+            except:
+                pass
 
         ## queued jobs
         totqjobs = 0
