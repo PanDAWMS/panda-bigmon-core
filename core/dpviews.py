@@ -801,7 +801,6 @@ def doRequest(request):
                 reqinfod[r['reqid']] = r
             except:
                 pass
-
         ## queued jobs
         totqjobs = 0
         ## jobs queued, all pre-run stages
