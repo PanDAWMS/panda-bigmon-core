@@ -6,7 +6,7 @@ import copy
 import itertools, random
 import string as strm
 import math
-from urllib import urlencode
+from urllib import urlencode, unquote
 from urlparse import urlparse, urlunparse, parse_qs
 from django.utils.decorators import available_attrs
 from django.http import HttpResponse
@@ -198,7 +198,7 @@ def initRequest(request):
     VOMODE = ''
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         VOMODE = 'atlas'
-
+        # VOMODE = 'devtest'
     request.session['IS_TESTER'] = False
 
     if VOMODE == 'atlas':
@@ -221,6 +221,17 @@ def initRequest(request):
                     user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'], first_name=request.session['ADFS_FIRSTNAME'], last_name=request.session['ADFS_LASTNAME'])
                     user.set_unusable_password()
                     user.save()
+
+    # if VOMODE == 'devtest':
+    #     request.session['ADFS_FULLNAME'] = ''
+    #     request.session['ADFS_EMAIL'] = ''
+    #     request.session['ADFS_FIRSTNAME'] = ''
+    #     request.session['ADFS_LASTNAME'] = ''
+    #     request.session['ADFS_LOGIN'] = ''
+    #     user = None
+    #     user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
+    #     request.session['IS_TESTER'] = user.is_tester
+
 
     viewParams = {}
     # if not 'viewParams' in request.session:
@@ -3737,6 +3748,114 @@ def userInfo(request, user=''):
         njobsmax = display_limit
         url_nolimit = request.get_full_path()
 
+    #
+    # getting most relevant links based on visit statistics
+    #
+    links = {'task': [], 'job': [], 'other': []}
+    if 'ADFS_LOGIN' in request.session and request.session['IS_TESTER']:
+        userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
+        sqlquerystr = """select pagegroup, pagename,visitrank, url
+                          from (
+                            select sum(w) as visitrank, pagegroup, pagename,row_number() over (partition by pagegroup ORDER BY sum(w) desc) as rn, url
+                            from (
+                              select exp(-(SYSdate - cast(time as date))*24/12) as w,
+                              SUBSTR(url,
+                                    INSTR(url,'/',1,3)+1,
+                                    (INSTR(url,'/',1,4)-INSTR(url,'/',1,3)-1)) as pagename,
+                              case when SUBSTR(url,INSTR(url,'/',1,3)+1,(INSTR(url,'/',1,4)-INSTR(url,'/',1,3)-1)) in ('task', 'tasks') then 'task'
+                                 when SUBSTR(url,INSTR(url,'/',1,3)+1,(INSTR(url,'/',1,4)-INSTR(url,'/',1,3)-1)) in ('job', 'jobs') then 'job'
+                                 else 'other' end as pagegroup,
+                              case when url like '%%timestamp=%%' then SUBSTR(url,1,INSTR(url,'timestamp=',1,1)-2)
+                                   when url like '%%job?pandaid=%%' then REPLACE(url,'job?pandaid=','job/')
+                                   when url like '%%task?jeditaskid=%%' then REPLACE(url,'task?jeditaskid=','task/') else url end as url
+                              from ATLAS_PANDABIGMON.visits
+                              where USERID=%i and url not like '%%/user/%%' and INSTR(url,'/',1,4) != 0
+                              order by time DESC)
+                            group by pagegroup,pagename,url)
+                        where rn < 10""" % (userid)
+
+
+        cur = connection.cursor()
+        cur.execute(sqlquerystr)
+        visits = cur.fetchall()
+        cur.close()
+
+        visitsnames = ['pagegroup', 'pagename', 'visitrank', 'url']
+        relevantVisits = [dict(zip(visitsnames, row)) for row in visits]
+
+        for page in relevantVisits:
+            for link in links.keys():
+                if page['pagegroup'].startswith(link):
+                    links[link].append(page)
+
+        for link in links['task']:
+            link['keyparams']=[]
+            link['otherparams'] = []
+            if link['pagename'] == 'task':
+                link['linktext'] = link['url'].split('/')[4]
+                link['keyparams'].append(dict(param='jeditaskid', value=link['url'].split('/')[4],
+                                              importance=True))
+            if link['pagename'] == 'tasks':
+                link['linktext'] = link['pagename']
+                params = unquote(urlparse(link['url']).query).split('&')
+                for param in params:
+                    if '=' in param:
+                        flag = False
+                        if param.split('=')[0] in standard_taskfields:
+                            flag = True
+                            link['keyparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
+                                                          importance=flag))
+                        else:
+                            link['otherparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
+                                                       importance=flag))
+
+        for link in links['job']:
+            link['keyparams'] = []
+            link['otherparams'] = []
+            if link['pagename'] == 'job':
+                link['linktext'] = link['url'].split('/')[4]
+                link['keyparams'].append(dict(param='pandaid', value=link['url'].split('/')[4],
+                                              importance=True))
+            if link['pagename'] == 'jobs':
+                link['linktext'] = link['pagename']
+                params = unquote(urlparse(link['url']).query).split('&')
+                for param in params:
+                    if '=' in param:
+                        flag = False
+                        if param.split('=')[0] in standard_fields:
+                            flag = True
+                            link['keyparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
+                                              importance=flag))
+                        else:
+                            link['otherparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
+                                                           importance=flag))
+
+        for link in links['other']:
+            link['keyparams'] = []
+            link['otherparams'] = []
+            if link['pagename'] == 'site':
+                link['linktext'] = link['pagename']
+                link['keyparams'].append(dict(param='site', value=link['url'].split('/')[4],
+                                              importance=True))
+            elif link['pagename'] == 'dash':
+                link['linktext'] = link['pagename']
+                link['keyparams'].append(dict(param='tasktype', value=link['url'].split('/')[4],
+                                              importance=True))
+            else:
+                link['linktext'] = link['pagename']
+            params = unquote(urlparse(link['url']).query).split('&')
+            for param in params:
+                if '=' in param:
+                    flag = False
+                    if param.split('=')[0] in standard_sitefields or param.split('=')[0] in standard_fields or param.split('=')[0] in standard_taskfields:
+                        flag = True
+                        link['keyparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
+                                          importance=flag))
+                    else:
+                        link['otherparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
+                                                       importance=flag))
+
+
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
         sumd = userSummaryDict(jobs)
@@ -3783,6 +3902,7 @@ def userInfo(request, user=''):
             'ntasks': ntasks,
             'tasksumd': tasksumd,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'links' : links,
         }
         data.update(getContextVariables(request))
         ##self monitor

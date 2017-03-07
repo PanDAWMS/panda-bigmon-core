@@ -1,16 +1,48 @@
 {% extends "_base_core.html" %}
-
+{% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA user {{ user }} {% endblock %}
 {% block subtitle %}PanDA user <b>{{ user }}</b>{{ viewParams.selection|safe }}{% endblock %}
 
 {% block body %}
 
+
 <p>
-<div class='section'>User page for <a href="{% url 'userInfo' user %}?display_limit=100">{{user}}</a>
-&nbsp; &nbsp; &nbsp;  Please read (and keep an eye on) the <a href="#doc"><span class='helpdark'>help section below</a> to familiarize yourself with using the monitor in JEDI based analysis.
-</div>
+{% if ntasks > 0 or njobsets > 0 or njobs > 0 %}
+<b>Jump to my {% if ntasks > 0 %} <a class="uservisits" href="#tasks">tasks</a> {% endif %} {% if njobsets > 0 %} &nbsp; <a class="uservisits" href="#jobsets">jobsets</a> {% endif %} {% if njobs > 0 %} &nbsp; <a class="uservisits" href="#jobs">jobs</a> {% endif %}
+{% endif %}
+</b>
 
 
+
+<p>
+{% if request.session.ADFS_LOGIN %}
+{% if links.task|length > 0 or links.job|length > 0 or links.other|length > 0 %}
+<h2>Inspired by history</h2>
+{% if links.task|length > 0 %}
+<h4>Tasks:</h4>
+{% for link in links.task %}
+    {% if link.keyparams|length > 0 %}<a class="uservisits" href={{ link.url }}>{% for param in link.keyparams %}{% if forloop.first %}{% elif forloop.counter == 2 %}({% else %},{% endif %}{% if param.param == 'status' %}<span class="{{ param.value }}">{{ param.param }}:{{ param.value }}</span>{% elif param.param == 'jeditaskid' or param.param == 'taskid' %}<b>{{ param.value }}</b>{% else %}{{ param.param }}:{{ param.value }}{% endif %}{% if forloop.last and link.keyparams|length > 1 %}),{% else %}{% endif %}{% endfor %}</a>{% endif %}{% if forloop.last %}{% else %},&emsp;{% endif %}
+{% endfor %}
+{% endif %}
+<p>
+{% if links.job|length > 0 %}
+<h4>Jobs:</h4>
+{% for link in links.job %}
+    {% if link.keyparams|length > 0 %}<a class="uservisits" href={{ link.url }}>{% for param in link.keyparams %}{% if forloop.first %}{% elif forloop.counter == 2 %}({% else %},{% endif %}{{ param.param }}:{% if param.param == 'jobstatus' %}<span class="{{ param.value }}">{{ param.value }}</span>{% elif param.param == 'jeditaskid' or param.param == 'taskid' %}<b>{{ param.value }}</b>{% else %}{{ param.value }}{% endif %}{% if forloop.last and link.keyparams|length > 1 %}){% else %}{% endif %}{% endfor %}</a>{% endif %}{% if forloop.last %}{% else %},&emsp;{% endif %}
+{% endfor %}
+{% endif %}
+<p>
+{% if links.other|length > 0 %}
+<h4>Other:</h4>
+{% for link in links.other %}
+    <a class="uservisits" href={{ link.url }}>{{ link.pagename }}{% if link.keyparams|length > 0 %}({% for param in link.keyparams %}{% if param.param == 'status' %}{{ param.param }}:<span class='{{ param.value }}'>{{param.value}}</span>{% elif param.param == 'site' %}<b>{{param.value}}</b>{% elif param.param == 'cloud' %}{{ param.param }}:<b>{{ param.value }}</b>{% elif param.param == 'jeditaskid' or param.param == 'taskid' %}{{ param.param }}:<b>{{ param.value }}</b>{% else %}{{ param.param }}:{{ param.value }}{% endif %}{% if forloop.last %}){% else %},{% endif %}{% endfor %}{% endif %}</a>{% if forloop.last %}{% else %},&emsp;{% endif %}
+{% endfor %}
+{% endif %}
+<hr/>
+<p>
+{% endif %}
+{% endif %}
+<p>
 {% if requestParams.priorityrange %}<br><b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}
 {% if requestParams.jobsetrange %}<br><b>Jobset ID range: {{ requestParams.jobsetrange }}</b> {% endif %}
 {% if requestParams.jobsetid %}<br><b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}
@@ -50,12 +82,6 @@
 
 <p>
 {% endif %}
-
-{% if ntasks > 0 or njobsets > 0 or njobs > 0 %}
-<b>Jump to recent {% if ntasks > 0 %}  &nbsp; <a href="#tasks">tasks</a> {% endif %} {% if njobsets > 0 %} &nbsp; <a href="#jobsets">jobsets</a> {% endif %} {% if njobs > 0 %} &nbsp; <a href="#jobs">jobs</a> {% endif %}
-{% endif %}
-</b>
-<p>
 
 {% if ntasks > 0 %}
 
