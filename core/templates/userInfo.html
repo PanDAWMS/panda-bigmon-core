@@ -21,14 +21,14 @@
 {% if links.task|length > 0 %}
 <h4>Tasks:</h4>
 {% for link in links.task %}
-    {% if link.keyparams|length > 0 %}<a class="uservisits" href={{ link.url }}>{% for param in link.keyparams %}{% if forloop.first %}{% elif forloop.counter == 2 %}({% else %},{% endif %}{% if param.param == 'status' %}<span class="{{ param.value }}">{{ param.param }}:{{ param.value }}</span>{% elif param.param == 'jeditaskid' or param.param == 'taskid' %}<b>{{ param.value }}</b>{% else %}{{ param.param }}:{{ param.value }}{% endif %}{% if forloop.last and link.keyparams|length > 1 %}),{% else %}{% endif %}{% endfor %}</a>{% endif %}{% if forloop.last %}{% else %},&emsp;{% endif %}
+    {% if link.keyparams|length > 0 %}<a class="uservisits" href={{ link.url }}>{% for param in link.keyparams %}{% if forloop.first %}{% elif forloop.counter == 2 %}({% else %},{% endif %}{% if param.param == 'status' %}<span class="{{ param.value }}">{{ param.param }}:{{ param.value }}</span>{% elif param.param == 'jeditaskid' or param.param == 'taskid' %}<b>{{ param.value }}</b>{% else %}{{ param.param }}:{{ param.value }}{% endif %}{% if forloop.last and link.keyparams|length > 1 %}){% else %}{% endif %}{% endfor %}</a>{% else %}<a class="uservisits" href={{ link.url }}>{{ link.pagename }}</a>{% endif %}{% if forloop.last %}{% else %},&emsp;{% endif %}
 {% endfor %}
 {% endif %}
 <p>
 {% if links.job|length > 0 %}
 <h4>Jobs:</h4>
 {% for link in links.job %}
-    {% if link.keyparams|length > 0 %}<a class="uservisits" href={{ link.url }}>{% for param in link.keyparams %}{% if forloop.first %}{% elif forloop.counter == 2 %}({% else %},{% endif %}{{ param.param }}:{% if param.param == 'jobstatus' %}<span class="{{ param.value }}">{{ param.value }}</span>{% elif param.param == 'jeditaskid' or param.param == 'taskid' %}<b>{{ param.value }}</b>{% else %}{{ param.value }}{% endif %}{% if forloop.last and link.keyparams|length > 1 %}){% else %}{% endif %}{% endfor %}</a>{% endif %}{% if forloop.last %}{% else %},&emsp;{% endif %}
+    {% if link.keyparams|length > 0 %}<a class="uservisits" href={{ link.url }}>{% for param in link.keyparams %}{% if forloop.first %}{% elif forloop.counter == 2 %}({% else %},{% endif %}{{ param.param }}:{% if param.param == 'jobstatus' %}<span class="{{ param.value }}">{{ param.value }}</span>{% elif param.param == 'pandaid' or param.param == 'jeditaskid' %}<b>{{ param.value }}</b>{% else %}{{ param.value }}{% endif %}{% if forloop.last and link.keyparams|length > 1 %}){% else %}{% endif %}{% endfor %}</a> {% else %}<a class="uservisits" href={{ link.url }}>{{ link.pagename }}</a>{% endif %}{% if forloop.last %}{% else %},&emsp;{% endif %}
 {% endfor %}
 {% endif %}
 <p>
