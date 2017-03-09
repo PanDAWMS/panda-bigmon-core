@@ -3,6 +3,7 @@
  */
 function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
 
+
     var colors= ["#116aff", "#fe8504", "#1ff7fe", "#f701ff", "#2e4a02", "#ffaad5", "#f1ff8d", "#1eff06", "#700111", "#1586c3", "#ff067d", "#0e02fb", "#1bffa1", "#921e8f", "#c49565", "#fd0128", "#4ea105", "#158279", "#c8fe0a", "#fdcc0b", "#834969", "#ff7673", "#05018b", "#c591fe", "#a6d8ab", "#948c01", "#484ba1", "#fe22c0", "#06a05d", "#694002", "#8e39e9", "#bdc6ff","#030139",  "#b33802", "#85fa60", "#a2025b", "#3e021b", "#ffcd6d", "#4a92ff", "#e564b6", "#43cfff", "#7e9051", "#e768fc", "#09406b", "#b17005", "#8fd977", "#c1063e", "#a7594f", "#14e3b8", "#bccb1e", "#53064f", "#fff1b7", "#997dba", "#fe965c", "#ffb0a7", "#046c04", "#8451ce", "#d46585", "#fef70c", "#1003c3", "#024a2e", "#0fc551", "#1f025d", "#fd5302", "#5bbfc4", "#481903", "#bfc066", "#ad04bb", "#efa425", "#06c709", "#9701ff", "#84468e", "#018da8", "#88cf01", "#6d6412", "#658a1d", "#0d3cb4", "#144cfe", "#fe5d43", "#33753e", "#4cb28f", "#e6b4ff", "#a5feef", "#caff68", "#d80f8a", "#79193a", "#97fdba", "#a85726", "#fe8cf9", "#8bfe01", "#4a315d", "#ff0155", "#02ff5e", "#6b0199", "#bc7e9f", "#fde75c"];
 
     var formatCount = d3.format(",.0f");
@@ -33,6 +34,10 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
             return d.values;
         });
 
+    numberofbins = 3*Math.round((upperBand-lowerBand)*Math.pow(values.length,1/3)/(3.49*d3.deviation(values)));
+    if (numberofbins > 100) {
+        numberofbins=100;
+    }
     if (lowerBand == upperBand) {
         numberofbins=2;
         x.domain([lowerBand-1,upperBand+1]);
@@ -163,6 +168,446 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
             .append("text")
             .attr("class", "title")
             .text(title);
+
+    if (title.indexOf('Walltime')>=0) {
+        svg.append("line")
+            .attr("x1", x(ave))
+            .attr("y1", height)
+            .attr("x2", x(ave))
+            .attr("y2", 0)
+            .attr("class", "averageline");
+    }
+
+    var squareside = 10;
+    var legend = svg.selectAll(".legend")
+            .data(color.domain().slice())
+          .enter().append("g")
+            .attr("class", "legend")
+            .attr("transform", function(d, i) {
+                maxLegendWidth = (i % 4) * (width+3*(margin.left+margin.right)/4)/4;
+                maxLegendHeight = Math.floor(i  / 4) * 12;
+                return "translate(" + (maxLegendWidth - 3*margin.left/4) + ", " + (height + margin.top + 30 + maxLegendHeight) + ")";
+            });
+
+    legend.append("rect")
+            .attr("x", 0)
+            .attr("width", squareside)
+            .attr("height", squareside)
+            .style("fill", color)
+            .style({"stroke":d3.rgb(color).darker(),'stroke-width':0.4});
+
+    legend.append("text")
+            .attr("x", squareside+5)
+            .attr("y", 10)
+            .text(function(d) {
+                return d;
+            });
+
+    var statlegend = svg.selectAll(".statlegend")
+		.data(statistics)
+		.enter()
+            .append("g")
+            .attr("class", "statlegend")
+            .attr("transform", function(d, i) {
+                return "translate(" + (width) + ", " + (margin.top + (i-1)*15) + ")";
+            });
+    statlegend.append("text")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("class", "stattext")
+            .text(function(d) {
+                return d.type + "=" + d.val.toFixed(1);
+            });
+
+    if (title.startsWith("Walltime per event histogram")) {
+        d3.select(divToShow).append("button")
+            .attr("class","buttonadjust")
+            .attr("float", "left")
+            .text("Adjust")
+            .on("click", adjust);
+    }
+
+    function adjust () {
+        var bins = stackedHistData[stackedHistData.length - 1].values;
+        var binsh = [];
+        for (var i = 0, len = bins.length; i < len; i++) {
+            binsh[i] = bins[i].y0 + bins[i].y;
+        }
+
+        var q10 = d3.quantile(binsh.sort(d3.ascending), 0.01);
+        var q90 = d3.quantile(binsh.sort(d3.ascending), 0.99);
+
+        var rl = (q10 > 0) ? (q10 - 2 * (q90 - q10)) : 0;
+        var rh = (q90 + 2 * (q90 - q10) > d3.max(binsh)) ? d3.max(binsh) - 1 : q90 + 2 * (q90 - q10);
+        var firstbinx = 0,
+            lastbinx = 0;
+        for (var i = 0, len = bins.length; i < len; i++) {
+            if ((bins[i].y0 + bins[i].y) > rh) {
+                firstbinx = bins[i].x;
+                break;
+            }
+        }
+        for (var i = 0, len = bins.length; i < len; i++) {
+            lastbinx = ((bins[i].y0 + bins[i].y) > rh) ? (bins[i].x + bins[i].dx) : lastbinx;
+        }
+        var minx = (firstbinx ) > 0 ? Math.floor(firstbinx) : 0,
+            maxx = Math.ceil(lastbinx);
+        var underlier = 0, outlier = 0;
+        for (var i = 0, len = bins.length; i < len; i++) {
+            if ((bins[i].x + bins[i].dx) < minx) {
+                underlier += (bins[i].y0 + bins[i].y);
+            }
+            if ((bins[i].x) > maxx) {
+                outlier += (bins[i].y0 + bins[i].y);
+            }
+        }
+        var ymax = d3.max(stackedHistData[stackedHistData.length - 1].values, function (d) {
+            return d.y + d.y0;
+        });
+        if (underlier < 0.1 * ymax && outlier < 0.1 * ymax) {
+            redraw();
+        }
+        else {
+
+            q10 = d3.quantile(binsh.sort(d3.ascending), 0.1);
+            q90 = d3.quantile(binsh.sort(d3.ascending), 0.9);
+
+            rl = (q10 > 0) ? (q10 - 1.5 * (q90 - q10)) : 0;
+            rh = (q90 + 1.5* (q90 - q10) > d3.max(binsh)) ? d3.max(binsh) - 1 : q90 + 1.5 * (q90 - q10);
+            firstbinx = 0;
+            lastbinx = 0;
+            for (var i = 0, len = bins.length; i < len; i++) {
+                if ((bins[i].y0 + bins[i].y) > rh) {
+                    firstbinx = bins[i].x;
+                    break;
+                }
+            }
+            for (var i = 0, len = bins.length; i < len; i++) {
+                lastbinx = ((bins[i].y0 + bins[i].y) > rh) ? (bins[i].x + bins[i].dx) : lastbinx;
+            }
+            minx = (firstbinx - (lastbinx - firstbinx) / 4) > 0 ? Math.floor(firstbinx - (lastbinx - firstbinx) / 4) : 0;
+            maxx = Math.ceil(lastbinx + (lastbinx - firstbinx) / 4);
+            // sum of underlier and outlier
+            underlier = 0;
+            outlier = 0;
+            for (var i = 0, len = bins.length; i < len; i++) {
+                if ((bins[i].x + bins[i].dx) < minx) {
+                    underlier += (bins[i].y0 + bins[i].y);
+                }
+                if ((bins[i].x) > maxx) {
+                    outlier += (bins[i].y0 + bins[i].y);
+                }
+            }
+            redraw();
+        }
+
+
+        function redraw() {
+
+
+            var stat = [];
+            stat.push({type: "underlier", val: underlier});
+            stat.push({type: "outlier", val: outlier});
+
+
+            // rebinning most interesting part of histogram
+            x.domain([minx, maxx]);
+            binBySite.bins(x.ticks(numberofbins));
+
+
+            histDataBySite = [];
+            dataGroupedBySite.forEach(function (key, value) {
+                // Bin the data for each borough by month
+                var histData = binBySite(value);
+                histDataBySite.push({
+                    site: key,
+                    values: histData
+                });
+            });
+            stackedHistData = stack(histDataBySite);
+
+            y.domain([0, d3.max(stackedHistData[stackedHistData.length - 1].values, function (d) {
+                return d.y + d.y0;
+            })]);
+
+
+            var svg = d3.select(divToShow);
+            svg.selectAll(".site")
+                .data(stackedHistData);
+
+            bin.selectAll(".bar")
+                .data(function (d) {
+                    return d.values;
+                });
+
+            svg.selectAll(".bar")
+                .attr("x", function (d) {
+                    return x(d.x);
+                })
+                .attr("width", width / (x.ticks(numberofbins).length))
+                .attr("y", function (d) {
+                    return y(d.y0 + d.y);
+                })
+                .attr("height", function (d) {
+                    return y(d.y0) - y(d.y0 + d.y);
+                });
+
+            svg.select('.x.axis')
+                .call(xAxis)
+                .selectAll("text")
+                .attr("dx", -32)
+                .attr("dy", 5)
+                .attr("transform", function (d) {
+                    return "rotate(-45)"
+                });
+            svg.select('.y.axis')
+                .call(yAxis);
+
+            svg.select(".averageline")
+                .attr("x1", x(ave))
+                .attr("y1", height)
+                .attr("x2", x(ave))
+                .attr("y2", 0);
+
+            statlegend.data(stat);
+            statlegend.append("text")
+                .attr("x", 0)
+                .attr("y", 30)
+                .attr("class", "stattext")
+                .text(function (d) {
+                    return d.type + "=" + d.val.toFixed(1);
+                });
+
+            d3.select(".buttonadjust")
+                .style('opacity', 0);
+            svg.select(".title")
+                .text(title + ' [adjusted]')
+        }
+
+    }
+}
+
+function pandamonplotOverlayFunc(values, sites, divToShow, title, numberofbins) {
+
+    var colors= ["#116aff", "#fe8504", "#1ff7fe", "#f701ff", "#2e4a02", "#ffaad5", "#f1ff8d", "#1eff06", "#700111", "#1586c3", "#ff067d", "#0e02fb", "#1bffa1", "#921e8f", "#c49565", "#fd0128", "#4ea105", "#158279", "#c8fe0a", "#fdcc0b", "#834969", "#ff7673", "#05018b", "#c591fe", "#a6d8ab", "#948c01", "#484ba1", "#fe22c0", "#06a05d", "#694002", "#8e39e9", "#bdc6ff","#030139",  "#b33802", "#85fa60", "#a2025b", "#3e021b", "#ffcd6d", "#4a92ff", "#e564b6", "#43cfff", "#7e9051", "#e768fc", "#09406b", "#b17005", "#8fd977", "#c1063e", "#a7594f", "#14e3b8", "#bccb1e", "#53064f", "#fff1b7", "#997dba", "#fe965c", "#ffb0a7", "#046c04", "#8451ce", "#d46585", "#fef70c", "#1003c3", "#024a2e", "#0fc551", "#1f025d", "#fd5302", "#5bbfc4", "#481903", "#bfc066", "#ad04bb", "#efa425", "#06c709", "#9701ff", "#84468e", "#018da8", "#88cf01", "#6d6412", "#658a1d", "#0d3cb4", "#144cfe", "#fe5d43", "#33753e", "#4cb28f", "#e6b4ff", "#a5feef", "#caff68", "#d80f8a", "#79193a", "#97fdba", "#a85726", "#fe8cf9", "#8bfe01", "#4a315d", "#ff0155", "#02ff5e", "#6b0199", "#bc7e9f", "#fde75c"];
+
+    var formatCount = d3.format(",.0f");
+
+    var margin = {top: 30, right: 100, bottom: 100, left: 70},
+        width = 650 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    var lowerBand = d3.min(values);
+    var upperBand = d3.max(values);
+
+	var ave = values.reduce(function(a,b){return (a+b);})/values.length;
+	var statistics = [{type: "\u03BC", val:ave}];
+	if (values.length>1) {statistics.push({type:"\u03C3", val:d3.deviation(values)});}
+	var x = d3.scale.linear()
+        .domain([lowerBand, upperBand])
+        .range([0, width])
+        .nice();
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+    var y = d3.scale.linear().range([height, 0]);
+    var yAxis = d3.svg.axis().scale(y)
+        .orient("left");
+    var stack = d3.layout.stack()
+        .values(function(d) {
+            return d.values;
+        });
+    numberofbins = 3*Math.round((upperBand-lowerBand)*Math.pow(values.length,1/3)/(3.49*d3.deviation(values)));
+    if (lowerBand == upperBand) {
+        numberofbins=2;
+        x.domain([lowerBand-1,upperBand+1]);
+        xAxis.ticks(1);
+    }
+
+    var data = [{'value': 0, 'site': ''}];
+
+    for(var i = 0, ii = values.length; i<ii; i++) {
+        data[i]={'value': values[i], 'site': sites[i]}
+    }
+
+    var binBySite = d3.layout.histogram()
+        .value(function(d) { return d.value; })
+        .bins(x.ticks(numberofbins));
+
+    var dataGroupedBySite = d3.nest()
+        .key(function(d) { return d['site']; })
+        .map(data, d3.map);
+
+    var histDataBySite = [];
+    dataGroupedBySite.forEach(function(key, value) {
+            // Bin the data for each borough by month
+            var histData = binBySite(value);
+            histDataBySite.push({
+                site: key,
+                values: histData
+            });
+        });
+
+    var stackedHistData = stack(histDataBySite);
+
+    var bins = stackedHistData[stackedHistData.length - 1].values;
+    var binsh = [];
+    for (var i = 0, len = bins.length; i < len; i++) {
+        binsh[i] = bins[i].y0 + bins[i].y;
+    }
+
+    var q10 = d3.quantile(binsh.sort(d3.ascending), 0.1 );
+    var q90 = d3.quantile(binsh.sort(d3.ascending), 0.9 );
+
+    var rl = (q10>0) ? (q10-1.5*(q90-q10)) : 0;
+    var rh = (q90+1.5*(q90-q10)>d3.max(binsh))? d3.max(binsh)-1 : q90+1.5*(q90-q10);
+    var firstbinx=0,
+        lastbinx=0;
+    for (var i = 0, len = bins.length; i < len; i++) {
+        if  ((bins[i].y0 + bins[i].y)>rh) {
+            firstbinx = bins[i].x;
+            break;
+        }
+    }
+    for (var i = 0, len = bins.length; i < len; i++) {
+        lastbinx =  ((bins[i].y0 + bins[i].y)>rh) ? (bins[i].x+bins[i].dx) : lastbinx;
+    }
+    var minx = (firstbinx-(lastbinx-firstbinx)/4)>0 ? Math.floor(firstbinx-(lastbinx-firstbinx)/4) : 0,
+    maxx = Math.ceil(lastbinx+(lastbinx-firstbinx)/4);
+    // sum of underlier and outlier
+    var underlier=0, outlier=0;
+    for (var i = 0, len = bins.length; i < len; i++) {
+        if ((bins[i].x+bins[i].dx) < minx) {
+            underlier += (bins[i].y0 + bins[i].y);
+        }
+        if ((bins[i].x) > maxx) {
+            outlier += (bins[i].y0 + bins[i].y);
+        }
+    }
+    statistics.push({type:"un", val:underlier});
+    statistics.push({type:"ov", val:outlier});
+
+    // rebinning most interesting part of histogram
+    x.domain([minx,maxx]);
+    binBySite = d3.layout.histogram()
+        .value(function(d) { return d.value; })
+        .bins(x.ticks(numberofbins));
+
+    dataGroupedBySite = d3.nest()
+        .key(function(d) { return d['site']; })
+        .map(data, d3.map);
+
+    histDataBySite = [];
+    dataGroupedBySite.forEach(function(key, value) {
+            // Bin the data for each borough by month
+            var histData = binBySite(value);
+            histDataBySite.push({
+                site: key,
+                values: histData
+            });
+        });
+    stackedHistData = stack(histDataBySite);
+
+
+
+    var color = d3.scale.ordinal().range(colors);
+
+    y.domain([0, d3.max(stackedHistData[stackedHistData.length - 1].values, function(d) {
+            return d.y + d.y0;
+        })]);
+
+    if (stackedHistData.length>4){
+        margin.bottom+=Math.floor(stackedHistData.length/4)*12;
+    }
+
+    var svg = d3.select(divToShow)
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    var bin = svg.selectAll(".site")
+            .data(stackedHistData)
+          .enter().append("g")
+            .attr("class", "site")
+            .style("fill", function(d, i) {
+                return color(d.site);
+            })
+            .style("stroke", function(d, i) {
+                return d3.rgb(color(d.site)).darker();
+            })
+            .style("stroke-width", 0.4);
+
+    bin.selectAll(".bar")
+            .data(function(d) {
+                return d.values;
+            })
+          .enter().append("rect")
+            .attr("class", "bar")
+            .attr("x", function(d) {
+                return x(d.x);
+            })
+            .attr("width",width/ (x.ticks(numberofbins).length))
+            .attr("y", function(d) {
+                return y(d.y0 + d.y);
+            })
+            .attr("height", function(d) {
+                return y(d.y0) - y(d.y0 + d.y);
+            });
+    if (lowerBand == upperBand) {
+        bin.selectAll(".bar")
+            .attr("x",width/4)
+            .attr("width",width/2);
+    }
+    svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis)
+            .selectAll("text")
+                .attr("dx", -32)
+                .attr("dy", 5)
+                .attr("transform", function(d) {
+                    return "rotate(-45)"
+                });
+    if (title.indexOf('PSS')>=0) {
+        svg.append("g")
+            .attr("transform", "translate(" + (width+10) + " ," + (height + 15) + ")")
+            .append("text")
+            .style("text-anchor", "left")
+            .text("PSS, MB");
+    }
+    if (title.indexOf('Walltime')>=0) {
+        svg.append("g")
+            .attr("transform", "translate(" + (width+10) + " ," + (height + 15) + ")")
+            .append("text")
+            .style("text-anchor", "left")
+            .text("Time, s");
+    }
+    if (title.indexOf('HS06')>=0) {
+        svg.append("g")
+            .attr("transform", "translate(" + (width+10) + " ," + (height + 15) + ")")
+            .append("text")
+            .style("text-anchor", "left")
+            .text("HS06s");
+    }
+    svg.append("g")
+            .attr("class", "y axis")
+            .call(yAxis);
+	svg.append("g")
+        .attr("transform", "rotate(-90)")
+		.append("text")
+        .attr("y", 0 - margin.left)
+        .attr("x",0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("N jobs");
+
+    svg.append("g")
+            .attr("transform", "translate(" + (width/2) + ", -10)")
+            .append("text")
+            .attr("class", "title")
+            .text(title + ' (adjusted)');
 
     if (title.indexOf('Walltime')>=0) {
         svg.append("line")
