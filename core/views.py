@@ -505,9 +505,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     else:
         request.session['noenddate'] = False
 
-
-    query = {
-        'modificationtime__range': [startdate.strftime(defaultDatetimeFormat), enddate.strftime(defaultDatetimeFormat)]}
+    if request.path.startswith('/running'):
+        query = {}
+    else:
+        query = {
+            'modificationtime__range': [startdate.strftime(defaultDatetimeFormat), enddate.strftime(defaultDatetimeFormat)]}
 
     request.session['TFIRST'] = startdate  # startdate[:18]
     request.session['TLAST'] = enddate  # enddate[:18]
@@ -6241,20 +6243,10 @@ def runningMCProdTasks(request):
     else:
         xurl += '?'
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-    tquery = {}
-    if 'processingtype' in request.session['requestParams']:
-        tquery['processingtype'] = request.session['requestParams']['processingtype']
-    if 'username' in request.session['requestParams']:
-        tquery['username'] = request.session['requestParams']['username']
-    if 'campaign' in request.session['requestParams']:
-        tquery['campaign__contains'] = request.session['requestParams']['campaign']
-    if 'reqid' in request.session['requestParams']:
-        tquery['reqid'] = request.session['requestParams']['reqid']
-    if 'corecount' in request.session['requestParams']:
-        tquery['corecount'] = request.session['requestParams']['corecount']
-    if 'status' in request.session['requestParams']:
-        tquery['status'] = request.session['requestParams']['status']
-    tasks = RunningMCProductionTasks.objects.filter(**tquery).values()
+    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=0, limit=9999999, querytype='task',
+                                                           wildCardExt=True)
+
+    tasks = RunningMCProductionTasks.objects.filter(**tquery).extra(where=[wildCardExtension]).values()
     ntasks = len(tasks)
     slots = 0
     ages = []
