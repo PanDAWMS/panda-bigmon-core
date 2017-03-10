@@ -275,7 +275,7 @@ parent task<a href="{% url 'taskInfo' task.parent_tid %}"> {{ task.parent_tid }}
 </td>
 {% endif %}
 <td>
-<a href="{% url 'pandaLogger' %}?type={{ taskbrokerage }}&jeditaskid={{ jeditaskid }}&startdate={{ task.creationdate|date:"Y-m-d H:i:s" }}&enddate={{ task.modificationtime|date:"Y-m-d H:i:s" }}">brokerage logger</a>
+<a href="{% url 'pandaLogger' %}?type={{ taskbrokerage }}&jeditaskid={{ jeditaskid }}&startdate={{ task.creationdate }}&enddate={{ task.modificationtime }}">brokerage logger</a>
 </td>
 
 <td>
@@ -372,8 +372,8 @@ function toggleRowsDisplay(className) {
 		<td class='{{dsrec.state}}'>{{ dsrec.state }}</td>
 		<td class='{{dsrec.status}}'>{{ dsrec.status }}</td>
 		<td>{{ dsrec.nfiles }}</td>
-		<td>{{ dsrec.creationtime|date:"Y-m-d H:i" }}</td>
-		<td>{{ dsrec.modificationtime|date:"m-d H:i" }}</td>
+		<td>{{ dsrec.creationtime }}</td>
+		<td>{{ dsrec.modificationtime }}</td>
 	</tr>
 {% endfor %}
 </table>

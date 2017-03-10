@@ -109,7 +109,7 @@
 		<td>{% if frec.pandaid %}<a href="{% url 'jobInfo' %}?pandaid={{ frec.pandaid }}">{{ frec.pandaid }}</a> {% endif %}</td>
 		<td>{{ frec.attemptnr }}</td>
 		<td class='{{frec.status}}'>{{ frec.status }}</td>
-		<td><font size=-1>{{ frec.creationdate|date:"Y-m-d H:i" }}</font></td>
+		<td><font size=-1>{{ frec.creationdate }}</font></td>
 		<td><font size=-1>{{ frec.guid }}</font></td>
 		<td><font size=-1>{{ frec.fileid }}</font></td>
         <td>

@@ -7218,6 +7218,12 @@ def taskInfo(request, jeditaskid=0):
         if taskrec['ttcrequested']:
             taskrec['ttcrequested'] = taskrec['ttcrequested'].strftime(defaultDatetimeFormat)
 
+    for dset in dsets:
+        dset['creationtime'] = dset['creationtime'].strftime(defaultDatetimeFormat)
+        dset['modificationtime'] = dset['modificationtime'].strftime(defaultDatetimeFormat)
+        if dset['statechecktime'] is not None:
+            dset['statechecktime'] = dset['statechecktime'].strftime(defaultDatetimeFormat)
+
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
 
@@ -7229,12 +7235,6 @@ def taskInfo(request, jeditaskid=0):
             taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
             taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
             taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
-
-        for dset in dsets:
-            dset['creationtime'] = dset['creationtime'].strftime(defaultDatetimeFormat)
-            dset['modificationtime'] = dset['modificationtime'].strftime(defaultDatetimeFormat)
-            if dset['statechecktime'] is not None:
-                dset['statechecktime'] = dset['statechecktime'].strftime(defaultDatetimeFormat)
 
         data = {
             'task': taskrec,
@@ -8033,8 +8033,8 @@ def errorSummary(request):
         jobsurl = xurlsubst.replace('/errors/', '/jobs/')
         jobsurlNoSite = xurlsubstNoSite.replace('/errors/', '')
 
-        TFIRST = request.session['TFIRST']
-        TLAST = request.session['TLAST']
+        TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
+        TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
         del request.session['TLAST']
 
@@ -8695,8 +8695,8 @@ def datasetInfo(request):
                 dsets = moredsets
                 for ds in dsets:
                     ds['datasetname'] = ds['name']
-                    ds['creationtime'] = ds['creationdate']
-                    ds['modificationtime'] = ds['modificationdate']
+                    ds['creationtime'] = ds['creationdate'].strftime(defaultDatetimeFormat)
+                    ds['modificationtime'] = ds['modificationdate'].strftime(defaultDatetimeFormat)
                     ds['nfiles'] = ds['numberfiles']
                     ds['datasetid'] = ds['vuid']
     if len(dsets) > 0:
@@ -8750,6 +8750,9 @@ def datasetList(request):
 
     del request.session['TFIRST']
     del request.session['TLAST']
+    for ds in dsets:
+        ds['creationtime'] = ds['creationtime'].strftime(defaultDatetimeFormat)
+        ds['modificationtime'] = ds['modificationtime'].strftime(defaultDatetimeFormat)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
         data = {
@@ -8891,7 +8894,7 @@ def fileInfo(request):
     if ((len(files) > 0) and ('jeditaskid' in files[0]) and ('startevent' in files[0]) and (
         files[0]['jeditaskid'] != None)):
         files = sorted(files, key=lambda k: (-k['jeditaskid'], k['startevent']))
-
+    frec['creationdate']=frec['creationdate'].strftime(defaultDatetimeFormat)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
         data = {
@@ -9060,6 +9063,7 @@ def fileList(request):
                     ruciolink = 'https://rucio-ui.cern.ch/did?scope=' + filesFromFileTableDict[f['fileid']][
                         'scope'] + '&name=' + filesFromFileTableDict[f['fileid']]['destinationdblock']
         f['rucio'] = ruciolink
+        f['creationdate']=f['creationdate'].strftime(defaultDatetimeFormat)
 
     nfiles = len(filed)
 
