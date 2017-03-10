@@ -2189,6 +2189,11 @@ def getJobList(request,requesttoken=None):
 
     jobsToShow = jobs[:njobsmax]
 
+    for job in jobsToShow:
+        job['creationtime'] = str(job['creationtime'])
+        job['modificationtime'] = str(job['modificationtime'])
+        job['statechangetime'] = str(job['statechangetime'])
+
     if 'requestParams' in request.session and 'jeditaskid' in request.session['requestParams']:
         if len(jobs) > 0:
             for job in jobs:
@@ -2675,6 +2680,11 @@ def jobList(request, mode=None, param=None):
     else:
         jobsTotalCount = int(math.ceil((jobsTotalCount+10000)/10000)*10000)
 
+
+    for job in jobsToShow:
+        job['creationtime'] = str(job['creationtime'])
+        job['modificationtime'] = str(job['modificationtime'])
+        job['statechangetime'] = str(job['statechangetime'])
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
@@ -3407,6 +3417,11 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         errorinfo = getErrorDescription(job)
         if len(errorinfo) > 0:
             job['errorinfo'] = errorinfo
+
+
+    job['creationtime'] = str(job['creationtime'])
+    job['modificationtime'] = str(job['modificationtime'])
+    job['statechangetime'] = str(job['statechangetime'])
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):

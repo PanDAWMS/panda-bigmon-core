@@ -53,10 +53,10 @@ function loadExtendedErrorData(jeditaskid, pandaid) {
     </td>
 {% endif %}
 	<td class='{{job.jobstatus}}_fill'>{{ job.jobstatus }}</td>
-	<td>{{ job.creationtime|date:"Y-m-d H:i" }}</td>
+	<td>{{ job.creationtime }}</td>
 	<td>{{ job.waittime }}</td>
 	<td>{{ job.duration }}</td>
-	<td>{{ job.modificationtime|date:"m-d H:i" }}</td>
+	<td>{{ job.modificationtime }}</td>
 	<td>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite  %}">{{ job.computingsite }}</a></td>
 	<td>{{ job.currentpriority }}</td>
 </tr>
@@ -397,7 +397,7 @@ But if you want, you can check.
 
 <table>
 <tr><th colspan=20 bgcolor='lightcyan'> Other key job parameters </th></tr>
-	{% if job.statechangetime %}<tr><th>Last state change</th><td>to <span class={{job.jobstatus}}>{{job.jobstatus}}</span> at {{ job.statechangetime|date:"Y-m-d H:i" }}</td></tr></tr>{% endif %}
+	{% if job.statechangetime %}<tr><th>Last state change</th><td>to <span class={{job.jobstatus}}>{{job.jobstatus}}</span> at {{ job.statechangetime }}</td></tr></tr>{% endif %}
 	{% if job.atlasrelease %}<tr><th>Release</th><td>{{ job.atlasrelease }}</td></tr></tr>{% endif %}
 	{% if job.transexitcode != '0' and job.transexitcode != 'None' and job.transexitcode != '' %}<tr><th class="alarm">Transformation exit code</th><td class="alarm">{{ job.transexitcode }} (non-zero exit code from job payload)</td></tr></tr>{% endif %}
 	{% if job.parentid %}<tr><th>Parent job ID</th><td><a href="{% url 'jobInfo' job.parentid %}">{{ job.parentid }}</a></td></tr></tr>{% endif %}

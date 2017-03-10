@@ -198,10 +198,10 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 		<td><font size=-1><a href="{{xurl}}transformation={{job.transformation}}">{{ job.transformation }}</a></font></td>
 
 		<td class='{{job.jobstatus}}_fill'>{{ job.jobstatus }}</td>
-		<td><font size=-1>{{ job.creationtime|date:"Y-m-d H:i" }}</font></td>
+		<td><font size=-1>{{ job.creationtime }}</font></td>
 		<td><font size=-1>{{ job.waittime }}</font></td>
 		<td><font size=-1>{{ job.duration }}</font></td>
-		<td><font size=-1>{{ job.modificationtime|date:"m-d H:i" }}</font></td>
+		<td><font size=-1>{{ job.modificationtime }}</font></td>
 		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a></font></td>
 		<td>{{ job.currentpriority }}</td>
         {% if requestParams.jeditaskid  %}
