@@ -19,15 +19,15 @@
 </tr>
 <tr>
 <td bgcolor='lightcyan'><b> Creation time: </b></td>
-<td> {{ task.creationdate|date:"Y-m-d H:i" }} </td>
+<td> {{ task.creationdate }} </td>
 </tr>
 <tr>
 <td bgcolor='lightcyan'><b> Start time: </b></td>
-<td> {{ task.starttime|date:"Y-m-d H:i" }} </td>
+<td> {{ task.starttime }} </td>
 </tr>
 <tr>
 <td bgcolor='lightcyan'><b> Predicted time to complete: </b></td>
-<td> {{ task.ttc|date:"Y-m-d H:i" }} </td>
+<td> {{ task.ttc }} </td>
 </tr>
 {% if task.status == 'running' and task.percentage >= 0 and task.percentage <= 100 %}
 <tr>
@@ -45,7 +45,7 @@
 {% if task.status == 'finished' or task.status == 'done' %}
 <tr>
 <td bgcolor='lightcyan'><b> Real end time: </b></td>
-<td> {{ task.endtime|date:"Y-m-d H:i" }} </td>
+<td> {{ task.endtime }} </td>
 </tr>
 {% endif %}
 </table>

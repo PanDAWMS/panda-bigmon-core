@@ -137,8 +137,8 @@ function loadSummaryData(nosorturl) {
         <br> {% if task.dsinfo.nfilesfinished > 0 %} <span  class='finished'>{{ task.dsinfo.nfilesfinished }}</span> {% endif %} &nbsp; {% if task.dsinfo.nfilesfailed > 0 %} <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span  class='failed'>{{ task.dsinfo.nfilesfailed }}</span></a> {% endif %}
 		</td>
 		<td><font size=-1>{% if task.totev > 0 %} {{ task.totev }} / {{task.totevrem}} {%endif%}</font></td>	
-		<td><font size=-1>{{ task.modificationtime|date:"Y-m-d H:i" }}</font></td>
-		<td><font size=-1>{{ task.statechangetime|date:"m-d H:i" }}</font></td>
+		<td><font size=-1>{{ task.modificationtime }}</font></td>
+		<td><font size=-1>{{ task.statechangetime }}</font></td>
 		<td>{{ task.taskpriority }}</td>
 		<td>{{ task.nucleus }}</td>
 		<td>{{ task.cloud }}</td>

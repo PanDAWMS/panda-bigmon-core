@@ -111,8 +111,8 @@ function loadESData(jeditaskid) {
 
         </td>
 
-		<td><font size=-1>{{ task.modificationtime|date:"Y-m-d H:i" }}</font></td>
-		<td><font size=-1>{{ task.statechangetime|date:"m-d H:i" }}</font></td>
+		<td><font size=-1>{{ task.modificationtime }}</font></td>
+		<td><font size=-1>{{ task.statechangetime }}</font></td>
 		<td>{{ task.taskpriority }}</td>
 	</tr>
     {% endfor %}

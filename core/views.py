@@ -5837,6 +5837,16 @@ def taskList(request):
         tasksTotalCount = None
     else:
         tasksTotalCount = int(math.ceil((tasksTotalCount + 10000) / 10000) * 10000)
+    tasksToShow = tasks[:nmax]
+    for task in tasksToShow:
+        task['creationdate'] = task['creationdate'].strftime(defaultDatetimeFormat)
+        task['modificationtime'] = task['modificationtime'].strftime(defaultDatetimeFormat)
+        task['starttime'] = task['starttime'].strftime(defaultDatetimeFormat)
+        task['statechangetime'] = task['statechangetime'].strftime(defaultDatetimeFormat)
+        if task['ttcrequested']:
+            task['ttcrequested'] = task['ttcrequested'].strftime(defaultDatetimeFormat)
+
+
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
@@ -5862,7 +5872,7 @@ def taskList(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
-            'tasks': tasks[:nmax],
+            'tasks': tasksToShow,
             'ntasks': ntasks,
             'sumd': sumd,
             'xurl': xurl,
@@ -7201,6 +7211,14 @@ def taskInfo(request, jeditaskid=0):
     if len(countfailed) > 0 and countfailed[0] > 0:
         showtaskprof = True
 
+    if taskrec:
+        taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
+        taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
+        taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
+        taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
+        if taskrec['ttcrequested']:
+            taskrec['ttcrequested'] = taskrec['ttcrequested'].strftime(defaultDatetimeFormat)
+
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
 
@@ -8483,7 +8501,10 @@ def ttc(request):
     if taskrec['tasktype'] != 'prod' or taskrec['ttcrequested'] == None:
         data = {"error": "TTC for this type of task has not implemented yet"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
-    taskrec['ttc'] = taskrec['ttcrequested']
+    taskrec['ttc'] = taskrec['ttcrequested'].strftime(defaultDatetimeFormat)
+    taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
+    taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
+    taskrec['endtime'] = taskrec['endtime'].strftime(defaultDatetimeFormat)
 
     taskevents = GetEventsForTask.objects.filter(**query).values('jeditaskid', 'totev', 'totevrem')
     if len(taskevents) > 0:

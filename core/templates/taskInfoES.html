@@ -51,8 +51,8 @@
             <span class='finished'>{{task.dsinfo.nfilesfinished}} ({{task.dsinfo.pctfinished}}%)</span> {% if task.dsinfo.nfilesfailed > 0 %} | <span class='failed'>{{task.dsinfo.nfilesfailed}} ({{task.dsinfo.pctfailed}}%)</span>  {% endif %} </td>
 {% endif %}
 
-		<td>{{ task.creationdate|date:"Y-m-d H:i" }}</td>
-		<td>{{ task.modificationtime|date:"m-d H:i" }}</td>
+		<td>{{ task.creationdate }}</td>
+		<td>{{ task.modificationtime }}</td>
 		<td>{{ task.corecount }}</td>
 		<td>{{ task.taskpriority }}</td>
 {% if task.ticketid %}
@@ -326,7 +326,7 @@ parent task<a href="{% url 'taskInfo' task.parent_tid %}"> {{ task.parent_tid }}
 {% endif %}
 
 <td>
-<a href="{% url 'pandaLogger' %}?type={{ taskbrokerage }}&jeditaskid={{ jeditaskid }}&startdate={{ task.creationdate|date:"Y-m-d H:i:s" }}&enddate={{ task.modificationtime|date:"Y-m-d H:i:s" }}">brokerage lo
+<a href="{% url 'pandaLogger' %}?type={{ taskbrokerage }}&jeditaskid={{ jeditaskid }}&startdate={{ task.creationdate }}&enddate={{ task.modificationtime }}">brokerage lo
 gger</a>
 </td>
 
@@ -417,8 +417,8 @@ function toggleRowsDisplay(className) {
 		<td class='{{dsrec.state}}'>{{ dsrec.state }}</td>
 		<td class='{{dsrec.status}}'>{{ dsrec.status }}</td>
 		<td>{{ dsrec.nfiles }}</td>
-		<td>{{ dsrec.creationtime|date:"Y-m-d H:i" }}</td>
-		<td>{{ dsrec.modificationtime|date:"m-d H:i" }}</td>
+		<td>{{ dsrec.creationtime }}</td>
+		<td>{{ dsrec.modificationtime }}</td>
 	</tr>
 {% endfor %}
 </table>

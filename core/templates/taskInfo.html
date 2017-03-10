@@ -49,8 +49,8 @@
             <span class='finished'>{{task.dsinfo.nfilesfinished}} ({{task.dsinfo.pctfinished}}%)</span> {% if task.dsinfo.nfilesfailed > 0 %} | <span class='failed'>{{task.dsinfo.nfilesfailed}} ({{task.dsinfo.pctfailed}}%)</span>  {% endif %} </td>
 {% endif %}
 		<td>{{ task.maxpssave }}</td>
-		<td>{{ task.creationdate|date:"Y-m-d H:i" }}</td>
-		<td>{{ task.modificationtime|date:"m-d H:i" }}</td>
+		<td>{{ task.creationdate }}</td>
+		<td>{{ task.modificationtime }}</td>
 		<td>{{ task.corecount }}</td>
 		<td>{{ task.taskpriority }}</td>
 		<td><a href="{% url 'taskInfo' task.parent_tid %}">{% if task.parent_tid != task.jeditaskid %} {{ task.parent_tid }} {% endif %}</a></td>
