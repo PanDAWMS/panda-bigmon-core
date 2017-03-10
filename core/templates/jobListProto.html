@@ -38,7 +38,7 @@
 <p>
 
 {% if jobList %}
-<br>Job <b>modification times</b> in this listing range from <b>{{ tfirst|date:"Y-m-d H:i" }}</b> to <b>{{ tlast|date:"Y-m-d H:i" }}</b>.
+<br>Job <b>modification times</b> in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>.
 <br>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.
 {% endif %}
 

@@ -1930,8 +1930,8 @@ def jobListP(request, mode=None, param=None):
     if 'json' not in request.session['requestParams']:
         data = {
             'requesttoken': requestToken,
-            'tfirst': request.session['TFIRST'],
-            'tlast': request.session['TLAST'],
+            'tfirst': request.session['TFIRST'].strftime(defaultDatetimeFormat),
+            'tlast': request.session['TLAST'].strftime(defaultDatetimeFormat),
             'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
@@ -2190,9 +2190,9 @@ def getJobList(request,requesttoken=None):
     jobsToShow = jobs[:njobsmax]
 
     for job in jobsToShow:
-        job['creationtime'] = str(job['creationtime'])
-        job['modificationtime'] = str(job['modificationtime'])
-        job['statechangetime'] = str(job['statechangetime'])
+        job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
+        job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
+        job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
 
     if 'requestParams' in request.session and 'jeditaskid' in request.session['requestParams']:
         if len(jobs) > 0:
@@ -2218,10 +2218,10 @@ def getJobList(request,requesttoken=None):
     TFIRST = None
     TLAST = None
     if 'TFIRST' in request.session:
-        TFIRST = request.session['TFIRST']
+        TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
     if 'TLAST' in request.session:
-        TLAST = request.session['TLAST']
+        TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TLAST']
     if 'viewParams' in request.session and 'limit' in request.session['viewParams']:
         del request.session['viewParams']['limit']
@@ -2682,9 +2682,9 @@ def jobList(request, mode=None, param=None):
 
 
     for job in jobsToShow:
-        job['creationtime'] = str(job['creationtime'])
-        job['modificationtime'] = str(job['modificationtime'])
-        job['statechangetime'] = str(job['statechangetime'])
+        job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
+        job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
+        job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
@@ -2694,8 +2694,8 @@ def jobList(request, mode=None, param=None):
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
 
-        TFIRST = request.session['TFIRST']
-        TLAST = request.session['TLAST']
+        TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
+        TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
         del request.session['TLAST']
         nodropPartURL = cleanURLFromDropPart(xurl)
@@ -3418,10 +3418,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         if len(errorinfo) > 0:
             job['errorinfo'] = errorinfo
 
-
-    job['creationtime'] = str(job['creationtime'])
-    job['modificationtime'] = str(job['modificationtime'])
-    job['statechangetime'] = str(job['statechangetime'])
+    job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
+    job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
+    job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
