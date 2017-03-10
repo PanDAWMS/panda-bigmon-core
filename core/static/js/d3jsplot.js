@@ -219,7 +219,7 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
                 return d.type + "=" + d.val.toFixed(1);
             });
 
-    if (title.startsWith("Walltime per event histogram")) {
+    if (title.startsWith("Walltime per event histogram") && numberofbins > 50) {
         d3.select(divToShow).append("button")
             .attr("class","buttonadjust")
             .attr("float", "left")
