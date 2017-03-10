@@ -5838,10 +5838,14 @@ def taskList(request):
         tasksTotalCount = int(math.ceil((tasksTotalCount + 10000) / 10000) * 10000)
     tasksToShow = tasks[:nmax]
     for task in tasksToShow:
-        task['creationdate'] = task['creationdate'].strftime(defaultDatetimeFormat)
-        task['modificationtime'] = task['modificationtime'].strftime(defaultDatetimeFormat)
-        task['starttime'] = task['starttime'].strftime(defaultDatetimeFormat)
-        task['statechangetime'] = task['statechangetime'].strftime(defaultDatetimeFormat)
+        if task['creationdate']:
+            task['creationdate'] = task['creationdate'].strftime(defaultDatetimeFormat)
+        if task['modificationtime']:
+            task['modificationtime'] = task['modificationtime'].strftime(defaultDatetimeFormat)
+        if task['starttime']:
+            task['starttime'] = task['starttime'].strftime(defaultDatetimeFormat)
+        if task['statechangetime']:
+            task['statechangetime'] = task['statechangetime'].strftime(defaultDatetimeFormat)
         if task['ttcrequested']:
             task['ttcrequested'] = task['ttcrequested'].strftime(defaultDatetimeFormat)
 
