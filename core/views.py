@@ -7215,10 +7215,14 @@ def taskInfo(request, jeditaskid=0):
         showtaskprof = True
 
     if taskrec:
-        taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
-        taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
-        taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
-        taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
+        if taskrec['creationdate']:
+            taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
+        if taskrec['modificationtime']:
+            taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
+        if taskrec['starttime']:
+            taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
+        if taskrec['statechangetime']:
+            taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
         if taskrec['ttcrequested']:
             taskrec['ttcrequested'] = taskrec['ttcrequested'].strftime(defaultDatetimeFormat)
 
