@@ -288,8 +288,6 @@ parent task<a href="{% url 'taskInfo' task.parent_tid %}"> {{ task.parent_tid }}
 <a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('@timestamp',type,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Job brokerage (es-atlas)</a>
 </td>
 
-<a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&jeditaskid={{ jeditaskid }}">Action logger</a>
-
 <td>
 <a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&jeditaskid={{ jeditaskid }}">Action logger</a>
 </td>
