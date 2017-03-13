@@ -287,13 +287,13 @@ parent task<a href="{% url 'taskInfo' task.parent_tid %}"> {{ task.parent_tid }}
 <td>
 <a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('@timestamp',type,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Job brokerage (es-atlas)</a>
 </td>
-    
+
 <td>
 <a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&jeditaskid={{ jeditaskid }}">Action logger</a>
 </td>
 
 <td>
-<a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@timestamp',type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc))">Action logger (es-atlas)</a>
+<a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('@timestamp',type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc))">Action logger (es-atlas)</a>
 </td>
 
 
