@@ -85,6 +85,8 @@ errorCodes = {}
 errorStages = {}
 
 from django.template.defaulttags import register
+from reports import RunningMCProdTasks
+
 
 @register.filter
 def get_item(dictionary, key):
@@ -6243,8 +6245,9 @@ def getSummaryForTaskList(request):
     return response
 
 
-#def runningProdTasks(request):
-#    return redirect('runningMCProdTasks')
+def report(request):
+    mcReport = RunningMCProdTasks.RunningMCProdTasks()
+    return mcReport.prepareReport("MC16", 600, True)
 
 
 def runningMCProdTasks(request):
@@ -6260,9 +6263,6 @@ def runningMCProdTasks(request):
         endSelfMonitor(request)
         return response
 
-    #from reports import RunningMCProdTasks
-    #mcReport = RunningMCProdTasks.RunningMCProdTasks()
-    #mcReport.prepareReport("MC16", 100, True)
 
     # xurl = extensibleURL(request)
     xurl = request.get_full_path()

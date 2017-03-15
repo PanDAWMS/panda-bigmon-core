@@ -229,7 +229,7 @@ gauges['slots'].redraw(slots);});
 </tr>
 {% for task in tasks %}
     <tr>
-    <td><a href="{{ xurl }}campaign={{ task.cutcampaign }}">{{ task.cutcampaign }}</a></td>
+    <td><a href="{{ xurl }}campaign={{ task.campaign }}">{{ task.cutcampaign }}</a></td>
     <td><a href="{{ xurl }}reqid={{ task.reqid }}">{{ task.reqid }}</a>  <a href="https://prodtask-dev.cern.ch/reqtask/{{task.reqid}}/"
                                target="_blank"> &rArr;</a></td>
     <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>

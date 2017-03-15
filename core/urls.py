@@ -88,7 +88,9 @@ urlpatterns = [
     ### data product catalog prototyping                                                                                                                                                         
     url(r'^dp/$', dpviews.doRequest, name='doRequest'),
 
-    ### filebrowser
+    url(r'^report/$', coremon_views.report, name='report'),
+
+                  ### filebrowser
     url(r'^filebrowser/', include('core.filebrowser.urls'), name='filebrowser'),
     ### PanDA Brokerage Monitor
     url(r'^pbm/', include('core.pbm.urls'), name='pbm'),
