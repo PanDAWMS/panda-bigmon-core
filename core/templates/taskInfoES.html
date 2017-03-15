@@ -326,21 +326,24 @@ parent task<a href="{% url 'taskInfo' task.parent_tid %}"> {{ task.parent_tid }}
 {% endif %}
 
 <td>
-<a href="{% url 'pandaLogger' %}?type={{ taskbrokerage }}&jeditaskid={{ jeditaskid }}&startdate={{ task.creationdate }}&enddate={{ task.modificationtime }}">brokerage lo
-gger</a>
+<a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('@timestamp',type,logLevel,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Task brokerage (es-atlas)</a>
+</td>
+
+
+<td>
+<a href="{% url 'pandaLogger' %}?type={{ taskbrokerage }}&jeditaskid={{ jeditaskid }}&startdate={{ task.creationdate|date:"Y-m-d H:i:s" }}&enddate={{ task.modificationtime|date:"Y-m-d H:i:s" }}">Job brokerage</a>
 </td>
 
 <td>
-<a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&jeditaskid={{ jeditaskid }}">JEDI action logger</a>
+<a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('@timestamp',type,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Job brokerage (es-atlas)</a>
 </td>
 
 <td>
-<a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-2d%2Fd,mode:relative,to:now))&_a=(columns:!('@message.module','@message.Type','@message.name','@message.levelname','@message.message'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.msg:%22jediTaskID%3D{{jeditaskid}}%20%22%20AND%20@message.Type:%22{{taskbrokerage}}%22')),sort:!('@timestamp',desc))">brokerage logger (es)</a>
+<a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&jeditaskid={{ jeditaskid }}">Action logger</a>
 </td>
 
-<a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&jeditaskid={{ jeditaskid }}">JEDI action logger</a>
-<td><a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-2d%2Fd,mode:relative,to:now))&_a=(columns:!('@message.module','@message.Type','@message.name','@message.levelname','@message.message'),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms
-:!f,query:'@message.msg:%22jediTaskID%3D{{jeditaskid}}%22%20AND%20@message.name:%22panda.mon.jedi%22')),sort:!('@timestamp',desc))">JEDI action logger (es)</a>
+<td>
+<a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('@timestamp',type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc))">Action logger (es-atlas)</a>
 </td>
 
 
