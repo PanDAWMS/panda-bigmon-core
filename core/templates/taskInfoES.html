@@ -331,7 +331,7 @@ parent task<a href="{% url 'taskInfo' task.parent_tid %}"> {{ task.parent_tid }}
 
 
 <td>
-<a href="{% url 'pandaLogger' %}?type={{ taskbrokerage }}&jeditaskid={{ jeditaskid }}&startdate={{ task.creationdate|date:"Y-m-d H:i:s" }}&enddate={{ task.modificationtime|date:"Y-m-d H:i:s" }}">Job brokerage</a>
+<a href="{% url 'pandaLogger' %}?type={{ taskbrokerage }}&jeditaskid={{ jeditaskid }}&startdate={{ task.creationdate }}&enddate={{ task.modificationtime }}">Job brokerage</a>
 </td>
 
 <td>

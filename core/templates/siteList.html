@@ -39,11 +39,11 @@
 <tr><th rowspan=2><a href="{% url 'siteList' %}?cloud={{ cloud.name }}">{{ cloud.name }}</a></th>
 <td><font size=-1><a href="{% url 'siteList' %}?siteid={{ cloud.tier1 }}">{{ cloud.tier1 }}</a></font></td>
 <td class="{{ cloud.status }}">{{ cloud.status }}</td>
-<td><font size=-1>{{ cloud.comment_field }}<br>{{ cloud.modtime|date:"Y-m-d H:i" }} {{ cloud.moduser }}</font></td>
+<td><font size=-1>{{ cloud.comment_field }}<br>{{ cloud.modtime }} {{ cloud.moduser }}</font></td>
 <td>{{ cloud.transtimelo }}/{{ cloud.transtimehi }}</td>
 <td width=300><font size=-1>{{ cloud.tier1se }}</font></td>
 <td>{{ cloud.space }}</td>
-<td> {{ cloud.tspace|date:"m-d H:i" }}</td>
+<td> {{ cloud.tspace }}</td>
 </tr>
 <tr><td colspan=7> <font size=-2><b>MCP sites (home cloud sites in bold):</b> {{ cloud.mcpsites|safe }}</font></td></tr>
 {% endif %}

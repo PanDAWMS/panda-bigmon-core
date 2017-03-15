@@ -10,7 +10,7 @@
 {% if sumd %}
 
 {% if plow %}
-<p>Job <b>modification times</b> in this listing range from <b>{{ tfirst|date:"Y-m-d H:i" }}</b> to <b>{{ tlast|date:"Y-m-d H:i" }}</b>.
+<p>Job <b>modification times</b> in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>.
 <br>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.
 {% endif %}
 
@@ -47,7 +47,7 @@
 <tr>
 <th> <a href="{% url 'userInfo' userd.dict.name %}?display_limit=200">{{userd.dict.name}}</a> </th>
 <td> <a href="{% url 'jobInfo' userd.dict.pandaid %}">{{ userd.dict.pandaid }}</a> </td>
-<td> {{ userd.dict.latest|date:"Y-m-d H:i" }} </td>
+<td> {{ userd.dict.latest }} </td>
 <td> {{ userd.dict.njobs }} </td>
 <td class='finished'> <a href="{% url 'jobList' %}?produsername={{userd.dict.name}}&jobstatus=finished&display_limit=200"><span class='finished'>{{ userd.dict.nfinished }}</span></a> </td>
 <td class='failed'> <a href="{% url 'jobList' %}?produsername={{userd.dict.name}}&jobstatus=failed&display_limit=200"><span class='failed'>{{ userd.dict.nfailed }}</span></a> </td>
@@ -105,7 +105,7 @@ No dynamic usage information found.
 <tr>
 <td> <a href="{% url 'userInfo' user.name %}?display_limit=200">{{user.name}}</a> </td>
 <td> {% if user.njobsa %}{{ user.njobsa }} {% endif %}</td>
-<td>{{ user.latestjob|date:"Y-m-d H:i" }}</td>
+<td>{{ user.latestjob }}</td>
 
 {% comment %}
 <td class='finished'> {{ user.nfinished }} </td>
