@@ -85,7 +85,7 @@ errorCodes = {}
 errorStages = {}
 
 from django.template.defaulttags import register
-from reports import RunningMCProdTasks
+#from reports import RunningMCProdTasks
 
 
 @register.filter
