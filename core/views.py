@@ -2192,9 +2192,12 @@ def getJobList(request,requesttoken=None):
     jobsToShow = jobs[:njobsmax]
 
     for job in jobsToShow:
-        job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
-        job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
-        job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
+        if job['creationtime']:
+            job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
+        if job['modificationtime']:
+            job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
+        if job['statechangetime']:
+            job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
 
     if 'requestParams' in request.session and 'jeditaskid' in request.session['requestParams']:
         if len(jobs) > 0:
@@ -2684,9 +2687,12 @@ def jobList(request, mode=None, param=None):
 
 
     for job in jobsToShow:
-        job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
-        job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
-        job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
+        if job['creationtime']:
+            job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
+        if job['modificationtime']:
+            job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
+        if job['statechangetime']:
+            job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
@@ -3420,9 +3426,12 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         if len(errorinfo) > 0:
             job['errorinfo'] = errorinfo
 
-    job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
-    job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
-    job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
+    if job['creationtime']:
+        job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
+    if job['modificationtime']:
+        job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
+    if job['statechangetime']:
+        job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
@@ -3559,7 +3568,8 @@ def userList(request):
             if u.cpua7: udict['cpua7'] = "%0.1f" % (int(u.cpua7) / 3600.)
             if u.cpup1: udict['cpup1'] = "%0.1f" % (int(u.cpup1) / 3600.)
             if u.cpup7: udict['cpup7'] = "%0.1f" % (int(u.cpup7) / 3600.)
-            udict['latestjob'] = u.latestjob
+            if u.latestjob:
+                udict['latestjob'] = u.latestjob.strftime(defaultDatetimeFormat)
             userdbl.append(udict)
 
             if u.njobsa > 0: anajobs += u.njobsa
@@ -3598,6 +3608,9 @@ def userList(request):
         )
         jobs = cleanJobList(request, jobs)
         sumd = userSummaryDict(jobs)
+        for user in sumd:
+            if user['dict']['latest']:
+                user['dict']['latest'] = user['dict']['latest'].strftime(defaultDatetimeFormat)
         sumparams = ['jobstatus', 'prodsourcelabel', 'specialhandling', 'transformation', 'processingtype',
                      'workinggroup', 'priorityrange', 'jobsetrange']
         if VOMODE == 'atlas':
@@ -3623,8 +3636,8 @@ def userList(request):
             'jobsumd': jobsumd,
             'userdb': userdbl,
             'userstats': userstats,
-            'tfirst': TFIRST,
-            'tlast': TLAST,
+            'tfirst': TFIRST.strftime(defaultDatetimeFormat),
+            'tlast': TLAST.strftime(defaultDatetimeFormat),
             'plow': PLOW,
             'phigh': PHIGH,
             'built': datetime.now().strftime("%H:%M:%S"),
@@ -3684,6 +3697,11 @@ def userInfo(request, user=''):
     ntasks = len(tasks)
     tasksumd = taskSummaryDict(request, tasks)
     tasks = getTaskScoutingInfo(tasks, ntasks)
+    for task in tasks:
+        if task['modificationtime']:
+            task['modificationtime'] = task['modificationtime'].strftime(defaultDatetimeFormat)
+        if task['statechangetime']:
+            task['statechangetime'] = task['statechangetime'].strftime(defaultDatetimeFormat)
 
     ## Jobs
     limit = 5000
@@ -3726,6 +3744,11 @@ def userInfo(request, user=''):
                 userstats[field] = "%0.1f" % (float(userstats[field]) / 3600.)
             except:
                 userstats[field] = '-'
+        for timefield in ['cachetime', 'firstjob', 'lastmod', 'latestjob']:
+            try:
+                userstats[timefield] = userstats[timefield].strftime(defaultDatetimeFormat)
+            except:
+                userstats[timefield] = userstats[timefield]
     else:
         userstats = None
 
@@ -3750,8 +3773,8 @@ def userInfo(request, user=''):
             if job['modificationtime'] < tfirst: tfirst = job['modificationtime']
             if job['currentpriority'] > phigh: phigh = job['currentpriority']
             if job['currentpriority'] < plow: plow = job['currentpriority']
-        jobsets[jobset]['tfirst'] = tfirst
-        jobsets[jobset]['tlast'] = tlast
+        jobsets[jobset]['tfirst'] = tfirst.strftime(defaultDatetimeFormat)
+        jobsets[jobset]['tlast'] = tlast.strftime(defaultDatetimeFormat)
         jobsets[jobset]['plow'] = plow
         jobsets[jobset]['phigh'] = phigh
     jobsetl = []
@@ -3894,6 +3917,12 @@ def userInfo(request, user=''):
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
 
+        for job in jobs:
+            if job['creationtime']:
+                job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
+            if job['modificationtime']:
+                job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
+
         TFIRST = request.session['TFIRST']
         TLAST = request.session['TLAST']
         del request.session['TFIRST']
@@ -3912,8 +3941,8 @@ def userInfo(request, user=''):
             'njobs': len(jobs),
             'query': query,
             'userstats': userstats,
-            'tfirst': TFIRST,
-            'tlast': TLAST,
+            'tfirst': TFIRST.strftime(defaultDatetimeFormat),
+            'tlast': TLAST.strftime(defaultDatetimeFormat),
             'plow': PLOW,
             'phigh': PHIGH,
             'jobsets': jobsetl[:njobsetmax - 1],
@@ -4031,7 +4060,7 @@ def siteList(request):
             for site in sites:
                 if site['siteid'] == cloud['tier1']:
                     cloud['space'] = site['space']
-                    cloud['tspace'] = site['tspace']
+                    cloud['tspace'] = site['tspace'].strftime("%m-%d %H:%M")
             for site in mcpres:
                 mcpclouds = site['multicloud'].split(',')
                 if cloud['name'] in mcpclouds or cloud['name'] == site['cloud']:
@@ -4049,6 +4078,8 @@ def siteList(request):
                     cloud['mcpsites'] += "<b>%s</b> &nbsp; " % s['name']
                 else:
                     cloud['mcpsites'] += "%s &nbsp; " % s['name']
+            if cloud['modtime']:
+                cloud['modtime'] = cloud['modtime'].strftime("%m-%d %H:%M")
     else:
         clouds = None
     xurl = extensibleURL(request)
@@ -4100,8 +4131,16 @@ def siteInfo(request, site=''):
     try:
         siterec = sites[0]
         colnames = siterec.get_all_fields()
+        if sites[0].lastmod:
+            sites[0].lastmod = sites[0].lastmod.strftime(defaultDatetimeFormat)
     except IndexError:
         siterec = None
+    if len(sites) > 1:
+        for queue in sites:
+            if queue['lastmod']:
+                queue['lastmod'] = queue['lastmod'].strftime(defaultDatetimeFormat)
+
+
 
     HPC = False
     njobhours = 12
@@ -4163,6 +4202,9 @@ def siteInfo(request, site=''):
             cloudQuery = Q(description__contains='queue=%s' % siterec.nickname) | Q(
                 description__contains='queue=%s' % siterec.siteid)
             incidents = Incidents.objects.filter(**iquery).filter(cloudQuery).order_by('at_time').reverse().values()
+            for inc in incidents:
+                if inc['at_time']:
+                    inc['at_time'] = inc['at_time'].strftime(defaultDatetimeFormat)
         else:
             incidents = []
         del request.session['TFIRST']
@@ -8508,10 +8550,14 @@ def ttc(request):
     if taskrec['tasktype'] != 'prod' or taskrec['ttcrequested'] == None:
         data = {"error": "TTC for this type of task has not implemented yet"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
-    taskrec['ttc'] = taskrec['ttcrequested'].strftime(defaultDatetimeFormat)
-    taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
-    taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
-    taskrec['endtime'] = taskrec['endtime'].strftime(defaultDatetimeFormat)
+    if taskrec['ttcrequested']:
+        taskrec['ttc'] = taskrec['ttcrequested'].strftime(defaultDatetimeFormat)
+    if taskrec['creationdate']:
+        taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
+    if taskrec['starttime']:
+        taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
+    if taskrec['endtime']:
+        taskrec['endtime'] = taskrec['endtime'].strftime(defaultDatetimeFormat)
 
     taskevents = GetEventsForTask.objects.filter(**query).values('jeditaskid', 'totev', 'totevrem')
     if len(taskevents) > 0:

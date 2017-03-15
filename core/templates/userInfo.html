@@ -64,7 +64,7 @@
 <tr>
 <td> {{ userstats.name }} </td>
 <td> {% if userstats.njobsa %}{{ userstats.njobsa }} {% endif %}</td>
-<td>{{ userstats.latestjob|date:"Y-m-d H:i" }}</td>
+<td>{{ userstats.latestjob }}</td>
 
 {% comment %}
 <td class='finished'> {{ userstats.nfinished }} </td>
@@ -142,8 +142,8 @@
         <td>{% if task.dsinfo.nfilesfinished > 0 %}<span  class='finished'>{{task.dsinfo.pctfinished}}%</span>{% endif %} {% if task.dsinfo.nfilesfailed > 0 %}<a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span class='failed'> {{task.dsinfo.pctfailed}}%</span>{% endif %}</a>
         <br> {% if task.dsinfo.nfilesfinished > 0 %} <span  class='finished'>{{ task.dsinfo.nfilesfinished }}</span> {% endif %} &nbsp; {% if task.dsinfo.nfilesfailed > 0 %} <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span  class='failed'>{{ task.dsinfo.nfilesfailed }}</span></a> {% endif %}
 		</td>
-		<td><font size=-1>{{ task.modificationtime|date:"Y-m-d H:i" }}</font></td>
-		<td><font size=-1>{{ task.statechangetime|date:"m-d H:i" }}</font></td>
+		<td><font size=-1>{{ task.modificationtime }}</font></td>
+		<td><font size=-1>{{ task.statechangetime }}</font></td>
 		<td>{{ task.taskpriority }}</td>
 	</tr>
     {% endfor %}
@@ -180,7 +180,7 @@
 <tr>
 <th> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&display_limit=100">{{ jobset.jobsetid }}</a></th>
 <td> {{ jobset.njobs }} </td>
-<td> {{ jobset.tfirst|date:"Y-m-d H:i" }} to {{ jobset.tlast|date:"m-d H:i" }} </td>
+<td> {{ jobset.tfirst }} to {{ jobset.tlast }} </td>
 <td> {{ jobset.plow }} to {{ jobset.phigh }} </td>
 <td {% if jobset.sum.defined > 0 %} class='defined_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=defined&display_limit=100">{% if jobset.sum.defined > 0 %}<span class="defined_fill">{% else %}<span class="defined">{% endif %}{{ jobset.sum.defined }}</span></a> </td>
 <td {% if jobset.sum.waiting > 0 %} class='waiting_fill' {% endif %}> <a href="{% url 'jobList' %}?produsername={{ user }}&jobsetid={{ jobset.jobsetid }}&jobstatus=waiting&display_limit=100">{% if jobset.sum.waiting > 0 %}<span class="waiting_fill">{% else %}<span class="waiting">{% endif %}{{ jobset.sum.waiting }}</span></a> </td>
@@ -205,7 +205,7 @@
 <a name="jobs"></a>
 <p>
 <b>{{ njobs }} jobs</b>
-<br>Job <b>modification times</b> in this listing range from <b>{{ tfirst|date:"Y-m-d H:i" }}</b> to <b>{{ tlast|date:"Y-m-d H:i" }}</b>.
+<br>Job <b>modification times</b> in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>.
 <br>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.
 </p>
 
@@ -261,10 +261,10 @@ Only the most recent {{ display_limit }} jobs are shown. <a href="{{ url_nolimit
 		<td><font size=-1><a href="{{xurl}}transformation={{job.transformation}}">{{ job.transformation }}</a></font></td>
 
 		<td class='{{job.jobstatus}}_fill'>{{ job.jobstatus }}</td>
-		<td><font size=-1>{{ job.creationtime|date:"Y-m-d H:i" }}</font></td>
+		<td><font size=-1>{{ job.creationtime }}</font></td>
 		<td><font size=-1>{{ job.waittime }}</font></td>
 		<td><font size=-1>{{ job.duration }}</font></td>
-		<td><font size=-1>{{ job.modificationtime|date:"m-d H:i" }}</font></td>
+		<td><font size=-1>{{ job.modificationtime }}</font></td>
 		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a></font></td>
 		<td>{{ job.currentpriority }}</td>
 		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}

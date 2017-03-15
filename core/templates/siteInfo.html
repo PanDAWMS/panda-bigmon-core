@@ -43,7 +43,7 @@
 {% for queue in queues %}
 <tr>
 <td> <a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{ queue.nickname }}/full/">{{ queue.nickname }}</a></td><td> <span class='{{ queue.status }}'>{{ queue.status }}</span> </td>
-<td> {{ queue.lastmod|date:"Y-m-d H:i" }} </td> <td> {{ queue.comment_field }} </td>
+<td> {{ queue.lastmod }} </td> <td> {{ queue.comment_field }} </td>
 </tr>
 {% endfor %}
 </table>
@@ -107,7 +107,7 @@ DDM
 <table>
 <tr class='tablesection'><th colspan=20> Incidents over the last month </th></tr>
 {% for inc in incidents %}
-<tr><td> {{ inc.at_time|date:"Y-m-d H:i" }} </td>
+<tr><td> {{ inc.at_time }} </td>
 <td> <font size=-1>{{ inc.description|safe }}</font> </td>
 {% endfor %}
 </table>
