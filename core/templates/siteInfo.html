@@ -64,9 +64,8 @@
 </td>
 
 <td>
-<a href="https://aianalytics01.cern.ch/#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-2d%2Fd,mode:relative,to:now))&_a=(columns:!(%27@message.message%27),index:%5Bpandalogger-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:%27(@message.message:%20%22{{ site.siteid }}%20%22%20OR%20@message.message:%20%22site%3D{{site.siteid}}%20%22%20OR%20@messsage.message:%20{{site.siteid}}*)%27)),sort:!(%27@timestamp%27,desc))">brokerage actions (es) </a> 
+<a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(%27@timestamp%27,type,message),filters:!(),index:%27atlas_jedilogs-*%27,interval:auto,query:(query_string:(analyze_wildcard:!t,query:%27(type:%22atlasanaljobbroker%22%20OR%20type:%22atlasprodjobbroker%22)%20AND%20site:{{site.siteid}}%20%27)),sort:!(%27@timestamp%27,desc),vis:(aggs:!((params:(field:site,orderBy:%272%27,size:20),schema:segment,type:terms),(id:%272%27,schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">brokerage actions (es-atlas)</a>
 </td>
-
 {% if site.nickname %}
 <td>
 <a href="http://apfmon.lancs.ac.uk/q/{{site.nickname}}">pilots</a>
