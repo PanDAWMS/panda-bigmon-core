@@ -3798,7 +3798,7 @@ def userInfo(request, user=''):
     # getting most relevant links based on visit statistics
     #
     links = {'task': [], 'job': [], 'other': []}
-    if 'ADFS_LOGIN' in request.session and request.session['IS_TESTER']:
+    if 'ADFS_LOGIN' in request.session:
         userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
         sqlquerystr = """select pagegroup, pagename,visitrank, url
                           from (
