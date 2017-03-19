@@ -86,6 +86,7 @@ errorStages = {}
 
 from django.template.defaulttags import register
 from reports import RunningMCProdTasks
+from reports import MC16aCPReport
 
 
 @register.filter
@@ -6288,8 +6289,18 @@ def getSummaryForTaskList(request):
 
 
 def report(request):
-    mcReport = RunningMCProdTasks.RunningMCProdTasks()
-    return mcReport.prepareReport("MC16", 600, True)
+    initRequest(request)
+    step = 0
+    response = None
+    if 'requestParams' in request.session and 'step' in request.session['requestParams']:
+        step = int(request.session['requestParams']['step'])
+    if step == 0:
+        response = render_to_response('reportWizard.html', {'nevents': 0}, RequestContext(request))
+    else:
+        if 'reporttype' in request.session['requestParams'] and request.session['requestParams']['reporttype'] == 'rep0':
+            reportGen = MC16aCPReport.MC16aCPReport()
+            response = reportGen.prepareReport()
+    return response
 
 
 def runningMCProdTasks(request):

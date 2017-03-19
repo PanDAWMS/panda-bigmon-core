@@ -1,0 +1,124 @@
+body {
+	background-color: #eee;
+	font-family: "Arial", "Helvetica", "Verdana", "sans-serif";
+	font-size: 12px;
+	margin: 0;
+	padding: 0;
+}
+
+h1 {
+	background-color: #333;
+	color: #fff;
+	font-size: 2.0em;
+	margin: 0;
+	padding: 10px;
+}
+
+h1 a {
+	color: #fff;
+	text-decoration: none;
+}
+
+h1 a:hover {
+	color: #eee;
+	text-decoration: underline;
+}
+
+h3 span {
+	font-weight: normal;
+}
+
+#wrapper {
+	width: 800px;
+}
+
+#navigation {
+	background-color: #fff;
+	border: #ddd 1px solid;
+	border-radius: 10px;
+	margin: 10px;
+	padding: 10px;
+}
+
+#navigation li {
+	margin: 2px 0;
+}
+
+label.error {
+	color: #ff0000;
+	margin-left: 10px;
+	position: relative;
+}
+
+#progressbar {
+	margin: 10px 0;
+	width: 400px;
+	height: 15px;
+}
+
+.wizard {
+	background-color: #fff;
+	border: #ddd 1px solid;
+	border-radius: 10px;
+	margin: 10px;
+	padding: 10px;
+}
+
+.wizard .wizard-header {
+	background-color: #f4f4f4;
+	border-bottom: #ddd 1px solid;
+	border-top-left-radius: 10px;
+	border-top-right-radius: 10px;
+	padding: 5px 10px;
+	margin: 0 0 10px 0;
+}
+
+.wizard .wizard-step {
+	margin: 10px 0;
+}
+
+.wizard .wizard-step p {
+	padding: 5px;
+}
+
+.navigation {
+	border-top: #ddd 1px solid;
+	margin-top: 10px;
+	padding-top: 10px;
+}
+
+.navigation ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.navigation li {
+	float: left;
+	margin-right: 10px;
+}
+
+.pad {
+	padding: 5px;
+}
+
+.blue {
+	background: blue;
+	color: white;
+}
+
+.pink {
+	background: pink;
+	color: black;
+}
+
+.clearfix:before, .clearfix:after {
+	content: "\0020";
+	display: block;
+	height: 0;
+	visibility: hidden;
+}
+
+.clearfix:after {
+	clear: both;
+}

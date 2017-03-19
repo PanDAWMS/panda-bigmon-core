@@ -1,0 +1,76 @@
+{% load static %}
+
+
+<html>
+	<head>
+		<title>jQuery JavaScript Form Wizard | jQuery.wizard</title>
+
+		<link rel="stylesheet" type="text/css" href="{% static "/css/jquery-ui-1.10.3.custom.min.css"%}" />
+		<link rel="stylesheet" type="text/css" href="{% static "/css/wizardstyles.css"%}" />
+
+
+       	<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js"%}"></script>
+       	<script type="text/javascript" src="{% static "/js/jquery-ui-1.10.3.custom.min.js"%}"></script>
+       	<script type="text/javascript" src="{% static "/js/jquery-ui-1.10.3.custom.min.js"%}"></script>
+		<script type="text/javascript" src="{% static "/js/jquery.wizard.js"%}"></script>
+
+		<!-- Demo -->
+		<script type="text/javascript">
+			jQuery(function($) {
+				// Example 1: Basic wizard with validation
+				$( "#example-3" ).wizard({
+					transitions: {
+						report: function( state, action ) {
+						    var t = document.getElementById("reportType");
+                            var reportType = t.options[t.selectedIndex].value;
+                            if ( !reportType ) {
+								alert( "Please select a value to continue." );
+							}
+							return reportType;
+						}
+					}
+				}).wizard( "form" ).submit(function( event ) {
+					//event.preventDefault();
+                    var t = document.getElementById("reportType");
+                    var reportType = t.options[t.selectedIndex].value;
+
+					//alert( "Form submitted! " + reportType );
+					});
+			});
+		</script>
+	</head>
+
+
+<body>
+            <div id="example-3">
+				<h2>Reports Wizard</h2>
+
+				<form name="example-3">
+
+					<div class="step" data-state="report">
+						<p>Select report to create</p>
+                        <select name="reportType" size="5" id="reportType">
+                          <option value="rep0">Simple campaign report, req. in (11034,11048,11049,11050,11051,11052,11198,11197,11222,11359)</option>
+                        </select>
+                    </div>
+
+					<div class="submit step" id="rep0">
+                        <p>Select delivery</p>
+                        <label for="deliveryDownload"><input type="radio" name="delivery" value="Download" id="deliveryDownload" />Download</label>
+                        <label for="deliveryEmail"><input disabled="disabled" type="radio" name="delivery" value="Email" id="deliveryEmail" />Email</label>
+                        <input type="hidden" name="step" value="1">
+                    </div>
+
+
+					<div class="navigation">
+						<ul class="clearfix">
+							<button type="button" name="backward" class="backward">Backward</button>
+							<button type="button" name="forward" class="forward">Forward</button>
+                            <button type="submit" name="process" class="submit">Submit</button>
+						</ul>
+					</div>
+				</form>
+			</div>
+	</body>
+</html>
+
