@@ -6287,7 +6287,7 @@ def getSummaryForTaskList(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-
+@never_cache
 def report(request):
     initRequest(request)
     step = 0
