@@ -70,7 +70,7 @@ class MC16aCPReport:
         style = getSampleStyleSheet()['Normal']
         style.leading = 24
 
-        Report.append(Paragraph('Report on Request List: ' + "MC16a", styles["Heading1"]))
+        Report.append(Paragraph('Report on Campaign: ' + "MC16a", styles["Heading1"]))
         Report.append(Paragraph('Build on ' + time.ctime() + " by BigPanDA", styles["Bullet"]))
         Report.append(Paragraph('Progress and loads', styles["Heading2"]))
         Report.append(Paragraph('Done events: ' + humanize.intcomma(int(finished/1000000)) +' M', styles["Normal"]))
