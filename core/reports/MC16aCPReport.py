@@ -41,24 +41,33 @@ class MC16aCPReport:
         summaryDictFinished = {}
         summaryDictRunning = {}
         summaryDictWaiting = {}
+        summaryDictObsolete = {}
+        summaryDictFailed = {}
 
         for summaryRow in campaignsummary:
             if summaryRow[1] == 'finished' or summaryRow[1] == 'done':
                 if summaryRow[2] in summaryDictFinished:
-                    summaryDictFinished[summaryRow[2]] += summaryRow[0]
+                    summaryDictFinished[summaryRow[2]] += summaryRow[0] if summaryRow[0] >= 0 else 0
                 else:
-                    summaryDictFinished[summaryRow[2]] = summaryRow[0]
+                    summaryDictFinished[summaryRow[2]] = summaryRow[0] if summaryRow[0] >= 0 else 0
 
             if summaryRow[1] == 'running':
-                summaryDictRunning[summaryRow[2]] = summaryRow[0]
+                summaryDictRunning[summaryRow[2]] = summaryRow[0] if summaryRow[0] >= 0 else 0
+
+            if summaryRow[1] == 'obsolete':
+                summaryDictObsolete[summaryRow[2]] = summaryRow[0] if summaryRow[0] >= 0 else 0
+
+            if summaryRow[1] == 'failed':
+                summaryDictFailed[summaryRow[2]] = summaryRow[0] if summaryRow[0] >= 0 else 0
+
 
             if summaryRow[1] == 'submitting' or summaryRow[1] == 'registered' or summaryRow[1] == 'waiting':
                 if summaryRow[1] in summaryDictWaiting:
-                    summaryDictWaiting[summaryRow[2]] += summaryRow[0]
+                    summaryDictWaiting[summaryRow[2]] += summaryRow[0] if summaryRow[0] >= 0 else 0
                 else:
-                    summaryDictWaiting[summaryRow[2]] = summaryRow[0]
+                    summaryDictWaiting[summaryRow[2]] = summaryRow[0] if summaryRow[0] >= 0 else 0
 
-        return {'summaryDictFinished':summaryDictFinished, 'summaryDictRunning':summaryDictRunning, 'summaryDictWaiting':summaryDictWaiting}
+        return {'summaryDictFinished':summaryDictFinished, 'summaryDictRunning':summaryDictRunning, 'summaryDictWaiting':summaryDictWaiting, 'summaryDictObsolete':summaryDictObsolete, 'summaryDictFailed':summaryDictFailed}
 
     def prepareReportDEFT(self, request):
         total = self.getDEFTSummary('')

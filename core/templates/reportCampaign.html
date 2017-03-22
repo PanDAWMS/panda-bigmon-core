@@ -35,12 +35,27 @@
             <td>{{ data.summaryDictRunning.merge|floatformat:2|intcomma }}</td>
         </tr>
         <tr>
-            <td>Waiting+Submitting</td>
+            <td>Registered+Waiting+Submitting</td>
             <td>{{ data.summaryDictWaiting.evgen|floatformat:2|intcomma }}</td>
             <td>{{ data.summaryDictWaiting.simul|floatformat:2|intcomma }}</td>
             <td>{{ data.summaryDictWaiting.recon|floatformat:2|intcomma }}</td>
             <td>{{ data.summaryDictWaiting.merge|floatformat:2|intcomma }}</td>
         </tr>
+        <tr>
+            <td>Obsolete</td>
+            <td>{{ data.summaryDictObsolete.evgen|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictObsolete.simul|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictObsolete.recon|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictObsolete.merge|floatformat:2|intcomma }}</td>
+        </tr>
+        <tr>
+            <td>Failed</td>
+            <td>{{ data.summaryDictFailed.evgen|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictFailed.simul|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictFailed.recon|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictFailed.merge|floatformat:2|intcomma }}</td>
+        </tr>
+
 
     </table>
     {% endfor %}
