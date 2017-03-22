@@ -1,5 +1,6 @@
 from django.db import connection
 import time
+from django.shortcuts import render_to_response, render, redirect
 from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
@@ -7,12 +8,100 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
+from django.template import RequestContext, loader
 import StringIO
 import humanize
 
 class MC16aCPReport:
     def __init__(self):
         pass
+
+
+    def getDEFTSummary(self, condition):
+        sqlRequest = '''
+            SELECT sum(TOTAL_EVENTS),STATUS, 'merge' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.merge.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%'
+            and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
+            group by STATUS
+            UNION ALL
+            SELECT sum(TOTAL_EVENTS),STATUS, 'recon' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.recon.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {1}
+            group by STATUS
+            UNION ALL
+            SELECT sum(TOTAL_EVENTS),STATUS, 'simul' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.simul.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {2}
+            group by STATUS
+            UNION ALL
+            SELECT sum(TOTAL_EVENTS),STATUS, 'evgen' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.evgen.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {3}
+            group by STATUS
+        '''
+
+        sqlRequestFull = sqlRequest.format(condition, condition, condition, condition)
+
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        campaignsummary = cur.fetchall()
+        summaryDictFinished = {}
+        summaryDictRunning = {}
+        summaryDictWaiting = {}
+
+        for summaryRow in campaignsummary:
+            if summaryRow[1] == 'finished' or summaryRow[1] == 'done':
+                if summaryRow[2] in summaryDictFinished:
+                    summaryDictFinished[summaryRow[2]] += summaryRow[0]
+                else:
+                    summaryDictFinished[summaryRow[2]] = summaryRow[0]
+
+            if summaryRow[1] == 'running':
+                summaryDictRunning[summaryRow[2]] = summaryRow[0]
+
+            if summaryRow[1] == 'submitting' or summaryRow[1] == 'registered' or summaryRow[1] == 'waiting':
+                if summaryRow[1] in summaryDictWaiting:
+                    summaryDictWaiting[summaryRow[2]] += summaryRow[0]
+                else:
+                    summaryDictWaiting[summaryRow[2]] = summaryRow[0]
+
+        return {'summaryDictFinished':summaryDictFinished, 'summaryDictRunning':summaryDictRunning, 'summaryDictWaiting':summaryDictWaiting}
+
+    def prepareReportDEFT(self, request):
+        total = self.getDEFTSummary('')
+        total['title'] = 'Overall campaign summary'
+
+        SingleTop = self.getDEFTSummary("and (TASKNAME LIKE '%singletop%' OR TASKNAME LIKE '%\\_wt%' ESCAPE '\\' OR TASKNAME LIKE '%\\_wwbb%' ESCAPE '\\') ")
+        SingleTop['title'] = 'SingleTop'
+
+        TTbar = self.getDEFTSummary("and (TASKNAME LIKE '%ttbar%' OR TASKNAME LIKE '%\\_tt\\_%' ESCAPE '\\')")
+        TTbar['title'] = 'TTbar'
+
+        Multijet = self.getDEFTSummary("and TASKNAME LIKE '%jets%' ")
+        Multijet['title'] = 'Multijet'
+
+        Higgs = self.getDEFTSummary("and TASKNAME LIKE '%h125%' ")
+        Higgs['title'] = 'Higgs'
+
+        TTbarX = self.getDEFTSummary("and (TASKNAME LIKE '%ttbb%' OR TASKNAME LIKE '%ttgamma%' OR TASKNAME LIKE '%3top%') ")
+        TTbarX['title'] = 'TTbarX'
+
+        BPhysics = self.getDEFTSummary("and TASKNAME LIKE '%upsilon%' ")
+        BPhysics['title'] = 'BPhysics'
+
+        SUSY = self.getDEFTSummary("and TASKNAME LIKE '%tanb%' ")
+        SUSY['title'] = 'SUSY'
+
+        Exotic = self.getDEFTSummary("and TASKNAME LIKE '%4topci%' ")
+        Exotic['title'] = 'Exotic'
+
+        Higgs = self.getDEFTSummary("and TASKNAME LIKE '%xhh%' ")
+        Higgs['title'] = 'Higgs'
+
+        Wjets = self.getDEFTSummary("and TASKNAME LIKE '%\\_wenu\\_%' ESCAPE '\\'")
+        Wjets['title'] = 'Wjets'
+
+        return render_to_response('reportCampaign.html', {"tables": [total, SingleTop, TTbar, Multijet, Higgs, TTbarX, BPhysics, SUSY, Exotic, Higgs, Wjets]}, RequestContext(request))
+
+
+
+
+
+
+
 
     def prepareReport(self):
 

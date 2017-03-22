@@ -1,0 +1,48 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+
+{% block page_title %} {{ viewParams.MON_VO }} Report on Campaign {% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} Report on Campaign</a>{% endblock %}
+{% block subtitle %}PanDA {{view}} {{ requestParams.mode }} {{ viewParams.selection|safe }}
+{% endblock %}
+{% block body %}
+    <h1> Report on Campaign MC16 </h1>
+
+    {% for data in tables %}
+    <table>
+        <tr>
+            <th colspan=20>{{ data.title }}</th>
+        </tr>
+        <tr>
+            <th></th>
+            <th>evgen</th>
+            <th>simul</th>
+            <th>recon</th>
+            <th>merge</th>
+        </tr>
+        <tr>
+            <td>Done+Finished</td>
+            <td>{{ data.summaryDictFinished.evgen|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictFinished.simul|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictFinished.recon|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictFinished.merge|floatformat:2|intcomma }}</td>
+        </tr>
+        <tr>
+            <td>Running</td>
+            <td>{{ data.summaryDictRunning.evgen|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictRunning.simul|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictRunning.recon|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictRunning.merge|floatformat:2|intcomma }}</td>
+        </tr>
+        <tr>
+            <td>Waiting+Submitting</td>
+            <td>{{ data.summaryDictWaiting.evgen|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictWaiting.simul|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictWaiting.recon|floatformat:2|intcomma }}</td>
+            <td>{{ data.summaryDictWaiting.merge|floatformat:2|intcomma }}</td>
+        </tr>
+
+    </table>
+    {% endfor %}
+
+{% endblock %}
