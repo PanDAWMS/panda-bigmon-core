@@ -7632,6 +7632,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     errsBySite = {}
     errsByUser = {}
     errsByTask = {}
+
     sumd = {}
     ## histogram of errors vs. time, for plotting
     errHist = {}
@@ -7681,7 +7682,8 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
             for v in shl:
                 if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
                 sumd['specialhandling'][v] += 1
-
+        errsByList = {}
+        #errsByCount[errcode]['list'] = {}
         for err in errorcodelist:
             if job[err['error']] != 0 and job[err['error']] != '' and job[err['error']] != None:
                 errval = job[err['error']]
@@ -7697,6 +7699,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
                 errcode = "%s:%s" % (err['name'], errnum)
                 if err['diag']:
                     errdiag = job[err['diag']]
+                errsByList[job['pandaid']]=errdiag
 
                 if errcode not in errsByCount:
                     errsByCount[errcode] = {}
@@ -7705,8 +7708,9 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
                     errsByCount[errcode]['codeval'] = errnum
                     errsByCount[errcode]['diag'] = errdiag
                     errsByCount[errcode]['count'] = 0
+                    errsByCount[errcode]['pandalist'] = {}
                 errsByCount[errcode]['count'] += 1
-
+                errsByCount[errcode]['pandalist'].update(errsByList)
                 if user not in errsByUser:
                     errsByUser[user] = {}
                     errsByUser[user]['name'] = user
@@ -7756,6 +7760,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
                         errsByTask[taskid]['errors'][errcode]['count'] = 0
                     errsByTask[taskid]['errors'][errcode]['count'] += 1
                     errsByTask[taskid]['toterrors'] += 1
+
         if site in errsBySite: errsBySite[site]['toterrjobs'] += 1
         if taskid in errsByTask: errsByTask[taskid]['toterrjobs'] += 1
 
@@ -7764,10 +7769,25 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     errsBySiteL = []
     errsByUserL = []
     errsByTaskL = []
+    v = {}
 
     kys = errsByCount.keys()
     kys.sort()
     for err in kys:
+        v = {}
+        for key, value in sorted(errsByCount[err]['pandalist'].iteritems()):
+            if value == '':
+                value = 'empty'
+            if err == 'jobdispatcher:100':
+                value = re.sub("(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})", "*", value)
+            elif err == 'exe:68':
+                #value = re.sub("","*",value)
+                value = value
+            elif err == 'pilot:1099':
+                if ('STAGEIN FAILED: Get error: Staging input file failed' in value):
+                    value = 'STAGEIN FAILED: Get error: Staging input file failed'
+            v.setdefault(value, []).append(key)
+        errsByCount[err]['pandalist'] = v
         errsByCountL.append(errsByCount[err])
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByCountL = sorted(errsByCountL, key=lambda x: -x['count'])
