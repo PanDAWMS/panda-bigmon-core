@@ -70,7 +70,7 @@ class MC16aCPReport:
 
 
             if summaryRow[1] == 'submitting' or summaryRow[1] == 'registered' or summaryRow[1] == 'waiting':
-                if summaryRow[1] in summaryDictWaiting:
+                if summaryRow[2] in summaryDictWaiting:
                     summaryDictWaiting[summaryRow[2]] += summaryRow[0] if summaryRow[0] >= 0 else 0
                 else:
                     summaryDictWaiting[summaryRow[2]] = summaryRow[0] if summaryRow[0] >= 0 else 0
@@ -84,7 +84,7 @@ class MC16aCPReport:
             data = json.loads(data)
             data['request'] = request
             response = render_to_response('reportCampaign.html', data, RequestContext(request))
-            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 160)
+            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
 
         total = self.getDEFTSummary('')
