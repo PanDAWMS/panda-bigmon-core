@@ -11,6 +11,14 @@ from reportlab.pdfgen import canvas
 from django.template import RequestContext, loader
 import StringIO
 import humanize
+from django.utils.cache import patch_cache_control, patch_response_headers
+import json
+import hashlib
+from django.conf import settings as djangosettings
+from django.core.cache import cache
+from django.utils import encoding
+
+notcachedRemoteAddress = ['188.184.185.129']
 
 class MC16aCPReport:
     def __init__(self):
@@ -70,6 +78,15 @@ class MC16aCPReport:
         return {'summaryDictFinished':summaryDictFinished, 'summaryDictRunning':summaryDictRunning, 'summaryDictWaiting':summaryDictWaiting, 'summaryDictObsolete':summaryDictObsolete, 'summaryDictFailed':summaryDictFailed}
 
     def prepareReportDEFT(self, request):
+
+        data = self.getCacheEntry(request, "prepareReportDEFT")
+        if data is not None:
+            data = json.loads(data)
+            data['request'] = request
+            response = render_to_response('reportCampaign.html', data, RequestContext(request))
+            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 160)
+            return response
+
         total = self.getDEFTSummary('')
         total['title'] = 'Overall campaign summary'
 
@@ -103,14 +120,10 @@ class MC16aCPReport:
         Wjets = self.getDEFTSummary("and TASKNAME LIKE '%\\_wenu\\_%' ESCAPE '\\'")
         Wjets['title'] = 'Wjets'
 
-        return render_to_response('reportCampaign.html', {"tables": [total, SingleTop, TTbar, Multijet, Higgs, TTbarX, BPhysics, SUSY, Exotic, Higgs, Wjets]}, RequestContext(request))
+        data = {"tables": [total, SingleTop, TTbar, Multijet, Higgs, TTbarX, BPhysics, SUSY, Exotic, Higgs, Wjets]}
+        self.setCacheEntry(request, "prepareReportDEFT", json.dumps(data, cls=self.DateEncoder), 60 * 20)
 
-
-
-
-
-
-
+        return render_to_response('reportCampaign.html', data, RequestContext(request))
 
     def prepareReport(self):
 
@@ -188,4 +201,38 @@ class MC16aCPReport:
     def getParameters(self):
         return {'Request List': ['11034,11048,11049,11050,11051,11052,11198,11197,11222,11359']}
 
+    def getCacheEntry(self,request, viewType, skipCentralRefresh = False):
+        is_json = False
 
+        # We do this check to always rebuild cache for the page when it called from the crawler
+        if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
+                    skipCentralRefresh == False):
+            return None
+
+        request._cache_update_cache = False
+        if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
+                    'json' in request.GET)):
+            is_json = True
+        key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
+        path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+        return cache.get(cache_key, None)
+
+    def setCacheEntry(self,request, viewType, data, timeout):
+        is_json = False
+        request._cache_update_cache = False
+        if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
+                    'json' in request.GET)):
+            is_json = True
+        key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
+        path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+        cache.set(cache_key, data, timeout)
+
+    class DateEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if hasattr(obj, 'isoformat'):
+                return obj.isoformat()
+            else:
+                return str(obj)
+            return json.JSONEncoder.default(self, obj)
