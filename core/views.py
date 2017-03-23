@@ -65,6 +65,7 @@ from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel
 from time import gmtime, strftime
 from settings.local import dbaccess
 from settings.local import PRODSYS
+from settings.local import ES
 import string as strm
 from django.views.decorators.cache import cache_page
 
@@ -8301,6 +8302,101 @@ def incidentList(request):
         jsonResp = json.dumps(clearedInc)
         return HttpResponse(jsonResp, content_type='text/html')
 
+def esatlasPandaLogger(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+    from elasticsearch import Elasticsearch
+    from elasticsearch_dsl import Search, Q
+    esHost = None
+    esPort = None
+    esUser = None
+    esPassword = None
+
+    if 'esHost' in ES:
+        esHost = ES['esHost']
+    if 'esPort' in ES:
+        esPort = ES['esPort']
+    if 'esUser' in ES:
+        esUser = ES['esUser']
+    if 'esPassword' in ES:
+        esPassword = ES['esPassword']
+
+    es = Elasticsearch(
+        [{'host': esHost, 'port': int(esPort)}],
+        http_auth=(esUser,esPassword),
+        use_ssl=True,
+        verify_certs=False,
+        timeout=30,
+        max_retries=10,
+        retry_on_timeout=True,
+    )
+    today = time.strftime("%Y.%m.%d")
+
+    logindexpanda = 'atlas_pandalogs-'
+    logindexjedi = 'atlas_jedilogs-'
+
+    indices = [logindexpanda,logindexjedi]
+
+    panda = {}
+    jedi = {}
+    for index in indices:
+        res = es.search(index=index + str(today), fields=['logName', 'type', 'logLevel'], body={
+            "aggs": {
+                "logName": {
+                    "terms": {"field": "logName"},
+                    "aggs": {
+                        "type": {
+                            "terms": {"field": "type"},
+                            "aggs": {
+                                "logLevel": {
+                                    "terms": {"field": "logLevel"}
+                                }
+                            }
+                        }
+                 }
+                }
+            }
+        }
+        )
+        if index == "atlas_pandalogs-":
+            for agg in res['aggregations']['logName']['buckets']:
+                name = agg['key']
+                panda[name] = {}
+                for types in agg['type']['buckets']:
+                    type = types['key']
+                    panda[name][type] = {}
+                    for levelnames in types['logLevel']['buckets']:
+                        levelname = levelnames['key']
+                        panda[name][type][levelname] = {}
+                        panda[name][type][levelname]['logLevel'] = levelname
+                        panda[name][type][levelname]['lcount'] = str(levelnames['doc_count'])
+        elif index == "atlas_jedilogs-":
+            for agg in res['aggregations']['logName']['buckets']:
+                name = agg['key']
+                jedi[name] = {}
+                for types in agg['type']['buckets']:
+                    type = types['key']
+                    jedi[name][type] = {}
+                    for levelnames in types['logLevel']['buckets']:
+                        levelname = levelnames['key']
+                        jedi[name][type][levelname] = {}
+                        jedi[name][type][levelname]['logLevel'] = levelname
+                        jedi[name][type][levelname]['lcount'] = str(levelnames['doc_count'])
+
+
+    data = {
+        'request': request,
+        'viewParams': request.session['viewParams'],
+        'requestParams': request.session['requestParams'],
+        'user': None,
+        'panda': panda,
+        'jedi': jedi,
+    }
+
+    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+        'json' not in request.session['requestParams'])):
+        response = render_to_response('esatlasPandaLogger.html', data, RequestContext(request))
+        return response
 
 def esPandaLogger(request):
     valid, response = initRequest(request)

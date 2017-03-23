@@ -49,6 +49,7 @@ urlpatterns = [
     url(r'^incidents/$', coremon_views.incidentList, name='incidentList'),
     url(r'^logger/$', coremon_views.pandaLogger, name='pandaLogger'),
     url(r'^eslogger/$', coremon_views.esPandaLogger, name='esPandaLogger'),
+    url(r'^esatlaslogger/$', coremon_views.esatlasPandaLogger, name='esatlasPandaLogger'),
     url(r'^task/(?P<jeditaskid>.*)/$', coremon_views.taskInfo, name='taskInfo'),
     url(r'^dash/$', coremon_views.dashboard, name='dashboard'),
     url(r'^dash/analysis/$', coremon_views.dashAnalysis, name='dashAnalysis'),

@@ -1,0 +1,122 @@
+{% extends "_base_core.html" %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA logger{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA logger{{ viewParams.selection|safe }}
+{% if user %} &nbsp; user={{ user }} {% endif %}
+{% if site %} &nbsp; site={{ site }} {% endif %}
+{% if vo %} &nbsp; VO={{ vo }} {% endif %}
+{% endblock %}
+{% block body %}
+
+{{ res }}
+{{ viewParams.header }}
+
+<p>
+{% if requestParams.category %} <br><b>Log category: {{ requestParams.category }}</b> {% endif %}
+{% if requestParams.type %} <br><b>Log type: {{ requestParams.type }}</b> {% endif %}
+{% if requestParams.level %} <br><b>Log level: <span class="{{ requestParams.level }}">{{ requestParams.level }}</span></b> {% endif %}
+{% if requestParams.taskid %} <br><b>Task ID: <a href="{% url 'taskInfo' requestParams.taskid %}">{{ requestParams.taskid }}</a></b> {% endif %}
+{% if requestParams.jeditaskid %} <br><b>Task ID: <a href="{% url 'taskInfo' requestParams.jeditaskid %}">{{ requestParams.jeditaskid }}</a></b> {% endif %}
+{% if requestParams.site %} <br><b>Site: <a href="{% url 'siteInfo' requestParams.site %}">{{ requestParams.site }}</a></b> {% endif %}
+{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
+</p>
+
+{% if jedi or panda %}
+<p>
+
+<table>
+  <tr class='tablesection'><th colspan=20>Job Broker Logs Linked to Task</th></tr>
+  <tr>
+    <td> Jedi TaskID: <input type="text" id="jediTaskID0" value=""> <input type="button" value="Search"  onclick="searchJedi()"></td>
+  </tr>
+</table>
+
+<table>
+  <tr class='tablesection'><th colspan=20>Task brokerage</th></tr>
+  <tr>
+    <td> Jedi TaskID: <input type="text" id="jediTaskID1" value=""> <input type="button" value="Search"  onclick="searchTaskBr()"></td>
+  </tr>
+</table>
+
+
+<script>
+function searchJedi() {
+    input = document.getElementById("jediTaskID0").value;
+    if (input){
+        taskid = input.replace(/\s/g, '');
+        url = "https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:"+taskid+"')),sort:!('@timestamp',desc))"
+        window.location.href=url;
+    }
+}
+
+function searchTaskBr() {
+    input = document.getElementById("jediTaskID1").value;
+    if (input){
+        taskid = input.replace(/\s/g, '');
+        url = "https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:"+taskid+"%20AND%20logLevel:%22INFO%22')),sort:!('@timestamp',desc))"
+        window.location.href=url;
+    }
+}
+</script>
+
+
+
+<table  style="display: inline-block; width: 400px; border: 0px">
+<tr class='tablesection'><th colspan=20>JEDI</th></tr>
+<tr class='tablesection'>
+    <th> Type </th>
+    <th> Level(count) </th>
+</tr>
+{% for name,types in jedi.items %}
+
+{% for type,levels in types.items %}
+
+<tr bgcolor="#FCFCFC">
+
+<td> <a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ type }}</a> </td><td>
+
+{% for key,level in levels.items %}
+<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('@timestamp',desc))" target="_blank">
+<span class="{% if  level.logLevel|lower == "error" %}errspan {% else %}{{ level.logLevel|lower }}{% endif %}">{{ level.logLevel }}</span>({{ level.lcount }})
+</a> &nbsp;
+{% endfor %}
+</td></tr>
+{% endfor %}
+<tr height=20></tr>
+{% endfor %}
+</table>
+
+<table  style="display: inline-block; width: 400px;margin-left: 20px; border: 0px">
+<tr class='tablesection'><th colspan=20>PANDA Server</th></tr>
+<tr class='tablesection'>
+    <th> Type </th>
+    <th> Level(count) </th>
+</tr>
+{% for name,types in panda.items %}
+
+{% for type,levels in types.items %}
+<tr bgcolor="#FCFCFC">
+
+<td> <a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_pandalogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ type }}</a> </td><td>
+
+{% for key,level in levels.items %}
+<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_pandalogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('@timestamp',desc))" target="_blank">
+<span class="{% if  level.logLevel|lower == "error" %}errspan {% else %}{{ level.logLevel|lower }}{% endif %}">{{ level.logLevel }}</span>({{ level.lcount }})
+</a> &nbsp;
+{% endfor %}
+</td></tr>
+{% endfor %}
+<tr height=20></tr>
+{% endfor %}
+</table>
+</p>
+{% endif %}
+
+
+{% endblock %}
+
+{% block helptext %}
+{% include "pandaLoggerHelp.html" with helptitle="PanDA logger help" %}
+{% endblock %}
+
