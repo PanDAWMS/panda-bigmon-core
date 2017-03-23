@@ -6293,6 +6293,12 @@ def report(request):
     initRequest(request)
     step = 0
     response = None
+
+    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'] == 'MC16':
+        reportGen = MC16aCPReport.MC16aCPReport()
+        response = reportGen.prepareReportDEFT(request)
+        return response
+
     if 'requestParams' in request.session and 'step' in request.session['requestParams']:
         step = int(request.session['requestParams']['step'])
     if step == 0:
