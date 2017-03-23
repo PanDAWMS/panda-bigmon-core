@@ -7299,10 +7299,10 @@ def taskInfo(request, jeditaskid=0):
         del columns
         del ds
         if taskrec:
-            taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
-            taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
-            taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
-            taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
+            taskrec['creationdate'] = taskrec['creationdate']
+            taskrec['modificationtime'] = taskrec['modificationtime']
+            taskrec['starttime'] = taskrec['starttime']
+            taskrec['statechangetime'] = taskrec['statechangetime']
 
         data = {
             'task': taskrec,
