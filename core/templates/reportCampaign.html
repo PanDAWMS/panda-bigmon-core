@@ -1,6 +1,7 @@
 {% extends "_base_core.html" %}
 {% load humanize %}
 
+
 {% block page_title %} {{ viewParams.MON_VO }} Report on Campaign {% endblock %}
 {% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} Report on Campaign</a>{% endblock %}
 {% block subtitle %}PanDA {{view}} {{ requestParams.mode }} {{ viewParams.selection|safe }}
@@ -8,7 +9,7 @@
 {% block body %}
     <h1> Report on Campaign MC16 </h1>
 
-    {% for data in tables %}
+    {% for data in totalEvents %}
     <table>
         <tr>
             <th colspan=20>{{ data.title }}</th>
@@ -19,45 +20,89 @@
             <th>simul</th>
             <th>recon</th>
             <th>merge</th>
-        </tr>
-        <tr>
-            <td>Done+Finished</td>
-            <td>{{ data.summaryDictFinished.evgen|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictFinished.simul|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictFinished.recon|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictFinished.merge|floatformat:2|intcomma }}</td>
-        </tr>
-        <tr>
-            <td>Running</td>
-            <td>{{ data.summaryDictRunning.evgen|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictRunning.simul|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictRunning.recon|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictRunning.merge|floatformat:2|intcomma }}</td>
-        </tr>
-        <tr>
-            <td>Registered+Waiting+Submitting</td>
-            <td>{{ data.summaryDictWaiting.evgen|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictWaiting.simul|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictWaiting.recon|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictWaiting.merge|floatformat:2|intcomma }}</td>
-        </tr>
-        <tr>
-            <td>Obsolete</td>
-            <td>{{ data.summaryDictObsolete.evgen|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictObsolete.simul|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictObsolete.recon|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictObsolete.merge|floatformat:2|intcomma }}</td>
-        </tr>
-        <tr>
-            <td>Failed</td>
-            <td>{{ data.summaryDictFailed.evgen|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictFailed.simul|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictFailed.recon|floatformat:2|intcomma }}</td>
-            <td>{{ data.summaryDictFailed.merge|floatformat:2|intcomma }}</td>
+            <th>total</th>
         </tr>
 
+        {% for key, values in data.items %}
+            {% ifnotequal key 'title' %}
+            <tr>
+                <td>{{ key }}</td>
+                <td>{{ values.evgen|intcomma }}</td>
+                <td>{{ values.simul|intcomma }}</td>
+                <td>{{ values.recon|intcomma }}</td>
+                <td>{{ values.merge|intcomma }}</td>
+                <td>{{ values.total|intcomma }}</td>
+
+            </tr>
+            {% endifnotequal %}
+        {% endfor %}
 
     </table>
     {% endfor %}
+
+
+    {% for data in totalTasks %}
+    <table>
+        <tr>
+            <th colspan=20>{{ data.title }}</th>
+        </tr>
+        <tr>
+            <th></th>
+            <th>evgen</th>
+            <th>simul</th>
+            <th>recon</th>
+            <th>merge</th>
+            <th>total</th>
+
+        </tr>
+
+        {% for key, values in data.items %}
+            {% ifnotequal key 'title' %}
+                <tr>
+                    <td><span class='{{ key }}'>{{ key }}</span></td>
+                    <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&taskname=*.evgen.*&days=300'>   {{ values.evgen|intcomma }}</td>
+                    <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&taskname=*.simul.*&days=300'>   {{ values.simul|intcomma }}</td>
+                    <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&taskname=*.recon.*&days=300'>   {{ values.recon|intcomma }}</td>
+                    <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&taskname=*.merge.*&days=300'>   {{ values.merge|intcomma }}</td>
+                    <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&days=300'>{{ values.total|intcomma }}</td>
+                </tr>
+            {% endifnotequal %}
+        {% endfor %}
+
+    </table>
+    {% endfor %}
+    <p>(*) Links may not provide corespondent number due to additional filtering which should be applied to select true merge tasks
+
+    {% for data in totalJobs %}
+    <table>
+        <tr>
+            <th colspan=20>{{ data.title }}</th>
+        </tr>
+        <tr>
+            <th></th>
+            <th>evgen</th>
+            <th>simul</th>
+            <th>recon</th>
+            <th>merge</th>
+            <th>total</th>
+        </tr>
+
+        {% for key, values in data.items %}
+            {% ifnotequal key 'title' %}
+                <tr>
+                    <td>{{ key }}</td>
+                    <td>{{ values.evgen|intcomma }}</td>
+                    <td>{{ values.simul|intcomma }}</td>
+                    <td>{{ values.recon|intcomma }}</td>
+                    <td>{{ values.merge|intcomma }}</td>
+                    <td>{{ values.total|intcomma }}</td>
+                </tr>
+            {% endifnotequal %}
+        {% endfor %}
+
+    </table>
+    {% endfor %}
+
+
 
 {% endblock %}
