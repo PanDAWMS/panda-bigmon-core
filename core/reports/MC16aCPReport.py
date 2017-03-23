@@ -119,6 +119,7 @@ class MC16aCPReport:
         sqlRequest = '''
         SELECT COUNT(JOBSTATUS), JOBSTATUS, STEP FROM
             (
+            SELECT DISTINCT PANDAID, JOBSTATUS, STEP FROM (
             WITH selectedTasks AS (
             SELECT JEDITASKID, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.recon.%'
             UNION ALL
@@ -137,7 +138,7 @@ class MC16aCPReport:
             SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP FROM ATLAS_PANDA.JOBSDEFINED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
             UNION ALL
             SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP FROM ATLAS_PANDA.JOBSWAITING4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
-            ) tb group by JOBSTATUS, STEP
+            )tt) tb group by JOBSTATUS, STEP
         '''
 
         sqlRequestFull = sqlRequest.format(condition)
