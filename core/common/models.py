@@ -627,6 +627,7 @@ class RunningDPDProductionTasks(models.Model):
 class RunningProdTasksModel(models.Model):
     campaign = models.CharField(max_length=72, db_column='CAMPAIGN', blank=True)
     reqid = models.IntegerField(null=True, db_column='REQID', blank=True)
+    runnumber = models.IntegerField(null=True, db_column='RUNNUMBER', blank=True)
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
     rjobs = models.IntegerField(null=True, db_column='RJOBS', blank=True)
     status = models.CharField(max_length=192, db_column='STATUS')
@@ -643,7 +644,9 @@ class RunningProdTasksModel(models.Model):
     username = models.CharField(max_length=384, db_column='USERNAME')
     outputtype = models.CharField(max_length=384, db_column='OUTPUTTYPE')
     cputime = models.IntegerField(null=True,db_column='CPUTIME', blank=True)
-    site = models.CharField(max_length=384, db_column='SITE')
+    site = models.CharField(max_length=384, db_column='SITE', blank=True)
+    outputdatasettype = models.CharField(max_length=384, db_column='OUTPUTDATASETTYPE')
+    ptag = models.CharField(max_length=72, db_column='PTAG', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODTASKS"'
 
