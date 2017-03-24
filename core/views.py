@@ -8349,10 +8349,10 @@ def esatlasPandaLogger(request):
         res = es.search(index=index + str(today), fields=['logName', 'type', 'logLevel'], body={
             "aggs": {
                 "logName": {
-                    "terms": {"field": "logName"},
+                    "terms": {"field": "logName","size": 100},
                     "aggs": {
                         "type": {
-                            "terms": {"field": "type"},
+                            "terms": {"field": "type","size": 100},
                             "aggs": {
                                 "logLevel": {
                                     "terms": {"field": "logLevel"}
@@ -8364,6 +8364,7 @@ def esatlasPandaLogger(request):
             }
         }
         )
+
         if index == "atlas_pandalogs-":
             for agg in res['aggregations']['logName']['buckets']:
                 name = agg['key']
@@ -8389,7 +8390,6 @@ def esatlasPandaLogger(request):
                         jedi[name][type][levelname]['logLevel'] = levelname
                         jedi[name][type][levelname]['lcount'] = str(levelnames['doc_count'])
 
-
     data = {
         'request': request,
         'viewParams': request.session['viewParams'],
@@ -8397,6 +8397,7 @@ def esatlasPandaLogger(request):
         'user': None,
         'panda': panda,
         'jedi': jedi,
+        'time': time.strftime("%Y-%m-%d"),
     }
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
