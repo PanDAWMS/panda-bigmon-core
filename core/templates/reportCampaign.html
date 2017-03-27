@@ -11,7 +11,9 @@
     <h5> Built on {{ built }}, additional selection by requests {{ requestList }} applied </h5>
 
     {% comment %}
-    {% for data in DEFTEvents %}
+    {% endcomment %}
+
+    {% for data in JediEventsR %}
     <table>
         <tr>
             <th colspan=20>{{ data.title }}</th>
@@ -38,7 +40,6 @@
 
     </table>
     {% endfor %}
-    {% endcomment %}
 
 
     {% for data in totalEvents %}
