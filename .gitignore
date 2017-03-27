@@ -5,3 +5,5 @@ core/settings/base.py
 *.iml
 .idea
 out
+/core/settings/base.py
+/core/settings/config.py
