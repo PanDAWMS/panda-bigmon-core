@@ -357,17 +357,13 @@ def preprocessWildCardString(strToProcess, fieldToLookAt):
                 trailStar = True
 
             if (leadStar and trailStar):
-                extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'%%' + parameter + '%%\'))'
-
+                    extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'%%' + parameter + '%%\'))'
             elif (not leadStar and not trailStar):
-                extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'' + parameter + '\'))'
-
+                    extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'' + parameter + '\'))'
             elif (leadStar and not trailStar):
-                extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'%%' + parameter + '\'))'
-
+                    extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'%%' + parameter + '\'))'
             elif (not leadStar and trailStar):
-                extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'' + parameter + '%%\'))'
-
+                    extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'' + parameter + '%%\'))'
             currentRealParCount += 1
             if currentRealParCount < countRealParameters:
                 extraQueryString += ' AND '
@@ -388,6 +384,26 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         jobrequest = request.session['requestParams']['jobname']
         if (('*' in jobrequest) or ('|' in jobrequest)):
             excludeJobNameFromWildCard = False
+    excludeWGFromWildCard = False
+    excludeSiteFromWildCard = False
+    if 'workinggroup' in request.session['requestParams'] and 'preset' in request.session['requestParams'] and request.session['requestParams']['preset']=='MC':
+        # if 'workinggroup' in request.session['requestParams']:
+        workinggroupQuery = request.session['requestParams']['workinggroup']
+        extraQueryString = '('
+        for card in workinggroupQuery.split(','):
+            if card[0] == '!':
+                extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
+            else:
+                extraQueryString += ' workinggroup=\''+escapeInput(card[0:])+'\' OR '
+        if extraQueryString.endswith('AND'):
+            extraQueryString = extraQueryString[:-3]
+        elif extraQueryString.endswith('OR'):
+            extraQueryString = extraQueryString[:-2]
+        extraQueryString += ')'
+        excludeWGFromWildCard = True
+    if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] == 'hpc':
+        excludeSiteFromWildCard = True
+
 
     wildSearchFields = []
     if querytype == 'job':
@@ -399,7 +415,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     if querytype == 'task':
         for field in JediTasks._meta.get_fields():
             if (field.get_internal_type() == 'CharField'):
-                if not (field.name == 'status' or field.name == 'modificationhost'):
+                if not (field.name == 'status' or field.name == 'modificationhost' or (excludeWGFromWildCard and field.name == 'workinggroup') or (excludeSiteFromWildCard and field.name == 'site')):
                     wildSearchFields.append(field.name)
 
     deepquery = False
@@ -563,7 +579,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         elif param == 'reqid_to':
             val = int(request.session['requestParams'][param])
             query['reqid__lte'] = val
-        elif param == 'processingtype':
+        elif param == 'processingtype' and '|' not in request.session['requestParams'][param] and '*' not in request.session['requestParams'][param]:
             val = request.session['requestParams'][param]
             query['processingtype'] = val
         elif param == 'mismatchedcloudsite' and request.session['requestParams'][param] == 'true':
@@ -573,7 +589,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     'selection'] += "  &nbsp; <b>The query can not be processed because list of mismatches is not found. Please visit %s/dash/production/?cloudview=region page and then try again</b>" % \
                                     request.session['hostname']
             else:
-                extraQueryString = '('
+                try:
+                    extraQueryString += ' AND ( '
+                except NameError:
+                    extraQueryString = '('
                 for count, cloudSitePair in enumerate(listOfCloudSitesMismatched):
                     extraQueryString += ' ( (cloud=\'%s\') and (computingsite=\'%s\') ) ' % (
                     cloudSitePair[1], cloudSitePair[0])
@@ -6509,47 +6528,74 @@ def runningProdTasks(request):
     else:
         xurl += '?'
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-    tquery = {}
-    if 'campaign' in request.session['requestParams']:
-        tquery['campaign__contains'] = request.session['requestParams']['campaign']
+    exquery = {}
+    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=0, limit=9999999, querytype='task',
+                                                            wildCardExt=True)
+    productiontype = ''
+    if 'preset' in request.session['requestParams']:
+        if request.session['requestParams']['preset'] and request.session['requestParams']['preset'] == 'MC':
+            productiontype = 'MC'
+        elif request.session['requestParams']['preset'] and request.session['requestParams']['preset'] == 'DPD':
+            productiontype = 'DPD'
+    if 'workinggroup' in tquery and request.session['requestParams']['preset'] == 'MC' and ',' in tquery['workinggroup']:
+        #     excludeWGList = list(str(wg[1:]) for wg in request.session['requestParams']['workinggroup'].split(','))
+        #     exquery['workinggroup__in'] = excludeWGList
+            del tquery['workinggroup']
+            # exquery['workinggroup__isnull'] = True
+            # exquery['username__in'] = 'atlas-dpd-production'
+    if 'status' in request.session['requestParams'] and request.session['requestParams']['status'] == '':
+        del tquery['status']
+    if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] == 'hpc':
+        del tquery['site']
+        exquery['site__isnull'] = True
 
-    if 'corecount' in request.session['requestParams']:
-        tquery['corecount'] = request.session['requestParams']['corecount']
-    if 'status' in request.session['requestParams']:
-        tquery['status'] = request.session['requestParams']['status']
-    if 'reqid' in request.session['requestParams']:
-        tquery['reqid'] = request.session['requestParams']['reqid']
-    if 'inputdataset' in request.session['requestParams']:
-        tquery['taskname__contains'] = request.session['requestParams']['inputdataset']
+    oquery = ''
+    if 'sortby' in request.session['requestParams']:
+        sortby = request.session['requestParams']['sortby']
+    else:
+        sortby = 'creationdate-asc'
+    oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
 
-    if 'campaignstart' in request.session['requestParams']:
-        tquery['campaign__startswith'] = request.session['requestParams']['campaignstart']
-    productionType = ''
-    extraQueryString = ''
-    if 'workinggroup' in request.session['requestParams']:
-        workinggroupQuery = request.session['requestParams']['workinggroup']
-        for card in workinggroupQuery.split(','):
-            if card[0] == '!':
-                extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
-            else:
-                extraQueryString += ' workinggroup=\''+escapeInput(card[0:])+'\' OR '
-        productionType = 'DPD' if workinggroupQuery == 'GP_PHYS' else ''
-
-    if 'processingtype' in request.session['requestParams']:
-        val = escapeInput(request.session['requestParams']['processingtype'])
-        values = val.split(',')
-        tquery['processingtype__in'] = values
-
-    extraQueryString = extraQueryString[:-3]
-    if (len(extraQueryString) < 2):
-        extraQueryString = '1=1'
+    # if 'campaign' in request.session['requestParams']:
+    #     tquery['campaign__contains'] = request.session['requestParams']['campaign']
+    # if 'corecount' in request.session['requestParams']:
+    #     tquery['corecount'] = request.session['requestParams']['corecount']
+    # if 'status' in request.session['requestParams']:
+    #     tquery['status'] = request.session['requestParams']['status']
+    # if 'reqid' in request.session['requestParams']:
+    #     tquery['reqid'] = request.session['requestParams']['reqid']
+    # if 'inputdataset' in request.session['requestParams']:
+    #     tquery['taskname__contains'] = request.session['requestParams']['inputdataset']
+    #
+    # if 'campaignstart' in request.session['requestParams']:
+    #     tquery['campaign__startswith'] = request.session['requestParams']['campaignstart']
+    # productiontype = ''
+    # extraQueryString = ''
+    # if 'workinggroup' in request.session['requestParams']:
+    #     workinggroupQuery = request.session['requestParams']['workinggroup']
+    #     for card in workinggroupQuery.split(','):
+    #         if card[0] == '!':
+    #             extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
+    #         else:
+    #             extraQueryString += ' workinggroup=\''+escapeInput(card[0:])+'\' OR '
+    #     productiontype = 'DPD' if workinggroupQuery == 'GP_PHYS' else ''
+    # if 'processingtype' in request.session['requestParams']:
+    #     val = escapeInput(request.session['requestParams']['processingtype'])
+    #     values = val.split(',')
+    #     tquery['processingtype__in'] = values
+    #
+    # extraQueryString = extraQueryString[:-3]
+    # if (len(extraQueryString) < 2):
+    #     extraQueryString = '1=1'
 
     #processingtype in ('evgen', 'pile', 'simul', 'recon')
-
-    tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[extraQueryString]).values()
+    # .exclude(**exquery)
+    tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().order_by(oquery)
     ntasks = len(tasks)
     slots = 0
     ages = []
+    neventsAFIItasksSum = {'evgen': 0, 'pile': 0, 'simul': 0, 'recon': 0}
+    neventsFStasksSum = {'evgen': 0, 'pile': 0, 'simul': 0, 'recon': 0}
 
     neventsTotSum = 0
     neventsUsedTotSum = 0
@@ -6576,99 +6622,113 @@ def runningProdTasks(request):
         else:
             task['cutcampaign'] = task['campaign'].split(':')[0]
 
-        if (len(task['taskname'].split('.'))>1):
-            task['inputdataset'] = task['taskname'].split('.')[1]
-        else:
-            task['inputdataset'] = ''
+        # if (len(task['taskname'].split('.'))>1):
+        #     task['inputdataset'] = task['taskname'].split('.')[1]
+        # else:
+        #     task['inputdataset'] = ''
 
-
-        if task['inputdataset'].startswith('00'):
+        task['inputdataset'] = task['runnumber']
+        if task['inputdataset'] and task['inputdataset'].startswith('00'):
             task['inputdataset'] = task['inputdataset'][2:]
-        task['tid'] = task['outputtype'].split('_tid')[1].split('_')[0] if '_tid' in task['outputtype'] else None
+        # task['tid'] = task['outputtype'].split('_tid')[1].split('_')[0] if '_tid' in task['outputtype'] else None
         task['outputtypes'] = ''
-        outputtypes = []
-        outputtypes = task['outputtype'].split(',')
+        outputtypes = task['outputdatasettype'].split(',')
         if len(outputtypes) > 0:
             for outputtype in outputtypes:
-                task['outputtypes'] += outputtype.split('_')[1].split('_p')[0] + ' ' if '_' in outputtype else ''
-        task['ptag'] = task['outputtype'].split('_')[2] if '_' in task['outputtype'] else ''
+                task['outputtypes'] += outputtype.split('_')[1] + ' ' if '_' in outputtype else ''
+        # task['ptag'] = task['outputtype'].split('_')[1] if '_' in task['outputdatasettype'] else ''
+        if productiontype == 'MC':
+            ltag = len(task['taskname'].split("_"))
+            rtag = task['taskname'].split("_")[ltag - 1]
+            if "." in rtag:
+                rtag = rtag.split(".")[len(rtag.split(".")) - 1]
+            if 'a' in rtag:
+                task['simtype'] = 'AFII'
+                neventsAFIItasksSum[task['processingtype']] += task['totev'] if task['totev'] is not None else 0
+            else:
+                task['simtype'] = 'FS'
+                neventsFStasksSum[task['processingtype']] += task['totev'] if task['totev'] is not None else 0
     plotageshistogram = 1
     if sum(ages) == 0: plotageshistogram = 0
-    sumd = taskSummaryDict(request, tasks, ['status'])
+    sumd = taskSummaryDict(request, tasks, ['status','workinggroup','cutcampaign', 'processingtype'])
 
-    if 'sortby' in request.session['requestParams']:
-        sortby = request.session['requestParams']['sortby']
-        if sortby == 'campaign-asc':
-            tasks = sorted(tasks, key=lambda x: x['campaign'])
-        elif sortby == 'campaign-desc':
-            tasks = sorted(tasks, key=lambda x: x['campaign'], reverse=True)
-        elif sortby == 'reqid-asc':
-            tasks = sorted(tasks, key=lambda x: x['reqid'])
-        elif sortby == 'reqid-desc':
-            tasks = sorted(tasks, key=lambda x: x['reqid'], reverse=True)
-        elif sortby == 'jeditaskid-asc':
-            tasks = sorted(tasks, key=lambda x: x['jeditaskid'])
-        elif sortby == 'jeditaskid-desc':
-            tasks = sorted(tasks, key=lambda x: x['jeditaskid'], reverse=True)
-        elif sortby == 'rjobs-asc':
-            tasks = sorted(tasks, key=lambda x: x['rjobs'])
-        elif sortby == 'rjobs-desc':
-            tasks = sorted(tasks, key=lambda x: x['rjobs'], reverse=True)
-        elif sortby == 'status-asc':
-            tasks = sorted(tasks, key=lambda x: x['status'])
-        elif sortby == 'status-desc':
-            tasks = sorted(tasks, key=lambda x: x['status'], reverse=True)
-        elif sortby == 'nevents-asc':
-            tasks = sorted(tasks, key=lambda x: x['totev'])
-        elif sortby == 'nevents-desc':
-            tasks = sorted(tasks, key=lambda x: x['totev'], reverse=True)
-        elif sortby == 'neventsused-asc':
-            tasks = sorted(tasks, key=lambda x: x['neventsused'])
-        elif sortby == 'neventsused-desc':
-            tasks = sorted(tasks, key=lambda x: x['neventsused'], reverse=True)
-        elif sortby == 'neventstobeused-asc':
-            tasks = sorted(tasks, key=lambda x: x['totevrem'])
-        elif sortby == 'neventstobeused-desc':
-            tasks = sorted(tasks, key=lambda x: x['totevrem'], reverse=True)
-        elif sortby == 'percentage-asc':
-            tasks = sorted(tasks, key=lambda x: x['percentage'])
-        elif sortby == 'percentage-desc':
-            tasks = sorted(tasks, key=lambda x: x['percentage'], reverse=True)
-        elif sortby == 'nfilesfailed-asc':
-            tasks = sorted(tasks, key=lambda x: x['nfilesfailed'])
-        elif sortby == 'nfilesfailed-desc':
-            tasks = sorted(tasks, key=lambda x: x['nfilesfailed'], reverse=True)
-        elif sortby == 'priority-asc':
-            tasks = sorted(tasks, key=lambda x: x['currentpriority'])
-        elif sortby == 'priority-desc':
-            tasks = sorted(tasks, key=lambda x: x['currentpriority'], reverse=True)
-        elif sortby == 'ptag-asc':
-            tasks = sorted(tasks, key=lambda x: x['ptag'])
-        elif sortby == 'ptag-desc':
-            tasks = sorted(tasks, key=lambda x: x['ptag'], reverse=True)
-        elif sortby == 'outputtype-asc':
-            tasks = sorted(tasks, key=lambda x: x['outputtypes'])
-        elif sortby == 'output-desc':
-            tasks = sorted(tasks, key=lambda x: x['outputtypes'], reverse=True)
-        elif sortby == 'age-asc':
-            tasks = sorted(tasks, key=lambda x: x['age'])
-        elif sortby == 'age-desc':
-            tasks = sorted(tasks, key=lambda x: x['age'], reverse=True)
-        elif sortby == 'corecount-asc':
-            tasks = sorted(tasks, key=lambda x: x['corecount'])
-        elif sortby == 'corecount-desc':
-            tasks = sorted(tasks, key=lambda x: x['corecount'], reverse=True)
-        elif sortby == 'username-asc':
-            tasks = sorted(tasks, key=lambda x: x['username'])
-        elif sortby == 'username-desc':
-            tasks = sorted(tasks, key=lambda x: x['username'], reverse=True)
-        elif sortby == 'inputdataset-asc':
-            tasks = sorted(tasks, key=lambda x: x['inputdataset'])
-        elif sortby == 'inputdataset-desc':
-            tasks = sorted(tasks, key=lambda x: x['inputdataset'], reverse=True)
-    else:
-        sortby = 'age-asc'
-        tasks = sorted(tasks, key=lambda x: x['age'])
+    # if 'sortby' in request.session['requestParams']:
+    #     sortby = request.session['requestParams']['sortby']
+    #     if sortby == 'campaign-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['campaign'])
+    #     elif sortby == 'campaign-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['campaign'], reverse=True)
+    #     elif sortby == 'reqid-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['reqid'])
+    #     elif sortby == 'reqid-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['reqid'], reverse=True)
+    #     elif sortby == 'jeditaskid-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['jeditaskid'])
+    #     elif sortby == 'jeditaskid-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['jeditaskid'], reverse=True)
+    #     elif sortby == 'rjobs-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['rjobs'])
+    #     elif sortby == 'rjobs-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['rjobs'], reverse=True)
+    #     elif sortby == 'status-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['status'])
+    #     elif sortby == 'status-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['status'], reverse=True)
+    #     elif sortby == 'nevents-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['totev'])
+    #     elif sortby == 'nevents-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['totev'], reverse=True)
+    #     elif sortby == 'neventsused-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['neventsused'])
+    #     elif sortby == 'neventsused-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['neventsused'], reverse=True)
+    #     elif sortby == 'neventstobeused-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['totevrem'])
+    #     elif sortby == 'neventstobeused-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['totevrem'], reverse=True)
+    #     elif sortby == 'percentage-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['percentage'])
+    #     elif sortby == 'percentage-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['percentage'], reverse=True)
+    #     elif sortby == 'nfilesfailed-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['nfilesfailed'])
+    #     elif sortby == 'nfilesfailed-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['nfilesfailed'], reverse=True)
+    #     elif sortby == 'priority-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['currentpriority'])
+    #     elif sortby == 'priority-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['currentpriority'], reverse=True)
+    #     elif sortby == 'ptag-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['ptag'])
+    #     elif sortby == 'ptag-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['ptag'], reverse=True)
+    #     elif sortby == 'outputtype-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['outputtypes'])
+    #     elif sortby == 'output-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['outputtypes'], reverse=True)
+    #     elif sortby == 'age-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['age'])
+    #     elif sortby == 'age-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['age'], reverse=True)
+    #     elif sortby == 'corecount-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['corecount'])
+    #     elif sortby == 'corecount-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['corecount'], reverse=True)
+    #     elif sortby == 'username-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['username'])
+    #     elif sortby == 'username-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['username'], reverse=True)
+    #     elif sortby == 'inputdataset-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['inputdataset'])
+    #     elif sortby == 'inputdataset-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['inputdataset'], reverse=True)
+    #     elif sortby == 'cputime-asc':
+    #         tasks = sorted(tasks, key=lambda x: x['cputime'])
+    #     elif sortby == 'cputime-desc':
+    #         tasks = sorted(tasks, key=lambda x: x['cputime'], reverse=True)
+    # else:
+    #     sortby = 'age-asc'
+    #     tasks = sorted(tasks, key=lambda x: x['age'])
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
@@ -6692,8 +6752,10 @@ def runningProdTasks(request):
             'neventsTotSum': round(neventsTotSum / 1000000., 1),
             'rjobs1coreTot': rjobs1coreTot,
             'rjobs8coreTot': rjobs8coreTot,
+            'neventsAFIItasksSum': neventsAFIItasksSum,
+            'neventsFStasksSum': neventsFStasksSum,
             'plotageshistogram': plotageshistogram,
-            'productiontype' : json.dumps(productionType),
+            'productiontype' : json.dumps(productiontype),
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
@@ -8349,10 +8411,10 @@ def esatlasPandaLogger(request):
         res = es.search(index=index + str(today), fields=['logName', 'type', 'logLevel'], body={
             "aggs": {
                 "logName": {
-                    "terms": {"field": "logName"},
+                    "terms": {"field": "logName","size": 100},
                     "aggs": {
                         "type": {
-                            "terms": {"field": "type"},
+                            "terms": {"field": "type","size": 100},
                             "aggs": {
                                 "logLevel": {
                                     "terms": {"field": "logLevel"}
@@ -8364,6 +8426,7 @@ def esatlasPandaLogger(request):
             }
         }
         )
+
         if index == "atlas_pandalogs-":
             for agg in res['aggregations']['logName']['buckets']:
                 name = agg['key']
@@ -8389,7 +8452,6 @@ def esatlasPandaLogger(request):
                         jedi[name][type][levelname]['logLevel'] = levelname
                         jedi[name][type][levelname]['lcount'] = str(levelnames['doc_count'])
 
-
     data = {
         'request': request,
         'viewParams': request.session['viewParams'],
@@ -8397,6 +8459,7 @@ def esatlasPandaLogger(request):
         'user': None,
         'panda': panda,
         'jedi': jedi,
+        'time': time.strftime("%Y-%m-%d"),
     }
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (

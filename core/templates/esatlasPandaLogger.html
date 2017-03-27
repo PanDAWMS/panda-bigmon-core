@@ -62,7 +62,7 @@ function searchTaskBr() {
 
 
 
-<table  style="display: inline-block; width: 400px; border: 0px">
+<table  style="display: inline-block; width: 550px; border: 0px">
 <tr class='tablesection'><th colspan=20>JEDI</th></tr>
 <tr class='tablesection'>
     <th> Type </th>
@@ -74,10 +74,10 @@ function searchTaskBr() {
 
 <tr bgcolor="#FCFCFC">
 
-<td> <a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ type }}</a> </td><td>
+<td> <a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{time}}T00:00.00Z',mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ type }}</a> </td><td>
 
 {% for key,level in levels.items %}
-<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('@timestamp',desc))" target="_blank">
+<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{time}}T00:00.00Z',mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('@timestamp',desc))" target="_blank">
 <span class="{% if  level.logLevel|lower == "error" %}errspan {% else %}{{ level.logLevel|lower }}{% endif %}">{{ level.logLevel }}</span>({{ level.lcount }})
 </a> &nbsp;
 {% endfor %}
@@ -87,7 +87,7 @@ function searchTaskBr() {
 {% endfor %}
 </table>
 
-<table  style="display: inline-block; width: 400px;margin-left: 20px; border: 0px">
+<table valign="top"  style="display: inline-block; width: 550px;margin-left: 20px; border: 0px">
 <tr class='tablesection'><th colspan=20>PANDA Server</th></tr>
 <tr class='tablesection'>
     <th> Type </th>
@@ -98,10 +98,10 @@ function searchTaskBr() {
 {% for type,levels in types.items %}
 <tr bgcolor="#FCFCFC">
 
-<td> <a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_pandalogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ type }}</a> </td><td>
+<td> <a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{time}}T00:00.00Z',mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_pandalogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ type }}</a> </td><td>
 
 {% for key,level in levels.items %}
-<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_pandalogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('@timestamp',desc))" target="_blank">
+<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{time}}T00:00.00Z',mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_pandalogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('@timestamp',desc))" target="_blank">
 <span class="{% if  level.logLevel|lower == "error" %}errspan {% else %}{{ level.logLevel|lower }}{% endif %}">{{ level.logLevel }}</span>({{ level.lcount }})
 </a> &nbsp;
 {% endfor %}

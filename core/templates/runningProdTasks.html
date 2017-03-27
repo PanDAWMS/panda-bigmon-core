@@ -14,7 +14,19 @@
     {% if requestParams.inputdataset %}<br><b>Input dataset:</b> {{ requestParams.inputdataset }} {% endif %}
     {% if requestParams.reqid %}<br><b>Request ID:</b> {{ requestParams.reqid }} {% endif %}
     {% if requestParams.ptag %}<br><b>pTag:</b> {{ requestParams.ptag }} {% endif %}
+    {% if requestParams.workinggroup %}<br><b>Working group:</b> {{ requestParams.workinggroup }} {% endif %}
+    {% if requestParams.processingtype %}<br><b>Processingtype:</b> {{ requestParams.processingtype }} {% endif %}
+    {% if requestParams.site %}<br><b>Site:</b> {{ requestParams.site }} {% endif %}
     <p>
+        <script>
+            var numberOfRunning = 0;
+            var numberOfWaiting = 0;
+
+            function insertReply(content) {
+                alert(content);
+            }
+
+        </script>
 
 
             <script>
@@ -23,23 +35,35 @@
                     var workinggroup = document.getElementById ("workinggroup");
                     var processingtype = document.getElementById ("processingtype");
                     var campaign = document.getElementById ("campaign");
+                    var status = document.getElementById ("status");
 
-                    if (presetChoice.value == 'mc') {
+                    if (presetChoice.value == 'MC') {
+                        workinggroup.selectedIndex = 1;
+                        processingtype.selectedIndex = 1;
+                        campaign.selectedIndex = 1;
+                        status.selectedIndex = 0;
+                    }
+
+                    if (presetChoice.value == 'DPD') {
+                        workinggroup.selectedIndex = 2;
+                        processingtype.selectedIndex =2;
+                        campaign.selectedIndex =0;
+                        status.selectedIndex = 0;
+                    }
+
+                    if (presetChoice.value == '') {
                         workinggroup.selectedIndex = 0;
                         processingtype.selectedIndex =0;
                         campaign.selectedIndex =0;
-                    }
-
-                    if (presetChoice.value == 'dpd') {
-                        workinggroup.selectedIndex = 1;
-                        processingtype.selectedIndex =1;
-                        campaign.selectedIndex =1;
+                        status.selectedIndex = 0;
                     }
                 }
 
                 function onSubElementChoice() {
-                    var presetChoice = document.getElementById ("presetChoice");
-                    presetChoice.selectedIndex = 2;
+                    var warning = document.getElementById ("warning");
+                    warning.style.display = '';
+{#                    var presetChoice = document.getElementById ("presetChoice");#}
+{#                    presetChoice.selectedIndex = 2;#}
 
                 }
                 function go() {
@@ -47,18 +71,30 @@
                     var workinggroupQ = "";
                     var processingtypeQ = "";
                     var campaignQ = "";
+                    var presetQ = "";
+                    var statusQ = "";
+                    var hpcsitesQ = "";
                     var workinggroup = document.getElementById ("workinggroup");
                     var processingtype = document.getElementById ("processingtype");
                     var campaign = document.getElementById ("campaign");
-                    var query = {% url 'runningProdTasks' %}
+                    var presetChoice = document.getElementById ("presetChoice");
+                    var query = {% url 'runningProdTasks' %} ;
+                    var status = document.getElementById ("status");
+                    var hpcsites = document.getElementById('hpc');
 
 
                     if (workinggroup.value.length > 0) workinggroupQ = "workinggroup="+workinggroup.value;
                     if (processingtype.value.length > 0) processingtypeQ = "processingtype="+processingtype.value;
                     if (campaign.value.length > 0) campaignQ = "campaign="+campaign.value;
+                    if (presetChoice.value.length > 0) presetQ = "preset="+presetChoice.value;
+                    if (status.value.length > 0) statusQ = "status="+status.value;
+                    if (hpcsites.checked) hpcsitesQ = "site="+hpcsites.value;
 
-                    if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1)) {
+                    if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1) || (presetQ.length > 1) || (statusQ.length > 1)) {
                         query += "?";
+                        if (presetQ.length > 1) {
+                            query += presetQ+"&";
+                        }
                         if (workinggroupQ.length > 1) {
                             query += workinggroupQ+"&";
                         }
@@ -67,6 +103,12 @@
                         }
                         if (campaignQ.length > 1) {
                             query += campaignQ+"&";
+                        }
+                        if (statusQ.length > 1) {
+                            query += statusQ+"&";
+                        }
+                        if (hpcsitesQ.length > 1) {
+                            query += hpcsitesQ+"&";
                         }
                     }
                     query = query.substring(0, query.length - 1);
@@ -81,45 +123,106 @@
                 </tr>
                 <tr class='tablesection'>
                     <th>Selection Preset</th>
-                    <th>WORKINGGROUP</th>
-                    <th>PROCESSINGTYPE</th>
-                    <th>CAMPAIGN</th>
+                    <th>Working group</th>
+                    <th>Processing type</th>
+                    <th>Campaign</th>
+                    <th>Status</th>
+                    <th></th>
                     <th></th>
                 </tr>
                 <tr>
                     <td>
                         <select id="presetChoice" onchange="onPresetChoice()">
-                            <option value="mc">MC</option>
-                            <option value="dpd">DPD</option>
-                            <option value="" selected="selected"></option>
+                            <option value="MC"
+                                {% if requestParams.preset == 'MC' %} selected="selected" {% endif %}
+                                >MC</option>
+                            <option value="DPD"
+                                {% if requestParams.preset == 'DPD' %} selected="selected" {% endif %}
+                                >DPD</option>
+                            <option value=""
+                                {% if requestParams.preset != 'DPD' and requestParams.preset != 'MC' %} selected="selected" {% endif %}>All</option>
                         </select>
                     </td>
                     <td>
                         <select id="workinggroup" onchange="onSubElementChoice()">
-                            <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"> NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
-                            <option value="GP_PHYS">GP_PHYS</option>
-                            <option value=""  selected="selected"></option>
+                            <option value=""  selected="selected"
+                                {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
+                            >All</option>
+                            <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"
+                                {% if requestParams.workinggroup == '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
+                                {% if requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
+                            >NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
+                            <option value="GP_PHYS"
+                                {% if requestParams.workinggroup == 'GP_PHYS' %} selected="selected" {% endif %}
+                                {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
+                            >GP_PHYS</option>
+                            {% if requestParams.preset != 'DPD' %}
+                                {% for wg in sumd.3.list %}
+                                    <option value={{ wg.kname }}
+                                        {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>
+                                        {{ wg.kname }} </option>
+                                {% endfor %}
+                            {% endif %}
                         </select>
                     </td>
                     <td>
                         <select id="processingtype" onchange="onSubElementChoice()">
-                            <option value="evgen,pile,simul,recon"> IN ('evgen' , 'pile', 'simul', 'recon')</option>
-                            <option value=""  selected="selected"></option>
+                            <option value=""  selected="selected"
+                                {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
+                            >All</option>
+                            <option value="evgen|pile|simul|recon"
+                                {% if requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
+                                {% if requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
+                            >IN ('evgen' , 'pile', 'simul', 'recon')</option>
+                            <option value="merge"
+                                {% if requestParams.processingtype == 'merge' %} selected="selected" {% endif %}
+                                {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
+                            >merge</option>
+                            {% if requestParams.preset != 'DPD' %}
+                                {% for ptype in sumd.1.list %}
+                                        <option value={{ ptype.kname }}
+                                            {% if ptype.kname == requestParams.processingtype %} selected="selected" {% endif %}>
+                                            {{ ptype.kname }} </option>
+                                {% endfor %}
+                            {% endif %}
                         </select>
                     </td>
                     <td>
                         <select id="campaign" onchange="onSubElementChoice()">
-                            <option value="MC"> like 'MC%'</option>
-                            <option value=""  selected="selected"></option>
+                            <option value=""  selected="selected">All</option>
+                            <option value="MC*"
+                                {% if requestParams.campaign == 'MC*' %} selected="selected" {% endif %}
+                            > like 'MC%'</option>
+                                {% for campaign in sumd.0.list %}
+                                    <option value="*{{ campaign.kname }}*"
+                                        {% if campaign.kname in requestParams.campaign %} selected="selected" {% endif %}
+                                    >{{ campaign.kname }} </option>
+                                {% endfor %}
+
                         </select>
+                    </td>
+                    <td>
+                        <select id="status" onchange="onSubElementChoice()">
+                            <option value=""  selected="selected">All</option>
+                            {% for status in sumd.2.list %}
+                                <option value={{ status.kname }}
+                                    {% if status.kname == requestParams.status %} selected="selected" {% endif %}
+                                > {{ status.kname }} </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <input type="checkbox" id="hpc" name="hpc" value="hpc" onchange="onSubElementChoice()"
+                        {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC
                     </td>
                     <td>
                          <button onclick="go()">Go!</button>
                     </td>
                 </tr>
             </table>
-
-
+    <p>
+    <div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
+    <p>
         {% if tasks %}
 
             <table>
@@ -130,8 +233,15 @@
                 </tr>
                 <tr>
                     <td>
+                        {% if requestParams.preset == 'MC' %}
+                            {% if neventsFStasksSum|length > 0 %}<div class="d3splot" id="pieChartFS" style="float:left"></div>{% endif %}
+                            {% if neventsAFIItasksSum|length > 0 %}<div class="d3splot" id="pieChartAFII" style="float:left"></div>{% endif %}
+                        {% endif %}
+                        <br>
                         Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in
                         <b>{{ ntasks }}</b> tasks <br>
+                        Number of currently running events <b id="running"></b><b>M</b><br>
+                        Number of waiting events <b id="waiting"></b><b>M</b><br>
                         Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs
                     </td>
                     {#<td><div class="d3splot" id="slots" style="float:left"></div></td>#}
@@ -148,6 +258,12 @@
                 var plotageshistogram = {{ plotageshistogram }};
                 if (plotageshistogram == 1) {
                     pandamonProdRunTaskSumPlotFunc(ages, "#sumPlot", 'Task age histogram', 24, productiontype);
+                }
+                var neventsFStasksSum ={{ neventsFStasksSum|safe }};
+                var neventsAFIItasksSum ={{ neventsAFIItasksSum|safe }};
+                if (productiontype == 'MC') {
+                    pandamonPieChartFunc(neventsFStasksSum, "#pieChartFS", 'FS');
+                    pandamonPieChartFunc(neventsAFIItasksSum, "#pieChartAFII", 'AFII');
                 }
                 {#var slots = {{ slots|safe }};#}
                 {#var gauges = [];#}
@@ -219,6 +335,17 @@
                     {% else %}
                         <th>Status<br><a href="{{ nosorturl }}sortby=status-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=status-asc" class="headerSortUp"></a></th>{% endif %}
+                    {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
+                        {% if sortby == 'processingtype-desc' %}
+                            <th>Type<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=processingtype-asc"
+                                                                                  class="headerSortUp"></a></th>
+                        {% elif sortby == 'processingtype-asc' %}
+                            <th>Type<br><a href="{{ nosorturl }}sortby=processingtype-desc" class="headerSortDown"></a> <span
+                                    class="headerSortedUp"></span></th>
+                        {% else %}
+                            <th>Type<br><a href="{{ nosorturl }}sortby=processingtype-desc" class="headerSortDown"></a> <a
+                                    href="{{ nosorturl }}sortby=processingtype-asc" class="headerSortUp"></a></th>{% endif %}
+                    {% endif %}
                     {% if sortby == 'nevents-desc' %}
                         <th>Evtstotal<br><span class="headerSortedDown"></span> <a
                                 href="{{ nosorturl }}sortby=nevents-asc" class="headerSortUp"></a></th>
@@ -237,6 +364,7 @@
                     {% else %}
                         <th>Evtsdone<br><a href="{{ nosorturl }}sortby=neventsused-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=neventsused-asc" class="headerSortUp"></a></th>{% endif %}
+                    <th>Events currently running</th>
                     {% if sortby == 'neventstobeused-desc' %}
                         <th>Evtstobeused<br><span class="headerSortedDown"></span> <a
                                 href="{{ nosorturl }}sortby=neventstobeused-asc"
@@ -278,35 +406,35 @@
                     {% else %}
                         <th>Priority<br><a href="{{ nosorturl }}sortby=priority-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=priority-asc" class="headerSortUp"></a></th>{% endif %}
-                    {% comment %}
-                    {% if sortby == 'ptag-desc' %}
-                        <th>pTag<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=ptag-asc"
-                                                                              class="headerSortUp"></a></th>
-                    {% elif sortby == 'ptag-asc' %}
-                        <th>pTag<br><a href="{{ nosorturl }}sortby=ptag-desc" class="headerSortDown"></a> <span
-                                class="headerSortedUp"></span></th>
-                    {% else %}
-                        <th>pTag<br><a href="{{ nosorturl }}sortby=ptag-desc" class="headerSortDown"></a> <a
-                                href="{{ nosorturl }}sortby=ptag-asc" class="headerSortUp"></a></th>{% endif %}
-                    {% if sortby == 'outputtype-desc' %}
-                        <th>Output types<br><span class="headerSortedDown"></span> <a
-                                href="{{ nosorturl }}sortby=outputtype-asc" class="headerSortUp"></a></th>
-                    {% elif sortby == 'outputtype-asc' %}
-                        <th>Output types<br><a href="{{ nosorturl }}sortby=outputtype-desc" class="headerSortDown"></a>
-                            <span class="headerSortedUp"></span></th>
-                    {% else %}
-                        <th>Output types<br><a href="{{ nosorturl }}sortby=outputtype-desc" class="headerSortDown"></a>
-                            <a href="{{ nosorturl }}sortby=outputtype-asc" class="headerSortUp"></a></th>{% endif %}
-                    {% endcomment %}
-                    {% if sortby == 'age-desc' %}
-                        <th>Age<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=age-asc"
+                    {% if requestParams.preset == 'DPD' %}
+                        {% if sortby == 'ptag-desc' %}
+                            <th>pTag<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=ptag-asc"
+                                                                                  class="headerSortUp"></a></th>
+                        {% elif sortby == 'ptag-asc' %}
+                            <th>pTag<br><a href="{{ nosorturl }}sortby=ptag-desc" class="headerSortDown"></a> <span
+                                    class="headerSortedUp"></span></th>
+                        {% else %}
+                            <th>pTag<br><a href="{{ nosorturl }}sortby=ptag-desc" class="headerSortDown"></a> <a
+                                    href="{{ nosorturl }}sortby=ptag-asc" class="headerSortUp"></a></th>{% endif %}
+                        {% if sortby == 'outputdatasettype-desc' %}
+                            <th>Output types<br><span class="headerSortedDown"></span> <a
+                                    href="{{ nosorturl }}sortby=outputdatasettype-asc" class="headerSortUp"></a></th>
+                        {% elif sortby == 'outputdatasettype-asc' %}
+                            <th>Output types<br><a href="{{ nosorturl }}sortby=outputdatasettype-desc" class="headerSortDown"></a>
+                                <span class="headerSortedUp"></span></th>
+                        {% else %}
+                            <th>Output types<br><a href="{{ nosorturl }}sortby=outputdatasettype-desc" class="headerSortDown"></a>
+                                <a href="{{ nosorturl }}sortby=outputdatasettype-asc" class="headerSortUp"></a></th>{% endif %}
+                    {% endif %}
+                    {% if sortby == 'creationdate-desc' %}
+                        <th>Age<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=creationdate-asc"
                                                                              class="headerSortUp"></a></th>
-                    {% elif sortby == 'age-asc' %}
-                        <th>Age<br><a href="{{ nosorturl }}sortby=age-desc" class="headerSortDown"></a> <span
+                    {% elif sortby == 'creationdate-asc' %}
+                        <th>Age<br><a href="{{ nosorturl }}sortby=creationdate-desc" class="headerSortDown"></a> <span
                                 class="headerSortedUp"></span></th>
                     {% else %}
-                        <th>Age<br><a href="{{ nosorturl }}sortby=age-desc" class="headerSortDown"></a> <a
-                                href="{{ nosorturl }}sortby=age-asc" class="headerSortUp"></a></th>{% endif %}
+                        <th>Age<br><a href="{{ nosorturl }}sortby=creationdate-desc" class="headerSortDown"></a> <a
+                                href="{{ nosorturl }}sortby=creationdate-asc" class="headerSortUp"></a></th>{% endif %}
                     {% if sortby == 'corecount-desc' %}
                         <th>Cores<br><span class="headerSortedDown"></span> <a
                                 href="{{ nosorturl }}sortby=corecount-asc" class="headerSortUp"></a></th>
@@ -316,11 +444,42 @@
                     {% else %}
                         <th>Cores<br><a href="{{ nosorturl }}sortby=corecount-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=corecount-asc" class="headerSortUp"></a></th>{% endif %}
-                    <th>CPU Time per Event<br>(HS06sPerEvent)</th>
+                    {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
+                        {% if sortby == 'username-desc' %}
+                            <th>User<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=username-asc"
+                                                                                  class="headerSortUp"></a></th>
+                        {% elif sortby == 'username-asc' %}
+                            <th>User<br><a href="{{ nosorturl }}sortby=username-desc" class="headerSortDown"></a> <span
+                                    class="headerSortedUp"></span></th>
+                        {% else %}
+                            <th>User<br><a href="{{ nosorturl }}sortby=username-desc" class="headerSortDown"></a> <a
+                                    href="{{ nosorturl }}sortby=username-asc" class="headerSortUp"></a></th>{% endif %}
+                    {% endif %}
+{#                    <th>CPU Time per Event<br>(HS06sPerEvent)</th>#}
+                    {% if sortby == 'cputime-desc' %}
+                        <th>CPU Time per Event<br><span class="headerSortedDown"></span> <a
+                                href="{{ nosorturl }}sortby=cputime-asc" class="headerSortUp"></a></th>
+                    {% elif sortby == 'cputime-asc' %}
+                        <th>CPU Time per Event<br><a href="{{ nosorturl }}sortby=cputime-desc" class="headerSortDown"></a> <span
+                                class="headerSortedUp"></span></th>
+                    {% else %}
+                        <th>CPU Time per Event<br><a href="{{ nosorturl }}sortby=cputime-desc" class="headerSortDown"></a> <a
+                                href="{{ nosorturl }}sortby=cputime-asc" class="headerSortUp"></a></th>{% endif %}
+                    {% if requestParams.site %}
+                        {% if sortby == 'site-desc' %}
+                            <th>Site<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=site-asc"
+                                                                                  class="headerSortUp"></a></th>
+                        {% elif sortby == 'username-asc' %}
+                            <th>Site<br><a href="{{ nosorturl }}sortby=site-desc" class="headerSortDown"></a> <span
+                                    class="headerSortedUp"></span></th>
+                        {% else %}
+                            <th>Site<br><a href="{{ nosorturl }}sortby=site-desc" class="headerSortDown"></a> <a
+                                    href="{{ nosorturl }}sortby=site-asc" class="headerSortUp"></a></th>{% endif %}
+                    {% endif %}
                 </tr>
                 {% for task in tasks %}
                     <tr>
-                        <td><a href="{{ xurl }}campaign={{ task.campaign }}">{{ task.campaign }}</a></td>
+                        <td><a href="{{ xurl }}campaign={{ task.campaign }}">{{ task.cutcampaign }}</a></td>
                         <td><a href="{{ xurl }}reqid={{ task.reqid }}">{{ task.reqid }}</a>
                             <a href="https://prodtask-dev.cern.ch/reqtask/{{task.reqid}}/"
                                target="_blank"> &rArr;</a></td>
@@ -333,20 +492,52 @@
                             {{ task.rjobs }}{% endif %}</td>
                         <td class='{{ task.status }}_fill'><a
                                 href="{{ xurl }}status={{ task.status }}">{{ task.status }}</a></td>
+                        {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
+                            <td><a href="{{ xurl }}processingtype={{ task.processingtype }}"> {{ task.processingtype }} </a></td>
+                        {% endif %}
                         <td>{% if task.totev %}{{ task.totev|intcomma }}{% else %}---{% endif %}</td>
                         <td>{% if task.totev %}{{ task.neventsused|intcomma }}{% else %}---{% endif %}</td>
+                        <td><div id="{{ task.jeditaskid }}"></div></td>
+                        <script>
+                            $.ajax({
+                                url: '{% url 'eventsInfo' %}?jeditaskid={{ task.jeditaskid }}',
+                                dataType: 'json',
+                                jsonpCallback: 'insertReply',
+                                async: true,
+                                type: 'GET',
+                                success: function(response) {
+                                    document.getElementById(response.jeditaskid).innerHTML = ((typeof response.running) != 'undefined' ? response.running.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '---' );
+                                    if (response.running === parseInt(response.running, 10))
+                                        numberOfRunning = numberOfRunning + response.running;
+                                        numberOfWaiting = numberOfWaiting + {{ task.totevrem }};
+                                    document.getElementById("running").innerHTML = Math.round(numberOfRunning/1000000);
+                                    document.getElementById("waiting").innerHTML = Math.round(numberOfWaiting/1000000);
+
+                                },
+                                error: function(xhr, status, error) {
+                                    console.log(status + '; ' + error);
+                                }
+
+                            });
+
+                        </script>
                         <td>{% if task.totev %}{{ task.totevrem|intcomma }}{% else %}---{% endif %}</td>
                         <td>{% if task.totev %}{{ task.percentage }}{% else %}---{% endif %}</td>
                         <td>{% if task.nfilesfailed %}{{ task.nfilesfailed }}{% else %}0{% endif %}</td>
                         <td>{{ task.currentpriority }}</td>
-                        {% comment %}
-                        <td>{{ task.ptag }}</td>
-                        <td>{{ task.outputtypes }}</td>
-                        {% endcomment %}
-
+                        {% if productiontype|safe == '"DPD"' %}
+                            <td><a href="{{ xurl }}ptag={{ task.ptag }}">{{ task.ptag }}</a></td>
+                            <td>{{ task.outputtypes }}</td>
+                        {% endif %}
                         <td>{{ task.age }}</td>
                         <td><a href="{{ xurl }}corecount={{ task.corecount }}">{{ task.corecount }}</a></td>
-                        <td>{{ task.cputime }}</td>
+                        {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
+                            <td><a href="{{ xurl }}username={{ task.username }}">{{ task.username }} </a></td>
+                        {% endif %}
+                        <td>{% if task.cputime %} {{ task.cputime }} {% else %} --- {% endif %}</td>
+                        {% if requestParams.site %}
+                            <td>{% if task.site %} {{ task.site }} {% else %} --- {% endif %}</td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
             </table>

@@ -480,7 +480,7 @@ hr {
                     <li><a href="{% url 'taskList' %}?eventservice=eventservice&display_limit=300">Event service</a></li>
                     <li><a href="{% url 'runningMCProdTasks' %}">All running MC production</a></li>
                     <li><a href="{% url 'runningDPDProdTasks' %}">All running derivation production</a></li>
-                    <li><a href="{% url 'runningProdTasks' %}?workinggroup=!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT&processingtype=evgen,pile,simul,recon&campaign=MC">All running production tasks (default MC)</a></li>
+                    <li><a href="{% url 'runningProdTasks' %}?preset=MC&workinggroup=!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT&processingtype=evgen|pile|simul|recon&campaign=MC*">All running production tasks (default MC)</a></li>
                 {% endif %}
             </ul>
             </li>
@@ -552,6 +552,8 @@ hr {
                     <li><a href="{% url 'incidentList' %}">Recent incidents</a></li>
                 {% endif %}
                 <li><a href="{% url 'pandaLogger' %}">PanDA logger</a></li>
+                <li><a href="{% url 'esPandaLogger' %}">PanDA logger (analytics01)</a> </li>
+                <li><a href="{% url 'esatlasPandaLogger' %}">PanDA logger (es-atlas)</a> </li>
             </ul>
             </li>
 
