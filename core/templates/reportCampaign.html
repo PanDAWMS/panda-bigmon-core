@@ -88,10 +88,10 @@
             {% ifnotequal key 'title' %}
                 <tr>
                     <td><span class='{{ key }}'>{{ key }}</span></td>
-                    <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&taskname=*.evgen.*&days=300'>   {{ values.evgen|intcomma }}</td>
-                    <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&taskname=*.simul.*&days=300'>   {{ values.simul|intcomma }}</td>
-                    <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&taskname=*.recon.*&days=300'>   {{ values.recon|intcomma }}</td>
-                    <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&taskname=*.merge.*&days=300'>   {{ values.merge|intcomma }}</td>
+                    <td><a href='/tasks/?status={{ key }}&campaign=MC16*&taskname=*.evgen.*&days=300&reqid=11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>   {{ values.evgen|intcomma }}</td>
+                    <td><a href='/tasks/?status={{ key }}&campaign=MC16*&taskname=*.simul.*&days=300&reqid=11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>   {{ values.simul|intcomma }}</td>
+                    <td><a href='/tasks/?status={{ key }}&campaign=MC16*&taskname=*.recon.*&days=300&reqid=11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>   {{ values.recon|intcomma }}</td>
+                    <td><a href='/tasks/?status={{ key }}&campaign=MC16*&taskname=*.merge.*&days=300&reqid=11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>   {{ values.merge|intcomma }}</td>
                 </tr>
             {% endifnotequal %}
         {% endfor %}
