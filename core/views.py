@@ -6561,6 +6561,7 @@ def runningProdTasks(request):
         sortby = 'creationdate-asc'
     oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
 
+
     # if 'campaign' in request.session['requestParams']:
     #     tquery['campaign__contains'] = request.session['requestParams']['campaign']
     # if 'corecount' in request.session['requestParams']:
