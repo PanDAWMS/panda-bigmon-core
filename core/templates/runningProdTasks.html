@@ -139,8 +139,11 @@
                             <option value="DPD"
                                 {% if requestParams.preset == 'DPD' %} selected="selected" {% endif %}
                                 >DPD</option>
+                            <option value="DATA"
+                                {% if requestParams.preset == 'DATA' %} selected="selected" {% endif %}
+                                >DATA</option>
                             <option value=""
-                                {% if requestParams.preset != 'DPD' and requestParams.preset != 'MC' %} selected="selected" {% endif %}>All</option>
+                                {% if requestParams.preset != 'DPD' and requestParams.preset != 'MC'  and requestParams.preset != 'DATA' %} selected="selected" {% endif %}>All</option>
                         </select>
                     </td>
                     <td>
@@ -156,6 +159,12 @@
                                 {% if requestParams.workinggroup == 'GP_PHYS' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
                             >GP_PHYS</option>
+
+                            <option value="AP_REPR"
+                                {% if requestParams.preset == 'DATA' or requestParams.workinggroup == 'AP_REPR' %} selected="selected" {% endif %}
+                            >AP_REPR</option>
+
+
                             {% if requestParams.preset != 'DPD' %}
                                 {% for wg in sumd.3.list %}
                                     <option value={{ wg.kname }}
@@ -178,6 +187,11 @@
                                 {% if requestParams.processingtype == 'merge' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
                             >merge</option>
+
+                            <option value="reprocessing"
+                                {% if requestParams.processingtype == 'reprocessing' or requestParams.preset == 'DATA' %} selected="selected" {% endif %}
+                            >reprocessing</option>
+
                             {% if requestParams.preset != 'DPD' %}
                                 {% for ptype in sumd.1.list %}
                                         <option value={{ ptype.kname }}

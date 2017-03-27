@@ -6533,11 +6533,16 @@ def runningProdTasks(request):
                                                             wildCardExt=True)
     productiontype = ''
     if 'preset' in request.session['requestParams']:
-        if request.session['requestParams']['preset'] and request.session['requestParams']['preset'] == 'MC':
+        if request.session['requestParams']['preset'] and request.session['requestParams']['preset'].upper() == 'MC':
             productiontype = 'MC'
-        elif request.session['requestParams']['preset'] and request.session['requestParams']['preset'] == 'DPD':
+        if request.session['requestParams']['preset'] and request.session['requestParams']['preset'].upper() == 'DPD':
             productiontype = 'DPD'
-    if 'workinggroup' in tquery and request.session['requestParams']['preset'] == 'MC' and ',' in tquery['workinggroup']:
+        if request.session['requestParams']['preset'] and request.session['requestParams']['preset'].upper() == 'DATA':
+            productiontype = 'DATA'
+            tquery['workinggroup'] = 'AP_REPR'
+            tquery['processingtype'] = 'reprocessing'
+
+    if 'workinggroup' in tquery and request.session['requestParams']['preset'].upper() == 'MC' and ',' in tquery['workinggroup']:
         #     excludeWGList = list(str(wg[1:]) for wg in request.session['requestParams']['workinggroup'].split(','))
         #     exquery['workinggroup__in'] = excludeWGList
             del tquery['workinggroup']
@@ -6627,12 +6632,20 @@ def runningProdTasks(request):
         # else:
         #     task['inputdataset'] = ''
 
-        task['inputdataset'] = task['runnumber']
+        if 'runnumber' in task:
+            task['inputdataset'] = task['runnumber']
+        else:
+            task['inputdataset'] = None
+
         if task['inputdataset'] and task['inputdataset'].startswith('00'):
             task['inputdataset'] = task['inputdataset'][2:]
         # task['tid'] = task['outputtype'].split('_tid')[1].split('_')[0] if '_tid' in task['outputtype'] else None
         task['outputtypes'] = ''
-        outputtypes = task['outputdatasettype'].split(',')
+
+        if 'outputdatasettype' in task:
+            outputtypes = task['outputdatasettype'].split(',')
+        else:
+            outputtypes = []
         if len(outputtypes) > 0:
             for outputtype in outputtypes:
                 task['outputtypes'] += outputtype.split('_')[1] + ' ' if '_' in outputtype else ''
@@ -6647,7 +6660,11 @@ def runningProdTasks(request):
                 neventsAFIItasksSum[task['processingtype']] += task['totev'] if task['totev'] is not None else 0
             else:
                 task['simtype'] = 'FS'
-                neventsFStasksSum[task['processingtype']] += task['totev'] if task['totev'] is not None else 0
+
+                # dirty hack. Should be studied
+                if not task['processingtype'] in {'merge', 'validation', 'reprocessing', 'eventIndex'}:
+                    neventsFStasksSum[task['processingtype']] += task['totev'] if task['totev'] is not None else 0
+
     plotageshistogram = 1
     if sum(ages) == 0: plotageshistogram = 0
     sumd = taskSummaryDict(request, tasks, ['status','workinggroup','cutcampaign', 'processingtype'])
