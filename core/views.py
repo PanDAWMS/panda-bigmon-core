@@ -6511,7 +6511,8 @@ def runningProdTasks(request):
     valid, response = initRequest(request)
 
     # Here we try to get cached data
-    data = getCacheEntry(request, "runningProdTasks")
+    #data = getCacheEntry(request, "runningProdTasks")
+    data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -6576,27 +6577,27 @@ def runningProdTasks(request):
     # if 'campaignstart' in request.session['requestParams']:
     #     tquery['campaign__startswith'] = request.session['requestParams']['campaignstart']
     # productiontype = ''
-    # extraQueryString = ''
-    # if 'workinggroup' in request.session['requestParams']:
-    #     workinggroupQuery = request.session['requestParams']['workinggroup']
-    #     for card in workinggroupQuery.split(','):
-    #         if card[0] == '!':
-    #             extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
-    #         else:
-    #             extraQueryString += ' workinggroup=\''+escapeInput(card[0:])+'\' OR '
-    #     productiontype = 'DPD' if workinggroupQuery == 'GP_PHYS' else ''
+    extraQueryString = ''
+    if 'workinggroup' in request.session['requestParams']:
+         workinggroupQuery = request.session['requestParams']['workinggroup']
+         for card in workinggroupQuery.split(','):
+             if card[0] == '!':
+                 extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
+             else:
+                 extraQueryString += ' workinggroup=\''+escapeInput(card[0:])+'\' OR '
+    #      productiontype = 'DPD' if workinggroupQuery == 'GP_PHYS' else ''
     # if 'processingtype' in request.session['requestParams']:
     #     val = escapeInput(request.session['requestParams']['processingtype'])
     #     values = val.split(',')
     #     tquery['processingtype__in'] = values
     #
-    # extraQueryString = extraQueryString[:-3]
-    # if (len(extraQueryString) < 2):
-    #     extraQueryString = '1=1'
+    extraQueryString = extraQueryString[:-3]
+    if (len(extraQueryString) < 2):
+        extraQueryString = '1=1'
 
     #processingtype in ('evgen', 'pile', 'simul', 'recon')
     # .exclude(**exquery)
-    tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().order_by(oquery)
+    tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[extraQueryString]).exclude(**exquery).values().order_by(oquery)
     ntasks = len(tasks)
     slots = 0
     ages = []
