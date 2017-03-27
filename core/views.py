@@ -6663,7 +6663,7 @@ def runningProdTasks(request):
                 task['simtype'] = 'FS'
 
                 # dirty hack. Should be studied
-                if not task['processingtype'] in {'merge', 'validation', 'reprocessing', 'eventIndex'}:
+                if not task['processingtype'] in ['merge', 'validation', 'reprocessing', 'eventIndex']:
                     neventsFStasksSum[task['processingtype']] += task['totev'] if task['totev'] is not None else 0
 
     plotageshistogram = 1
