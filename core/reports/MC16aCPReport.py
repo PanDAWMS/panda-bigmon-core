@@ -26,32 +26,108 @@ class MC16aCPReport:
         pass
 
 
-    def getDEFTSummary(self, condition):
+    def getDEFTEventsSummaryChain(self, condition):
+        sqlRequest = '''
+          SELECT * FROM (
+          SELECT TASKID, PARENT_TID, 
+          CASE WHEN TASKNAME LIKE '%.merge.%' AND substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' THEN 'merge'
+          WHEN TASKNAME LIKE '%.recon.%' THEN 'recon'
+          WHEN TASKNAME LIKE '%.simul.%' THEN 'simul'
+          WHEN TASKNAME LIKE '%.evgen.%' THEN 'evgen'
+          END AS STEP,
+          s.INPUT_EVENTS, t.TOTAL_EVENTS
+          FROM ATLAS_DEFT.T_PRODUCTION_TASK t, ATLAS_DEFT.T_PRODUCTION_STEP s WHERE s.STEP_ID=t.STEP_ID and CAMPAIGN LIKE 'MC16%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {0}
+        )t1 where STEP IS NOT NULL
+        '''
+
+        #TASKID, PARENT_TID, STEP, INPUT_EVENTS, TOTAL_EVENTS
+
+        sqlRequestFull = sqlRequest.format(condition)
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        tasks = cur.fetchall()
+        parentIDHash = {}
+        processedHash = {}
+        summaryInput = {} #Step, INPUT_EVENTS
+        summaryProcessed = {} #Step, TOTAL_EVENTS
+
+        for task in tasks:
+            if task[0] != task[1]:
+                parentIDHash[task[0]] = task[1]
+            processedHash[task[0]] = task[4]
+
+        for task in tasks:
+            step = task[2]
+            if step not in summaryInput:
+                summaryInput[step] = 0
+            if step not in summaryProcessed:
+                summaryProcessed[step] = 0
+
+            taskid = task[0]
+            inputEvent = task[3]
+            outputEvent = task[4]
+            if taskid in parentIDHash and parentIDHash[taskid] in processedHash:
+                inputEvent = processedHash[parentIDHash[taskid]]
+
+            summaryInput[step] += inputEvent
+            summaryProcessed[step] += outputEvent
+
+        fullSummary = {}
+        fullSummary['total'] = {}
+        fullSummary['total']['evgen'] = '%s/%s' % (  humanize.intcomma(summaryInput['evgen']) if 'evgen' in summaryInput else '-', humanize.intcomma(summaryProcessed['evgen']) if 'evgen' in summaryInput else '-')
+        fullSummary['total']['recon'] = '%s/%s' % (  humanize.intcomma(summaryInput['simul']) if 'simul' in summaryInput else '-', humanize.intcomma(summaryProcessed['simul']) if 'simul' in summaryInput else '-')
+        fullSummary['total']['simul'] = '%s/%s' % (  humanize.intcomma(summaryInput['recon']) if 'recon' in summaryInput else '-', humanize.intcomma(summaryProcessed['recon']) if 'recon' in summaryInput else '-')
+        fullSummary['total']['merge'] = '%s/%s' % (  humanize.intcomma(summaryInput['merge']) if 'merge' in summaryInput else '-', humanize.intcomma(summaryProcessed['merge']) if 'merge' in summaryInput else '-')
+        return fullSummary
+
+
+
+        
+        
+    
+    
+
+
+    def getDEFTEventsSummary(self, condition):
         sqlRequest = '''
             SELECT sum(TOTAL_EVENTS),STATUS, 'merge' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.merge.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%'
             and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
             group by STATUS
             UNION ALL
-            SELECT sum(TOTAL_EVENTS),STATUS, 'recon' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.recon.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {1}
+            SELECT sum(TOTAL_EVENTS),STATUS, 'recon' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.recon.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {0}
             group by STATUS
             UNION ALL
-            SELECT sum(TOTAL_EVENTS),STATUS, 'simul' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.simul.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {2}
+            SELECT sum(TOTAL_EVENTS),STATUS, 'simul' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.simul.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {0}
             group by STATUS
             UNION ALL
-            SELECT sum(TOTAL_EVENTS),STATUS, 'evgen' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.evgen.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {3}
+            SELECT sum(TOTAL_EVENTS),STATUS, 'evgen' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.evgen.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {0}
             group by STATUS
         '''
 
-        sqlRequestFull = sqlRequest.format(condition, condition, condition, condition)
+        sqlRequestFull = sqlRequest.format(condition)
 
         cur = connection.cursor()
         cur.execute(sqlRequestFull)
         campaignsummary = cur.fetchall()
-        summaryDictFinished = {}
-        summaryDictRunning = {}
-        summaryDictWaiting = {}
-        summaryDictObsolete = {}
-        summaryDictFailed = {}
+
+        fullSummary = {}
+        for summaryRow in campaignsummary:
+            if summaryRow[1] not in fullSummary:
+                fullSummary[summaryRow[1]] = {}
+            if summaryRow[2] not in fullSummary[summaryRow[1]]:
+                fullSummary[summaryRow[1]][summaryRow[2]] = 0
+            fullSummary[summaryRow[1]][summaryRow[2]] += summaryRow[0]
+
+        for status, stepdict in fullSummary.items():
+            for step, val in stepdict.items():
+                if 'total' not in fullSummary[status]:
+                    fullSummary[status]['total'] = 0
+                fullSummary[status]['total'] += val
+
+        return fullSummary
+
+
+
 
         for summaryRow in campaignsummary:
             if summaryRow[1] == 'finished' or summaryRow[1] == 'done':
@@ -201,6 +277,9 @@ class MC16aCPReport:
 
     def prepareReportJEDI(self, request):
 
+        requestList = [11034,11048,11049,11050,11051,11052,11198,11197,11222,11359]
+        requestList = '(' + ','.join(map(str, requestList)) + ')'
+
         data = self.getCacheEntry(request, "prepareReportMC16")
         if data is not None:
             data = json.loads(data)
@@ -209,16 +288,27 @@ class MC16aCPReport:
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
 
-        totalEvents = self.getEventsJEDISummary('')
-        totalEvents['title'] = 'Overall input events processing summary'
+        DEFTEvents = self.getDEFTEventsSummaryChain("and t.PR_ID IN %s" % requestList)
+        DEFTEvents['title'] = 'Overall input events processing summary (DEFT)'
 
-        totalTasks = self.getTasksJEDISummary('')
-        totalTasks['title'] = 'Overall tasks processing summary'
+        totalEvents = self.getEventsJEDISummary('and REQID IN %s' % requestList)
+        totalEvents['title'] = 'Overall input events processing summary (JEDI)'
 
-        totalJobs = self.getJobsJEDISummary('')
-        totalJobs['title'] = 'Overall Jobs processing summary'
+        totalTasks = self.getTasksJEDISummary('and REQID IN %s' % requestList)
+        totalTasks['title'] = 'Overall tasks processing summary (JEDI)'
 
-        data = {"totalEvents": [totalEvents], "totalTasks":[totalTasks], "totalJobs":[totalJobs],  'built': datetime.now().strftime("%H:%M:%S")}
+        totalTasks = self.getTasksJEDISummary('and REQID IN %s' % requestList)
+        totalTasks['title'] = 'Overall tasks processing summary (JEDI)'
+
+        totalJobs = self.getJobsJEDISummary('and REQID IN %s' % requestList)
+        totalJobs['title'] = 'Overall Jobs processing summary  (JEDI)'
+
+        data = {"requestList":requestList,
+                "DEFTEvents":[DEFTEvents],
+                "totalEvents": [totalEvents],
+                "totalTasks":[totalTasks],
+                "totalJobs":[totalJobs],
+                "built": datetime.now().strftime("%H:%M:%S")}
         self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 60 * 20)
 
         return render_to_response('reportCampaign.html', data, RequestContext(request))

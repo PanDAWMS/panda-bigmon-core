@@ -8,6 +8,38 @@
 {% endblock %}
 {% block body %}
     <h1> Report on Campaign MC16 </h1>
+    <h5> Built on {{ built }}, additional selection by requests {{ requestList }} applied </h5>
+
+    {% comment %}
+    {% for data in DEFTEvents %}
+    <table>
+        <tr>
+            <th colspan=20>{{ data.title }}</th>
+        </tr>
+        <tr>
+            <th></th>
+            <th>evgen</th>
+            <th>simul</th>
+            <th>recon</th>
+            <th>merge</th>
+        </tr>
+
+        {% for key, values in data.items %}
+            {% ifnotequal key 'title' %}
+            <tr>
+                <td>{{ key }}</td>
+                <td>{{ values.evgen }}</td>
+                <td>{{ values.simul }}</td>
+                <td>{{ values.recon }}</td>
+                <td>{{ values.merge }}</td>
+            </tr>
+            {% endifnotequal %}
+        {% endfor %}
+
+    </table>
+    {% endfor %}
+    {% endcomment %}
+
 
     {% for data in totalEvents %}
     <table>
@@ -20,7 +52,6 @@
             <th>simul</th>
             <th>recon</th>
             <th>merge</th>
-            <th>total</th>
         </tr>
 
         {% for key, values in data.items %}
@@ -31,8 +62,6 @@
                 <td>{{ values.simul|intcomma }}</td>
                 <td>{{ values.recon|intcomma }}</td>
                 <td>{{ values.merge|intcomma }}</td>
-                <td>{{ values.total|intcomma }}</td>
-
             </tr>
             {% endifnotequal %}
         {% endfor %}
@@ -52,8 +81,6 @@
             <th>simul</th>
             <th>recon</th>
             <th>merge(*)</th>
-            <th>total</th>
-
         </tr>
 
         {% for key, values in data.items %}
@@ -64,7 +91,6 @@
                     <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&taskname=*.simul.*&days=300'>   {{ values.simul|intcomma }}</td>
                     <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&taskname=*.recon.*&days=300'>   {{ values.recon|intcomma }}</td>
                     <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&taskname=*.merge.*&days=300'>   {{ values.merge|intcomma }}</td>
-                    <td><a href='/tasks/?superstatus={{ key }}&campaign=MC16*&days=300'>{{ values.total|intcomma }}</td>
                 </tr>
             {% endifnotequal %}
         {% endfor %}
@@ -84,7 +110,6 @@
             <th>simul</th>
             <th>recon</th>
             <th>merge</th>
-            <th>total</th>
         </tr>
 
         {% for key, values in data.items %}
@@ -95,7 +120,6 @@
                     <td>{{ values.simul|intcomma }}</td>
                     <td>{{ values.recon|intcomma }}</td>
                     <td>{{ values.merge|intcomma }}</td>
-                    <td>{{ values.total|intcomma }}</td>
                 </tr>
             {% endifnotequal %}
         {% endfor %}
