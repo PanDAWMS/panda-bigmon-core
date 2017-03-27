@@ -81,80 +81,6 @@ class MC16aCPReport:
         return fullSummary
 
 
-
-        
-        
-    
-    
-
-
-    def getDEFTEventsSummary(self, condition):
-        sqlRequest = '''
-            SELECT sum(TOTAL_EVENTS),STATUS, 'merge' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.merge.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%'
-            and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
-            group by STATUS
-            UNION ALL
-            SELECT sum(TOTAL_EVENTS),STATUS, 'recon' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.recon.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {0}
-            group by STATUS
-            UNION ALL
-            SELECT sum(TOTAL_EVENTS),STATUS, 'simul' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.simul.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {0}
-            group by STATUS
-            UNION ALL
-            SELECT sum(TOTAL_EVENTS),STATUS, 'evgen' as STEP  FROM ATLAS_DEFT.T_PRODUCTION_TASK WHERE CAMPAIGN LIKE 'MC16%' and TASKNAME LIKE '%.evgen.%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {0}
-            group by STATUS
-        '''
-
-        sqlRequestFull = sqlRequest.format(condition)
-
-        cur = connection.cursor()
-        cur.execute(sqlRequestFull)
-        campaignsummary = cur.fetchall()
-
-        fullSummary = {}
-        for summaryRow in campaignsummary:
-            if summaryRow[1] not in fullSummary:
-                fullSummary[summaryRow[1]] = {}
-            if summaryRow[2] not in fullSummary[summaryRow[1]]:
-                fullSummary[summaryRow[1]][summaryRow[2]] = 0
-            fullSummary[summaryRow[1]][summaryRow[2]] += summaryRow[0]
-
-        for status, stepdict in fullSummary.items():
-            for step, val in stepdict.items():
-                if 'total' not in fullSummary[status]:
-                    fullSummary[status]['total'] = 0
-                fullSummary[status]['total'] += val
-
-        return fullSummary
-
-
-
-
-        for summaryRow in campaignsummary:
-            if summaryRow[1] == 'finished' or summaryRow[1] == 'done':
-                if summaryRow[2] in summaryDictFinished:
-                    summaryDictFinished[summaryRow[2]] += summaryRow[0] if summaryRow[0] >= 0 else 0
-                else:
-                    summaryDictFinished[summaryRow[2]] = summaryRow[0] if summaryRow[0] >= 0 else 0
-
-            if summaryRow[1] == 'running':
-                summaryDictRunning[summaryRow[2]] = summaryRow[0] if summaryRow[0] >= 0 else 0
-
-            if summaryRow[1] == 'obsolete':
-                summaryDictObsolete[summaryRow[2]] = summaryRow[0] if summaryRow[0] >= 0 else 0
-
-            if summaryRow[1] == 'failed':
-                summaryDictFailed[summaryRow[2]] = summaryRow[0] if summaryRow[0] >= 0 else 0
-
-
-            if summaryRow[1] == 'submitting' or summaryRow[1] == 'registered' or summaryRow[1] == 'waiting':
-                if summaryRow[2] in summaryDictWaiting:
-                    summaryDictWaiting[summaryRow[2]] += summaryRow[0] if summaryRow[0] >= 0 else 0
-                else:
-                    summaryDictWaiting[summaryRow[2]] = summaryRow[0] if summaryRow[0] >= 0 else 0
-
-        return {'summaryDictFinished':summaryDictFinished, 'summaryDictRunning':summaryDictRunning, 'summaryDictWaiting':summaryDictWaiting, 'summaryDictObsolete':summaryDictObsolete, 'summaryDictFailed':summaryDictFailed}
-
-
     def getTasksJEDISummary(self, condition):
         sqlRequest = '''
 
@@ -197,13 +123,13 @@ class MC16aCPReport:
             (
             SELECT DISTINCT PANDAID, JOBSTATUS, STEP FROM (
             WITH selectedTasks AS (
-            SELECT JEDITASKID, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.recon.%'
+            SELECT JEDITASKID, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.recon.%' {0}
             UNION ALL
-            SELECT JEDITASKID, 'simul' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.simul.%'
+            SELECT JEDITASKID, 'simul' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.simul.%' {0}
             UNION ALL
-            SELECT JEDITASKID, 'evgen' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.evgen.%'
+            SELECT JEDITASKID, 'evgen' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.evgen.%' {0}
             UNION ALL
-            SELECT JEDITASKID, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%'
+            SELECT JEDITASKID, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
             )
             SELECT PANDAID, JOBSTATUS, selectedTasks.STEP FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
             UNION ALL
