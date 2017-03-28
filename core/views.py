@@ -6540,70 +6540,31 @@ def runningProdTasks(request):
             productiontype = 'DPD'
         if request.session['requestParams']['preset'] and request.session['requestParams']['preset'].upper() == 'DATA':
             productiontype = 'DATA'
-            tquery['workinggroup'] = 'AP_REPR'
-            tquery['processingtype'] = 'reprocessing'
-
-    if 'workinggroup' in tquery and request.session['requestParams']['preset'].upper() == 'MC' and ',' in tquery['workinggroup']:
+    if 'workinggroup' in tquery and request.session['requestParams']['preset'] == 'MC' and ',' in tquery['workinggroup']:
         #     excludeWGList = list(str(wg[1:]) for wg in request.session['requestParams']['workinggroup'].split(','))
         #     exquery['workinggroup__in'] = excludeWGList
             del tquery['workinggroup']
-            # exquery['workinggroup__isnull'] = True
-            # exquery['username__in'] = 'atlas-dpd-production'
     if 'status' in request.session['requestParams'] and request.session['requestParams']['status'] == '':
         del tquery['status']
     if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] == 'hpc':
         del tquery['site']
         exquery['site__isnull'] = True
 
-    oquery = ''
     if 'sortby' in request.session['requestParams']:
         sortby = request.session['requestParams']['sortby']
     else:
-        sortby = 'creationdate-asc'
+        sortby = 'creationdate-desc'
     oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
 
-
-    # if 'campaign' in request.session['requestParams']:
-    #     tquery['campaign__contains'] = request.session['requestParams']['campaign']
-    # if 'corecount' in request.session['requestParams']:
-    #     tquery['corecount'] = request.session['requestParams']['corecount']
-    # if 'status' in request.session['requestParams']:
-    #     tquery['status'] = request.session['requestParams']['status']
-    # if 'reqid' in request.session['requestParams']:
-    #     tquery['reqid'] = request.session['requestParams']['reqid']
-    # if 'inputdataset' in request.session['requestParams']:
-    #     tquery['taskname__contains'] = request.session['requestParams']['inputdataset']
-    #
-    # if 'campaignstart' in request.session['requestParams']:
-    #     tquery['campaign__startswith'] = request.session['requestParams']['campaignstart']
-    # productiontype = ''
-    extraQueryString = ''
-    if 'workinggroup' in request.session['requestParams']:
-         workinggroupQuery = request.session['requestParams']['workinggroup']
-         for card in workinggroupQuery.split(','):
-             if card[0] == '!':
-                 extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
-             else:
-                 extraQueryString += ' workinggroup=\''+escapeInput(card[0:])+'\' OR '
-    #      productiontype = 'DPD' if workinggroupQuery == 'GP_PHYS' else ''
-    # if 'processingtype' in request.session['requestParams']:
-    #     val = escapeInput(request.session['requestParams']['processingtype'])
-    #     values = val.split(',')
-    #     tquery['processingtype__in'] = values
-    #
-    extraQueryString = extraQueryString[:-3]
-    if (len(extraQueryString) < 2):
-        extraQueryString = '1=1'
-
-    #processingtype in ('evgen', 'pile', 'simul', 'recon')
-    # .exclude(**exquery)
-    tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[extraQueryString]).exclude(**exquery).values().order_by(oquery)
+    tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().order_by(oquery)
     ntasks = len(tasks)
     slots = 0
+    aslots = 0
     ages = []
-    neventsAFIItasksSum = {'evgen': 0, 'pile': 0, 'simul': 0, 'recon': 0}
-    neventsFStasksSum = {'evgen': 0, 'pile': 0, 'simul': 0, 'recon': 0}
-
+    neventsAFIItasksSum = {}
+    neventsFStasksSum = {}
+    neventsByProcessingType = {}
+    aslotsByType = {}
     neventsTotSum = 0
     neventsUsedTotSum = 0
     rjobs1coreTot = 0
@@ -6615,7 +6576,13 @@ def runningProdTasks(request):
         task['percentage'] = round(100. * task['neventsused'] / task['totev'], 1) if task['totev'] > 0 else 0.
         neventsTotSum += task['totev'] if task['totev'] is not None else 0
         neventsUsedTotSum += task['neventsused']
-        slots += task['rjobs'] * task['corecount']
+        # slots += task['rjobs'] * task['corecount']
+        slots += task['slots'] if task['slots'] else 0
+        aslots += task['aslots'] if task['aslots'] else 0
+        if not task['processingtype'] in aslotsByType.keys():
+            aslotsByType[str(task['processingtype'])] = 0
+        aslotsByType[str(task['processingtype'])] += task['aslots'] if task['aslots'] else 0
+
         if task['corecount'] == 1:
             rjobs1coreTot += task['rjobs']
         if task['corecount'] == 8:
@@ -6629,11 +6596,6 @@ def runningProdTasks(request):
         else:
             task['cutcampaign'] = task['campaign'].split(':')[0]
 
-        # if (len(task['taskname'].split('.'))>1):
-        #     task['inputdataset'] = task['taskname'].split('.')[1]
-        # else:
-        #     task['inputdataset'] = ''
-
         if 'runnumber' in task:
             task['inputdataset'] = task['runnumber']
         else:
@@ -6641,7 +6603,6 @@ def runningProdTasks(request):
 
         if task['inputdataset'] and task['inputdataset'].startswith('00'):
             task['inputdataset'] = task['inputdataset'][2:]
-        # task['tid'] = task['outputtype'].split('_tid')[1].split('_')[0] if '_tid' in task['outputtype'] else None
         task['outputtypes'] = ''
 
         if 'outputdatasettype' in task:
@@ -6651,103 +6612,23 @@ def runningProdTasks(request):
         if len(outputtypes) > 0:
             for outputtype in outputtypes:
                 task['outputtypes'] += outputtype.split('_')[1] + ' ' if '_' in outputtype else ''
-        # task['ptag'] = task['outputtype'].split('_')[1] if '_' in task['outputdatasettype'] else ''
         if productiontype == 'MC':
-            ltag = len(task['taskname'].split("_"))
-            rtag = task['taskname'].split("_")[ltag - 1]
-            if "." in rtag:
-                rtag = rtag.split(".")[len(rtag.split(".")) - 1]
-            if 'a' in rtag:
-                task['simtype'] = 'AFII'
-                neventsAFIItasksSum[task['processingtype']] += task['totev'] if task['totev'] is not None else 0
-            else:
-                task['simtype'] = 'FS'
-
-                # dirty hack. Should be studied
-                if not task['processingtype'] in ['merge', 'validation', 'reprocessing', 'eventIndex']:
-                    neventsFStasksSum[task['processingtype']] += task['totev'] if task['totev'] is not None else 0
+            if  task['simtype'] == 'AFII':
+                if not task['processingtype'] in neventsAFIItasksSum.keys():
+                    neventsAFIItasksSum[str(task['processingtype'])] = 0
+                neventsAFIItasksSum[str(task['processingtype'])] += task['totev'] if task['totev'] is not None else 0
+            elif task['simtype'] == 'FS':
+                if not task['processingtype'] in neventsFStasksSum.keys():
+                    neventsFStasksSum[str(task['processingtype'])] = 0
+                neventsFStasksSum[str(task['processingtype'])] += task['totev'] if task['totev'] is not None else 0
+        else:
+            if not task['processingtype'] in neventsByProcessingType.keys():
+                neventsByProcessingType[str(task['processingtype'])] = 0
+            neventsByProcessingType[str(task['processingtype'])] += task['totev'] if task['totev'] is not None else 0
 
     plotageshistogram = 1
     if sum(ages) == 0: plotageshistogram = 0
     sumd = taskSummaryDict(request, tasks, ['status','workinggroup','cutcampaign', 'processingtype'])
-
-    # if 'sortby' in request.session['requestParams']:
-    #     sortby = request.session['requestParams']['sortby']
-    #     if sortby == 'campaign-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['campaign'])
-    #     elif sortby == 'campaign-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['campaign'], reverse=True)
-    #     elif sortby == 'reqid-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['reqid'])
-    #     elif sortby == 'reqid-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['reqid'], reverse=True)
-    #     elif sortby == 'jeditaskid-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['jeditaskid'])
-    #     elif sortby == 'jeditaskid-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['jeditaskid'], reverse=True)
-    #     elif sortby == 'rjobs-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['rjobs'])
-    #     elif sortby == 'rjobs-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['rjobs'], reverse=True)
-    #     elif sortby == 'status-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['status'])
-    #     elif sortby == 'status-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['status'], reverse=True)
-    #     elif sortby == 'nevents-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['totev'])
-    #     elif sortby == 'nevents-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['totev'], reverse=True)
-    #     elif sortby == 'neventsused-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['neventsused'])
-    #     elif sortby == 'neventsused-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['neventsused'], reverse=True)
-    #     elif sortby == 'neventstobeused-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['totevrem'])
-    #     elif sortby == 'neventstobeused-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['totevrem'], reverse=True)
-    #     elif sortby == 'percentage-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['percentage'])
-    #     elif sortby == 'percentage-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['percentage'], reverse=True)
-    #     elif sortby == 'nfilesfailed-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['nfilesfailed'])
-    #     elif sortby == 'nfilesfailed-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['nfilesfailed'], reverse=True)
-    #     elif sortby == 'priority-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['currentpriority'])
-    #     elif sortby == 'priority-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['currentpriority'], reverse=True)
-    #     elif sortby == 'ptag-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['ptag'])
-    #     elif sortby == 'ptag-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['ptag'], reverse=True)
-    #     elif sortby == 'outputtype-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['outputtypes'])
-    #     elif sortby == 'output-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['outputtypes'], reverse=True)
-    #     elif sortby == 'age-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['age'])
-    #     elif sortby == 'age-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['age'], reverse=True)
-    #     elif sortby == 'corecount-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['corecount'])
-    #     elif sortby == 'corecount-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['corecount'], reverse=True)
-    #     elif sortby == 'username-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['username'])
-    #     elif sortby == 'username-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['username'], reverse=True)
-    #     elif sortby == 'inputdataset-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['inputdataset'])
-    #     elif sortby == 'inputdataset-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['inputdataset'], reverse=True)
-    #     elif sortby == 'cputime-asc':
-    #         tasks = sorted(tasks, key=lambda x: x['cputime'])
-    #     elif sortby == 'cputime-desc':
-    #         tasks = sorted(tasks, key=lambda x: x['cputime'], reverse=True)
-    # else:
-    #     sortby = 'age-asc'
-    #     tasks = sorted(tasks, key=lambda x: x['age'])
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
@@ -6766,6 +6647,8 @@ def runningProdTasks(request):
             'sortby': sortby,
             'ages': ages,
             'slots': slots,
+            'aslots': aslots,
+            'aslotsByType' : aslotsByType,
             'sumd': sumd,
             'neventsUsedTotSum': round(neventsUsedTotSum / 1000000., 1),
             'neventsTotSum': round(neventsTotSum / 1000000., 1),
@@ -6773,6 +6656,7 @@ def runningProdTasks(request):
             'rjobs8coreTot': rjobs8coreTot,
             'neventsAFIItasksSum': neventsAFIItasksSum,
             'neventsFStasksSum': neventsFStasksSum,
+            'neventsByProcessingType' : neventsByProcessingType,
             'plotageshistogram': plotageshistogram,
             'productiontype' : json.dumps(productiontype),
             'built': datetime.now().strftime("%H:%M:%S"),

@@ -1101,6 +1101,103 @@ vis.append("g")
         .text(neventstot.toFixed(1)+'M events ');
 }
 
+function runningProdTasksPieChartFunc(values,divToShow,title){
+
+var formatDecimal = d3.format(",.2f"),
+	formatPercent = d3.format(",.1%");
+var data = $.map(values, function(value, key) { if (value>0) {return value} });
+var labels = $.map(values, function(value, key) { if (value>0) {return key} });
+var tot = 0;
+for (var i = 0; i < data.length; i++) { tot += data[i] << 0;}
+var margin = {top: 0, right: 100, bottom: 0, left: 0},
+    w = 350 - margin.left - margin.right,
+    h = 200 - margin.top - margin.bottom,
+    r = Math.min(w, h) / 2,
+    color = d3.scale.category20()
+		.domain(labels);
+
+var svg = d3.select(divToShow);
+var vis = svg
+	.data([data])
+  .append("svg")
+    .attr("width", w + margin.left + margin.right )
+    .attr("height", h + margin.top + margin.bottom )
+	.append("g")
+	.attr("transform", "translate(" + (r + margin.left) + "," + (r + margin.top) + ")");
+
+var donut = d3.layout.pie();
+var arc = d3.svg.arc()
+		.innerRadius(r * .6)
+		.outerRadius(r);
+
+var tooltip = svg
+    .append("div")
+	.attr("class","tooltippiechartrpt")
+	.style('opacity', 1);
+var tooltiplabel = tooltip.append('div')
+	.attr('class','tlabel')
+	.text('Total: ' + formatDecimal(tot));
+var tooltipcount = tooltip.append('div')
+	.attr('class','tcount');
+var tooltippercent = tooltip.append('div')
+	.attr('class','tpercent');
+
+var arcs = vis.selectAll("path")
+    .data(donut.value(function(d) { return d}))
+  	.enter()
+	.append("path")
+		.attr("d", arc)
+		.attr("class", "path")
+		.attr("fill", function(d, i) { return color(labels[i]); })
+		.on("mouseover", function(d,i){
+			d3.select(this).attr({"stroke":d3.rgb(color).darker(),'stroke-width':1});
+			// tooltip.text(labels[i]);
+			tooltiplabel.text(labels[i]);
+			tooltipcount.text(formatDecimal(d.value));
+			tooltippercent.text(formatPercent(d.value/tot));
+			})
+		.on("mouseout", function(){
+			d3.select(this).attr({"stroke":d3.rgb(color).darker(),'stroke-width':0});
+			tooltiplabel.text('Total: ' + formatDecimal(tot));
+			tooltipcount.text('');
+			tooltippercent.text('');
+			});
+
+vis.append("g")
+        .attr("transform", "translate(" + ( 0 ) + "," + ( -35 ) + ")")
+        .append("text")
+        .attr("class", "titleinpie")
+        .text(title);
+
+    var squareside = 10;
+    var legend = vis.selectAll(".legend")
+            .data(color.domain().slice())
+          .enter().append("g")
+            .attr("class", "legendoutpie")
+            .attr("transform", function(d, i) {
+                maxLegendWidth = 150;
+                maxLegendHeight = Math.floor(i) * 15;
+                return "translate(" + (r + margin.left + 10) + ", " + (- 3*r/4 - margin.top  + maxLegendHeight) + ")";
+            });
+
+    legend.append("rect")
+            .attr("x", 0)
+            .attr("width", squareside)
+            .attr("height", squareside)
+            .style("fill", color)
+            .style({"stroke":d3.rgb(color).darker(),'stroke-width':0.4});
+
+    legend.append("text")
+            .attr("x", squareside+5)
+            .attr("y", 8)
+            .attr("class", 'legendpie')
+            .text(function(d) {
+                return d;
+            });
+
+
+}
+
 function pandamonProgressBarFunc(values,divToShow,title){
 
 var margin = {top: 20, right: 20, bottom: 60, left: 10},
@@ -1345,7 +1442,7 @@ var margin = {top: 30, right: 170, bottom: 30, left: 30},
     h = 400 - margin.top - margin.bottom,
     r = Math.min(w, h) / 2,
     color = d3.scale.category20()
-		.domain(['Upgrade' , 'Reprocessing default', 'Data Derivations', 'Event Index', 'MC production', 'MC Derivations', 'Analysis', 'HLT Reprocessing', 'Heavy Ion', 'Test', 'Group production', 'Validation']);
+		.domain(labels);
 
 var svg = d3.select(divToShow);
 var vis = svg
@@ -1363,7 +1460,7 @@ var arc = d3.svg.arc()
 
 var tooltip = svg
     .append("div")
-	.attr("class","tooltippiechart")
+	.attr("class","tooltippiechartgs")
 	.style('opacity', 1);
 var tooltiplabel = tooltip.append('div')
 	.attr('class','tlabel')

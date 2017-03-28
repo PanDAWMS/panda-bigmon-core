@@ -630,6 +630,8 @@ class RunningProdTasksModel(models.Model):
     runnumber = models.IntegerField(null=True, db_column='RUNNUMBER', blank=True)
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
     rjobs = models.IntegerField(null=True, db_column='RJOBS', blank=True)
+    slots = models.IntegerField(null=True, db_column='SLOTS', blank=True)
+    aslots = models.IntegerField(null=True, db_column='ASLOTS', blank=True)
     status = models.CharField(max_length=192, db_column='STATUS')
     totevrem = models.BigIntegerField(db_column='TOTEVREM')
     totev = models.BigIntegerField(db_column='TOTEV')
@@ -647,6 +649,7 @@ class RunningProdTasksModel(models.Model):
     site = models.CharField(max_length=384, db_column='SITE', blank=True)
     outputdatasettype = models.CharField(max_length=384, db_column='OUTPUTDATASETTYPE')
     ptag = models.CharField(max_length=72, db_column='PTAG', blank=True)
+    simtype = models.CharField(max_length=72, db_column='SIMTYPE', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODTASKS"'
 

@@ -46,8 +46,8 @@
 
                     if (presetChoice.value == 'DPD') {
                         workinggroup.selectedIndex = 2;
-                        processingtype.selectedIndex =2;
-                        campaign.selectedIndex =0;
+                        processingtype.selectedIndex = 2;
+                        campaign.selectedIndex = 0;
                         status.selectedIndex = 0;
                     }
 
@@ -61,8 +61,8 @@
 
                     if (presetChoice.value == '') {
                         workinggroup.selectedIndex = 0;
-                        processingtype.selectedIndex =0;
-                        campaign.selectedIndex =0;
+                        processingtype.selectedIndex = 0;
+                        campaign.selectedIndex = 0;
                         status.selectedIndex = 0;
                     }
                 }
@@ -118,8 +118,8 @@
                         if (hpcsitesQ.length > 1) {
                             query += hpcsitesQ+"&";
                         }
+                        query = query.substring(0, query.length - 1);
                     }
-                    query = query.substring(0, query.length - 1);
                     window.location = query;
                 }
             </script>
@@ -162,18 +162,20 @@
                             <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"
                                 {% if requestParams.workinggroup == '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
+                                {% if requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
                             >NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
                             <option value="GP_PHYS"
-                                {% if requestParams.workinggroup == 'GP_PHYS' %} selected="selected" {% endif %}
-                                {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
+                                {% if requestParams.preset == 'DPD' or requestParams.workinggroup == 'GP_PHYS' %} selected="selected" {% endif %}
+                                {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
                             >GP_PHYS</option>
 
                             <option value="AP_REPR"
                                 {% if requestParams.preset == 'DATA' or requestParams.workinggroup == 'AP_REPR' %} selected="selected" {% endif %}
+                                {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
                             >AP_REPR</option>
 
 
-                            {% if requestParams.preset != 'DPD' %}
+                            {% if requestParams.preset != 'DPD' and requestParams.preset != 'DATA' %}
                                 {% for wg in sumd.3.list %}
                                     <option value={{ wg.kname }}
                                         {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>
@@ -189,18 +191,19 @@
                             >All</option>
                             <option value="evgen|pile|simul|recon"
                                 {% if requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
-                                {% if requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
+                                {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
                             >IN ('evgen' , 'pile', 'simul', 'recon')</option>
                             <option value="merge"
                                 {% if requestParams.processingtype == 'merge' %} selected="selected" {% endif %}
-                                {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
+                                {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
                             >merge</option>
 
                             <option value="reprocessing"
                                 {% if requestParams.processingtype == 'reprocessing' or requestParams.preset == 'DATA' %} selected="selected" {% endif %}
+                                {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
                             >reprocessing</option>
 
-                            {% if requestParams.preset != 'DPD' %}
+                            {% if requestParams.preset != 'DPD' and requestParams.preset != 'DATA' %}
                                 {% for ptype in sumd.1.list %}
                                         <option value={{ ptype.kname }}
                                             {% if ptype.kname == requestParams.processingtype %} selected="selected" {% endif %}>
@@ -214,6 +217,7 @@
                             <option value=""  selected="selected">All</option>
                             <option value="MC*"
                                 {% if requestParams.campaign == 'MC*' %} selected="selected" {% endif %}
+                                {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
                             > like 'MC%'</option>
                                 {% for campaign in sumd.0.list %}
                                     <option value="*{{ campaign.kname }}*"
@@ -258,6 +262,8 @@
                         {% if requestParams.preset == 'MC' %}
                             {% if neventsFStasksSum|length > 0 %}<div class="d3splot" id="pieChartFS" style="float:left"></div>{% endif %}
                             {% if neventsAFIItasksSum|length > 0 %}<div class="d3splot" id="pieChartAFII" style="float:left"></div>{% endif %}
+                        {% else %}
+                            {% if neventsByProcessingType|length > 0 %}<div class="d3splot" id="pieChartByPT" style="float:left"></div>{% endif %}
                         {% endif %}
                         <br>
                         Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in
@@ -267,7 +273,8 @@
                         Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs
                     </td>
                     {#<td><div class="d3splot" id="slots" style="float:left"></div></td>#}
-                    <td>Number of allocated slots: {{ slots }} </td>
+                    <td>{% if aslotsByType|length > 0 %}<div class="d3splot" id="pieChartSlots"></div>{% endif %}
+                        Number of allocated slots: {{ aslots }}</td>
                     <td colspan=20>{% if plotageshistogram == 1 %}
                         <div class="d3splot" id="sumPlot" style="float:left"></div>{% else %}
                         <p> All tasks age is 0 days</p> {% endif %} </td>
@@ -283,11 +290,20 @@
                 }
                 var neventsFStasksSum ={{ neventsFStasksSum|safe }};
                 var neventsAFIItasksSum ={{ neventsAFIItasksSum|safe }};
+                var neventsByProcessingType ={{ neventsByProcessingType|safe }};
                 if (productiontype == 'MC') {
-                    pandamonPieChartFunc(neventsFStasksSum, "#pieChartFS", 'FS');
-                    pandamonPieChartFunc(neventsAFIItasksSum, "#pieChartAFII", 'AFII');
+                    runningProdTasksPieChartFunc(neventsFStasksSum, "#pieChartFS", 'FS');
+                    runningProdTasksPieChartFunc(neventsAFIItasksSum, "#pieChartAFII", 'AFII');
+{#                    pandamonPieChartFunc(neventsFStasksSum, "#pieChartFS", 'FS');#}
+{#                    pandamonPieChartFunc(neventsAFIItasksSum, "#pieChartAFII", 'AFII');#}
                 }
-                {#var slots = {{ slots|safe }};#}
+                else {
+                    runningProdTasksPieChartFunc(neventsByProcessingType, "#pieChartByPT", 'N Events')
+                }
+
+                var slots = {{ aslotsByType|safe }};
+                runningProdTasksPieChartFunc(slots, '#pieChartSlots', 'Slots');
+
                 {#var gauges = [];#}
                 {#$(document).ready(function() {#}
                 {#createGauge("slots", "Slots");#}
@@ -357,7 +373,7 @@
                     {% else %}
                         <th>Status<br><a href="{{ nosorturl }}sortby=status-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=status-asc" class="headerSortUp"></a></th>{% endif %}
-                    {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
+                    {% if requestParams.preset != 'DPD' %}
                         {% if sortby == 'processingtype-desc' %}
                             <th>Type<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=processingtype-asc"
                                                                                   class="headerSortUp"></a></th>
@@ -448,12 +464,23 @@
                             <th>Output types<br><a href="{{ nosorturl }}sortby=outputdatasettype-desc" class="headerSortDown"></a>
                                 <a href="{{ nosorturl }}sortby=outputdatasettype-asc" class="headerSortUp"></a></th>{% endif %}
                     {% endif %}
+                    {% if requestParams.preset == 'MC' %}
+                        {% if sortby == 'simtype-desc' %}
+                            <th>Sim<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=simtype-asc"
+                                                                                 class="headerSortUp"></a></th>
+                        {% elif sortby == 'simtype-asc' %}
+                            <th>Sim<br><a href="{{ nosorturl }}sortby=simtype-desc" class="headerSortDown"></a> <span
+                                    class="headerSortedUp"></span></th>
+                        {% else %}
+                            <th>Sim<br><a href="{{ nosorturl }}sortby=simtype-desc" class="headerSortDown"></a> <a
+                                    href="{{ nosorturl }}sortby=simtype-asc" class="headerSortUp"></a></th>{% endif %}
+                    {% endif %}
                     {% if sortby == 'creationdate-desc' %}
-                        <th>Age<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=creationdate-asc"
-                                                                             class="headerSortUp"></a></th>
-                    {% elif sortby == 'creationdate-asc' %}
                         <th>Age<br><a href="{{ nosorturl }}sortby=creationdate-desc" class="headerSortDown"></a> <span
                                 class="headerSortedUp"></span></th>
+                    {% elif sortby == 'creationdate-asc' %}
+                        <th>Age<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=creationdate-asc"
+                                                                             class="headerSortUp"></a></th>
                     {% else %}
                         <th>Age<br><a href="{{ nosorturl }}sortby=creationdate-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=creationdate-asc" class="headerSortUp"></a></th>{% endif %}
@@ -514,7 +541,7 @@
                             {{ task.rjobs }}{% endif %}</td>
                         <td class='{{ task.status }}_fill'><a
                                 href="{{ xurl }}status={{ task.status }}">{{ task.status }}</a></td>
-                        {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
+                        {% if requestParams.preset != 'DPD' %}
                             <td><a href="{{ xurl }}processingtype={{ task.processingtype }}"> {{ task.processingtype }} </a></td>
                         {% endif %}
                         <td>{% if task.totev %}{{ task.totev|intcomma }}{% else %}---{% endif %}</td>
@@ -547,9 +574,12 @@
                         <td>{% if task.totev %}{{ task.percentage }}{% else %}---{% endif %}</td>
                         <td>{% if task.nfilesfailed %}{{ task.nfilesfailed }}{% else %}0{% endif %}</td>
                         <td>{{ task.currentpriority }}</td>
-                        {% if productiontype|safe == '"DPD"' %}
+                        {% if requestParams.preset == 'DPD' %}
                             <td><a href="{{ xurl }}ptag={{ task.ptag }}">{{ task.ptag }}</a></td>
                             <td>{{ task.outputtypes }}</td>
+                        {% endif %}
+                        {% if requestParams.preset == 'MC' %}
+                            <td><a href="{{ xurl }}simtype={{ task.simtype }}">{{ task.simtype }}</a></td>
                         {% endif %}
                         <td>{{ task.age }}</td>
                         <td><a href="{{ xurl }}corecount={{ task.corecount }}">{{ task.corecount }}</a></td>
