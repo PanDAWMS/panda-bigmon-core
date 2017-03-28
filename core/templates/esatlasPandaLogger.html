@@ -7,12 +7,13 @@
 {% if site %} &nbsp; site={{ site }} {% endif %}
 {% if vo %} &nbsp; VO={{ vo }} {% endif %}
 {% endblock %}
+
 {% block body %}
 
 {{ res }}
 {{ viewParams.header }}
 
-<p>
+    <p>
 {% if requestParams.category %} <br><b>Log category: {{ requestParams.category }}</b> {% endif %}
 {% if requestParams.type %} <br><b>Log type: {{ requestParams.type }}</b> {% endif %}
 {% if requestParams.level %} <br><b>Log level: <span class="{{ requestParams.level }}">{{ requestParams.level }}</span></b> {% endif %}
@@ -25,21 +26,30 @@
 {% if jedi or panda %}
 <p>
 
-<table>
-  <tr class='tablesection'><th colspan=20>Job Broker Logs Linked to Task</th></tr>
+<table valign="top"  style="display: inline-block; width: 250px; border: 0px">
+  <tr class='tablesection' ><th colspan=20>Job Broker Logs Linked to Task</th></tr>
   <tr>
     <td> Jedi TaskID: <input type="text" id="jediTaskID0" value=""> <input type="button" value="Search"  onclick="searchJedi()"></td>
   </tr>
 </table>
 
-<table>
+<table valign="top"  style="display: inline-block; width: 250px;margin-left: 20px; border: 0px">
   <tr class='tablesection'><th colspan=20>Task brokerage</th></tr>
   <tr>
     <td> Jedi TaskID: <input type="text" id="jediTaskID1" value=""> <input type="button" value="Search"  onclick="searchTaskBr()"></td>
   </tr>
 </table>
-
-
+<table id="jediTask" >
+   <caption  style="height: 30px;vertical-align: middle">JediTaskID in JEDI ({{ time }})</caption>
+     <thead>
+                <th>jediTaskID</th>
+                <th>Type</th>
+                <th>LevelName</th>
+                <th>Count</th>
+     </thead>
+     <tbody></tbody>
+    </table>
+<br/>
 <script>
 function searchJedi() {
     input = document.getElementById("jediTaskID0").value;
@@ -62,6 +72,10 @@ function searchTaskBr() {
 
 
 
+
+  <link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
+  <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
+  <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
 <table  style="display: inline-block; width: 550px; border: 0px">
 <tr class='tablesection'><th colspan=20>JEDI</th></tr>
 <tr class='tablesection'>
@@ -111,6 +125,63 @@ function searchTaskBr() {
 {% endfor %}
 </table>
 </p>
+
+
+<script type="text/javascript">
+
+
+
+var jediDataTable;
+$(document).ready(function () {
+        DisplayjediDataTableTableData();
+$("#jediTask_wrapper").css("width","950px");
+
+    });
+function DisplayjediDataTableTableData() {
+    jediDataTable = $('#jediTask').dataTable({
+        //"bRetrieve": true,
+        "sPaginationType": "full_numbers",
+        paging: true,
+        //"bProcessing": true,
+        //"bAutoWidth": false,
+        //"bStateSave": true,
+        "aaSorting": [[0, 'asc']],
+                     "ajax": {
+                 "processing": true,
+                 "url": "{% url 'dataTableJediTaskId' %}",
+                   "dataSrc" : ''},
+        rowsGroup: [0, 1],
+        "aoColumns": [
+            {
+                "data": "jediTaskID",
+                            "render": function(data, type, full, meta) {
+              return  '<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'@timestamp\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:'+data+'\')),sort:!(\'@timestamp\',desc))" target="_blank">' + full['jediTaskID'] + '</a>'
+                    //return '<a href="ab.aspx?emp_id=' + data + '">"' + full['Type'] + '"</a>';
+            },
+                sDefaultContent: ""
+            },
+            {
+                "data": "Type",
+                sDefaultContent: "",
+                 "render": function(data, type, full, meta) {
+                     return '<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'@timestamp\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:' +  full['jediTaskID'] + '%20AND%20type:%22'+full['Type']+'%22\')),sort:!(\'@timestamp\',desc))" target="_blank">' + full['Type'] + '</a>'
+                 }
+            },
+            {
+                "data": "LevelName",
+                sDefaultContent: "",
+                 "render": function(data, type, full, meta) {
+                     return '<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'@timestamp\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:' +  full['jediTaskID'] + '%20AND%20type:%22'+full['Type']+'%22%20AND%20logLevel:%22'+full['LevelName']+'%22\')),sort:!(\'@timestamp\',desc))" target="_blank">' + full['LevelName'] + '</a>'
+                 }
+            },
+            {
+                "data": "Count",
+                sDefaultContent: ""
+            }
+        ]
+    });
+}
+ </script>
 {% endif %}
 
 
@@ -119,4 +190,3 @@ function searchTaskBr() {
 {% block helptext %}
 {% include "pandaLoggerHelp.html" with helptitle="PanDA logger help" %}
 {% endblock %}
-

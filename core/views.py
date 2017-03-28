@@ -8272,7 +8272,74 @@ def incidentList(request):
             clearedInc.append(entry)
         jsonResp = json.dumps(clearedInc)
         return HttpResponse(jsonResp, content_type='text/html')
+def esatlasPandaLoggerJson(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+    from elasticsearch import Elasticsearch
+    from elasticsearch_dsl import Search, Q
 
+    esHost = None
+    esPort = None
+    esUser = None
+    esPassword = None
+
+    if 'esHost' in ES:
+        esHost = ES['esHost']
+    if 'esPort' in ES:
+        esPort = ES['esPort']
+    if 'esUser' in ES:
+        esUser = ES['esUser']
+    if 'esPassword' in ES:
+        esPassword = ES['esPassword']
+
+    es = Elasticsearch(
+        [{'host': esHost, 'port': int(esPort)}],
+        http_auth=(esUser,esPassword),
+        use_ssl=True,
+        verify_certs=False,
+        timeout=30,
+        max_retries=10,
+        retry_on_timeout=True,
+    )
+    today = time.strftime("%Y.%m.%d")
+    jedi = {}
+    logindexjedi = 'atlas_jedilogs-'
+    res = es.search(index=logindexjedi + str(today), fields=['jediTaskID', 'type', 'logLevel'], body={
+        "aggs": {
+            "jediTaskID": {
+                "terms": {"field": "jediTaskID", "size": 100000000},
+                "aggs": {
+                    "type": {
+                        "terms": {"field": "type", "size": 100},
+                        "aggs": {
+                            "logLevel": {
+                                "terms": {"field": "logLevel"}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    })
+
+    jdListFinal = []
+    for agg in res['aggregations']['jediTaskID']['buckets']:
+        jdlist = {}
+        name = agg['key']
+        for types in agg['type']['buckets']:
+            jdlist = {}
+            type = types['key']
+            for levelnames in types['logLevel']['buckets']:
+                jdlist = {}
+                levelname = levelnames['key']
+                jdlist['jediTaskID'] = str(name)
+                jdlist['Type'] = type
+                jdlist['LevelName'] = levelname
+                jdlist['Count'] = levelnames['doc_count']
+                jdListFinal.append(jdlist)
+
+
+    return HttpResponse(json.dumps(jdListFinal), content_type='text/html')
 def esatlasPandaLogger(request):
     valid, response = initRequest(request)
     if not valid: return response
