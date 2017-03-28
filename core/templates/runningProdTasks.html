@@ -161,8 +161,8 @@
                             >All</option>
                             <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"
                                 {% if requestParams.workinggroup == '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
-                                {% if requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
-                                {% if requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+                                {% if requestParams.preset == 'MC' and requestParams.workinggroup != '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
+                                {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
                             >NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
                             <option value="GP_PHYS"
                                 {% if requestParams.preset == 'DPD' or requestParams.workinggroup == 'GP_PHYS' %} selected="selected" {% endif %}
@@ -190,11 +190,11 @@
                                 {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
                             >All</option>
                             <option value="evgen|pile|simul|recon"
-                                {% if requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
+                                {% if requestParams.preset == 'MC'  or requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
                             >IN ('evgen' , 'pile', 'simul', 'recon')</option>
                             <option value="merge"
-                                {% if requestParams.processingtype == 'merge' %} selected="selected" {% endif %}
+                                {% if requestParams.preset == 'DPD' or requestParams.processingtype == 'merge' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
                             >merge</option>
 
@@ -216,7 +216,7 @@
                         <select id="campaign" onchange="onSubElementChoice()">
                             <option value=""  selected="selected">All</option>
                             <option value="MC*"
-                                {% if requestParams.campaign == 'MC*' %} selected="selected" {% endif %}
+                                {% if requestParams.preset == 'MC' or requestParams.campaign == 'MC*' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
                             > like 'MC%'</option>
                                 {% for campaign in sumd.0.list %}
