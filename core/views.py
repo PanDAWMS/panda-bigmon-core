@@ -394,7 +394,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             if card[0] == '!':
                 extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
             else:
-                extraQueryString += ' workinggroup=\''+escapeInput(card[0:])+'\' OR '
+                extraQueryString += ' workinggroup=\''+escapeInput(card[0:])+'\' OR'
         if extraQueryString.endswith('AND'):
             extraQueryString = extraQueryString[:-3]
         elif extraQueryString.endswith('OR'):
@@ -6530,16 +6530,33 @@ def runningProdTasks(request):
         xurl += '?'
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     exquery = {}
-    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=0, limit=9999999, querytype='task',
-                                                            wildCardExt=True)
+
     productiontype = ''
     if 'preset' in request.session['requestParams']:
         if request.session['requestParams']['preset'] and request.session['requestParams']['preset'].upper() == 'MC':
             productiontype = 'MC'
+            if 'workinggroup' not in request.session['requestParams']:
+                request.session['requestParams']['workinggroup'] = '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT'
+            if 'processingtype' not in request.session['requestParams']:
+                request.session['requestParams']['processingtype'] = 'evgen|pile|simul|recon'
+            if 'campaign' not in request.session['requestParams']:
+                request.session['requestParams']['campaign'] = 'mc*'
         if request.session['requestParams']['preset'] and request.session['requestParams']['preset'].upper() == 'DPD':
             productiontype = 'DPD'
+            if 'workinggroup' not in request.session['requestParams']:
+                request.session['requestParams']['workinggroup'] = 'GP_PHYS'
+            if 'processingtype' not in request.session['requestParams']:
+                request.session['requestParams']['processingtype'] = 'merge'
         if request.session['requestParams']['preset'] and request.session['requestParams']['preset'].upper() == 'DATA':
             productiontype = 'DATA'
+            if 'workinggroup' not in request.session['requestParams']:
+                request.session['requestParams']['workinggroup'] = 'AP_REPR'
+            if 'processingtype' not in request.session['requestParams']:
+                request.session['requestParams']['processingtype'] = 'reprocessing'
+
+    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=0, limit=9999999, querytype='task',
+                                                            wildCardExt=True)
+
     if 'workinggroup' in tquery and request.session['requestParams']['preset'] == 'MC' and ',' in tquery['workinggroup']:
         #     excludeWGList = list(str(wg[1:]) for wg in request.session['requestParams']['workinggroup'].split(','))
         #     exquery['workinggroup__in'] = excludeWGList
