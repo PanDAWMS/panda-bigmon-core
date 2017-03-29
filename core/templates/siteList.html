@@ -81,7 +81,6 @@
 	<th>Tier</th>
 	<th><a href="{{nosorturl}}sortby=maxmemory#sites">Max mem</a><br>(MB)</th>
 	<th><a href="{{nosorturl}}sortby=maxtime#sites">Max time</a><br>(hr)</th>
-	<th>Multicloud</th>
 	<th>Comment</th>
 </tr>
     {% for site in sites %}
@@ -97,7 +96,6 @@
 		<td> {{ site.tier }}</td>
 		<td> {% if site.maxmemory > 0 %} {{ site.maxmemory }} {% endif %}</td>
 		<td> {% if site.maxtime > 0 %} {{ site.maxtime }} {% endif %}</td>
-		<td> {% if site.multicloud != 'None' %} <font size=-1> {{ site.multicloud }} </font> {% else %} &nbsp; {% endif %} </td>
 		<td> {{ site.comment_field }} </td>
 	</tr>
     {% endfor %}

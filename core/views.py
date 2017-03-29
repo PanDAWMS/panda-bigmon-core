@@ -8713,14 +8713,9 @@ def ttc(request):
     if taskrec['tasktype'] != 'prod' or taskrec['ttcrequested'] == None:
         data = {"error": "TTC for this type of task has not implemented yet"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+
     if taskrec['ttcrequested']:
-        taskrec['ttc'] = taskrec['ttcrequested'].strftime(defaultDatetimeFormat)
-    if taskrec['creationdate']:
-        taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
-    if taskrec['starttime']:
-        taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
-    if taskrec['endtime']:
-        taskrec['endtime'] = taskrec['endtime'].strftime(defaultDatetimeFormat)
+        taskrec['ttc'] = taskrec['ttcrequested']
 
     taskevents = GetEventsForTask.objects.filter(**query).values('jeditaskid', 'totev', 'totevrem')
     if len(taskevents) > 0:
@@ -8760,6 +8755,15 @@ def ttc(request):
                                                                                                        taskrec[
                                                                                                            'ttc'] else 100
         progressForBar = [100, taskrec['percentage'], taskrec['ttcbasedpercentage']]
+
+    if taskrec['ttc']:
+        taskrec['ttc'] = taskrec['ttc'].strftime(defaultDatetimeFormat)
+    if taskrec['creationdate']:
+        taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
+    if taskrec['starttime']:
+        taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
+    if taskrec['endtime']:
+        taskrec['endtime'] = taskrec['endtime'].strftime(defaultDatetimeFormat)
 
     data = {
         'request': request,
