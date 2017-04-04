@@ -562,7 +562,7 @@ class JediTasksBase(models.Model):
     statechangetime = models.DateTimeField(null=True, db_column='STATECHANGETIME', blank=True) 
     superstatus = models.CharField(max_length=64, db_column='SUPERSTATUS', blank=True) 
     campaign = models.CharField(max_length=72, db_column='CAMPAIGN', blank=True)
-
+    gshare = models.CharField(max_length=72, db_column='GSHARE', blank=True)
     cputime = models.IntegerField(null=True, db_column='cputime', blank=True)
     cputimeunit = models.CharField(max_length=72, db_column='cputimeunit', blank=True)
     basewalltime = models.IntegerField(null=True, db_column='basewalltime', blank=True)
@@ -650,6 +650,7 @@ class RunningProdTasksModel(models.Model):
     outputdatasettype = models.CharField(max_length=384, db_column='OUTPUTDATASETTYPE')
     ptag = models.CharField(max_length=72, db_column='PTAG', blank=True)
     simtype = models.CharField(max_length=72, db_column='SIMTYPE', blank=True)
+    gshare = models.CharField(max_length=72, db_column='GSHARE', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODTASKS"'
 

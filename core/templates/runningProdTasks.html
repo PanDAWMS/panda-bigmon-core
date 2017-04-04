@@ -17,6 +17,7 @@
     {% if requestParams.workinggroup %}<br><b>Working group:</b> {{ requestParams.workinggroup }} {% endif %}
     {% if requestParams.processingtype %}<br><b>Processingtype:</b> {{ requestParams.processingtype }} {% endif %}
     {% if requestParams.site %}<br><b>Site:</b> {{ requestParams.site }} {% endif %}
+    {% if requestParams.gshare %}<br><b>Global Share:</b> {{ requestParams.gshare }} {% endif %}
     <p>
         <script>
             var numberOfRunning = 0;
@@ -36,6 +37,7 @@
                     var processingtype = document.getElementById ("processingtype");
                     var campaign = document.getElementById ("campaign");
                     var status = document.getElementById ("status");
+                    var warning = document.getElementById ("warning");
 
                     if (presetChoice.value == 'MC') {
                         workinggroup.selectedIndex = 1;
@@ -65,6 +67,7 @@
                         campaign.selectedIndex = 0;
                         status.selectedIndex = 0;
                     }
+                    warning.style.display = '';
                 }
 
                 function onSubElementChoice() {
@@ -525,6 +528,15 @@
                             <th>Site<br><a href="{{ nosorturl }}sortby=site-desc" class="headerSortDown"></a> <a
                                     href="{{ nosorturl }}sortby=site-asc" class="headerSortUp"></a></th>{% endif %}
                     {% endif %}
+                    {% if sortby == 'gshare-desc' %}
+                        <th>Global Share<br><span class="headerSortedDown"></span> <a
+                                href="{{ nosorturl }}sortby=gshare-asc" class="headerSortUp"></a></th>
+                    {% elif sortby == 'gshare-asc' %}
+                        <th>Global Share<br><a href="{{ nosorturl }}sortby=gshare-desc" class="headerSortDown"></a> <span
+                                class="headerSortedUp"></span></th>
+                    {% else %}
+                        <th>Global Share<br><a href="{{ nosorturl }}sortby=gshare-desc" class="headerSortDown"></a> <a
+                                href="{{ nosorturl }}sortby=gshare-asc" class="headerSortUp"></a></th>{% endif %}
                 </tr>
                 {% for task in tasks %}
                     <tr>
@@ -587,6 +599,7 @@
                             <td><a href="{{ xurl }}username={{ task.username }}">{{ task.username }} </a></td>
                         {% endif %}
                         <td>{% if task.cputime %} {{ task.cputime }} {% else %} --- {% endif %}</td>
+                        <td>{% if task.gshare %} <a href="{{ xurl }}gshare={{ task.gshare }}">{{ task.gshare }}</a> {% else %} --- {% endif %}</td>
                         {% if requestParams.site %}
                             <td>{% if task.site %} {{ task.site }} {% else %} --- {% endif %}</td>
                         {% endif %}
