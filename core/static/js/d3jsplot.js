@@ -220,12 +220,16 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
             });
 
     if (title.startsWith("Walltime per event histogram") && numberofbins > 50) {
-        d3.select(divToShow).append("button")
+        var adjustbutton = d3.select(divToShow).append("button")
             .attr("class","buttonadjust")
+            .attr('style', 'top: ' + (- height - margin.bottom - 10) + 'px; ' +
+                           'left: ' + (- width - margin.right - 50 ) + 'px;')
             .attr("float", "left")
             .text("Adjust")
             .on("click", adjust);
+
     }
+
 
     function adjust () {
         var bins = stackedHistData[stackedHistData.length - 1].values;
@@ -285,8 +289,8 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
             for (var i = 0, len = bins.length; i < len; i++) {
                 lastbinx = ((bins[i].y0 + bins[i].y) > rh) ? (bins[i].x + bins[i].dx) : lastbinx;
             }
-            minx = (firstbinx - (lastbinx - firstbinx) / 4) > 0 ? Math.floor(firstbinx - (lastbinx - firstbinx) / 4) : 0;
-            maxx = Math.ceil(lastbinx + (lastbinx - firstbinx) / 4);
+            minx = (firstbinx - (lastbinx - firstbinx) / 4) > 0 ? (firstbinx - (lastbinx - firstbinx) / 4) : 0;
+            maxx = lastbinx + (lastbinx - firstbinx) / 4;
             // sum of underlier and outlier
             underlier = 0;
             outlier = 0;
@@ -1108,7 +1112,7 @@ var formatDecimal = d3.format(",.2f"),
 var data = $.map(values, function(value, key) { if (value>0) {return value} });
 var labels = $.map(values, function(value, key) { if (value>0) {return key} });
 var tot = 0;
-for (var i = 0; i < data.length; i++) { tot += data[i] << 0;}
+for (var i = 0; i < data.length; i++) { tot += data[i];}
 var margin = {top: 0, right: 100, bottom: 0, left: 0},
     w = 350 - margin.left - margin.right,
     h = 200 - margin.top - margin.bottom,
