@@ -197,11 +197,11 @@ def api_status_summary(request):
 
     if not len(errors) and len(raw_data):
         ### set request response data
-        return  HttpResponse(json.dumps(data), mimetype='application/json')
+        return  HttpResponse(json.dumps(data), content_type='text/html')
     elif not len(raw_data):
-        return  HttpResponse(json.dumps(data), mimetype='application/json', status=404)
+        return  HttpResponse(json.dumps(data), content_type='application/json', status=404)
     else:
-        return  HttpResponse(json.dumps(data), mimetype='application/json', status=400)
+        return  HttpResponse(json.dumps(data), content_type='application/json', status=400)
 
 
 def index(request):

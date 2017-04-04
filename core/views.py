@@ -6160,7 +6160,7 @@ def getErrorSummaryForEvents(request):
         transactionKey = int(request.session['requestParams']['tk'])
     else:
         data = {"error": "no failed events found"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
     equery = {}
     equery['jeditaskid']=jeditaskid
     equery['error_code__isnull'] = False
@@ -6209,7 +6209,7 @@ def getErrorSummaryForEvents(request):
         eventsErrorsUP = dictfetchall(new_cur)
     else:
         data = {"error": "wrong mode specified"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), mimetype='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
 
     for error in eventsErrorsUP:
