@@ -7161,7 +7161,7 @@ def taskInfo(request, jeditaskid=0):
         for ds in dsets:
             if ds['type'] not in ['input', 'pseudo_input']: continue
             if ds['masterid']: continue
-            if int(ds['nevents']) > 0:
+            if not ds['nevents'] is None and int(ds['nevents']) > 0:
                 neventsTot += int(ds['nevents'])
                 neventsUsedTot += int(ds['neventsused'])
 
