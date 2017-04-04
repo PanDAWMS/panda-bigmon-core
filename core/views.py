@@ -4766,7 +4766,9 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         clouds[cloud]['summary'] = cloudsummary
         if clouds[cloud]['states']['finished']['count'] + clouds[cloud]['states']['failed']['count'] > 0:
             clouds[cloud]['pctfail'] = int(100. * float(clouds[cloud]['states']['failed']['count']) / (
-            clouds[cloud]['states']['finished']['count'] + clouds[cloud]['states']['failed']['count']))
+                clouds[cloud]['states']['finished']['count'] + clouds[cloud]['states']['failed']['count']))
+        else:
+            clouds[cloud]['pctfail'] = 0
 
         fullsummary.append(clouds[cloud])
 
