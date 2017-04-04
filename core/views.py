@@ -415,9 +415,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     if querytype == 'task':
         for field in JediTasks._meta.get_fields():
             if (field.get_internal_type() == 'CharField'):
-                if not (field.name == 'status' or field.name == 'modificationhost' or (excludeWGFromWildCard and field.name == 'workinggroup') or (excludeSiteFromWildCard and field.name == 'site')):
+                if not (field.name == 'modificationhost' or (excludeWGFromWildCard and field.name == 'workinggroup') or (excludeSiteFromWildCard and field.name == 'site')):
                     wildSearchFields.append(field.name)
-
     deepquery = False
     fields = standard_fields
     if 'limit' in request.session['requestParams']:
