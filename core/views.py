@@ -7105,7 +7105,8 @@ def taskInfo(request, jeditaskid=0):
                 rec = {'name': k, 'value': taskparams[k]}
                 taskparaml.append(rec)
             jobparams = taskparams['jobParameters']
-            jobparams.append(taskparams['log'])
+            if 'log' in taskparams:
+                jobparams.append(taskparams['log'])
             for p in jobparams:
                 if p['type'] == 'constant':
                     ptxt = p['value']
