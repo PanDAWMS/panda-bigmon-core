@@ -9117,7 +9117,7 @@ def fileInfo(request):
     if ((len(files) > 0) and ('jeditaskid' in files[0]) and ('startevent' in files[0]) and (
         files[0]['jeditaskid'] != None)):
         files = sorted(files, key=lambda k: (-k['jeditaskid'], k['startevent']))
-    frec['creationdate']=frec['creationdate'].strftime(defaultDatetimeFormat)
+    frec['creationdate'] = frec['creationdate'].strftime(defaultDatetimeFormat) if not frec['creationdate'] is None else ''
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
         data = {
