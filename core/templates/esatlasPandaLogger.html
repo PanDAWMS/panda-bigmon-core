@@ -133,9 +133,10 @@ function searchTaskBr() {
 
 var jediDataTable;
 $(document).ready(function () {
+
         DisplayjediDataTableTableData();
 $("#jediTask_wrapper").css("width","950px");
-
+$( ".has-dropdown" ).addClass("has-dropdown not-click");
     });
 function DisplayjediDataTableTableData() {
     jediDataTable = $('#jediTask').dataTable({
