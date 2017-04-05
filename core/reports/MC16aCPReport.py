@@ -71,6 +71,33 @@ class MC16aCPReport:
         fullSummary['input/processed']['merge'] = '%s/%s' % (  humanize.intcomma(summaryInput['merge']) if 'merge' in summaryInput else '-', humanize.intcomma(summaryProcessed['merge']) if 'merge' in summaryInput else '-')
         return fullSummary
 
+    #SELECT t1.TASKID, t3.HASHTAG FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_HT_TO_TASK t2, ATLAS_DEFT.T_HASHTAG t3 WHERE t3.HT_ID=t2.HT_ID and t1.TASKID=t2.TASKID AND PR_ID IN (11034,11048,11049,11050,11051,11052,11198,11197,11222,11359)
+
+    def getJEDIEventsSummaryRequestedBreakDownHashTag(self, condition):
+        sqlRequestHashTags = '''SELECT t1.TASKID, t3.HASHTAG FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_HT_TO_TASK t2, ATLAS_DEFT.T_HASHTAG t3 WHERE t3.HT_ID=t2.HT_ID and t1.TASKID=t2.TASKID AND t1.PR_ID IN {0}'''
+        sqlRequestFull = sqlRequestHashTags.format(condition)
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        hashTags = cur.fetchall()
+        hashTagsDict = {}
+
+        for hashTag in hashTags:
+            if not hashTag[1] in hashTagsDict:
+                hashTagsDict[hashTag[1]] = []
+            else:
+                hashTagsDict[hashTag[1]].append(hashTag[0])
+
+        JediEventsTableHashs = []
+        hashTagsList = []
+        for hashTagKey in hashTagsDict:
+            tasksList = hashTagsDict[hashTagKey]
+            if len(tasksList) > 0:
+                requestListString = '(' + ','.join(map(str, tasksList)) + ')'
+                JediEventsTableHash = self.getJEDIEventsSummaryRequested('and t1.REQID IN %s and t1.JEDITASKID IN %s' % (condition, requestListString))
+                JediEventsTableHash['hashtag'] = hashTagKey
+                JediEventsTableHashs.append(JediEventsTableHash)
+                hashTagsList.append(hashTagKey)
+        return (JediEventsTableHashs, hashTagsList)
 
 
 
@@ -266,6 +293,8 @@ class MC16aCPReport:
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
 
+        (jediEventsHashsTable, hashTable) = self.getJEDIEventsSummaryRequestedBreakDownHashTag(requestList)
+
         JediEventsR = self.getJEDIEventsSummaryRequested('and t1.REQID IN %s' % requestList)
         JediEventsR['title'] = 'Overall events processing summary (JEDI)'
 
@@ -286,8 +315,10 @@ class MC16aCPReport:
                 "totalEvents": [totalEvents],
                 "totalTasks":[totalTasks],
                 "totalJobs":[totalJobs],
+                "JediEventsHashsTable":jediEventsHashsTable,
+                "hashTable":hashTable,
                 "built": datetime.now().strftime("%H:%M:%S")}
-        self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 60 * 20)
+#        self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 60 * 20)
 
         return render_to_response('reportCampaign.html', data, RequestContext(request))
 
