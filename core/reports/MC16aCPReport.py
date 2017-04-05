@@ -187,13 +187,17 @@ class MC16aCPReport:
                 fullSummary[summaryRow[1]][summaryRow[2]] = 0
             fullSummary[summaryRow[1]][summaryRow[2]] += summaryRow[0]
 
+        fullSummaryTotal = {}
+
         for status, stepdict in fullSummary.items():
             for step, val in stepdict.items():
-                if 'total' not in fullSummary[status]:
-                    fullSummary[status]['total'] = 0
-                fullSummary[status]['total'] += val
+                if step not in fullSummaryTotal:
+                    fullSummaryTotal[step] = 0
+                fullSummaryTotal[step] += val
 
+        fullSummary['total'] = fullSummaryTotal
         return fullSummary
+
 
     def getJobsJEDISummary(self, condition):
 
@@ -234,11 +238,13 @@ class MC16aCPReport:
                 fullSummary[summaryRow[1]][summaryRow[2]] = 0
             fullSummary[summaryRow[1]][summaryRow[2]] += summaryRow[0]
 
+        fullSummaryTotal = {}
         for status, stepdict in fullSummary.items():
             for step, val in stepdict.items():
-                if 'total' not in fullSummary[status]:
-                    fullSummary[status]['total'] = 0
-                fullSummary[status]['total'] += val
+                if step not in fullSummaryTotal:
+                    fullSummaryTotal[step] = 0
+                fullSummaryTotal[step] += val
+        fullSummary['total'] = fullSummaryTotal
 
         return fullSummary
 
@@ -271,11 +277,13 @@ class MC16aCPReport:
                 fullSummary[summaryRow[1]][summaryRow[2]] = 0
             fullSummary[summaryRow[1]][summaryRow[2]] += summaryRow[0]
 
+        fullSummaryTotal = {}
         for status, stepdict in fullSummary.items():
             for step, val in stepdict.items():
-                if 'total' not in fullSummary[status]:
-                    fullSummary[status]['total'] = 0
-                fullSummary[status]['total'] += val
+                if step not in fullSummaryTotal:
+                    fullSummaryTotal[step] = 0
+                fullSummaryTotal[step] += val
+        fullSummary['total'] = fullSummaryTotal
 
         return fullSummary
 

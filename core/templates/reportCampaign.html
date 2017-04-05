@@ -98,7 +98,7 @@
         </tr>
 
         {% for key, values in data.items %}
-            {% ifnotequal key 'title' %}
+            {%if  key != 'title' and key != 'total' %}
             <tr>
                 <td>{{ key }}</td>
                 <td>{{ values.evgen|intcomma }}</td>
@@ -106,8 +106,15 @@
                 <td>{{ values.recon|intcomma }}</td>
                 <td>{{ values.merge|intcomma }}</td>
             </tr>
-            {% endifnotequal %}
+            {% endif %}
         {% endfor %}
+        <tr>
+             <td><span class='total'>TOTAL</span></td>
+             <td>{{ data.total.evgen|intcomma }}</td>
+             <td>{{ data.total.simul|intcomma }}</td>
+             <td>{{ data.total.recon|intcomma }}</td>
+             <td>{{ data.total.merge|intcomma }}</td>
+        <tr>
 
     </table>
     {% endfor %}
@@ -127,7 +134,7 @@
         </tr>
 
         {% for key, values in data.items %}
-            {% ifnotequal key 'title' %}
+            {%if  key != 'title' and key != 'total' %}
                 <tr>
                     <td><span class='{{ key }}'>{{ key }}</span></td>
                     <td><a href='/tasks/?status={{ key }}&campaign=MC16*&taskname=*.evgen.*&days=300&reqid=11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>   {{ values.evgen|intcomma }}</td>
@@ -135,9 +142,15 @@
                     <td><a href='/tasks/?status={{ key }}&campaign=MC16*&taskname=*.recon.*&days=300&reqid=11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>   {{ values.recon|intcomma }}</td>
                     <td><a href='/tasks/?status={{ key }}&campaign=MC16*&taskname=*.merge.*&days=300&reqid=11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>   {{ values.merge|intcomma }}</td>
                 </tr>
-            {% endifnotequal %}
+            {% endif %}
         {% endfor %}
-
+        <tr>
+             <td><span class='total'>TOTAL</span></td>
+             <td>{{ data.total.evgen|intcomma }}</td>
+             <td>{{ data.total.simul|intcomma }}</td>
+             <td>{{ data.total.recon|intcomma }}</td>
+             <td>{{ data.total.merge|intcomma }}</td>
+        <tr>
     </table>
     {% endfor %}
     <p>(*) Merge links may not provide corespondent number due to additional filtering which should be applied to select true merge tasks
@@ -156,7 +169,7 @@
         </tr>
 
         {% for key, values in data.items %}
-            {% ifnotequal key 'title' %}
+            {%if  key != 'title' and key != 'total' %}
                 <tr>
                     <td>{{ key }}</td>
                     <td>{{ values.evgen|intcomma }}</td>
@@ -164,12 +177,15 @@
                     <td>{{ values.recon|intcomma }}</td>
                     <td>{{ values.merge|intcomma }}</td>
                 </tr>
-            {% endifnotequal %}
+            {% endif %}
         {% endfor %}
-
+        <tr>
+             <td><span class='total'>TOTAL</span></td>
+             <td>{{ data.total.evgen|intcomma }}</td>
+             <td>{{ data.total.simul|intcomma }}</td>
+             <td>{{ data.total.recon|intcomma }}</td>
+             <td>{{ data.total.merge|intcomma }}</td>
+        <tr>
     </table>
     {% endfor %}
-
-
-
 {% endblock %}
