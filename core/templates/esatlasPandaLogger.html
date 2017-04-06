@@ -88,7 +88,7 @@ function searchTaskBr() {
 
 <tr bgcolor="#FCFCFC">
 
-<td> <a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{time}}T00:00.00Z',mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22')),sort:!('@timestamp',desc))" target="_blank">{{ type }}</a> </td><td>
+<td> <a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{time}}T00:00.00Z',mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22')),sort:!('@timestamp',desc))" target="_blank"> {% if type == "stdout" %}{{ type }} ({{name}}) {% else %}{{ type }}{% endif %}</a> </td><td>
 
 {% for key,level in levels.items %}
 <a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{time}}T00:00.00Z',mode:quick,to:now))&_a=(columns:!('@timestamp',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('@timestamp',desc))" target="_blank">
@@ -133,10 +133,9 @@ function searchTaskBr() {
 
 var jediDataTable;
 $(document).ready(function () {
-
         DisplayjediDataTableTableData();
-$("#jediTask_wrapper").css("width","950px");
-$( ".has-dropdown" ).addClass("has-dropdown not-click");
+        $("#jediTask_wrapper").css("width","950px");
+        $( ".has-dropdown" ).addClass("has-dropdown not-click");
     });
 function DisplayjediDataTableTableData() {
     jediDataTable = $('#jediTask').dataTable({
