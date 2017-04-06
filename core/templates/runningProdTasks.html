@@ -321,7 +321,7 @@
 
             <table>
                 <tr class='tablesection'>
-                    <th colspan=20> {{ ntasks }} tasks</th>
+                    <th colspan=25> {{ ntasks }} tasks</th>
                 </tr>
                 <tr class='tablesection'>
                     {% if sortby == 'campaign-desc' %}
@@ -520,6 +520,15 @@
                     {% else %}
                         <th>CPU Time per Event<br><a href="{{ nosorturl }}sortby=cputime-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=cputime-asc" class="headerSortUp"></a></th>{% endif %}
+                    {% if sortby == 'gshare-desc' %}
+                        <th>Global Share<br><span class="headerSortedDown"></span> <a
+                                href="{{ nosorturl }}sortby=gshare-asc" class="headerSortUp"></a></th>
+                    {% elif sortby == 'gshare-asc' %}
+                        <th>Global Share<br><a href="{{ nosorturl }}sortby=gshare-desc" class="headerSortDown"></a> <span
+                                class="headerSortedUp"></span></th>
+                    {% else %}
+                        <th>Global Share<br><a href="{{ nosorturl }}sortby=gshare-desc" class="headerSortDown"></a> <a
+                                href="{{ nosorturl }}sortby=gshare-asc" class="headerSortUp"></a></th>{% endif %}
                     {% if requestParams.site %}
                         {% if sortby == 'site-desc' %}
                             <th>Site<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=site-asc"
@@ -531,15 +540,6 @@
                             <th>Site<br><a href="{{ nosorturl }}sortby=site-desc" class="headerSortDown"></a> <a
                                     href="{{ nosorturl }}sortby=site-asc" class="headerSortUp"></a></th>{% endif %}
                     {% endif %}
-                    {% if sortby == 'gshare-desc' %}
-                        <th>Global Share<br><span class="headerSortedDown"></span> <a
-                                href="{{ nosorturl }}sortby=gshare-asc" class="headerSortUp"></a></th>
-                    {% elif sortby == 'gshare-asc' %}
-                        <th>Global Share<br><a href="{{ nosorturl }}sortby=gshare-desc" class="headerSortDown"></a> <span
-                                class="headerSortedUp"></span></th>
-                    {% else %}
-                        <th>Global Share<br><a href="{{ nosorturl }}sortby=gshare-desc" class="headerSortDown"></a> <a
-                                href="{{ nosorturl }}sortby=gshare-asc" class="headerSortUp"></a></th>{% endif %}
                 </tr>
                 {% for task in tasks %}
                     <tr>
