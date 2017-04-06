@@ -22,7 +22,8 @@
         <script>
             var numberOfRunning = 0;
             var numberOfWaiting = 0;
-
+            var c = 0;
+            var ntasks = {{ ntasks }};
             function insertReply(content) {
                 alert(content);
             }
@@ -271,8 +272,8 @@
                         <br>
                         Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in
                         <b>{{ ntasks }}</b> tasks <br>
-                        Number of currently running events <b id="running"></b><b>M</b><br>
-                        Number of waiting events <b id="waiting"></b><b>M</b><br>
+                        Number of currently running events <b id="running"></b><b>M</b>  <progress id="runningprogressbar" value="0" max="100"></progress><br>
+                        Number of waiting events <b id="waiting"></b><b>M</b> <progress id="waitingprogressbar" value="0" max="100"></progress><br>
                         Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs
                     </td>
                     {#<td><div class="d3splot" id="slots" style="float:left"></div></td>#}
@@ -285,6 +286,8 @@
             </table>
             <script src="/static/js/d3jsplot.js"></script>
             <script>
+                var progressBarR = $('#runningprogressbar');
+                var progressBarW = $('#waitingprogressbar');
                 var ages = {{ ages|safe }};
                 var productiontype = {{ productiontype | safe }};
                 var plotageshistogram = {{ plotageshistogram }};
@@ -546,7 +549,7 @@
                                target="_blank"> &rArr;</a></td>
                         <td><a href="{{ xurl }}inputdataset={{ task.inputdataset }}">{{ task.inputdataset }}</a></td>
                         <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>
-                            <a href=" https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
+                            <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
                                target="_blank"> &rArr;</a></td>
                         <td>{% if task.rjobs > 0 %}
                             <a href="/jobs/?jeditaskid={{ task.jeditaskid }}&jobstatus=running">{{ task.rjobs }}</a> {% else %}
@@ -568,12 +571,14 @@
                                 type: 'GET',
                                 success: function(response) {
                                     document.getElementById(response.jeditaskid).innerHTML = ((typeof response.running) != 'undefined' ? response.running.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '---' );
-                                    if (response.running === parseInt(response.running, 10))
+                                    if (response.running === parseInt(response.running, 10)) {
                                         numberOfRunning = numberOfRunning + response.running;
-                                        numberOfWaiting = numberOfWaiting + {{ task.totevrem }};
+                                        numberOfWaiting = numberOfWaiting + {{ task.totevrem }};}
                                     document.getElementById("running").innerHTML = Math.round(numberOfRunning/1000000);
                                     document.getElementById("waiting").innerHTML = Math.round(numberOfWaiting/1000000);
-
+                                    c+=1;
+                                    progressBarR.val(Math.ceil(c*100/ntasks));
+                                    progressBarW.val(Math.ceil(c*100/ntasks));
                                 },
                                 error: function(xhr, status, error) {
                                     console.log(status + '; ' + error);
