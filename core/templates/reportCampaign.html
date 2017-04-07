@@ -155,6 +155,40 @@
     {% endfor %}
     <p>(*) Merge links may not provide corespondent number due to additional filtering which should be applied to select true merge tasks
 
+
+    {% for data in recentTasks %}
+    <table>
+        <tr>
+            <th colspan=20>{{ data.title }}</th>
+        </tr>
+        <tr>
+            <th></th>
+            <th>evgen</th>
+            <th>simul</th>
+            <th>recon</th>
+            <th>merge</th>
+        </tr>
+
+        {% for key, values in data.items %}
+            {%if  key != 'title' and key != 'total' %}
+                <tr>
+                    <td>{{ key }}</td>
+                    <td>{{ values.evgen|intcomma }}</td>
+                    <td>{{ values.simul|intcomma }}</td>
+                    <td>{{ values.recon|intcomma }}</td>
+                    <td>{{ values.merge|intcomma }}</td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+    {% endfor %}
+    <p>(*) Tasks updated during last 24 hours
+    <br>(**) All current tasks
+    <br>(***) Tasks submitted during last 24 hours
+
+
+
+
     {% for data in totalJobs %}
     <table>
         <tr>

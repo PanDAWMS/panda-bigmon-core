@@ -301,6 +301,10 @@ class MC16aCPReport:
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
 
+        recentTasks = self.recentProgressReportDEFT('and PR_ID IN %s' % requestList)
+        recentTasks['title'] = 'Recent Tasks (24 hours, DEFT)'
+
+
         (jediEventsHashsTable, hashTable) = self.getJEDIEventsSummaryRequestedBreakDownHashTag(requestList)
 
         JediEventsR = self.getJEDIEventsSummaryRequested('and t1.REQID IN %s' % requestList)
@@ -325,8 +329,9 @@ class MC16aCPReport:
                 "totalJobs":[totalJobs],
                 "JediEventsHashsTable":jediEventsHashsTable,
                 "hashTable":hashTable,
+                "recentTasks":[recentTasks],
                 "built": datetime.now().strftime("%H:%M:%S")}
-        self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 60 * 20)
+        #self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 60 * 20)
 
         return render_to_response('reportCampaign.html', data, RequestContext(request))
 
@@ -381,6 +386,99 @@ class MC16aCPReport:
 
         return render_to_response('reportCampaign.html', data, RequestContext(request))
 
+
+    def recentProgressReportDEFT(self, condition):
+        """
+        1. Request tasks with statuses 
+                failed, finished, aborted, done, registered, exhausted, broken,  submitting, obsolete, assigning, ready
+                + timestamp = current_time - 24h
+                
+        2. Request tasks with statuses
+                running, waiting
+                
+        3. Request tasks with statuses
+                running, waiting + SUBMIT_TIME = current_time - 24h
+
+        sqlRequestFull = sqlRequest.format(condition)
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        campaignsummary = cur.fetchall()
+
+        """
+
+        sqlRequest = """
+        SELECT COUNT(STATUS), STATUS, STEP FROM (
+        SELECT STATUS, 'recon' as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1 WHERE timestamp >= SYS_EXTRACT_UTC(systimestamp) - 1 and campaign like 'MC16%' and TASKNAME LIKE '%.recon.%'  {0} 
+        UNION ALL
+        SELECT STATUS, 'simul' as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1 WHERE timestamp >= SYS_EXTRACT_UTC(systimestamp) - 1 and campaign like 'MC16%' and TASKNAME LIKE '%.simul.%'  {0} 
+        UNION ALL
+        SELECT STATUS, 'evgen' as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1 WHERE timestamp >= SYS_EXTRACT_UTC(systimestamp) - 1 and campaign like 'MC16%' and TASKNAME LIKE '%.evgen.%'  {0} 
+        UNION ALL
+        SELECT STATUS, 'merge' as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1 WHERE timestamp >= SYS_EXTRACT_UTC(systimestamp) - 1 and campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%'  {0} 
+        )t1 group by STATUS, STEP
+        """
+        sqlRequestFull = sqlRequest.format(condition)
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        campaignsummary = cur.fetchall()
+
+
+        fullSummary = {}
+        for summaryRow in campaignsummary:
+            if summaryRow[1] in ('failed', 'finished', 'aborted', 'done', 'registered', 'exhausted', 'broken'):
+                if summaryRow[1]+'*' not in fullSummary:
+                    fullSummary[summaryRow[1]+'*'] = {}
+                if summaryRow[2] not in fullSummary[summaryRow[1]+'*']:
+                    fullSummary[summaryRow[1]+'*'][summaryRow[2]] = 0
+                fullSummary[summaryRow[1]+'*'][summaryRow[2]] += summaryRow[0]
+
+        sqlRequest = """
+        SELECT COUNT(STATUS), STATUS, STEP FROM (
+        SELECT STATUS, 'recon' as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1 WHERE STATUS in ('running','waiting', 'submitting') and campaign like 'MC16%' and TASKNAME LIKE '%.recon.%'  {0} 
+        UNION ALL
+        SELECT STATUS, 'simul' as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1 WHERE STATUS in ('running','waiting', 'submitting') and campaign like 'MC16%' and TASKNAME LIKE '%.simul.%'  {0} 
+        UNION ALL
+        SELECT STATUS, 'evgen' as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1 WHERE STATUS in ('running','waiting', 'submitting') and campaign like 'MC16%' and TASKNAME LIKE '%.evgen.%'  {0} 
+        UNION ALL
+        SELECT STATUS, 'merge' as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1 WHERE STATUS in ('running','waiting', 'submitting') and campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%'  {0} 
+        )t1 group by STATUS, STEP
+        """
+        sqlRequestFull = sqlRequest.format(condition)
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        campaignsummary = cur.fetchall()
+
+        for summaryRow in campaignsummary:
+            if summaryRow[1]+'**' not in fullSummary:
+                fullSummary[summaryRow[1]+'**'] = {}
+            if summaryRow[2] not in fullSummary[summaryRow[1]+'**']:
+                fullSummary[summaryRow[1]+'**'][summaryRow[2]] = 0
+            fullSummary[summaryRow[1]+'**'][summaryRow[2]] += summaryRow[0]
+
+        sqlRequest = """
+        SELECT COUNT(STATUS), STATUS, STEP FROM (
+        SELECT STATUS, 'recon' as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1 WHERE STATUS in ('running', 'waiting', 'submitting') and SUBMIT_TIME >= SYS_EXTRACT_UTC(systimestamp) - 1 and campaign like 'MC16%' and TASKNAME LIKE '%.recon.%'  {0} 
+        UNION ALL
+        SELECT STATUS, 'simul' as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1 WHERE STATUS in ('running', 'waiting', 'submitting') and SUBMIT_TIME >= SYS_EXTRACT_UTC(systimestamp) - 1 and campaign like 'MC16%' and TASKNAME LIKE '%.simul.%'  {0} 
+        UNION ALL
+        SELECT STATUS, 'evgen' as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1 WHERE STATUS in ('running', 'waiting', 'submitting') and SUBMIT_TIME >= SYS_EXTRACT_UTC(systimestamp) - 1 and campaign like 'MC16%' and TASKNAME LIKE '%.evgen.%'  {0} 
+        UNION ALL
+        SELECT STATUS, 'merge' as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1 WHERE STATUS in ('running', 'waiting', 'submitting') and SUBMIT_TIME >= SYS_EXTRACT_UTC(systimestamp) - 1 and campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%'  {0} 
+        )t1 group by STATUS, STEP
+        """
+        sqlRequestFull = sqlRequest.format(condition)
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        campaignsummary = cur.fetchall()
+
+        for summaryRow in campaignsummary:
+            if summaryRow[1]+'***' not in fullSummary:
+                fullSummary[summaryRow[1]+'***'] = {}
+            if summaryRow[2] not in fullSummary[summaryRow[1]+'***']:
+                fullSummary[summaryRow[1]+'***'][summaryRow[2]] = 0
+            fullSummary[summaryRow[1]+'***'][summaryRow[2]] += summaryRow[0]
+
+        return fullSummary
 
 
 
