@@ -6568,13 +6568,13 @@ def runningProdTasks(request):
         del tquery['site']
         exquery['site__isnull'] = True
 
-    if 'sortby' in request.session['requestParams']:
+    if 'sortby' in request.session['requestParams'] and '-' in request.session['requestParams']['sortby'] :
         sortby = request.session['requestParams']['sortby']
     else:
         sortby = 'creationdate-desc'
     oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
 
-    tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().order_by(oquery)
+    tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)
     ntasks = len(tasks)
     slots = 0
     aslots = 0
