@@ -1434,7 +1434,7 @@ def taskSummaryDict(request, tasks, fieldlist=None):
                 ## Remove the noisy useless parameters in analysis listings
                 if flist in ('reqid', 'stream', 'tag'): continue
 
-            if len(task['taskname'].split('.')) == 5:
+            if 'taskname' in task and len(task['taskname'].split('.')) == 5:
                 if f == 'project':
                     try:
                         if not f in sumd: sumd[f] = {}
@@ -6588,13 +6588,10 @@ def runningProdTasks(request):
     rjobs1coreTot = 0
     rjobs8coreTot = 0
     for task in tasks:
-        if task['rjobs'] is None:
-            task['rjobs'] = 0
-        task['neventsused'] = task['totev'] - task['totevrem'] if task['totev'] is not None else 0
-        task['percentage'] = round(100. * task['neventsused'] / task['totev'], 1) if task['totev'] > 0 else 0.
-        neventsTotSum += task['totev'] if task['totev'] is not None else 0
+        task['rjobs'] = 0 if task['rjobs'] is None else task['rjobs']
+        task['percentage'] = round(100 * task['percentage'],1)
+        neventsTotSum += task['nevents'] if task['nevents'] is not None else 0
         neventsUsedTotSum += task['neventsused']
-        # slots += task['rjobs'] * task['corecount']
         slots += task['slots'] if task['slots'] else 0
         aslots += task['aslots'] if task['aslots'] else 0
         if not task['processingtype'] in aslotsByType.keys():
@@ -6634,15 +6631,15 @@ def runningProdTasks(request):
             if  task['simtype'] == 'AFII':
                 if not task['processingtype'] in neventsAFIItasksSum.keys():
                     neventsAFIItasksSum[str(task['processingtype'])] = 0
-                neventsAFIItasksSum[str(task['processingtype'])] += task['totev'] if task['totev'] is not None else 0
+                neventsAFIItasksSum[str(task['processingtype'])] += task['nevents'] if task['nevents'] is not None else 0
             elif task['simtype'] == 'FS':
                 if not task['processingtype'] in neventsFStasksSum.keys():
                     neventsFStasksSum[str(task['processingtype'])] = 0
-                neventsFStasksSum[str(task['processingtype'])] += task['totev'] if task['totev'] is not None else 0
+                neventsFStasksSum[str(task['processingtype'])] += task['nevents'] if task['nevents'] is not None else 0
         else:
             if not task['processingtype'] in neventsByProcessingType.keys():
                 neventsByProcessingType[str(task['processingtype'])] = 0
-            neventsByProcessingType[str(task['processingtype'])] += task['totev'] if task['totev'] is not None else 0
+            neventsByProcessingType[str(task['processingtype'])] += task['nevents'] if task['nevents'] is not None else 0
 
     plotageshistogram = 1
     if sum(ages) == 0: plotageshistogram = 0

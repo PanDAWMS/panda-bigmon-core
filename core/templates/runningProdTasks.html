@@ -342,16 +342,16 @@
                     {% else %}
                         <th>Request ID<br><a href="{{ nosorturl }}sortby=reqid-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=reqid-asc" class="headerSortUp"></a></th>{% endif %}
-                    {% if sortby == 'inputdataset-desc' %}
+                    {% if sortby == 'runnumber-desc' %}
                         <th>Input dataset<br><span class="headerSortedDown"></span> <a
-                                href="{{ nosorturl }}sortby=inputdataset-asc" class="headerSortUp"></a></th>
-                    {% elif sortby == 'inputdataset-asc' %}
-                        <th>Input dataset<br><a href="{{ nosorturl }}sortby=inputdataset-desc"
+                                href="{{ nosorturl }}sortby=runnumber-asc" class="headerSortUp"></a></th>
+                    {% elif sortby == 'runnumber-asc' %}
+                        <th>Input dataset<br><a href="{{ nosorturl }}sortby=runnumber-desc"
                                                 class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
                     {% else %}
-                        <th>Input dataset<br><a href="{{ nosorturl }}sortby=inputdataset-desc"
+                        <th>Input dataset<br><a href="{{ nosorturl }}sortby=runnumber-desc"
                                                 class="headerSortDown"></a> <a
-                                href="{{ nosorturl }}sortby=inputdataset-asc" class="headerSortUp"></a></th>{% endif %}
+                                href="{{ nosorturl }}sortby=runnumber-asc" class="headerSortUp"></a></th>{% endif %}
                     {% if sortby == 'jeditaskid-desc' %}
                         <th>Task ID<br><span class="headerSortedDown"></span> <a
                                 href="{{ nosorturl }}sortby=jeditaskid-asc" class="headerSortUp"></a></th>
@@ -441,15 +441,15 @@
                     {% else %}
                         <th>Failed<br><a href="{{ nosorturl }}sortby=nfilesfailed-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=nfilesfailed-asc" class="headerSortUp"></a></th>{% endif %}
-                    {% if sortby == 'priority-desc' %}
+                    {% if sortby == 'currentpriority-desc' %}
                         <th>Priority<br><span class="headerSortedDown"></span> <a
-                                href="{{ nosorturl }}sortby=priority-asc" class="headerSortUp"></a></th>
-                    {% elif sortby == 'priority-asc' %}
-                        <th>Priority<br><a href="{{ nosorturl }}sortby=priority-desc" class="headerSortDown"></a> <span
+                                href="{{ nosorturl }}sortby=currentpriority-asc" class="headerSortUp"></a></th>
+                    {% elif sortby == 'currentpriority-asc' %}
+                        <th>Priority<br><a href="{{ nosorturl }}sortby=currentpriority-desc" class="headerSortDown"></a> <span
                                 class="headerSortedUp"></span></th>
                     {% else %}
-                        <th>Priority<br><a href="{{ nosorturl }}sortby=priority-desc" class="headerSortDown"></a> <a
-                                href="{{ nosorturl }}sortby=priority-asc" class="headerSortUp"></a></th>{% endif %}
+                        <th>Priority<br><a href="{{ nosorturl }}sortby=currentpriority-desc" class="headerSortDown"></a> <a
+                                href="{{ nosorturl }}sortby=currentpriority-asc" class="headerSortUp"></a></th>{% endif %}
                     {% if requestParams.preset == 'DPD' %}
                         {% if sortby == 'ptag-desc' %}
                             <th>pTag<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=ptag-asc"
@@ -533,7 +533,7 @@
                         {% if sortby == 'site-desc' %}
                             <th>Site<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=site-asc"
                                                                                   class="headerSortUp"></a></th>
-                        {% elif sortby == 'username-asc' %}
+                        {% elif sortby == 'site-asc' %}
                             <th>Site<br><a href="{{ nosorturl }}sortby=site-desc" class="headerSortDown"></a> <span
                                     class="headerSortedUp"></span></th>
                         {% else %}
@@ -559,8 +559,8 @@
                         {% if requestParams.preset != 'DPD' %}
                             <td><a href="{{ xurl }}processingtype={{ task.processingtype }}"> {{ task.processingtype }} </a></td>
                         {% endif %}
-                        <td>{% if task.totev %}{{ task.totev|intcomma }}{% else %}---{% endif %}</td>
-                        <td>{% if task.totev %}{{ task.neventsused|intcomma }}{% else %}---{% endif %}</td>
+                        <td>{% if task.nevents %}{{ task.nevents|intcomma }}{% else %}---{% endif %}</td>
+                        <td>{% if task.nevents %}{{ task.neventsused|intcomma }}{% else %}---{% endif %}</td>
                         <td><div id="{{ task.jeditaskid }}"></div></td>
                         <script>
                             $.ajax({
@@ -573,7 +573,7 @@
                                     document.getElementById(response.jeditaskid).innerHTML = ((typeof response.running) != 'undefined' ? response.running.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '---' );
                                     if (response.running === parseInt(response.running, 10)) {
                                         numberOfRunning = numberOfRunning + response.running;
-                                        numberOfWaiting = numberOfWaiting + {{ task.totevrem }};}
+                                        numberOfWaiting = numberOfWaiting + {{ task.neventstobeused }};}
                                     document.getElementById("running").innerHTML = Math.round(numberOfRunning/1000000);
                                     document.getElementById("waiting").innerHTML = Math.round(numberOfWaiting/1000000);
                                     c+=1;
@@ -587,8 +587,8 @@
                             });
 
                         </script>
-                        <td>{% if task.totev %}{{ task.totevrem|intcomma }}{% else %}---{% endif %}</td>
-                        <td>{% if task.totev %}{{ task.percentage }}{% else %}---{% endif %}</td>
+                        <td>{% if task.nevents %}{{ task.neventstobeused|intcomma }}{% else %}---{% endif %}</td>
+                        <td>{% if task.nevents %}{{ task.percentage }}{% else %}---{% endif %}</td>
                         <td>{% if task.nfilesfailed %}{{ task.nfilesfailed }}{% else %}0{% endif %}</td>
                         <td>{{ task.currentpriority }}</td>
                         {% if requestParams.preset == 'DPD' %}
@@ -606,7 +606,7 @@
                         <td>{% if task.cputime %} {{ task.cputime }} {% else %} --- {% endif %}</td>
                         <td>{% if task.gshare %} <a href="{{ xurl }}gshare={{ task.gshare }}">{{ task.gshare }}</a> {% else %} --- {% endif %}</td>
                         {% if requestParams.site %}
-                            <td>{% if task.site %} {{ task.site }} {% else %} --- {% endif %}</td>
+                            <td>{% if task.site %} <a href="{{ xurl }}site={{ task.site }}">{{ task.site }}</a> {% else %} --- {% endif %}</td>
                         {% endif %}
                     </tr>
                 {% endfor %}
