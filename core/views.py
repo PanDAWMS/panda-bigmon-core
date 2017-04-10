@@ -6318,6 +6318,7 @@ def report(request):
     if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'] == 'MC16':
         reportGen = MC16aCPReport.MC16aCPReport()
         response = reportGen.prepareReportJEDI(request)
+        endSelfMonitor(request)
         return response
 
     if 'requestParams' in request.session and 'step' in request.session['requestParams']:
@@ -6328,6 +6329,7 @@ def report(request):
         if 'reporttype' in request.session['requestParams'] and request.session['requestParams']['reporttype'] == 'rep0':
             reportGen = MC16aCPReport.MC16aCPReport()
             response = reportGen.prepareReport()
+    endSelfMonitor(request)
     return response
 
 
