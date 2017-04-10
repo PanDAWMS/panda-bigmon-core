@@ -331,7 +331,7 @@ class MC16aCPReport:
                 "hashTable":hashTable,
                 "recentTasks":[recentTasks],
                 "built": datetime.now().strftime("%H:%M:%S")}
-        #self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 60 * 20)
+        self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 60 * 20)
 
         return render_to_response('reportCampaign.html', data, RequestContext(request))
 
