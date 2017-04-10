@@ -88,6 +88,7 @@ errorStages = {}
 from django.template.defaulttags import register
 from reports import RunningMCProdTasks
 from reports import MC16aCPReport
+from decimal import *
 
 
 @register.filter
@@ -10088,7 +10089,6 @@ def statpixel(request):
     pixel_= "\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b"
     return HttpResponse(pixel_, content_type='image/gif')
 
-
 #@cache_page(60 * 20)
 def globalshares(request):
     valid, response = initRequest(request)
@@ -10112,7 +10112,12 @@ def globalshares(request):
 
     for shareName, shareValue in gs.iteritems():
         shareValue['delta'] = shareValue['executing'] - shareValue['pledged']
+        shareValue['used'] = shareValue['ratio'] if 'ratio' in shareValue else None
         gsPlotData[str(shareName)] = int(shareValue['executing'])
+
+
+    for shareValue in tablerows:
+        shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue else None
 
     del request.session['TFIRST']
     del request.session['TLAST']
@@ -10282,6 +10287,7 @@ def stripTree(node, rows):
         row['delta'] = node.delta
         row['queued'] = node.queued
         row['ratio'] = node.ratio
+        row['value'] = node.value
         rows.append(row)
     for item in node.children:
         stripTree(item, rows)
