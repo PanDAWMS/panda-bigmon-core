@@ -250,4 +250,27 @@
     </table>
     {% endfor %}
 
+
+    <table>
+        <tr>
+            <th colspan=20>List of top sites with highest HS06SEC spent on failed jobs</th>
+        </tr>
+        <tr>
+            <th>Computingsite</th>
+            <th>Failedhs06sec</th>
+            <th>Count</th>
+            <th>Errors</th>
+        </tr>
+
+        {% for values in worstSite %}
+                <tr>
+                    <td>{{ values.COMPUTINGSITE }}</td>
+                    <td>{{ values.FAILEDHS06SEC|intcomma }}</td>
+                    <td>{{ values.COUNT|intcomma }}</td>
+                    <td>{{ values.ERRORS }}</td>
+                </tr>
+        {% endfor %}
+    </table>
+
+
 {% endblock %}

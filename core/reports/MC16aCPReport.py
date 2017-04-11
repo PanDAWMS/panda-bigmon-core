@@ -259,7 +259,6 @@ class MC16aCPReport:
 
     def getEventsJEDISummary(self, condition):
         sqlRequest = '''
-
             SELECT sum(decode(t3.startevent,NULL,t3.nevents,t3.endevent-t3.startevent+1)), t3.STATUS, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1, ATLAS_PANDA.JEDI_DATASETS t2, ATLAS_PANDA.JEDI_DATASET_CONTENTS t3 WHERE campaign like 'MC16%' AND
             t1.status not in ('failed','aborted','broken') and t1.JEDITASKID=t2.JEDITASKID AND t3.DATASETID=t2.DATASETID AND t2.MASTERID IS NULL AND t3.JEDITASKID=t1.JEDITASKID and TASKNAME LIKE '%.merge.%' and t3.TYPE IN ('input', 'pseudo_input') and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0} group by t3.STATUS
             UNION ALL
@@ -292,8 +291,69 @@ class MC16aCPReport:
                     fullSummaryTotal[step] = 0
                 fullSummaryTotal[step] += val
         fullSummary['total'] = fullSummaryTotal
-
         return fullSummary
+
+
+    def topSitesFailureRate(self, topN, condition):
+
+        sqlRequest ='''
+            SELECT COUNT(*), PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, STEP, SUM(HS06SEC), COMPUTINGSITE FROM
+            (
+            SELECT DISTINCT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, HS06SEC, STEP, COMPUTINGSITE FROM (
+            WITH selectedTasks AS (
+            SELECT JEDITASKID, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.recon.%' {0}
+            UNION ALL
+            SELECT JEDITASKID, 'simul' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.simul.%' {0}
+            UNION ALL
+            SELECT JEDITASKID, 'evgen' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.evgen.%' {0}
+            UNION ALL
+            SELECT JEDITASKID, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
+            )
+            SELECT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, CASE WHEN HS06SEC is null THEN 0 ELSE HS06SEC END as HS06SEC, JOBSTATUS, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS='failed'
+            UNION ALL
+            SELECT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, CASE WHEN HS06SEC is null THEN 0 ELSE HS06SEC END as HS06SEC, JOBSTATUS, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSARCHIVED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS='failed'
+            UNION ALL
+            SELECT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, CASE WHEN HS06SEC is null THEN 0 ELSE HS06SEC END as HS06SEC, JOBSTATUS, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDAARCH.JOBSARCHIVED t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS='failed'
+            UNION ALL
+            SELECT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, CASE WHEN HS06SEC is null THEN 0 ELSE HS06SEC END as HS06SEC, JOBSTATUS, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSDEFINED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS='failed'
+            UNION ALL
+            SELECT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, CASE WHEN HS06SEC is null THEN 0 ELSE HS06SEC END as HS06SEC, JOBSTATUS, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSWAITING4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS='failed'
+            )tt) tb group by COMPUTINGSITE, STEP, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode order by SUM(HS06SEC) desc
+        '''
+        sqlRequestFull = sqlRequest.format(condition)
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        errorsSummary = cur.fetchall()
+        errorsSummaryList = []
+        counter = 0
+        for row in errorsSummary:
+            errorsDict = {}
+            errorsDict['COMPUTINGSITE'] = row[9]
+            errorsDict['FAILEDHS06SEC'] = row[8]
+            errorsDict['STEP'] = row[7]
+            errorsDict['COUNT'] = row[0]
+            errorStr = ""
+            #PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode
+            if row[1] > 0:
+                errorStr += " PILOTERRORCODE:"+str(row[1])
+            if row[2] > 0:
+                errorStr += " TASKBUFFERERRORCODE:"+str(row[2])
+
+            if not row[3] is None and int(row[3]) > 0:
+                errorStr += " TRANSEXITCODE:"+str(row[3])
+            if row[4] > 0:
+                errorStr += " EXEERRORCODE:"+str(row[4])
+            if row[5] > 0:
+                errorStr += " JOBDISPATCHERERRORCODE:"+str(row[5])
+            if row[6] > 0:
+                errorStr += " DDMERRORCODE:"+str(row[6])
+            errorsDict['ERRORS'] = errorStr
+            errorsSummaryList.append(errorsDict)
+            counter += 1
+            if counter == topN:
+                break
+        return errorsSummaryList
+
 
 
     def prepareReportJEDI(self, request):
@@ -331,6 +391,9 @@ class MC16aCPReport:
         totalJobs['title'] = 'Overall Jobs processing summary  (JEDI)'
         hepspecJobs['title'] = 'HS06SEC summary'
 
+        worstSite = self.topSitesFailureRate(10, 'and REQID IN %s' % requestList)
+        #worstSite['title'] = 'List of top sites with highest failure rate'
+
 
         data = {"requestList":requestList,
                 "JediEventsR":[JediEventsR],
@@ -341,6 +404,7 @@ class MC16aCPReport:
                 "hashTable":hashTable,
                 "recentTasks":[recentTasks],
                 "hepspecJobs":[hepspecJobs],
+                "worstSite":worstSite,
                 "built": datetime.now().strftime("%H:%M:%S")}
         self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 60 * 20)
 
