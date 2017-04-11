@@ -257,7 +257,7 @@
         </tr>
         <tr>
             <th>Computingsite</th>
-            <th>Failedhs06sec</th>
+            <th>Failed hs06sec</th>
             <th>Count</th>
             <th>Errors</th>
         </tr>
@@ -272,5 +272,24 @@
         {% endfor %}
     </table>
 
+
+    <table>
+        <tr>
+            <th colspan=20>List of the top sites with the highest activated/running ratio</th>
+        </tr>
+        <tr>
+            <th>Site</th>
+            <th>Step</th>
+            <th>activated/running jobs</th>
+        </tr>
+
+        {% for values in siteActRun %}
+                <tr>
+                    <td>{{ values.COMPUTINGSITE }}</td>
+                    <td>{{ values.STEP }}</td>
+                    <td>{{ values.acttorun|floatformat:2|intcomma }}</td>
+                </tr>
+        {% endfor %}
+    </table>
 
 {% endblock %}
