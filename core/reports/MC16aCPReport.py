@@ -202,9 +202,9 @@ class MC16aCPReport:
     def getJobsJEDISummary(self, condition):
 
         sqlRequest = '''
-        SELECT COUNT(JOBSTATUS), JOBSTATUS, STEP FROM
+        SELECT COUNT(JOBSTATUS), JOBSTATUS, STEP, SUM(HS06SEC) FROM
             (
-            SELECT DISTINCT PANDAID, JOBSTATUS, STEP FROM (
+            SELECT DISTINCT PANDAID, JOBSTATUS, STEP, HS06SEC FROM (
             WITH selectedTasks AS (
             SELECT JEDITASKID, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.recon.%' {0}
             UNION ALL
@@ -214,15 +214,15 @@ class MC16aCPReport:
             UNION ALL
             SELECT JEDITASKID, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
             )
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
+            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP, HS06SEC FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
             UNION ALL
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP FROM ATLAS_PANDA.JOBSARCHIVED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
+            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP, HS06SEC FROM ATLAS_PANDA.JOBSARCHIVED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
             UNION ALL
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP FROM ATLAS_PANDAARCH.JOBSARCHIVED t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
+            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP, HS06SEC FROM ATLAS_PANDAARCH.JOBSARCHIVED t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
             UNION ALL
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP FROM ATLAS_PANDA.JOBSDEFINED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
+            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP, HS06SEC FROM ATLAS_PANDA.JOBSDEFINED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
             UNION ALL
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP FROM ATLAS_PANDA.JOBSWAITING4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
+            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP, HS06SEC FROM ATLAS_PANDA.JOBSWAITING4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
             )tt) tb group by JOBSTATUS, STEP
         '''
 
@@ -231,12 +231,20 @@ class MC16aCPReport:
         cur.execute(sqlRequestFull)
         campaignsummary = cur.fetchall()
         fullSummary = {}
+        hepspecSummary = {}
         for summaryRow in campaignsummary:
             if summaryRow[1] not in fullSummary:
                 fullSummary[summaryRow[1]] = {}
+                if not summaryRow[3] is None:
+                    hepspecSummary[summaryRow[1]] = {}
             if summaryRow[2] not in fullSummary[summaryRow[1]]:
                 fullSummary[summaryRow[1]][summaryRow[2]] = 0
+
+                if not summaryRow[3] is None:
+                    hepspecSummary[summaryRow[1]][summaryRow[2]] = 0
             fullSummary[summaryRow[1]][summaryRow[2]] += summaryRow[0]
+            if not summaryRow[3] is None:
+                hepspecSummary[summaryRow[1]][summaryRow[2]] += summaryRow[3]
 
         fullSummaryTotal = {}
         for status, stepdict in fullSummary.items():
@@ -246,7 +254,7 @@ class MC16aCPReport:
                 fullSummaryTotal[step] += val
         fullSummary['total'] = fullSummaryTotal
 
-        return fullSummary
+        return (fullSummary, hepspecSummary)
 
 
     def getEventsJEDISummary(self, condition):
@@ -319,8 +327,10 @@ class MC16aCPReport:
         totalTasks = self.getTasksJEDISummary('and REQID IN %s' % requestList)
         totalTasks['title'] = 'Overall tasks processing summary (JEDI)'
 
-        totalJobs = self.getJobsJEDISummary('and REQID IN %s' % requestList)
+        (totalJobs, hepspecJobs) = self.getJobsJEDISummary('and REQID IN %s' % requestList)
         totalJobs['title'] = 'Overall Jobs processing summary  (JEDI)'
+        hepspecJobs['title'] = 'HS06SEC summary'
+
 
         data = {"requestList":requestList,
                 "JediEventsR":[JediEventsR],
@@ -330,6 +340,7 @@ class MC16aCPReport:
                 "JediEventsHashsTable":jediEventsHashsTable,
                 "hashTable":hashTable,
                 "recentTasks":[recentTasks],
+                "hepspecJobs":[hepspecJobs],
                 "built": datetime.now().strftime("%H:%M:%S")}
         self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 60 * 20)
 

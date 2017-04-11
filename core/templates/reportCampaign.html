@@ -222,4 +222,32 @@
         <tr>
     </table>
     {% endfor %}
+
+    {% for data in hepspecJobs %}
+    <table>
+        <tr>
+            <th colspan=20>{{ data.title }}</th>
+        </tr>
+        <tr>
+            <th></th>
+            <th>evgen</th>
+            <th>simul</th>
+            <th>recon</th>
+            <th>merge</th>
+        </tr>
+
+        {% for key, values in data.items %}
+            {%if  key != 'title' and key != 'total' %}
+                <tr>
+                    <td>{{ key }}</td>
+                    <td>{{ values.evgen|intcomma }}</td>
+                    <td>{{ values.simul|intcomma }}</td>
+                    <td>{{ values.recon|intcomma }}</td>
+                    <td>{{ values.merge|intcomma }}</td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+    {% endfor %}
+
 {% endblock %}
