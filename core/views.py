@@ -1,4 +1,5 @@
 import logging, re, json, commands, os, copy
+import sys, traceback
 from datetime import datetime, timedelta
 import time
 import json
@@ -3165,6 +3166,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         else:
             logextract = None
     except:
+        traceback.print_exc(file=sys.stderr)
         logextract = None
 
     files = []
