@@ -356,7 +356,7 @@ class MC16aCPReport:
 
     def topSitesActivatedRunning(self, topN, condition):
         sqlRequest ='''
-            SELECT SA/SR, STEP,COMPUTINGSITE FROM (
+            SELECT SA/SR, STEP,COMPUTINGSITE, SA, SR FROM (
             SELECT SUM(ISACTIVATED) as SA, SUM(ISRUNNING) as SR, STEP,COMPUTINGSITE FROM
             (
             SELECT DISTINCT PANDAID, ISACTIVATED, ISRUNNING, STEP, COMPUTINGSITE FROM (
@@ -388,7 +388,7 @@ class MC16aCPReport:
         errorsSummaryList = []
         counter = 0
         for row in errorsSummary:
-            rowDict = {"COMPUTINGSITE":row[2], "STEP":row[1], "acttorun":row[0]}
+            rowDict = {"COMPUTINGSITE":row[2], "STEP":row[1], "acttorun":row[0], "SA":row[3], "SR":row[4]}
             errorsSummaryList.append(rowDict)
             counter += 1
             if counter == topN:
@@ -398,7 +398,7 @@ class MC16aCPReport:
 
     def topSitesAssignedRunning(self, topN, condition):
         sqlRequest ='''
-            SELECT SA/SR, STEP,COMPUTINGSITE FROM (
+            SELECT SA/SR, STEP,COMPUTINGSITE, SA, SR FROM (
             SELECT SUM(ISASSIGNED) as SA, SUM(ISRUNNING) as SR, STEP,COMPUTINGSITE FROM
             (
             SELECT DISTINCT PANDAID, ISASSIGNED, ISRUNNING, STEP, COMPUTINGSITE FROM (
@@ -430,7 +430,7 @@ class MC16aCPReport:
         errorsSummaryList = []
         counter = 0
         for row in errorsSummary:
-            rowDict = {"COMPUTINGSITE":row[2], "STEP":row[1], "acttorun":row[0]}
+            rowDict = {"COMPUTINGSITE":row[2], "STEP":row[1], "acttorun":row[0], "SA":row[3], "SR":row[4] }
             errorsSummaryList.append(rowDict)
             counter += 1
             if counter == topN:

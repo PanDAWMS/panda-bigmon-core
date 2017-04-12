@@ -281,6 +281,9 @@
             <th>Site</th>
             <th>Step</th>
             <th>activated/running jobs</th>
+            <th>assigned jobs</th>
+            <th>running jobs</th>
+
         </tr>
 
         {% for values in siteActRun %}
@@ -288,6 +291,8 @@
                     <td>{{ values.COMPUTINGSITE }}</td>
                     <td>{{ values.STEP }}</td>
                     <td>{{ values.acttorun|floatformat:2|intcomma }}</td>
+                    <td>{{ values.SA }}</td>
+                    <td>{{ values.SR }}</td>
                 </tr>
         {% endfor %}
     </table>
@@ -300,6 +305,8 @@
             <th>Site</th>
             <th>Step</th>
             <th>activated/running jobs</th>
+            <th>activated jobs</th>
+            <th>running jobs</th>
         </tr>
 
         {% for values in siteAssignRun %}
@@ -307,6 +314,8 @@
                     <td>{{ values.COMPUTINGSITE }}</td>
                     <td>{{ values.STEP }}</td>
                     <td>{{ values.acttorun|floatformat:2|intcomma }}</td>
+                    <td>{{ values.SA }}</td>
+                    <td>{{ values.SR }}</td>
                 </tr>
         {% endfor %}
     </table>
