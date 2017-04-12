@@ -292,4 +292,24 @@
         {% endfor %}
     </table>
 
+    <table>
+        <tr>
+            <th colspan=20>List of the top sites with the highest assigned/running ratio</th>
+        </tr>
+        <tr>
+            <th>Site</th>
+            <th>Step</th>
+            <th>activated/running jobs</th>
+        </tr>
+
+        {% for values in siteAssignRun %}
+                <tr>
+                    <td>{{ values.COMPUTINGSITE }}</td>
+                    <td>{{ values.STEP }}</td>
+                    <td>{{ values.acttorun|floatformat:2|intcomma }}</td>
+                </tr>
+        {% endfor %}
+    </table>
+
+
 {% endblock %}
