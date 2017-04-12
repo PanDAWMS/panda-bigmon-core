@@ -3157,11 +3157,14 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     except IndexError:
         job = {}
 
-    ## Check for logfile extracts
-    logs = Logstable.objects.filter(pandaid=pandaid)
-    if logs:
-        logextract = logs[0].log1
-    else:
+    try:
+        ## Check for logfile extracts
+        logs = Logstable.objects.filter(pandaid=pandaid)
+        if logs:
+            logextract = logs[0].log1
+        else:
+            logextract = None
+    except:
         logextract = None
 
     files = []
