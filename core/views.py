@@ -2829,43 +2829,48 @@ def summaryErrorsList(request):
         transactionkey = request.session['requestParams']['tk']
         codename = request.session['requestParams']['codename']
         codeval = request.session['requestParams']['codeval']
-        checkTKeyQuery = '''
-            SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}
-        '''
-        sqlRequestFull = checkTKeyQuery.format(transactionkey)
-        cur = connection.cursor()
-        cur.execute(sqlRequestFull)
-        errorsList = cur.fetchall()
-        if (len(errorsList) == 0 or errorsList ==''):
-            notTkLive = 1
-        if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+        if (transactionkey!='' and codename != '' and codeval!=''):
+            checkTKeyQuery = '''
+             SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}
+         '''
+            try:
+                sqlRequestFull = checkTKeyQuery.format(transactionkey)
+                cur = connection.cursor()
+                cur.execute(sqlRequestFull)
+                errorsList = cur.fetchall()
+            except:
+                return redirect('/jobs/?limit=100')
+            if (len(errorsList) == 0 or errorsList ==''):
+                notTkLive = 1
+            if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
             'json' not in request.session['requestParams'])):
 
-            xurl = extensibleURL(request)
-            print xurl
-            nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-            nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
+                xurl = extensibleURL(request)
+                print xurl
+                nosorturl = removeParam(xurl, 'sortby', mode='extensible')
+                nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
 
         #TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
         #TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         #del request.session['TFIRST']
         #del request.session['TLAST']
 
-            nodropPartURL = cleanURLFromDropPart(xurl)
-            data = {
-                'prefix': getPrefix(request),
-                'tk': transactionkey,
-                'codename':codename,
-                'codeval':codeval,
-                'request': request,
-                'notTkLive':str(notTkLive),
-                'viewParams': request.session['viewParams'],
-                'requestParams': request.session['requestParams'],
-                'built': datetime.now().strftime("%H:%M:%S"),
-            }
-            data.update(getContextVariables(request))
-            response = render_to_response('errorSummaryList.html', data, RequestContext(request))
-            return response
+                nodropPartURL = cleanURLFromDropPart(xurl)
+                data = {
+                    'prefix': getPrefix(request),
+                    'tk': transactionkey,
+                    'codename':codename,
+                    'codeval':codeval,
+                    'request': request,
+                    'notTkLive':str(notTkLive),
+                    'viewParams': request.session['viewParams'],
+                    'requestParams': request.session['requestParams'],
+                    'built': datetime.now().strftime("%H:%M:%S"),
+                }
+                data.update(getContextVariables(request))
+                response = render_to_response('errorSummaryList.html', data, RequestContext(request))
+                return response
+        else: return redirect('/jobs/?limit=100')
     else:
         return redirect('/jobs/?limit=100')
 def summaryErrorsListJSON(request):
