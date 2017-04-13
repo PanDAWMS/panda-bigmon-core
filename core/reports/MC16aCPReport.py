@@ -202,9 +202,9 @@ class MC16aCPReport:
     def getJobsJEDISummary(self, condition):
 
         sqlRequest = '''
-        SELECT COUNT(JOBSTATUS), JOBSTATUS, STEP FROM
+        SELECT COUNT(JOBSTATUS), JOBSTATUS, STEP, SUM(HS06SEC) FROM
             (
-            SELECT DISTINCT PANDAID, JOBSTATUS, STEP FROM (
+            SELECT DISTINCT PANDAID, JOBSTATUS, STEP, HS06SEC FROM (
             WITH selectedTasks AS (
             SELECT JEDITASKID, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.recon.%' {0}
             UNION ALL
@@ -214,15 +214,15 @@ class MC16aCPReport:
             UNION ALL
             SELECT JEDITASKID, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
             )
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
+            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP, HS06SEC FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
             UNION ALL
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP FROM ATLAS_PANDA.JOBSARCHIVED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
+            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP, HS06SEC FROM ATLAS_PANDA.JOBSARCHIVED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
             UNION ALL
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP FROM ATLAS_PANDAARCH.JOBSARCHIVED t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
+            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP, HS06SEC FROM ATLAS_PANDAARCH.JOBSARCHIVED t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
             UNION ALL
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP FROM ATLAS_PANDA.JOBSDEFINED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
+            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP, HS06SEC FROM ATLAS_PANDA.JOBSDEFINED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
             UNION ALL
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP FROM ATLAS_PANDA.JOBSWAITING4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
+            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP, HS06SEC FROM ATLAS_PANDA.JOBSWAITING4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID
             )tt) tb group by JOBSTATUS, STEP
         '''
 
@@ -231,12 +231,20 @@ class MC16aCPReport:
         cur.execute(sqlRequestFull)
         campaignsummary = cur.fetchall()
         fullSummary = {}
+        hepspecSummary = {}
         for summaryRow in campaignsummary:
             if summaryRow[1] not in fullSummary:
                 fullSummary[summaryRow[1]] = {}
+                if not summaryRow[3] is None:
+                    hepspecSummary[summaryRow[1]] = {}
             if summaryRow[2] not in fullSummary[summaryRow[1]]:
                 fullSummary[summaryRow[1]][summaryRow[2]] = 0
+
+                if not summaryRow[3] is None:
+                    hepspecSummary[summaryRow[1]][summaryRow[2]] = 0
             fullSummary[summaryRow[1]][summaryRow[2]] += summaryRow[0]
+            if not summaryRow[3] is None:
+                hepspecSummary[summaryRow[1]][summaryRow[2]] += summaryRow[3]
 
         fullSummaryTotal = {}
         for status, stepdict in fullSummary.items():
@@ -246,12 +254,11 @@ class MC16aCPReport:
                 fullSummaryTotal[step] += val
         fullSummary['total'] = fullSummaryTotal
 
-        return fullSummary
+        return (fullSummary, hepspecSummary)
 
 
     def getEventsJEDISummary(self, condition):
         sqlRequest = '''
-
             SELECT sum(decode(t3.startevent,NULL,t3.nevents,t3.endevent-t3.startevent+1)), t3.STATUS, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1, ATLAS_PANDA.JEDI_DATASETS t2, ATLAS_PANDA.JEDI_DATASET_CONTENTS t3 WHERE campaign like 'MC16%' AND
             t1.status not in ('failed','aborted','broken') and t1.JEDITASKID=t2.JEDITASKID AND t3.DATASETID=t2.DATASETID AND t2.MASTERID IS NULL AND t3.JEDITASKID=t1.JEDITASKID and TASKNAME LIKE '%.merge.%' and t3.TYPE IN ('input', 'pseudo_input') and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0} group by t3.STATUS
             UNION ALL
@@ -284,8 +291,154 @@ class MC16aCPReport:
                     fullSummaryTotal[step] = 0
                 fullSummaryTotal[step] += val
         fullSummary['total'] = fullSummaryTotal
-
         return fullSummary
+
+
+    def topSitesFailureRate(self, topN, condition):
+        sqlRequest ='''
+            SELECT COUNT(*), PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, STEP, SUM(HS06SEC), COMPUTINGSITE FROM
+            (
+            SELECT DISTINCT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, HS06SEC, STEP, COMPUTINGSITE FROM (
+            WITH selectedTasks AS (
+            SELECT JEDITASKID, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.recon.%' {0}
+            UNION ALL
+            SELECT JEDITASKID, 'simul' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.simul.%' {0}
+            UNION ALL
+            SELECT JEDITASKID, 'evgen' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.evgen.%' {0}
+            UNION ALL
+            SELECT JEDITASKID, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
+            )
+            SELECT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, CASE WHEN HS06SEC is null THEN 0 ELSE HS06SEC END as HS06SEC, JOBSTATUS, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS='failed'
+            UNION ALL
+            SELECT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, CASE WHEN HS06SEC is null THEN 0 ELSE HS06SEC END as HS06SEC, JOBSTATUS, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSARCHIVED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS='failed'
+            UNION ALL
+            SELECT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, CASE WHEN HS06SEC is null THEN 0 ELSE HS06SEC END as HS06SEC, JOBSTATUS, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDAARCH.JOBSARCHIVED t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS='failed'
+            UNION ALL
+            SELECT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, CASE WHEN HS06SEC is null THEN 0 ELSE HS06SEC END as HS06SEC, JOBSTATUS, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSDEFINED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS='failed'
+            UNION ALL
+            SELECT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, CASE WHEN HS06SEC is null THEN 0 ELSE HS06SEC END as HS06SEC, JOBSTATUS, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSWAITING4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS='failed'
+            )tt) tb group by COMPUTINGSITE, STEP, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode order by SUM(HS06SEC) desc
+        '''
+        sqlRequestFull = sqlRequest.format(condition)
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        errorsSummary = cur.fetchall()
+        errorsSummaryList = []
+        counter = 0
+        for row in errorsSummary:
+            errorsDict = {}
+            errorsDict['COMPUTINGSITE'] = row[9]
+            errorsDict['FAILEDHS06SEC'] = row[8]
+            errorsDict['STEP'] = row[7]
+            errorsDict['COUNT'] = row[0]
+            errorStr = ""
+            #PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode
+            if row[1] > 0:
+                errorStr += " PILOTERRORCODE:"+str(row[1])
+            if row[2] > 0:
+                errorStr += " TASKBUFFERERRORCODE:"+str(row[2])
+
+            if not row[3] is None and int(row[3]) > 0:
+                errorStr += " TRANSEXITCODE:"+str(row[3])
+            if row[4] > 0:
+                errorStr += " EXEERRORCODE:"+str(row[4])
+            if row[5] > 0:
+                errorStr += " JOBDISPATCHERERRORCODE:"+str(row[5])
+            if row[6] > 0:
+                errorStr += " DDMERRORCODE:"+str(row[6])
+            errorsDict['ERRORS'] = errorStr
+            errorsSummaryList.append(errorsDict)
+            counter += 1
+            if counter == topN:
+                break
+        return errorsSummaryList
+
+
+    def topSitesActivatedRunning(self, topN, condition):
+        sqlRequest ='''
+            SELECT SA/SR, STEP,COMPUTINGSITE, SA, SR FROM (
+            SELECT SUM(ISACTIVATED) as SA, SUM(ISRUNNING) as SR, STEP,COMPUTINGSITE FROM
+            (
+            SELECT DISTINCT PANDAID, ISACTIVATED, ISRUNNING, STEP, COMPUTINGSITE FROM (
+            WITH selectedTasks AS (
+            SELECT JEDITASKID, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.recon.%' {0}
+            UNION ALL
+            SELECT JEDITASKID, 'simul' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.simul.%' {0}
+            UNION ALL
+            SELECT JEDITASKID, 'evgen' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.evgen.%' {0}
+            UNION ALL
+            SELECT JEDITASKID, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
+            )
+            SELECT PANDAID, CASE JOBSTATUS WHEN 'activated' THEN 1 ELSE 0 END as ISACTIVATED, CASE JOBSTATUS WHEN 'running' THEN 1 ELSE 0 END as ISRUNNING, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS in ('activated', 'running')
+            UNION ALL
+            SELECT PANDAID, CASE JOBSTATUS WHEN 'activated' THEN 1 ELSE 0 END as ISACTIVATED, CASE JOBSTATUS WHEN 'running' THEN 1 ELSE 0 END as ISRUNNING, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSARCHIVED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS in ('activated', 'running')
+            UNION ALL
+            SELECT PANDAID, CASE JOBSTATUS WHEN 'activated' THEN 1 ELSE 0 END as ISACTIVATED, CASE JOBSTATUS WHEN 'running' THEN 1 ELSE 0 END as ISRUNNING, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDAARCH.JOBSARCHIVED t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS in ('activated', 'running')
+            UNION ALL
+            SELECT PANDAID, CASE JOBSTATUS WHEN 'activated' THEN 1 ELSE 0 END as ISACTIVATED, CASE JOBSTATUS WHEN 'running' THEN 1 ELSE 0 END as ISRUNNING, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSDEFINED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS in ('activated', 'running')
+            UNION ALL
+            SELECT PANDAID, CASE JOBSTATUS WHEN 'activated' THEN 1 ELSE 0 END as ISACTIVATED, CASE JOBSTATUS WHEN 'running' THEN 1 ELSE 0 END as ISRUNNING, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSWAITING4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS in ('activated', 'running')
+            )tt) tb group by COMPUTINGSITE, STEP)ts WHERE SR > 0 order by SA/SR desc
+         '''
+
+        sqlRequestFull = sqlRequest.format(condition)
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        errorsSummary = cur.fetchall()
+        errorsSummaryList = []
+        counter = 0
+        for row in errorsSummary:
+            rowDict = {"COMPUTINGSITE":row[2], "STEP":row[1], "acttorun":row[0], "SA":row[3], "SR":row[4]}
+            errorsSummaryList.append(rowDict)
+            counter += 1
+            if counter == topN:
+                break
+        return errorsSummaryList
+
+
+    def topSitesAssignedRunning(self, topN, condition):
+        sqlRequest ='''
+            SELECT SA/SR, STEP,COMPUTINGSITE, SA, SR FROM (
+            SELECT SUM(ISASSIGNED) as SA, SUM(ISRUNNING) as SR, STEP,COMPUTINGSITE FROM
+            (
+            SELECT DISTINCT PANDAID, ISASSIGNED, ISRUNNING, STEP, COMPUTINGSITE FROM (
+            WITH selectedTasks AS (
+            SELECT JEDITASKID, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.recon.%' {0}
+            UNION ALL
+            SELECT JEDITASKID, 'simul' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.simul.%' {0}
+            UNION ALL
+            SELECT JEDITASKID, 'evgen' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.evgen.%' {0}
+            UNION ALL
+            SELECT JEDITASKID, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
+            )
+            SELECT PANDAID, CASE JOBSTATUS WHEN 'assigned' THEN 1 ELSE 0 END as ISASSIGNED, CASE JOBSTATUS WHEN 'running' THEN 1 ELSE 0 END as ISRUNNING, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS in ('assigned', 'running')
+            UNION ALL
+            SELECT PANDAID, CASE JOBSTATUS WHEN 'assigned' THEN 1 ELSE 0 END as ISASSIGNED, CASE JOBSTATUS WHEN 'running' THEN 1 ELSE 0 END as ISRUNNING, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSARCHIVED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS in ('assigned', 'running')
+            UNION ALL
+            SELECT PANDAID, CASE JOBSTATUS WHEN 'assigned' THEN 1 ELSE 0 END as ISASSIGNED, CASE JOBSTATUS WHEN 'running' THEN 1 ELSE 0 END as ISRUNNING, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDAARCH.JOBSARCHIVED t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS in ('assigned', 'running')
+            UNION ALL
+            SELECT PANDAID, CASE JOBSTATUS WHEN 'assigned' THEN 1 ELSE 0 END as ISASSIGNED, CASE JOBSTATUS WHEN 'running' THEN 1 ELSE 0 END as ISRUNNING, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSDEFINED4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS in ('assigned', 'running')
+            UNION ALL
+            SELECT PANDAID, CASE JOBSTATUS WHEN 'assigned' THEN 1 ELSE 0 END as ISASSIGNED, CASE JOBSTATUS WHEN 'running' THEN 1 ELSE 0 END as ISRUNNING, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSWAITING4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS in ('assigned', 'running')
+            )tt) tb group by COMPUTINGSITE, STEP)ts WHERE SR > 0 order by SA/SR desc
+         '''
+
+        sqlRequestFull = sqlRequest.format(condition)
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        errorsSummary = cur.fetchall()
+        errorsSummaryList = []
+        counter = 0
+        for row in errorsSummary:
+            rowDict = {"COMPUTINGSITE":row[2], "STEP":row[1], "acttorun":row[0], "SA":row[3], "SR":row[4] }
+            errorsSummaryList.append(rowDict)
+            counter += 1
+            if counter == topN:
+                break
+        return errorsSummaryList
+
+
+
 
 
     def prepareReportJEDI(self, request):
@@ -319,8 +472,15 @@ class MC16aCPReport:
         totalTasks = self.getTasksJEDISummary('and REQID IN %s' % requestList)
         totalTasks['title'] = 'Overall tasks processing summary (JEDI)'
 
-        totalJobs = self.getJobsJEDISummary('and REQID IN %s' % requestList)
+        (totalJobs, hepspecJobs) = self.getJobsJEDISummary('and REQID IN %s' % requestList)
         totalJobs['title'] = 'Overall Jobs processing summary  (JEDI)'
+        hepspecJobs['title'] = 'HS06SEC summary'
+
+        worstSite = self.topSitesFailureRate(10, 'and REQID IN %s' % requestList)
+        #worstSite['title'] = 'List of top sites with highest failure rate'
+
+        siteActRun = self.topSitesActivatedRunning(10, 'and REQID IN %s' % requestList)
+        siteAssignRun = self.topSitesAssignedRunning(10, 'and REQID IN %s' % requestList)
 
         data = {"requestList":requestList,
                 "JediEventsR":[JediEventsR],
@@ -330,8 +490,12 @@ class MC16aCPReport:
                 "JediEventsHashsTable":jediEventsHashsTable,
                 "hashTable":hashTable,
                 "recentTasks":[recentTasks],
+                "hepspecJobs":[hepspecJobs],
+                "worstSite":worstSite,
+                "siteActRun":siteActRun,
+                "siteAssignRun":siteAssignRun,
                 "built": datetime.now().strftime("%H:%M:%S")}
-        #self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 60 * 20)
+        self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 60 * 20)
 
         return render_to_response('reportCampaign.html', data, RequestContext(request))
 

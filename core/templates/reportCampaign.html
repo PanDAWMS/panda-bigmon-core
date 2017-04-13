@@ -222,4 +222,103 @@
         <tr>
     </table>
     {% endfor %}
+
+    {% for data in hepspecJobs %}
+    <table>
+        <tr>
+            <th colspan=20>{{ data.title }}</th>
+        </tr>
+        <tr>
+            <th></th>
+            <th>evgen</th>
+            <th>simul</th>
+            <th>recon</th>
+            <th>merge</th>
+        </tr>
+
+        {% for key, values in data.items %}
+            {%if  key != 'title' and key != 'total' %}
+                <tr>
+                    <td>{{ key }}</td>
+                    <td>{{ values.evgen|intcomma }}</td>
+                    <td>{{ values.simul|intcomma }}</td>
+                    <td>{{ values.recon|intcomma }}</td>
+                    <td>{{ values.merge|intcomma }}</td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+    {% endfor %}
+
+
+    <table>
+        <tr>
+            <th colspan=20>List of top sites with highest HS06SEC spent on failed jobs</th>
+        </tr>
+        <tr>
+            <th>Computingsite</th>
+            <th>Failed hs06sec</th>
+            <th>Count</th>
+            <th>Errors</th>
+        </tr>
+
+        {% for values in worstSite %}
+                <tr>
+                    <td>{{ values.COMPUTINGSITE }}</td>
+                    <td>{{ values.FAILEDHS06SEC|intcomma }}</td>
+                    <td>{{ values.COUNT|intcomma }}</td>
+                    <td>{{ values.ERRORS }}</td>
+                </tr>
+        {% endfor %}
+    </table>
+
+
+    <table>
+        <tr>
+            <th colspan=20>List of the top sites with the highest activated/running ratio</th>
+        </tr>
+        <tr>
+            <th>Site</th>
+            <th>Step</th>
+            <th>activated/running jobs</th>
+            <th>activated jobs</th>
+            <th>running jobs</th>
+
+        </tr>
+
+        {% for values in siteActRun %}
+                <tr>
+                    <td>{{ values.COMPUTINGSITE }}</td>
+                    <td>{{ values.STEP }}</td>
+                    <td>{{ values.acttorun|floatformat:2|intcomma }}</td>
+                    <td>{{ values.SA }}</td>
+                    <td>{{ values.SR }}</td>
+                </tr>
+        {% endfor %}
+    </table>
+
+    <table>
+        <tr>
+            <th colspan=20>List of the top sites with the highest assigned/running ratio</th>
+        </tr>
+        <tr>
+            <th>Site</th>
+            <th>Step</th>
+            <th>assigned/running jobs</th>
+            <th>assigned jobs</th>
+            <th>running jobs</th>
+        </tr>
+
+        {% for values in siteAssignRun %}
+                <tr>
+                    <td>{{ values.COMPUTINGSITE }}</td>
+                    <td>{{ values.STEP }}</td>
+                    <td>{{ values.acttorun|floatformat:2|intcomma }}</td>
+                    <td>{{ values.SA }}</td>
+                    <td>{{ values.SR }}</td>
+                </tr>
+        {% endfor %}
+    </table>
+
+
 {% endblock %}

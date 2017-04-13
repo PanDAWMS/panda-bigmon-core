@@ -1,4 +1,5 @@
 import logging, re, json, commands, os, copy
+import sys, traceback
 from datetime import datetime, timedelta
 import time
 import json
@@ -88,6 +89,7 @@ errorStages = {}
 from django.template.defaulttags import register
 from reports import RunningMCProdTasks
 from reports import MC16aCPReport
+from decimal import *
 
 
 @register.filter
@@ -3276,11 +3278,15 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     except IndexError:
         job = {}
 
-    ## Check for logfile extracts
-    logs = Logstable.objects.filter(pandaid=pandaid)
-    if logs:
-        logextract = logs[0].log1
-    else:
+    try:
+        ## Check for logfile extracts
+        logs = Logstable.objects.filter(pandaid=pandaid)
+        if logs:
+            logextract = logs[0].log1
+        else:
+            logextract = None
+    except:
+        traceback.print_exc(file=sys.stderr)
         logextract = None
 
     files = []
@@ -6437,6 +6443,7 @@ def report(request):
     if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'] == 'MC16':
         reportGen = MC16aCPReport.MC16aCPReport()
         response = reportGen.prepareReportJEDI(request)
+        endSelfMonitor(request)
         return response
 
     if 'requestParams' in request.session and 'step' in request.session['requestParams']:
@@ -6447,6 +6454,7 @@ def report(request):
         if 'reporttype' in request.session['requestParams'] and request.session['requestParams']['reporttype'] == 'rep0':
             reportGen = MC16aCPReport.MC16aCPReport()
             response = reportGen.prepareReport()
+    endSelfMonitor(request)
     return response
 
 
@@ -10249,7 +10257,6 @@ def statpixel(request):
     pixel_= "\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b"
     return HttpResponse(pixel_, content_type='image/gif')
 
-
 #@cache_page(60 * 20)
 def globalshares(request):
     valid, response = initRequest(request)
@@ -10273,7 +10280,12 @@ def globalshares(request):
 
     for shareName, shareValue in gs.iteritems():
         shareValue['delta'] = shareValue['executing'] - shareValue['pledged']
+        shareValue['used'] = shareValue['ratio'] if 'ratio' in shareValue else None
         gsPlotData[str(shareName)] = int(shareValue['executing'])
+
+
+    for shareValue in tablerows:
+        shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue else None
 
     del request.session['TFIRST']
     del request.session['TLAST']
@@ -10443,6 +10455,7 @@ def stripTree(node, rows):
         row['delta'] = node.delta
         row['queued'] = node.queued
         row['ratio'] = node.ratio
+        row['value'] = node.value
         rows.append(row)
     for item in node.children:
         stripTree(item, rows)
