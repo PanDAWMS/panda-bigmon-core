@@ -572,8 +572,9 @@
                                 success: function(response) {
                                     document.getElementById(response.jeditaskid).innerHTML = ((typeof response.running) != 'undefined' ? response.running.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '---' );
                                     if (response.running === parseInt(response.running, 10)) {
-                                        numberOfRunning = numberOfRunning + response.running;
-                                        numberOfWaiting = numberOfWaiting + {{ task.neventstobeused }};}
+                                        numberOfRunning = numberOfRunning + response.running;}
+                                    if ( typeof {{ task.neventstobeused }} != 'undefined' ) {
+                                    numberOfWaiting = numberOfWaiting + {{ task.neventstobeused }};}
                                     document.getElementById("running").innerHTML = Math.round(numberOfRunning/1000000);
                                     document.getElementById("waiting").innerHTML = Math.round(numberOfWaiting/1000000);
                                     c+=1;
