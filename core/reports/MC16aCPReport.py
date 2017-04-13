@@ -233,10 +233,11 @@ class MC16aCPReport:
         fullSummary = {}
         hepspecSummary = {}
         for summaryRow in campaignsummary:
+            if not summaryRow[3] is None and summaryRow[1] not in hepspecSummary:
+                hepspecSummary[summaryRow[1]] = {}
+
             if summaryRow[1] not in fullSummary:
                 fullSummary[summaryRow[1]] = {}
-                if not summaryRow[3] is None:
-                    hepspecSummary[summaryRow[1]] = {}
             if summaryRow[2] not in fullSummary[summaryRow[1]]:
                 fullSummary[summaryRow[1]][summaryRow[2]] = 0
 
