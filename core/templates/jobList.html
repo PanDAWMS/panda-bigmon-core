@@ -137,7 +137,7 @@ function toggleDetailDisplay(className) {
     <th> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </th>
     <td> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> jobs </a> </th>
     <td> {{ errval.count }} </td>
-    <td> <div class="comment more">{% for key, value in errval.pandalist.items %} {% if forloop.first  %}{{ value }} {% endif %}{% endfor %}<br/><a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> </div>
+    <td> <div class="comment more">{% for key, value in errval.pandalist.items %} {% if forloop.first  %}{{ value }} {% endif %}{% endfor %}</div>
 
     </td>
 </tr>
