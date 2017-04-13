@@ -1,0 +1,59 @@
+{% extends "_base_core.html" %}
+{% load static %}
+{% block page_title %} {{ viewParams.MON_VO }}{% endblock %}
+{% block subtitle %}<font size=-1>{{ viewParams.selection|safe }}
+</font>
+{% endblock %}
+{% block body %}
+
+  <link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
+  <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
+  <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
+
+    <b>Error type:</b> {{ codename }}<br/><br/>
+    <b>Error code:</b>  {{ codeval }} <br/><br/>
+    {% if notTkLive == '1'%}<span class="errspan"><b>The data is outdated or not found. You should close this page and refresh jobs page. </b></span><br/><br/>{%  endif %}<hr/>
+<table id="errorsList" >
+     <thead>
+                <th>jediTaskID</th>
+                <th>PandaID</th>
+                <th>Error message</th>
+     </thead>
+     <tbody></tbody>
+    </table>
+ <script type="text/javascript">
+
+
+
+var jediDataTable;
+$(document).ready(function () {
+        DisplayjediDataTableTableData();
+        $( ".has-dropdown" ).addClass("has-dropdown not-click");
+    });
+function DisplayjediDataTableTableData() {
+    jediDataTable = $('#errorsList').dataTable({
+        //"bRetrieve": true,
+        "sPaginationType": "full_numbers",
+        paging: true,
+        //"bProcessing": true,
+        //"bAutoWidth": false,
+        //"bStateSave": true,
+        "aaSorting": [[0, 'asc']],
+                     "ajax": {
+                 "processing": true,
+                 "url": "{% url 'summaryErrorsListJSON' %}?codename={{codename}}&codeval={{codeval}}&tk={{tk}}",
+
+                 "dataSrc" : ''},
+         rowsGroup: [0],
+
+
+    });
+}
+ </script>
+
+{% endblock %}
+
+{% block helptext %}
+{% include "jobListHelp.html" with helptitle="Job list help" %}
+{% include "jobInfoHelp.html" with helptitle="Job information" show="all" %}
+{% endblock %}
