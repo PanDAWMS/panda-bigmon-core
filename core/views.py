@@ -2726,6 +2726,7 @@ def jobList(request, mode=None, param=None):
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
         del request.session['TLAST']
+        errsByCount = imortToken(errsByCount=errsByCount)
         nodropPartURL = cleanURLFromDropPart(xurl)
         data = {
             'prefix': getPrefix(request),
@@ -2797,7 +2798,126 @@ def jobList(request, mode=None, param=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
+def imortToken(errsByCount):
+    newErrsByCount = []
+    random.seed()
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+    else:
+        tmpTableName = "TMP_IDS1DEBUG"
 
+    new_cur = connection.cursor()
+
+    for item in errsByCount:
+        executionData = []
+        transactionKey = random.randrange(1000000)
+        item['tk'] = transactionKey
+        for key,values in item['pandalist'].iteritems():
+            #print item['error'] , key , values
+            executionData.append((key, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
+        query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
+        new_cur.executemany(query, executionData)
+        newErrsByCount.append(item)
+    return newErrsByCount
+
+def summaryErrorsList(request):
+    initRequest(request)
+    notTkLive = 0
+    if ('tk' in request.session['requestParams'] and 'codename' in request.session['requestParams'] and 'codeval' in request.session['requestParams']):
+        transactionkey = request.session['requestParams']['tk']
+        codename = request.session['requestParams']['codename']
+        codeval = request.session['requestParams']['codeval']
+        checkTKeyQuery = '''
+            SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}
+        '''
+        sqlRequestFull = checkTKeyQuery.format(transactionkey)
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        errorsList = cur.fetchall()
+        if (len(errorsList) == 0 or errorsList ==''):
+            notTkLive = 1
+        if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+            'json' not in request.session['requestParams'])):
+
+            xurl = extensibleURL(request)
+            print xurl
+            nosorturl = removeParam(xurl, 'sortby', mode='extensible')
+            nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
+
+        #TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
+        #TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
+        #del request.session['TFIRST']
+        #del request.session['TLAST']
+
+            nodropPartURL = cleanURLFromDropPart(xurl)
+            data = {
+                'prefix': getPrefix(request),
+                'tk': transactionkey,
+                'codename':codename,
+                'codeval':codeval,
+                'request': request,
+                'notTkLive':str(notTkLive),
+                'viewParams': request.session['viewParams'],
+                'requestParams': request.session['requestParams'],
+                'built': datetime.now().strftime("%H:%M:%S"),
+            }
+            data.update(getContextVariables(request))
+            response = render_to_response('errorSummaryList.html', data, RequestContext(request))
+            return response
+    else:
+        return redirect('/jobs/?limit=100')
+def summaryErrorsListJSON(request):
+    initRequest(request)
+
+    codename = request.session['requestParams']['codename']
+    codeval = request.session['requestParams']['codeval']
+    fullListErrors = []
+    print request.session['requestParams']
+    for er in errorcodelist:
+        if er['error'] == request.session['requestParams']['codename']:
+            errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
+    #d = dict((k, v) for k, v in errorcodelist if v >= request.session['requestParams']['codename'])
+
+
+    condition = request.session['requestParams']['tk']
+    sqlRequest = '''
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, concat('transformation:',TRANSEXITCODE) AS TRANSEXITCODE, concat('pilot:',PILOTERRORCODE) AS PILOTERRORCODE, PILOTERRORDIAG, concat('exe:',EXEERRORCODE) AS EXEERRORCODE, EXEERRORDIAG, concat('sup:',SUPERRORCODE) AS SUPERRORCODE,SUPERRORDIAG,concat('ddm:',DDMERRORCODE) AS DDMERRORCODE,DDMERRORDIAG,concat('brokerage:',BROKERAGEERRORCODE) AS BROKERAGEERRORCODE,BROKERAGEERRORDIAG,concat('jobdispatcher:',JOBDISPATCHERERRORCODE) AS JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,concat('taskbuffer:',TASKBUFFERERRORCODE) AS TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM
+(SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSARCHIVED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSARCHIVED4.PANDAID
+UNION ALL
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSACTIVE4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSACTIVE4.PANDAID
+UNION ALL 
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSDEFINED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSDEFINED4.PANDAID
+UNION ALL 
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSWAITING4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSWAITING4.PANDAID)
+    '''
+    # INPUT_EVENTS, TOTAL_EVENTS, STEP
+    shortListErrors = []
+    sqlRequestFull = sqlRequest.format(condition)
+    cur = connection.cursor()
+    cur.execute(sqlRequestFull)
+    errorsList = cur.fetchall()
+    for error in errorsList:
+        shortListErrors = []
+        if (errorcode in error):
+            try:
+                errnum = int(codeval)
+                if codename in errorCodes and errnum in errorCodes[codename]:
+                    descr = errorCodes[codename][errnum]
+                else:
+                    descr = error[error.index(errorcode) + 1]
+            except:
+                pass
+            taskId = error[1]
+            pandaid = error[0]
+            shortListErrors.append(taskId)
+            shortListErrors.append(pandaid)
+            shortListErrors.append(descr)
+            fullListErrors.append(shortListErrors)
+
+
+
+
+    return HttpResponse(json.dumps(fullListErrors), content_type='text/html')
 def isEventService(job):
     if 'specialhandling' in job and job['specialhandling'] and (
                 job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 or (
@@ -7769,25 +7889,46 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     errsByUserL = []
     errsByTaskL = []
     v = {}
-
+    esjobs = []
     kys = errsByCount.keys()
     kys.sort()
     for err in kys:
         v = {}
         for key, value in sorted(errsByCount[err]['pandalist'].iteritems()):
             if value == '':
-                value = 'empty'
-            if err == 'jobdispatcher:100':
-                value = re.sub("(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})", "*", value)
-            elif err == 'exe:68':
-                #value = re.sub("","*",value)
-                value = value
-            elif err == 'pilot:1099':
-                if ('STAGEIN FAILED: Get error: Staging input file failed' in value):
-                    value = 'STAGEIN FAILED: Get error: Staging input file failed'
-            v.setdefault(value, []).append(key)
-        errsByCount[err]['pandalist'] = v
+                value = 'None'
+            esjobs.append(key)
+           # if err == 'jobdispatcher:100':
+           #     value = re.sub("(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})", "*", value)
+           # elif err == 'exe:68':
+           #     #value = re.sub("","*",value)
+           #     value = value
+          #  elif err == 'pilot:1099':
+          #      if ('STAGEIN FAILED: Get error: Staging input file failed' in value):
+         #           value = 'STAGEIN FAILED: Get error: Staging input file failed'
+          #  v.setdefault(value, []).append(key)
+        #errsByCount[err]['pandalist'] = v
         errsByCountL.append(errsByCount[err])
+
+
+
+       # random.seed()
+
+        #if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        #    tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+        #else:
+        #    tmpTableName = "TMP_IDS1DEBUG"
+
+        #transactionKey = random.randrange(1000000)
+        #            connection.enter_transaction_management()
+        #new_cur = connection.cursor()
+        #executionData = []
+        #for id in esjobs:
+        #    executionData.append((id, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
+        #query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
+        #new_cur.executemany(query, executionData)
+        #            connection.commit()
+
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByCountL = sorted(errsByCountL, key=lambda x: -x['count'])
 
