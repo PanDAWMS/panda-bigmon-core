@@ -2908,25 +2908,20 @@ SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTER
     cur.execute(sqlRequestFull)
     errorsList = cur.fetchall()
     for error in errorsList:
-        shortListErrors = []
         if (errorcode in error):
             try:
                 errnum = int(codeval)
-                if codename in errorCodes and errnum in errorCodes[codename]:
-                    descr = errorCodes[codename][errnum]
+                if str(error[error.index(errorcode) + 1]) !='' and 'transformation' not in errorcode:
+                    descr = str(error[error.index(errorcode) + 1])
                 else:
-                    if ('transformation' in errorcode):
-                        descr = 'None'
+                    if codename in errorCodes and errnum in errorCodes[codename]:
+                        descr = errorCodes[codename][errnum]
                     else:
-                        descr = error[error.index(errorcode) + 1]
+                        descr = 'None'
             except:
                 pass
-            taskId = error[1]
-            pandaid = error[0]
-            shortListErrors.append(taskId)
-            shortListErrors.append(pandaid)
-            shortListErrors.append(descr)
-            fullListErrors.append(shortListErrors)
+            rowDict = {"taskid": error[1], "pandaid": error[0], "desc": descr}
+            fullListErrors.append(rowDict)
 
 
 
