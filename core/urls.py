@@ -62,6 +62,7 @@ urlpatterns = [
     url(r'^workQueues/$', coremon_views.workQueues, name='workQueues'),
     url(r'^preprocess/$', coremon_views.preProcess, name='preprocess'),
     url(r'^g4exceptions/$', coremon_views.g4exceptions, name='g4exceptions'),
+    url(r'^errorslist/$', coremon_views.summaryErrorsList, name='summaryErrorsList'),
 
     url(r'^worldjobs/$', coremon_views.worldjobs, name='worldjobs'),
 #    url(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
@@ -104,7 +105,7 @@ urlpatterns = [
     url(r'^support/jobinfouservo/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<ndays>\d+)/$', core_coremon_support_views.jobUserDaysOrig, name='supportJobUserVo'),
     #### JSON for Datatables
     url (r'^datatable/data/jeditaskid',coremon_views.esatlasPandaLoggerJson, name='dataTableJediTaskId'),
-
+    url(r'^datatable/data/errorSummaryList', coremon_views.summaryErrorsListJSON, name='summaryErrorsListJSON'),
 
     ###self monitor
     url(r'^admin/', include('core.admin.urls', namespace='admin')),
