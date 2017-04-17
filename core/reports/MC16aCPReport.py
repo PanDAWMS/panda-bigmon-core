@@ -47,6 +47,7 @@ class MC16aCPReport:
     stepsLabels = {'simul':'Simulation', 'recon':'Reconstruction', 'merge':'AOD Merge', 'mergeHits':'HITS Merge'}
 
 
+
     def getJEDIEventsSummaryRequestedOutput(self, condition):
         sqlRequest = '''
           SELECT * FROM (
@@ -90,19 +91,19 @@ class MC16aCPReport:
         for row in stats:
             if row[3] == 'simul':
                 input = humanize.intcomma(row[0])
-                simulated = humanize.intcomma(row[2])
+                simulated = humanize.intcomma(row[1])
                 if (row[0] > 0):
                     simulatedprogr = int(row[1]/float(row[0])*100)
             if row[3] == 'mergeHits':
-                mergeHits = humanize.intcomma(row[2])
+                mergeHits = humanize.intcomma(row[1])
                 if (row[0] > 0):
                     mergeHitsprog = int(row[1]/float(row[0])*100)
             if row[3] == 'recon':
-                reconstructed = humanize.intcomma(row[2])
+                reconstructed = humanize.intcomma(row[1])
                 if (row[0] > 0):
                     reconstructedprog = int(row[1]/float(row[0])*100)
             if row[3] == 'merge':
-                merge = humanize.intcomma(row[2])
+                merge = humanize.intcomma(row[1])
                 if (row[0] > 0):
                     mergeprog = int(row[1]/float(row[0])*100)
 
@@ -431,6 +432,17 @@ class MC16aCPReport:
         campaignsummary = cur.fetchall()
 
         orderedsummary = OrderedDict()
+        input = 0
+        simulated = 0
+        simulatedprogr = 0
+        mergeHits = 0
+        mergeHitsprog = 0
+        reconstructed = 0
+        reconstructedprog = 0
+        merge = 0
+        mergeprog = 0
+
+
         for step in self.steps:
             jobstate = OrderedDict()
             for state in self.jobstatelist:
@@ -439,7 +451,49 @@ class MC16aCPReport:
 
         for summaryRow in campaignsummary:
             orderedsummary[summaryRow[2]][summaryRow[1]] += summaryRow[0]
-        return orderedsummary
+
+        for stepName in orderedsummary:
+            stepInfo = orderedsummary.get(stepName)
+            for jobsStatus in stepInfo:
+                countOfEv = stepInfo[jobsStatus]
+
+                if jobsStatus == 'finished':
+                    if stepName == 'simul':
+                        simulated = countOfEv
+                    if stepName == 'merge':
+                        merge = countOfEv
+                    if stepName == 'recon':
+                        reconstructed = countOfEv
+                    if stepName == 'mergeHits':
+                        mergeHits = countOfEv
+                elif jobsStatus in ['pending',	'defined',	'assigned',	'waiting',	'activated',	'sent',	'starting',	'running',	'holding',	'transferring',	'merging']:
+                    if stepName == 'simul':
+                        simulatedprogr += countOfEv
+                    if stepName == 'merge':
+                        mergeprog += countOfEv
+                    if stepName == 'recon':
+                        reconstructedprog += countOfEv
+                    if stepName == 'mergeHits':
+                        mergeHitsprog += countOfEv
+
+        input = simulatedprogr
+        simulatedprogr = int( (1-simulatedprogr/ float(simulated)) * 100)
+        mergeprog = int((1-mergeprog/ float(merge)) * 100)
+        reconstructedprog = int( (1 - reconstructedprog / float(reconstructed)) * 100)
+        mergeHitsprog = int( (1- mergeHitsprog / float(mergeHits)) * 100)
+
+        fullSummary = {"input":input,
+                       "simulated":simulated,
+                       "mergeHits":mergeHits,
+                       "reconstructed":reconstructed,
+                       "merge":merge,
+                       "simulatedprogr":simulatedprogr,
+                       "mergeHitsprog":mergeHitsprog,
+                       "reconstructedprog":reconstructedprog,
+                       "mergeprog":mergeprog,
+                      }
+
+        return (orderedsummary, fullSummary)
 
 
     def getEventsJEDISummary(self, condition):
@@ -685,13 +739,19 @@ class MC16aCPReport:
         recentTasks = self.recentProgressReportDEFT('and PR_ID IN %s' % requestList)
         recentTasks['title'] = 'Tasks updated during last 24 hours'
 
-        JediEventsR = self.getJEDIEventsSummaryRequestedOutput('and t1.REQID IN %s' % requestList)
-        JediEventsR['title'] = 'Overall events processing summary'
+        JediEventsR1 = self.getJEDIEventsSummaryRequestedOutput('and t1.REQID IN %s' % requestList)
+        #JediEventsR['title'] = 'Overall events processing summary'
 
         (jediEventsHashsTable, hashTable) = self.getJEDIEventsSummaryRequestedBreakDownHashTag(requestList)
 
-        totalEvents = self.getEventsJEDISummaryJobStatus('and REQID IN %s' % requestList)
+        (totalEvents,JediEventsR) = self.getEventsJEDISummaryJobStatus('and REQID IN %s' % requestList)
         totalEvents['title'] = 'Events processing summary'
+        JediEventsR['title'] = 'Overall events processing summary'
+        JediEventsR.simulatedprogr =  JediEventsR1.simulatedprogr
+        JediEventsR.reconstructedprog =  JediEventsR1.reconstructedprog
+        JediEventsR.mergeHitsprog =  JediEventsR1.mergeHitsprog
+        JediEventsR.mergeprog =  JediEventsR1.mergeprog
+
 
         totalTasks = self.getTasksDEFTSummary('and PR_ID IN %s' % requestList)
         totalTasks['title'] = 'Tasks processing summary'
