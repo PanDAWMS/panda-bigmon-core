@@ -38,11 +38,11 @@
         </tr>
 
          <tr>
-                <td>{{ JediEventsR.input }}</td>
-                <td>{{ JediEventsR.simulated }} ({{ JediEventsR.simulatedprogr }}%)</td>
-                <td>{{ JediEventsR.mergeHits }} ({{ JediEventsR.mergeHitsprog }}%)</td>
-                <td>{{ JediEventsR.reconstructed }} ({{ JediEventsR.reconstructedprog }}%)</td>
-                <td>{{ JediEventsR.merge }} ({{ JediEventsR.mergeprog }}%)</td>
+                <td>{{ JediEventsR.input|intcomma }}</td>
+                <td>{{ JediEventsR.simulated|intcomma }} ({{ JediEventsR.simulatedprogr }}%)</td>
+                <td>{{ JediEventsR.mergeHits|intcomma }} ({{ JediEventsR.mergeHitsprog }}%)</td>
+                <td>{{ JediEventsR.reconstructed |intcomma}} ({{ JediEventsR.reconstructedprog }}%)</td>
+                <td>{{ JediEventsR.merge|intcomma }} ({{ JediEventsR.mergeprog }}%)</td>
          </tr>
 
     </table>

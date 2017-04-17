@@ -79,43 +79,31 @@ class MC16aCPReport:
         cur.execute(sqlRequestFull)
         stats = cur.fetchall()
         input = 0
-        simulated = 0
+        tosimulate = 0
         simulatedprogr = 0
-        mergeHits = 0
+        tomergeHits = 0
         mergeHitsprog = 0
-        reconstructed = 0
+        toreconstruct = 0
         reconstructedprog = 0
-        merge = 0
+        tomerge = 0
         mergeprog = 0
 
         for row in stats:
             if row[3] == 'simul':
-                input = humanize.intcomma(row[0])
-                simulated = humanize.intcomma(row[1])
-                if (row[0] > 0):
-                    simulatedprogr = int(row[1]/float(row[0])*100)
+                input = row[0]
+                tosimulate = row[0]
             if row[3] == 'mergeHits':
-                mergeHits = humanize.intcomma(row[1])
-                if (row[0] > 0):
-                    mergeHitsprog = int(row[1]/float(row[0])*100)
+                tomergeHits = row[0]
             if row[3] == 'recon':
-                reconstructed = humanize.intcomma(row[1])
-                if (row[0] > 0):
-                    reconstructedprog = int(row[1]/float(row[0])*100)
+                toreconstruct = row[0]
             if row[3] == 'merge':
-                merge = humanize.intcomma(row[1])
-                if (row[0] > 0):
-                    mergeprog = int(row[1]/float(row[0])*100)
+                tomerge = row[0]
 
         fullSummary = {"input":input,
-                       "simulated":simulated,
-                       "mergeHits":mergeHits,
-                       "reconstructed":reconstructed,
-                       "merge":merge,
-                       "simulatedprogr":simulatedprogr,
-                       "mergeHitsprog":mergeHitsprog,
-                       "reconstructedprog":reconstructedprog,
-                       "mergeprog":mergeprog,
+                       "tosimulate":tosimulate,
+                       "tomergeHits":tomergeHits,
+                       "toreconstruct":toreconstruct,
+                       "tomerge":tomerge
                       }
         return fullSummary
 
@@ -414,16 +402,18 @@ class MC16aCPReport:
             t1.status not in ('failed','aborted','broken') and t1.JEDITASKID=t2.JEDITASKID AND t3.DATASETID=t2.DATASETID AND t2.MASTERID IS NULL AND t3.JEDITASKID=t1.JEDITASKID and TASKNAME LIKE '%.evgen.%' and t3.TYPE IN ('input', 'pseudo_input') {0} group by t3.PANDAID
           ),
           selectedJobs as (
-            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS FROM selectedevents, ATLAS_PANDAARCH.JOBSARCHIVED t2 where t2.pandaid = selectedevents.pandaid
+            SELECT JOBSTATUS, STEP, NEVENTS, row_number() OVER(PARTITION BY pandaid order by JOBSTATUS) as rn FROM (
+            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS, t2.pandaid FROM selectedevents, ATLAS_PANDAARCH.JOBSARCHIVED t2 where t2.pandaid = selectedevents.pandaid 
             UNION ALL
-            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS FROM selectedevents, ATLAS_PANDA.JOBSACTIVE4 t2 where t2.pandaid = selectedevents.pandaid
+            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS, t2.pandaid FROM selectedevents, ATLAS_PANDA.JOBSACTIVE4 t2 where t2.pandaid = selectedevents.pandaid
             UNION ALL
-            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS FROM selectedevents, ATLAS_PANDA.JOBSARCHIVED4 t2 where t2.pandaid = selectedevents.pandaid
+            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS, t2.pandaid FROM selectedevents, ATLAS_PANDA.JOBSARCHIVED4 t2 where t2.pandaid = selectedevents.pandaid
             UNION ALL
-            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS FROM selectedevents, ATLAS_PANDA.JOBSWAITING4 t2 where t2.pandaid = selectedevents.pandaid
+            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS, t2.pandaid FROM selectedevents, ATLAS_PANDA.JOBSWAITING4 t2 where t2.pandaid = selectedevents.pandaid
             UNION ALL
-            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS FROM selectedevents, ATLAS_PANDA.JOBSDEFINED4 t2 where t2.pandaid = selectedevents.pandaid
-          ) SELECT SUM(NEVENTS), JOBSTATUS, STEP  FROM selectedJobs GROUP BY STEP, JOBSTATUS
+            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS, t2.pandaid FROM selectedevents, ATLAS_PANDA.JOBSDEFINED4 t2 where t2.pandaid = selectedevents.pandaid
+            ) 
+          ) SELECT SUM(NEVENTS), JOBSTATUS, STEP FROM selectedJobs where rn = 1 GROUP BY STEP, JOBSTATUS
           
         '''
         sqlRequestFull = sqlRequest.format(condition)
@@ -747,11 +737,11 @@ class MC16aCPReport:
         (totalEvents,JediEventsR) = self.getEventsJEDISummaryJobStatus('and REQID IN %s' % requestList)
         totalEvents['title'] = 'Events processing summary'
         JediEventsR['title'] = 'Overall events processing summary'
-        JediEventsR.simulatedprogr =  JediEventsR1.simulatedprogr
-        JediEventsR.reconstructedprog =  JediEventsR1.reconstructedprog
-        JediEventsR.mergeHitsprog =  JediEventsR1.mergeHitsprog
-        JediEventsR.mergeprog =  JediEventsR1.mergeprog
-        JediEventsR.input =  JediEventsR1.input
+        JediEventsR['simulatedprogr'] =  int (JediEventsR['simulated']/float(JediEventsR1['tosimulate'])*100)
+        JediEventsR['reconstructedprog'] =  int (JediEventsR['reconstructed']/float(JediEventsR1['toreconstruct'])*100)
+        JediEventsR['mergeHitsprog'] =  int (JediEventsR['mergeHits']/float(JediEventsR1['tomergeHits'])*100)
+        JediEventsR['mergeprog'] = int (JediEventsR['merge']/float(JediEventsR1['tomerge'])*100)
+        JediEventsR['input'] =  JediEventsR1['input']
 
 
 
