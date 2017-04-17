@@ -3,44 +3,52 @@
 
 
 {% block page_title %} {{ viewParams.MON_VO }} Report on Campaign {% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} Report on Campaign</a>{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} Campaign Report</a>{% endblock %}
 {% block subtitle %}PanDA {{view}} {{ requestParams.mode }} {{ viewParams.selection|safe }}
 {% endblock %}
 {% block body %}
-    <h1> Report on Campaign MC16 </h1>
-    <h5> Built on {{ built }}, additional selection by requests {{ requestList }} applied </h5>
+    <h1> MC16a Campaign Report<sup>(<a href="#selectioncrit">&#8711;</a>)</sup>
+        <span style="float:right;"><h3>Built on {{ built }}</h3></span></h1>
 
-    {% comment %}
-    {% endcomment %}
+    <section>
+        <h3>Outline:</h3>
+        <h4><a href="#{{ JediEventsR.title }}">{{ JediEventsR.title }}</a></h4>
+        <h4><a href="#{{ totalEvents.title }}">{{ totalEvents.title }}</a></h4>
+        <h4><a href="#{{ totalJobs.title }}">{{ totalJobs.title }}</a></h4>
+        <h4><a href="#{{ totalTasks.title }}">{{ totalTasks.title }}</a></h4>
+        <h4><a href="#{{ recentTasks.title }}">{{ recentTasks.title }}</a></h4>
+        <h4><a href="#siteshighestHS06SECfailed">List of top sites with  spent on failed jobs</a></h4>
+        <h4><a href="#siteshighestactivatedrunning">List of the top sites with the highest activated/running ratio</a></h4>
+        <h4><a href="#siteshighestassignedrunning">List of the top sites with the highest assigned/running ratio</a></h4>
+    </section>
 
-    {% for data in JediEventsR %}
-    <table>
+    <p></p><p></p>
+
+
+    <table id="{{ JediEventsR.title }}">
         <tr>
-            <th colspan=20>{{ data.title }}</th>
+            <th colspan=20>{{ JediEventsR.title }}</th>
         </tr>
         <tr>
-            <th></th>
-            <th>evgen</th>
-            <th>simul</th>
-            <th>recon</th>
-            <th>merge</th>
+            <th>Input Events</th>
+            <th>Simulated</th>
+            <th>HITS Merged</th>
+            <th>Reconsructed</th>
+            <th>AOD Merged</th>
         </tr>
 
-        {% for key, values in data.items %}
-            {% ifnotequal key 'title' %}
-            <tr>
-                <td>{{ key }}</td>
-                <td>{{ values.evgen }}</td>
-                <td>{{ values.simul }}</td>
-                <td>{{ values.recon }}</td>
-                <td>{{ values.merge }}</td>
-            </tr>
-            {% endifnotequal %}
-        {% endfor %}
+         <tr>
+                <td>{{ JediEventsR.input }}</td>
+                <td>{{ JediEventsR.simulated }} ({{ JediEventsR.simulatedprogr }}%)</td>
+                <td>{{ JediEventsR.mergeHits }} ({{ JediEventsR.mergeHitsprog }}%)</td>
+                <td>{{ JediEventsR.reconstructed }} ({{ JediEventsR.reconstructedprog }}%)</td>
+                <td>{{ JediEventsR.merge }} ({{ JediEventsR.mergeprog }}%)</td>
+         </tr>
 
     </table>
-    {% endfor %}
 
+
+    {% comment %}
     <script type="text/javascript">
         function toggleTable(hashtag) {
             var lTable = document.getElementById(hashtag);
@@ -64,10 +72,10 @@
         </tr>
         <tr>
             <th></th>
-            <th>evgen</th>
-            <th>simul</th>
-            <th>recon</th>
-            <th>merge</th>
+            <th>Event Generation</th>
+            <th>Simulation</th>
+            <th>Reconstruction</th>
+            <th>Merge</th>
         </tr>
         {% for key, values in data.items %}
             {% ifnotequal key 'hashtag' %}
@@ -82,161 +90,149 @@
         {% endfor %}
     </table>
     {% endfor %}
+    {% endcomment %}
 
 
-    {% for data in totalEvents %}
-    <table>
+
+    <table id="{{ totalEvents.title }}">
         <tr>
-            <th colspan=20>{{ data.title }}</th>
+            <th colspan=24>{{ totalEvents.title }}</th>
         </tr>
         <tr>
-            <th></th>
-            <th>evgen</th>
-            <th>simul</th>
-            <th>recon</th>
-            <th>merge</th>
+            <td></td>
+            {% for state in jobstatelist %}
+                <td class="{{ state }}"> <b> {{ state }} </b> </td>
+            {% endfor %}
         </tr>
-
-        {% for key, values in data.items %}
-            {%if  key != 'title' and key != 'total' %}
-            <tr>
-                <td>{{ key }}</td>
-                <td>{{ values.evgen|intcomma }}</td>
-                <td>{{ values.simul|intcomma }}</td>
-                <td>{{ values.recon|intcomma }}</td>
-                <td>{{ values.merge|intcomma }}</td>
-            </tr>
-            {% endif %}
-        {% endfor %}
-        <tr>
-             <td><span class='total'>TOTAL</span></td>
-             <td>{{ data.total.evgen|intcomma }}</td>
-             <td>{{ data.total.simul|intcomma }}</td>
-             <td>{{ data.total.recon|intcomma }}</td>
-             <td>{{ data.total.merge|intcomma }}</td>
-        <tr>
-
-    </table>
-    {% endfor %}
-
-
-    {% for data in totalTasks %}
-    <table>
-        <tr>
-            <th colspan=20>{{ data.title }}</th>
-        </tr>
-        <tr>
-            <th></th>
-            <th>evgen</th>
-            <th>simul</th>
-            <th>recon</th>
-            <th>merge(*)</th>
-        </tr>
-
-        {% for key, values in data.items %}
-            {%if  key != 'title' and key != 'total' %}
+            {% for step in steps %}
                 <tr>
-                    <td><span class='{{ key }}'>{{ key }}</span></td>
-                    <td><a href='/tasks/?status={{ key }}&campaign=MC16*&taskname=*.evgen.*&days=300&reqid=11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>   {{ values.evgen|intcomma }}</td>
-                    <td><a href='/tasks/?status={{ key }}&campaign=MC16*&taskname=*.simul.*&days=300&reqid=11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>   {{ values.simul|intcomma }}</td>
-                    <td><a href='/tasks/?status={{ key }}&campaign=MC16*&taskname=*.recon.*&days=300&reqid=11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>   {{ values.recon|intcomma }}</td>
-                    <td><a href='/tasks/?status={{ key }}&campaign=MC16*&taskname=*.merge.*&days=300&reqid=11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>   {{ values.merge|intcomma }}</td>
+                <td>
+                    {{ stepsLabels|get_item:step }}
+                </td>
+
+                {% for state in jobstatelist %}
+                    <td>
+                        {% if totalEvents|get_item:step|get_item:state > 0 %}
+                            {{ totalEvents|get_item:step|get_item:state|intcomma }}
+                        {% endif %}
+                    </td>
+                {% endfor %}
+
                 </tr>
-            {% endif %}
-        {% endfor %}
-        <tr>
-             <td><span class='total'>TOTAL</span></td>
-             <td>{{ data.total.evgen|intcomma }}</td>
-             <td>{{ data.total.simul|intcomma }}</td>
-             <td>{{ data.total.recon|intcomma }}</td>
-             <td>{{ data.total.merge|intcomma }}</td>
-        <tr>
+            {% endfor %}
+
     </table>
-    {% endfor %}
-    <p>(*) Merge links may not provide corespondent number due to additional filtering which should be applied to select true merge tasks
 
-
-    {% for data in recentTasks %}
-    <table>
+    <table id="{{ totalJobs.title }}">
         <tr>
-            <th colspan=20>{{ data.title }}</th>
+            <th colspan=24>{{ totalJobs.title }}</th>
         </tr>
         <tr>
-            <th></th>
-            <th>evgen</th>
-            <th>simul</th>
-            <th>recon</th>
-            <th>merge</th>
+            <td></td>
+            {% for state in jobstatelist %}
+                <td class="{{ state }}"> <b> {{ state }} </b> </td>
+            {% endfor %}
         </tr>
-
-        {% for key, values in data.items %}
-            {%if  key != 'title' and key != 'total' %}
+            {% for step in steps %}
                 <tr>
-                    <td>{{ key }}</td>
-                    <td>{{ values.evgen|intcomma }}</td>
-                    <td>{{ values.simul|intcomma }}</td>
-                    <td>{{ values.recon|intcomma }}</td>
-                    <td>{{ values.merge|intcomma }}</td>
+                <td>
+                    {{ stepsLabels|get_item:step }}
+                </td>
+
+                {% for state in jobstatelist %}
+                    <td>
+                        {% if totalJobs|get_item:step|get_item:state > 0 %}
+                            {{ totalJobs|get_item:step|get_item:state|intcomma }}
+                        {% endif %}
+                    </td>
+                {% endfor %}
+
                 </tr>
-            {% endif %}
-        {% endfor %}
+            {% endfor %}
+
     </table>
-    {% endfor %}
+
+    <table id="{{ totalTasks.title }}">
+        <tr>
+            <th colspan=24>{{ totalTasks.title }}</th>
+        </tr>
+        <tr>
+            <td></td>
+            {% for state in taskstatelistDEFT %}
+                {% if state == 'done+finished' %}
+                    <td class="done"> <b> {{ state }} </b> </td>
+                {% else %}
+                    <td class="{{ state }}"> <b> {{ state }} </b> </td>
+                {% endif %}
+            {% endfor %}
+        </tr>
+            {% for step in steps %}
+                <tr>
+                <td>
+                    {{ stepsLabels|get_item:step }}
+                </td>
+
+                {% for state in taskstatelistDEFT %}
+                    <td>
+                        {% if totalTasks|get_item:step|get_item:state > 0 %}
+                            <a href='/tasks/?status={{ state }}&campaign=MC16*&taskname=*.{{ step }}.*&days=300&reqid=11035|11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>{{ totalTasks|get_item:step|get_item:state }}</a>
+                        {% endif %}
+                    </td>
+                {% endfor %}
+
+                </tr>
+            {% endfor %}
+
+    </table>
+    <p>Merge links may not provide corespondent number due to additional filtering which should be applied to select true merge tasks
+
+
+    <table id="{{ recentTasks.title }}">
+        <tr>
+            <th colspan=24>{{ recentTasks.title }}</th>
+        </tr>
+        <tr>
+            <td></td>
+            {% for state in taskstatelistRecent %}
+                <td class="{{ state }}"> <b> {{ state }} </b> </td>
+            {% endfor %}
+        </tr>
+            {% for step in steps %}
+                <tr>
+                <td>
+                    {{ stepsLabels|get_item:step }}
+                </td>
+
+                {% for state in taskstatelistRecent %}
+                    <td>
+                        {% if recentTasks|get_item:step|get_item:state > 0 %}
+                            {{ recentTasks|get_item:step|get_item:state }}
+                        {% endif %}
+                    </td>
+                {% endfor %}
+
+                </tr>
+            {% endfor %}
+
+    </table>
     <p>(*) Tasks updated during last 24 hours
     <br>(**) All current tasks
     <br>(***) Tasks submitted during last 24 hours
 
 
-
-
-    {% for data in totalJobs %}
-    <table>
+    <table id="{{ hepspecJobs.title }}">
         <tr>
-            <th colspan=20>{{ data.title }}</th>
+            <th colspan=20>{{ hepspecJobs.title }}</th>
         </tr>
         <tr>
             <th></th>
-            <th>evgen</th>
-            <th>simul</th>
-            <th>recon</th>
-            <th>merge</th>
+            <th>Event Generation</th>
+            <th>Simulation</th>
+            <th>Reconstruction</th>
+            <th>Merge</th>
         </tr>
 
-        {% for key, values in data.items %}
-            {%if  key != 'title' and key != 'total' %}
-                <tr>
-                    <td>{{ key }}</td>
-                    <td>{{ values.evgen|intcomma }}</td>
-                    <td>{{ values.simul|intcomma }}</td>
-                    <td>{{ values.recon|intcomma }}</td>
-                    <td>{{ values.merge|intcomma }}</td>
-                </tr>
-            {% endif %}
-        {% endfor %}
-        <tr>
-             <td><span class='total'>TOTAL</span></td>
-             <td>{{ data.total.evgen|intcomma }}</td>
-             <td>{{ data.total.simul|intcomma }}</td>
-             <td>{{ data.total.recon|intcomma }}</td>
-             <td>{{ data.total.merge|intcomma }}</td>
-        <tr>
-    </table>
-    {% endfor %}
-
-    {% for data in hepspecJobs %}
-    <table>
-        <tr>
-            <th colspan=20>{{ data.title }}</th>
-        </tr>
-        <tr>
-            <th></th>
-            <th>evgen</th>
-            <th>simul</th>
-            <th>recon</th>
-            <th>merge</th>
-        </tr>
-
-        {% for key, values in data.items %}
+        {% for key, values in hepspecJobs.items %}
             {%if  key != 'title' and key != 'total' %}
                 <tr>
                     <td>{{ key }}</td>
@@ -248,12 +244,11 @@
             {% endif %}
         {% endfor %}
     </table>
-    {% endfor %}
 
 
-    <table>
+    <table id="siteshighestHS06SECfailed">
         <tr>
-            <th colspan=20>List of top sites with highest HS06SEC spent on failed jobs</th>
+            <th colspan=20>List of top sites with  spent on failed jobs</th>
         </tr>
         <tr>
             <th>Computingsite</th>
@@ -273,7 +268,7 @@
     </table>
 
 
-    <table>
+    <table id="siteshighestactivatedrunning">
         <tr>
             <th colspan=20>List of the top sites with the highest activated/running ratio</th>
         </tr>
@@ -283,7 +278,6 @@
             <th>activated/running jobs</th>
             <th>activated jobs</th>
             <th>running jobs</th>
-
         </tr>
 
         {% for values in siteActRun %}
@@ -297,7 +291,7 @@
         {% endfor %}
     </table>
 
-    <table>
+    <table id="siteshighestassignedrunning">
         <tr>
             <th colspan=20>List of the top sites with the highest assigned/running ratio</th>
         </tr>
@@ -319,6 +313,8 @@
                 </tr>
         {% endfor %}
     </table>
+
+    <h5 id="selectioncrit">Additional selection by requests {{ requestList }} applied </h5>
 
 
 {% endblock %}
