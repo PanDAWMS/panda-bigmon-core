@@ -751,6 +751,8 @@ class MC16aCPReport:
         JediEventsR.reconstructedprog =  JediEventsR1.reconstructedprog
         JediEventsR.mergeHitsprog =  JediEventsR1.mergeHitsprog
         JediEventsR.mergeprog =  JediEventsR1.mergeprog
+        JediEventsR.input =  JediEventsR1.input
+
 
 
         totalTasks = self.getTasksDEFTSummary('and PR_ID IN %s' % requestList)
