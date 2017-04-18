@@ -732,7 +732,7 @@ class MC16aCPReport:
         JediEventsR1 = self.getJEDIEventsSummaryRequestedOutput('and t1.REQID IN %s' % requestList)
         #JediEventsR['title'] = 'Overall events processing summary'
 
-        (jediEventsHashsTable, hashTable) = self.getJEDIEventsSummaryRequestedBreakDownHashTag(requestList)
+        #(jediEventsHashsTable, hashTable) = self.getJEDIEventsSummaryRequestedBreakDownHashTag(requestList)
 
         (totalEvents,JediEventsR) = self.getEventsJEDISummaryJobStatus('and REQID IN %s' % requestList)
         totalEvents['title'] = 'Events processing summary'
@@ -763,8 +763,8 @@ class MC16aCPReport:
                 "totalEvents": totalEvents,
                 "totalTasks":totalTasks,
                 "totalJobs":totalJobs,
-                "JediEventsHashsTable":jediEventsHashsTable,
-                "hashTable":hashTable,
+                #"JediEventsHashsTable":jediEventsHashsTable,
+                #"hashTable":hashTable,
                 "recentTasks":recentTasks,
                 "hepspecJobs":hepspecJobs,
                 "worstSite":worstSite,
