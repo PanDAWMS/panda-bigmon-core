@@ -6447,7 +6447,7 @@ def report(request):
     step = 0
     response = None
 
-    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'] == 'MC16':
+    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16':
         reportGen = MC16aCPReport.MC16aCPReport()
         response = reportGen.prepareReportJEDI(request)
         endSelfMonitor(request)
