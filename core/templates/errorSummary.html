@@ -96,7 +96,11 @@
 <tr class='tablesection'><th colspan=20> Overall error summary </th></tr>
 <tr><th>Category:code</th><th>Job list</th><th>Nerrors</th><th>Sample error description</th></tr>
 {% for errval in errsByCount %}
-<tr><th> <a href="{{xurlsubst}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> {{ errval.error }} </a> </td><td> <a href="{{jobsurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> jobs </a> </th> <td> {{ errval.count }} </td> <td> {{ errval.diag }} </td>  </tr>
+<tr>
+    <td> <a href="{{xurlsubst}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> {{ errval.error }} </a> </td>
+    <td> <a href="{{jobsurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> jobs </a> </td>
+    <td> {{ errval.count }} </td> <td> {{ errval.diag }} <br/> {% if errval.count > 1%} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %} </td>
+</tr>
 {% endfor %}
 </table>
 {% endif %}
@@ -110,7 +114,10 @@
 <th> {{ site.toterrors }} </th>
 <th> Total errors in {{ site.toterrjobs }} jobs. &nbsp; <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ site.finished }} </span></a> &nbsp; <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ site.failed }} </span></a> &nbsp; % failed: {{ site.pctfail }} &nbsp; <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ site.holding }} </span></a> &nbsp;  <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ site.cancelled }} </span></a> </th>  </tr>
 {% for errval in site.errorlist %}
-<tr><td>  </td> <td> <a href="{{jobsurlNoSite}}?computingsite={{site.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td> <b>{{ errval.error }}</b> &nbsp; <font size=-1> {{ errval.diag }} </font></td>  </tr>
+<tr><td>  </td>
+    <td> <a href="{{jobsurlNoSite}}?computingsite={{site.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td>
+    <td> <b>{{ errval.error }}</b> &nbsp; <font size=-1> {{ errval.diag }} </font></td>
+</tr>
 {% endfor %}
 {% endfor %}
 </table>

@@ -1972,6 +1972,7 @@ def jobListP(request, mode=None, param=None):
 
 def getJobList(request,requesttoken=None):
     rawsummary={}
+    newpandaIDVal = {}
     if 'requestParams' in request.session and u'display_limit' in request.session['requestParams']:
         display_limit = int(request.session['requestParams']['display_limit'])
         url_nolimit = removeParam(request.get_full_path(), 'display_limit')
@@ -2082,7 +2083,9 @@ def getJobList(request,requesttoken=None):
     jobs = []
 
     if not doRefresh:
+        print len(jobsToList)
         pandaIDVal = [int(val) for val in jobsToList]
+        newpandaIDVal = importToken(pandaIDVal)
         pandaIDVal = pandaIDVal[:njobsmax]
         newquery = {}
         newquery['pandaid__in'] = pandaIDVal
@@ -2257,8 +2260,10 @@ def getJobList(request,requesttoken=None):
         nodropPartURL = cleanURLFromDropPart(xurl)
     #sumd = None
     #errsByCount = None
+
         data = {
             'errsByCount': errsByCount,
+            'newpandaIDVal': newpandaIDVal,
             #        'errdSumd': errdSumd,
             'request': request,
             'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
@@ -2728,7 +2733,7 @@ def jobList(request, mode=None, param=None):
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
         del request.session['TLAST']
-        errsByCount = imortToken(errsByCount=errsByCount)
+        errsByCount = importToken(errsByCount=errsByCount)
         nodropPartURL = cleanURLFromDropPart(xurl)
         data = {
             'prefix': getPrefix(request),
@@ -2800,26 +2805,37 @@ def jobList(request, mode=None, param=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-def imortToken(errsByCount):
+def importToken(errsByCount):
     newErrsByCount = []
     random.seed()
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
     else:
         tmpTableName = "TMP_IDS1DEBUG"
-
+    isListPID = False
     new_cur = connection.cursor()
-
+    transactionKey = random.randrange(1000000)
     for item in errsByCount:
         executionData = []
-        transactionKey = random.randrange(1000000)
-        item['tk'] = transactionKey
-        for key,values in item['pandalist'].iteritems():
+        if (type(item) is not int):
+            transactionKey = random.randrange(1000000)
+            if ('pandalist' in item):
+                item['tk'] = transactionKey
+                for key,values in item['pandalist'].iteritems():
             #print item['error'] , key , values
-            executionData.append((key, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
+                    executionData.append((key, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
+        else:
+            executionData.append((item, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
+            if isListPID == False:
+                isListPID = True
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
         new_cur.executemany(query, executionData)
         newErrsByCount.append(item)
+    if isListPID == True:
+        #newErrsByCount =  {'tk':transactionKey, 'pandalist':newErrsByCount}
+        newErrsByCount = transactionKey
+        #print newErrsByCount['tk']
+        print len(errsByCount)
     return newErrsByCount
 
 def summaryErrorsList(request):
@@ -2829,6 +2845,7 @@ def summaryErrorsList(request):
         transactionkey = request.session['requestParams']['tk']
         codename = request.session['requestParams']['codename']
         codeval = request.session['requestParams']['codeval']
+
         if (transactionkey!='' and codename != '' and codeval!=''):
             checkTKeyQuery = '''
              SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}
@@ -2871,6 +2888,7 @@ def summaryErrorsList(request):
                 response = render_to_response('errorSummaryList.html', data, RequestContext(request))
                 return response
         else: return redirect('/jobs/?limit=100')
+
     else:
         return redirect('/jobs/?limit=100')
 ###JSON for Datatables###
@@ -2880,10 +2898,15 @@ def summaryErrorsListJSON(request):
     codename = request.session['requestParams']['codename']
     codeval = request.session['requestParams']['codeval']
     fullListErrors = []
+    #isJobsss = False
     print request.session['requestParams']
     for er in errorcodelist:
         if er['error'] == request.session['requestParams']['codename']:
             errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
+        if er['name'] == str(request.session['requestParams']['codename']):
+            codename = er['error']
+            errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
+            #isJobsss=True
     #d = dict((k, v) for k, v in errorcodelist if v >= request.session['requestParams']['codename'])
 
 
@@ -2899,8 +2922,9 @@ UNION ALL
 SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSWAITING4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSWAITING4.PANDAID
 UNION ALL
 SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDAARCH.JOBSARCHIVED, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID)
-    
     '''
+    #if isJobsss:
+    sqlRequest += ' WHERE '+ codename + '='+codeval
     # INPUT_EVENTS, TOTAL_EVENTS, STEP
     shortListErrors = []
     sqlRequestFull = sqlRequest.format(condition)
@@ -8257,7 +8281,9 @@ def errorSummary(request):
         xurl = extensibleURL(request)
         jobsurl = xurlsubst.replace('/errors/', '/jobs/')
         jobsurlNoSite = xurlsubstNoSite.replace('/errors/', '')
-
+        print str(datetime.now())
+        errsByCount = importToken(errsByCount=errsByCount)
+        print str(datetime.now())
         TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
