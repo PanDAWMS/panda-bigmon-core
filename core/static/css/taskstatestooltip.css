@@ -1,0 +1,749 @@
+
+
+.running_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.running_fill:after {
+    content: 'the task is running jobs';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.running_fill:hover:after {
+   display: inline-block;
+}
+
+
+.registered_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.registered_fill:after {
+    content: 'the task information is inserted to the JEDI_Tasks table';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.registered_fill:hover:after {
+   display: inline-block;
+}
+
+.defined_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.defined_fill:after {
+    content: 'all task parameters are properly defined';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.defined_fill:hover:after {
+   display: inline-block;
+}
+
+.assigning_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.assigning_fill:after {
+    content: 'the task brokerage is assigning the task to a cloud';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.assigning_fill:hover:after {
+   display: inline-block;
+}
+
+.ready_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.ready_fill:after {
+    content: 'the task is ready to generate jobs. New jobs are generated once computing resources become available.';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.ready_fill:hover:after {
+   display: inline-block;
+}
+
+.pending_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.pending_fill:after {
+    content: 'the task has a temporary problem';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.pending_fill:hover:after {
+   display: inline-block;
+}
+
+.scouting_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.scouting_fill:after {
+    content: 'the task is running scout jobs to collect job data';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.scouting_fill:hover:after {
+   display: inline-block;
+}
+
+.submitting_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.submitting_fill:after {
+    content: 'the task is running scout jobs to collect job data';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.submitting_fill:hover:after {
+   display: inline-block;
+}
+
+
+.scouted_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.scouted_fill:after {
+    content: 'all scout jobs were successfully finished';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.scouted_fill:hover:after {
+   display: inline-block;
+}
+
+.running_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.running_fill:after {
+    content: 'the task is running jobs';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.running_fill:hover:after {
+   display: inline-block;
+}
+
+
+.prepared_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.prepared_fill:after {
+    content: 'the task is ready to go to a final status';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.prepared_fill:hover:after {
+   display: inline-block;
+}
+
+
+.done_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.done_fill:after {
+    content: 'all inputs of the task were successfully processed';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.done_fill:hover:after {
+   display: inline-block;
+}
+
+
+.failed_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.failed_fill:after {
+    content: 'all inputs of the task were failed';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.failed_fill:hover:after {
+   display: inline-block;
+}
+
+
+.finished_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.finished_fill:after {
+    content: 'some inputs of the task were successfully processed but others were failed or not processed since the task was terminated';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.finished_fill:hover:after {
+   display: inline-block;
+}
+
+
+.aborting_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.aborting_fill:after {
+    content: 'the task is being killed';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.aborting_fill:hover:after {
+   display: inline-block;
+}
+
+
+.aborted_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.aborted_fill:after {
+    content: 'the task is killed';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.aborted_fill:hover:after {
+   display: inline-block;
+}
+
+
+.finishing_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.finishing_fill:after {
+    content: 'the task is forced to get finished';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.finishing_fill:hover:after {
+   display: inline-block;
+}
+
+
+.topreprocess_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.topreprocess_fill:after {
+    content: 'preprocess job is ready for the task';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.topreprocess_fill:hover:after {
+   display: inline-block;
+}
+
+
+.preprocessing_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.preprocessing_fill:after {
+    content: 'preprocess job is running for the task';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.preprocessing_fill:hover:after {
+   display: inline-block;
+}
+
+
+.tobroken_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.tobroken_fill:after {
+    content: 'the task is going to broken';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.tobroken_fill:hover:after {
+   display: inline-block;
+}
+
+
+.broken_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.broken_fill:after {
+    content: 'task cannot be executed, task definition is wrong';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.broken_fill:hover:after {
+   display: inline-block;
+}
+
+
+.toretry_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.toretry_fill:after {
+    content: 'the retry command was received for the task';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.toretry_fill:hover:after {
+   display: inline-block;
+}
+
+
+.toincexec_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.toincexec_fill:after {
+    content: 'the incexec command was received for the task';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.toincexec_fill:hover:after {
+   display: inline-block;
+}
+
+
+.rerefine_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.rerefine_fill:after {
+    content: 'task parameters are going to be changed for incremental execution';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.rerefine_fill:hover:after {
+   display: inline-block;
+}
+
+
+.paused_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.paused_fill:after {
+    content: 'the task is paused and does not do anything until it is resumed';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.paused_fill:hover:after {
+   display: inline-block;
+}
+
+
+.throttled_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.throttled_fill:after {
+    content: 'the task is throttled to generate jobs since the largest attemptNr in the task is a multiple of 5. The throttled period is 120 x int(max(attemptNr)/5)**2 minites';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.throttled_fill:hover:after {
+   display: inline-block;
+}
+
+
+.exhausted_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.exhausted_fill:after {
+    content: 'all reattempts were done but some inputs were still unsuccessful, and the task is configured to go to this state instead of finished to wait for manual intervention or timeout of 10 days. Also, if cpuTime of scouts jobs > 2x cpuTime of task definition, the task goes to exhausted';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.exhausted_fill:hover:after {
+   display: inline-block;
+}
+
+
+.passed_fill:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.passed_fill:after {
+    content: 'the task is ready to go to a final state after manual intervention or timeout';
+    display: none;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    left: 90%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.passed_fill:hover:after {
+   display: inline-block;
+}

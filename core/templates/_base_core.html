@@ -122,6 +122,7 @@ td { text-align:left; border-style:solid; border-width:1px; border-color:lightgr
 .broken { color:red }
 .tobroken { color:red }
 .deleted { color:red }
+.paused { color:darkgrey }
 .brokeroff { color:darkgrey }
 .test { color:darkgrey }
 .offline { color:darkgrey }
@@ -164,13 +165,13 @@ td { text-align:left; border-style:solid; border-width:1px; border-color:lightgr
 .alarm_fill { color:black;  background-color:#FF8174 }
 .error_fill { color:black;  background-color:#FF8174 }
 
-.broken_fill { color:black;  background-color:#FF8174 }
-.tobroken_fill { color:black;  background-color:#FF8174 }
+.broken_fill { color:black;  background-color:#FF8174; position: relative; }
+.tobroken_fill { color:black;  background-color:#FF8174; position: relative; }
 .reassign_fill { color:black;  background-color:#FF8174 }
 
-.failed_fill { color:black;  background-color:#FFABA2 }
-.aborted_fill { color:black;  background-color:#FFABA2 }
-.aborting_fill { color:black;  background-color:#FFABA2 }
+.failed_fill { color:black;  background-color:#FFABA2; position: relative; }
+.aborted_fill { color:black;  background-color:#FFABA2; position: relative; }
+.aborting_fill { color:black;  background-color:#FFABA2; position: relative; }
 .deleted_fill { color:black;  background-color:#FFABA2 }
 
 .info_fill { color:black;  color:black }
@@ -178,39 +179,42 @@ td { text-align:left; border-style:solid; border-width:1px; border-color:lightgr
 
 .failedscouting_fill { color:white;  background-color:red }
 
-.done_fill { color:black;  background-color:#62AC21 }
-.toincexec_fill { color:black;  background-color:#62AC21 }
-.rerefine_fill { color:black;  background-color:#62AC21 }
+.done_fill { color:black;  background-color:#62AC21; position: relative; }
+.toincexec_fill { color:black;  background-color:#62AC21; position: relative; }
+.rerefine_fill { color:black;  background-color:#62AC21; position: relative; }
 .merged_fill { color:black;  background-color:#62AC21 }
 
-.prepared_fill { color:black;  background-color:#A0D670 }
-.finished_fill { color:black;  background-color:#A0D670 }
+.prepared_fill { color:black;  background-color:#A0D670; position: relative; }
+.finished_fill { color:black;  background-color:#A0D670; position: relative; }
 .completed_fill { color:black;  background-color:#A0D670 }
-.toretry_fill { color:black; background-color:#A0D670 }
+.toretry_fill { color:black; background-color:#A0D670; position: relative; }
+.passed_fill { color: black; background-color:white; position: relative;}
 
-.running_fill { color:black;  background-color:#C7E9A9 }
-.pending_fill { color:black;  background-color:#C7E9A9 }
-.starting_fill { color:black;  background-color:#C7E9A9 }
-.scouted_fill { color:black;  background-color:#C7E9A9 }
+.running_fill { color:black;  background-color:#C7E9A9; position: relative; }
+.pending_fill { color:black;  background-color:#C7E9A9; position: relative; }
+.starting_fill { color:black;  background-color:#C7E9A9; position: relative; }
+.scouted_fill { color:black;  background-color:#C7E9A9; position: relative; }
 .transferring_fill { color:black;  background-color:#C7E9A9 }
-.finishing_fill { color:black;  background-color:#C7E9A9 }
-.ready_fill { color:black;  background-color:#C7E9A9 }
+.finishing_fill { color:black;  background-color:#C7E9A9; position: relative; }
+.ready_fill { color:black;  background-color:#C7E9A9; position: relative; }
 .cached_fill { color:black;  background-color:#C7E9A9 }
 .online_fill { color:black;  background-color:#C7E9A9 }
 .merging_fill { color:black;  background-color:#C7E9A9 }
 
-.scouting_fill { color:black;  background-color:#DBF1C6 }
-.topreprocess_fill { color:black;  background-color:#DBF1C6 }
-.preprocessing_fill { color:black;  background-color:#DBF1C6 }
+.scouting_fill { color:black;  background-color:#DBF1C6; position: relative;  }
+.topreprocess_fill { color:black;  background-color:#DBF1C6; position: relative; }
+.preprocessing_fill { color:black;  background-color:#DBF1C6; position: relative; }
 .assigned_fill { color:black;  background-color:#DBF1C6 }
 .activated_fill { color:black;  background-color:#DBF1C6 }
 
-.assigning_fill { color:black;  background-color:#EBF5E2 }
-.defined_fill { color:black;  background-color:#EBF5E2 }
-.registered_fill { color:black;  background-color:#EBF5E2 }
-.submitting_fill { color:black;  background-color:#EBF5E2 }
+.assigning_fill { color:black;  background-color:#EBF5E2; position: relative; }
+.defined_fill { color:black;  background-color:#EBF5E2; position: relative; }
+.registered_fill { color:black;  background-color:#EBF5E2; position: relative;  }
+.submitting_fill { color:black;  background-color:#EBF5E2; position: relative; }
 .approved_fill { color:black;  background-color:#EBF5E2 }
 .processed_fill { color:black;  background-color:#EBF5E2 }
+
+.paused_fill { color:black;  background-color:#DCDCDC; position: relative; }
 
 .warning_fill { color:#FFCB2F }
 
@@ -219,8 +223,8 @@ td { text-align:left; border-style:solid; border-width:1px; border-color:lightgr
 .cancelled_fill { color:black; background-color:#FFD65D }
 
 .holding_fill { color:black; background-color:#FFE38E }
-.throttled_fill { color:black; background-color:#FFE38E }
-.exhausted_fill { color:black; background-color:#FFE38E }
+.throttled_fill { color:black; background-color:#FFE38E; position: relative; }
+.exhausted_fill { color:black; background-color:#FFE38E; position: relative; }
 
 .waiting_fill { color:black; background-color:#FFF5D6 }
 .sent_fill { color:black; background-color:#FFF5D6 }
@@ -265,6 +269,8 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
 .dpd_2days { background-color: #FFFF99 }
 .dpd_3days { background-color: #FFCB2F }
 .dpd_ndays { background-color: #FF8174 }
+
+
 
 th.main {
     font-weight: 600;
@@ -453,6 +459,8 @@ hr {
       }
 
 </STYLE>
+
+    <link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}">
 
 </head>
 <body>
