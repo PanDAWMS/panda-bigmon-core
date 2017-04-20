@@ -47,6 +47,12 @@ class MC16aCPReport:
     stepsLabels = {'simul':'Simulation', 'recon':'Reconstruction', 'merge':'AOD Merge', 'mergeHits':'HITS Merge'}
 
 
+    def refreshPreprocessed:
+        """
+        TaskID, Status, Campaign, RequestID, DEFTStatus, STEP, TimeStamp, SubmitTime, InputEvents, pendingJEv, definedJEv,	assignedJEv,	waitingJEv,	activatedJEv,	sentJEv,	startingJEv,	runningJEv,	holdingJEv,	transferringJEv,	mergingJEv,	finishedJEv,	failedJEv,	cancelledJEv,	throttledJEv,	closedJEv, pendingNJ,	definedNJ,	assignedNJ,	waitingNJ,	activatedNJ,	sentNJ,	startingNJ,	runningNJ,	holdingNJ,	transferringNJ,	mergingNJ,	finishedNJ,	failedNJ,	cancelledNJ,	throttledNJ,	closedNJ
+        """
+        pass
+
 
     def getJEDIEventsSummaryRequestedOutput(self, condition):
         sqlRequest = '''
@@ -738,9 +744,9 @@ class MC16aCPReport:
         totalEvents['title'] = 'Events processing summary'
         JediEventsR['title'] = 'Overall events processing summary'
         JediEventsR['simulatedprogr'] =  int (JediEventsR['simulated']/float(JediEventsR1['tosimulate'])*100)
-        JediEventsR['reconstructedprog'] =  int (JediEventsR['reconstructed']/float(JediEventsR1['toreconstruct'])*100)
-        JediEventsR['mergeHitsprog'] =  int (JediEventsR['mergeHits']/float(JediEventsR1['tomergeHits'])*100)
-        JediEventsR['mergeprog'] = int (JediEventsR['merge']/float(JediEventsR1['tomerge'])*100)
+        JediEventsR['reconstructedprog'] =  int (JediEventsR['reconstructed']/float(JediEventsR1['tosimulate'])*100)
+        JediEventsR['mergeHitsprog'] =  int (JediEventsR['mergeHits']/float(JediEventsR1['tosimulate'])*100)
+        JediEventsR['mergeprog'] = int (JediEventsR['merge']/float(JediEventsR1['tosimulate'])*100)
         JediEventsR['input'] =  JediEventsR1['input']
 
 
