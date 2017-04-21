@@ -47,7 +47,7 @@ class MC16aCPReport:
     stepsLabels = {'simul':'Simulation', 'recon':'Reconstruction', 'merge':'AOD Merge', 'mergeHits':'HITS Merge'}
 
 
-    def refreshPreprocessed:
+    def refreshPreprocessed(self):
         """
         TaskID, Status, Campaign, RequestID, DEFTStatus, STEP, TimeStamp, SubmitTime, InputEvents, pendingJEv, definedJEv,	assignedJEv,	waitingJEv,	activatedJEv,	sentJEv,	startingJEv,	runningJEv,	holdingJEv,	transferringJEv,	mergingJEv,	finishedJEv,	failedJEv,	cancelledJEv,	throttledJEv,	closedJEv, pendingNJ,	definedNJ,	assignedNJ,	waitingNJ,	activatedNJ,	sentNJ,	startingNJ,	runningNJ,	holdingNJ,	transferringNJ,	mergingNJ,	finishedNJ,	failedNJ,	cancelledNJ,	throttledNJ,	closedNJ
         """
@@ -682,7 +682,7 @@ class MC16aCPReport:
         return errorsSummaryList
 
 
-    def topTasksWithFailedSuccessRat(self, request):
+    def topTasksWithFailedSuccessRat(self, condition):
         sqlRequest ='''
             SELECT COUNT(*), PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, STEP, SUM(HS06SEC), COMPUTINGSITE FROM
             (
