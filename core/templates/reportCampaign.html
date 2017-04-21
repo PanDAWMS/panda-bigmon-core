@@ -177,7 +177,7 @@
                 {% for state in taskstatelistDEFT %}
                     <td>
                         {% if totalTasks|get_item:step|get_item:state > 0 %}
-                            {% if state== 'done+finished' %}
+                            {% if state == 'done+finished' %}
                                 <a href='/tasks/?status={{ 'done|finished' }}&campaign=MC16*&taskname=*.{{ step }}.*&days=300&reqid=11035|11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>{{ totalTasks|get_item:step|get_item:state }}</a>
                             {% else %}
                                 <a href='/tasks/?status={{ state }}&campaign=MC16*&taskname=*.{{ step }}.*&days=300&reqid=11035|11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>{{ totalTasks|get_item:step|get_item:state }}</a>
