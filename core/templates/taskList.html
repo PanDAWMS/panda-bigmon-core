@@ -62,7 +62,7 @@
 Too many to list
 {% else %}
 {% for item in fdict.list %}
-<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
+<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}} {{item.kname}}_tooltip'{% endif %}> {{ item.kname }} </span>
 <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
 {% endfor %}
 {% endif %}
@@ -131,7 +131,7 @@ function loadSummaryData(nosorturl) {
              {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
              {% else %}class='{{task.superstatus}}_fill'
              {% endif %}>
-            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} {{ task.superstatus }} {% else %} {{ task.status }} {% endif %}</a> {% if task.failedscouting == True %}<br>during scouting{%endif%}
+            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} <span class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</span> {% else %} <span class="{{ task.status }}_tooltip">{{ task.status }} </span> {% endif %}</a> {% if task.failedscouting == True %}<br>during scouting{%endif%}
                     {% if task.dsinfo.nfiles > 0 %} <br>{{task.dsinfo.nfiles}} {% endif %} </td>
         <td>{% if task.dsinfo.nfilesfinished > 0 %}<span  class='finished'>{{task.dsinfo.pctfinished}}%</span>{% endif %} {% if task.dsinfo.nfilesfailed > 0 %}<a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span class='failed'> {{task.dsinfo.pctfailed}}%</span>{% endif %}</a>
         <br> {% if task.dsinfo.nfilesfinished > 0 %} <span  class='finished'>{{ task.dsinfo.nfilesfinished }}</span> {% endif %} &nbsp; {% if task.dsinfo.nfilesfailed > 0 %} <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span  class='failed'>{{ task.dsinfo.nfilesfailed }}</span></a> {% endif %}

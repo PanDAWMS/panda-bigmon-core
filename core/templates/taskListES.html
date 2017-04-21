@@ -58,7 +58,7 @@ function loadESData(jeditaskid) {
 {% for fdict in sumd %}
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
 {% for item in fdict.list %}
-<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
+<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}} {{item.kname}}_tooltip' {% endif %}> {{ item.kname }} </span>
 <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
 {% endfor %}
 </td></tr>
@@ -101,7 +101,7 @@ function loadESData(jeditaskid) {
 
         <td> <a href="{% url 'siteInfo' task.site %}">{{ task.site }}</a> </td>
 
-		<td  class='{{task.superstatus}}_fill'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} {{ task.superstatus }} {% else %} {{ task.status }} {% endif %}</a></td>
+		<td  class='{{task.superstatus}}_fill'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} <span class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</span> {% else %} <span class="{{ task.status }}_tooltip">{{ task.status }} </span> {% endif %}</a></td>
         <td> {{task.estaskstr}}
 
            <div id="div-{{ task.jeditaskid }}">
