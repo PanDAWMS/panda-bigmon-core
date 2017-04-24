@@ -313,45 +313,42 @@ function killtasks(taskID, action) {
 
 
 <p>
-{% if  nevents|length > 0 %} <div class="nevents_plot" id="plot0" style="align:left;display:none;"></div><br> {% endif %}
-{% if  maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
-{% if  walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
-{% if  maxpsspercore|length > 0 %} <div class="d3splot" id="plot5" style="float:left;display:none"></div> {% endif %}
-{% if  hs06s|length > 0 %} <div class="d3splot" id="plot7" style="float:left;display:none"></div> {% endif %}
-{% if  walltimeperevent|length > 0 %} <div class="d3splot" id="plot9" style="float:left;display:none"></div> {% endif %}
-{% if  maxpssf|length > 0 %} <div class="d3splot" id="plot3" style="float:left;display:none"></div> {% endif %}
-{% if  walltimef|length > 0 %} <div class="d3splot" id="plot4" style="float:left;display:none"></div> {% endif %}
-{% if  maxpssfpercore|length > 0 %} <div class="d3splot" id="plot6" style="float:left;display:none"></div> {% endif %}
-{% if  hs06sf|length > 0 %} <div class="d3splot" id="plot8" style="float:left;display:none"></div> {% endif %}
+{% if  plotsDict.nevents|length > 0 %} <div class="nevents_plot" id="plot0" style="align:left;display:none;"></div><br style="clear:both;"> {% endif %}
+
+{% if  plotsDict.maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
+{% if  plotsDict.walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
+{% if  plotsDict.maxpsspercore|length > 0 %} <div class="d3splot" id="plot5" style="float:left;display:none"></div> {% endif %}
+{% if  plotsDict.hs06s|length > 0 %} <div class="d3splot" id="plot7" style="float:left;display:none"></div> {% endif %}
+{% if  plotsDict.walltimeperevent|length > 0 %} <div class="d3splot" id="plot9" style="float:left;display:none"></div> {% endif %}
+    <br style="clear:both;">
+{% if  plotsDict.maxpssf|length > 0 %} <div class="d3splot" id="plot3" style="float:left;display:none"></div> {% endif %}
+{% if  plotsDict.walltimef|length > 0 %} <div class="d3splot" id="plot4" style="float:left;display:none"></div> {% endif %}
+{% if  plotsDict.maxpsspercoref|length > 0 %} <div class="d3splot" id="plot6" style="float:left;display:none"></div> {% endif %}
+{% if  plotsDict.hs06sf|length > 0 %} <div class="d3splot" id="plot8" style="float:left;display:none"></div> {% endif %}
+<br style="clear: both;">
 
 <script src="/static/js/d3jsplot.js"></script>
 <script>
-    var nevents = {{ nevents|safe }};
+    var nevents = {{ plotsDict.nevents|safe }};
     if (nevents.length > 0) {pandamonProdRunTaskSumPlotFunc(nevents, "#plot0", "Number of events histogram (finished non-merge jobs)", 40, 'ES');}
-    var values1 = {{ maxpss|safe }};
-    var values2 = {{ walltime|safe }};
-    var sites1 = {{ sitepss|safe }};
-    var sites2 = {{ sitewalltime|safe }};
-    var values3 = {{ maxpssf|safe }};
-    var values4 = {{ walltimef|safe }};
-    var sites3 = {{ sitepssf|safe }};
-    var sites4 = {{ sitewalltimef|safe }};
-    {#Maxpsspercore, sites is the same as for maxpss#}
-    var values5 = {{ maxpsspercore|safe }};
-    var values6 = {{ maxpssfpercore|safe }};
-    {#HS06s, sites is the same as for walltime#}
-    var values7 = {{ hs06s|safe }};
-    var values8 = {{ hs06sf|safe }};
-    var values9 = {{ walltimeperevent|safe }};
-    if (values1.length > 0) {pandamonplotFunc(values1, sites1, "#plot1", "Maximum PSS histogram", {% if  maxpss|length < 100 %} 10 {% else %} 100 {% endif %});}
-    if (values3.length > 0) {pandamonplotFunc(values3, sites3, "#plot3", "Maximum PSS histogram (failed jobs)", {% if  maxpss|length < 20 %} 5 {% else %} 20 {% endif %});}
-    if (values2.length > 0) {pandamonplotFunc(values2, sites2, "#plot2", "Walltime histogram", {% if  walltime|length < 100 %} 5 {% else %} 40 {% endif %});}
-    if (values4.length > 0) {pandamonplotFunc(values4, sites4, "#plot4", "Walltime histogram (failed jobs)", {% if  walltime|length < 20 %} 5 {% else %} 20 {% endif %});}
-    if (values5.length > 0) {pandamonplotFunc(values5, sites1, "#plot5", "Maximum PSS per core histogram", {% if  maxpsspercore|length < 100 %} 10 {% else %} 100 {% endif %});}
-    if (values6.length > 0) {pandamonplotFunc(values6, sites3, "#plot6", "Maximum PSS per core histogram (failed jobs)", {% if  maxpssfpercore|length < 20 %} 5 {% else %} 20 {% endif %});}
-    if (values7.length > 0) {pandamonplotFunc(values7, sites2, "#plot7", "HS06s histogram", {% if  hs06s|length < 100 %} 10 {% else %} 100 {% endif %});}
-    if (values8.length > 0) {pandamonplotFunc(values8, sites4, "#plot8", "HS06s histogram (failed jobs)", {% if  hs06sf|length < 20 %} 5 {% else %} 20 {% endif %});}
-    if (values9.length > 0) {pandamonplotFunc(values9, sites2, "#plot9", "Walltime per event histogram", {% if  walltimeperevent|length < 100 %} 5 {% else %} 40 {% endif %});}
+    var values1 = {{ plotsDict.maxpss|safe }};
+    var values2 = {{ plotsDict.walltime|safe }};
+    var values3 = {{ plotsDict.maxpssf|safe }};
+    var values4 = {{ plotsDict.walltimef|safe }};
+    var values5 = {{ plotsDict.maxpsspercore|safe }};
+    var values6 = {{ plotsDict.maxpsspercoref|safe }};
+    var values7 = {{ plotsDict.hs06s|safe }};
+    var values8 = {{ plotsDict.hs06sf|safe }};
+    var values9 = {{ plotsDict.walltimeperevent|safe }};
+    if (values1.length > 0) {pandamonplotHist(values1,  "#plot1", "Maximum PSS histogram");}
+    if (values3.length > 0) {pandamonplotHist(values3,  "#plot3", "Maximum PSS histogram (failed jobs)");}
+    if (values2.length > 0) {pandamonplotHist(values2,  "#plot2", "Walltime histogram");}
+    if (values4.length > 0) {pandamonplotHist(values4,  "#plot4", "Walltime histogram (failed jobs)");}
+    if (values5.length > 0) {pandamonplotHist(values5,  "#plot5", "Maximum PSS per core histogram");}
+    if (values6.length > 0) {pandamonplotHist(values6,  "#plot6", "Maximum PSS per core histogram (failed jobs)");}
+    if (values7.length > 0) {pandamonplotHist(values7,  "#plot7", "HS06s histogram");}
+    if (values8.length > 0) {pandamonplotHist(values8,  "#plot8", "HS06s histogram (failed jobs)");}
+    if (values9.length > 0) {pandamonplotHist(values9,  "#plot9", "Walltime per event histogram");}
  </script>
 
 {% if inctrs %}

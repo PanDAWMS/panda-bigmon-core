@@ -1,7 +1,8 @@
 /**
  * Created by spadolski on 12/22/15.
  */
-function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
+
+function pandamonplotHist(data, divToShow, title, numberofbins) {
 
 
     var colors= ["#116aff", "#fe8504", "#1ff7fe", "#f701ff", "#2e4a02", "#ffaad5", "#f1ff8d", "#1eff06", "#700111", "#1586c3", "#ff067d", "#0e02fb", "#1bffa1", "#921e8f", "#c49565", "#fd0128", "#4ea105", "#158279", "#c8fe0a", "#fdcc0b", "#834969", "#ff7673", "#05018b", "#c591fe", "#a6d8ab", "#948c01", "#484ba1", "#fe22c0", "#06a05d", "#694002", "#8e39e9", "#bdc6ff","#030139",  "#b33802", "#85fa60", "#a2025b", "#3e021b", "#ffcd6d", "#4a92ff", "#e564b6", "#43cfff", "#7e9051", "#e768fc", "#09406b", "#b17005", "#8fd977", "#c1063e", "#a7594f", "#14e3b8", "#bccb1e", "#53064f", "#fff1b7", "#997dba", "#fe965c", "#ffb0a7", "#046c04", "#8451ce", "#d46585", "#fef70c", "#1003c3", "#024a2e", "#0fc551", "#1f025d", "#fd5302", "#5bbfc4", "#481903", "#bfc066", "#ad04bb", "#efa425", "#06c709", "#9701ff", "#84468e", "#018da8", "#88cf01", "#6d6412", "#658a1d", "#0d3cb4", "#144cfe", "#fe5d43", "#33753e", "#4cb28f", "#e6b4ff", "#a5feef", "#caff68", "#d80f8a", "#79193a", "#97fdba", "#a85726", "#fe8cf9", "#8bfe01", "#4a315d", "#ff0155", "#02ff5e", "#6b0199", "#bc7e9f", "#fde75c"];
@@ -12,8 +13,13 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
         width = 650 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
+    var values = [];
+    for (var i = 0, ii = data.length; i<ii; i++) {
+        values[i] = data[i].value;
+    }
     var lowerBand = d3.min(values);
     var upperBand = d3.max(values);
+
 
 	var ave = values.reduce(function(a,b){return (a+b);})/values.length;
 	var statistics = [{type: "\u03BC", val:ave}];
@@ -44,13 +50,6 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
         xAxis.ticks(1);
     }
 
-    var data = [{'value': 0, 'site': ''}];
-
-    for(var i = 0, ii = values.length; i<ii; i++) {
-        data[i]={'value': values[i], 'site': sites[i]}
-    }
-
-
     var binBySite = d3.layout.histogram()
         .value(function(d) { return d.value; })
         .bins(x.ticks(numberofbins));
@@ -61,7 +60,6 @@ function pandamonplotFunc(values, sites, divToShow, title, numberofbins) {
 
     var histDataBySite = [];
     dataGroupedBySite.forEach(function(key, value) {
-            // Bin the data for each borough by month
             var histData = binBySite(value);
             histDataBySite.push({
                 site: key,

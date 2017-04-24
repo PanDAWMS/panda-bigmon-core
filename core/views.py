@@ -7160,9 +7160,9 @@ def taskInfo(request, jeditaskid=0):
                 'mode'] == 'nodrop': mode = 'nodrop'
 
 
-            jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum, nevents, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
+            plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
                 query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge')
-            jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM, neventsESM, maxpssESM, walltimeESM, sitepssESM, sitewalltimeESM, maxpssfESM, walltimefESM, sitepssfESM, sitewalltimefESM, maxpsspercoreESM, maxpssfpercoreESM, hs06sESM, hs06sfESM, walltimepereventESM = jobSummary2(
+            plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary2(
                 query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
             for state in eventservicestatelist:
                 eventstatus = {}
@@ -7197,9 +7197,9 @@ def taskInfo(request, jeditaskid=0):
             mode = 'drop'
             if 'mode' in request.session['requestParams']:
                 mode = request.session['requestParams']['mode']
-            jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum, nevents, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent = jobSummary2(
+            plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
                 query, exclude=exclude, mode=mode)
-            jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE, neventsPMERGE, maxpssPMERGE, walltimePMERGE, sitepssPMERGE, sitewalltimePMERGE, maxpssfPMERGE, walltimefPMERGE, sitepssfPMERGE, sitewalltimefPMERGE, maxpsspercorePMERGE, maxpssfpercorePMERGE, hs06sPMERGE, hs06sfPMERGE, walltimepereventPMERGE = jobSummary2(
+            plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary2(
                 query, exclude={}, mode=mode, processingtype='pmerge')
 
 
@@ -7472,21 +7472,8 @@ def taskInfo(request, jeditaskid=0):
             'showtaskprof': showtaskprof,
             'jobsummaryESMerge': jobsummaryESMerge,
             'jobsummaryPMERGE': jobsummaryPMERGE,
-            'nevents' : nevents,
-            'maxpss': maxpss,
+            'plotsDict': plotsDict,
             'taskbrokerage': taskbrokerage,
-            'walltime': walltime,
-            'sitepss': json.dumps(sitepss),
-            'sitewalltime': json.dumps(sitewalltime),
-            'maxpssf': maxpssf,
-            'walltimef': walltimef,
-            'sitepssf': json.dumps(sitepssf),
-            'sitewalltimef': json.dumps(sitewalltimef),
-            'maxpsspercore': maxpsspercore,
-            'maxpssfpercore': maxpssfpercore,
-            'hs06s': hs06s,
-            'hs06sf': hs06sf,
-            'walltimeperevent': walltimeperevent,
             'jobscoutids' : jobScoutIDs,
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -7671,46 +7658,42 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
         print 'filtering retries'
         jobs, droplist, droppedPMerge = dropRetrielsJobs(jobs, newquery['jeditaskid'], isReturnDroppedPMerge)
 
-    nevents = []
-    maxpss = []
-    maxpsspercore = []
-    walltime = []
-    sitepss = []
-    sitewalltime = []
-    maxpssf = []
-    maxpssfpercore = []
-    walltimef = []
-    sitepssf = []
-    sitewalltimef = []
-    hs06s = []
-    hs06sf = []
-    walltimeperevent = []
+    plotsDict = {}
+    plotsDict['maxpss'] = []
+    plotsDict['maxpssf'] = []
+    plotsDict['maxpsspercore'] = []
+    plotsDict['maxpsspercoref'] = []
+    plotsDict['nevents'] = []
+    plotsDict['walltime'] = []
+    plotsDict['walltimef'] = []
+    plotsDict['hs06s'] = []
+    plotsDict['hs06sf'] = []
+    plotsDict['walltimeperevent'] = []
+
     for job in jobs:
         if job['actualcorecount'] is None:
             job['actualcorecount'] = 1
         if job['maxpss'] is not None and job['maxpss'] != -1:
             if job['jobstatus'] == 'finished':
-                maxpss.append(job['maxpss'] / 1024)
                 if job['actualcorecount'] and job['actualcorecount']>0:
-                    maxpsspercore.append(job['maxpss'] / 1024 / job['actualcorecount'])
-                sitepss.append(job['computingsite'])
-                nevents.append(job['nevents'])
+                    plotsDict['maxpsspercore'].append(
+                        {'value': job['maxpss'] / 1024 / job['actualcorecount'], 'site': str(job['computingsite'])})
+                plotsDict['nevents'].append(job['nevents'])
+                plotsDict['maxpss'].append({'value': job['maxpss'] / 1024, 'site': str(job['computingsite'])})
             if job['jobstatus'] == 'failed':
-                maxpssf.append(job['maxpss'] / 1024)
+                plotsDict['maxpssf'].append({'value': job['maxpss'] / 1024, 'site': str(job['computingsite'])})
                 if job['actualcorecount'] and job['actualcorecount']>0:
-                    maxpssfpercore.append(job['maxpss'] / 1024 / job['actualcorecount'])
-                sitepssf.append(job['computingsite'])
+                    plotsDict['maxpsspercoref'].append(
+                        {'value': job['maxpss'] / 1024 / job['actualcorecount'], 'site': str(job['computingsite'])})
         if 'duration' in job and job['duration']:
             if job['jobstatus'] == 'finished':
-                walltime.append(job['duration'])
-                sitewalltime.append(job['computingsite'])
-                hs06s.append(job['hs06sec'])
+                plotsDict['walltime'].append({'value': job['duration'], 'site': str(job['computingsite'])})
+                plotsDict['hs06s'].append({'value': job['hs06sec'], 'site': str(job['computingsite'])})
                 if 'walltimeperevent' in job:
-                    walltimeperevent.append(job['walltimeperevent'])
+                    plotsDict['walltimeperevent'].append({'value': job['walltimeperevent'], 'site': str(job['computingsite'])})
             if job['jobstatus'] == 'failed':
-                walltimef.append(job['duration'])
-                sitewalltimef.append(job['computingsite'])
-                hs06sf.append(job['hs06sec'])
+                plotsDict['walltimef'].append({'value': job['duration'], 'site': str(job['computingsite'])})
+                plotsDict['hs06sf'].append({'value': job['hs06sec'], 'site': str(job['computingsite'])})
 
     jobstates = []
     global statelist
@@ -7771,7 +7754,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
             for state in eventsdict:
                 essummary[eventservicestatelist[state['status']]]=state['count']
 
-    return jobstates, essummary, transactionKey, jobScoutIDs, hs06sSum, nevents, maxpss, walltime, sitepss, sitewalltime, maxpssf, walltimef, sitepssf, sitewalltimef, maxpsspercore, maxpssfpercore, hs06s, hs06sf, walltimeperevent
+    return plotsDict, jobstates, essummary, transactionKey, jobScoutIDs, hs06sSum
 
 
 def jobStateSummary(jobs):
