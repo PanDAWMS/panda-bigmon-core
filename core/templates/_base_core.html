@@ -339,6 +339,60 @@ hr {
     background-color: rgba(53,86,129, 0.8);
     height: 3px;
 }
+.killbutton {
+  display: inline-block;
+  min-width: 100px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: none;
+  background-color: firebrick;
+  color: white;
+  padding: 10px;
+}
+.killbutton:hover {
+    background-color: #222222;
+    color: white;
+}
+.dropdownplots {
+    position: relative;
+    display: inline-block;
+}
+.dropdownbutton{
+    background-color: rgba(53,86,129, 0.8);
+    color: white;
+    width: 200px;
+    padding: 10px;
+    margin-bottom: 0px;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+}
+.dropdown-plot {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 200px;
+    border-left: 1px solid #222222;
+    box-shadow: 8px 8px 16px 0px rgba(0,0,0,0.5);
+    z-index: 1;
+}
+.dropdown-plot a {
+    color: #222222;
+    padding: 6px 8px;
+    font-size: 14px;
+    text-decoration: none;
+    display: block;
+}
+.dropdown-plot a:hover {background-color: rgba(53,86,129, 0.3)}
+.dropdownplots:hover .dropdown-plot {
+    display: block;
+}
+
+.dropdownplots:hover .dropdownbutton {
+    background-color: #222222;
+}
+
 .d3splot{
   font: 12px sans-serif;
 }

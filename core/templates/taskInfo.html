@@ -62,18 +62,6 @@
 
 <p>
 
-{% if requestParams.mode and requestParams.mode == 'nodrop' %}
-    <a style="cursor: pointer;" href="{{nomodeurl}}mode=drop">Switch to drop mode</a>
-{% else%}
-    <a style="cursor: pointer;" href="{{nomodeurl}}mode=nodrop">Switch to nodrop mode</a>
-{% endif %}
-
-{% if vomode == 'atlas' %}
-    {%  if task.tasktype == 'prod' %}
-        &emsp;<a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}" target="_blank">Prod Task view</a>
-    {% endif %}
-{% endif %}
-
 <script type="text/javascript">
 function toggleDetailDisplay(className) {
    el = document.getElementsByClassName(className)
@@ -81,6 +69,7 @@ function toggleDetailDisplay(className) {
      el[i].style.display = (el[i].style.display=="none") ? "" : "none";
    }
 }
+
 
 function killtasks(taskID, action) {
     var message = ''
@@ -106,74 +95,104 @@ function killtasks(taskID, action) {
 
 </script>
 
-<p>
-{% if not task.tasktype == 'anal' %}
-<a href="{% url 'taskchain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Open tasks chain</a>&emsp;
-{% endif %}
 
-{% if showtaskprof == True %}
-    <a href="{% url 'taskprofileplot' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Open Task Profile</a>&emsp;
-{% endif %}
+<div>
+    <span class="warning" style="float: left; font-weight: bold; padding-top: 10px">!!! All links are here &#x279c; &nbsp; </span>
+</div>
+<div class="dropdownplots">
+  <button class="dropdownbutton">Go to</button>
+  <div id="dropdown-plotchoice" class="dropdown-plot">
+    {% if requestParams.mode and requestParams.mode == 'nodrop' %}
+        <a style="cursor: pointer;" href="{{nomodeurl}}mode=drop">Drop mode</a>
+    {% else%}
+        <a style="cursor: pointer;" href="{{nomodeurl}}mode=nodrop">Nodrop mode</a>
+    {% endif %}
+    {% if vomode == 'atlas' %}
+        {%  if task.tasktype == 'prod' %}
+            <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}" target="_blank">Prod Task view (to manage task)</a>
+            <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
+        {% endif %}
+    {% endif %}
+    <a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('@timestamp',type,logLevel,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Task brokerage (es-atlas)</a>
+    <a href="{% url 'pandaLogger' %}?type={{ taskbrokerage }}&jeditaskid={{ jeditaskid }}&startdate={{ task.creationdate }}&enddate={{ task.modificationtime }}">Job brokerage</a>
+    <a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('@timestamp',type,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Job brokerage (es-atlas)</a>
+    <a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&jeditaskid={{ jeditaskid }}">Action logger</a>
+    <a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('@timestamp',type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc))">Action logger (es-atlas)</a>
+    <a href="{% url 'errorSummary' %}?jeditaskid={{jeditaskid}}">Error summary</a>
+    {% if task.parent_tid != task.jeditaskid and task.parent_tid != None %}
+        <a href="{% url 'taskInfo' task.parent_tid %}">Parent task {{ task.parent_tid }}</a>
+    {% endif %}
+    <a href="{% url 'taskList' %}?parent_tid={{ task.jeditaskid }}&display_limit=100">Child tasks</a>
+    {% if task.ttcrequested != None and task.starttime != None%}
+        <a href="{% url 'ttc' %}?jeditaskid={{jeditaskid}}" target="_blank">TTC page</a>
+    {% endif %}
+  </div>
+</div>
 
-<a href="{% url 'ganttTaskChain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Open Task Chain</a>&emsp;
+<div class="dropdownplots">
+  <button class="dropdownbutton">Show jobs</button>
+  <div id="dropdown-plotchoice" class="dropdown-plot">
+    {% if jobsummary %}
+        <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&mode=nodrop&display_limit=100">All (access to job details and logs)</a>
+        <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&jobstatus=finished|failed|cancelled">Ended</a>
+        <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Active</a>
+    {% endif %}
+  </div>
+</div>
 
-<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('d3splot');">Show/hide plots</a>&emsp;
-<a href="http://atlas-kibana.mwt2.org:5601/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))" target="_blank">Corresponding dashboard in Kibana</a>&emsp;
+<div class="dropdownplots">
+  <button class="dropdownbutton">Jump to</button>
+  <div id="dropdown-plotchoice" class="dropdown-plot">
+    <a href="#jobparams">Job parameters</a>
+    {% if jobscoutids.cputimescoutjob|length > 0 or jobscoutids.walltimescoutjob|length > 0 %}
+        <a href="#scouts">Scout jobs</a>
+    {% endif %}
+    {% if taskparaml %}
+        <a href="#taskparamsprodsys">Prodsys task parameters</a>
+    {% endif %}
+    <a href="#taskparamsjedi">PanDA/JEDI task parameters</a>
+    <a href="#help">Help</a>
+  </div>
+</div>
+
+<div class="dropdownplots">
+  <button class="dropdownbutton">Open plot</button>
+  <div id="dropdown-plotchoice" class="dropdown-plot">
+    <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('d3splot');">Memory and Walltime usage</a>
+    <a href="http://atlas-kibana.mwt2.org:5601/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))" target="_blank">Memory and Walltime usage (Kibana)</a>
+    {% if not task.tasktype == 'anal' %}
+        <a href="{% url 'ganttTaskChain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Gantt diagram)</a>
+        <a href="{% url 'taskchain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Tree diagram)</a>
+    {% endif %}
+    {% if showtaskprof == True %}
+        <a href="{% url 'taskprofileplot' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Profile</a>
+    {% endif %}
+    <a href="http://atlas-kibana.mwt2.org:5601/app/kibana#/dashboard/9058c590-200d-11e7-84dc-8d3ed2710506?_g=(filters:!(),refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:'3f4fa5d0-2001-11e7-a8cf-1bce3a1c32b4',panelIndex:1,row:1,size_x:3,size_y:3,type:visualization),(col:4,id:'94d395c0-2001-11e7-a8cf-1bce3a1c32b4',panelIndex:3,row:1,size_x:5,size_y:4,type:visualization),(col:1,id:'88c1ea50-2003-11e7-983d-8109a2d43cab',panelIndex:4,row:5,size_x:6,size_y:5,type:visualization),(col:9,id:c3a6e3c0-2001-11e7-a8cf-1bce3a1c32b4,panelIndex:5,row:1,size_x:4,size_y:4,type:visualization),(col:7,id:'88e76c50-2006-11e7-983d-8109a2d43cab',panelIndex:6,row:5,size_x:6,size_y:5,type:visualization),(col:1,id:b2c68750-2005-11e7-983d-8109a2d43cab,panelIndex:7,row:10,size_x:5,size_y:3,type:visualization),(col:6,id:f0d9a450-2005-11e7-983d-8109a2d43cab,panelIndex:8,row:10,size_x:6,size_y:3,type:visualization),(col:1,id:c9e1f1d0-2006-11e7-983d-8109a2d43cab,panelIndex:9,row:13,size_x:2,size_y:3,type:visualization),(col:3,id:'7c88d960-2008-11e7-983d-8109a2d43cab',panelIndex:10,row:13,size_x:10,size_y:3,type:visualization),(col:9,id:'12a10860-2008-11e7-983d-8109a2d43cab',panelIndex:12,row:16,size_x:4,size_y:3,type:visualization),(col:5,id:'0b3a75d0-2007-11e7-983d-8109a2d43cab',panelIndex:13,row:16,size_x:4,size_y:3,type:visualization),(col:1,id:'52964850-2007-11e7-983d-8109a2d43cab',panelIndex:14,row:16,size_x:4,size_y:3,type:visualization),(col:1,id:b07c2fe0-200a-11e7-983d-8109a2d43cab,panelIndex:15,row:19,size_x:12,size_y:4,type:visualization),(col:1,id:'039a7c60-2009-11e7-983d-8109a2d43cab',panelIndex:16,row:23,size_x:12,size_y:5,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_ES_task,uiState:(P-1:(vis:(legendOpen:!f)),P-10:(vis:(legendOpen:!f)),P-13:(vis:(legendOpen:!f)),P-14:(vis:(legendOpen:!f)),P-15:(vis:(legendOpen:!f)),P-16:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!f)),P-3:(vis:(legendOpen:!f)),P-4:(vis:(legendOpen:!f)),P-5:(vis:(legendOpen:!f)),P-6:(vis:(legendOpen:!f)),P-7:(vis:(legendOpen:!f)),P-8:(vis:(legendOpen:!f)),P-9:(vis:(legendOpen:!f))))" target="_blank">ES task dashboard (Kibana)</a>
+  </div>
+</div>
+
 
     {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
         {% if not task.status in finalstatelist %}
-            <a style="margin-left: 10em;" onclick="javascript:killtasks({{ task.jeditaskid }}, 0);" class='failed'>Finish</a>
-            <a style="margin-left: 2em;" onclick="javascript:killtasks({{ task.jeditaskid }}, 1);" class='failed'>Abort</a>
+            <div style="float: right">
+                <a onclick="javascript:killtasks({{ task.jeditaskid }}, 0);" class='killbutton'>Finish</a>
+                <a onclick="javascript:killtasks({{ task.jeditaskid }}, 1);" class='killbutton'>Abort</a>
+            </div>
         {% endif %}
     {% endwith %}
 
 <p>
 
-
-{% if  maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
-{% if  walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
-{% if  maxpsspercore|length > 0 %} <div class="d3splot" id="plot5" style="float:left;display:none"></div> {% endif %}
-{% if  hs06s|length > 0 %} <div class="d3splot" id="plot7" style="float:left;display:none"></div> {% endif %}
-{% if  walltimeperevent|length > 0 %} <div class="d3splot" id="plot9" style="float:left;display:none"></div> {% endif %}
-{% if  maxpssf|length > 0 %} <div class="d3splot" id="plot3" style="float:left;display:none"></div> {% endif %}
-{% if  walltimef|length > 0 %} <div class="d3splot" id="plot4" style="float:left;display:none"></div> {% endif %}
-{% if  maxpssfpercore|length > 0 %} <div class="d3splot" id="plot6" style="float:left;display:none"></div> {% endif %}
-{% if  hs06sf|length > 0 %} <div class="d3splot" id="plot8" style="float:left;display:none"></div> {% endif %}
-
-<script src="/static/js/d3jsplot.js"></script>
-<script>
-    var values1 = {{ maxpss|safe }};
-    var values2 = {{ walltime|safe }};
-    var sites1 = {{ sitepss|safe }};
-    var sites2 = {{ sitewalltime|safe }};
-    var values3 = {{ maxpssf|safe }};
-    var values4 = {{ walltimef|safe }};
-    var sites3 = {{ sitepssf|safe }};
-    var sites4 = {{ sitewalltimef|safe }};
-    {#Maxpsspercore, sites is the same as for maxpss#}
-    var values5 = {{ maxpsspercore|safe }};
-    var values6 = {{ maxpssfpercore|safe }};
-    {#HS06s, Walltime per event, sites is the same as for walltime#}
-    var values7 = {{ hs06s|safe }};
-    var values8 = {{ hs06sf|safe }};
-    var values9 = {{ walltimeperevent|safe }};
-    if (values1.length > 0) {pandamonplotFunc(values1, sites1, "#plot1", "Maximum PSS histogram", {% if  maxpss|length < 100 %} 10 {% else %} 100 {% endif %});}
-    if (values3.length > 0) {pandamonplotFunc(values3, sites3, "#plot3", "Maximum PSS histogram (failed jobs)", {% if  maxpss|length < 20 %} 5 {% else %} 20 {% endif %});}
-    if (values2.length > 0) {pandamonplotFunc(values2, sites2, "#plot2", "Walltime histogram", {% if  walltime|length < 100 %} 5 {% else %} 40 {% endif %});}
-    if (values4.length > 0) {pandamonplotFunc(values4, sites4, "#plot4", "Walltime histogram (failed jobs)", {% if  walltime|length < 20 %} 5 {% else %} 20 {% endif %});}
-    if (values5.length > 0) {pandamonplotFunc(values5, sites1, "#plot5", "Maximum PSS per core histogram", {% if  maxpsspercore|length < 100 %} 10 {% else %} 100 {% endif %});}
-    if (values6.length > 0) {pandamonplotFunc(values6, sites3, "#plot6", "Maximum PSS per core histogram (failed jobs)", {% if  maxpssfpercore|length < 20 %} 5 {% else %} 20 {% endif %});}
-    if (values7.length > 0) {pandamonplotFunc(values7, sites2, "#plot7", "HS06s histogram", {% if  hs06s|length < 100 %} 5 {% else %} 40 {% endif %});}
-    if (values8.length > 0) {pandamonplotFunc(values8, sites4, "#plot8", "HS06s histogram (failed jobs)", {% if  hs06sf|length < 20 %} 5 {% else %} 20 {% endif %});}
-    if (values9.length > 0) {pandamonplotFunc(values9, sites2, "#plot9", "Walltime per event histogram", {% if  walltimeperevent|length < 100 %} 5 {% else %} 40 {% endif %});}
- </script>
-
-
 {% if jobsummary %}
 
 <table>
 <tr bgcolor="lightcyan"><th colspan=20>
-<b>States of jobs in this task (merge jobs excluded)</b>   &nbsp; &nbsp; &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&mode=nodrop&display_limit=100">Show all jobs</a>
+<b>States of jobs in this task (merge jobs excluded)</b>   &nbsp; &nbsp; &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&mode=nodrop&display_limit=100">Show all jobs</a> &nbsp; &nbsp; &nbsp;
+    {% if requestParams.mode and requestParams.mode == 'nodrop' %}
+        <a style="cursor: pointer;" href="{{nomodeurl}}mode=drop">Switch to drop mode</a>
+    {% else%}
+        <a style="cursor: pointer;" href="{{nomodeurl}}mode=nodrop">Switch to nodrop mode</a>
+    {% endif %}
 </th></tr>
 <tr>
 {% for state in jobsummary %}
@@ -210,9 +229,6 @@ function killtasks(taskID, action) {
 </table>
 {% endif %}
 
-
-
-
 <p>
 {% if task.errordialog %}
 <table width=1000><tr><td bgcolor="#FFFBDA"><font color='brown'> <b>Logged status: {{ task.errordialog|safe }}</b></font></td></tr>
@@ -231,79 +247,47 @@ function killtasks(taskID, action) {
 This is an event service task<p>
 {% endif %}
 
-<table><tr>
-<td bgcolor='lightcyan'><b> View: </b></td>
 
+{% if  maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
+{% if  walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
+{% if  maxpsspercore|length > 0 %} <div class="d3splot" id="plot5" style="float:left;display:none"></div> {% endif %}
+{% if  hs06s|length > 0 %} <div class="d3splot" id="plot7" style="float:left;display:none"></div> {% endif %}
+{% if  walltimeperevent|length > 0 %} <div class="d3splot" id="plot9" style="float:left;display:none"></div> {% endif %}
+{% if  maxpssf|length > 0 %} <div class="d3splot" id="plot3" style="float:left;display:none"></div> {% endif %}
+{% if  walltimef|length > 0 %} <div class="d3splot" id="plot4" style="float:left;display:none"></div> {% endif %}
+{% if  maxpssfpercore|length > 0 %} <div class="d3splot" id="plot6" style="float:left;display:none"></div> {% endif %}
+{% if  hs06sf|length > 0 %} <div class="d3splot" id="plot8" style="float:left;display:none"></div> {% endif %}
+
+
+<script src="/static/js/d3jsplot.js"></script>
+<script>
+    var values1 = {{ maxpss|safe }};
+    var values2 = {{ walltime|safe }};
+    var sites1 = {{ sitepss|safe }};
+    var sites2 = {{ sitewalltime|safe }};
+    var values3 = {{ maxpssf|safe }};
+    var values4 = {{ walltimef|safe }};
+    var sites3 = {{ sitepssf|safe }};
+    var sites4 = {{ sitewalltimef|safe }};
+    {#Maxpsspercore, sites is the same as for maxpss#}
+    var values5 = {{ maxpsspercore|safe }};
+    var values6 = {{ maxpssfpercore|safe }};
+    {#HS06s, Walltime per event, sites is the same as for walltime#}
+    var values7 = {{ hs06s|safe }};
+    var values8 = {{ hs06sf|safe }};
+    var values9 = {{ walltimeperevent|safe }};
+    if (values1.length > 0) {pandamonplotFunc(values1, sites1, "#plot1", "Maximum PSS histogram", {% if  maxpss|length < 100 %} 10 {% else %} 100 {% endif %});}
+    if (values3.length > 0) {pandamonplotFunc(values3, sites3, "#plot3", "Maximum PSS histogram (failed jobs)", {% if  maxpss|length < 20 %} 5 {% else %} 20 {% endif %});}
+    if (values2.length > 0) {pandamonplotFunc(values2, sites2, "#plot2", "Walltime histogram", {% if  walltime|length < 100 %} 5 {% else %} 40 {% endif %});}
+    if (values4.length > 0) {pandamonplotFunc(values4, sites4, "#plot4", "Walltime histogram (failed jobs)", {% if  walltime|length < 20 %} 5 {% else %} 20 {% endif %});}
+    if (values5.length > 0) {pandamonplotFunc(values5, sites1, "#plot5", "Maximum PSS per core histogram", {% if  maxpsspercore|length < 100 %} 10 {% else %} 100 {% endif %});}
+    if (values6.length > 0) {pandamonplotFunc(values6, sites3, "#plot6", "Maximum PSS per core histogram (failed jobs)", {% if  maxpssfpercore|length < 20 %} 5 {% else %} 20 {% endif %});}
+    if (values7.length > 0) {pandamonplotFunc(values7, sites2, "#plot7", "HS06s histogram", {% if  hs06s|length < 100 %} 5 {% else %} 40 {% endif %});}
+    if (values8.length > 0) {pandamonplotFunc(values8, sites4, "#plot8", "HS06s histogram (failed jobs)", {% if  hs06sf|length < 20 %} 5 {% else %} 20 {% endif %});}
+    if (values9.length > 0) {pandamonplotFunc(values9, sites2, "#plot9", "Walltime per event histogram", {% if  walltimeperevent|length < 100 %} 5 {% else %} 40 {% endif %});}
+ </script>
 <p>
-<b> &nbsp; Jump to <a href="#jobparams">job parameters</a>, <a href="#taskparams">task parameters</a></b>
-</p>
 
-{% if jobsummary %}
-<td>
-<a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&display_limit=100">job list (access to job details and logs)</a>
-</td>
-
-<td>
-<a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&jobstatus=finished|failed|cancelled">Show ended jobs</a>
-</td>
-
-<td>
-<a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Show active jobs</a>
-</td>
-
-{% endif %}
-
-{% if task.ttcrequested != None and task.starttime != None%}
-<td>
-<a href="{% url 'ttc' %}?jeditaskid={{jeditaskid}}" target="_blank">Show TTC</a>
-</td>
-{% endif %}
-
-{% if task.parent_tid != task.jeditaskid and task.parent_tid != None %}
-<td>
-parent task<a href="{% url 'taskInfo' task.parent_tid %}"> {{ task.parent_tid }}</a>
-</td>
-{% endif %}
-
-<td>
-<a href="{% url 'taskList' %}?parent_tid={{ task.jeditaskid }}&display_limit=100">child tasks</a>
-</td>
-
-{% if viewParams.MON_VO == 'ATLAS' %}
-<td>
-<a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">prodsys task page</a>
-</td>
-{% endif %}
-
-<td>
-<a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('@timestamp',type,logLevel,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Task brokerage (es-atlas)</a>
-</td>
-
-
-<td>
-<a href="{% url 'pandaLogger' %}?type={{ taskbrokerage }}&jeditaskid={{ jeditaskid }}&startdate={{ task.creationdate }}&enddate={{ task.modificationtime }}">Job brokerage</a>
-</td>
-
-<td>
-<a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('@timestamp',type,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Job brokerage (es-atlas)</a>
-</td>
-
-<td>
-<a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&jeditaskid={{ jeditaskid }}">Action logger</a>
-</td>
-
-<td>
-<a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('@timestamp',type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{jeditaskid}}')),sort:!('@timestamp',desc))">Action logger (es-atlas)</a>
-</td>
-
-
-<td>
-<a href="{% url 'errorSummary' %}?jeditaskid={{jeditaskid}}">error summary</a>
-</td>
-
-
-
-</tr></table>
 
 {% if inctrs %}
 <table>
@@ -409,19 +393,21 @@ No datasets were found for this task
 <p>
 {% endif %}
 
-{% if jobscoutids %}
-<table><tr>
+{% if jobscoutids.cputimescoutjob|length > 0 or jobscoutids.walltimescoutjob|length > 0 %}
+<table>
+<a name="scouts"></a>
+<tr>
 <td bgcolor='lightcyan'><b> Scout jobs: </b></td>
     {% if jobscoutids.walltimescoutjob|length > 0 %}
         <td>Walltime:
             {% for job in jobscoutids.walltimescoutjob %}
-            <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> <br>
+            <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %} {% else %} , {% endif %}
             {% endfor %}
         </td>{% endif %}
     {% if jobscoutids.cputimescoutjob|length %}
         <td>CPU time:
             {% for job in jobscoutids.cputimescoutjob %}
-            <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a><br>
+            <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %} {% else %} , {% endif %}
             {% endfor %}
         </td>{% endif %}
     {% if jobscoutids.ramcountscoutjob %}
@@ -434,9 +420,10 @@ No datasets were found for this task
 </table>
 {% endif %}
 
-<a name="taskparams"></a>
+
 {% if taskparaml %}
 <table>
+<a name="taskparamsprodsys"></a>
 <tr bgcolor='lightcyan'><th colspan=20> Prodsys task parameters </th></tr>
 {% for p in taskparaml %}
 {% if p.name != 'jobParameters' and p.name != 'log' %}
@@ -447,7 +434,7 @@ No datasets were found for this task
 <p>
 {% endif %}
 
-
+<a name="taskparamsjedi"></a>
 <table>
 <tr bgcolor='lightcyan'><th colspan=20> PanDA/JEDI task parameters </th></tr>
 {% for col in columns %}
@@ -473,6 +460,7 @@ PanDA task {% if jeditaskid > 0 %}{{ jeditaskid }}:{% endif %} <b>{{ taskname }}
 
 {% endblock %}
 
+<a name="help"></a>
 {% block helptext %}
 {% include "taskInfoHelp.html" with helptitle="Task detail page help" %}
 {% endblock %}
