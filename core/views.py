@@ -7472,7 +7472,7 @@ def taskInfo(request, jeditaskid=0):
             'showtaskprof': showtaskprof,
             'jobsummaryESMerge': jobsummaryESMerge,
             'jobsummaryPMERGE': jobsummaryPMERGE,
-            'plotsDict': plotsDict,
+            'plotsDict': encode_dict(plotsDict),
             'taskbrokerage': taskbrokerage,
             'jobscoutids' : jobScoutIDs,
             'request': request,
@@ -7517,6 +7517,20 @@ def taskInfo(request, jeditaskid=0):
             response = render_to_response('taskInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
+def encode_dict(d, codec='utf8'):
+    ks = d.keys()
+    for k in ks:
+        val = d.pop(k)
+        if isinstance(val, unicode):
+            val = val.encode(codec)
+        elif isinstance(val, dict):
+            val = encode_dict(val, codec)
+        if isinstance(k, unicode):
+            k = k.encode(codec)
+        d[k] = val
+    return d
+
 
 
 def taskchain(request):
