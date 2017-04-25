@@ -155,7 +155,7 @@ standard_sitefields = ['region', 'gocname', 'nickname', 'status', 'tier', 'comme
                        'allowfax', 'copytool', 'faxredirector', 'retry', 'timefloor']
 standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'username', 'transuses',
                        'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
-                       'reqid', 'ramcount', 'nucleus', 'eventservice']
+                       'reqid', 'ramcount', 'nucleus', 'eventservice', 'gshare']
 
 VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
