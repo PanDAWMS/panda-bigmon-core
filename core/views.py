@@ -2891,7 +2891,7 @@ def summaryErrorsList(request):
 
     else:
         return redirect('/jobs/?limit=100')
-###JSON for Datatables###
+###JSON for Datatables errors###
 def summaryErrorsListJSON(request):
     initRequest(request)
 
@@ -2946,11 +2946,170 @@ SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTER
                 pass
             rowDict = {"taskid": error[1], "pandaid": error[0], "desc": descr}
             fullListErrors.append(rowDict)
-
-
-
-
     return HttpResponse(json.dumps(fullListErrors), content_type='text/html')
+
+
+###JSON for Datatables globalshares###
+def globalsharesNewV1JSON(request):
+    fullListGS = []
+    sqlRequest = '''
+SELECT gshare, corecount, jobstatus, count(*), sum(HS06)/100  FROM 
+(select gshare,  (CASE 
+WHEN corecount is null THEN 1 else corecount END 
+) as corecount, 
+ (CASE 
+  WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','sent','starting','holding','transferring') THEN 'scheduled'
+ WHEN jobstatus in ('merging','running') THEN 'running'
+ WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
+END) as jobstatus,HS06
+from
+atlas_panda.jobsactive4 
+UNION ALL
+select gshare,  (CASE 
+WHEN corecount is null THEN 1 else corecount END 
+) as corecount, 
+(CASE 
+ WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','sent','starting','holding','transferring') THEN 'scheduled'
+ WHEN jobstatus in ('merging','running') THEN 'running'
+ WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
+END) as jobstatus,HS06
+from
+atlas_panda.JOBSDEFINED4
+UNION ALL
+select gshare,  (CASE 
+   WHEN corecount is null THEN 1 else corecount END  
+) as corecount, (CASE 
+ WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','sent','starting','holding','transferring') THEN 'scheduled'
+ WHEN jobstatus in ('merging','running') THEN 'running'
+ WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
+END) as jobstatus,HS06 from
+atlas_panda.JOBSWAITING4) 
+group by gshare, corecount, jobstatus
+order by gshare, corecount, jobstatus
+'''
+    #if isJobsss:
+    #sqlRequest += ' WHERE '+ codename + '='+codeval
+    # INPUT_EVENTS, TOTAL_EVENTS, STEP
+    shortListErrors = []
+    #sqlRequestFull = sqlRequest.format(condition)
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+    globalSharesList = cur.fetchall()
+    for gs in globalSharesList:
+        if gs[1] == 1:
+            corecount = 'Singlecore'
+        elif gs[1]==0:
+            corecount = 'Multicore'
+        else:
+            corecount = 'Multicore (' + str(gs[1]) + ')'
+        rowDict = {"gshare": gs[0], "corecount": corecount, "jobstatus": gs[2], "count": gs[3], "hs06":str(gs[4])}
+        fullListGS.append(rowDict)
+    return HttpResponse(json.dumps(fullListGS), content_type='text/html')
+
+def globalsharesNewV2JSON(request):
+    fullListGS = []
+    sqlRequest = '''
+SELECT gshare,COMPUTINGSITE, corecount, jobstatus, COUNT(*) 
+FROM (select gshare,COMPUTINGSITE, (CASE 
+   WHEN corecount is null THEN 1 else corecount END   
+) as corecount, 
+ (CASE jobstatus
+  WHEN 'running' THEN 'running'
+  ELSE 'scheduled'
+END) as jobstatus
+from
+atlas_panda.jobsactive4 
+UNION ALL
+select gshare,COMPUTINGSITE, (CASE 
+  WHEN corecount is null THEN 1 else corecount END  
+) as corecount, 
+ (CASE jobstatus
+  WHEN 'running' THEN 'running'
+  ELSE 'scheduled'
+END) as jobstatus
+from
+atlas_panda.JOBSDEFINED4
+UNION ALL
+select gshare,COMPUTINGSITE, (CASE 
+ WHEN corecount is null THEN 1 else corecount END   
+) as corecount, (CASE jobstatus
+  WHEN 'running' THEN 'running'
+  ELSE 'scheduled'
+END) as jobstatus from
+atlas_panda.JOBSWAITING4
+) group by gshare,COMPUTINGSITE, corecount, jobstatus
+order by gshare,COMPUTINGSITE, corecount, jobstatus
+'''
+    #if isJobsss:
+    #sqlRequest += ' WHERE '+ codename + '='+codeval
+    # INPUT_EVENTS, TOTAL_EVENTS, STEP
+    shortListErrors = []
+    #sqlRequestFull = sqlRequest.format(condition)
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+    globalSharesList = cur.fetchall()
+    for gs in globalSharesList:
+        if gs[2] == 1:
+            corecount = 'Singlecore'
+        elif gs[2]==0:
+            corecount = 'Multicore'
+        else:
+            corecount = 'Multicore (' + str(gs[2]) + ')'
+        rowDict = {"gshare": gs[0],"computingsite": gs[1], "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4]}
+        fullListGS.append(rowDict)
+    return HttpResponse(json.dumps(fullListGS), content_type='text/html')
+def globalsharesNewV3JSON(request):
+    fullListGS = []
+    sqlRequest = '''
+SELECT COMPUTINGSITE,gshare, corecount, jobstatus,COUNT (*)
+FROM (select COMPUTINGSITE,gshare, (CASE 
+   WHEN corecount is null THEN 1 else corecount END 
+) as corecount, 
+ (CASE jobstatus
+  WHEN 'running' THEN 'running'
+  ELSE 'scheduled'
+END) as jobstatus
+from
+atlas_panda.jobsactive4 
+UNION ALL
+select COMPUTINGSITE,gshare, (CASE 
+  WHEN corecount is null THEN 1 else corecount END 
+) as corecount, 
+ (CASE jobstatus
+  WHEN 'running' THEN 'running'
+  ELSE 'scheduled'
+END) as jobstatus
+from
+atlas_panda.JOBSDEFINED4
+UNION ALL
+select COMPUTINGSITE,gshare, (CASE 
+WHEN corecount is null THEN 1 else corecount END  
+) as corecount, (CASE jobstatus
+  WHEN 'running' THEN 'running'
+  ELSE 'scheduled'
+END) as jobstatus from
+atlas_panda.JOBSWAITING4
+) group by COMPUTINGSITE,gshare, corecount, jobstatus
+order by COMPUTINGSITE,gshare, corecount, jobstatus
+'''
+    #if isJobsss:
+    #sqlRequest += ' WHERE '+ codename + '='+codeval
+    # INPUT_EVENTS, TOTAL_EVENTS, STEP
+    shortListErrors = []
+    #sqlRequestFull = sqlRequest.format(condition)
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+    globalSharesList = cur.fetchall()
+    for gs in globalSharesList:
+        if gs[2]==1:
+            corecount = 'Singlecore'
+        elif gs[2]==0:
+            corecount = 'Multicore'
+        else: corecount = 'Multicore ('+str(gs[2])+')'
+        rowDict = {"computingsite": gs[0],"gshare": gs[1], "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4]}
+        fullListGS.append(rowDict)
+    return HttpResponse(json.dumps(fullListGS), content_type='text/html')
+
 def isEventService(job):
     if 'specialhandling' in job and job['specialhandling'] and (
                 job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 or (
@@ -10326,6 +10485,54 @@ def globalshares(request):
     else:
         return HttpResponse(json.dumps(gs), content_type='text/html')
 
+def globalsharesnew(request):
+    valid, response = initRequest(request)
+    data = getCacheEntry(request, "globalshares")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        gsPlotData = {}
+        oldGsPlotData = data['gsPlotData']
+        for shareName, shareValue in oldGsPlotData.iteritems():
+            gsPlotData[str(shareName)] = int(shareValue)
+        data['gsPlotData'] = gsPlotData
+        #response = render_to_response('globalshares.html', data, RequestContext(request))
+        #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        #endSelfMonitor(request)
+        #return response
+    if not valid: return response
+    setupView(request, hours=180 * 24, limit=9999999)
+    gs, tablerows = __get_hs_leave_distribution()
+    gsPlotData = {}#{'Upgrade':130049 , 'Reprocessing default':568841, 'Data Derivations': 202962, 'Event Index': 143 }
+
+    for shareName, shareValue in gs.iteritems():
+        shareValue['delta'] = shareValue['executing'] - shareValue['pledged']
+        shareValue['used'] = shareValue['ratio'] if 'ratio' in shareValue else None
+        gsPlotData[str(shareName)] = int(shareValue['executing'])
+
+
+    for shareValue in tablerows:
+        shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue else None
+
+    del request.session['TFIRST']
+    del request.session['TLAST']
+    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+                'json' not in request.session['requestParams'])):
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'globalshares': gs,
+            'xurl': extensibleURL(request),
+            'gsPlotData':gsPlotData,
+            'tablerows':tablerows,
+            'built': datetime.now().strftime("%H:%M:%S"),
+        }
+        endSelfMonitor(request)
+        response = render_to_response('globalsharesnew.html', data, RequestContext(request))
+        setCacheEntry(request, "globalsharesnew", json.dumps(data, cls=DateEncoder), 60 * 20)
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
 
 # taken from https://raw.githubusercontent.com/PanDAWMS/panda-server/master/pandaserver/taskbuffer/OraDBProxy.py
 # retrieve global shares
