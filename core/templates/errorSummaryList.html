@@ -48,7 +48,7 @@ function DisplayjediDataTableTableData() {
         "aoColumns": [
             {
                 "data": "taskid",
-                            "render": function(data, type, full, meta) {
+                "render": function(data, type, full, meta) {
                     if (full['taskid']==null)
                     {
                         return 'None'
@@ -63,9 +63,9 @@ function DisplayjediDataTableTableData() {
             {
                 "data": "pandaid",
                 sDefaultContent: "",
-                 "render": function(data, type, full, meta) {
+                "render": function(data, type, full, meta) {
                      return '<a href="/job/'+ full['pandaid'] +'" target="_blank">' + full['pandaid'] + '</a>'
-                 }
+                }
             },
             {
                 "data": "desc",

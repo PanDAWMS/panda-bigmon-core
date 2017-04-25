@@ -154,8 +154,8 @@ function DisplayjediDataTableTableData() {
         "aoColumns": [
             {
                 "data": "jediTaskID",
-                            "render": function(data, type, full, meta) {
-              return  '<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'@timestamp\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:'+data+'\')),sort:!(\'@timestamp\',desc))" target="_blank">' + full['jediTaskID'] + '</a>'
+                "render": function(data, type, full, meta) {
+                    return  '<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'@timestamp\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:'+data+'\')),sort:!(\'@timestamp\',desc))" target="_blank">' + full['jediTaskID'] + '</a>'
                     //return '<a href="ab.aspx?emp_id=' + data + '">"' + full['Type'] + '"</a>';
             },
                 sDefaultContent: ""
@@ -163,16 +163,16 @@ function DisplayjediDataTableTableData() {
             {
                 "data": "Type",
                 sDefaultContent: "",
-                 "render": function(data, type, full, meta) {
+                "render": function(data, type, full, meta) {
                      return '<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'@timestamp\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:' +  full['jediTaskID'] + '%20AND%20type:%22'+full['Type']+'%22\')),sort:!(\'@timestamp\',desc))" target="_blank">' + full['Type'] + '</a>'
                  }
             },
             {
                 "data": "LevelName",
                 sDefaultContent: "",
-                 "render": function(data, type, full, meta) {
+                "render": function(data, type, full, meta) {
                      return '<a href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'@timestamp\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:' +  full['jediTaskID'] + '%20AND%20type:%22'+full['Type']+'%22%20AND%20logLevel:%22'+full['LevelName']+'%22\')),sort:!(\'@timestamp\',desc))" target="_blank">' + full['LevelName'] + '</a>'
-                 }
+                }
             },
             {
                 "data": "Count",
