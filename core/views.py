@@ -666,7 +666,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     elif param == 'transformation' or param == 'transpath':
                         query['%s__endswith' % param] = request.session['requestParams'][param]
                     elif param == 'modificationhost' and request.session['requestParams'][param].find('@') < 0:
-                        query['%s__contains' % param] = request.session['requestParams'][param]
+                        paramQuery = request.session['requestParams'][param]
+                        if paramQuery[0] == '*': paramQuery = paramQuery[1:]
+                        if paramQuery[-1] == '*': paramQuery = paramQuery[:-1]
+                        query['%s__contains' % param] = paramQuery
                     elif param == 'jeditaskid':
                         if request.session['requestParams']['jeditaskid'] != 'None':
                             if int(request.session['requestParams']['jeditaskid']) < 4000000:
