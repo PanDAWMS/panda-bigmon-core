@@ -7257,6 +7257,16 @@ def taskInfo(request, jeditaskid=0):
         data = json.loads(data)
         doRefresh = False
 
+        plotDict = {}
+        oldPlotDict = data['plotsDict']
+        for plotName, plotData in oldPlotDict.iteritems():
+            plotDict[str(plotName)] = []
+            if len(plotData) > 0:
+                for dictSiteValue in plotData:
+                    plotDict[str(plotName)].append(
+                        {'site': str(dictSiteValue['site']), 'value': int(dictSiteValue['value'])})
+        data['plotsDict'] = plotDict
+
         #We still want to refresh tasks if request came from central crawler and task not in the frozen state
         if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
                 data['task'] and data['task']['status'] not in ['broken', 'aborted']):
@@ -7634,7 +7644,7 @@ def taskInfo(request, jeditaskid=0):
             'showtaskprof': showtaskprof,
             'jobsummaryESMerge': jobsummaryESMerge,
             'jobsummaryPMERGE': jobsummaryPMERGE,
-            'plotsDict': encode_dict(plotsDict),
+            'plotsDict': plotsDict,
             'taskbrokerage': taskbrokerage,
             'jobscoutids' : jobScoutIDs,
             'request': request,
@@ -7679,20 +7689,6 @@ def taskInfo(request, jeditaskid=0):
             response = render_to_response('taskInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-
-def encode_dict(d, codec='utf8'):
-    ks = d.keys()
-    for k in ks:
-        val = d.pop(k)
-        if isinstance(val, unicode):
-            val = val.encode(codec)
-        elif isinstance(val, dict):
-            val = encode_dict(val, codec)
-        if isinstance(k, unicode):
-            k = k.encode(codec)
-        d[k] = val
-    return d
-
 
 
 def taskchain(request):
@@ -7854,7 +7850,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
                 if job['actualcorecount'] and job['actualcorecount']>0:
                     plotsDict['maxpsspercore'].append(
                         {'value': job['maxpss'] / 1024 / job['actualcorecount'], 'site': str(job['computingsite'])})
-                plotsDict['nevents'].append(job['nevents'])
+                plotsDict['nevents'].append({'value': job['nevents'], 'site': str(job['computingsite'])})
                 plotsDict['maxpss'].append({'value': job['maxpss'] / 1024, 'site': str(job['computingsite'])})
             if job['jobstatus'] == 'failed':
                 plotsDict['maxpssf'].append({'value': job['maxpss'] / 1024, 'site': str(job['computingsite'])})

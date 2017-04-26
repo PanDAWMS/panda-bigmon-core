@@ -313,7 +313,7 @@ function killtasks(taskID, action) {
 
 
 <p>
-{% if  plotsDict.nevents|length > 0 %} <div class="nevents_plot" id="plot0" style="align:left;display:none;"></div><br style="clear:both;"> {% endif %}
+{% if  plotsDict.nevents|length > 0 %} <div class="nevents_plot" id="plot0" style="align:left;display:none;font-size: 12px"></div><br style="clear:both;"> {% endif %}
 
 {% if  plotsDict.maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
 {% if  plotsDict.walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
@@ -330,7 +330,7 @@ function killtasks(taskID, action) {
 <script src="/static/js/d3jsplot.js"></script>
 <script>
     var nevents = {{ plotsDict.nevents|safe }};
-    if (nevents.length > 0) {pandamonProdRunTaskSumPlotFunc(nevents, "#plot0", "Number of events histogram (finished non-merge jobs)", 40, 'ES');}
+    if (nevents.length > 0) {pandamonplotHist(nevents, "#plot0", "Number of events histogram (finished non-merge jobs)");}
     var values1 = {{ plotsDict.maxpss|safe }};
     var values2 = {{ plotsDict.walltime|safe }};
     var values3 = {{ plotsDict.maxpssf|safe }};
