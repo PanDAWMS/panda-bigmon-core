@@ -666,13 +666,18 @@ class MC16aCPReport:
         requestList = '(' + ','.join(map(str, requestList)) + ')'
 
         data = self.getCacheEntry(request, "prepareReportMC16")
-        #data = None
+        data = None
         if data is not None:
             data = json.loads(data)
             data['request'] = request
             response = render_to_response('reportCampaign.html', data, RequestContext(request))
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
+
+        (totalJobs, hepspecJobs) = self.getJobsJEDISummary('and t1.PR_ID IN %s' % requestList)
+        totalJobs['title'] = 'Jobs processing summary'
+        hepspecJobs['title'] = 'HS06SEC summary'
+
 
         recentTasks = self.recentProgressReportDEFT('and t1.PR_ID IN %s' % requestList)
         recentTasks['title'] = 'Tasks updated during last 24 hours'
@@ -695,10 +700,6 @@ class MC16aCPReport:
 
         totalTasks = self.getTasksDEFTSummary('and t1.PR_ID IN %s' % requestList)
         totalTasks['title'] = 'Tasks processing summary'
-
-        (totalJobs, hepspecJobs) = self.getJobsJEDISummary('and t1.PR_ID IN %s' % requestList)
-        totalJobs['title'] = 'Jobs processing summary'
-        hepspecJobs['title'] = 'HS06SEC summary'
 
         worstSite = self.topSitesFailureRate(10, 'and t1.PR_ID IN %s' % requestList)
         #worstSite['title'] = 'List of top sites with highest failure rate'
