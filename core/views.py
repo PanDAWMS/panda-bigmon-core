@@ -2956,13 +2956,13 @@ SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTER
 def globalsharesNewV1JSON(request):
     fullListGS = []
     sqlRequest = '''
-SELECT gshare, corecount, jobstatus, count(*), sum(HS06)/100  FROM 
+SELECT gshare, corecount, jobstatus, count(*), sum(HS06)  FROM 
 (select gshare,  (CASE 
 WHEN corecount is null THEN 1 else corecount END 
 ) as corecount, 
  (CASE 
-  WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','sent','starting','holding','transferring') THEN 'scheduled'
- WHEN jobstatus in ('merging','running') THEN 'running'
+  WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','merging','starting','holding','transferring') THEN 'scheduled'
+ WHEN jobstatus in ('sent','running') THEN 'running'
  WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
 END) as jobstatus,HS06
 from
@@ -2972,8 +2972,8 @@ select gshare,  (CASE
 WHEN corecount is null THEN 1 else corecount END 
 ) as corecount, 
 (CASE 
- WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','sent','starting','holding','transferring') THEN 'scheduled'
- WHEN jobstatus in ('merging','running') THEN 'running'
+ WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','merging','starting','holding','transferring') THEN 'scheduled'
+ WHEN jobstatus in ('sent','running') THEN 'running'
  WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
 END) as jobstatus,HS06
 from
@@ -2982,8 +2982,8 @@ UNION ALL
 select gshare,  (CASE 
    WHEN corecount is null THEN 1 else corecount END  
 ) as corecount, (CASE 
- WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','sent','starting','holding','transferring') THEN 'scheduled'
- WHEN jobstatus in ('merging','running') THEN 'running'
+ WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','merging','starting','holding','transferring') THEN 'scheduled'
+ WHEN jobstatus in ('sent','running') THEN 'running'
  WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
 END) as jobstatus,HS06 from
 atlas_panda.JOBSWAITING4) 
@@ -3005,9 +3005,15 @@ order by gshare, corecount, jobstatus
             corecount = 'Multicore'
         else:
             corecount = 'Multicore (' + str(gs[1]) + ')'
-        rowDict = {"gshare": gs[0], "corecount": corecount, "jobstatus": gs[2], "count": gs[3], "hs06":str(gs[4])}
+        rowDict = {"gshare": gs[0], "corecount": corecount, "jobstatus": gs[2], "count": gs[3], "hs06":gs[4]}
         fullListGS.append(rowDict)
     return HttpResponse(json.dumps(fullListGS), content_type='text/html')
+
+def decimal_default(obj):
+    if isinstance(obj, decimal.Decimal):
+        return float(obj)
+    elif (obj == 0): return 0
+    elif (obj == 'None'): return -1
 
 def globalsharesNewV2JSON(request):
     fullListGS = []

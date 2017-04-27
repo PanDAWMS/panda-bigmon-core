@@ -14,7 +14,7 @@
 
 
   <div class="d3splot" id="pieChartGS"></div>
-
+   <link rel="stylesheet" href="{% static "css/globalsharetooltip.css" %}">
 <table>
     <tr class='tablesection'>
         <th>L1 Share</th>
@@ -49,12 +49,13 @@
         $("#detailedinformation_wrapper").css("width","1030px");
         $("#sharesdistribution_wrapper").css("width","1030px");
         $("#siteworkqueues_wrapper").css("width","1030px");
+
     });
     function ReverseDisplay(d,hlink) {
         if(document.getElementById(d).style.display == "none") { document.getElementById(d).style.display = "block";
         var urlname = document.getElementById(hlink).innerText;
         urlname = urlname.replace("Show","Hide");
-         document.getElementById(hlink).innerText=urlname;
+        document.getElementById(hlink).innerText=urlname;
         }
     else { document.getElementById(d).style.display = "none";
         var urlname = document.getElementById(hlink).innerText;
@@ -65,20 +66,22 @@
     function DisplayDetailedInformation() {
      var detinf = $('#detailedinformation').dataTable({
         //"bRetrieve": true,
-        "sPaginationType": "full_numbers",
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         paging: true,
         //"bProcessing": true,
         //"bAutoWidth": false,
         //"bStateSave": true,
-        "aaSorting": [[0, 'asc']],
+        order: [[3, 'desc']],
                      "ajax": {
                  "processing": true,
                  "url": "{% url 'globalsharesNewV1JSON' %}",
 
                  "dataSrc" : ''},
-         rowsGroup: [0,1],
+
           "createdRow": function ( row, data, index ) {
             if ( data["jobstatus"] == 'running') {
+                $('td', row).eq(0).addClass('running_fill');
+                $('td', row).eq(1).addClass('running_fill');
                 $('td', row).eq(2).addClass('running_fill');
                 $('td', row).eq(3).addClass('running_fill');
                 $('td', row).eq(4).addClass('running_fill');
@@ -123,9 +126,6 @@
                 column.data().unique().sort().each( function ( d, j ) {
                     select.append( '<option value="'+d+'">'+d+'</option>' )
                 } );
-                column.cells('', column[1]).render('display').sort().unique().each( function ( d, j ){
-                    select.append( '<option value="'+d+'">'+d+'</option>' )
-                });
             } );
 
         }
@@ -135,18 +135,18 @@
     function DisplaySharesDistribution() {
      $('#sharesdistribution').dataTable({
         //"bRetrieve": true,
-        "sPaginationType": "full_numbers",
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         paging: true,
         //"bProcessing": true,
         //"bAutoWidth": false,
         //"bStateSave": true,
-        "aaSorting": [[0, 'asc']],
+        order: [[4, 'desc']],
                      "ajax": {
                  "processing": true,
                  "url": "{% url 'globalsharesNewV2JSON' %}",
 
                  "dataSrc" : ''},
-         rowsGroup: [0,1],
+
         "aoColumns": [
             {
                 "data": "gshare",
@@ -172,6 +172,8 @@
         ],
          "createdRow": function ( row, data, index ) {
              if ( data["jobstatus"] == 'running') {
+                $('td', row).eq(0).addClass('running_fill');
+                $('td', row).eq(1).addClass('running_fill');
                 $('td', row).eq(2).addClass('running_fill');
                 $('td', row).eq(3).addClass('running_fill');
                 $('td', row).eq(4).addClass('running_fill');
@@ -194,9 +196,6 @@
                 column.data().unique().sort().each( function ( d, j ) {
                     select.append( '<option value="'+d+'">'+d+'</option>' )
                 } );
-                column.cells('', column[1]).render('display').sort().unique().each( function ( d, j ){
-                    select.append( '<option value="'+d+'">'+d+'</option>' )
-                });
             } );
         }
     });
@@ -205,18 +204,14 @@
     function DisplaySiteworkqueues() {
     $('#siteworkqueues').dataTable({
         //"bRetrieve": true,
-        "sPaginationType": "full_numbers",
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         paging: true,
-        //"bProcessing": true,
-        //"bAutoWidth": false,
-        //"bStateSave": true,
-        "aaSorting": [[0, 'asc']],
+        order: [[4, 'desc']],
                      "ajax": {
                  "processing": true,
                  "url": "{% url 'globalsharesNewV3JSON' %}",
 
                  "dataSrc" : ''},
-         rowsGroup: [0,1],
         "aoColumns": [
                    {
                 "data": "computingsite",
@@ -242,6 +237,8 @@
         ],
         "createdRow": function ( row, data, index ) {
             if ( data["jobstatus"] == 'running') {
+                $('td', row).eq(0).addClass('running_fill');
+                $('td', row).eq(1).addClass('running_fill');
                 $('td', row).eq(2).addClass('running_fill');
                 $('td', row).eq(3).addClass('running_fill');
                 $('td', row).eq(4).addClass('running_fill');
@@ -265,9 +262,6 @@
                 column.data().unique().sort().each( function ( d, j ) {
                     select.append( '<option value="'+d+'">'+d+'</option>' )
                 } );
-                column.cells('', column[1]).render('display').sort().unique().each( function ( d, j ){
-                    select.append( '<option value="'+d+'">'+d+'</option>' )
-                });
             } );
         }
     });
@@ -278,7 +272,7 @@
   <div id="sharesdistributiondiv"  style="display: none">
   <hr/>
       <table id="sharesdistribution" style="width: 100%">
-          <caption  style="height: 30px;vertical-align: middle">Shares distribution</caption>
+          <caption  style="height: 30px;vertical-align: middle">Shares distribution (4 days)</caption>
      <thead>
                 <th>Global share</th>
                 <th>Computing site</th>
@@ -303,7 +297,7 @@
   <div id="siteworkqueuesdiv"  style="display: none">
   <hr/>
       <table id="siteworkqueues" style="width: 100%">
-          <caption  style="height: 30px;vertical-align: middle">Site workqueues occupations</caption>
+          <caption  style="height: 30px;vertical-align: middle">Site workqueues occupations (4 days)</caption>
      <thead>
                 <th>Computing site</th>
                 <th>Global share</th>
@@ -329,11 +323,31 @@
   <div id="detailedinformationdiv" style="display: none">
   <hr/>
       <table id="detailedinformation" style="width: 100%">
-          <caption  style="height: 30px;vertical-align: middle">Detailed information</caption>
+          <caption  style="height: 30px;vertical-align: middle">Detailed information (4 days)</caption>
      <thead>
                 <th>Global share</th>
                 <th>Core count</th>
-                <th>Job status</th>
+                <th>Job status <span class="hasTooltip"> (?)
+<table>
+      <thead>
+          <th>Table job status</th>
+          <th>Database job status</th>
+      </thead>
+      <tr>
+          <td>scheduled</td>
+          <td>defined,waiting,pending,assigned,throttled,activated,merging,starting,holding,transferring</td>
+      </tr>
+      <tr>
+          <td>running</td>
+          <td>sent,running</td>
+      </tr>
+      <tr>
+          <td>did run</td>
+          <td>failed,cancelled,closed</td>
+      </tr>
+  </table>
+     </span>
+                </th>
                 <th>COUNT</th>
                 <th>HS06</th>
      </thead>
