@@ -7263,8 +7263,11 @@ def taskInfo(request, jeditaskid=0):
             plotDict[str(plotName)] = []
             if len(plotData) > 0:
                 for dictSiteValue in plotData:
-                    plotDict[str(plotName)].append(
-                        {'site': str(dictSiteValue['site']), 'value': int(dictSiteValue['value'])})
+                    try:
+                        plotDict[str(plotName)].append(
+                            {'site': str(dictSiteValue['site']), 'value': int(dictSiteValue['value'])})
+                    except:
+                        pass
         data['plotsDict'] = plotDict
 
         #We still want to refresh tasks if request came from central crawler and task not in the frozen state
