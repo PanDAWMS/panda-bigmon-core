@@ -666,7 +666,7 @@ class MC16aCPReport:
         requestList = '(' + ','.join(map(str, requestList)) + ')'
 
         data = self.getCacheEntry(request, "prepareReportMC16")
-        data = None
+        #data = None
         if data is not None:
             data = json.loads(data)
             data['request'] = request
