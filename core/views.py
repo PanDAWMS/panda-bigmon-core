@@ -5708,8 +5708,13 @@ def dashboard(request, view='production'):
 
     hoursSinceUpdate = 36
     if view == 'production':
+        extra = "(1=1)"
+        if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
+            extra = "(not eventservice is null and eventservice in (1,2) and not specialhandling like '%%sc:%%')"
+        if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
+            extra = "(not (not eventservice is null and eventservice in (1,2) and not specialhandling like '%%sc:%%'))"
         noldtransjobs, transclouds, transrclouds = stateNotUpdated(request, state='transferring',
-                                                                   hoursSinceUpdate=hoursSinceUpdate, count=True)
+                                                                   hoursSinceUpdate=hoursSinceUpdate, count=True, wildCardExtension=extra)
     else:
         hours = 3
         noldtransjobs = 0
