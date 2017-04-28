@@ -127,6 +127,7 @@ class JobsWorldViewTaskType(models.Model):
     jobstatus = models.CharField(max_length=45, db_column='JOBSTATUS') # Field name made lowercase.
     countjobsinstate = models.IntegerField(db_column='COUNTJOBSINSTATE')
     tasktype = models.CharField(max_length=64, db_column='TASKTYPE')
+    es = models.IntegerField(db_column='ES')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEWTASKTYPE"'
 

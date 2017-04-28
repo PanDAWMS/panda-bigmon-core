@@ -4614,19 +4614,19 @@ def getListOfFailedBeforeSiteAssignedJobs(query, mismatchedSites, notime=True):
     return jobsString
 
 
-def siteSummary(query, notime=True):
+def siteSummary(query, notime=True, extra="(1=1)"):
     summary = []
     querynotime = copy.deepcopy(query)
     if notime:
         if 'modificationtime__range' in querynotime:
             del querynotime['modificationtime__range']
-    summary.extend(Jobsactive4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus').annotate(
+    summary.extend(Jobsactive4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus').extra(where=[extra]).annotate(
         Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
-    summary.extend(Jobsdefined4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus').annotate(
+    summary.extend(Jobsdefined4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus').extra(where=[extra]).annotate(
         Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
-    summary.extend(Jobswaiting4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus').annotate(
+    summary.extend(Jobswaiting4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus').extra(where=[extra]).annotate(
         Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
-    summary.extend(Jobsarchived4.objects.filter(**query).values('cloud', 'computingsite', 'jobstatus').annotate(
+    summary.extend(Jobsarchived4.objects.filter(**query).values('cloud', 'computingsite', 'jobstatus').extra(where=[extra]).annotate(
         Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
     return summary
 
@@ -4929,7 +4929,13 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
     for s in siteinfol:
         siteinfo[s['siteid']] = s['status']
 
-    sitesummarydata = siteSummary(query, notime)
+    extra = "(1=1)"
+    if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
+        extra = "(not eventservice is null and eventservice in (1,2) and not specialhandling like '%%sc:%%')"
+    if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
+        extra = "(not (not eventservice is null and eventservice in (1,2) and not specialhandling like '%%sc:%%'))"
+
+    sitesummarydata = siteSummary(query, notime, extra)
     nojobabs = Sitedata.objects.filter(hours=3).values('site').annotate(dcount=Sum('nojobabs'))
     nojobabshash = {}
     for item in nojobabs:
@@ -5780,6 +5786,12 @@ def dashboard(request, view='production'):
             query['tasktype'] = 'prod'
         else:
             query['tasktype'] = 'anal'
+
+        if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
+            query['es'] = 1
+        if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
+            query['es'] = 0
+
 
         worldJobsSummary.extend(JobsWorldViewTaskType.objects.filter(**query).values(*values))
         nucleus = {}
