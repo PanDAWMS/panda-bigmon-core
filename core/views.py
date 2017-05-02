@@ -3018,14 +3018,14 @@ def decimal_default(obj):
 def globalsharesNewV2JSON(request):
     fullListGS = []
     sqlRequest = '''
-SELECT gshare,COMPUTINGSITE, corecount, jobstatus, COUNT(*) 
+SELECT gshare,COMPUTINGSITE, corecount, jobstatus, COUNT(*), SUM(HS06)
 FROM (select gshare,COMPUTINGSITE, (CASE 
    WHEN corecount is null THEN 1 else corecount END   
 ) as corecount, 
  (CASE jobstatus
   WHEN 'running' THEN 'running'
   ELSE 'scheduled'
-END) as jobstatus
+END) as jobstatus, HS06
 from
 atlas_panda.jobsactive4 
 UNION ALL
@@ -3035,7 +3035,7 @@ select gshare,COMPUTINGSITE, (CASE
  (CASE jobstatus
   WHEN 'running' THEN 'running'
   ELSE 'scheduled'
-END) as jobstatus
+END) as jobstatus, HS06
 from
 atlas_panda.JOBSDEFINED4
 UNION ALL
@@ -3044,7 +3044,7 @@ select gshare,COMPUTINGSITE, (CASE
 ) as corecount, (CASE jobstatus
   WHEN 'running' THEN 'running'
   ELSE 'scheduled'
-END) as jobstatus from
+END) as jobstatus, HS06 from
 atlas_panda.JOBSWAITING4
 ) group by gshare,COMPUTINGSITE, corecount, jobstatus
 order by gshare,COMPUTINGSITE, corecount, jobstatus
@@ -3064,7 +3064,7 @@ order by gshare,COMPUTINGSITE, corecount, jobstatus
             corecount = 'Multicore'
         else:
             corecount = 'Multicore (' + str(gs[2]) + ')'
-        rowDict = {"gshare": gs[0],"computingsite": gs[1], "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4]}
+        rowDict = {"gshare": gs[0],"computingsite": gs[1], "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4], "hs06":gs[5]}
         fullListGS.append(rowDict)
     return HttpResponse(json.dumps(fullListGS), content_type='text/html')
 def globalsharesNewV3JSON(request):

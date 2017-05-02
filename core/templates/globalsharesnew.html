@@ -168,6 +168,10 @@
             {
                 "data": "count",
                 sDefaultContent: "",
+            },
+            {
+                "data": "hs06",
+                sDefaultContent: "",
             }
         ],
          "createdRow": function ( row, data, index ) {
@@ -177,6 +181,7 @@
                 $('td', row).eq(2).addClass('running_fill');
                 $('td', row).eq(3).addClass('running_fill');
                 $('td', row).eq(4).addClass('running_fill');
+                $('td', row).eq(5).addClass('running_fill');
             }},
       initComplete: function () {
             this.api().columns([0,1,2,3]).every( function () {
@@ -279,10 +284,12 @@
                 <th>Core count</th>
                 <th>Job status</th>
                 <th>COUNT</th>
+                <th>HS06</th>
      </thead>
      <tbody></tbody>
                 <tfoot>
 					<tr>
+                <th></th>
                 <th></th>
                 <th></th>
                 <th></th>
