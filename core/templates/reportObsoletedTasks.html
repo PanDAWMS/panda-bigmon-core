@@ -1,0 +1,34 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+
+
+{% block page_title %} {{ viewParams.MON_VO }} Obsolete tasks {% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} Obsolete tasks</a>{% endblock %}
+{% block subtitle %}PanDA {{view}} {{ requestParams.mode }} {{ viewParams.selection|safe }}
+{% endblock %}
+{% block body %}
+    <h1> Obsolete tasks <span style="float:right;"><h3>Built on {{ built }} (UTC)</h3></span></h1>
+    <table>
+        <tr>
+            <th>Root Task</th>
+            <th>Child Tasks (if any)</th>
+            <th>Type Of Deletion, Grace Period</th>
+            <th>Dataset Status, Updated at</th>
+            <th>Sample Dataset</th>
+        </tr>
+        {% for taskDict in tasksInfo %}
+            <tr>
+                <td><a href='https://prodtask-dev.cern.ch/prodtask/task/{{ taskDict.rootTask }}' target="_blank">{{ taskDict.rootTask }}</a></td>
+                <td>
+                    {% for childTask in  taskDict.childtasks%}
+                        <a href='https://prodtask-dev.cern.ch/prodtask/task/{{ childTask }}' target="_blank">{{ childTask }}</a>
+                    {% endfor %}
+                </td>
+                <td>{{ taskDict.tofdel }}, {{ taskDict.graceperiod }}h</td>
+                <td> {{ taskDict.dsstatus }}, {{ taskDict.date }}</td>
+                <td><a href="https://bigpanda.cern.ch/datasetInfo/?datasetname={{ taskDict.dsname }}&jeditaskid={{ taskDict.rootTask }}" target="_blank">{{ taskDict.dsname }}</a></td>
+            </tr>
+        {% endfor %}
+
+    </table>
+{% endblock %}

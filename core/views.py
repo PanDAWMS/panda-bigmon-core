@@ -88,7 +88,7 @@ errorStages = {}
 
 from django.template.defaulttags import register
 from reports import RunningMCProdTasks
-from reports import MC16aCPReport
+from reports import MC16aCPReport, ObsoletedTasksReport
 from decimal import *
 
 
@@ -6661,6 +6661,14 @@ def report(request):
         response = reportGen.prepareReportJEDI(request)
         endSelfMonitor(request)
         return response
+
+    if 'requestParams' in request.session and 'obstasks' in request.session['requestParams']:
+        reportGen = ObsoletedTasksReport.ObsoletedTasksReport()
+        response = reportGen.prepareReport(request)
+        endSelfMonitor(request)
+        return response
+
+
 
     if 'requestParams' in request.session and 'step' in request.session['requestParams']:
         step = int(request.session['requestParams']['step'])
