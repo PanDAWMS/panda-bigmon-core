@@ -7785,6 +7785,9 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
     jobScoutIDs = {}
     jobScoutIDs['cputimescoutjob'] = []
     jobScoutIDs['walltimescoutjob'] = []
+    jobScoutIDs['ramcountscoutjob'] = []
+    jobScoutIDs['iointensityscoutjob'] = []
+    jobScoutIDs['outdiskcountscoutjob'] = []
     newquery = copy.deepcopy(query)
     isESMerge = False
     if substatusfilter != '':
@@ -7830,13 +7833,15 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
         if 'scout=cpuTime' in job['jobmetrics'] or (
                 'scout=' in job['jobmetrics'] and 'cpuTime' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
             jobScoutIDs['cputimescoutjob'].append(job['pandaid'])
-        if 'scout=ioIntensity' in job['jobmetrics']:
-            jobScoutIDs['iointensityscoutjob'] = job['pandaid']
-        if 'scout=outDiskCount' in job['jobmetrics']:
-            jobScoutIDs['outdiskcountscoutjob'] = job['pandaid']
+        if 'scout=ioIntensity' in job['jobmetrics'] or (
+                'scout=' in job['jobmetrics'] and 'ioIntensity' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
+            jobScoutIDs['iointensityscoutjob'].append(job['pandaid'])
+        if 'scout=outDiskCount' in job['jobmetrics'] or (
+                'scout=' in job['jobmetrics'] and 'outDiskCount' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
+            jobScoutIDs['outdiskcountscoutjob'].append(job['pandaid'])
         if 'scout=ramCount' in job['jobmetrics'] or (
                 'scout=' in job['jobmetrics'] and 'ramCount' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
-            jobScoutIDs['ramcountscoutjob'] = job['pandaid']
+            jobScoutIDs['ramcountscoutjob'].append(job['pandaid'])
         if 'scout=walltime' in job['jobmetrics'] or (
                 'scout=' in job['jobmetrics'] and 'walltime' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
             jobScoutIDs['walltimescoutjob'].append(job['pandaid'])
