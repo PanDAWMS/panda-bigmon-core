@@ -9,6 +9,12 @@ class ObsoletedTasksReport:
         pass
 
     def prepareReportTasksV1(self, request, type):
+
+        uniqueTasksCond = ""
+        if type == "tasksview":
+            uniqueTasksCond ="PART=1 and"
+
+
         sqlRequest = '''
                     SELECT * FROM (
             WITH RECONSTRUCTEDTASKCHAIN AS (
@@ -17,7 +23,7 @@ class ObsoletedTasksReport:
             CONNECT BY NOCYCLE PRIOR TASKID=PARENT_TID ORDER SIBLINGS BY TASKID
             ) SELECT RECONSTRUCTEDTASKCHAIN.*, STATUS as DSSTATUS, TIMESTAMP, row_number() OVER(PARTITION BY RECONSTRUCTEDTASKCHAIN.TASKID order by t_production_dataset.TIMESTAMP) AS PART, t_production_dataset.NAME as dsname FROM ATLAS_DEFT.RECONSTRUCTEDTASKCHAIN, ATLAS_DEFT.t_production_dataset  WHERE t_production_dataset.TASKID=RECONSTRUCTEDTASKCHAIN.TASKID
             and instr(t_production_dataset.NAME,'.log.') = 0 
-            ) WHERE PART=1 and PPFLAG>=0 ORDER BY LEV ASC
+            ) WHERE '''+uniqueTasksCond+''' PPFLAG>=0 ORDER BY LEV ASC
         '''
 
         cur = connection.cursor()
