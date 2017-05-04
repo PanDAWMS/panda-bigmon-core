@@ -1,0 +1,34 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+
+{% block page_title %} {{ viewParams.MON_VO }} Obsolete {% if type == 'dsview' %}datasets{% elif type == 'tasks' %}tasks{% endif %}
+{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} Obsolete {% if type == 'dsview' %}datasets{% elif type == 'tasks' %}tasks{% endif %}</a>{% endblock %}
+{% block subtitle %}PanDA {{view}} {{ requestParams.mode }} {{ viewParams.selection|safe }}
+{% endblock %}
+{% block body %}
+    <h1> Obsolete {% if type == 'dsview' %}datasets{% elif type == 'tasks' %}tasks{% endif %}<span style="float:right;"><h3>Built on {{ built }} (UTC)</h3></span></h1>
+    <table>
+        <tr>
+            <th>RequestID</th>
+            {% if type == 'tasksview' %}
+            <th>Task Name</th>
+            {% elif type == 'dsview' %}
+            <th>Dataset Name</th>
+            {% endif %}
+            <th>Task Chain</th>
+        </tr>
+        {% for taskDict in tasksInfo %}
+            <tr>
+                <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ taskDict.reqid }}/"  target="_blank">{{ taskDict.reqid }}</a></td>
+                {% if type == 'tasksview' %}
+                <td><a href='https://prodtask-dev.cern.ch/prodtask/task/{{ taskDict.taskid }}' target="_blank">{{ taskDict.taskname }}</a></td>
+                {% elif type == 'dsview' %}
+                <td><a href="https://bigpanda.cern.ch/datasetInfo/?datasetname={{ taskDict.dsname }}&jeditaskid={{ taskDict.taskid }}" target="_blank">{{ taskDict.dsname }}</a></td>
+                {% endif %}
+                <td><a href='/ganttTaskChain/?jeditaskid={{ taskDict.taskid }}' target="_blank">Chain Diagram</a></td>
+            </tr>
+        {% endfor %}
+
+    </table>
+{% endblock %}
