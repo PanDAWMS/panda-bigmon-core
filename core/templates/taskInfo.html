@@ -392,31 +392,31 @@ No datasets were found for this task
 <a name="scouts"></a>
 <tr>
 <td bgcolor='lightcyan'><b> Scout jobs: </b></td>
-    {% if jobscoutids.walltimescoutjob|length > 0 %}
+    {% if jobscoutids.walltimescoutjob and jobscoutids.walltimescoutjob|length > 0 %}
         <td>Walltime:
             {% for job in jobscoutids.walltimescoutjob %}
                 <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %} {% else %} , {% endif %}
             {% endfor %}
         </td>{% endif %}
-    {% if jobscoutids.cputimescoutjob|length %}
+    {% if jobscoutids.cputimescoutjob and jobscoutids.cputimescoutjob|length %}
         <td>CPU time:
             {% for job in jobscoutids.cputimescoutjob %}
                 <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %} {% else %} , {% endif %}
             {% endfor %}
         </td>{% endif %}
-    {% if jobscoutids.ramcountscoutjob %}
+    {% if jobscoutids.ramcountscoutjob and jobscoutids.ramcountscoutjob|length %}
         <td>RAM count:
             {% for job in jobscoutids.ramcountscoutjob %}
                 <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %} {% else %} , {% endif %}
             {% endfor %}
         </td>{% endif %}
-    {% if jobscoutids.outdiskcountscoutjob %}
+    {% if jobscoutids.outdiskcountscoutjob and jobscoutids.outdiskcountscoutjob|length %}
         <td>Out disk count:
             {% for job in jobscoutids.outdiskcountscoutjob %}
                 <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %} {% else %} , {% endif %}
             {% endfor %}
         </td>{% endif %}
-    {% if jobscoutids.iointensityscoutjob %}
+    {% if jobscoutids.iointensityscoutjob and jobscoutids.iointensityscoutjob|length %}
         <td>IO intensity:
             {% for job in jobscoutids.iointensityscoutjob %}
                 <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %} {% else %} , {% endif %}

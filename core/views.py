@@ -7342,6 +7342,8 @@ def taskInfo(request, jeditaskid=0):
         ### This is a temporary fix in order of avoiding 500 error for cached tasks not compartible to a new template
         if not isinstance(data['jobscoutids']['ramcountscoutjob'], list):
             del data['jobscoutids']['ramcountscoutjob']
+            del data['jobscoutids']['iointensityscoutjob']
+            del data['jobscoutids']['outdiskcountscoutjob']
 
         if not doRefresh:
             data['request'] = request
