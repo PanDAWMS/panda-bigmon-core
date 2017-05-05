@@ -7337,6 +7337,7 @@ def taskInfo(request, jeditaskid=0):
                         doRefresh = True
                 else:
                     doRefresh = True
+        doRefresh = True
 
         if not doRefresh:
             data['request'] = request
