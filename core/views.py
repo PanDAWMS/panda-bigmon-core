@@ -403,7 +403,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             extraQueryString = extraQueryString[:-2]
         extraQueryString += ')'
         excludeWGFromWildCard = True
-    if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] == 'hpc':
+    if 'site' in request.session['requestParams'] and (request.session['requestParams']['site'] == 'hpc' or not (
+                    '*' in request.session['requestParams']['site'] or '|' in request.session['requestParams']['site'])):
         excludeSiteFromWildCard = True
 
 
@@ -634,6 +635,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query['reqid__in'] = values
                         else:
                             query['reqid'] = int(val)
+                    elif param == 'site':
+                        if request.session['requestParams'][param] != 'hpc' and excludeSiteFromWildCard:
+                            query['site__contains'] = request.session['requestParams'][param]
                     elif param == 'eventservice':
                         if request.session['requestParams'][param] == 'eventservice' or \
                                         request.session['requestParams'][param] == '1':
@@ -6913,11 +6917,20 @@ def runningProdTasks(request):
     if 'workinggroup' in tquery and request.session['requestParams']['preset'] == 'MC' and ',' in tquery['workinggroup']:
         #     excludeWGList = list(str(wg[1:]) for wg in request.session['requestParams']['workinggroup'].split(','))
         #     exquery['workinggroup__in'] = excludeWGList
+        try:
             del tquery['workinggroup']
+        except:
+            pass
     if 'status' in request.session['requestParams'] and request.session['requestParams']['status'] == '':
-        del tquery['status']
+        try:
+            del tquery['status']
+        except:
+            pass
     if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] == 'hpc':
-        del tquery['site']
+        try:
+            del tquery['site']
+        except:
+            pass
         exquery['site__isnull'] = True
 
     if 'sortby' in request.session['requestParams'] and '-' in request.session['requestParams']['sortby'] :
