@@ -1960,6 +1960,9 @@ def jobListP(request, mode=None, param=None):
     #request.session['viewParams']['selection'] = request.session['viewParams']['selection'][:request.session['viewParams']['selection'].index('<b>limit=</b>')]
     if 'json' not in request.session['requestParams']:
         data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
             'requesttoken': requestToken,
             'tfirst': request.session['TFIRST'].strftime(defaultDatetimeFormat),
             'tlast': request.session['TLAST'].strftime(defaultDatetimeFormat),
