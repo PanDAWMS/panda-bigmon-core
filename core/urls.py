@@ -130,5 +130,7 @@ if settings.DEBUG:
         url(r'^__debug__/', include(debug_toolbar.urls)),
     ]
 
+
+
 #urlpatterns += common_patterns
 #urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
