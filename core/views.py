@@ -9494,6 +9494,7 @@ def fileInfo(request):
         new_cur.executemany(query, executionData)
 #        connection.commit()
 
+
         new_cur.execute(
             "SELECT DATASETNAME,DATASETID FROM %s WHERE DATASETID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
                 JediDatasetsTableName, tmpTableName, transactionKey))
