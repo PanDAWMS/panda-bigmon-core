@@ -49,15 +49,7 @@ class MC16aCPReport:
 
     def jobsQuery(self, condition):
         """
-        Overall events processing summary
-        (totalEvents,JediEventsR) = self.getEventsJEDISummaryJobStatus('and t1.PR_ID IN %s' % requestList)
-        totalEvents['title'] = 'Events processing summary'
-        JediEventsR['title'] = 'Overall events processing summary'
-        JediEventsR['simulatedprogr'] =  round( JediEventsR['simulated']/float(JediEventsR1['input'])*100 , 2)
-        JediEventsR['reconstructedprog'] =  round(JediEventsR['reconstructed']/float(JediEventsR1['input'])*100 , 2)
-        JediEventsR['mergeHitsprog'] =  round(JediEventsR['mergeHits']/float(JediEventsR1['input'])*100 , 2)
-        JediEventsR['mergeprog'] = round(JediEventsR['merge']/float(JediEventsR1['input'])*100, 2)
-        JediEventsR['input'] =  JediEventsR1['input']
+        TODO: Update HS06SEC summary to use not dropped jobs to calculate HEPSPEC
         """
 
         sqlRequest = '''
@@ -154,66 +146,6 @@ class MC16aCPReport:
         return (orderedjobssummary, orderedjobsevsummary, hepspecSummary, JediEventsR)
 
 
-
-
-
-
-
-    def getJEDIEventsSummaryRequestedOutput(self, condition):
-        sqlRequest = '''
-          SELECT * FROM (
-            SELECT SUM(NINPUTEVENTS), SUM(NEVENTSUSED), SUM(NOUTEVENTS), STEP FROM (
-            SELECT 
-            
-                      t1.TASKID,
-                      CASE WHEN t4.TYPE='output' THEN t4.nevents ELSE 0 END as NOUTEVENTS,
-                      CASE WHEN t4.TYPE IN ('input', 'pseudo_input') THEN t4.nevents ELSE 0 END as NINPUTEVENTS,
-                      CASE WHEN t4.TYPE IN ('input', 'pseudo_input') THEN t4.neventsused ELSE 0 END as NEVENTSUSED,
-                      t3.STEP_NAME as STEP
-            
-            FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_PANDA.JEDI_DATASETS t4, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3  WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID and campaign like 'MC16%' and 
-            t1.status not in ('failed','aborted','broken') and  t1.TASKID=t4.JEDITASKID and t4.MASTERID IS NULL AND t1.PR_ID IN (11034, 11035, 11048,11049,11050,11051,11052,11198,11197,11222,11359) 
-            ) GROUP BY STEP 
-        )t1 
-
-        '''
-
-        # INPUT_EVENTS, TOTAL_EVENTS, OUTEV, STEP
-
-        sqlRequestFull = sqlRequest.format(condition)
-        cur = connection.cursor()
-        cur.execute(sqlRequestFull)
-        stats = cur.fetchall()
-        input = 0
-        tosimulate = 0
-        simulatedprogr = 0
-        tomergeHits = 0
-        mergeHitsprog = 0
-        toreconstruct = 0
-        reconstructedprog = 0
-        tomerge = 0
-        mergeprog = 0
-
-        for row in stats:
-            if row[3] == 'Simul':
-                input = row[0]
-                tosimulate = row[0]
-            if row[3] == 'Merge':
-                tomergeHits = row[0]
-            if row[3] == 'Reco':
-                toreconstruct = row[0]
-            if row[3] == 'Rec Merge':
-                tomerge = row[0]
-
-        fullSummary = {"input":input,
-                       "tosimulate":tosimulate,
-                       "tomergeHits":tomergeHits,
-                       "toreconstruct":toreconstruct,
-                       "tomerge":tomerge
-                      }
-        return fullSummary
-
-
     def getJEDIEventsSummaryRequested(self, condition):
         sqlRequest = '''
           SELECT * FROM (
@@ -260,37 +192,6 @@ class MC16aCPReport:
         fullSummary['input/processed']['recon'] = '%s/%s' % (  humanize.intcomma(summaryInput['recon']) if 'recon' in summaryInput else '-', humanize.intcomma(summaryProcessed['recon']) if 'recon' in summaryInput else '-')
         fullSummary['input/processed']['merge'] = '%s/%s' % (  humanize.intcomma(summaryInput['merge']) if 'merge' in summaryInput else '-', humanize.intcomma(summaryProcessed['merge']) if 'merge' in summaryInput else '-')
         return fullSummary
-
-    #SELECT t1.TASKID, t3.HASHTAG FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_HT_TO_TASK t2, ATLAS_DEFT.T_HASHTAG t3 WHERE t3.HT_ID=t2.HT_ID and t1.TASKID=t2.TASKID AND PR_ID IN (11034,11048,11049,11050,11051,11052,11198,11197,11222,11359)
-
-    def getJEDIEventsSummaryRequestedBreakDownHashTag(self, condition):
-        sqlRequestHashTags = '''SELECT t1.TASKID, t3.HASHTAG FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_HT_TO_TASK t2, ATLAS_DEFT.T_HASHTAG t3 WHERE t3.HT_ID=t2.HT_ID and t1.TASKID=t2.TASKID AND t1.PR_ID IN {0}'''
-        sqlRequestFull = sqlRequestHashTags.format(condition)
-        cur = connection.cursor()
-        cur.execute(sqlRequestFull)
-        hashTags = cur.fetchall()
-        hashTagsDict = {}
-
-        for hashTag in hashTags:
-            if not hashTag[1] in hashTagsDict:
-                hashTagsDict[hashTag[1]] = []
-            else:
-                hashTagsDict[hashTag[1]].append(hashTag[0])
-
-        JediEventsTableHashs = []
-        hashTagsList = []
-        for hashTagKey in hashTagsDict:
-            tasksList = hashTagsDict[hashTagKey]
-            if len(tasksList) > 0:
-                requestListString = '(' + ','.join(map(str, tasksList)) + ')'
-                JediEventsTableHash = self.getJEDIEventsSummaryRequested('and t1.REQID IN %s and t1.JEDITASKID IN %s' % (condition, requestListString))
-                JediEventsTableHash['hashtag'] = hashTagKey
-                JediEventsTableHashs.append(JediEventsTableHash)
-                hashTagsList.append(hashTagKey)
-        return (JediEventsTableHashs, hashTagsList)
-
-
-
 
 
     def getDEFTEventsSummaryChain(self, condition):
@@ -351,35 +252,6 @@ class MC16aCPReport:
         return fullSummary
 
 
-    def getTasksJEDISummary(self, condition):
-        sqlRequest = '''
-
-            SELECT count(t1.STATUS), t1.STATUS, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0} group by t1.STATUS
-            UNION ALL
-            SELECT count(t1.STATUS), t1.STATUS, 'mergeHits' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and not substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0} group by t1.STATUS
-            UNION ALL
-            SELECT count(t1.STATUS), t1.STATUS, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.recon.%' {0} group by t1.STATUS
-            UNION ALL
-            SELECT count(t1.STATUS), t1.STATUS, 'simul' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.simul.%' {0}  group by t1.STATUS
-            UNION ALL
-            SELECT count(t1.STATUS), t1.STATUS, 'evgen' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.evgen.%' {0} group by t1.STATUS
-
-        '''
-        sqlRequestFull = sqlRequest.format(condition)
-        cur = connection.cursor()
-        cur.execute(sqlRequestFull)
-        campaignsummary = cur.fetchall()
-        orderedsummary = OrderedDict()
-        for step in self.steps:
-            taskstate = OrderedDict()
-            for state in self.taskstatelist:
-                taskstate[state] = 0
-            orderedsummary[step] = taskstate
-        for summaryRow in campaignsummary:
-            orderedsummary[summaryRow[2]][summaryRow[1]] += summaryRow[0]
-        return orderedsummary
-
-
     def getTasksDEFTSummary(self, condition):
         sqlRequest = '''
 
@@ -402,204 +274,6 @@ class MC16aCPReport:
             else:
                 orderedsummary[summaryRow[2]][summaryRow[1]] += summaryRow[0]
         return orderedsummary
-
-
-
-    def getJobsJEDISummary(self, condition):
-
-        sqlRequest = '''
-        SELECT COUNT(JOBSTATUS), JOBSTATUS, STEP, SUM(HS06SEC) FROM
-            (
-            SELECT DISTINCT PANDAID, JOBSTATUS, STEP, HS06SEC FROM (
-            WITH selectedTasks AS (
-              SELECT t1.STATUS, t1.taskid, t3.STEP_NAME as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID and campaign like 'MC16%' {0} 
-            )
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP, HS06SEC FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.taskid=t2.JEDITASKID
-            UNION ALL
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP, HS06SEC FROM ATLAS_PANDA.JOBSARCHIVED4 t2, selectedTasks WHERE selectedTasks.taskid=t2.JEDITASKID
-            UNION ALL
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP, HS06SEC FROM ATLAS_PANDAARCH.JOBSARCHIVED t2, selectedTasks WHERE selectedTasks.taskid=t2.JEDITASKID
-            UNION ALL
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP, HS06SEC FROM ATLAS_PANDA.JOBSDEFINED4 t2, selectedTasks WHERE selectedTasks.taskid=t2.JEDITASKID
-            UNION ALL
-            SELECT PANDAID, JOBSTATUS, selectedTasks.STEP as STEP, HS06SEC FROM ATLAS_PANDA.JOBSWAITING4 t2, selectedTasks WHERE selectedTasks.taskid=t2.JEDITASKID
-            )tt) tb group by JOBSTATUS, STEP
-        '''
-
-        orderedsummary = OrderedDict()
-        for step in self.steps:
-            jobstate = OrderedDict()
-            for state in self.jobstatelist:
-                jobstate[state] = 0
-            orderedsummary[step] = jobstate
-
-
-        sqlRequestFull = sqlRequest.format(condition)
-        cur = connection.cursor()
-        cur.execute(sqlRequestFull)
-        campaignsummary = cur.fetchall()
-
-
-        fullSummary = {}
-        hepspecSummary = {}
-        for summaryRow in campaignsummary:
-            if not summaryRow[3] is None and summaryRow[1] not in hepspecSummary:
-                hepspecSummary[summaryRow[1]] = {}
-
-            orderedsummary[summaryRow[2]][summaryRow[1]] += summaryRow[0]
-
-            if summaryRow[1] not in fullSummary:
-                fullSummary[summaryRow[1]] = {}
-            if summaryRow[2] not in fullSummary[summaryRow[1]]:
-                fullSummary[summaryRow[1]][summaryRow[2]] = 0
-
-                if not summaryRow[3] is None:
-                    hepspecSummary[summaryRow[1]][summaryRow[2]] = 0
-            fullSummary[summaryRow[1]][summaryRow[2]] += summaryRow[0]
-            if not summaryRow[3] is None:
-                hepspecSummary[summaryRow[1]][summaryRow[2]] += summaryRow[3]
-
-        fullSummaryTotal = {}
-        for status, stepdict in fullSummary.items():
-            for step, val in stepdict.items():
-                if step not in fullSummaryTotal:
-                    fullSummaryTotal[step] = 0
-                fullSummaryTotal[step] += val
-        fullSummary['total'] = fullSummaryTotal
-
-        return (orderedsummary, hepspecSummary)
-
-
-    def getEventsJEDISummaryJobStatus(self, condition):
-
-        sqlRequest = '''
-            with selectedEvents as (
-            SELECT sum(decode(t3.startevent,NULL,t3.nevents,t3.endevent-t3.startevent+1)) AS NEVENTS, t3.PANDAID, tt.STEP_NAME as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_PANDA.JEDI_DATASETS t2, ATLAS_PANDA.JEDI_DATASET_CONTENTS t3, ATLAS_DEFT.T_PRODUCTION_STEP ts, ATLAS_DEFT.T_STEP_TEMPLATE tt  WHERE 
-            t1.STEP_ID=ts.STEP_ID and ts.STEP_T_ID=tt.STEP_T_ID and campaign like 'MC16%' AND
-            t1.status not in ('failed','aborted','broken') and t1.TASKID=t2.JEDITASKID AND t3.DATASETID=t2.DATASETID AND t2.MASTERID IS NULL AND t3.JEDITASKID=t1.TASKID and t3.TYPE IN ('input', 'pseudo_input') {0} group by t3.PANDAID, tt.STEP_NAME
-          ),
-          selectedJobs as (
-            SELECT JOBSTATUS, STEP, NEVENTS, row_number() OVER(PARTITION BY pandaid order by JOBSTATUS) as rn FROM (
-            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS, t2.pandaid FROM selectedevents, ATLAS_PANDAARCH.JOBSARCHIVED t2 where t2.pandaid = selectedevents.pandaid 
-            UNION ALL
-            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS, t2.pandaid FROM selectedevents, ATLAS_PANDA.JOBSACTIVE4 t2 where t2.pandaid = selectedevents.pandaid
-            UNION ALL
-            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS, t2.pandaid FROM selectedevents, ATLAS_PANDA.JOBSARCHIVED4 t2 where t2.pandaid = selectedevents.pandaid
-            UNION ALL
-            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS, t2.pandaid FROM selectedevents, ATLAS_PANDA.JOBSWAITING4 t2 where t2.pandaid = selectedevents.pandaid
-            UNION ALL
-            SELECT t2.JOBSTATUS, STEP, selectedevents.NEVENTS, t2.pandaid FROM selectedevents, ATLAS_PANDA.JOBSDEFINED4 t2 where t2.pandaid = selectedevents.pandaid
-            ) 
-          ) SELECT SUM(NEVENTS), JOBSTATUS, STEP FROM selectedJobs where rn = 1 GROUP BY STEP, JOBSTATUS
-        '''
-        sqlRequestFull = sqlRequest.format(condition)
-        cur = connection.cursor()
-        cur.execute(sqlRequestFull)
-        campaignsummary = cur.fetchall()
-
-        orderedsummary = OrderedDict()
-        input = 0
-        simulated = 0
-        simulatedprogr = 0
-        mergeHits = 0
-        mergeHitsprog = 0
-        reconstructed = 0
-        reconstructedprog = 0
-        merge = 0
-        mergeprog = 0
-
-
-        for step in self.steps:
-            jobstate = OrderedDict()
-            for state in self.jobstatelist:
-                jobstate[state] = 0
-            orderedsummary[step] = jobstate
-
-        for summaryRow in campaignsummary:
-            orderedsummary[summaryRow[2]][summaryRow[1]] += summaryRow[0]
-
-        for stepName in orderedsummary:
-            stepInfo = orderedsummary.get(stepName)
-            for jobsStatus in stepInfo:
-                countOfEv = stepInfo[jobsStatus]
-
-                if jobsStatus == 'finished':
-                    if stepName == 'Simul':
-                        simulated = countOfEv
-                    if stepName == 'Rec Merge':
-                        merge = countOfEv
-                    if stepName == 'Reco':
-                        reconstructed = countOfEv
-                    if stepName == 'Merge':
-                        mergeHits = countOfEv
-                elif jobsStatus in ['pending',	'defined',	'assigned',	'waiting',	'activated',	'sent',	'starting',	'running',	'holding',	'transferring',	'merging']:
-                    if stepName == 'Simul':
-                        simulatedprogr += countOfEv
-                    if stepName == 'Rec Merge':
-                        mergeprog += countOfEv
-                    if stepName == 'Reco':
-                        reconstructedprog += countOfEv
-                    if stepName == 'Merge':
-                        mergeHitsprog += countOfEv
-
-        input = simulatedprogr
-        simulatedprogr = int( (1-simulatedprogr/ float(simulated)) * 100)
-        mergeprog = int((1-mergeprog/ float(merge)) * 100)
-        reconstructedprog = int( (1 - reconstructedprog / float(reconstructed)) * 100)
-        mergeHitsprog = int( (1- mergeHitsprog / float(mergeHits)) * 100)
-
-        fullSummary = {"input":input,
-                       "simulated":simulated,
-                       "mergeHits":mergeHits,
-                       "reconstructed":reconstructed,
-                       "merge":merge,
-                       "simulatedprogr":simulatedprogr,
-                       "mergeHitsprog":mergeHitsprog,
-                       "reconstructedprog":reconstructedprog,
-                       "mergeprog":mergeprog,
-                      }
-
-        return (orderedsummary, fullSummary)
-
-
-    def getEventsJEDISummary(self, condition):
-        sqlRequest = '''
-            SELECT sum(decode(t3.startevent,NULL,t3.nevents,t3.endevent-t3.startevent+1)), t3.STATUS, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1, ATLAS_PANDA.JEDI_DATASETS t2, ATLAS_PANDA.JEDI_DATASET_CONTENTS t3 WHERE campaign like 'MC16%' AND
-            t1.status not in ('failed','aborted','broken') and t1.JEDITASKID=t2.JEDITASKID AND t3.DATASETID=t2.DATASETID AND t2.MASTERID IS NULL AND t3.JEDITASKID=t1.JEDITASKID and TASKNAME LIKE '%.merge.%' and t3.TYPE IN ('input', 'pseudo_input') and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0} group by t3.STATUS
-            UNION ALL
-            SELECT sum(decode(t3.startevent,NULL,t3.nevents,t3.endevent-t3.startevent+1)), t3.STATUS, 'mergeHits' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1, ATLAS_PANDA.JEDI_DATASETS t2, ATLAS_PANDA.JEDI_DATASET_CONTENTS t3 WHERE campaign like 'MC16%' AND
-            t1.status not in ('failed','aborted','broken') and t1.JEDITASKID=t2.JEDITASKID AND t3.DATASETID=t2.DATASETID AND t2.MASTERID IS NULL AND t3.JEDITASKID=t1.JEDITASKID and TASKNAME LIKE '%.merge.%' and t3.TYPE IN ('input', 'pseudo_input') and not substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0} group by t3.STATUS
-            UNION ALL
-            SELECT sum(decode(t3.startevent,NULL,t3.nevents,t3.endevent-t3.startevent+1)), t3.STATUS, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1, ATLAS_PANDA.JEDI_DATASETS t2, ATLAS_PANDA.JEDI_DATASET_CONTENTS t3 WHERE campaign like 'MC16%' AND
-            t1.status not in ('failed','aborted','broken') and t1.JEDITASKID=t2.JEDITASKID AND t3.DATASETID=t2.DATASETID AND t2.MASTERID IS NULL AND t3.JEDITASKID=t1.JEDITASKID and TASKNAME LIKE '%.recon.%' and t3.TYPE IN ('input', 'pseudo_input') {0} group by t3.STATUS
-            UNION ALL
-            SELECT sum(decode(t3.startevent,NULL,t3.nevents,t3.endevent-t3.startevent+1)), t3.STATUS, 'simul' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1, ATLAS_PANDA.JEDI_DATASETS t2, ATLAS_PANDA.JEDI_DATASET_CONTENTS t3 WHERE campaign like 'MC16%' AND
-            t1.status not in ('failed','aborted','broken') and t1.JEDITASKID=t2.JEDITASKID AND t3.DATASETID=t2.DATASETID AND t2.MASTERID IS NULL AND t3.JEDITASKID=t1.JEDITASKID and TASKNAME LIKE '%.simul.%' and t3.TYPE IN ('input', 'pseudo_input') {0} group by t3.STATUS
-            UNION ALL
-            SELECT sum(decode(t3.startevent,NULL,t3.nevents,t3.endevent-t3.startevent+1)), t3.STATUS, 'evgen' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1, ATLAS_PANDA.JEDI_DATASETS t2, ATLAS_PANDA.JEDI_DATASET_CONTENTS t3 WHERE campaign like 'MC16%' AND
-            t1.status not in ('failed','aborted','broken') and t1.JEDITASKID=t2.JEDITASKID AND t3.DATASETID=t2.DATASETID AND t2.MASTERID IS NULL AND t3.JEDITASKID=t1.JEDITASKID and TASKNAME LIKE '%.evgen.%' and t3.TYPE IN ('input', 'pseudo_input') {0} group by t3.STATUS
-        '''
-
-        sqlRequestFull = sqlRequest.format(condition)
-        cur = connection.cursor()
-        cur.execute(sqlRequestFull)
-        campaignsummary = cur.fetchall()
-        fullSummary = {}
-        for summaryRow in campaignsummary:
-            if summaryRow[1] not in fullSummary:
-                fullSummary[summaryRow[1]] = {}
-            if summaryRow[2] not in fullSummary[summaryRow[1]]:
-                fullSummary[summaryRow[1]][summaryRow[2]] = 0
-            fullSummary[summaryRow[1]][summaryRow[2]] += summaryRow[0]
-
-        fullSummaryTotal = {}
-        for status, stepdict in fullSummary.items():
-            for step, val in stepdict.items():
-                if step not in fullSummaryTotal:
-                    fullSummaryTotal[step] = 0
-                fullSummaryTotal[step] += val
-        fullSummary['total'] = fullSummaryTotal
-        return fullSummary
 
 
     def topSitesFailureRate(self, topN, condition):
@@ -761,12 +435,8 @@ class MC16aCPReport:
         #SUM(HS06SEC)
 
 
-
-
-
     def prepareReportJEDI(self, request):
 
-        #               11035, 11034, 11048, 11049, 11050, 11051, 11052, 11198, 11197, 11222, 11359
         requestList = [11035, 11034, 11048, 11049, 11050, 11051, 11052, 11198, 11197, 11222, 11359]
         requestList = '(' + ','.join(map(str, requestList)) + ')'
 
