@@ -47,11 +47,116 @@ class MC16aCPReport:
     stepsLabels = {'Simul':'Simulation', 'Reco':'Reconstruction', 'Rec Merge':'AOD Merge', 'Merge':'HITS Merge'}
 
 
-    def refreshPreprocessed(self):
+    def jobsQuery(self, condition):
         """
-        TaskID, Status, Campaign, RequestID, DEFTStatus, STEP, TimeStamp, SubmitTime, InputEvents, pendingJEv, definedJEv,	assignedJEv,	waitingJEv,	activatedJEv,	sentJEv,	startingJEv,	runningJEv,	holdingJEv,	transferringJEv,	mergingJEv,	finishedJEv,	failedJEv,	cancelledJEv,	throttledJEv,	closedJEv, pendingNJ,	definedNJ,	assignedNJ,	waitingNJ,	activatedNJ,	sentNJ,	startingNJ,	runningNJ,	holdingNJ,	transferringNJ,	mergingNJ,	finishedNJ,	failedNJ,	cancelledNJ,	throttledNJ,	closedNJ
+        Overall events processing summary
+        (totalEvents,JediEventsR) = self.getEventsJEDISummaryJobStatus('and t1.PR_ID IN %s' % requestList)
+        totalEvents['title'] = 'Events processing summary'
+        JediEventsR['title'] = 'Overall events processing summary'
+        JediEventsR['simulatedprogr'] =  round( JediEventsR['simulated']/float(JediEventsR1['input'])*100 , 2)
+        JediEventsR['reconstructedprog'] =  round(JediEventsR['reconstructed']/float(JediEventsR1['input'])*100 , 2)
+        JediEventsR['mergeHitsprog'] =  round(JediEventsR['mergeHits']/float(JediEventsR1['input'])*100 , 2)
+        JediEventsR['mergeprog'] = round(JediEventsR['merge']/float(JediEventsR1['input'])*100, 2)
+        JediEventsR['input'] =  JediEventsR1['input']
         """
-        pass
+
+        sqlRequest = '''
+            SELECT STEP, SUM(FINISHEDJEV) as FINISHEDJEV, SUM(PENDINGJEV+DEFINEDJEV+ASSIGNEDJEV+WAITINGJEV+ACTIVATEDJEV+SENTJEV+STARTINGJEV+RUNNINGJEV+HOLDINGJEV+TRANSFERRINGJEV+MERGINGJEV) as RESTJEV, 
+            SUM(PENDINGJEV), SUM(DEFINEDJEV), SUM(ASSIGNEDJEV), SUM (WAITINGJEV), SUM(ACTIVATEDJEV), SUM(SENTJEV), SUM(STARTINGJEV), SUM(RUNNINGJEV), SUM(HOLDINGJEV), SUM(TRANSFERRINGJEV), SUM(MERGINGJEV), SUM(FAILEDJEV), SUM(CANCELLEDJEV), SUM(THROTTLEDJEV), SUM(CLOSEDJEV),
+            SUM(PENDINGNJ), SUM(DEFINEDNJ), SUM(ASSIGNEDNJ), SUM(WAITINGNJ), SUM(ACTIVATEDNJ), SUM(SENTNJ), SUM(STARTINGNJ), SUM(RUNNINGNJ), SUM(HOLDINGNJ), SUM(TRANSFERRINGNJ),  SUM(MERGINGNJ), SUM(FINISHEDNJ), SUM(FAILEDNJ), SUM(CANCELLEDNJ), SUM(THROTTLEDNJ), SUM(CLOSEDNJ), 
+            SUM(INPUTEVENTS), SUM(HS06SECFAILED), SUM(HS06SECCANCELLED), SUM(HS06SECFINISHED), SUM(HS06SECCLOSED)
+            FROM ATLAS_PANDABIGMON.TASKS_PROD_AGGREGATE WHERE DEFTSTATUS NOT IN ('failed','aborted','broken') and campaign like 'MC16%' {0} GROUP BY STEP
+        '''
+        sqlrequestwithcond = sqlRequest.format(condition)
+        cur = connection.cursor()
+        cur.execute(sqlrequestwithcond)
+        rawsummary = cur.fetchall()
+
+        orderedjobssummary = OrderedDict()
+        orderedjobsevsummary = OrderedDict()
+        inputevents = 0
+
+        for step in self.steps:
+            jobstate = OrderedDict()
+            for state in self.jobstatelist:
+                jobstate[state] = 0
+            orderedjobssummary[step] = {state:0}
+            orderedjobsevsummary[step] = {state:0}
+
+        for row in rawsummary:
+            orderedjobssummary[row[0]]['pending'] = row[18]
+            orderedjobsevsummary[row[0]]['pending'] = row[3]
+            orderedjobssummary[row[0]]['defined'] = row[19]
+            orderedjobsevsummary[row[0]]['defined'] = row[4]
+            orderedjobssummary[row[0]]['assigned'] = row[20]
+            orderedjobsevsummary[row[0]]['assigned'] = row[5]
+            orderedjobssummary[row[0]]['waiting'] = row[21]
+            orderedjobsevsummary[row[0]]['waiting'] = row[6]
+            orderedjobssummary[row[0]]['activated'] = row[22]
+            orderedjobsevsummary[row[0]]['activated'] = row[7]
+            orderedjobssummary[row[0]]['sent'] = row[23]
+            orderedjobsevsummary[row[0]]['sent'] = row[8]
+            orderedjobssummary[row[0]]['starting'] = row[24]
+            orderedjobsevsummary[row[0]]['starting'] = row[9]
+            orderedjobssummary[row[0]]['running'] = row[25]
+            orderedjobsevsummary[row[0]]['running'] = row[10]
+            orderedjobssummary[row[0]]['holding'] = row[26]
+            orderedjobsevsummary[row[0]]['holding'] = row[11]
+            orderedjobssummary[row[0]]['transferring'] = row[27]
+            orderedjobsevsummary[row[0]]['transferring'] = row[12]
+            orderedjobssummary[row[0]]['merging'] = row[28]
+            orderedjobsevsummary[row[0]]['merging'] = row[13]
+            orderedjobssummary[row[0]]['finished'] = row[29]
+            orderedjobsevsummary[row[0]]['finished'] = row[1]
+            orderedjobssummary[row[0]]['failed'] = row[30]
+            orderedjobsevsummary[row[0]]['failed'] = row[14]
+            orderedjobssummary[row[0]]['cancelled'] = row[31]
+            orderedjobsevsummary[row[0]]['cancelled'] = row[15]
+            orderedjobssummary[row[0]]['throttled'] = row[32]
+            orderedjobsevsummary[row[0]]['throttled'] = row[16]
+            orderedjobssummary[row[0]]['closed'] = row[33]
+            orderedjobsevsummary[row[0]]['closed'] = row[17]
+            if row[0] == 'Simul':
+                inputevents = row[34]
+        orderedjobssummary['title'] = 'Jobs processing summary'
+        orderedjobsevsummary['title'] = 'Events processing summary'
+
+        #Hepspecs estimation
+        hepspecSummary = {'failed': {}, 'cancelled': {}, 'finished': {}, 'closed': {}}
+        sqlRequest = '''
+            SELECT STEP, SUM(HS06SECFAILED), SUM(HS06SECCANCELLED), SUM(HS06SECFINISHED), SUM(HS06SECCLOSED)
+            FROM ATLAS_PANDABIGMON.TASKS_PROD_AGGREGATE WHERE campaign like 'MC16%' {0} GROUP BY STEP
+        '''
+        sqlrequestwithcond = sqlRequest.format(condition)
+        cur = connection.cursor()
+        cur.execute(sqlrequestwithcond)
+        rawhepssummary = cur.fetchall()
+        for row in rawhepssummary:
+            hepspecSummary['failed'][row[0]] = row[1]
+            hepspecSummary['cancelled'][row[0]] = row[2]
+            hepspecSummary['finished'][row[0]] = row[3]
+            hepspecSummary['closed'][row[0]] = row[4]
+        hepspecSummary['title'] = 'HS06SEC summary'
+
+        #Progress calculation
+        JediEventsR = {}
+        JediEventsR['title'] = 'Overall events processing summary'
+        JediEventsR['simulated'] = orderedjobsevsummary['Simul']['finished']
+        JediEventsR['simulatedprogr'] = round( JediEventsR['simulated']/float(inputevents)*100, 2)
+        JediEventsR['reconstructed'] = orderedjobsevsummary['Reco']['finished']
+        JediEventsR['reconstructedprog'] = round(JediEventsR['reconstructed']/float(inputevents)*100, 2)
+        JediEventsR['mergeHits'] = orderedjobsevsummary['Merge']['finished']
+        JediEventsR['mergeHitsprog'] = round(JediEventsR['mergeHits']/float(inputevents)*100, 2)
+        JediEventsR['merge'] = orderedjobsevsummary['Rec Merge']['finished']
+        JediEventsR['mergeprog'] = round(JediEventsR['merge']/float(inputevents)*100, 2)
+        JediEventsR['input'] = inputevents
+
+        return (orderedjobssummary, orderedjobsevsummary, hepspecSummary, JediEventsR)
+
+
+
+
+
 
 
     def getJEDIEventsSummaryRequestedOutput(self, condition):
@@ -674,36 +779,14 @@ class MC16aCPReport:
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
 
-        (totalJobs, hepspecJobs) = self.getJobsJEDISummary('and t1.PR_ID IN %s' % requestList)
-        totalJobs['title'] = 'Jobs processing summary'
-        hepspecJobs['title'] = 'HS06SEC summary'
-
+        (totalJobs, totalEvents, hepspecJobs, JediEventsR) = self.jobsQuery('and REQUESTID IN %s' % requestList)
 
         recentTasks = self.recentProgressReportDEFT('and t1.PR_ID IN %s' % requestList)
         recentTasks['title'] = 'Tasks updated during last 24 hours'
-
-        JediEventsR1 = self.getJEDIEventsSummaryRequestedOutput('and t1.PR_ID IN %s' % requestList)
-        #JediEventsR['title'] = 'Overall events processing summary'
-
-        #(jediEventsHashsTable, hashTable) = self.getJEDIEventsSummaryRequestedBreakDownHashTag(requestList)
-
-        (totalEvents,JediEventsR) = self.getEventsJEDISummaryJobStatus('and t1.PR_ID IN %s' % requestList)
-        totalEvents['title'] = 'Events processing summary'
-        JediEventsR['title'] = 'Overall events processing summary'
-        JediEventsR['simulatedprogr'] =  round( JediEventsR['simulated']/float(JediEventsR1['input'])*100 , 2)
-        JediEventsR['reconstructedprog'] =  round(JediEventsR['reconstructed']/float(JediEventsR1['input'])*100 , 2)
-        JediEventsR['mergeHitsprog'] =  round(JediEventsR['mergeHits']/float(JediEventsR1['input'])*100 , 2)
-        JediEventsR['mergeprog'] = round(JediEventsR['merge']/float(JediEventsR1['input'])*100, 2)
-        JediEventsR['input'] =  JediEventsR1['input']
-
-
-
         totalTasks = self.getTasksDEFTSummary('and t1.PR_ID IN %s' % requestList)
         totalTasks['title'] = 'Tasks processing summary'
 
         worstSite = self.topSitesFailureRate(10, 'and t1.PR_ID IN %s' % requestList)
-        #worstSite['title'] = 'List of top sites with highest failure rate'
-
         siteActRun = self.topSitesActivatedRunning(10, 'and t1.PR_ID IN %s' % requestList)
         siteAssignRun = self.topSitesAssignedRunning(10, 'and t1.PR_ID IN %s' % requestList)
 
