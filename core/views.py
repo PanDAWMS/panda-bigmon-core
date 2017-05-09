@@ -5714,10 +5714,12 @@ def dashboard(request, view='production'):
         hours = 12
 
     hoursSinceUpdate = 36
+    estailtojobslinks = ''
     if view == 'production':
         extra = "(1=1)"
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
             extra = "(not eventservice is null and eventservice in (1,2) and not specialhandling like '%%sc:%%')"
+            estailtojobslinks = '&eventservice=eventservice'
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
             extra = "(not (not eventservice is null and eventservice in (1,2) and not specialhandling like '%%sc:%%'))"
         noldtransjobs, transclouds, transrclouds = stateNotUpdated(request, state='transferring',
@@ -5912,6 +5914,7 @@ def dashboard(request, view='production'):
                 'cloudTaskSummary': cloudTaskSummary,
                 'taskstates': taskstatedict,
                 'taskdays': taskdays,
+                'estailtojobslinks':estailtojobslinks,
                 'noldtransjobs': noldtransjobs,
                 'transclouds': transclouds,
                 'transrclouds': transrclouds,
@@ -6035,6 +6038,7 @@ def dashTasks(request, hours, view='production'):
             'taskJobSummary': taskJobSummary[:display_limit],
             'display_limit': display_limit,
             'jobsLeft': jobsLeft,
+            'estailtojobslinks': '',
             'rw': rw,
             'template': 'dashboard.html',
             'built': datetime.now().strftime("%H:%M:%S"),
