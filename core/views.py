@@ -6117,7 +6117,24 @@ def taskList(request):
         'eventservice'] == '1'):
         eventservice = True
         hours = 7 * 24
+    extrahashtagquery = ''
+    if 'hashtag' in request.session['requestParams']:
+        hashtagsrt = request.session['requestParams']['hashtag']
+        if ',' in hashtagsrt:
+            hashtaglistquery = ''.join("'" + ht + "' ," for ht in hashtagsrt.split(','))
+        elif '|' in hashtagsrt:
+            hashtaglistquery = ''.join("'" + ht + "' ," for ht in hashtagsrt.split('|'))
+        else:
+            hashtaglistquery = "'" + request.session['requestParams']['hashtag'] + "'"
+        hashtaglistquery = hashtaglistquery[:-1] if hashtaglistquery[-1] == ',' else hashtaglistquery
+        extrahashtagquery = """JEDITASKID IN ( SELECT HTT.TASKID FROM ATLAS_DEFT.T_HASHTAG H, ATLAS_DEFT.T_HT_TO_TASK HTT WHERE JEDITASKID = HTT.TASKID AND H.HT_ID = HTT.HT_ID AND H.HASHTAG IN ( %s ))""" % (hashtaglistquery)
+
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
+    if len(extrahashtagquery) > 0:
+        if len(wildCardExtension) > 0:
+            wildCardExtension += ' AND ( ' + extrahashtagquery + ' )'
+        else:
+            wildCardExtension = extrahashtagquery
     listTasks = []
     if 'statenotupdated' in request.session['requestParams']:
         tasks = taskNotUpdated(request, query, wildCardExtension)
@@ -6126,6 +6143,65 @@ def taskList(request):
         listTasks.append(JediTasksOrdered)
         thread = Thread(target=totalCount, args=(listTasks, query, wildCardExtension, dkey))
         thread.start()
+
+    # Getting hashtags for task selection
+    taskl = []
+    for task in tasks:
+        taskl.append(task['jeditaskid'])
+    random.seed()
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+    else:
+        tmpTableName = "TMP_IDS1"
+    transactionKey = random.randrange(1000000)
+    print (transactionKey)
+    executionData = []
+    for id in taskl:
+        executionData.append((id, transactionKey))
+
+    new_cur = connection.cursor()
+    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    new_cur.executemany(query, executionData)
+    connection.commit()
+    new_cur.execute(
+        """
+        select htt.TASKID,
+            LISTAGG(h.hashtag, ',') within GROUP (order by htt.taskid) as hashtags
+        from ATLAS_DEFT.T_HASHTAG h, ATLAS_DEFT.T_HT_TO_TASK htt , %s tmp
+        where TRANSACTIONKEY=%i and h.ht_id = htt.ht_id and tmp.id = htt.taskid
+        GROUP BY htt.TASKID
+        """ % (tmpTableName, transactionKey)
+    )
+    taskhashtags = dictfetchall(new_cur)
+
+    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+
+    taskids = {}
+    for taskid in taskhashtags:
+        taskids[taskid['TASKID']] = taskid['HASHTAGS']
+
+
+    # Filtering tasks if there are a few hashtahgs with 'AND' operand in query
+    if 'hashtagsrt' in locals() and ',' in hashtagsrt:
+        thashtags = hashtagsrt.split(',')
+        newtasks = []
+        for task in tasks:
+            if task['jeditaskid'] in taskids.keys():
+                if all(ht+',' in taskids[task['jeditaskid']]+',' for ht in thashtags):
+                    newtasks.append(task)
+        tasks = newtasks
+
+    # Forming hashtag list for summary attribute table
+    hashtags = []
+    for task in tasks:
+        if task['jeditaskid'] in taskids.keys():
+            task['hashtag'] = taskids[task['jeditaskid']]
+            for hashtag in taskids[task['jeditaskid']].split(','):
+                if hashtag not in hashtags:
+                    hashtags.append(hashtag)
+    if len(hashtags) > 0:
+        hashtags = sorted(hashtags, key=lambda h: h.lower())
+
     tasks = cleanTaskList(request, tasks)
     ntasks = len(tasks)
     nmax = ntasks
@@ -6229,7 +6305,7 @@ def taskList(request):
     flowstruct = buildGoogleFlowDiagram(request, tasks=tasks)
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-
+    nohashtagurl = removeParam(xurl, 'hashtag', mode='extensible')
     try:
         thread.join()
         tasksTotalCount = sum(tcount[dkey])
@@ -6297,8 +6373,10 @@ def taskList(request):
             'tasks': tasksToShow,
             'ntasks': ntasks,
             'sumd': sumd,
+            'hashtags': hashtags,
             'xurl': xurl,
             'nosorturl': nosorturl,
+            'nohashtagurl': nohashtagurl,
             'url_nolimit': url_nolimit,
             'display_limit': nmax,
             'flowstruct': flowstruct,
@@ -8563,7 +8641,7 @@ def removeParam(urlquery, parname, mode='complete'):
     """Remove a parameter from current query"""
     urlquery = urlquery.replace('&&', '&')
     urlquery = urlquery.replace('?&', '?')
-    pstr = '.*(%s=[a-zA-Z0-9\.\-]*).*' % parname
+    pstr = '.*(%s=[a-zA-Z0-9\.\-\_]*).*' % parname
     pat = re.compile(pstr)
     mat = pat.match(urlquery)
     if mat:

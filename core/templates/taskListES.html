@@ -28,6 +28,7 @@
 {% if requestParams.parent_tid %}<br><b>Parent task: {{ requestParams.parent_tid }}</b> {% endif %}
 {% if requestParams.status %}<br><b>{% if viewParams.MON_VO == 'ATLAS' %}Detailed JEDI task status {% else %}Task status {% endif %}: <span class='{{requestParams.status}}'>{{ requestParams.status }}</span></b> {% endif %}
 {% if requestParams.superstatus %}<br><b>{% if viewParams.MON_VO == 'ATLAS' %}Task status {% else %}Task status {% endif %}: <span class='{{requestParams.superstatus}}'>{{ requestParams.superstatus }}</span></b> {% endif %}
+{% if requestParams.hashtag %}<br><b>Hashtag: {{ requestParams.hashtag }} </b> {% endif %}
 
 <p>
 
@@ -63,6 +64,19 @@ function loadESData(jeditaskid) {
 {% endfor %}
 </td></tr>
 {% endfor %}
+{% if hashtags and hashtags|length > 0 %}
+    <tr>
+        <th>hashtags ({{ hashtags|length }})</th>
+        <td>{% for hashtag in hashtags %}
+                {% if 'hashtag' in requestParams %}
+                    <a href="{{ nohashtagurl }}hashtag={{ requestParams.hashtag }},{{ hashtag }}">{{ hashtag }}</a>
+                {% else %}
+                    <a href="{{ xurl }}hashtag={{ hashtag }}">{{ hashtag }}</a>
+                {% endif %}
+                {% if not forloop.last %}, {% endif %}
+            {% endfor %}</td>
+    </tr>
+{% endif %}
 </table>
 {% endif %}
 
