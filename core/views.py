@@ -8829,7 +8829,7 @@ def esatlasPandaLoggerJson(request):
     today = time.strftime("%Y.%m.%d")
     jedi = {}
     logindexjedi = 'atlas_jedilogs-'
-    res = es.search(index=logindexjedi + str(today), fields=['jediTaskID', 'type', 'logLevel'], body={
+    res = es.search(index=logindexjedi + str(today), stored_fields=['jediTaskID', 'type', 'logLevel'], body={
         "aggs": {
             "jediTaskID": {
                 "terms": {"field": "jediTaskID", "size": 100000000},
@@ -8903,7 +8903,7 @@ def esatlasPandaLogger(request):
     panda = {}
     jedi = {}
     for index in indices:
-        res = es.search(index=index + str(today), fields=['logName', 'type', 'logLevel'], body={
+        res = es.search(index=index + str(today), stored_fields=['logName', 'type', 'logLevel'], body={
             "aggs": {
                 "logName": {
                     "terms": {"field": "logName","size": 100},
@@ -8986,7 +8986,7 @@ def esPandaLogger(request):
         indices = [logindex, logindexdev]
     else:
         indices = [logindex]
-    res = es.search(index=indices, fields=['@message.name', '@message.Type', '@message.levelname'], body={
+    res = es.search(index=indices, stored_fields=['@message.name', '@message.Type', '@message.levelname'], body={
         "aggs": {
             "name": {
                 "terms": {"field": "@message.name"},
