@@ -4938,9 +4938,12 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
 
     extra = "(1=1)"
     if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
-        extra = "(not eventservice is null and eventservice in (1,2) and not specialhandling like '%%sc:%%')"
-    if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
-        extra = "(not (not eventservice is null and eventservice in (1,2) and not specialhandling like '%%sc:%%'))"
+        extra = "(not eventservice is null and eventservice=1 and not specialhandling like '%%sc:%%')"
+    elif 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
+        extra = "(not (not eventservice is null and eventservice=1 and not specialhandling like '%%sc:%%'))"
+    elif 'esmerge' in request.session['requestParams'] and request.session['requestParams'][
+        'esmerge'].upper() == 'TRUE':
+        extra = "(not eventservice is null and eventservice=2 and not specialhandling like '%%sc:%%')"
 
     sitesummarydata = siteSummary(query, notime, extra)
     nojobabs = Sitedata.objects.filter(hours=3).values('site').annotate(dcount=Sum('nojobabs'))
@@ -5718,10 +5721,14 @@ def dashboard(request, view='production'):
     if view == 'production':
         extra = "(1=1)"
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
-            extra = "(not eventservice is null and eventservice in (1,2) and not specialhandling like '%%sc:%%')"
+            extra = "(not eventservice is null and eventservice=1 and not specialhandling like '%%sc:%%')"
             estailtojobslinks = '&eventservice=eventservice'
-        if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
-            extra = "(not (not eventservice is null and eventservice in (1,2) and not specialhandling like '%%sc:%%'))"
+        elif 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
+            extra = "(not (not eventservice is null and eventservice=1 and not specialhandling like '%%sc:%%'))"
+        elif 'esmerge' in request.session['requestParams'] and request.session['requestParams'][
+            'esmerge'].upper() == 'TRUE':
+            extra = "(not eventservice is null and eventservice=2 and not specialhandling like '%%sc:%%')"
+            estailtojobslinks = '&eventservice=2'
         noldtransjobs, transclouds, transrclouds = stateNotUpdated(request, state='transferring',
                                                                    hoursSinceUpdate=hoursSinceUpdate, count=True, wildCardExtension=extra)
     else:
