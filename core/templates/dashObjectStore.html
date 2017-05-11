@@ -1,0 +1,43 @@
+{% extends "_base_core.html" %}
+
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
+{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA {{view}} {{ requestParams.mode }} dashboard{{ viewParams.selection|safe }}, last 12 hours
+{% endblock %}
+{% block body %}
+
+<table id="cloudsitesummary">
+
+<tr class='tablesection'><th colspan=20> Object Stores summary </th></tr>
+<tr class='tablesection'>
+<th>Object Store</th>
+<th>defined</th>
+<th>waiting</th>
+<th>assigned</th>
+<th>throttled</th>
+<th>activated</th>
+<th>sent</th>
+<th>starting</th>
+<th>running</th>
+<th>holding</th>
+<th>merging</th>
+<th>transferring</th>
+<th>finished</th>
+<th>failed</th>
+<th>cancelled</th>
+<th>closed</th>
+</tr>
+
+{% for os in summary %}
+<tr>
+    <th  bgcolor=whitesmoke> {{ os.name }} </th>
+{% for name, count in os.summary.items %}
+    <td class='{{name}}{% if count > 0 %}_fill{% endif %}' align='right'><span class="{{ name }}{% if count > 0 %}_fill{% endif %}"> {{ count }} </span></td>
+{% endfor %}
+</tr>
+
+{% endfor %}
+</table>
+
+{% endblock %}

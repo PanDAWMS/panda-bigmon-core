@@ -54,6 +54,7 @@ urlpatterns = [
     url(r'^dash/$', coremon_views.dashboard, name='dashboard'),
     url(r'^dash/analysis/$', coremon_views.dashAnalysis, name='dashAnalysis'),
     url(r'^dash/production/$', coremon_views.dashProduction, name='dashProduction'),
+    url(r'^dash/objectstore/$', coremon_views.dashObjectStore, name='dashObjectStore'),
     url(r'^workingGroups/$', coremon_views.workingGroups, name='workingGroups'),
     url(r'^fileInfo/$', coremon_views.fileInfo, name='fileInfo'),
     url(r'^fileList/$', coremon_views.fileList, name='fileList'),

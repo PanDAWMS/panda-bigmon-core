@@ -90,6 +90,7 @@ from django.template.defaulttags import register
 from reports import RunningMCProdTasks
 from reports import MC16aCPReport, ObsoletedTasksReport
 from decimal import *
+from collections import OrderedDict
 
 
 @register.filter
@@ -105,6 +106,10 @@ except:
 callCount = 0
 homeCloud = {}
 objectStores = {}
+objectStoresNames = {}
+objectStoresSites = {}
+
+
 pandaSites = {}
 cloudList = ['CA', 'CERN', 'DE', 'ES', 'FR', 'IT', 'ND', 'NL', 'RU', 'TW', 'UK', 'US']
 
@@ -160,6 +165,25 @@ standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'cor
 VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
 VOMODE = ' '
+
+def getObjectStoresNames():
+    global objectStoresNames
+    url = "http://atlas-agis-api.cern.ch/request/ddmendpoint/query/list/?json&preset=dict&json_pretty=1&type[]=OS_ES"
+    http = urllib3.PoolManager()
+    data = {}
+    try:
+        r = http.request('GET', url)
+        data = json.loads(r.data.decode('utf-8'))
+    except Exception as exc:
+        print exc.message
+        return
+
+    for OSname, OSdescr in data.iteritems():
+        if "resource" in OSdescr and "bucket_id" in OSdescr["resource"]:
+            objectStoresNames[OSdescr["resource"]["bucket_id"]] = OSname
+            objectStoresSites[OSname] = OSdescr["site"]
+
+
 
 
 def escapeInput(strToEscape):
@@ -5881,6 +5905,55 @@ def dashboard(request, view='production'):
             }
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
+    elif view == 'objectstore':
+        global objectStoresNames
+        if len(objectStoresNames) == 0:
+            getObjectStoresNames()
+
+        sqlRequest = """SELECT ES, JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, OBJSTORE_ID FROM (
+        SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, OBJSTORE_ID 
+        FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID
+        WHERE t1.ES in (1) and CLOUD='WORLD' and MODIFICATIONTIME > (sysdate - interval '13' hour)
+        )
+        GROUP BY JOBSTATUS, JOBSTATUS, OBJSTORE_ID, ES order by OBJSTORE_ID
+        """
+        cur = connection.cursor()
+        cur.execute(sqlRequest)
+        rawsummary = cur.fetchall()
+
+        osdict = {}
+        for raw in rawsummary:
+            if not raw[3] is None:
+                osName = objectStoresNames[raw[3]]
+            else:
+                osName = "Not defined"
+            if not osName in osdict:
+                osdict[osName] = {}
+            osdict[osName][raw[1]] = raw[2]
+
+        summary = []
+
+        for key, value in osdict.iteritems():
+            entry = {}
+            entry['name'] = key
+            totstates = OrderedDict()
+            for state in sitestatelist+["closed"]:
+                totstates[state] = 0
+            for jobstate, count in value.iteritems():
+                totstates[jobstate] = count
+            entry['summary'] = totstates
+            summary.append(entry)
+
+        data = {
+                'summary': summary,
+                }
+        endSelfMonitor(request)
+        response = render_to_response('dashObjectStore.html', data, content_type='text/html')
+        #setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 20)
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+
     else:
 
         fullsummary = dashSummary(request, hours=hours, view=view, cloudview=cloudview)
@@ -5970,6 +6043,9 @@ def dashAnalysis(request):
 
 def dashProduction(request):
     return dashboard(request, view='production')
+
+def dashObjectStore(request):
+    return dashboard(request, view='objectstore')
 
 
 def dashTasks(request, hours, view='production'):
