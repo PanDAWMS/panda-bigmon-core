@@ -131,6 +131,11 @@ Tasks for tag </td><td><font size=-1><input id="tag" name="tag" size="25" maxlen
 
 <tr><td><form action="{% url 'taskList' %}" method='post'>
 {% csrf_token %}
+Tasks for hashtag </td><td><font size=-1><input id="hashtag" name="hashtag" size="25" maxlength="400" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 /><input type='hidden' name="days" readonly="readonly" value="30" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+
+<tr><td><form action="{% url 'taskList' %}" method='post'>
+{% csrf_token %}
 Tasks for stream </td><td><font size=-1><input id="stream" name="stream" size="25" maxlength="400" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 /><input type='hidden' name="days" readonly="readonly" value="30" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
 
 
