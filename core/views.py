@@ -1504,7 +1504,7 @@ def taskSummaryDict(request, tasks, fieldlist=None):
                         pass
             if f in task and task[f]:
                 val = task[f]
-                if val == 'anal': val = 'analy'
+                # if val == 'anal': val = 'analy'
                 if not f in sumd: sumd[f] = {}
                 if not val in sumd[f]: sumd[f][val] = 0
                 sumd[f][val] += 1
