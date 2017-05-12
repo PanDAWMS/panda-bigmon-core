@@ -737,6 +737,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         elif request.session['requestParams'][param] == 'eventservice' or \
                                         request.session['requestParams'][param] == '1':
                             query['eventservice'] = 1
+                            try:
+                                extraQueryString += " not specialhandling like \'%%sc:%%\' "
+                            except NameError:
+                                extraQueryString = " not specialhandling like \'%%sc:%%\' "
+
                         elif request.session['requestParams'][param] == 'not2':
                             try:
                                 extraQueryString += ' AND (eventservice != 2) '
