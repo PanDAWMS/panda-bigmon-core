@@ -2989,7 +2989,7 @@ SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTER
 
 
 ###JSON for Datatables globalshares###
-def globalsharesNewV1JSON(request):
+def detailedInformationJSON(request):
     fullListGS = []
     sqlRequest = '''
 SELECT gshare, corecount, jobstatus, count(*), sum(HS06)  FROM 
@@ -3051,7 +3051,7 @@ def decimal_default(obj):
     elif (obj == 0): return 0
     elif (obj == 'None'): return -1
 
-def globalsharesNewV2JSON(request):
+def sharesDistributionJSON(request):
     fullListGS = []
     sqlRequest = '''
 SELECT gshare,COMPUTINGSITE, corecount, jobstatus, COUNT(*), SUM(HS06)
@@ -3103,7 +3103,8 @@ order by gshare,COMPUTINGSITE, corecount, jobstatus
         rowDict = {"gshare": gs[0],"computingsite": gs[1], "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4], "hs06":gs[5]}
         fullListGS.append(rowDict)
     return HttpResponse(json.dumps(fullListGS), content_type='text/html')
-def globalsharesNewV3JSON(request):
+
+def siteWorkQueuesJSON(request):
     fullListGS = []
     sqlRequest = '''
 SELECT COMPUTINGSITE,gshare, corecount, jobstatus,COUNT (*)

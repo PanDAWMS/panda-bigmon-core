@@ -87,7 +87,7 @@ urlpatterns = [
     url(r'^killtasks/$', coremon_views.killtasks, name='killtasks'),
     url(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
 
-    url(r'^globalsharesnew/$', coremon_views.globalsharesnew, name='globalsharesnew'),
+    #url(r'^globalsharesnew/$', coremon_views.globalsharesnew, name='globalsharesnew'),
                        #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
     ### data product catalog prototyping                                                                                                                                                         
     url(r'^dp/$', dpviews.doRequest, name='doRequest'),
@@ -108,9 +108,9 @@ urlpatterns = [
     #### JSON for Datatables
     url (r'^datatable/data/jeditaskid',coremon_views.esatlasPandaLoggerJson, name='dataTableJediTaskId'),
     url(r'^datatable/data/errorSummaryList', coremon_views.summaryErrorsListJSON, name='summaryErrorsListJSON'),
-    url(r'^datatable/data/globalsharesNewV1JSON', coremon_views.globalsharesNewV1JSON, name='globalsharesNewV1JSON'),
-    url(r'^datatable/data/globalsharesNewV2JSON', coremon_views.globalsharesNewV2JSON, name='globalsharesNewV2JSON'),
-    url(r'^datatable/data/globalsharesNewV3JSON', coremon_views.globalsharesNewV3JSON, name='globalsharesNewV3JSON'),
+    url(r'^datatable/data/detailedInformationJSON', coremon_views.detailedInformationJSON, name='detailedInformationJSON'),
+    url(r'^datatable/data/sharesDistributionJSON', coremon_views.sharesDistributionJSON, name='sharesDistributionJSON'),
+    url(r'^datatable/data/siteWorkQueuesJSON', coremon_views.siteWorkQueuesJSON, name='siteWorkQueuesJSON'),
     ###self monitor
     url(r'^admin/', include('core.admin.urls', namespace='admin')),
 
