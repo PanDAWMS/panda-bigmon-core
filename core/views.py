@@ -35,7 +35,7 @@ from django.db import connections
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
-    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, JobsWorldViewTaskType, Getfailedjobshspecarch, Getfailedjobshspec, JobsWorldView
+    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, JobsWorldViewTaskType, CombinedWaitActDefArch4
 from schedresource.models import Schedconfig
 from core.common.models import Filestable4
 from core.common.models import Datasets
@@ -5829,9 +5829,13 @@ def dashboard(request, view='production'):
         cloudview = 'N/A'
     if view == 'production' and (cloudview == 'world' or cloudview == 'cloud'): #cloud view is the old way of jobs distributing;
         # just to avoid redirecting
-        query = {}
-        values = ['nucleus', 'computingsite', 'jobstatus', 'countjobsinstate']
+        if 'modificationtime__range' in query:
+            query = {'modificationtime__range': query['modificationtime__range']}
+        else:
+            query = {}
+        values = ['nucleus', 'computingsite', 'jobstatus']
         worldJobsSummary = []
+        estailtojobslinks = ''
 
         if view == 'production':
             query['tasktype'] = 'prod'
@@ -5840,11 +5844,18 @@ def dashboard(request, view='production'):
 
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
             query['es'] = 1
+            estailtojobslinks = '&eventservice=eventservice'
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
             query['es'] = 0
 
 
-        worldJobsSummary.extend(JobsWorldViewTaskType.objects.filter(**query).values(*values))
+        # This is done for compartibility with /jobs/ results
+        excludedTimeQuery = copy.deepcopy(query)
+        jobsarch4statuses = ['finished', 'failed', 'cancelled', 'closed']
+        if ('modificationtime__range' in excludedTimeQuery and not 'date_to' in request.session['requestParams']):
+            del excludedTimeQuery['modificationtime__range']
+        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**excludedTimeQuery).values(*values).exclude(isarchive=1).annotate(countjobsinstate=Count('jobstatus')))
+        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values).exclude(isarchive=0).annotate(countjobsinstate=Count('jobstatus')))
         nucleus = {}
         statelist1 = statelist
         #    del statelist1[statelist1.index('jclosed')]
@@ -5854,7 +5865,7 @@ def dashboard(request, view='production'):
             for jobs in worldJobsSummary:
                 if jobs['nucleus'] in nucleus:
                     if jobs['computingsite'] in nucleus[jobs['nucleus']]:
-                        nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
+                        nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] += jobs['countjobsinstate']
                     else:
                         nucleus[jobs['nucleus']][jobs['computingsite']] = {}
                         for state in statelist1:
@@ -5892,8 +5903,10 @@ def dashboard(request, view='production'):
                 'nucleussummary': nucleusSummary,
                 'statelist': statelist1,
                 'xurl': xurl,
+                'estailtojobslinks':estailtojobslinks,
                 'nosorturl': nosorturl,
                 'user': None,
+                'hours': hours,
                 'template': 'worldjobs.html',
                 'built': datetime.now().strftime("%m-%d %H:%M:%S"),
             }

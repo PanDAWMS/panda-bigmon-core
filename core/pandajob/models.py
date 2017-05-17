@@ -111,7 +111,6 @@ class RemainedEventsPerCloud3dayswind(models.Model):
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."REMEVPCL3DAYSWIND"'
 
-
 class JobsWorldView(models.Model):
     nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
     computingsite = models.CharField(max_length=384, db_column='COMPUTINGSITE', blank=True) # Field name made lowercase.
@@ -120,6 +119,16 @@ class JobsWorldView(models.Model):
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEW"'
 
+class CombinedWaitActDefArch4(models.Model):
+    nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
+    computingsite = models.CharField(max_length=384, db_column='COMPUTINGSITE', blank=True) # Field name made lowercase.
+    jobstatus = models.CharField(max_length=45, db_column='JOBSTATUS') # Field name made lowercase.
+    tasktype = models.CharField(max_length=64, db_column='TASKTYPE')
+    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME') # Field name made lowercase.
+    es = models.IntegerField(db_column='ES')
+    isarchive = models.IntegerField(db_column='ISARCHIVE')
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."COMBINED_WAIT_ACT_DEF_ARCH4"'
 
 class JobsWorldViewTaskType(models.Model):
     nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)

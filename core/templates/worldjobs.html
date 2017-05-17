@@ -34,7 +34,7 @@
         <tr>
             <td><a href="#nucleus_{{ nucleus }}">{{ nucleus }}</a></td>
             {%  for jobstatus in statelist %}
-                    <td  {% if nuclval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}  > <a href="{% url 'jobList' %}?jobstatus={{ jobstatus }}&nucleus={{nucleus}}&cloud=WORLD&noarchjobs=1&days=5&display_limit=100"> {{ nuclval|get_item:jobstatus }} </a> </td>
+                    <td  {% if nuclval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}  > <a href="{% url 'jobList' %}?jobstatus={{ jobstatus }}{{ estailtojobslinks }}&nucleus={{nucleus}}&cloud=WORLD&noarchjobs=1&hours={{hours}}&display_limit=100"> {{ nuclval|get_item:jobstatus }} </a> </td>
             {% endfor %}
         </tr>
     {% endif %}
@@ -72,7 +72,7 @@
         <tr>
             <td>{{ computingsite }}</td>
             {%  for jobstatus in statelist %}
-                <td  {% if computingsiteval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}  > <a href="{% url 'jobList' %}?jobstatus={{ jobstatus }}&nucleus={{nucleus}}&computingsite={{ computingsite }}&cloud=WORLD&noarchjobs=1&days=5&display_limit=100"> {{ computingsiteval|get_item:jobstatus }} </a> </td>
+                <td  {% if computingsiteval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}  > <a href="{% url 'jobList' %}?jobstatus={{ jobstatus }}{{ estailtojobslinks }}&nucleus={{nucleus}}&computingsite={{ computingsite }}&cloud=WORLD&noarchjobs=1&hours={{hours}}&display_limit=100"> {{ computingsiteval|get_item:jobstatus }} </a> </td>
             {% endfor %}
         </tr>
     {% endfor %}
