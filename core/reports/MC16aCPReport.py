@@ -448,7 +448,7 @@ class MC16aCPReport:
         requestList = '(' + ','.join(map(str, requestList)) + ')'
 
         data = self.getCacheEntry(request, "prepareReportMC16")
-        #data = None
+        data = None
         if data is not None:
             data = json.loads(data)
             data['request'] = request
@@ -468,6 +468,7 @@ class MC16aCPReport:
         siteAssignRun = self.topSitesAssignedRunning(10, 'and t1.PR_ID IN %s' % requestList)
 
         data = {"requestList":requestList,
+                'viewParams': request.session['viewParams'],
                 "JediEventsR":JediEventsR,
                 "totalEvents": totalEvents,
                 "totalTasks":totalTasks,

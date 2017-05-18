@@ -5965,7 +5965,8 @@ def dashboard(request, view='production'):
 
         data = {
                 'summary': summary,
-                }
+                'viewParams': request.session['viewParams'],
+        }
         endSelfMonitor(request)
         response = render_to_response('dashObjectStore.html', data, content_type='text/html')
         #setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 20)
