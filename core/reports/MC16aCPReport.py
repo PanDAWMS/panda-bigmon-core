@@ -76,40 +76,41 @@ class MC16aCPReport:
             orderedjobsevsummary[step] = {state:0}
 
         for row in rawsummary:
-            orderedjobssummary[row[0]]['pending'] = row[18]
-            orderedjobsevsummary[row[0]]['pending'] = row[3]
-            orderedjobssummary[row[0]]['defined'] = row[19]
-            orderedjobsevsummary[row[0]]['defined'] = row[4]
-            orderedjobssummary[row[0]]['assigned'] = row[20]
-            orderedjobsevsummary[row[0]]['assigned'] = row[5]
-            orderedjobssummary[row[0]]['waiting'] = row[21]
-            orderedjobsevsummary[row[0]]['waiting'] = row[6]
-            orderedjobssummary[row[0]]['activated'] = row[22]
-            orderedjobsevsummary[row[0]]['activated'] = row[7]
-            orderedjobssummary[row[0]]['sent'] = row[23]
-            orderedjobsevsummary[row[0]]['sent'] = row[8]
-            orderedjobssummary[row[0]]['starting'] = row[24]
-            orderedjobsevsummary[row[0]]['starting'] = row[9]
-            orderedjobssummary[row[0]]['running'] = row[25]
-            orderedjobsevsummary[row[0]]['running'] = row[10]
-            orderedjobssummary[row[0]]['holding'] = row[26]
-            orderedjobsevsummary[row[0]]['holding'] = row[11]
-            orderedjobssummary[row[0]]['transferring'] = row[27]
-            orderedjobsevsummary[row[0]]['transferring'] = row[12]
-            orderedjobssummary[row[0]]['merging'] = row[28]
-            orderedjobsevsummary[row[0]]['merging'] = row[13]
-            orderedjobssummary[row[0]]['finished'] = row[29]
-            orderedjobsevsummary[row[0]]['finished'] = row[1]
-            orderedjobssummary[row[0]]['failed'] = row[30]
-            orderedjobsevsummary[row[0]]['failed'] = row[14]
-            orderedjobssummary[row[0]]['cancelled'] = row[31]
-            orderedjobsevsummary[row[0]]['cancelled'] = row[15]
-            orderedjobssummary[row[0]]['throttled'] = row[32]
-            orderedjobsevsummary[row[0]]['throttled'] = row[16]
-            orderedjobssummary[row[0]]['closed'] = row[33]
-            orderedjobsevsummary[row[0]]['closed'] = row[17]
-            if row[0] == 'Simul':
-                inputevents = row[34]
+            if row[0] not in  ['Deriv Merge', 'Deriv']:
+                orderedjobssummary[row[0]]['pending'] = row[18]
+                orderedjobsevsummary[row[0]]['pending'] = row[3]
+                orderedjobssummary[row[0]]['defined'] = row[19]
+                orderedjobsevsummary[row[0]]['defined'] = row[4]
+                orderedjobssummary[row[0]]['assigned'] = row[20]
+                orderedjobsevsummary[row[0]]['assigned'] = row[5]
+                orderedjobssummary[row[0]]['waiting'] = row[21]
+                orderedjobsevsummary[row[0]]['waiting'] = row[6]
+                orderedjobssummary[row[0]]['activated'] = row[22]
+                orderedjobsevsummary[row[0]]['activated'] = row[7]
+                orderedjobssummary[row[0]]['sent'] = row[23]
+                orderedjobsevsummary[row[0]]['sent'] = row[8]
+                orderedjobssummary[row[0]]['starting'] = row[24]
+                orderedjobsevsummary[row[0]]['starting'] = row[9]
+                orderedjobssummary[row[0]]['running'] = row[25]
+                orderedjobsevsummary[row[0]]['running'] = row[10]
+                orderedjobssummary[row[0]]['holding'] = row[26]
+                orderedjobsevsummary[row[0]]['holding'] = row[11]
+                orderedjobssummary[row[0]]['transferring'] = row[27]
+                orderedjobsevsummary[row[0]]['transferring'] = row[12]
+                orderedjobssummary[row[0]]['merging'] = row[28]
+                orderedjobsevsummary[row[0]]['merging'] = row[13]
+                orderedjobssummary[row[0]]['finished'] = row[29]
+                orderedjobsevsummary[row[0]]['finished'] = row[1]
+                orderedjobssummary[row[0]]['failed'] = row[30]
+                orderedjobsevsummary[row[0]]['failed'] = row[14]
+                orderedjobssummary[row[0]]['cancelled'] = row[31]
+                orderedjobsevsummary[row[0]]['cancelled'] = row[15]
+                orderedjobssummary[row[0]]['throttled'] = row[32]
+                orderedjobsevsummary[row[0]]['throttled'] = row[16]
+                orderedjobssummary[row[0]]['closed'] = row[33]
+                orderedjobsevsummary[row[0]]['closed'] = row[17]
+                if row[0] == 'Simul':
+                    inputevents = row[34]
         orderedjobssummary['title'] = 'Jobs processing summary'
         orderedjobsevsummary['title'] = 'Events processing summary'
 
@@ -269,10 +270,11 @@ class MC16aCPReport:
                 taskstate[state] = 0
             orderedsummary[step] = taskstate
         for summaryRow in campaignsummary:
-            if summaryRow[1] == 'done' or summaryRow[1] == 'finished':
-                orderedsummary[summaryRow[2]]['done+finished'] += summaryRow[0]
-            else:
-                orderedsummary[summaryRow[2]][summaryRow[1]] += summaryRow[0]
+            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+                if summaryRow[1] == 'done' or summaryRow[1] == 'finished':
+                    orderedsummary[summaryRow[2]]['done+finished'] += summaryRow[0]
+                else:
+                    orderedsummary[summaryRow[2]][summaryRow[1]] += summaryRow[0]
         return orderedsummary
 
 
@@ -523,17 +525,19 @@ class MC16aCPReport:
 
         for summaryRow in campaignsummary:
             if summaryRow[1] in ('failed', 'finished', 'aborted', 'done', 'registered', 'exhausted', 'broken'):
-                orderedsummary[summaryRow[2]][summaryRow[1]+'*'] += summaryRow[0]
+                if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+                    orderedsummary[summaryRow[2]][summaryRow[1]+'*'] += summaryRow[0]
 
 
         fullSummary = {}
         for summaryRow in campaignsummary:
             if summaryRow[1] in ('failed', 'finished', 'aborted', 'done', 'registered', 'exhausted', 'broken'):
-                if summaryRow[1]+'*' not in fullSummary:
-                    fullSummary[summaryRow[1]+'*'] = {}
-                if summaryRow[2] not in fullSummary[summaryRow[1]+'*']:
-                    fullSummary[summaryRow[1]+'*'][summaryRow[2]] = 0
-                fullSummary[summaryRow[1]+'*'][summaryRow[2]] += summaryRow[0]
+                if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+                    if summaryRow[1]+'*' not in fullSummary:
+                        fullSummary[summaryRow[1]+'*'] = {}
+                    if summaryRow[2] not in fullSummary[summaryRow[1]+'*']:
+                        fullSummary[summaryRow[1]+'*'][summaryRow[2]] = 0
+                    fullSummary[summaryRow[1]+'*'][summaryRow[2]] += summaryRow[0]
 
 
 
@@ -548,16 +552,18 @@ class MC16aCPReport:
 
 
         for summaryRow in campaignsummary:
-            orderedsummary[summaryRow[2]][summaryRow[1]+'**'] += summaryRow[0]
+            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+                orderedsummary[summaryRow[2]][summaryRow[1]+'**'] += summaryRow[0]
 
 
 
         for summaryRow in campaignsummary:
-            if summaryRow[1]+'**' not in fullSummary:
-                fullSummary[summaryRow[1]+'**'] = {}
-            if summaryRow[2] not in fullSummary[summaryRow[1]+'**']:
-                fullSummary[summaryRow[1]+'**'][summaryRow[2]] = 0
-            fullSummary[summaryRow[1]+'**'][summaryRow[2]] += summaryRow[0]
+            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+                if summaryRow[1]+'**' not in fullSummary:
+                    fullSummary[summaryRow[1]+'**'] = {}
+                if summaryRow[2] not in fullSummary[summaryRow[1]+'**']:
+                    fullSummary[summaryRow[1]+'**'][summaryRow[2]] = 0
+                fullSummary[summaryRow[1]+'**'][summaryRow[2]] += summaryRow[0]
 
 
 
@@ -572,16 +578,18 @@ class MC16aCPReport:
 
 
         for summaryRow in campaignsummary:
-            orderedsummary[summaryRow[2]][summaryRow[1]+'***'] += summaryRow[0]
+            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+                orderedsummary[summaryRow[2]][summaryRow[1]+'***'] += summaryRow[0]
 
 
 
         for summaryRow in campaignsummary:
-            if summaryRow[1]+'***' not in fullSummary:
-                fullSummary[summaryRow[1]+'***'] = {}
-            if summaryRow[2] not in fullSummary[summaryRow[1]+'***']:
-                fullSummary[summaryRow[1]+'***'][summaryRow[2]] = 0
-            fullSummary[summaryRow[1]+'***'][summaryRow[2]] += summaryRow[0]
+            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+                if summaryRow[1]+'***' not in fullSummary:
+                    fullSummary[summaryRow[1]+'***'] = {}
+                if summaryRow[2] not in fullSummary[summaryRow[1]+'***']:
+                    fullSummary[summaryRow[1]+'***'][summaryRow[2]] = 0
+                fullSummary[summaryRow[1]+'***'][summaryRow[2]] += summaryRow[0]
 
         return orderedsummary
 
