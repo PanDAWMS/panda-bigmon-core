@@ -5929,43 +5929,58 @@ def dashboard(request, view='production'):
         if len(objectStoresNames) == 0:
             getObjectStoresNames()
 
-        sqlRequest = """SELECT ES, JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, OBJSTORE_ID FROM (
+        sqlRequest = """
+        SELECT ES, JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, OBJSTORE_ID, COMPUTINGSITE FROM (
         SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, OBJSTORE_ID 
         FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID
         WHERE t1.ES in (1) and CLOUD='WORLD' and MODIFICATIONTIME > (sysdate - interval '13' hour)
         )
-        GROUP BY JOBSTATUS, JOBSTATUS, OBJSTORE_ID, ES order by OBJSTORE_ID
+        GROUP BY JOBSTATUS, JOBSTATUS, OBJSTORE_ID, ES, COMPUTINGSITE order by OBJSTORE_ID
         """
         cur = connection.cursor()
         cur.execute(sqlRequest)
         rawsummary = cur.fetchall()
 
-        osdict = {}
-        for raw in rawsummary:
-            if not raw[3] is None:
-                osName = objectStoresNames[raw[3]]
-            else:
-                osName = "Not defined"
-            if not osName in osdict:
-                osdict[osName] = {}
-            osdict[osName][raw[1]] = raw[2]
+        mObjectStores = {}
+        if len(rawsummary) > 0:
+            for row in rawsummary:
 
-        summary = []
+                if not row[3] is None:
+                    osName = objectStoresNames[row[3]]
+                else:
+                    osName = "Not defined"
+                compsite = row[4]
+                status = row[1]
+                count = row[2]
 
-        for key, value in osdict.iteritems():
-            entry = {}
-            entry['name'] = key
-            totstates = OrderedDict()
-            for state in sitestatelist+["closed"]:
-                totstates[state] = 0
-            for jobstate, count in value.iteritems():
-                totstates[jobstate] = count
-            entry['summary'] = totstates
-            summary.append(entry)
+                if osName in mObjectStores:
+                    if not compsite in mObjectStores[osName]:
+                        mObjectStores[osName][compsite] = {}
+                        for state in sitestatelist + ["closed"]:
+                            mObjectStores[osName][compsite][state] = 0
+                    mObjectStores[osName][compsite][status] = count
+                else:
+                    mObjectStores[osName] = {}
+                    mObjectStores[osName][compsite] = {}
+                    for state in sitestatelist + ["closed"]:
+                        mObjectStores[osName][compsite][state] = 0
+                    mObjectStores[osName][compsite][status] = count
+
+        mObjectStoresSummary = {}
+        for osName in mObjectStores:
+            mObjectStoresSummary[osName] ={}
+            for site in mObjectStores[osName]:
+                for state in mObjectStores[osName][site]:
+                    if state in mObjectStoresSummary[osName]:
+                        mObjectStoresSummary[osName][state] += mObjectStores[osName][site][state]
+                    else:
+                        mObjectStoresSummary[osName][state] = mObjectStores[osName][site][state]
 
         data = {
-                'summary': summary,
-                'viewParams': request.session['viewParams'],
+            'mObjectStoresSummary': mObjectStoresSummary,
+            'mObjectStores': mObjectStores,
+            'viewParams': request.session['viewParams'],
+            'statelist': sitestatelist + ["closed"],
         }
         endSelfMonitor(request)
         response = render_to_response('dashObjectStore.html', data, content_type='text/html')
