@@ -35,14 +35,19 @@
             <th>HITS Merged</th>
             <th>Reconsructed</th>
             <th>AOD Merged</th>
+            <th>Derived</th>
+            <th>Derivation Merged</th>
+
         </tr>
 
          <tr>
                 <td>{{ JediEventsR.input|intcomma }}</td>
                 <td>{{ JediEventsR.simulated|intcomma }} ({{ JediEventsR.simulatedprogr }}%)</td>
-             <td>{{ JediEventsR.mergeHits|intcomma }} (<sup><a href="#hitsmergedescr">&#8710;</a></sup>)</td>
+                <td>{{ JediEventsR.mergeHits|intcomma }} (<sup><a href="#hitsmergedescr">&#8710;</a></sup>)</td>
                 <td>{{ JediEventsR.reconstructed |intcomma}} ({{ JediEventsR.reconstructedprog }}%)</td>
                 <td>{{ JediEventsR.merge|intcomma }} ({{ JediEventsR.mergeprog }}%)</td>
+                <td>{{ JediEventsR.deriv|intcomma }} ({{ JediEventsR.derivprog }}%)</td>
+                <td>{{ JediEventsR.derivmerge|intcomma }} ({{ JediEventsR.derivmergeprog }}%)</td>
          </tr>
 
     </table>

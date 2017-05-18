@@ -43,8 +43,8 @@ class MC16aCPReport:
 #    steps = ['evgen', 'simul', 'mergeHits', 'recon', 'merge']
 #    stepsLabels = {'evgen':'Event Generation', 'simul':'Simulation', 'recon':'Reconstruction', 'merge':'Merge', 'mergeHits':'Hits Merge'}
 
-    steps = ['Simul', 'Merge', 'Reco', 'Rec Merge']
-    stepsLabels = {'Simul':'Simulation', 'Reco':'Reconstruction', 'Rec Merge':'AOD Merge', 'Merge':'HITS Merge'}
+    steps = ['Simul', 'Merge', 'Reco', 'Rec Merge', 'Deriv', 'Deriv Merge']
+    stepsLabels = {'Simul':'Simulation', 'Reco':'Reconstruction', 'Rec Merge':'AOD Merge', 'Merge':'HITS Merge', 'Deriv':'Derivation', 'Deriv Merge':'Derivation Merge'}
 
 
     def jobsQuery(self, condition):
@@ -76,7 +76,7 @@ class MC16aCPReport:
             orderedjobsevsummary[step] = {state:0}
 
         for row in rawsummary:
-            if row[0] not in  ['Deriv Merge', 'Deriv']:
+            #if row[0] not in  ['Deriv Merge', 'Deriv']:
                 orderedjobssummary[row[0]]['pending'] = row[18]
                 orderedjobsevsummary[row[0]]['pending'] = row[3]
                 orderedjobssummary[row[0]]['defined'] = row[19]
@@ -142,6 +142,11 @@ class MC16aCPReport:
         JediEventsR['mergeHitsprog'] = round(JediEventsR['mergeHits']/float(inputevents)*100, 2)
         JediEventsR['merge'] = orderedjobsevsummary['Rec Merge']['finished']
         JediEventsR['mergeprog'] = round(JediEventsR['merge']/float(inputevents)*100, 2)
+        JediEventsR['deriv'] = orderedjobsevsummary['Deriv']['finished']
+        JediEventsR['derivprog'] = round(orderedjobsevsummary['Deriv']['finished']/float(inputevents)*100, 2)
+        JediEventsR['derivmerge'] = orderedjobsevsummary['Deriv Merge']['finished']
+        JediEventsR['derivmergeprog'] = round(orderedjobsevsummary['Deriv Merge']['finished']/float(inputevents)*100, 2)
+
         JediEventsR['input'] = inputevents
 
         return (orderedjobssummary, orderedjobsevsummary, hepspecSummary, JediEventsR)
@@ -270,7 +275,7 @@ class MC16aCPReport:
                 taskstate[state] = 0
             orderedsummary[step] = taskstate
         for summaryRow in campaignsummary:
-            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+#            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
                 if summaryRow[1] == 'done' or summaryRow[1] == 'finished':
                     orderedsummary[summaryRow[2]]['done+finished'] += summaryRow[0]
                 else:
@@ -525,14 +530,14 @@ class MC16aCPReport:
 
         for summaryRow in campaignsummary:
             if summaryRow[1] in ('failed', 'finished', 'aborted', 'done', 'registered', 'exhausted', 'broken'):
-                if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+#                if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
                     orderedsummary[summaryRow[2]][summaryRow[1]+'*'] += summaryRow[0]
 
 
         fullSummary = {}
         for summaryRow in campaignsummary:
             if summaryRow[1] in ('failed', 'finished', 'aborted', 'done', 'registered', 'exhausted', 'broken'):
-                if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+#                if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
                     if summaryRow[1]+'*' not in fullSummary:
                         fullSummary[summaryRow[1]+'*'] = {}
                     if summaryRow[2] not in fullSummary[summaryRow[1]+'*']:
@@ -552,13 +557,13 @@ class MC16aCPReport:
 
 
         for summaryRow in campaignsummary:
-            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+#            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
                 orderedsummary[summaryRow[2]][summaryRow[1]+'**'] += summaryRow[0]
 
 
 
         for summaryRow in campaignsummary:
-            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+#            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
                 if summaryRow[1]+'**' not in fullSummary:
                     fullSummary[summaryRow[1]+'**'] = {}
                 if summaryRow[2] not in fullSummary[summaryRow[1]+'**']:
@@ -578,13 +583,13 @@ class MC16aCPReport:
 
 
         for summaryRow in campaignsummary:
-            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+#            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
                 orderedsummary[summaryRow[2]][summaryRow[1]+'***'] += summaryRow[0]
 
 
 
         for summaryRow in campaignsummary:
-            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
+#            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
                 if summaryRow[1]+'***' not in fullSummary:
                     fullSummary[summaryRow[1]+'***'] = {}
                 if summaryRow[2] not in fullSummary[summaryRow[1]+'***']:
