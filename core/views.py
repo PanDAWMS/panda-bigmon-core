@@ -5726,6 +5726,7 @@ def dashboard(request, view='production'):
     if not valid: return response
 
     data = getCacheEntry(request, "dashboard")
+    #data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -5981,6 +5982,8 @@ def dashboard(request, view='production'):
             'mObjectStores': mObjectStores,
             'viewParams': request.session['viewParams'],
             'statelist': sitestatelist + ["closed"],
+            'template': 'dashObjectStore.html',
+            'built': datetime.now().strftime("%m-%d %H:%M:%S"),
         }
         endSelfMonitor(request)
         response = render_to_response('dashObjectStore.html', data, content_type='text/html')
