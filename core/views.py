@@ -5945,7 +5945,7 @@ def dashboard(request, view='production'):
         if len(rawsummary) > 0:
             for row in rawsummary:
 
-                if not row[3] is None:
+                if not row[3] is None and row[3] in objectStoresNames:
                     osName = objectStoresNames[row[3]]
                 else:
                     osName = "Not defined"
