@@ -8027,7 +8027,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
         newquery['processingtype'] = 'pmerge'
         isReturnDroppedPMerge=True
 
-    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec'
+    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime'
     # newquery['jobstatus'] = 'finished'
 
     # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
@@ -8085,7 +8085,7 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
                     job['hs06sec'] = 0
             if job['nevents'] and job['nevents'] > 0:
                 cpuTimeCurrent.append(job['hs06sec'] / job['nevents'])
-                job['walltimeperevent'] = job['duration'] * job['actualcorecount'] / job['nevents']
+                job['walltimeperevent'] = round(job['duration'] * job['actualcorecount'] / (job['nevents']*1.0), 2)
             hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
             hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
             hs06sSum['total'] += job['hs06sec']
@@ -8107,7 +8107,10 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
     plotsDict['hs06s'] = []
     plotsDict['hs06sf'] = []
     plotsDict['walltimeperevent'] = []
-
+    plotsDict['cputime'] = []
+    plotsDict['cputimeperevent'] = []
+    plotsDict['cputimef'] = []
+    plotsDict['cputimepereventf'] = []
     for job in jobs:
         if job['actualcorecount'] is None:
             job['actualcorecount'] = 1
@@ -8132,6 +8135,15 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
             if job['jobstatus'] == 'failed':
                 plotsDict['walltimef'].append({'value': job['duration'], 'site': str(job['computingsite'])})
                 plotsDict['hs06sf'].append({'value': job['hs06sec'], 'site': str(job['computingsite'])})
+        if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
+            if job['jobstatus'] == 'finished':
+                plotsDict['cputime'].append({'value': job['cpuconsumptiontime'], 'site': str(job['computingsite'])})
+                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 1:
+                    plotsDict['cputimeperevent'].append({'value': round(job['cpuconsumptiontime']/(job['nevents']*1.0),2), 'site': str(job['computingsite'])})
+            if job['jobstatus'] == 'failed':
+                plotsDict['cputimef'].append({'value': job['cpuconsumptiontime'], 'site': str(job['computingsite'])})
+                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 1:
+                    plotsDict['cputimepereventf'].append({'value': round(job['cpuconsumptiontime']/(job['nevents']*1.0),2), 'site': str(job['computingsite'])})
 
     jobstates = []
     global statelist
