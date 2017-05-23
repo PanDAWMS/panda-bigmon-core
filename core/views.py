@@ -8138,11 +8138,11 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
         if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
             if job['jobstatus'] == 'finished':
                 plotsDict['cputime'].append({'value': job['cpuconsumptiontime'], 'site': str(job['computingsite'])})
-                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 1:
+                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
                     plotsDict['cputimeperevent'].append({'value': round(job['cpuconsumptiontime']/(job['nevents']*1.0),2), 'site': str(job['computingsite'])})
             if job['jobstatus'] == 'failed':
                 plotsDict['cputimef'].append({'value': job['cpuconsumptiontime'], 'site': str(job['computingsite'])})
-                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 1:
+                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
                     plotsDict['cputimepereventf'].append({'value': round(job['cpuconsumptiontime']/(job['nevents']*1.0),2), 'site': str(job['computingsite'])})
 
     jobstates = []
