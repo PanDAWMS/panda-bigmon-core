@@ -5837,6 +5837,12 @@ def dashboard(request, view='production'):
         worldJobsSummary = []
         estailtojobslinks = ''
 
+        if 'days' in request.session['requestParams']:
+            hours = int(request.session['requestParams']['days'])*24
+        if 'hours' in request.session['requestParams']:
+            hours = int(request.session['requestParams']['hours'])
+
+
         if view == 'production':
             query['tasktype'] = 'prod'
         else:
