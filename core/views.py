@@ -1015,9 +1015,9 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             if 'jobsubstatus' in job and job['jobstatus'] == 'closed' and job['jobsubstatus'] == 'toreassign':
                 job['jobstatus'] += ':' + job['jobsubstatus']
         if 'eventservice' in job:
-            if job['eventservice'] == 1:
+            if isEventService(job) and job['eventservice'] == 1:
                 job['eventservice'] = 'eventservice'
-            elif job['eventservice'] == 2:
+            elif isEventService(job) and job['eventservice'] == 2:
                 job['eventservice'] = 'esmerge'
             else:
                 job['eventservice'] = 'ordinary'
@@ -2540,7 +2540,6 @@ def jobList(request, mode=None, param=None):
                     listJobs.append(Jobsarchived)
                     totalJobs = len(archJobs)
                     jobs.extend(archJobs)
-        print listJobs
         thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
         thread.start()
 
@@ -3159,7 +3158,7 @@ order by COMPUTINGSITE,gshare, corecount, jobstatus
 def isEventService(job):
     if 'specialhandling' in job and job['specialhandling'] and (
                 job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 or (
-            job['eventservice'] != 'ordinary' and job['eventservice'] > 0)):
+            job['eventservice'] != 'ordinary' and job['eventservice'] > 0)) and job['specialhandling'].find('sc:') == -1:
         return True
     else:
         return False
