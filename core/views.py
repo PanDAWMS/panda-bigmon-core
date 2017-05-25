@@ -10713,13 +10713,13 @@ def statpixel(request):
         ip = x_forwarded_for.split(',')[0]
     else:
         ip = request.META.get('REMOTE_ADDR')
-
-    url = request.META['HTTP_REFERER']
-    service = 0
-    userid = -1
-    if ('ADFS_LOGIN' in request.session):
-        userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
-    Visits.objects.create(url=url, service=service, remote=ip, time=str(timezone.now()), userid=userid)
+    if 'HTTP_REFERER' in request.META:
+        url = request.META['HTTP_REFERER']
+        service = 0
+        userid = -1
+        if ('ADFS_LOGIN' in request.session):
+            userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
+        Visits.objects.create(url=url, service=service, remote=ip, time=str(timezone.now()), userid=userid)
 
     #user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'],
     #                                  first_name=request.session['ADFS_FIRSTNAME'],
