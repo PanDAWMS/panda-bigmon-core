@@ -10684,7 +10684,6 @@ def initSelfMonitor(request):
 def endSelfMonitor(request):
     qduration = str(timezone.now())
     request.session['qduration'] = qduration
-
     try:
         duration = (datetime.strptime(request.session['qduration'], "%Y-%m-%d %H:%M:%S.%f") - datetime.strptime(
             request.session['qtime'], "%Y-%m-%d %H:%M:%S.%f")).seconds

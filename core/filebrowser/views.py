@@ -4,6 +4,7 @@
 """
 import logging
 import re
+import json
 from datetime import datetime
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, render
@@ -123,7 +124,11 @@ def index(request):
         'HOSTNAME': get_filebrowser_hostname() \
 #        , 'new_contents': new_contents
     }
-    return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
+    if 'json' not in request.GET:
+        return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
+    else:
+        return HttpResponse(json.dumps(data), content_type='text/html')
+
 
 
 def api_single_pandaid(request):
