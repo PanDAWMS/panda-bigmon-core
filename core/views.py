@@ -9688,7 +9688,7 @@ def fileInfo(request):
     if 'scope' in request.session['requestParams']:
         query['scope'] = request.session['requestParams']['scope']
 
-    if file or (query['pandaid'] is not None) or (query['jeditaskid'] is not None):
+    if file or ('pandaid' in query and query['pandaid'] is not None) or ('jeditaskid' in query and query['jeditaskid'] is not None):
         files = JediDatasetContents.objects.filter(**query).values()
         if len(files) == 0:
             del query['creationdate__range']
@@ -9755,7 +9755,8 @@ def fileInfo(request):
     if ((len(files) > 0) and ('jeditaskid' in files[0]) and ('startevent' in files[0]) and (
         files[0]['jeditaskid'] != None)):
         files = sorted(files, key=lambda k: (-k['jeditaskid'], k['startevent']))
-    frec['creationdate'] = frec['creationdate'].strftime(defaultDatetimeFormat) if not frec['creationdate'] is None else ''
+    if frec and 'creationdate' in frec and frec['creationdate'] is None:
+        frec['creationdate'] = frec['creationdate'].strftime(defaultDatetimeFormat)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
         data = {
