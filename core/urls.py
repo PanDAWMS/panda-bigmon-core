@@ -9,6 +9,8 @@ from django.conf import settings
 
 from core import views as coremon_views
 from core import dpviews as dpviews
+from core import MemoryMonitorPlots as memmon
+
 #import core.views as coremon_views
 import core.pandajob.views_support as core_coremon_support_views
 #import core.pandajob.views as core_coremon_views
@@ -118,9 +120,10 @@ urlpatterns = [
     url(r'^api/$', core_coremon_support_views.maxpandaid, name='supportRoot'),
 #    url(r'^api/reprocessing/$', include('core.api.reprocessing.urls')),
 
-
     ### robots.txt
     url('^robots\.txt$', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
+
+    url(r'^memoryplot/', memmon.getPlots, name='memoryplot'),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
