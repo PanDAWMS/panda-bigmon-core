@@ -7499,7 +7499,16 @@ def taskESprofileplot(request):
 
 
 def taskInfo(request, jeditaskid=0):
-    jeditaskid = int(jeditaskid)
+    try:
+        jeditaskid = int(jeditaskid)
+    except:
+        jeditaskid = re.findall("\d+", jeditaskid)
+        jdtstr =""
+        for jdt in jeditaskid:
+            jdtstr = jdtstr+str(jdt)
+        return redirect('/task/'+jdtstr)
+    if jeditaskid == 0:
+        return redirect('/tasks')
     valid, response = initRequest(request)
     furl = request.get_full_path()
     nomodeurl = removeParam(furl, 'mode')
