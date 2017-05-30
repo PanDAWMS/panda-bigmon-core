@@ -34,7 +34,7 @@ def collectData(pandaID):
             MEDIA_URL = data['MEDIA_URL']
             dirprefix = data['dirprefix']
             files = data['files']
-            files = [f for f in files if 'mem.full.' in f['name']]
+            files = [f for f in files if 'memory_monitor_output.txt' in f['name']]
         except:
             return -2
     else:
@@ -68,7 +68,7 @@ def collectData(pandaID):
 
 
         # Make plot for memory consumption
-        f1 = plt.figure(figsize=(20, 15))
+        f1 = plt.figure(figsize=(15, 10))
         ax1 = f1.add_subplot(111)
         ax1.plot(df['Time'], df['PSS'], label="PSS")
         ax1.legend(loc="upper right")
@@ -98,7 +98,7 @@ def collectData(pandaID):
 
 
         #Make plot for IO
-        f1 = plt.figure(figsize=(20, 15))
+        f1 = plt.figure(figsize=(15, 10))
         ax1 = f1.add_subplot(111)
         ax1.plot(df['Time'], df['rchar'], label="rchar")
         ax1.legend(loc="upper right")
@@ -127,7 +127,6 @@ def collectData(pandaID):
         plot2img.seek(0)
 
 
-        """
         #Make plot for IO rate
         lasttime = 0
         lastrchar = 0
@@ -158,7 +157,7 @@ def collectData(pandaID):
         df['drbytes'] = drbytes
         df['dwbytes'] = dwbytes
 
-        f1 = plt.figure(figsize=(20, 15))
+        f1 = plt.figure(figsize=(15, 10))
         ax1 = f1.add_subplot(111)
         ax1.plot(df['Time'], drchar, label="rchar")
         ax1.legend(loc="upper right")
@@ -175,9 +174,9 @@ def collectData(pandaID):
         ax4.plot(df['Time'], dwbytes, label="wbytes")
         ax4.legend(loc="upper right")
 
-        plt.title("IO, job " + str(pandaID))
+        plt.title("IO rate, job " + str(pandaID))
         plt.xlabel("time (s)")
-        plt.ylabel("IO (GB)")
+        plt.ylabel("IO rate (MB/S)")
         plt.grid()
         plt.ylim(ymin=0)
         plt.xlim(xmin=0)
@@ -185,13 +184,12 @@ def collectData(pandaID):
         plot3img = StringIO.StringIO()
         plt.savefig(plot3img, format='png')
         plot3img.seek(0)
-        """
 
 
 
 
         #Here we combine few plots
-        images = map(Image.open, [plot1img, plot2img])
+        images = map(Image.open, [plot1img, plot2img, plot3img])
         widths, heights = zip(*(i.size for i in images))
         total_width = sum(widths)
         max_height = max(heights)
