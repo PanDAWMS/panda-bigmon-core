@@ -669,6 +669,13 @@ class BPUser(AbstractUser):
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."AUTH_USER"'
 
+class BPUserSettings(models.Model):
+    userid = models.IntegerField(db_column='USERID', null=False )
+    page = models.CharField(db_column='PAGE', max_length=100, null=False)
+    preferences = models.CharField(db_column='PREFERENCES', max_length=4000)
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."USER_SETTINGS"'
+
 #class BPToken(models.Model):
 #    key = models.CharField(max_length=40, primary_key=True)
 #    user = models.OneToOneField(BPUser)

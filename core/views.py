@@ -58,7 +58,7 @@ from core.common.models import JediEvents
 from core.common.models import JediDatasets
 from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
-from core.common.models import RequestStat, BPUser, Visits
+from core.common.models import RequestStat, BPUser, Visits, BPUserSettings
 from core.settings.config import ENV
 from core.common.models import RunningMCProductionTasks
 from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel
@@ -248,8 +248,8 @@ def initRequest(request):
 
     VOMODE = ''
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        VOMODE = 'atlas'
-        # VOMODE = 'devtest'
+        # VOMODE = 'atlas'
+        VOMODE = 'devtest'
     request.session['IS_TESTER'] = False
 
     if VOMODE == 'atlas':
@@ -273,15 +273,15 @@ def initRequest(request):
                     user.set_unusable_password()
                     user.save()
 
-    # if VOMODE == 'devtest':
-    #     request.session['ADFS_FULLNAME'] = ''
-    #     request.session['ADFS_EMAIL'] = ''
-    #     request.session['ADFS_FIRSTNAME'] = ''
-    #     request.session['ADFS_LASTNAME'] = ''
-    #     request.session['ADFS_LOGIN'] = ''
-    #     user = None
-    #     user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
-    #     request.session['IS_TESTER'] = user.is_tester
+    if VOMODE == 'devtest':
+        request.session['ADFS_FULLNAME'] = ''
+        request.session['ADFS_EMAIL'] = ''
+        request.session['ADFS_FIRSTNAME'] = ''
+        request.session['ADFS_LASTNAME'] = ''
+        request.session['ADFS_LOGIN'] = 'tkorchug'
+        # user = None
+        user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
+        request.session['IS_TESTER'] = user.is_tester
 
 
     viewParams = {}
@@ -867,6 +867,21 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     return (query, extraQueryString, LAST_N_HOURS_MAX)
 
+
+def saveUserSettings(request, page, preferences):
+    preferences = {"errors_standard_fields":["jobstatus", "computingsite"]}
+    if page == 'errors':
+        query = {}
+        query['page']= str(page)
+        if ('ADFS_LOGIN' in request.session):
+            userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
+            try:
+                userSetting = BPUserSettings.objects.get(page=page, userid=userid)
+                userSetting.preferences = json.dumps(preferences)
+                userSetting.save(update_fields=['preferences'])
+            except BPUserSettings.DoesNotExist:
+                userSetting = BPUserSettings(page=page, userid=userid, preferences=json.dumps(preferences))
+                userSetting.save()
 
 def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     # dropping algorithm for jobs belong to single task
@@ -8324,8 +8339,11 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     sumd = {}
     ## histogram of errors vs. time, for plotting
     errHist = {}
-    flist = ['cloud', 'computingsite', 'produsername', 'taskid', 'jeditaskid', 'processingtype', 'prodsourcelabel',
-             'transformation', 'workinggroup', 'specialhandling', 'jobstatus','gshare']
+    if request.session['errors_standard_fields']:
+        flist = request.session['errors_standard_fields']
+    else:
+        flist = ['cloud', 'computingsite', 'produsername', 'taskid', 'jeditaskid', 'processingtype', 'prodsourcelabel',
+             'transformation', 'workinggroup', 'specialhandling', 'jobstatus']
 
     print len(jobs)
     for job in jobs:
