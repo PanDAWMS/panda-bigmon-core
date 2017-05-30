@@ -58,7 +58,7 @@ from core.common.models import JediEvents
 from core.common.models import JediDatasets
 from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
-from core.common.models import RequestStat, BPUser, Visits, BPUserSettings
+from core.common.models import RequestStat, BPUser, Visits
 from core.settings.config import ENV
 from core.common.models import RunningMCProductionTasks
 from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel
@@ -5023,15 +5023,10 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         extra = "(not eventservice is null and eventservice=2 and not specialhandling like '%%sc:%%')"
 
     sitesummarydata = siteSummary(query, notime, extra)
-
     nojobabs = Sitedata.objects.filter(hours=3).values('site').annotate(dcount=Sum('nojobabs'))
-
     nojobabshash = {}
-    try:
-        for item in nojobabs:
-            nojobabshash[item['site']] = item['dcount']
-    except:
-        pass
+    for item in nojobabs:
+        nojobabshash[item['site']] = item['dcount']
 
 
     mismatchedSites = []
@@ -8339,7 +8334,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     sumd = {}
     ## histogram of errors vs. time, for plotting
     errHist = {}
-    if 'errors_standard_fields' in request.session and request.session['errors_standard_fields']:
+    if request.session['errors_standard_fields']:
         flist = request.session['errors_standard_fields']
     else:
         flist = ['cloud', 'computingsite', 'produsername', 'taskid', 'jeditaskid', 'processingtype', 'prodsourcelabel',
