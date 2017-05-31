@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
 import matplotlib.pyplot as plt
 from PIL import Image
+import numpy as np
 
 filebrowserURL = "http://bigpanda.cern.ch/filebrowser/" #This is deployment specific because memory monitoring is intended to work in ATLAS
 
@@ -91,6 +92,10 @@ def collectData(pandaID):
         plt.grid()
         plt.ylim(ymin=0)
         plt.xlim(xmin=0)
+
+        minor_ticks = np.arange(0, plt.ylim()[1], 1)
+        plt.minorticks_on()
+        plt.yticks(minor_ticks)
 
         plot1img = StringIO.StringIO()
         plt.savefig(plot1img, format='png')
@@ -185,21 +190,18 @@ def collectData(pandaID):
         plt.savefig(plot3img, format='png')
         plot3img.seek(0)
 
-
-
-
         #Here we combine few plots
         images = map(Image.open, [plot1img, plot2img, plot3img])
         widths, heights = zip(*(i.size for i in images))
-        total_width = sum(widths)
-        max_height = max(heights)
+        max_width = max(widths)
+        total_height = sum(heights)
 
-        new_im = Image.new('RGB', (total_width, max_height))
+        new_im = Image.new('RGB', (max_width, total_height))
 
-        x_offset = 0
+        y_offset = 0
         for im in images:
-            new_im.paste(im, (x_offset, 0))
-            x_offset += im.size[0]
+            new_im.paste(im, (0, y_offset))
+            y_offset += im.size[1]
 
         finPlotData = StringIO.StringIO()
         new_im.save(finPlotData, format='png')
