@@ -58,14 +58,14 @@ def collectData(pandaID):
         tstart = df['Time'].min()
 
         df['Time'] = df['Time'].apply(lambda x: x-tstart)
-        df['PSS'] = df['PSS'].apply(lambda x: x / 1024 / 1024)
-        df['RSS'] = df['RSS'].apply(lambda x: x / 1024 / 1024)
-        df['VMEM'] = df['VMEM'].apply(lambda x: x / 1024 / 1024)
-        df['Swap'] = df['Swap'].apply(lambda x: x / 1024 / 1024)
-        df['rchar'] = df['rchar'].apply(lambda x: x / 1024 / 1024)
-        df['wchar'] = df['wchar'].apply(lambda x: x / 1024 / 1024)
-        df['rbytes'] = df['rbytes'].apply(lambda x: x / 1024 / 1024)
-        df['wbytes'] = df['wbytes'].apply(lambda x: x / 1024 / 1024)
+        df['PSS'] = df['PSS'].apply(lambda x: x / 1024.0 / 1024.0)
+        df['RSS'] = df['RSS'].apply(lambda x: x / 1024.0 / 1024.0)
+        df['VMEM'] = df['VMEM'].apply(lambda x: x / 1024.0 / 1024.0)
+        df['Swap'] = df['Swap'].apply(lambda x: x / 1024.0 / 1024.0)
+        df['rchar'] = df['rchar'].apply(lambda x: x / 1024.0 / 1024.0)
+        df['wchar'] = df['wchar'].apply(lambda x: x / 1024.0 / 1024.0)
+        df['rbytes'] = df['rbytes'].apply(lambda x: x / 1024.0 / 1024.0)
+        df['wbytes'] = df['wbytes'].apply(lambda x: x / 1024.0 / 1024.0)
 
 
         # Make plot for memory consumption
@@ -89,9 +89,9 @@ def collectData(pandaID):
         plt.title("Memory consumption, job " + str(pandaID))
         plt.xlabel("time (s)")
         plt.ylabel("memory usage (GB)")
-        plt.grid()
         plt.ylim(ymin=0)
         plt.xlim(xmin=0)
+        plt.grid()
 
         minor_ticks = np.arange(0, plt.ylim()[1], 1)
         plt.minorticks_on()
