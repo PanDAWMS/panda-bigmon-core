@@ -62,8 +62,8 @@ def collectData(pandaID):
         df['RSS'] = df['RSS'].apply(lambda x: x / 1024.0 / 1024.0)
         df['VMEM'] = df['VMEM'].apply(lambda x: x / 1024.0 / 1024.0)
         df['Swap'] = df['Swap'].apply(lambda x: x / 1024.0 / 1024.0)
-        df['rchar'] = df['rchar'].apply(lambda x: x / 1024.0 / 1024.0)
-        df['wchar'] = df['wchar'].apply(lambda x: x / 1024.0 / 1024.0)
+        df['rchar'] = df['rchar'].apply(lambda x: x / 1000.0 / 1000.0)
+        df['wchar'] = df['wchar'].apply(lambda x: x / 1000.0 / 1000.0)
         df['rbytes'] = df['rbytes'].apply(lambda x: x / 1024.0 / 1024.0)
         df['wbytes'] = df['wbytes'].apply(lambda x: x / 1024.0 / 1024.0)
 
@@ -122,7 +122,7 @@ def collectData(pandaID):
 
         plt.title("IO, job " + str(pandaID))
         plt.xlabel("time (s)")
-        plt.ylabel("IO (GB)")
+        plt.ylabel("IO (MB)")
         plt.grid()
         plt.ylim(ymin=0)
         plt.xlim(xmin=0)
