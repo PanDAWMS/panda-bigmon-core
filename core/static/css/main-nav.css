@@ -73,55 +73,17 @@
   color: #fefefe;
 }
 
-.canvas-settings {
+.off-canvas {
   background: #333;
   color: #fefefe;
   padding: 20px;
 }
-
-.canvas-settings > .menu {
-  margin-bottom: 1rem;
-}
-
-.canvas-settings .menu a {
-  color: rgba(254, 254, 254, 0.6);
-  padding-top: 7px;
-  padding-bottom: 7px;
-  transition: color 0.2s ease-in;
-}
-
-.canvas-settings .menu a:hover {
+.off-canvas .menu a {
   color: #fefefe;
 }
-
-.canvas-settings .is-accordion-submenu-parent > a::after {
-  border-color: rgba(254, 254, 254, 0.6) transparent transparent;
-}
-
-.switch-toggle-wrapper {
-  display: -webkit-flex;
-  display: -ms-flexbox;
-  display: flex;
-  margin-bottom: 1rem;
-  -webkit-justify-content: space-between;
-      -ms-flex-pack: justify;
-          justify-content: space-between;
-  -webkit-align-items: center;
-      -ms-flex-align: center;
-          align-items: center;
-}
-
-.switch-toggle-wrapper .switch {
-  margin-bottom: 10px;
-}
-
-.switch input:checked ~ .switch-paddle {
-  background: #4ba173;
-}
-
-.canvas-settings .save {
-    background: #4ba173;
-    color: #fefefe;
+.off-canvas .row .columns {
+  background: #333;
+  color: #fefefe;
 }
 
 .top-subbar {
