@@ -7774,8 +7774,6 @@ def taskInfo(request, jeditaskid=0):
                 nfiles += int(ds['nfiles'])
                 nfinished += int(ds['nfilesfinished'])
                 nfailed += int(ds['nfilesfailed'])
-    else:
-        ds = []
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
         if nfiles > 0:
             dsinfo = {}
@@ -7784,7 +7782,7 @@ def taskInfo(request, jeditaskid=0):
             dsinfo['nfilesfailed'] = nfailed
             dsinfo['pctfinished'] = int(100. * nfinished / nfiles)
             dsinfo['pctfailed'] = int(100. * nfailed / nfiles)
-
+    else: ds = []
     if taskrec: taskrec['dsinfo'] = dsinfo
 
     ## get dataset types
