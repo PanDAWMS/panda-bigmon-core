@@ -218,25 +218,164 @@ hr {
   <div class="title-bar-title">Menu</div>
 </div>
 
-<div class="off-canvas position-right" id="offCanvasRight" data-off-canvas>
-    <div class="row">
-      <div class="columns">
-        <ul class="tabs" data-tabs id="example-tabs">
-          <li class="tabs-title is-active"><a href="#panel1" aria-selected="true">Tab 1</a></li>
-          <li class="tabs-title"><a href="#panel2">Tab 2</a></li>
-        </ul>
-
-        <div class="tabs-content" data-tabs-content="example-tabs">
-          <div class="tabs-panel is-active" id="panel1">
-            <p>One</p>
-          </div>
-          <div class="tabs-panel" id="panel2">
-            <p>Two</p>
-          </div>
-        </div>
-      </div>
+<div class="canvas-settings off-canvas position-right" id="offCanvasRight" data-off-canvas>
+{% if '/errors/' in request.path %}
+    <p>
+        <span style="font-weight: bold">Errors page settings</span>
+    </p>
+  <div class="switch-toggle-wrapper">
+    <div class="switch tiny">
+      <input class="switch-input" id="switch-table-jobattrsummary" type="checkbox" name="switch-table-jobattrsummary">
+      <label class="switch-paddle" for="switch-table-jobattrsummary">
+        <span class="show-for-sr">Job attribute summary</span>
+      </label>
     </div>
+    <span>Job attribute summary</span>
+  </div>
+  <div class="switch-toggle-wrapper">
+    <div class="switch tiny">
+      <input class="switch-input" id="switch-table-errorsummary" type="checkbox" name="switch-table-errorsummary">
+      <label class="switch-paddle" for="switch-table-errorsummary">
+        <span class="show-for-sr">Overall error summary</span>
+      </label>
+    </div>
+    <span>Overall error summary</span>
+  </div>
+  <div class="switch-toggle-wrapper">
+    <div class="switch tiny">
+      <input class="switch-input" id="switch-table-siteerrorsummary" type="checkbox" name="switch-table-siteerrorsummary">
+      <label class="switch-paddle" for="switch-table-siteerrorsummary">
+        <span class="show-for-sr">Site error summary</span>
+      </label>
+    </div>
+    <span>Site error summary</span>
+  </div>
+  <div class="switch-toggle-wrapper">
+    <div class="switch tiny">
+      <input class="switch-input" id="switch-table-usererrorsummary" type="checkbox" name="switch-table-usererrorsummary">
+      <label class="switch-paddle" for="switch-table-usererrorsummary">
+        <span class="show-for-sr">User error summary</span>
+      </label>
+    </div>
+    <span>User error summary</span>
+  </div>
+  <div class="switch-toggle-wrapper">
+    <div class="switch tiny">
+      <input class="switch-input" id="switch-table-taskerrorsummary" type="checkbox" name="switch-table-taskerrorsummary">
+      <label class="switch-paddle" for="switch-table-taskerrorsummary">
+        <span class="show-for-sr">Task error summary</span>
+      </label>
+    </div>
+    <span>Task error summary</span>
+  </div>
+<ul class="vertical menu" data-accordion-menu>
+    <li><a href="#">JOB ATTRIBUTE SUMMARY TABLE</a>
+      <ul class="menu vertical nested">
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-cloud" type="checkbox" name="switch-jobsattr-cloud">
+              <label class="switch-paddle" for="switch-jobsattr-cloud">
+                <span class="show-for-sr">Cloud</span>
+              </label>
+            </div>
+            <span>Cloud</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-computingsite" type="checkbox" name="switch-jobsattr-computingsite">
+              <label class="switch-paddle" for="switch-jobsattr-computingsite">
+                <span class="show-for-sr">Computing site</span>
+              </label>
+            </div>
+            <span>Computing site</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-jeditaskid" type="checkbox" name="switch-jobsattr-jeditaskid">
+              <label class="switch-paddle" for="switch-jobsattr-jeditaskid">
+                <span class="show-for-sr">JEDI task ID</span>
+              </label>
+            </div>
+            <span>JEDI task ID</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-jobstatus" type="checkbox" name="switch-jobsattr-jobstatus">
+              <label class="switch-paddle" for="switch-jobsattr-jobstatus">
+                <span class="show-for-sr">Job status</span>
+              </label>
+            </div>
+            <span>Job status</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-processingtype" type="checkbox" name="switch-jobsattr-processingtype">
+              <label class="switch-paddle" for="switch-jobsattr-processingtype">
+                <span class="show-for-sr">Processing type</span>
+              </label>
+            </div>
+            <span>Processing type</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-prodsourcelabel" type="checkbox" name="switch-jobsattr-prodsourcelabel">
+              <label class="switch-paddle" for="switch-jobsattr-prodsourcelabel">
+                <span class="show-for-sr">Prod source label</span>
+              </label>
+            </div>
+            <span>Prod source label</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-produsername" type="checkbox" name="switch-jobsattr-produsername">
+              <label class="switch-paddle" for="switch-jobsattr-produsername">
+                <span class="show-for-sr">Produser name</span>
+              </label>
+            </div>
+            <span>Produser name</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-specialhandling" type="checkbox" name="switch-jobsattr-specialhandling">
+              <label class="switch-paddle" for="switch-jobsattr-specialhandling">
+                <span class="show-for-sr">Special handling</span>
+              </label>
+            </div>
+            <span>Special handling</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-taskid" type="checkbox" name="switch-jobsattr-taskid">
+              <label class="switch-paddle" for="switch-jobsattr-taskid">
+                <span class="show-for-sr">Task ID</span>
+              </label>
+            </div>
+            <span>Task ID</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-transformation" type="checkbox" name="switch-jobsattr-transformation" checked="checked">
+              <label class="switch-paddle" for="switch-jobsattr-transformation">
+                <span class="show-for-sr">Transformation</span>
+              </label>
+            </div>
+            <span>Transformation</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-workinggroup" type="checkbox" name="switch-jobsattr-workinggroup">
+              <label class="switch-paddle" for="switch-jobsattr-workinggroup">
+                <span class="show-for-sr">Working group</span>
+              </label>
+            </div>
+            <span>Working group</span>
+          </div>
+       </ul>
+    </li>
+  </ul>
 
+  <button type="button" class="save button">Save & Reload</button>
+{% endif %}
 </div>
 
 <div class="top-bar stacked-for-large" id="main-menu">

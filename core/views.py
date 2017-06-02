@@ -8339,7 +8339,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     sumd = {}
     ## histogram of errors vs. time, for plotting
     errHist = {}
-    if request.session['errors_standard_fields']:
+    if 'errors_standard_fields' in request.session and request.session['errors_standard_fields']:
         flist = request.session['errors_standard_fields']
     else:
         flist = ['cloud', 'computingsite', 'produsername', 'taskid', 'jeditaskid', 'processingtype', 'prodsourcelabel',
