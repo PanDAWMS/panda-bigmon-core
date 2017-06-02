@@ -15,8 +15,8 @@
   <script src="{% static 'js/d3.v3.min.js' %}"></script>
   <script src="{% static 'js/vendor/modernizr.js' %}"></script>
   <script src="{% static 'js/vendor/jquery.js' %}"></script>
-  <script src="{% static 'js/foundation/foundation.js' %}"></script>
-  <script src="{% static 'js/foundation/foundation.topbar.js' %}"></script>
+  <script src="{% static 'js/vendor/foundation.js' %}"></script>
+{#  <script src="{% static 'js/foundation/foundation.topbar.js' %}"></script>#}
 
 {% endblock %}
 
@@ -29,8 +29,15 @@
 	<link rel="stylesheet" href="http://hepsoftware.org/static/css/foundation.css" %}">
 {% endcomment %}
 
-  <link rel="stylesheet" href="{% static "css/foundation/normalize.css" %}">
-  <link rel="stylesheet" href="{% static "css/foundation_5.3.1.css" %}">
+{#  <link rel="stylesheet" href="{% static "css/foundation/normalize.css" %}">#}
+
+<link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}">
+<link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}">
+<link rel="stylesheet" href="{% static "css/main-nav.css" %}">
+<link rel="stylesheet" href="{% static "css/state-colors.css" %}">
+<link rel="stylesheet" href="{% static "css/table.css" %}">
+<link rel="stylesheet" href="{% static "css/d3js-plots.css" %}">
+
 
 	{% comment %} <link rel="stylesheet" href="{% static "css/bigpandamon.css" %}"> {% endcomment %}
 
@@ -53,16 +60,6 @@
 
 <STYLE type="text/css">
 
-.top-subbar {
-  background-color: #DDDDDD;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  padding-left: 1em;
-  padding-right: 1em;
-  height: 1.8em;
-  margin-bottom: 8px;
-}
-
 .showentries {
   background-color : transparent;
   font-size: 1em;
@@ -75,13 +72,6 @@
   background-color : transparent;
   font-size: 1em;
   color: #FFFFFF;
-}
-
-.tableFilter{
-vertical-align: top;
-}
-.tableFilter.td{
-vertical-align: top;
 }
 
 .tdF{
@@ -97,146 +87,10 @@ a:hover, a:visited, a:link, a:active
     text-decoration: none;
     color:#0a47ff;
 }
-th { text-align:left; border-style:solid; border-width:1px; border-color:grey;}
-{#th {text-align:left; border-style:solid; border-width:1px; border-color:grey; border-collapse: collapse;#}
-{#    font-weight: 600;#}
-{#	font-family: 'Muli', sans-serif;#}
-{#    color:#355681;}#}
-td { text-align:left; border-style:solid; border-width:1px; border-color:lightgrey;}
-.alarm { color:red }
-.errspan {color: red}
-.error { color:red !important; background-color:white !important; font-size:12pt !important; font-style:normal !important;  }
-.info { color:black }
-.messageinfo { color:forestgreen }
-.debug { color:darkgrey }
-.finished { color:#248F24 }
-.completed { color:#248F24 }
-.done { color:#248F24 }
-.ready { color:#248F24 }
-.cached { color:#248F24 }
-.online { color:#248F24 }
-.merged { color:#248F24 }
-.failed { color:red }
-.aborted { color:red }
-.aborting { color:red }
-.broken { color:red }
-.tobroken { color:red }
-.deleted { color:red }
-.paused { color:darkgrey }
-.brokeroff { color:darkgrey }
-.test { color:darkgrey }
-.offline { color:darkgrey }
-.skipped { color:darkgrey }
-.notcheckedskipped { color:darkgrey }
-.holding { color:#FF9933 }
-.throttled { color:#FF9933 }
-.exhausted { color:#FF9933 }
-.cancelled { color:#FF9933 }
-.warning { color:#FF9933 }
-.timeout { color:#FF9933 }
-.discarded { color:#FF9933 }
-.finishing { color:#FF9933 }
-.running { color:#47D147 }
-.approved { color:#47D147 }
-.merging { color:#47D147 }
-.topreprocess { color:#47D147 }
-.preprocessing { color:#47D147 }
-.prepared { color:#47D147 }
-.starting { color:#47D147 }
-.submitting { color:#47D147 }
-.scouting { color:#47D147 }
-.scouted { color:#47D147 }
-.transferring { color:#47D147 }
-.activated { color:#099999 }
-.assigning { color:#099999 }
-.defined { color:grey }
-.registered { color:grey }
-.assigned { color:black }
-.fatal {color:black}
-.pending { color:grey }
-.waiting { color:grey }
-.toretry { color:grey }
-.toincexec { color:grey }
-.rerefine { color:grey }
-.sent { color:#FF9933 }
-.reassign { color:#FF8174 }
-.ok {color:#0a47ff}
 
-.alarm_fill { color:black;  background-color:#FF8174 }
-.error_fill { color:black;  background-color:#FF8174 }
-
-.broken_fill { color:black;  background-color:#FF8174; position: relative; }
-.tobroken_fill { color:black;  background-color:#FF8174; position: relative; }
-.reassign_fill { color:black;  background-color:#FF8174 }
-
-.failed_fill { color:black;  background-color:#FFABA2; position: relative; }
-.aborted_fill { color:black;  background-color:#FFABA2; position: relative; }
-.aborting_fill { color:black;  background-color:#FFABA2; position: relative; }
-.deleted_fill { color:black;  background-color:#FFABA2 }
-
-.info_fill { color:black;  color:black }
-.debug_fill { color:black;  color:darkgrey }
-
-.failedscouting_fill { color:white;  background-color:red }
-
-.done_fill { color:black;  background-color:#62AC21; position: relative; }
-.toincexec_fill { color:black;  background-color:#62AC21; position: relative; }
-.rerefine_fill { color:black;  background-color:#62AC21; position: relative; }
-.merged_fill { color:black;  background-color:#62AC21 }
-
-.prepared_fill { color:black;  background-color:#A0D670; position: relative; }
-.finished_fill { color:black;  background-color:#A0D670; position: relative; }
-.completed_fill { color:black;  background-color:#A0D670 }
-.toretry_fill { color:black; background-color:#A0D670; position: relative; }
-.passed_fill { color: black; background-color:white; position: relative;}
-
-.running_fill { color:black;  background-color:#C7E9A9; position: relative; }
-.pending_fill { color:black;  background-color:#C7E9A9; position: relative; }
-.starting_fill { color:black;  background-color:#C7E9A9; position: relative; }
-.scouted_fill { color:black;  background-color:#C7E9A9; position: relative; }
-.transferring_fill { color:black;  background-color:#C7E9A9 }
-.finishing_fill { color:black;  background-color:#C7E9A9; position: relative; }
-.ready_fill { color:black;  background-color:#C7E9A9; position: relative; }
-.cached_fill { color:black;  background-color:#C7E9A9 }
-.online_fill { color:black;  background-color:#C7E9A9 }
-.merging_fill { color:black;  background-color:#C7E9A9 }
-
-.scouting_fill { color:black;  background-color:#DBF1C6; position: relative;  }
-.topreprocess_fill { color:black;  background-color:#DBF1C6; position: relative; }
-.preprocessing_fill { color:black;  background-color:#DBF1C6; position: relative; }
-.assigned_fill { color:black;  background-color:#DBF1C6 }
-.activated_fill { color:black;  background-color:#DBF1C6 }
-
-.assigning_fill { color:black;  background-color:#EBF5E2; position: relative; }
-.defined_fill { color:black;  background-color:#EBF5E2; position: relative; }
-.registered_fill { color:black;  background-color:#EBF5E2; position: relative;  }
-.submitting_fill { color:black;  background-color:#EBF5E2; position: relative; }
-.approved_fill { color:black;  background-color:#EBF5E2 }
-.processed_fill { color:black;  background-color:#EBF5E2 }
-
-.paused_fill { color:black;  background-color:#DCDCDC; position: relative; }
-
-.warning_fill { color:#FFCB2F }
-
-.discarded_fill { color:black; background-color:#FFD65D }
-.timeout_fill { color:black; background-color:#FFD65D }
-.cancelled_fill { color:black; background-color:#FFD65D }
-
-.holding_fill { color:black; background-color:#FFE38E }
-.throttled_fill { color:black; background-color:#FFE38E; position: relative; }
-.exhausted_fill { color:black; background-color:#FFE38E; position: relative; }
-
-.waiting_fill { color:black; background-color:#FFF5D6 }
-.sent_fill { color:black; background-color:#FFF5D6 }
-
-.fatal_fill {color:white; background-color: black}
-
-.brokeroff_fill { color:darkgrey }
-.test_fill { color:darkgrey }
-.offline_fill { color:darkgrey }
 
 .section{ font-weight:bold; color:darkblue; padding-bottom:10px }
-.tablesection{ font-weight:bold; background-color:lightcyan; border-style:solid; border-width:1px; border-color:grey;}
+
 .docsection{ background-color:#b2d546; font-weight:bold; border-style:solid; border-width:1px; border-color:#324f00;}
 .doctext{ background-color:#e4f9a6; border-style:solid; border-width:1px; border-color:#324f00;}
 .doctextlight{ background-color:#F4FFDD; border-style:solid; border-width:1px; border-color:#324f00;}
@@ -251,55 +105,13 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
 
 .invisibletable{ border-width:0px; border-color:white; vertical-align: top;}
 
-.headerSortDown:after{content: ''; position: relative;left: 0px; top: 13px;border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 7px dashed #0a47ff;}
-.headerSortUp:after{content: ''; position: relative; left: 5px;bottom: 15px; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px dashed #0a47ff;}
-.headerSortedDown:after{content: ''; position: relative;left: 0px; top: 13px;border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 7px dashed black;}
-.headerSortedUp:after{content: ''; position: relative; left: 5px;bottom: 15px; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px dashed black;}
 
 .inputW{width:10em}
 .input8{width:8em}
 .inputN{width:2em}
 .input4{width:4em}
 
-.target { fill: #fff; stroke: #000; stroke-width: 2px; }
-.forecastedprogress { fill: #ccc; }
-.currentprogressg { fill: #248F24; }
-.currentprogressb { fill: red; }
 
-.dpd_2days { background-color: #FFFF99 }
-.dpd_3days { background-color: #FFCB2F }
-.dpd_ndays { background-color: #FF8174 }
-
-
-
-th.main {
-    font-weight: 600;
-	font-family: 'Muli', sans-serif;
-    color:white;
-    background-color:rgba(53,86,129, 0.8);
-	border: 1px solid white;
-    border-radius: 10px 10px 0px 0px;
-}
-
-th.sub {
-    font-weight: 600;
-	font-family: 'Muli', sans-serif;
-    color:#355681;
-    background-color:white;
-}
-
-table.tableinlinel {
-    float:left;
-    width:25%;
-}
-table.tableinliner {
-    float:left;
-    width:25%;
-}
-table.tableinlinem {
-    float:left;
-    width:40%;
-}
 
 a.uservisits {
     color: black;
@@ -393,125 +205,6 @@ hr {
     background-color: #222222;
 }
 
-.d3splot{
-  font: 12px sans-serif;
-}
-.x.axis {
-    font: 12px sans-serif;
-    text-anchor: end;
-}
-.y.axis {
-    font: 12px sans-serif;
-    text-anchor: end;
-}
-.title {
-    font: 12px sans-serif bold;
-    text-anchor: middle;
-}
-.legend {
-    font: 8px sans-serif;
-    text-anchor: start;
-}
-.titleinpie {
-    font: 11px sans-serif bold;
-    text-anchor: middle;
-}
-.legendpie {
-    font: 10px sans-serif;
-    text-anchor: left;
-}
-.legendoutpie {
-    font: 12px sans-serif;
-    text-anchor: left;
-}
-.axislabel {
-    font: 12px sans-serif;
-    text-anchor: middle;
-}
-.buttonadjust {
-    color: black;
-    background: white;
-    border: 1px solid black;
-    border-radius: 3px;
-    width: 40px;
-    height: 20px;
-    padding: 1px 1px 1px 1px;
-    font-size: 10px;
-    position: relative;
-    top:-400px;
-    left: -600px;
-}
-.bar rect {
-    shape-rendering: crispEdges;
-}
-.bar text {
-    fill: #fff;
-}
-.axis path, .axis line {
-    fill: none;
-    stroke: #000;
-    shape-rendering: crispEdges;
-}
-.averageline {
-    stroke-width: 3;
-    stroke-dasharray: 10,10;
-    stroke: black;
-}
-.linetaskprofile {
-  fill: none;
-  stroke: #116aff;
-  stroke-width: 1.5px;
-}
-.linetaskgood {
-  fill: none;
-  stroke: green;
-  stroke-width: 1.5px;
-}
-.linetaskbad {
-  fill: none;
-  stroke: red;
-  stroke-width: 1.5px;
-}
-.linettccold {
-  fill: none;
-  stroke: gray;
-  stroke-width: 1.5px;
-}
-.dotstarttime {
-  fill: dodgerblue;
-}
-
-.tooltippiechartrpt {
-    background: #f1f0f1;
-    box-shadow: 0 0 5px #999999;
-    color: #333;
-    font-family: sans-serif;
-    font-size: 10px;
-    left: 50px;
-    padding: 10px;
-    position: relative;
-    text-align: center;
-    top: -130px;
-    width: 100px;
-    height: 50px;
-    z-index: 10;
-      }
-.tooltippiechartgs {
-    background: #f1f0f1;
-    box-shadow: 0 0 5px #999999;
-    color: #333;
-    font-family: sans-serif;
-    font-size: 14px;
-    left: 140px;
-    padding: 10px;
-    position: absolute;
-    text-align: center;
-    top: 170px;
-    width: 150px;
-    height: 70px;
-    z-index: 10;
-      }
-
 </STYLE>
 
     <link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}">
@@ -519,136 +212,159 @@ hr {
 </head>
 <body>
 
-<nav class="top-bar" data-topbar>
 
-    <ul class="title-area">
-        <li class="name">
-        <h1><a href="{% url 'index' %}">{% block title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}  PanDA {% endblock %}</a></h1>
-        </li>
-        <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
-        <li class="toggle-topbar menu-icon"><a href="#"><span></span></a></li>
-    </ul>
+<div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="large">
+  <button class="menu-icon" type="button" data-toggle="main-menu"></button>
+  <div class="title-bar-title">Menu</div>
+</div>
 
-    <section class="top-bar-section">
-
-        <ul class="left">
-
-            <li class="has-dropdown">
-            <a href="#">Dash</a>
-            <ul class="dropdown">
-                {% if viewParams.MON_VO == 'ATLAS' %}
-                    <li><a href="{% url 'dashAnalysis' %}">Analysis jobs - Region view</a></li>
-                    <li><a href="{% url 'dashProduction' %}?cloudview=world">Production jobs - World view</a></li>
-                    <li><a href="{% url 'dashProduction' %}?cloudview=region">Production jobs - Region view</a></li>
-                    <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
-                    <li><a href="{% url 'dashAnalysis' %}?mode=task">Analysis tasks</a></li>
-                    <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
-                    <li><a href="{% url 'worldHS06s' %}">World HS06s</a></li>
-                    <li><a href="{% url 'globalshares' %}">Global Shares</a></li>
-                {% else %}
-                    <li><a href="{% url 'dashboard' %}">VOs, sites</a></li>
-                    <li><a href="{% url 'workingGroups' %}">Working groups</a></li>
-                {% endif %}
-            </ul>
-            </li>
-
-            <li class="has-dropdown">
-            <a href="#">Tasks</a>
-            <ul class="dropdown">
-                <li><a href="{% url 'taskList' %}?display_limit=300">All</a></li>
-                {% if viewParams.MON_VO == 'ATLAS' %}
-                    <li><a href="{% url 'taskList' %}?tasktype=anal&display_limit=300">Analysis</a></li>
-                    <li><a href="{% url 'taskList' %}?tasktype=prod&display_limit=300">Production</a></li>
-                    <li><a href="{% url 'taskList' %}?eventservice=eventservice&display_limit=300">Event service</a></li>
-                    <li><a href="{% url 'runningMCProdTasks' %}">All running MC production</a></li>
-                    <li><a href="{% url 'runningDPDProdTasks' %}">All running derivation production</a></li>
-                    <li><a href="{% url 'runningProdTasks' %}?preset=MC&workinggroup=!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT&processingtype=evgen|pile|simul|recon&campaign=MC*">All running production tasks (default MC)</a></li>
-                {% endif %}
-            </ul>
-            </li>
-
-            <li class="has-dropdown">
-            <a href="#">Jobs</a>
-            <ul class="dropdown">
-                <li><a href="{% url 'jobList' %}?display_limit=100">All</a></li>
-                {% if viewParams.MON_VO == 'ATLAS' %}
-                    <li><a href="{% url 'jobList' %}?jobtype=analysis&display_limit=100">Analysis</a></li>
-                    <li><a href="{% url 'jobList' %}?jobtype=production&display_limit=100">Production</a></li>
-                    <li><a href="{% url 'jobList' %}?jobtype=groupproduction&display_limit=100">Group production</a></li>
-                    <li><a href="{% url 'jobList' %}?jobtype=eventservice&display_limit=100">Event service</a></li>
-                    <li><a href="{% url 'status_summary-index' %}">Status Summary</a></li>
-                {% endif %}
-                <li><a href="{% url 'jobList' %}?jobtype=test&display_limit=100">Test</a></li>
-            </ul>
-            </li>
-
-            <li class="has-dropdown">
-            <a href="#">Errors</a>
-            <ul class="dropdown">
-                <li><a href="{% url 'errorSummary' %}?sortby=count">All</a></li>
-                {% if viewParams.MON_VO == 'ATLAS' %}
-                    <li><a href="{% url 'errorSummary' %}?jobtype=analysis&sortby=count">Analysis</a></li>
-                    <li><a href="{% url 'errorSummary' %}?jobtype=production&sortby=count">Production</a></li>
-                    <li><a href="{% url 'errorSummary' %}?sortby=count&prodsourcelabel=rc_test">rc_test</a></li>
-                {% endif %}
-            </ul>
-            </li>
-
-            <li class="has-dropdown">
-            <a href="#">Users</a>
-            <ul class="dropdown">
-                {% if viewParams.MON_VO == 'ATLAS' %}
-                    <li><a href="{% url 'userList' %}?sortby=date&view=database">Usage stats view</a></li>
-                {% endif %}
-                <li><a href="{% url 'userList' %}?sortby=date&view=dynamic">Dynamic view</a></li>
-            </ul>
-            </li>
-
-            <li class="has-dropdown">
-            <a href="#">Sites</a>
-            <ul class="dropdown">
-                <li><a href="{% url 'siteList' %}">Clouds, sites</a></li>
-                {% if viewParams.MON_VO == 'ATLAS' %}
-                    <li><a href="{% url 'siteList' %}?cloud=CA">CA</a></li>
-                    <li><a href="{% url 'siteList' %}?cloud=CERN">CERN</a></li>
-                    <li><a href="{% url 'siteList' %}?cloud=DE">DE</a></li>
-                    <li><a href="{% url 'siteList' %}?cloud=ES">ES</a></li>
-                    <li><a href="{% url 'siteList' %}?cloud=FR">FR</a></li>
-                    <li><a href="{% url 'siteList' %}?cloud=IT">IT</a></li>
-                    <li><a href="{% url 'siteList' %}?cloud=ND">ND</a></li>
-                    <li><a href="{% url 'siteList' %}?cloud=NL">NL</a></li>
-                    <li><a href="{% url 'siteList' %}?cloud=RU">RU</a></li>
-                    <li><a href="{% url 'siteList' %}?cloud=TW">TW</a></li>
-                    <li><a href="{% url 'siteList' %}?cloud=UK">UK</a></li>
-                    <li><a href="{% url 'siteList' %}?cloud=US">US</a></li>
-                    <li><a href="{% url 'siteList' %}?CATCHALL=*jobseed%3Des*|*jobseed%3Dall*">Event Service sites</a></li>
-                {% endif %}
-                <li><a href="{% url 'workQueues' %}">Work queues</a></li>
-            </ul>
-            </li>
-
-            <li class="has-dropdown">
-            <a href="#">Incidents</a>
-            <ul class="dropdown">
-                {% if viewParams.MON_VO == 'ATLAS' %}
-                    <li><a href="{% url 'incidentList' %}">Recent incidents</a></li>
-                {% endif %}
-                <li><a href="{% url 'pandaLogger' %}">PanDA logger</a></li>
-                <li><a href="{% url 'esatlasPandaLogger' %}">PanDA logger (es-atlas)</a> </li>
-            </ul>
-            </li>
-
-            <li>
-            <a href="{% url 'index' %}?mode=quicksearch">Search</a>
-            </li>
-            <li>
-            <a href="{% url 'admin:adMain' %}">Admin</a>
-            </li>
-
+<div class="off-canvas position-right" id="offCanvasRight" data-off-canvas>
+    <div class="row">
+      <div class="columns">
+        <ul class="tabs" data-tabs id="example-tabs">
+          <li class="tabs-title is-active"><a href="#panel1" aria-selected="true">Tab 1</a></li>
+          <li class="tabs-title"><a href="#panel2">Tab 2</a></li>
         </ul>
 
-        <ul class="right">
+        <div class="tabs-content" data-tabs-content="example-tabs">
+          <div class="tabs-panel is-active" id="panel1">
+            <p>One</p>
+          </div>
+          <div class="tabs-panel" id="panel2">
+            <p>Two</p>
+          </div>
+        </div>
+      </div>
+    </div>
 
+</div>
+
+<div class="top-bar stacked-for-large" id="main-menu">
+    <div class="top-bar-left">
+      <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
+        <li class="menu-text">
+{#                    ATLAS PanDA#}
+            <a href="{% url 'index' %}">{% block title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}  PanDA {% endblock %}</a>
+        </li>
+        <li class="has-submenu">
+        <a href="#">Dash</a>
+        <ul class="submenu menu vertical">
+            {% if viewParams.MON_VO == 'ATLAS' %}
+                <li><a href="{% url 'dashAnalysis' %}">Analysis jobs - Region view</a></li>
+                <li><a href="{% url 'dashProduction' %}?cloudview=world">Production jobs - World view</a></li>
+                <li><a href="{% url 'dashProduction' %}?cloudview=region">Production jobs - Region view</a></li>
+                <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
+                <li><a href="{% url 'dashAnalysis' %}?mode=task">Analysis tasks</a></li>
+                <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
+                <li><a href="{% url 'worldHS06s' %}">World HS06s</a></li>
+                <li><a href="{% url 'globalshares' %}">Global Shares</a></li>
+            {% else %}
+                <li><a href="{% url 'dashboard' %}">VOs, sites</a></li>
+                <li><a href="{% url 'workingGroups' %}">Working groups</a></li>
+            {% endif %}
+        </ul>
+        </li>
+
+        <li class="has-submenu">
+        <a href="#">Tasks</a>
+        <ul class="submenu menu vertical">
+            <li><a href="{% url 'taskList' %}?display_limit=300">All</a></li>
+            {% if viewParams.MON_VO == 'ATLAS' %}
+                <li><a href="{% url 'taskList' %}?tasktype=anal&display_limit=300">Analysis</a></li>
+                <li><a href="{% url 'taskList' %}?tasktype=prod&display_limit=300">Production</a></li>
+                <li><a href="{% url 'taskList' %}?eventservice=eventservice&display_limit=300">Event service</a></li>
+                <li><a href="{% url 'runningMCProdTasks' %}">All running MC production</a></li>
+                <li><a href="{% url 'runningDPDProdTasks' %}">All running derivation production</a></li>
+                <li><a href="{% url 'runningProdTasks' %}?preset=MC&workinggroup=!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT&processingtype=evgen|pile|simul|recon&campaign=MC*">All running production tasks (default MC)</a></li>
+            {% endif %}
+        </ul>
+        </li>
+
+        <li class="has-submenu">
+        <a href="#">Jobs</a>
+        <ul class="submenu menu vertical">
+            <li><a href="{% url 'jobList' %}?display_limit=100">All</a></li>
+            {% if viewParams.MON_VO == 'ATLAS' %}
+                <li><a href="{% url 'jobList' %}?jobtype=analysis&display_limit=100">Analysis</a></li>
+                <li><a href="{% url 'jobList' %}?jobtype=production&display_limit=100">Production</a></li>
+                <li><a href="{% url 'jobList' %}?jobtype=groupproduction&display_limit=100">Group production</a></li>
+                <li><a href="{% url 'jobList' %}?jobtype=eventservice&display_limit=100">Event service</a></li>
+                <li><a href="{% url 'status_summary-index' %}">Status Summary</a></li>
+            {% endif %}
+            <li><a href="{% url 'jobList' %}?jobtype=test&display_limit=100">Test</a></li>
+        </ul>
+        </li>
+
+        <li class="has-submenu">
+        <a href="#">Errors</a>
+        <ul class="submenu menu vertical">
+            <li><a href="{% url 'errorSummary' %}?sortby=count">All</a></li>
+            {% if viewParams.MON_VO == 'ATLAS' %}
+                <li><a href="{% url 'errorSummary' %}?jobtype=analysis&sortby=count">Analysis</a></li>
+                <li><a href="{% url 'errorSummary' %}?jobtype=production&sortby=count">Production</a></li>
+                <li><a href="{% url 'errorSummary' %}?sortby=count&prodsourcelabel=rc_test">rc_test</a></li>
+            {% endif %}
+        </ul>
+        </li>
+
+        <li class="has-submenu">
+        <a href="#">Users</a>
+        <ul class="submenu menu vertical">
+            {% if viewParams.MON_VO == 'ATLAS' %}
+                <li><a href="{% url 'userList' %}?sortby=date&view=database">Usage stats view</a></li>
+            {% endif %}
+            <li><a href="{% url 'userList' %}?sortby=date&view=dynamic">Dynamic view</a></li>
+        </ul>
+        </li>
+
+        <li class="has-submenu">
+        <a href="#">Sites</a>
+        <ul class="submenu menu vertical">
+            <li><a href="{% url 'siteList' %}">Clouds, sites</a></li>
+            {% if viewParams.MON_VO == 'ATLAS' %}
+                <li><a href="{% url 'siteList' %}?cloud=CA">CA</a></li>
+                <li><a href="{% url 'siteList' %}?cloud=CERN">CERN</a></li>
+                <li><a href="{% url 'siteList' %}?cloud=DE">DE</a></li>
+                <li><a href="{% url 'siteList' %}?cloud=ES">ES</a></li>
+                <li><a href="{% url 'siteList' %}?cloud=FR">FR</a></li>
+                <li><a href="{% url 'siteList' %}?cloud=IT">IT</a></li>
+                <li><a href="{% url 'siteList' %}?cloud=ND">ND</a></li>
+                <li><a href="{% url 'siteList' %}?cloud=NL">NL</a></li>
+                <li><a href="{% url 'siteList' %}?cloud=RU">RU</a></li>
+                <li><a href="{% url 'siteList' %}?cloud=TW">TW</a></li>
+                <li><a href="{% url 'siteList' %}?cloud=UK">UK</a></li>
+                <li><a href="{% url 'siteList' %}?cloud=US">US</a></li>
+                <li><a href="{% url 'siteList' %}?CATCHALL=*jobseed%3Des*|*jobseed%3Dall*">Event Service sites</a></li>
+            {% endif %}
+            <li><a href="{% url 'workQueues' %}">Work queues</a></li>
+        </ul>
+        </li>
+
+        <li class="has-submenu">
+        <a href="#">Incidents</a>
+        <ul class="submenu menu vertical">
+            {% if viewParams.MON_VO == 'ATLAS' %}
+                <li><a href="{% url 'incidentList' %}">Recent incidents</a></li>
+            {% endif %}
+            <li><a href="{% url 'pandaLogger' %}">PanDA logger</a></li>
+            <li><a href="{% url 'esatlasPandaLogger' %}">PanDA logger (es-atlas)</a> </li>
+        </ul>
+        </li>
+
+        <li>
+        <a href="{% url 'index' %}?mode=quicksearch">Search</a>
+        </li>
+        <li>
+        <a href="{% url 'admin:adMain' %}">Admin</a>
+        </li>
+
+      </ul>
+    </div>
+
+
+
+    <div class="top-bar-right">
+        <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
             {% if viewParams.MON_VO == 'ATLAS' %}
 
                 {% comment %}
@@ -657,9 +373,9 @@ hr {
                 </li>
                 {% endcomment %}
 
-                <li class="has-dropdown">
+                <li class="has-submenu">
                 <a href="#">Prodsys</a>
-                <ul class="dropdown">
+                <ul  class="submenu menu vertical">
                     <li><a href="https://prodtask-dev.cern.ch/prodtask/task_table/">Prodsys task list</a>
                     <li><a href="https://prodtask-dev.cern.ch/prodtask/task_manage/">Manage tasks</a>
                     <li><a href="https://prodtask-dev.cern.ch/prodtask/task_create/">Create task</a>
@@ -669,9 +385,9 @@ hr {
                 </ul>
                 </li>
 
-                <li class="has-dropdown">
+                <li class="has-submenu">
                 <a href="#">Services</a>
-                <ul class="dropdown">
+                <ul class="submenu menu vertical">
                     <li><a href="http://apfmon.lancs.ac.uk/">Pilot factory monitor</a>
                     {% comment %} <li><a href="http://bigpanda.cern.ch/pbm/">PanDA Brokerage Monitor</a>{% endcomment %}
                     <li><a href="http://dashb-atlas-job.cern.ch/dashboard/request.py/dailysummary#button=jobstatus&sites%5B%5D=All+T3210&sitesCat%5B%5D=All+Clouds&activities%5B%5D=Data+Processing&activities%5B%5D=Extra+Production&activities%5B%5D=Group+Production&activities%5B%5D=MC+Reconstruction&activities%5B%5D=MC+Simulation&activities%5B%5D=Others&activities%5B%5D=T0+Processing&resourcetype=All&sitesSort=7&sitesCatSort=1&start=null&end=null&timerange=last24&granularity=Hourly&generic=3&sortby=3&series=All">Dashboard historical views</a></li>
@@ -683,9 +399,9 @@ hr {
 
             {% endif %}
 
-            <li class="has-dropdown">
+            <li class="has-submenu">
             <a href="#">VO</a>
-            <ul class="dropdown">
+            <ul class="submenu menu vertical">
                 <li><a href="http://bigpanda.cern.ch/dev">ATLAS</a></li>
                 <li><a href="http://bigpanda.pandawms.org/dev">BigPanDA</a></li>
                 <li><a href="http://htcondor.pandawms.org/dev">HTCondor</a></li>
@@ -701,9 +417,9 @@ hr {
             </li>
             {% endif %}
 
-            <li class="has-dropdown">
+            <li class="has-submenu">
             <a href="#"><span class='help'>Help</span></a>
-            <ul class="dropdown">
+            <ul class="submenu menu vertical">
                 <li><a href="#doc"><span class='help'>See the bottom of the page for contextual help on current page</span></a>
                 <li><a href="/help/"><span class='help'>Complete PanDA monitor help page</span></a>
                 {% if viewParams.MON_VO == 'ATLAS' %}
@@ -714,40 +430,54 @@ hr {
                 <li><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a>
             </ul>
             </li>
-
+            {#        {% if request.session.username %}#}
+            <li class="settings-button">
+             <button type="button" data-open="offCanvasRight"><i class="fi-widget"></i></button>
+            </li>
+{#        {% endif %}#}
         </ul>
-    
-    </section>
-</nav>
 
+    </div>
+</div>
   <!-- End Header and Nav -->
 
   <!-- sub-title and bread-crumbs -->
 
-  <div class="top-subbar">
+<div class="top-subbar">
 
     <!-- sub-title -->
-      <div class="left" id="div-subtitle"><font size=-1>{% block subtitle %}Subtitle goes here{% endblock %}
-          {% if jobsErrorsTotalCount != None%} <b> Total jobs found &asymp; <a href="{% url 'errorSummary' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">
-              {{ jobsErrorsTotalCount }}</a></b> {% endif %}
-          {% if jobsTotalCount != None%} <b> Total jobs found &asymp; <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{jobsTotalCount}}">
-              {{ jobsTotalCount }}</a></b> {% endif %}
-          {% if tasksTotalCount != None%} <b> Total tasks found &asymp; <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{tasksTotalCount}}">
-              {{ tasksTotalCount }}</a></b> {% endif %}
-      </font>
-      </div>
+    <div class="left" id="div-subtitle"><font size=-1>{% block subtitle %}Subtitle goes here{% endblock %}
+      {% if jobsErrorsTotalCount != None%} <b> Total jobs found &asymp; <a href="{% url 'errorSummary' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">
+          {{ jobsErrorsTotalCount }}</a></b> {% endif %}
+      {% if jobsTotalCount != None%} <b> Total jobs found &asymp; <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{jobsTotalCount}}">
+          {{ jobsTotalCount }}</a></b> {% endif %}
+      {% if tasksTotalCount != None%} <b> Total tasks found &asymp; <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{tasksTotalCount}}">
+          {{ tasksTotalCount }}</a></b> {% endif %}
+    </font>
+    </div>
     <!-- End sub-title -->
 
     <!-- bread-crumbs -->
     <div class="right">
-      {% block header-nav-chain %}
-          <span class="hide-for-small"><font size=-1>{% if request.session.hostname %}{{ request.session.hostname }}{% endif %}{% if built != None %} {{ built }} {% endif %},  <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a> {% if request.session.ADFS_EMAIL %}&nbsp;You are logged as {{ request.session.ADFS_FULLNAME }}({% if request.session.ADFS_LOGIN %}{{request.session.ADFS_LOGIN}}{% endif %}, {% if request.session.ADFS_EMAIL %}{{request.session.ADFS_EMAIL}}{% endif %}) <a href="https://login.cern.ch/adfs/ls/?wa=wsignout1.0">Logout</a> &nbsp; {% else %} <a href="https://bigpanda.cern.ch{{ request.path }}">Login</a>{% endif %}</font></span>
-      {% endblock %}
+    {#      {% block header-nav-chain %}#}
+          <span class="hide-for-small"><font size=-1>
+              {% if request.session.hostname %}{{ request.session.hostname }}{% endif %}
+              {% if built != None %} {{ built }} {% endif %}
+              ,<a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a>
+              {% if request.session.ADFS_EMAIL %}&nbsp;You are logged as {{ request.session.ADFS_FULLNAME }}(
+                  {% if request.session.ADFS_LOGIN %}{{request.session.ADFS_LOGIN}}{% endif %}
+                  ,
+                  {% if request.session.ADFS_EMAIL %}{{request.session.ADFS_EMAIL}}{% endif %})
+                <a href="https://login.cern.ch/adfs/ls/?wa=wsignout1.0">Logout</a> &nbsp;
+              {% else %}
+                <a href="https://bigpanda.cern.ch{{ request.path }}">Login</a>{% endif %}
+          </font></span>
+    {#      {% endblock %}#}
     </div>
     <!-- End bread-crumbs -->
-    
-    
-  </div>
+
+
+</div>
   <!-- End sub-title and bread-crumbs -->
 
 {% block left_menu %}{% endblock %}
