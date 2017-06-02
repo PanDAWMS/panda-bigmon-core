@@ -1,0 +1,127 @@
+.d3splot{
+  font: 12px sans-serif;
+}
+.x.axis {
+    font: 12px sans-serif;
+    text-anchor: end;
+}
+.y.axis {
+    font: 12px sans-serif;
+    text-anchor: end;
+}
+.title {
+    font: 12px sans-serif bold;
+    text-anchor: middle;
+}
+.legend {
+    font: 8px sans-serif;
+    text-anchor: start;
+}
+.titleinpie {
+    font: 11px sans-serif bold;
+    text-anchor: middle;
+}
+.legendpie {
+    font: 10px sans-serif;
+    text-anchor: left;
+}
+.legendoutpie {
+    font: 12px sans-serif;
+    text-anchor: left;
+}
+.axislabel {
+    font: 12px sans-serif;
+    text-anchor: middle;
+}
+.buttonadjust {
+    color: black;
+    background: white;
+    border: 1px solid black;
+    border-radius: 3px;
+    width: 40px;
+    height: 20px;
+    padding: 1px 1px 1px 1px;
+    font-size: 10px;
+    position: relative;
+    top:-400px;
+    left: -600px;
+}
+.bar rect {
+    shape-rendering: crispEdges;
+}
+.bar text {
+    fill: #fff;
+}
+.axis path, .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+.averageline {
+    stroke-width: 3;
+    stroke-dasharray: 10,10;
+    stroke: black;
+}
+.linetaskprofile {
+  fill: none;
+  stroke: #116aff;
+  stroke-width: 1.5px;
+}
+.linetaskgood {
+  fill: none;
+  stroke: green;
+  stroke-width: 1.5px;
+}
+.linetaskbad {
+  fill: none;
+  stroke: red;
+  stroke-width: 1.5px;
+}
+.linettccold {
+  fill: none;
+  stroke: gray;
+  stroke-width: 1.5px;
+}
+.dotstarttime {
+  fill: dodgerblue;
+}
+
+.tooltippiechartrpt {
+    background: #f1f0f1;
+    box-shadow: 0 0 5px #999999;
+    color: #333;
+    font-family: sans-serif;
+    font-size: 10px;
+    left: 50px;
+    padding: 10px;
+    position: relative;
+    text-align: center;
+    top: -130px;
+    width: 100px;
+    height: 50px;
+    z-index: 10;
+      }
+.tooltippiechartgs {
+    background: #f1f0f1;
+    box-shadow: 0 0 5px #999999;
+    color: #333;
+    font-family: sans-serif;
+    font-size: 14px;
+    left: 140px;
+    padding: 10px;
+    position: absolute;
+    text-align: center;
+    top: 170px;
+    width: 150px;
+    height: 70px;
+    z-index: 10;
+      }
+
+.target { fill: #fff; stroke: #000; stroke-width: 2px; }
+.forecastedprogress { fill: #ccc; }
+.currentprogressg { fill: #248F24; }
+.currentprogressb { fill: red; }
+
+.dpd_2days { background-color: #FFFF99 }
+.dpd_3days { background-color: #FFCB2F }
+.dpd_ndays { background-color: #FF8174 }
