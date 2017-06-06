@@ -5861,7 +5861,7 @@ def dashboard(request, view='production'):
                 suppressruntime = DEFAULTFAILEDJOBSSUPPRESSIONRUNTINE
                 if 'suppressruntime' in request.session['requestParams']:
                     try:
-                        suppressruntime = int(request.session['requestParams'])
+                        suppressruntime = int(request.session['requestParams']['suppressruntime'])
                     except:
                         pass
                 extra = '( not( (JOBDISPATCHERERRORCODE=100 OR PILOTERRORCODE=1201) and ((ENDTIME-STARTTIME)*24*60 < '+str(suppressruntime)+')))'
@@ -7627,7 +7627,7 @@ def taskInfo(request, jeditaskid=0):
                 suppressruntime = DEFAULTFAILEDJOBSSUPPRESSIONRUNTINE
                 if 'suppressruntime' in request.session['requestParams']:
                     try:
-                        suppressruntime = int(request.session['requestParams'])
+                        suppressruntime = int(request.session['requestParams']['suppressruntime'])
                     except:
                         pass
                 extra = '( not( (JOBDISPATCHERERRORCODE=100 OR PILOTERRORCODE=1201) and ((ENDTIME-STARTTIME)*24*60 < '+str(suppressruntime)+')))'
