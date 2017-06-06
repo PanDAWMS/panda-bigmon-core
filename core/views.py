@@ -152,6 +152,7 @@ LAST_N_HOURS_MAX = 0
 PLOW = 1000000
 PHIGH = -1000000
 
+DEFAULTFAILEDJOBSSUPPRESSIONRUNTINE = 10
 
 standard_fields = ['processingtype', 'computingsite', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid',
                    'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype',
