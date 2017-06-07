@@ -130,7 +130,7 @@ class TaskProgressPlot:
 
     def make_verbose_profile_graph(self,frame, taskid, status=None, daterange=None):
         plt.style.use('fivethirtyeight')
-        fig = plt.figure(figsize=(20, 15))
+        fig = plt.figure(figsize=(20, 18))
         plt.locator_params(axis='x', nbins=30)
         plt.locator_params(axis='y', nbins=30)
         if status is not None:
