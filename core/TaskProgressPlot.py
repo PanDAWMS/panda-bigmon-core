@@ -142,10 +142,10 @@ class TaskProgressPlot:
 
         if len(frame['merge'].values[:,0:2])>0:
             mint = min(frame['run'].values[:,0:2].min(), frame['merge'].values[:,0:2].min(), taskstart)
-            maxt = max(frame['run'].values[:, 0:2].max(), frame['merge'].values[:, 0:2].max())
+            maxt = max(frame['run'].values[:, 0:3].max(), frame['merge'].values[:, 0:3].max())
         else:
-            mint = min(frame['run'].values[:,0:2].min(), taskstart)
-            maxt = frame['run'].values[:, 0:2].max()
+            mint = min(frame['run'].values[:,0:3].min(), taskstart)
+            maxt = frame['run'].values[:, 0:3].max()
 
         plt.xlim(xmax=maxt)
         plt.xlim(xmin=mint)
