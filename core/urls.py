@@ -69,8 +69,6 @@ urlpatterns = [
 
     url(r'^worldjobs/$', coremon_views.worldjobs, name='worldjobs'),
 
-    url(r'^errorstest/$', coremon_views.errorSummaryTest, name='errorSummaryTest'),
-
 
 #    url(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
 #    url(r'^worldjobs/production/$', coremon_views.dashWorldProduction, name='dashWorldProduction'),
