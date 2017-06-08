@@ -2,14 +2,32 @@ table {
     border-collapse: collapse;
 }
 
-.tablesection{ font-weight:bold; background-color:lightcyan; border-style:solid; border-width:1px; border-color:grey;}
+.tablesection{
+    font-weight:bold;
+    background-color:lightcyan;
+    border-style:solid;
+    border-width:1px;
+    border-color:grey;}
 
-th { text-align:left; border-style:solid; border-width:1px; border-color:grey;}
+
+th {
+    text-align:left;
+    border-style:solid;
+    border-width:1px;
+    border-color:grey;
+    font-size: 0.875rem;
+}
 /*{#th {text-align:left; border-style:solid; border-width:1px; border-color:grey; border-collapse: collapse;#}*/
 /*{#    font-weight: 600;#}*/
 /*{#	font-family: 'Muli', sans-serif;#}*/
 /*{#    color:#355681;}#}*/
-td { text-align:left; border-style:solid; border-width:1px; border-color:lightgrey;}
+td {
+    text-align:left;
+    border-style:solid;
+    border-width:1px;
+    border-color:lightgrey;
+    font-size: 0.875rem;
+}
 
 th.main {
     font-weight: 600;
