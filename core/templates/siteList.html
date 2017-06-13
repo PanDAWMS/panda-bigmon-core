@@ -2,7 +2,7 @@
 
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA sites{% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA sites{{viewParams.selection|safe }}
 {% if vo %} &nbsp; for VO {{ vo }}
 {% endif %}

@@ -3,7 +3,7 @@
 
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA ES tasks{% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA Event Service tasks{{viewParams.selection|safe }}
 {% if vo %} &nbsp; for VO {{ vo }}
 {% endif %}
