@@ -58,7 +58,7 @@ from core.common.models import JediEvents
 from core.common.models import JediDatasets
 from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
-from core.common.models import RequestStat, BPUser, Visits
+from core.common.models import RequestStat, BPUser, Visits, BPUserSettings
 from core.settings.config import ENV
 from core.common.models import RunningMCProductionTasks
 from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel
@@ -162,6 +162,8 @@ standard_sitefields = ['region', 'gocname', 'nickname', 'status', 'tier', 'comme
 standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'username', 'transuses',
                        'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
                        'reqid', 'ramcount', 'nucleus', 'eventservice', 'gshare']
+standard_errorfields = ['cloud', 'computingsite', 'produsername', 'taskid', 'jeditaskid', 'processingtype', 'prodsourcelabel',
+             'transformation', 'workinggroup', 'specialhandling', 'jobstatus']
 
 VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
@@ -866,9 +868,28 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     return (query, extraQueryString, LAST_N_HOURS_MAX)
 
 
-def saveUserSettings(request, page, preferences):
-    preferences = {"errors_standard_fields":["jobstatus", "computingsite"]}
+def saveUserSettings(request, page):
+
     if page == 'errors':
+        errorspage_tables = ['jobattrsummary', 'errorsummary', 'siteerrorsummary', 'usererrorsummary',
+                            'taskerrorsummary']
+        preferences = {}
+        if 'jobattr' in request.session['requestParams']:
+            preferences["jobattr"] = request.session['requestParams']['jobattr'].split(",")
+            try:
+                del request.session['requestParams']['jobattr']
+            except:
+                pass
+        else:
+            preferences["jobattr"] = standard_errorfields
+        if 'tables' in request.session['requestParams']:
+            preferences['tables'] = request.session['requestParams']['tables'].split(",")
+            try:
+                del request.session['requestParams']['tables']
+            except:
+                pass
+        else:
+            preferences['tables'] = errorspage_tables
         query = {}
         query['page']= str(page)
         if ('ADFS_LOGIN' in request.session):
@@ -8297,12 +8318,8 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     sumd = {}
     ## histogram of errors vs. time, for plotting
     errHist = {}
-    if request.session['errors_standard_fields']:
-        flist = request.session['errors_standard_fields']
-    else:
-        flist = ['cloud', 'computingsite', 'produsername', 'taskid', 'jeditaskid', 'processingtype', 'prodsourcelabel',
-             'transformation', 'workinggroup', 'specialhandling', 'jobstatus']
 
+    flist = standard_errorfields
     print len(jobs)
     for job in jobs:
         if not testjobs:
@@ -8571,6 +8588,7 @@ def digkey (rq):
     hashkey = hashlib.sha256(str(sk) + ' ' + qt)
     return hashkey.hexdigest()
 
+@csrf_exempt
 def errorSummary(request):
     valid, response = initRequest(request)
 
@@ -8583,10 +8601,20 @@ def errorSummary(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
+        # Filtering data due to user settings
+        if request.session['ADFS_LOGIN'] and request.session['IS_TESTER']:
+            data = filterErrorData(request, data)
         response = render_to_response('errorSummary.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
         return response
+
+    if 'jobattr' in request.session['requestParams'] or 'tables' in request.session['requestParams']:
+        saveUserSettings(request,'errors')
+        if request.GET:
+            addGetRequestParams(request)
+
+
 
     testjobs = False
     if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams'][
@@ -8795,100 +8823,42 @@ def errorSummary(request):
         del request.session['TFIRST']
         del request.session['TLAST']
 
-        defaultErrorsPreferences = {}
-        defaultErrorsPreferences['errors_standard_fields'] = standard_fields
-        if request.session['ADFS_LOGIN'] and request.session['IS_TESTER']:
-            userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
-            try:
-                userSetting = BPUserSettings.objects.get(page='errors', userid=userid)
-                userPreferences = json.loads(userSetting.preferences)
-            except:
-                saveUserSettings(request, 'errors', json.dumps(defaultErrorsPreferences))
-                userPreferences = defaultErrorsPreferences
-
-
-            data = {
-                'prefix': getPrefix(request),
-                'request': request,
-                'viewParams': request.session['viewParams'],
-                'requestParams': request.session['requestParams'],
-                'requestString': urlParametrs,
-                'jobtype': jobtype,
-                'njobs': njobs,
-                'hours': LAST_N_HOURS_MAX,
-                'limit': limit,
-                'user': None,
-                'xurl': xurl,
-                'xurlsubst': xurlsubst,
-                'xurlsubstNoSite': xurlsubstNoSite,
-                'jobsurlNoSite': jobsurlNoSite,
-                'jobsurl': jobsurl,
-                'nosorturl': nosorturl,
-                'userPreferences': userPreferences,
-                'errHist': errHist,
-                'tfirst': TFIRST,
-                'tlast': TLAST,
-                'sortby': sortby,
-                'taskname': taskname,
-                'flowstruct': flowstruct,
-                'jobsErrorsTotalCount': jobsErrorsTotalCount,
-                'built': datetime.now().strftime("%H:%M:%S"),
-            }
-
-            if 'tables' in userPreferences:
-                if 'jobattrsummary' in userPreferences['tables']:
-                    if 'jobattr' in userPreferences:
-                        sumd_new = []
-                        for attr in userPreferences['jobattr']:
-                            for field in sumd:
-                                if attr == field['field']:
-                                    sumd_new.append(field)
-                                    continue
-                        data['sumd'] = sumd_new
-                    else:
-                        data['sumd']=sumd
-                if 'errorsummary' in userPreferences['tables']:
-                    data['errsByCount'] = errsByCount
-                if 'siteerrorsummary' in userPreferences['tables']:
-                    data['errsBySite'] = errsBySite
-                if 'usererrorsummary' in userPreferences['tables']:
-                    data['errsByUser'] = errsByUser
-                if 'taskerrorsummary' in userPreferences['tables']:
-                    data['errsByTask'] = errsByTask
-        else:
-            data = {
-                'prefix': getPrefix(request),
-                'request': request,
-                'viewParams': request.session['viewParams'],
-                'requestParams': request.session['requestParams'],
-                'requestString': urlParametrs,
-                'jobtype': jobtype,
-                'njobs': njobs,
-                'hours': LAST_N_HOURS_MAX,
-                'limit': limit,
-                'user': None,
-                'xurl': xurl,
-                'xurlsubst': xurlsubst,
-                'xurlsubstNoSite': xurlsubstNoSite,
-                'jobsurlNoSite': jobsurlNoSite,
-                'jobsurl': jobsurl,
-                'nosorturl': nosorturl,
-                'errsByCount': errsByCount,
-                'errsBySite': errsBySite,
-                'errsByUser': errsByUser,
-                'errsByTask': errsByTask,
-                'sumd': sumd,
-                'errHist': errHist,
-                'tfirst': TFIRST,
-                'tlast': TLAST,
-                'sortby': sortby,
-                'taskname': taskname,
-                'flowstruct': flowstruct,
-                'jobsErrorsTotalCount': jobsErrorsTotalCount,
-                'built': datetime.now().strftime("%H:%M:%S"),
-            }
+        data = {
+            'prefix': getPrefix(request),
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'requestString': urlParametrs,
+            'jobtype': jobtype,
+            'njobs': njobs,
+            'hours': LAST_N_HOURS_MAX,
+            'limit': limit,
+            'user': None,
+            'xurl': xurl,
+            'xurlsubst': xurlsubst,
+            'xurlsubstNoSite': xurlsubstNoSite,
+            'jobsurlNoSite': jobsurlNoSite,
+            'jobsurl': jobsurl,
+            'nosorturl': nosorturl,
+            'errsByCount': errsByCount,
+            'errsBySite': errsBySite,
+            'errsByUser': errsByUser,
+            'errsByTask': errsByTask,
+            'sumd': sumd,
+            'errHist': errHist,
+            'tfirst': TFIRST,
+            'tlast': TLAST,
+            'sortby': sortby,
+            'taskname': taskname,
+            'flowstruct': flowstruct,
+            'jobsErrorsTotalCount': jobsErrorsTotalCount,
+            'built': datetime.now().strftime("%H:%M:%S"),
+        }
         data.update(getContextVariables(request))
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
+        # Filtering data due to user settings
+        if request.session['ADFS_LOGIN'] and request.session['IS_TESTER']:
+            data = filterErrorData(request, data)
         ##self monitor
         endSelfMonitor(request)
         response = render_to_response('errorSummary.html', data, content_type='text/html')
@@ -8903,6 +8873,80 @@ def errorSummary(request):
                          'produserid': job.produserid})
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
+def filterErrorData(request, data):
+    defaultErrorsPreferences = {}
+    defaultErrorsPreferences['errors_standard_fields'] = standard_fields
+    defaultErrorsPreferences['tables'] = []
+    userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
+    try:
+        userSetting = BPUserSettings.objects.get(page='errors', userid=userid)
+        userPreferences = json.loads(userSetting.preferences)
+    except:
+        saveUserSettings(request, 'errors')
+        userSetting = BPUserSettings.objects.get(page='errors', userid=userid)
+        userPreferences = json.loads(userSetting.preferences)
+        # userPreferences = defaultErrorsPreferences
+
+    data['userPreferences'] = userPreferences
+    if 'tables' in userPreferences:
+        if 'jobattrsummary' in userPreferences['tables']:
+            if 'jobattr' in userPreferences:
+                sumd_new = []
+                for attr in userPreferences['jobattr']:
+                    for field in data['sumd']:
+                        if attr == field['field']:
+                            sumd_new.append(field)
+                            continue
+                data['sumd'] = sumd_new
+        if 'errorsummary' not in userPreferences['tables']:
+            try:
+                del data['errsByCount']
+            except:
+                pass
+        if 'siteerrorsummary' not in userPreferences['tables']:
+            try:
+                del data['errsBySite']
+            except:
+                pass
+        if 'usererrorsummary' not in userPreferences['tables']:
+            try:
+                del data['errsByUser']
+            except:
+                pass
+        if 'taskerrorsummary' not in userPreferences['tables']:
+            try:
+                del data['errsByTask']
+            except:
+                pass
+
+    return data
+
+def addGetRequestParams(request):
+    for p in request.GET:
+        pval = request.GET[p]
+        pval = pval.replace('+', ' ')
+        if p.lower() != 'batchid':  # Special requester exception
+            pval = pval.replace('#', '')
+        ## is it int, if it's supposed to be?
+        if p.lower() in (
+                'days', 'hours', 'limit', 'display_limit', 'taskid', 'jeditaskid', 'jobsetid', 'corecount',
+                'taskpriority',
+                'priority', 'attemptnr', 'statenotupdated', 'tasknotupdated', 'corepower', 'wansourcelimit',
+                'wansinklimit', 'nqueue', 'nodes', 'queuehours', 'memory', 'maxtime', 'space',
+                'maxinputsize', 'timefloor', 'depthboost', 'idlepilotsupression', 'pilotlimit',
+                'transferringlimit', 'cachedse', 'stageinretry', 'stageoutretry', 'maxwdir', 'minmemory',
+                'maxmemory', 'minrss',
+                'maxrss', 'mintime',):
+            try:
+                i = int(request.GET[p])
+            except:
+                data = {
+                    'viewParams': request.session['viewParams'],
+                    'requestParams': request.session['requestParams'],
+                    "errormessage": "Illegal value '%s' for %s" % (pval, p),
+                }
+                return False, render_to_response('errorPage.html', data, content_type='text/html')
+        request.session['requestParams'][p.lower()] = pval
 
 def removeParam(urlquery, parname, mode='complete'):
     """Remove a parameter from current query"""
