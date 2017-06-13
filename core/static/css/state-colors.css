@@ -61,13 +61,13 @@
 .alarm_fill { color:black;  background-color:#FF8174 }
 .error_fill { color:black;  background-color:#FF8174 }
 
-.broken_fill { color:black;  background-color:#FF8174; position: relative; }
-.tobroken_fill { color:black;  background-color:#FF8174; position: relative; }
+.broken_fill { color:black;  background-color:#FF8174; position: static; }
+.tobroken_fill { color:black;  background-color:#FF8174; position: static; }
 .reassign_fill { color:black;  background-color:#FF8174 }
 
-.failed_fill { color:black;  background-color:#FFABA2; position: relative; }
-.aborted_fill { color:black;  background-color:#FFABA2; position: relative; }
-.aborting_fill { color:black;  background-color:#FFABA2; position: relative; }
+.failed_fill { color:black;  background-color:#FFABA2; position: static; }
+.aborted_fill { color:black;  background-color:#FFABA2; position: static; }
+.aborting_fill { color:black;  background-color:#FFABA2; position: static; }
 .deleted_fill { color:black;  background-color:#FFABA2 }
 
 .info_fill { color:black;  color:black }
@@ -75,42 +75,42 @@
 
 .failedscouting_fill { color:white;  background-color:red }
 
-.done_fill { color:black;  background-color:#62AC21; position: relative; }
-.toincexec_fill { color:black;  background-color:#62AC21; position: relative; }
-.rerefine_fill { color:black;  background-color:#62AC21; position: relative; }
+.done_fill { color:black;  background-color:#62AC21; position: static; }
+.toincexec_fill { color:black;  background-color:#62AC21; position: static; }
+.rerefine_fill { color:black;  background-color:#62AC21; position: static; }
 .merged_fill { color:black;  background-color:#62AC21 }
 
-.prepared_fill { color:black;  background-color:#A0D670; position: relative; }
-.finished_fill { color:black;  background-color:#A0D670; position: relative; }
+.prepared_fill { color:black;  background-color:#A0D670; position: static; }
+.finished_fill { color:black;  background-color:#A0D670; position: static; }
 .completed_fill { color:black;  background-color:#A0D670 }
-.toretry_fill { color:black; background-color:#A0D670; position: relative; }
-.passed_fill { color: black; background-color:white; position: relative;}
+.toretry_fill { color:black; background-color:#A0D670; position: static; }
+.passed_fill { color: black; background-color:white; position: static;}
 
-.running_fill { color:black;  background-color:#C7E9A9; position: relative; }
-.pending_fill { color:black;  background-color:#C7E9A9; position: relative; }
-.starting_fill { color:black;  background-color:#C7E9A9; position: relative; }
-.scouted_fill { color:black;  background-color:#C7E9A9; position: relative; }
+.running_fill { color:black;  background-color:#C7E9A9; position: static; }
+.pending_fill { color:black;  background-color:#C7E9A9; position: static; }
+.starting_fill { color:black;  background-color:#C7E9A9; position: static; }
+.scouted_fill { color:black;  background-color:#C7E9A9; position: static; }
 .transferring_fill { color:black;  background-color:#C7E9A9 }
-.finishing_fill { color:black;  background-color:#C7E9A9; position: relative; }
-.ready_fill { color:black;  background-color:#C7E9A9; position: relative; }
+.finishing_fill { color:black;  background-color:#C7E9A9; position: static; }
+.ready_fill { color:black;  background-color:#C7E9A9; position: static; }
 .cached_fill { color:black;  background-color:#C7E9A9 }
 .online_fill { color:black;  background-color:#C7E9A9 }
 .merging_fill { color:black;  background-color:#C7E9A9 }
 
-.scouting_fill { color:black;  background-color:#DBF1C6; position: relative;  }
-.topreprocess_fill { color:black;  background-color:#DBF1C6; position: relative; }
-.preprocessing_fill { color:black;  background-color:#DBF1C6; position: relative; }
+.scouting_fill { color:black;  background-color:#DBF1C6; position: static;  }
+.topreprocess_fill { color:black;  background-color:#DBF1C6; position: static; }
+.preprocessing_fill { color:black;  background-color:#DBF1C6; position: static; }
 .assigned_fill { color:black;  background-color:#DBF1C6 }
 .activated_fill { color:black;  background-color:#DBF1C6 }
 
-.assigning_fill { color:black;  background-color:#EBF5E2; position: relative; }
-.defined_fill { color:black;  background-color:#EBF5E2; position: relative; }
-.registered_fill { color:black;  background-color:#EBF5E2; position: relative;  }
-.submitting_fill { color:black;  background-color:#EBF5E2; position: relative; }
+.assigning_fill { color:black;  background-color:#EBF5E2; position: static; }
+.defined_fill { color:black;  background-color:#EBF5E2; position: static; }
+.registered_fill { color:black;  background-color:#EBF5E2; position: static;  }
+.submitting_fill { color:black;  background-color:#EBF5E2; position: static; }
 .approved_fill { color:black;  background-color:#EBF5E2 }
 .processed_fill { color:black;  background-color:#EBF5E2 }
 
-.paused_fill { color:black;  background-color:#DCDCDC; position: relative; }
+.paused_fill { color:black;  background-color:#DCDCDC; position: static; }
 
 .warning_fill { color:#FFCB2F }
 
@@ -119,8 +119,8 @@
 .cancelled_fill { color:black; background-color:#FFD65D }
 
 .holding_fill { color:black; background-color:#FFE38E }
-.throttled_fill { color:black; background-color:#FFE38E; position: relative; }
-.exhausted_fill { color:black; background-color:#FFE38E; position: relative; }
+.throttled_fill { color:black; background-color:#FFE38E; position: static; }
+.exhausted_fill { color:black; background-color:#FFE38E; position: static; }
 
 .waiting_fill { color:black; background-color:#FFF5D6 }
 .sent_fill { color:black; background-color:#FFF5D6 }
