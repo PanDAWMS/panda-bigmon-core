@@ -8860,98 +8860,37 @@ def errorSummary(request):
         del request.session['TFIRST']
         del request.session['TLAST']
 
-        defaultErrorsPreferences = {}
-        defaultErrorsPreferences['errors_standard_fields'] = standard_fields
-        if request.session['ADFS_LOGIN'] and request.session['IS_TESTER']:
-            userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
-            try:
-                userSetting = BPUserSettings.objects.get(page='errors', userid=userid)
-                userPreferences = json.loads(userSetting.preferences)
-            except:
-                saveUserSettings(request, 'errors', json.dumps(defaultErrorsPreferences))
-                userPreferences = defaultErrorsPreferences
-
-
-            data = {
-                'prefix': getPrefix(request),
-                'request': request,
-                'viewParams': request.session['viewParams'],
-                'requestParams': request.session['requestParams'],
-                'requestString': urlParametrs,
-                'jobtype': jobtype,
-                'njobs': njobs,
-                'hours': LAST_N_HOURS_MAX,
-                'limit': limit,
-                'user': None,
-                'xurl': xurl,
-                'xurlsubst': xurlsubst,
-                'xurlsubstNoSite': xurlsubstNoSite,
-                'jobsurlNoSite': jobsurlNoSite,
-                'jobsurl': jobsurl,
-                'nosorturl': nosorturl,
-                'userPreferences': userPreferences,
-                'errHist': errHist,
-                'tfirst': TFIRST,
-                'tlast': TLAST,
-                'sortby': sortby,
-                'taskname': taskname,
-                'flowstruct': flowstruct,
-                'jobsErrorsTotalCount': jobsErrorsTotalCount,
-                'built': datetime.now().strftime("%H:%M:%S"),
-            }
-
-            if 'tables' in userPreferences:
-                if 'jobattrsummary' in userPreferences['tables']:
-                    if 'jobattr' in userPreferences:
-                        sumd_new = []
-                        for attr in userPreferences['jobattr']:
-                            for field in sumd:
-                                if attr == field['field']:
-                                    sumd_new.append(field)
-                                    continue
-                        data['sumd'] = sumd_new
-                    else:
-                        data['sumd']=sumd
-                if 'errorsummary' in userPreferences['tables']:
-                    data['errsByCount'] = errsByCount
-                if 'siteerrorsummary' in userPreferences['tables']:
-                    data['errsBySite'] = errsBySite
-                if 'usererrorsummary' in userPreferences['tables']:
-                    data['errsByUser'] = errsByUser
-                if 'taskerrorsummary' in userPreferences['tables']:
-                    data['errsByTask'] = errsByTask
-        else:
-            data = {
-                'prefix': getPrefix(request),
-                'request': request,
-                'viewParams': request.session['viewParams'],
-                'requestParams': request.session['requestParams'],
-                'requestString': urlParametrs,
-                'jobtype': jobtype,
-                'njobs': njobs,
-                'hours': LAST_N_HOURS_MAX,
-                'limit': limit,
-                'user': None,
-                'xurl': xurl,
-                'xurlsubst': xurlsubst,
-                'xurlsubstNoSite': xurlsubstNoSite,
-                'jobsurlNoSite': jobsurlNoSite,
-                'jobsurl': jobsurl,
-                'nosorturl': nosorturl,
-                'errsByCount': errsByCount,
-                'errsBySite': errsBySite,
-                'errsByUser': errsByUser,
-                'errsByTask': errsByTask,
-                'sumd': sumd,
-                'errHist': errHist,
-                'tfirst': TFIRST,
-                'tlast': TLAST,
-                'sortby': sortby,
-                'taskname': taskname,
-                'flowstruct': flowstruct,
-                'jobsErrorsTotalCount': jobsErrorsTotalCount,
-                'built': datetime.now().strftime("%H:%M:%S"),
-            }
+        data = {
+            'prefix': getPrefix(request),
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'requestString': urlParametrs,
+            'jobtype': jobtype,
+            'njobs': njobs,
+            'hours': LAST_N_HOURS_MAX,
+            'limit': limit,
+            'user': None,
+            'xurl': xurl,
+            'xurlsubst': xurlsubst,
+            'xurlsubstNoSite': xurlsubstNoSite,
+            'jobsurlNoSite': jobsurlNoSite,
+            'jobsurl': jobsurl,
+            'nosorturl': nosorturl,
+            'errsByCount': errsByCount,
+            'errsBySite': errsBySite,
+            'errsByUser': errsByUser,
+            'errsByTask': errsByTask,
+            'sumd': sumd,
+            'errHist': errHist,
+            'tfirst': TFIRST,
+            'tlast': TLAST,
+            'sortby': sortby,
+            'taskname': taskname,
+            'flowstruct': flowstruct,
+            'jobsErrorsTotalCount': jobsErrorsTotalCount,
+            'built': datetime.now().strftime("%H:%M:%S"),
+        }
         data.update(getContextVariables(request))
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
         # Filtering data due to user settings
