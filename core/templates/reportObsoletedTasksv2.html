@@ -3,7 +3,7 @@
 
 {% block page_title %} {{ viewParams.MON_VO }} Obsolete {% if type == 'dsview' %}datasets{% elif type == 'tasksview' %}tasks{% endif %}
 {% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} Obsolete {% if type == 'dsview' %}datasets{% elif type == 'tasksview' %}tasks{% endif %}</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} Obsolete {% if type == 'dsview' %}datasets{% elif type == 'tasksview' %}tasks{% endif %}</a>{% endblock %}
 {% block subtitle %}PanDA {{view}} {{ requestParams.mode }} {{ viewParams.selection|safe }}
 {% endblock %}
 {% block body %}

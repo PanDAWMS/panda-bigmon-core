@@ -1,7 +1,7 @@
 {% extends "_base_core.html" %}
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA users{% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}Recent PanDA users{{viewParams.selection|safe }}
 {% if vo %} &nbsp; for VO {{ vo }}{% endif %}
 {% endblock %}
