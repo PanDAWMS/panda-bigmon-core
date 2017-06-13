@@ -25,8 +25,8 @@
 
 
 {% comment %}
-	<link rel="stylesheet" href="http://hepsoftware.org/static/css/normalize.css" %}">
-	<link rel="stylesheet" href="http://hepsoftware.org/static/css/foundation.css" %}">
+	<link rel="stylesheet" href="http://hepsoftware.org/static/css/normalize.css">
+	<link rel="stylesheet" href="http://hepsoftware.org/static/css/foundation.css">
 {% endcomment %}
 
 {#  <link rel="stylesheet" href="{% static "css/foundation/normalize.css" %}">#}
@@ -37,6 +37,9 @@
 <link rel="stylesheet" href="{% static "css/state-colors.css" %}">
 <link rel="stylesheet" href="{% static "css/table.css" %}">
 <link rel="stylesheet" href="{% static "css/d3js-plots.css" %}">
+<link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}">
+<link rel="stylesheet" href="{% static "css/page-sections.css" %}">
+
 
 
 	{% comment %} <link rel="stylesheet" href="{% static "css/bigpandamon.css" %}"> {% endcomment %}
@@ -58,194 +61,240 @@
     ga('send', 'pageview');
 	</script>
 
-<STYLE type="text/css">
-
-.showentries {
-  background-color : transparent;
-  font-size: 1em;
-  color: #FFFFFF;
-  display: block;
-  font-weight: 500;
-  margin-bottom: 0.1875em; 
-}
-.showentries.label {
-  background-color : transparent;
-  font-size: 1em;
-  color: #FFFFFF;
-}
-
-.tdF{
-vertical-align: top;
-}
-
-.inputW{
-width:10em;
-}
-
-a:hover, a:visited, a:link, a:active
-{
-    text-decoration: none;
-    color:#0a47ff;
-}
-
-
-.section{ font-weight:bold; color:darkblue; padding-bottom:10px }
-
-.docsection{ background-color:#b2d546; font-weight:bold; border-style:solid; border-width:1px; border-color:#324f00;}
-.doctext{ background-color:#e4f9a6; border-style:solid; border-width:1px; border-color:#324f00;}
-.doctextlight{ background-color:#F4FFDD; border-style:solid; border-width:1px; border-color:#324f00;}
-li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
-.help { color:#b2d546 }
-.helpsection{ font-weight:bold; font-size:14pt; background-color:forestgreen; color:white; border-style:solid; border-width:1px; border-color:forestgreen;}
-.helplight { color:#e4f9a6 }
-.helpdark { color:forestgreen }
-.highlightcell { background-color:#ECE6E6 }
-.whitecell { background-color:white }
-.whitesmokecell { background-color:whitesmoke }
-
-.invisibletable{ border-width:0px; border-color:white; vertical-align: top;}
-
-
-.inputW{width:10em}
-.input8{width:8em}
-.inputN{width:2em}
-.input4{width:4em}
-
-
-
-a.uservisits {
-    color: black;
-    font-family: 'Muli', sans-serif;
-    font-size: 14px;
-}
-a.uservisits:hover {
-    text-decoration: underline;
-}
-
-h2 {
-	margin: 1em 0 0.5em 0;
-	font-weight: 600;
-	position: relative;
-	font-size: 14px;
-	line-height: 30px;
-	background: #355681;
-	background: rgba(53,86,129, 0.8);
-	border: 1px solid #fff;
-	padding: 5px 15px;
-	color: white;
-	border-radius: 10px 10px 0px 0px;
-	font-family: 'Muli', sans-serif;
-}
-
-h4 {
-	margin: 1em 0 0.5em 0;
-	font-weight: 600;
-	position: relative;
-	font-size: 14px;
-	line-height: 20px;
-	color: rgba(53,86,129, 0.8);
-	font-family: 'Muli', sans-serif;
-}
-
-hr {
-    background-color: rgba(53,86,129, 0.8);
-    height: 3px;
-}
-.killbutton {
-  display: inline-block;
-  min-width: 100px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: bold;
-  text-decoration: none;
-  background-color: firebrick;
-  color: white;
-  padding: 10px;
-}
-.killbutton:hover {
-    background-color: #222222;
-    color: white;
-}
-.dropdownplots {
-    position: relative;
-    display: inline-block;
-}
-.dropdownbutton{
-    background-color: rgba(53,86,129, 0.8);
-    color: white;
-    width: 200px;
-    padding: 10px;
-    margin-bottom: 0px;
-    font-size: 14px;
-    border: none;
-    cursor: pointer;
-}
-.dropdown-plot {
-    display: none;
-    position: absolute;
-    background-color: #f9f9f9;
-    min-width: 200px;
-    border-left: 1px solid #222222;
-    box-shadow: 8px 8px 16px 0px rgba(0,0,0,0.5);
-    z-index: 1;
-}
-.dropdown-plot a {
-    color: #222222;
-    padding: 6px 8px;
-    font-size: 14px;
-    text-decoration: none;
-    display: block;
-}
-.dropdown-plot a:hover {background-color: rgba(53,86,129, 0.3)}
-.dropdownplots:hover .dropdown-plot {
-    display: block;
-}
-
-.dropdownplots:hover .dropdownbutton {
-    background-color: #222222;
-}
-
-</STYLE>
-
-    <link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}">
-
 </head>
 <body>
 
+<form id="form-usersettings" action="{{ request.get_full_path }}" method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="tables" value=""/>
+    <input type="hidden" name="jobattr" value=""/>
+</form>
 
 <div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="large">
   <button class="menu-icon" type="button" data-toggle="main-menu"></button>
   <div class="title-bar-title">Menu</div>
 </div>
 
-<div class="off-canvas position-right" id="offCanvasRight" data-off-canvas>
-    <div class="row">
-      <div class="columns">
-        <ul class="tabs" data-tabs id="example-tabs">
-          <li class="tabs-title is-active"><a href="#panel1" aria-selected="true">Tab 1</a></li>
-          <li class="tabs-title"><a href="#panel2">Tab 2</a></li>
-        </ul>
-
-        <div class="tabs-content" data-tabs-content="example-tabs">
-          <div class="tabs-panel is-active" id="panel1">
-            <p>One</p>
-          </div>
-          <div class="tabs-panel" id="panel2">
-            <p>Two</p>
-          </div>
-        </div>
-      </div>
+<div class="canvas-settings off-canvas position-right" id="offCanvasRight" data-off-canvas>
+{% if '/errors/' in request.path %}
+    <p>
+        <span style="font-weight: bold">Errors page settings</span>
+    </p>
+  <div class="switch-toggle-wrapper">
+    <div class="switch tiny">
+      <input class="switch-input" id="switch-table-jobattrsummary" type="checkbox" name="switch-table"
+              {% if 'jobattrsummary' in userPreferences.tables %} checked="checked" {% endif %}>
+      <label class="switch-paddle" for="switch-table-jobattrsummary">
+        <span class="show-for-sr">Job attribute summary</span>
+      </label>
     </div>
+    <span>Job attribute summary</span>
+  </div>
+  <div class="switch-toggle-wrapper">
+    <div class="switch tiny">
+      <input class="switch-input" id="switch-table-errorsummary" type="checkbox" name="switch-table"
+              {% if 'errorsummary' in userPreferences.tables %} checked="checked" {% endif %}>
+      <label class="switch-paddle" for="switch-table-errorsummary">
+        <span class="show-for-sr">Overall error summary</span>
+      </label>
+    </div>
+    <span>Overall error summary</span>
+  </div>
+  <div class="switch-toggle-wrapper">
+    <div class="switch tiny">
+      <input class="switch-input" id="switch-table-siteerrorsummary" type="checkbox" name="switch-table"
+              {% if 'siteerrorsummary' in userPreferences.tables %} checked="checked" {% endif %}>
+      <label class="switch-paddle" for="switch-table-siteerrorsummary">
+        <span class="show-for-sr">Site error summary</span>
+      </label>
+    </div>
+    <span>Site error summary</span>
+  </div>
+  <div class="switch-toggle-wrapper">
+    <div class="switch tiny">
+      <input class="switch-input" id="switch-table-usererrorsummary" type="checkbox" name="switch-table"
+              {% if 'usererrorsummary' in userPreferences.tables %} checked="checked" {% endif %}>
+      <label class="switch-paddle" for="switch-table-usererrorsummary">
+        <span class="show-for-sr">User error summary</span>
+      </label>
+    </div>
+    <span>User error summary</span>
+  </div>
+  <div class="switch-toggle-wrapper">
+    <div class="switch tiny">
+      <input class="switch-input" id="switch-table-taskerrorsummary" type="checkbox" name="switch-table"
+              {% if 'taskerrorsummary' in userPreferences.tables %} checked="checked" {% endif %}>
+      <label class="switch-paddle" for="switch-table-taskerrorsummary">
+        <span class="show-for-sr">Task error summary</span>
+      </label>
+    </div>
+    <span>Task error summary</span>
+  </div>
+<ul class="vertical menu" data-accordion-menu>
+    <li><a href="#">JOB ATTRIBUTE SUMMARY TABLE</a>
+      <ul class="menu vertical nested">
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-cloud" type="checkbox" name="switch-jobsattr"
+                {% if 'cloud' in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-cloud">
+                <span class="show-for-sr">Cloud</span>
+              </label>
+            </div>
+            <span>Cloud</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-computingsite" type="checkbox" name="switch-jobsattr"
+                {% if 'computingsite' in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-computingsite">
+                <span class="show-for-sr">Computing site</span>
+              </label>
+            </div>
+            <span>Computing site</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-jeditaskid" type="checkbox" name="switch-jobsattr"
+                {% if 'jeditaskid' in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-jeditaskid">
+                <span class="show-for-sr">JEDI task ID</span>
+              </label>
+            </div>
+            <span>JEDI task ID</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-jobstatus" type="checkbox" name="switch-jobsattr"
+                {% if 'jobstatus' in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-jobstatus">
+                <span class="show-for-sr">Job status</span>
+              </label>
+            </div>
+            <span>Job status</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-processingtype" type="checkbox" name="switch-jobsattr"
+                {% if 'processingtype' in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-processingtype">
+                <span class="show-for-sr">Processing type</span>
+              </label>
+            </div>
+            <span>Processing type</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-prodsourcelabel" type="checkbox" name="switch-jobsattr"
+                {% if 'prodsourcelabel' in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-prodsourcelabel">
+                <span class="show-for-sr">Prod source label</span>
+              </label>
+            </div>
+            <span>Prod source label</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-produsername" type="checkbox" name="switch-jobsattr"
+                {% if 'produsername' in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-produsername">
+                <span class="show-for-sr">Produser name</span>
+              </label>
+            </div>
+            <span>Produser name</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-specialhandling" type="checkbox" name="switch-jobsattr"
+                {% if 'specialhandling' in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-specialhandling">
+                <span class="show-for-sr">Special handling</span>
+              </label>
+            </div>
+            <span>Special handling</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-taskid" type="checkbox" name="switch-jobsattr"
+                {% if 'taskid' in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-taskid">
+                <span class="show-for-sr">Task ID</span>
+              </label>
+            </div>
+            <span>Task ID</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-transformation" type="checkbox" name="switch-jobsattr"
+                {% if 'transformation' in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-transformation">
+                <span class="show-for-sr">Transformation</span>
+              </label>
+            </div>
+            <span>Transformation</span>
+          </div>
+        <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-workinggroup" type="checkbox" name="switch-jobsattr"
+                {% if 'workinggroup' in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-workinggroup">
+                <span class="show-for-sr">Working group</span>
+              </label>
+            </div>
+            <span>Working group</span>
+          </div>
+       </ul>
+    </li>
+  </ul>
 
+  <button type="button" class="save button" onclick="saveSettings()">Save & Reload</button>
+{% endif %}
 </div>
 
+<script >
+function getSettings(name) {
+    var settingsStr = '';
+    var settings = document.getElementsByName(name);
+    for (var i = 0; i < settings.length; i++) {
+        var element = settings[i];
+        if (element.checked) {
+            settingsStr += element.id.split("-")[2];
+            settingsStr += ','
+        }
+    }
+    if (settingsStr[settingsStr.length - 1] == ',') {
+        settingsStr = settingsStr.substring(0,settingsStr.length - 1);
+    }
+    return settingsStr;
+}
+function saveSettings() {
+    var settingTables = getSettings('switch-table');
+    var settingJobAttr = getSettings('switch-jobsattr');
+    var url = window.location.href;
+    if (settingTables.length > 1) {
+        url += '&tables=' + settingTables;
+    }
+    if (settingJobAttr.length > 1) {
+        url += '&jobattr=' + settingJobAttr;
+    }
+    var usersettingsForm = document.forms['form-usersettings'];
+    usersettingsForm.elements["tables"].value = settingTables;
+    usersettingsForm.elements["jobattr"].value = settingJobAttr;
+
+    document.getElementById("form-usersettings").submit();
+{#    window.location = url;#}
+}
+</script>
+
 <div class="top-bar stacked-for-large" id="main-menu">
+  <div class="top-bar-title">
+    <span data-responsive-toggle="responsive-menu" data-hide-for="medium">
+      <button class="menu-icon" type="button" data-toggle></button>
+    </span>
+    <strong><a href="{% url 'index' %}" style="color: #fefefe; font-weight: normal">{% block title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}  PanDA {% endblock %}</a></strong>
+  </div>
     <div class="top-bar-left">
       <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
-        <li class="menu-text">
-{#                    ATLAS PanDA#}
-            <a href="{% url 'index' %}">{% block title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}  PanDA {% endblock %}</a>
-        </li>
         <li class="has-submenu">
         <a href="#">Dash</a>
         <ul class="submenu menu vertical">
@@ -430,13 +479,12 @@ hr {
                 <li><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a>
             </ul>
             </li>
-            {#        {% if request.session.username %}#}
+            {% if request.session.ADFS_LOGIN and request.session.IS_TESTER and '/errors/' in request.path %}
             <li class="settings-button">
              <button type="button" data-open="offCanvasRight"><i class="fi-widget"></i></button>
             </li>
-{#        {% endif %}#}
+            {% endif %}
         </ul>
-
     </div>
 </div>
   <!-- End Header and Nav -->
