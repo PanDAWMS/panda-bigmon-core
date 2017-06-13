@@ -83,7 +83,8 @@
   <div class="switch-toggle-wrapper">
     <div class="switch tiny">
       <input class="switch-input" id="switch-table-jobattrsummary" type="checkbox" name="switch-table"
-              {% if 'jobattrsummary' in userPreferences.tables %} checked="checked" {% endif %}>
+              {% if 'jobattrsummary' in userPreferences.tables %} checked="checked" {% endif %}
+                onchange="disableDetails('switch-table-jobattrsummary','switch-jobsattr', 'jobattr-menu', 'jobattr-menu-item');">
       <label class="switch-paddle" for="switch-table-jobattrsummary">
         <span class="show-for-sr">Job attribute summary</span>
       </label>
@@ -130,9 +131,13 @@
     </div>
     <span>Task error summary</span>
   </div>
-<ul class="vertical menu" data-accordion-menu>
-    <li><a href="#">JOB ATTRIBUTE SUMMARY TABLE</a>
-      <ul class="menu vertical nested">
+
+<div class="row">
+  <div class="columns offCanvasRight-columns">
+    <ul class="accordion " data-accordion data-allow-all-closed="true">
+    <li id="jobattr-menu" class="accordion-item is-active " data-accordion-item><a href="#" style="color: #fefefe" id="jobattr-link" class="accordion-title">JOB ATTRIBUTE SUMMARY TABLE</a>
+     <div class="accordion-content" data-tab-content >
+      <ul id="jobattr-menu-item" class="menu vertical nested">
         <div class="switch-toggle-wrapper">
             <div class="switch tiny">
               <input class="switch-input" id="switch-jobsattr-cloud" type="checkbox" name="switch-jobsattr"
@@ -244,8 +249,11 @@
             <span>Working group</span>
           </div>
        </ul>
+     </div>
     </li>
   </ul>
+  </div>
+</div>
 
   <button type="button" class="save button" onclick="saveSettings()">Save & Reload</button>
 {% endif %}
@@ -284,6 +292,30 @@ function saveSettings() {
     document.getElementById("form-usersettings").submit();
 {#    window.location = url;#}
 }
+
+function disableDetails(inputid,name,menuid,menuitemid) {
+    var input = document.getElementById(inputid);
+    var switches = document.getElementsByName(name);
+    if (!input.checked) {
+        for (var sw = 0; sw<switches.length; sw++ ) {
+            if (switches[sw].hasAttribute('checked')) {
+                switches[sw].removeAttribute('checked');
+            }
+        }
+        document.getElementById(menuid).setAttribute('aria-expanded', 'false');
+        document.getElementById(menuid).classList.add('invisible');
+    }
+    else {
+        document.getElementById(menuid).classList.remove('invisible');
+{#        var userSettings = {{ userPreferences.jobattr | safe }} ;#}
+{#        for (var i = 0; i<switches.length; i++ ) {#}
+{#            if (userSettings.indexOf(switches[i].id.split('-')[2]) != -1) {#}
+{#                switches[i].addAttribute('checked');#}
+{#            }#}
+{#        }#}
+    }
+}
+
 </script>
 
 <div class="top-bar stacked-for-large" id="main-menu">
@@ -291,7 +323,7 @@ function saveSettings() {
     <span data-responsive-toggle="responsive-menu" data-hide-for="medium">
       <button class="menu-icon" type="button" data-toggle></button>
     </span>
-    <strong><a href="{% url 'index' %}" style="color: #fefefe; font-weight: normal">{% block title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}  PanDA {% endblock %}</a></strong>
+    <strong><a href="{% url 'index' %}" style="color: #fefefe !important; font-weight: normal">{% block title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}  PanDA {% endblock %}</a></strong>
   </div>
     <div class="top-bar-left">
       <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
