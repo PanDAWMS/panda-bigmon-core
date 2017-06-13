@@ -2,7 +2,7 @@
 
 {% load staticfiles %}
 {% block page_title %} {{ jeditaskid }} ES task {% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA Event Service task {{ jeditaskid }} at {{ task.site }} {% endblock %}
 
 {% block body %}

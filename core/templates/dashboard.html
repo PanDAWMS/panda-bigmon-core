@@ -2,7 +2,7 @@
 
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA {{view}} {{ requestParams.mode }} dashboard{{ viewParams.selection|safe }}
 {% endblock %}
 {% block body %}
@@ -282,9 +282,8 @@ Click on column titles to sort.
 
 
 </script>
-
+<a class="bluebutton" onclick="javascript:toggle('hiderow');" href="#">Select states to show</a>
 <table id="columnstoshow">
-<th><a style="cursor: pointer;" onclick="javascript:toggle('hiderow');" href="#">Select states to show</a></th>
 <tr class='hiderow'><td>defined <input id="defined" type="checkbox" checked/></td>
 <td>waiting <input id="waiting" type="checkbox" checked/></td>
 <td>assigned <input id="assigned" type="checkbox" checked/></td>
@@ -322,9 +321,10 @@ Click on column titles to sort.
             document.getElementById('hidebutton').innerHTML='Hide offline and brokeroff queues'}
     }
 </script>
-<table>
-<th><a id="hidebutton" style="cursor: pointer;" onclick="javascript:hideoffline();" href="#">Hide offline and brokeroff queues</a></th>
-</table>
+
+<a id="hidebutton" class="bluebutton" onclick="javascript:hideoffline();" href="#">Hide offline and brokeroff queues</a>
+<br style="clear:both;">
+<p>
 {% endif %}
 
 

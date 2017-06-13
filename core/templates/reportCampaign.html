@@ -3,7 +3,7 @@
 
 
 {% block page_title %} {{ viewParams.MON_VO }} Campaign Report {% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} Campaign Report</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} Campaign Report</a>{% endblock %}
 {% block subtitle %}PanDA {{view}} {{ requestParams.mode }} {{ viewParams.selection|safe }}
 {% endblock %}
 {% block body %}
