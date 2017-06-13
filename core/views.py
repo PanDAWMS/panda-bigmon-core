@@ -4998,18 +4998,14 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
 
     sitesummarydata = siteSummary(query, notime, extra)
 
-    #nojobabs = Sitedata.objects.filter(hours=3).values('site').annotate(dcount=Sum('nojobabs'))
-
-    #sql_hs_distribution = "SELECT SUM(nojobabs), site  FROM ATLAS_PANDAMETA.SITEDATA WHERE HOURS=3 GROUP BY "
-
-    #cur = connection.cursor()
-    #cur.execute(sql_hs_distribution)
-    #hs_distribution_raw = cur.fetchall()
+    nojobabs = Sitedata.objects.filter(hours=3).values('site').annotate(dcount=Sum('nojobabs'))
 
     nojobabshash = {}
-    #nojobabs.encode('utf-8').strip()
-    #for item in nojobabs:
-    #    nojobabshash[item['site']] = item['dcount']
+    try:
+        for item in nojobabs:
+            nojobabshash[item['site']] = item['dcount']
+    except:
+        pass
 
 
     mismatchedSites = []
