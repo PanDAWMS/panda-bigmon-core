@@ -10498,11 +10498,14 @@ def getPilotCounts(view):
     query['hours'] = 3
     rows = Sitedata.objects.filter(**query).values()
     pilotd = {}
-    for r in rows:
-        site = r['site']
-        if not site in pilotd: pilotd[site] = {}
-        pilotd[site]['count'] = r['getjob'] + r['updatejob']
-        pilotd[site]['time'] = r['lastmod']
+    try:
+        for r in rows:
+            site = r['site']
+            if not site in pilotd: pilotd[site] = {}
+            pilotd[site]['count'] = r['getjob'] + r['updatejob']
+            pilotd[site]['time'] = r['lastmod']
+    except:
+        pass
     return pilotd
 
 
