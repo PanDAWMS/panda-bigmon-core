@@ -241,6 +241,6 @@
   display: none;
 }
 
-.menu-link a {
-  color: #fefefe;
+.menu-link {
+  color: #fefefe !important;
 }

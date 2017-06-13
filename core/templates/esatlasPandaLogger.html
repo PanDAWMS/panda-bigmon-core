@@ -1,7 +1,7 @@
 {% extends "_base_core.html" %}
 {% load staticfiles %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA logger{% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA logger{{ viewParams.selection|safe }}
 {% if user %} &nbsp; user={{ user }} {% endif %}
 {% if site %} &nbsp; site={{ site }} {% endif %}

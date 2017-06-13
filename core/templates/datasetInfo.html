@@ -1,7 +1,7 @@
 {% extends "_base_core.html" %}
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA dataset {{ datasetname }} {% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA dataset <b>{{ datasetname }}</b>{% endblock %}
 
 {% block body %}

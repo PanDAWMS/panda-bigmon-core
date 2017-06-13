@@ -3,7 +3,7 @@
 {% load staticfiles %}
 
 {% block page_title %}PanDA job {{ pandaid }}{% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA Event Service job details for job <b>{{ jobid }}</b>{% endblock %}
 
 {% block body %}
