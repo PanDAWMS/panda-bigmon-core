@@ -6907,6 +6907,13 @@ def report(request):
         endSelfMonitor(request)
         return response
 
+    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16A' and 'type' in request.session['requestParams'] and request.session['requestParams']['type'].upper() == 'DCC':
+        reportGen = MC16aCPReport.MC16aCPReport()
+        resp = reportGen.getDKBEventsSummaryRequestedBreakDownHashTag(request)
+        dump = json.dumps(resp, cls=DateEncoder)
+        return HttpResponse(dump, content_type='text/html')
+
+
     if 'requestParams' in request.session and 'obstasks' in request.session['requestParams']:
         reportGen = ObsoletedTasksReport.ObsoletedTasksReport()
         response = reportGen.prepareReport(request)

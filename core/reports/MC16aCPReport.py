@@ -713,6 +713,30 @@ class MC16aCPReport:
         cache.set(cache_key, data, timeout)
         cache.set("2hoursRefreshTick", True, 120*60)
 
+
+
+
+    def getDKBEventsSummaryRequestedBreakDownHashTag(self, request):
+        sqlRequestHashTags = '''SELECT SUM(t1.FINISHEDJEV) AS FINISHEDEV, 
+            SUM(PENDINGJEV+DEFINEDJEV+ASSIGNEDJEV+WAITINGJEV+ACTIVATEDJEV+SENTJEV+STARTINGJEV+RUNNINGJEV+HOLDINGJEV+TRANSFERRINGJEV+MERGINGJEV) as RESTEV,
+            t3.HASHTAG, STEP FROM ATLAS_PANDABIGMON.TASKS_PROD_AGGREGATE t1, ATLAS_DEFT.T_HT_TO_TASK t2, ATLAS_DEFT.T_HASHTAG t3 
+            WHERE t3.HT_ID=t2.HT_ID and t1.TASKID=t2.TASKID AND t1.REQUESTID IN (11034, 11035, 11048,11049,11050,11051,11052,11198,11197,11222,11359)
+            GROUP BY t3.HASHTAG, STEP
+            '''
+        sqlRequestFull = sqlRequestHashTags
+        cur = connection.cursor()
+        cur.execute(sqlRequestFull)
+        dbResult = cur.fetchall()
+        listHashProgress = []
+
+        for row in dbResult:
+            rowDict = {"finishedev":row[0], "restev":row[1], "hashtag":row[2], "step":row[3]}
+            listHashProgress.append(rowDict)
+        return listHashProgress
+
+
+
+
     class DateEncoder(json.JSONEncoder):
         def default(self, obj):
             if hasattr(obj, 'isoformat'):
@@ -720,3 +744,4 @@ class MC16aCPReport:
             else:
                 return str(obj)
             return json.JSONEncoder.default(self, obj)
+
