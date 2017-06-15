@@ -154,3 +154,13 @@ hr {
   color: white !important;
   padding: 10px;
 }
+
+.row.left-aligned {
+    margin: 0;
+    padding: 0;
+}
+.column.left-aligned {
+margin-left: 0;
+margin-right: 0;
+padding: 0;
+float: none !important; }
