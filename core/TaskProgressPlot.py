@@ -10,6 +10,7 @@ import StringIO
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
+import datetime
 
 class TaskProgressPlot:
 
@@ -110,10 +111,19 @@ class TaskProgressPlot:
                     JOIN JOBSARCHIVED ON t2.PANDAID = JOBSARCHIVED.PANDAID AND JEDITASKID={0} AND JOBSARCHIVED.JOBSTATUS='finished') t3""".format(taskid))
         rows = cur.fetchall()
 
+        modificationtimeList = []
+        neventsList = []
         if len(rows) > 0:
-            data = {'modificationtime': [row[0] for row in rows],
-                    'nevents': [row[1] for row in rows]}
-            return pd.DataFrame(data, columns=['modificationtime','nevents'])
+            for row in rows:
+                if isinstance(row[0], datetime.datetime) and row[0] > (datetime.datetime.now() + datetime.timedelta(-10000)) and (row[0] not in modificationtimeList):
+                    modificationtimeList.append(row[0])
+                    neventsList.append(row[1])
+            data = {'modificationtime': modificationtimeList,
+                    'nevents': neventsList}
+            if len(modificationtimeList) > 10000:
+                return pd.DataFrame(data, columns=['modificationtime','nevents']).sample(n=10000)
+            else:
+                return pd.DataFrame(data, columns=['modificationtime', 'nevents'])
         else:
             None
 
@@ -170,6 +180,7 @@ class TaskProgressPlot:
         return fig
 
     def make_es_verbose_profile_graph(self,frame, taskid, status=None, daterange=None):
+        #plt.switch_backend('Cairo')
         plt.style.use('fivethirtyeight')
         fig = plt.figure(figsize=(20, 15))
         plt.locator_params(axis='x', nbins=30)
@@ -180,7 +191,11 @@ class TaskProgressPlot:
         starttime = self.get_task_start(taskid)['starttime']
         plt.axvline(x=starttime, color='b', linewidth=4, label="Task start time")
 
-        min = starttime
+        if not starttime is None:
+            min = starttime
+        else:
+            min = frame.values[:,0].min()
+
         max = frame.values[:,0].max()
         plt.xlim(xmax=max)
         plt.xlim(xmin=min)
