@@ -7544,8 +7544,6 @@ def taskInfo(request, jeditaskid=0):
         for jdt in jeditaskid:
             jdtstr = jdtstr+str(jdt)
         return redirect('/task/'+jdtstr)
-    if jeditaskid == 0:
-        return redirect('/tasks')
     valid, response = initRequest(request)
     furl = request.get_full_path()
     nomodeurl = removeParam(furl, 'mode')
@@ -7630,6 +7628,8 @@ def taskInfo(request, jeditaskid=0):
     objectStoreDict=[]
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
         request.session['requestParams']['jeditaskid'])
+    if jeditaskid == 0:
+        return redirect('/tasks')
     if jeditaskid != 0:
 
         query = {'jeditaskid': jeditaskid}
