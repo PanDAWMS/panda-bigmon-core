@@ -152,6 +152,7 @@ LAST_N_HOURS_MAX = 0
 PLOW = 1000000
 PHIGH = -1000000
 
+
 standard_fields = ['processingtype', 'computingsite', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid',
                    'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype',
                    'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount', 'eventservice',
@@ -165,6 +166,25 @@ standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'cor
 VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
 VOMODE = ' '
+
+
+
+def jobSuppression(request):
+
+    extra = '(1=1)'
+
+    if not 'notsuppress' in request.session['requestParams']:
+        suppressruntime = 10
+        if 'suppressruntime' in request.session['requestParams']:
+            try:
+                suppressruntime = int(request.session['requestParams']['suppressruntime'])
+            except:
+                pass
+            extra = '( not( (JOBDISPATCHERERRORCODE=100 OR ' \
+                    'PILOTERRORCODE in (1200, 1201, 1202, 1203, 1204, 1206, 1207) ) and ((ENDTIME-STARTTIME)*24*60 < ' + str(
+            suppressruntime) + ')))'
+    return extra
+
 
 def getObjectStoresNames():
     global objectStoresNames
@@ -4986,10 +5006,15 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         extra = "(not eventservice is null and eventservice=2 and not specialhandling like '%%sc:%%')"
 
     sitesummarydata = siteSummary(query, notime, extra)
+
     nojobabs = Sitedata.objects.filter(hours=3).values('site').annotate(dcount=Sum('nojobabs'))
+
     nojobabshash = {}
-    for item in nojobabs:
-        nojobabshash[item['site']] = item['dcount']
+    try:
+        for item in nojobabs:
+            nojobabshash[item['site']] = item['dcount']
+    except:
+        pass
 
 
     mismatchedSites = []
@@ -5853,6 +5878,7 @@ def dashboard(request, view='production'):
         if 'hours' in request.session['requestParams']:
             hours = int(request.session['requestParams']['hours'])
 
+        extra = '(1=1)'
 
         if view == 'production':
             query['tasktype'] = 'prod'
@@ -5862,6 +5888,8 @@ def dashboard(request, view='production'):
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
             query['es'] = 1
             estailtojobslinks = '&eventservice=eventservice'
+            extra = jobSuppression(request)
+
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
             query['es'] = 0
 
@@ -5871,8 +5899,8 @@ def dashboard(request, view='production'):
         jobsarch4statuses = ['finished', 'failed', 'cancelled', 'closed']
         if ('modificationtime__range' in excludedTimeQuery and not 'date_to' in request.session['requestParams']):
             del excludedTimeQuery['modificationtime__range']
-        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**excludedTimeQuery).values(*values).exclude(isarchive=1).annotate(countjobsinstate=Count('jobstatus')))
-        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values).exclude(isarchive=0).annotate(countjobsinstate=Count('jobstatus')))
+        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**excludedTimeQuery).values(*values).extra(where=[extra]).exclude(isarchive=1).annotate(countjobsinstate=Count('jobstatus')))
+        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values).extra(where=[extra]).exclude(isarchive=0).annotate(countjobsinstate=Count('jobstatus')))
         nucleus = {}
         statelist1 = statelist
         #    del statelist1[statelist1.index('jclosed')]
@@ -6888,6 +6916,13 @@ def report(request):
         endSelfMonitor(request)
         return response
 
+    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16A' and 'type' in request.session['requestParams'] and request.session['requestParams']['type'].upper() == 'DCC':
+        reportGen = MC16aCPReport.MC16aCPReport()
+        resp = reportGen.getDKBEventsSummaryRequestedBreakDownHashTag(request)
+        dump = json.dumps(resp, cls=DateEncoder)
+        return HttpResponse(dump, content_type='text/html')
+
+
     if 'requestParams' in request.session and 'obstasks' in request.session['requestParams']:
         reportGen = ObsoletedTasksReport.ObsoletedTasksReport()
         response = reportGen.prepareReport(request)
@@ -7518,8 +7553,6 @@ def taskInfo(request, jeditaskid=0):
         for jdt in jeditaskid:
             jdtstr = jdtstr+str(jdt)
         return redirect('/task/'+jdtstr)
-    if jeditaskid == 0:
-        return redirect('/tasks')
     valid, response = initRequest(request)
     furl = request.get_full_path()
     nomodeurl = removeParam(furl, 'mode')
@@ -7604,6 +7637,8 @@ def taskInfo(request, jeditaskid=0):
     objectStoreDict=[]
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
         request.session['requestParams']['jeditaskid'])
+    if jeditaskid == 0:
+        return redirect('/tasks')
     if jeditaskid != 0:
 
         query = {'jeditaskid': jeditaskid}
@@ -7617,11 +7652,12 @@ def taskInfo(request, jeditaskid=0):
             if 'mode' in request.session['requestParams'] and request.session['requestParams'][
                 'mode'] == 'nodrop': mode = 'nodrop'
 
+            extra = jobSuppression(request)
 
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge')
+                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge')
             plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary2(
-                query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
+                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
             for state in eventservicestatelist:
                 eventstatus = {}
                 eventstatus['statusname'] = state
@@ -8030,7 +8066,7 @@ def ganttTaskChain(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype=''):
+def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype=''):
     jobs = []
     jobScoutIDs = {}
     jobScoutIDs['cputimescoutjob'] = []
@@ -8058,12 +8094,12 @@ def jobSummary2(query, exclude={}, mode='drop', isEventServiceFlag=False, substa
 
     # print str(datetime.now())
 
-    jobs.extend(Jobsarchived.objects.filter(**newquery).exclude(**exclude).values(*values))
+    jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
 
-    jobs.extend(Jobsdefined4.objects.filter(**newquery).exclude(**exclude).values(*values))
-    jobs.extend(Jobswaiting4.objects.filter(**newquery).exclude(**exclude).values(*values))
-    jobs.extend(Jobsactive4.objects.filter(**newquery).exclude(**exclude).values(*values))
-    jobs.extend(Jobsarchived4.objects.filter(**newquery).exclude(**exclude).values(*values))
+    jobs.extend(Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
+    jobs.extend(Jobswaiting4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
+    jobs.extend(Jobsactive4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
+    jobs.extend(Jobsarchived4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
 
     # print str(datetime.now())
 
@@ -10172,11 +10208,14 @@ def getPilotCounts(view):
     query['hours'] = 3
     rows = Sitedata.objects.filter(**query).values()
     pilotd = {}
-    for r in rows:
-        site = r['site']
-        if not site in pilotd: pilotd[site] = {}
-        pilotd[site]['count'] = r['getjob'] + r['updatejob']
-        pilotd[site]['time'] = r['lastmod']
+    try:
+        for r in rows:
+            site = r['site']
+            if not site in pilotd: pilotd[site] = {}
+            pilotd[site]['count'] = r['getjob'] + r['updatejob']
+            pilotd[site]['time'] = r['lastmod']
+    except:
+        pass
     return pilotd
 
 
