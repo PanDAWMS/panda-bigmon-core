@@ -168,10 +168,10 @@
                                 {% if requestParams.preset == 'MC' and requestParams.workinggroup != '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
                             >NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
-                            <option value="GP_PHYS"
-                                {% if requestParams.preset == 'DPD' or requestParams.workinggroup == 'GP_PHYS' %} selected="selected" {% endif %}
+                            <option value="GP_*"
+                                {% if requestParams.preset == 'DPD' and requestParams.workinggroup == 'GP_*' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                            >GP_PHYS</option>
+                            >GP_*</option>
 
                             <option value="AP_REPR"
                                 {% if requestParams.preset == 'DATA' or requestParams.workinggroup == 'AP_REPR' %} selected="selected" {% endif %}
@@ -179,11 +179,15 @@
                             >AP_REPR</option>
 
 
-                            {% if requestParams.preset != 'DPD' and requestParams.preset != 'DATA' %}
-                                {% for wg in sumd.3.list %}
-                                    <option value={{ wg.kname }}
-                                        {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>
-                                        {{ wg.kname }} </option>
+                            {% if requestParams.preset != 'DATA' %}
+                                {% for field in sumd %}
+                                    {% if field.field == 'workinggroup' %}
+                                        {% for wg in field.list %}
+                                            <option value={{ wg.kname }}
+                                                {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>
+                                                {{ wg.kname }} </option>
+                                        {% endfor %}
+                                    {% endif %}
                                 {% endfor %}
                             {% endif %}
                         </select>

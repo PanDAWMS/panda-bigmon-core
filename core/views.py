@@ -429,6 +429,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             extraQueryString = extraQueryString[:-2]
         extraQueryString += ')'
         excludeWGFromWildCard = True
+    elif 'workinggroup' in request.session['requestParams'] and request.session['requestParams']['workinggroup'] and \
+                        '*' not in request.session['requestParams']['workinggroup'] and \
+                        ',' not in request.session['requestParams']['workinggroup']:
+        excludeWGFromWildCard = True
+
     if 'site' in request.session['requestParams'] and (request.session['requestParams']['site'] == 'hpc' or not (
                     '*' in request.session['requestParams']['site'] or '|' in request.session['requestParams']['site'])):
         excludeSiteFromWildCard = True
@@ -652,7 +657,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         val = escapeInput(request.session['requestParams'][param])
                         values = val.split('|')
                         query['superstatus__in'] = values
-
+                    elif param == 'workinggroup':
+                        if request.session['requestParams'][param] and \
+                                '*' not in request.session['requestParams'][param] and \
+                                ',' not in request.session['requestParams'][param]:
+                            query[param]=request.session['requestParams'][param]
                     elif param == 'reqid':
                         val = escapeInput(request.session['requestParams'][param])
                         if val.find('|') >= 0:
@@ -7114,7 +7123,7 @@ def runningProdTasks(request):
         if request.session['requestParams']['preset'] and request.session['requestParams']['preset'].upper() == 'DPD':
             productiontype = 'DPD'
             if 'workinggroup' not in request.session['requestParams']:
-                request.session['requestParams']['workinggroup'] = 'GP_PHYS'
+                request.session['requestParams']['workinggroup'] = 'GP_*'
             if 'processingtype' not in request.session['requestParams']:
                 request.session['requestParams']['processingtype'] = 'merge'
         if request.session['requestParams']['preset'] and request.session['requestParams']['preset'].upper() == 'DATA':
