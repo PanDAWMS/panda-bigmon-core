@@ -7160,7 +7160,7 @@ def runningProdTasks(request):
             if 'workinggroup' not in request.session['requestParams']:
                 request.session['requestParams']['workinggroup'] = 'GP_*'
             if 'processingtype' not in request.session['requestParams']:
-                request.session['requestParams']['processingtype'] = 'merge'
+                request.session['requestParams']['processingtype'] = 'merge|deriv'
         if request.session['requestParams']['preset'] and request.session['requestParams']['preset'].upper() == 'DATA':
             productiontype = 'DATA'
             if 'workinggroup' not in request.session['requestParams']:

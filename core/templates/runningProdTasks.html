@@ -200,18 +200,18 @@
                             <option value="evgen|pile|simul|recon"
                                 {% if requestParams.preset == 'MC'  or requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                            >IN ('evgen' , 'pile', 'simul', 'recon')</option>
-                            <option value="merge"
-                                {% if requestParams.preset == 'DPD' or requestParams.processingtype == 'merge' %} selected="selected" {% endif %}
+                            >evgen|pile|simul|recon</option>
+                            <option value="merge|deriv"
+                                {% if requestParams.preset == 'DPD' or requestParams.processingtype == 'merge|deriv' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                            >merge</option>
+                            >merge|deriv</option>
 
                             <option value="reprocessing"
                                 {% if requestParams.processingtype == 'reprocessing' or requestParams.preset == 'DATA' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
                             >reprocessing</option>
 
-                            {% if requestParams.preset != 'DPD' and requestParams.preset != 'DATA' %}
+                            {% if requestParams.preset != 'DATA' %}
                                 {% for ptype in sumd.1.list %}
                                         <option value={{ ptype.kname }}
                                             {% if ptype.kname == requestParams.processingtype %} selected="selected" {% endif %}>
