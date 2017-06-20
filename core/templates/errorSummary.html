@@ -97,8 +97,8 @@
 <tr><th>Category:code</th><th>Job list</th><th>Nerrors</th><th>Sample error description</th></tr>
 {% for errval in errsByCount %}
 <tr>
-    <td> <a href="{{xurlsubst}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> {{ errval.error }} </a> </td>
-    <td> <a href="{{jobsurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> jobs </a> </td>
+    <td> <a href="{{xurlsubst}}{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> {{ errval.error }} </a> </td>
+    <td> <a href="{{jobsurl}}{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> jobs </a> </td>
     <td> {{ errval.count }} </td> <td> {{ errval.diag }} <br/> {% if errval.count > 1%} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %} </td>
 </tr>
 {% endfor %}
