@@ -156,6 +156,7 @@ class PandaJob(models.Model):
     prodserieslabel = models.CharField(max_length=60, db_column='PRODSERIESLABEL', blank=True) # Field name made lowercase.
     prodsourcelabel = models.CharField(max_length=60, db_column='PRODSOURCELABEL', blank=True) # Field name made lowercase.
     produserid = models.CharField(max_length=750, db_column='PRODUSERID', blank=True) # Field name made lowercase.
+    gshare = models.CharField(max_length=750, db_column='GSHARE', blank=True)
     assignedpriority = models.IntegerField(db_column='ASSIGNEDPRIORITY') # Field name made lowercase.
     currentpriority = models.IntegerField(db_column='CURRENTPRIORITY') # Field name made lowercase.
     attemptnr = models.IntegerField(db_column='ATTEMPTNR') # Field name made lowercase.
