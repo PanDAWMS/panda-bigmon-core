@@ -1138,7 +1138,7 @@ var tooltip = svg
 	.style('opacity', 1);
 var tooltiplabel = tooltip.append('div')
 	.attr('class','tlabel')
-	.text('Total: ' + formatDecimal(tot));
+	.text('Total: ' + Humanize.compactInteger(tot,2));
 var tooltipcount = tooltip.append('div')
 	.attr('class','tcount');
 var tooltippercent = tooltip.append('div')
@@ -1155,12 +1155,12 @@ var arcs = vis.selectAll("path")
 			d3.select(this).attr({"stroke":d3.rgb(color).darker(),'stroke-width':1});
 			// tooltip.text(labels[i]);
 			tooltiplabel.text(labels[i]);
-			tooltipcount.text(formatDecimal(d.value));
+			tooltipcount.text(Humanize.compactInteger(d.value,2));
 			tooltippercent.text(formatPercent(d.value/tot));
 			})
 		.on("mouseout", function(){
 			d3.select(this).attr({"stroke":d3.rgb(color).darker(),'stroke-width':0});
-			tooltiplabel.text('Total: ' + formatDecimal(tot));
+			tooltiplabel.text('Total: ' + Humanize.compactInteger(tot,2));
 			tooltipcount.text('');
 			tooltippercent.text('');
 			});
@@ -1466,7 +1466,7 @@ var tooltip = svg
 	.style('opacity', 1);
 var tooltiplabel = tooltip.append('div')
 	.attr('class','tlabel')
-	.text('Total: ' + formatDecimal(tot));
+	.text('Total: ' + Humanize.compactInteger(tot,2));
 var tooltipcount = tooltip.append('div')
 	.attr('class','tcount');
 var tooltippercent = tooltip.append('div')
@@ -1483,12 +1483,12 @@ var arcs = vis.selectAll("path")
 			d3.select(this).attr({"stroke":d3.rgb(color).darker(),'stroke-width':1});
 			// tooltip.text(labels[i]);
 			tooltiplabel.text(labels[i]);
-			tooltipcount.text(formatDecimal(d.value));
+			tooltipcount.text(Humanize.compactInteger(d.value,2));
 			tooltippercent.text(formatPercent(d.value/tot));
 			})
 		.on("mouseout", function(){
 			d3.select(this).attr({"stroke":d3.rgb(color).darker(),'stroke-width':0});
-			tooltiplabel.text('Total: ' + formatDecimal(tot));
+			tooltiplabel.text('Total: ' + Humanize.compactInteger(tot,2));
 			tooltipcount.text('');
 			tooltippercent.text('');
 			});

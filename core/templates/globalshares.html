@@ -1,20 +1,33 @@
 {% extends "_base_core.html" %}
 
-{% load staticfiles %}
+{% load static %}
 {% load humanize %}
 
 {% block page_title %} {{ viewParams.MON_VO }} Global Shares{% endblock %}
 {% block subtitle %}Global Shares{% endblock %}
-
+{% block extra_js %}
+    <script src="/static/js/humanize.min.js"></script>
+{% endblock %}
 {% block body %}
 
   <link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
   <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
   <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
+  <script src="/static/js/d3jsplot.js"></script>
 
 
   <div class="d3splot" id="pieChartGS"></div>
    <link rel="stylesheet" href="{% static "css/globalsharetooltip.css" %}">
+    <script>
+
+    var gsPlotData={{ gsPlotData|safe }};
+    globalSharesPieChartFunc(gsPlotData,"#pieChartGS",'Actual HS06');
+    $(document).ready(function () {
+
+            $( ".has-dropdown" ).addClass("has-dropdown not-click");
+        });
+    </script>
+
 <table>
     <tr class='tablesection'>
         <th>L1 Share</th>
@@ -374,16 +387,8 @@
 
 
 
-<script src="/static/js/d3jsplot.js"></script>
-<script>
 
-var gsPlotData={{ gsPlotData|safe }};
-globalSharesPieChartFunc(gsPlotData,"#pieChartGS",'Actual HS06');
-$(document).ready(function () {
 
-        $( ".has-dropdown" ).addClass("has-dropdown not-click");
-    });
-</script>
 
 
 {% endblock %}
