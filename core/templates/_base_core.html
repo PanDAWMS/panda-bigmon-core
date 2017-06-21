@@ -10,15 +10,17 @@
 
 	<title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
 
+  <script src="{% static 'js/vendor/modernizr.js' %}"></script>
+  <script src="{% static 'js/jquery/jquery-3.2.1.min.js' %}"></script>
+  <script src="{% static 'js/vendor/what-input.js' %}"></script>
+  <script src="{% static 'js/vendor/foundation.min.js' %}"></script>
+  <script src="{% static 'js/d3.v3.min.js' %}"></script>
+
 {% block extra_js_hepsw %}
 
-  <script src="{% static 'js/d3.v3.min.js' %}"></script>
-  <script src="{% static 'js/vendor/modernizr.js' %}"></script>
-  <script src="{% static 'js/vendor/jquery.js' %}"></script>
-  <script src="{% static 'js/vendor/foundation.js' %}"></script>
-{#  <script src="{% static 'js/foundation/foundation.topbar.js' %}"></script>#}
-
 {% endblock %}
+
+
 
 
 	<!-- Included CSS Files -->
@@ -48,7 +50,7 @@
 	{% block base_css %}{% endblock %}
 	{% block extra_css %}{% endblock %}
 
-	<script src="{% static "js/vendor/custom.modernizr.js" %}"></script>
+{#	<script src="{% static "js/vendor/custom.modernizr.js" %}"></script>#}
 	{% block base_js %}{% endblock %}
 	{% block extra_js %}{% endblock %}
 	<script>
@@ -61,8 +63,6 @@
     ga('send', 'pageview');
 	</script>
 
-</head>
-<body>
 
 <form id="form-usersettings" action="{{ request.get_full_path }}" method="POST">
     {% csrf_token %}
@@ -259,64 +259,6 @@
 {% endif %}
 </div>
 
-<script >
-function getSettings(name) {
-    var settingsStr = '';
-    var settings = document.getElementsByName(name);
-    for (var i = 0; i < settings.length; i++) {
-        var element = settings[i];
-        if (element.checked) {
-            settingsStr += element.id.split("-")[2];
-            settingsStr += ','
-        }
-    }
-    if (settingsStr[settingsStr.length - 1] == ',') {
-        settingsStr = settingsStr.substring(0,settingsStr.length - 1);
-    }
-    return settingsStr;
-}
-function saveSettings() {
-    var settingTables = getSettings('switch-table');
-    var settingJobAttr = getSettings('switch-jobsattr');
-    var url = window.location.href;
-    if (settingTables.length > 1) {
-        url += '&tables=' + settingTables;
-    }
-    if (settingJobAttr.length > 1) {
-        url += '&jobattr=' + settingJobAttr;
-    }
-    var usersettingsForm = document.forms['form-usersettings'];
-    usersettingsForm.elements["tables"].value = settingTables;
-    usersettingsForm.elements["jobattr"].value = settingJobAttr;
-
-    document.getElementById("form-usersettings").submit();
-{#    window.location = url;#}
-}
-
-function disableDetails(inputid,name,menuid,menuitemid) {
-    var input = document.getElementById(inputid);
-    var switches = document.getElementsByName(name);
-    if (!input.checked) {
-        for (var sw = 0; sw<switches.length; sw++ ) {
-            if (switches[sw].hasAttribute('checked')) {
-                switches[sw].removeAttribute('checked');
-            }
-        }
-        document.getElementById(menuid).setAttribute('aria-expanded', 'false');
-        document.getElementById(menuid).classList.add('invisible');
-    }
-    else {
-        document.getElementById(menuid).classList.remove('invisible');
-{#        var userSettings = {{ userPreferences.jobattr | safe }} ;#}
-{#        for (var i = 0; i<switches.length; i++ ) {#}
-{#            if (userSettings.indexOf(switches[i].id.split('-')[2]) != -1) {#}
-{#                switches[i].addAttribute('checked');#}
-{#            }#}
-{#        }#}
-    }
-}
-
-</script>
 
 <div class="top-bar stacked-for-large" id="main-menu">
   <div class="top-bar-title">
@@ -520,6 +462,13 @@ function disableDetails(inputid,name,menuid,menuitemid) {
     </div>
 </div>
   <!-- End Header and Nav -->
+  <script>
+    $(document).foundation();
+  </script>
+
+
+</head>
+<body>
 
   <!-- sub-title and bread-crumbs -->
 
@@ -581,9 +530,20 @@ function disableDetails(inputid,name,menuid,menuitemid) {
   <!-- End Main Grid Section -->
 
 
-  <!-- Footer -->
 
-  <footer>
+
+
+
+{#  <script src="{% static 'js/app.js' %}"></script>#}
+  <script>
+    $(document).foundation();
+  </script>
+
+</body>
+
+ <!-- Footer -->
+
+<footer>
     <div class="large-12 columns">
         {% block bottom_copy %}
 
@@ -625,11 +585,5 @@ function disableDetails(inputid,name,menuid,menuitemid) {
         {% endblock %}
       </div>
     </div>
-  </footer>
-
-  <script>
-    $(document).foundation();
-  </script>
-
-</body>
+</footer>
 </html>
