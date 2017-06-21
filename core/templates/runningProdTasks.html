@@ -4,7 +4,10 @@
 {% block page_title %} PanDA tasks{% endblock %}
 {% block subtitle %}Running production task list
 {% endblock %}
-<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js"%}"></script>
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+{% endblock %}
+{#<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js"%}"></script>#}
 {% block body %}
 
     {% if requestParams.campaign %}<br><b>Campaign:</b> {{ requestParams.campaign }} {% endif %}
@@ -250,7 +253,7 @@
                         {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC
                     </td>
                     <td>
-                         <button onclick="go()">Go!</button>
+                        <a onclick="go()" class="button">Go!</a>
                     </td>
                 </tr>
             </table>
