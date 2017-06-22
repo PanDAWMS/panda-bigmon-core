@@ -6916,6 +6916,13 @@ def report(request):
         endSelfMonitor(request)
         return response
 
+    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16C':
+        reportGen = MC16aCPReport.MC16aCPReport()
+        response = reportGen.prepareReportJEDIMC16c(request)
+        endSelfMonitor(request)
+        return response
+
+
     if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16A' and 'type' in request.session['requestParams'] and request.session['requestParams']['type'].upper() == 'DCC':
         reportGen = MC16aCPReport.MC16aCPReport()
         resp = reportGen.getDKBEventsSummaryRequestedBreakDownHashTag(request)
@@ -6929,8 +6936,6 @@ def report(request):
         endSelfMonitor(request)
         return response
 
-
-
     if 'requestParams' in request.session and 'step' in request.session['requestParams']:
         step = int(request.session['requestParams']['step'])
     if step == 0:
@@ -6941,7 +6946,6 @@ def report(request):
             response = reportGen.prepareReport()
     endSelfMonitor(request)
     return response
-
 
 def runningMCProdTasks(request):
     valid, response = initRequest(request)

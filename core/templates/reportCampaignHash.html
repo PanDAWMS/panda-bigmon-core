@@ -31,6 +31,8 @@
         </tr>
         <tr>
             <th>Input Events</th>
+            <th>Events Generated</th>
+            <th>Events Generated Merge</th>
             {% if JediEventsR.simulated > 0 %}
                 <th>Simulated</th>
             {% endif %}
@@ -54,11 +56,13 @@
 
          <tr>
                 <td>{{ JediEventsR.input|intcomma }}</td>
+                <td>{{ JediEventsR.evgened|intcomma }} ({{ JediEventsR.evgenedprogr }}%)</td>
+                <td>{{ JediEventsR.evgenmerged|intcomma }} ({{ JediEventsR.evgenmergededprogr }}%)</td>
                 {% if JediEventsR.simulated > 0 %}
                     <td>{{ JediEventsR.simulated|intcomma }} ({{ JediEventsR.simulatedprogr }}%)</td>
                 {% endif %}
                 {% if JediEventsR.mergeHits > 0 %}
-                    <td>{{ JediEventsR.mergeHits|intcomma }} (<sup><a href="#hitsmergedescr">&#8710;</a></sup>)</td>
+                    <td>{{ JediEventsR.mergeHits|intcomma }}</td>
                 {% endif %}
                 {% if JediEventsR.reconstructed > 0 %}
                     <td>{{ JediEventsR.reconstructed |intcomma}} ({{ JediEventsR.reconstructedprog }}%)</td>
@@ -72,10 +76,16 @@
                 {% if JediEventsR.derivmerge > 0 %}
                     <td>{{ JediEventsR.derivmerge|intcomma }} ({{ JediEventsR.derivmergeprog }}%)</td>
                 {% endif %}
-
          </tr>
 
     </table>
+
+
+
+
+
+
+
 
 
     {% comment %}
@@ -205,12 +215,22 @@
                 {% for state in taskstatelistDEFT %}
                     <td>
                         {% if totalTasks|get_item:step|get_item:state > 0 %}
-                            {% if state == 'done+finished' %}
-                                <a href='/tasks/?status={{ 'done|finished' }}&campaign=MC16*&taskname=*.{{ step }}.*&days=300&reqid=11035|11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>{{ totalTasks|get_item:step|get_item:state }}</a>
-                            {% else %}
-                                <a href='/tasks/?status={{ state }}&campaign=MC16*&taskname=*.{{ step }}.*&days=300&reqid=11035|11034|11048|11049|11050|11051|11052|11198|11197|11222|11359'>{{ totalTasks|get_item:step|get_item:state }}</a>
-                            {% endif %}
+                            {% if not stepsLabels|get_item:step == 'Evgen Merge' %}
+                                {% if state == 'done+finished' %}
+                                    <a href='/tasks/?status={{ 'done|finished' }}&campaign=MC16*&taskname=*.{{ step }}.*&days=300&hashtag=MC16c_CP'>{{ totalTasks|get_item:step|get_item:state }}</a>
+                                {% elif state == 'failed' or state == 'aborted' or state == 'running'%}
+                                     <a href='/tasks/?status={{ state }}&campaign=MC16*&taskname=*.{{ step }}.*&days=300&hashtag=MC16c_CP'>{{ totalTasks|get_item:step|get_item:state }}</a>
+                                {% else %}
+                                     {{ totalTasks|get_item:step|get_item:state }}
 
+                                    {% comment %}
+                                    <a href='/tasks/?status={{ state }}&campaign=MC16*&taskname=*.{{ step }}.*&days=300&hashtag=MC16c_CP'>{{ totalTasks|get_item:step|get_item:state }}</a>
+                                    {% endcomment %}
+
+                                {% endif %}
+                            {% else %}
+                                {{ totalTasks|get_item:step|get_item:state }}
+                            {% endif %}
                         {% endif %}
                     </td>
                 {% endfor %}
@@ -360,10 +380,7 @@
             {% endfor %}
         </table>
     </div>
-    <h5 id="selectioncrit"><sup>&#8711;</sup> Additional selection by requests {{ requestList }} applied.</h5>
-    <h5 id="hitsmergedescr"><sup>&#8710;</sup> There is only a small fraction of HITS is merged explicitly, that's why there is no %.</h5>
-
-
+    <h5 id="selectioncrit"><sup>&#8711;</sup> Selection by hashtags {{ primaryHash }} applied.</h5>
 
 
 {% endblock %}

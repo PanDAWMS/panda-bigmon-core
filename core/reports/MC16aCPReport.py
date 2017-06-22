@@ -43,11 +43,11 @@ class MC16aCPReport:
 #    steps = ['evgen', 'simul', 'mergeHits', 'recon', 'merge']
 #    stepsLabels = {'evgen':'Event Generation', 'simul':'Simulation', 'recon':'Reconstruction', 'merge':'Merge', 'mergeHits':'Hits Merge'}
 
-    steps = ['Simul', 'Merge', 'Reco', 'Rec Merge', 'Deriv', 'Deriv Merge']
-    stepsLabels = {'Simul':'Simulation', 'Reco':'Reconstruction', 'Rec Merge':'AOD Merge', 'Merge':'HITS Merge', 'Deriv':'Derivation', 'Deriv Merge':'Derivation Merge'}
+    steps = ['Evgen', 'Evgen Merge', 'Simul', 'Merge', 'Reco', 'Rec Merge', 'Deriv', 'Deriv Merge']
+    stepsLabels = {'Simul':'Simulation', 'Reco':'Reconstruction', 'Rec Merge':'AOD Merge', 'Merge':'HITS Merge', 'Deriv':'Derivation', 'Deriv Merge':'Derivation Merge', 'Evgen Merge':'Evgen Merge', 'Evgen':'Evgen'}
 
 
-    def jobsQuery(self, condition):
+    def jobsQuery(self, condition, campaign='MC16a'):
         """
         TODO: Update HS06SEC summary to use not dropped jobs to calculate HEPSPEC
         """
@@ -56,8 +56,14 @@ class MC16aCPReport:
             SELECT STEP, SUM(FINISHEDJEV) as FINISHEDJEV, SUM(PENDINGJEV+DEFINEDJEV+ASSIGNEDJEV+WAITINGJEV+ACTIVATEDJEV+SENTJEV+STARTINGJEV+RUNNINGJEV+HOLDINGJEV+TRANSFERRINGJEV+MERGINGJEV) as RESTJEV, 
             SUM(PENDINGJEV), SUM(DEFINEDJEV), SUM(ASSIGNEDJEV), SUM (WAITINGJEV), SUM(ACTIVATEDJEV), SUM(SENTJEV), SUM(STARTINGJEV), SUM(RUNNINGJEV), SUM(HOLDINGJEV), SUM(TRANSFERRINGJEV), SUM(MERGINGJEV), SUM(FAILEDJEV), SUM(CANCELLEDJEV), SUM(THROTTLEDJEV), SUM(CLOSEDJEV),
             SUM(PENDINGNJ), SUM(DEFINEDNJ), SUM(ASSIGNEDNJ), SUM(WAITINGNJ), SUM(ACTIVATEDNJ), SUM(SENTNJ), SUM(STARTINGNJ), SUM(RUNNINGNJ), SUM(HOLDINGNJ), SUM(TRANSFERRINGNJ),  SUM(MERGINGNJ), SUM(FINISHEDNJ), SUM(FAILEDNJ), SUM(CANCELLEDNJ), SUM(THROTTLEDNJ), SUM(CLOSEDNJ), 
-            SUM(INPUTEVENTS), SUM(HS06SECFAILED), SUM(HS06SECCANCELLED), SUM(HS06SECFINISHED), SUM(HS06SECCLOSED)
-            FROM ATLAS_PANDABIGMON.TASKS_PROD_AGGREGATE WHERE DEFTSTATUS NOT IN ('failed','aborted','broken') and campaign like 'MC16%' {0} GROUP BY STEP
+            SUM(INPUTEVENTS), SUM(HS06SECFAILED), SUM(HS06SECCANCELLED), SUM(HS06SECFINISHED), SUM(HS06SECCLOSED), 
+            SUM(
+                CASE 
+                    WHEN STATUS NOT IN ('failed','aborted','broken') THEN NREQUESTEDEV
+                    ELSE 0
+                END 
+            )
+            FROM ATLAS_PANDABIGMON.TASKS_PROD_AGGREGATE WHERE DEFTSTATUS NOT IN ('failed','aborted','broken') {0} GROUP BY STEP
         '''
         sqlrequestwithcond = sqlRequest.format(condition)
         cur = connection.cursor()
@@ -109,16 +115,28 @@ class MC16aCPReport:
                 orderedjobsevsummary[row[0]]['throttled'] = row[16]
                 orderedjobssummary[row[0]]['closed'] = row[33]
                 orderedjobsevsummary[row[0]]['closed'] = row[17]
-                if row[0] == 'Simul':
-                    inputevents = row[34]
+                inputevents = row[34]
+
         orderedjobssummary['title'] = 'Jobs processing summary'
         orderedjobsevsummary['title'] = 'Events processing summary'
+
+        if campaign == 'MC16c':
+            totalEvQuery = 'SELECT SUM(t1.TOTAL_REQ_EVENTS), t3.HASHTAG, t5.STEP_NAME as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_HT_TO_TASK t2, ATLAS_DEFT.T_HASHTAG t3, ' \
+                           'ATLAS_DEFT.T_PRODUCTION_STEP t4, ATLAS_DEFT.T_STEP_TEMPLATE t5 ' \
+                           'WHERE t3.HT_ID=t2.HT_ID and t1.TASKID=t2.TASKID AND t3.HASHTAG=\'MC16c_CP\' and t1.STEP_ID=t4.STEP_ID and t4.STEP_T_ID=t5.STEP_T_ID and t1.STATUS not in (\'broken\',\'aborted\',\'failed\') ' \
+                           'GROUP BY t3.HASHTAG, t5.STEP_NAME'
+            cur = connection.cursor()
+            cur.execute(totalEvQuery)
+            requestSummaryRes = cur.fetchall()
+            for requestSummary in requestSummaryRes:
+                if requestSummary[1] == 'MC16c_CP' and requestSummary[2] == 'Evgen':
+                    inputevents = requestSummary[0]
 
         #Hepspecs estimation
         hepspecSummary = {'failed': {}, 'cancelled': {}, 'finished': {}, 'closed': {}}
         sqlRequest = '''
             SELECT STEP, SUM(HS06SECFAILED), SUM(HS06SECCANCELLED), SUM(HS06SECFINISHED), SUM(HS06SECCLOSED)
-            FROM ATLAS_PANDABIGMON.TASKS_PROD_AGGREGATE WHERE campaign like 'MC16%' {0} GROUP BY STEP
+            FROM ATLAS_PANDABIGMON.TASKS_PROD_AGGREGATE WHERE (1=1) {0} GROUP BY STEP
         '''
         sqlrequestwithcond = sqlRequest.format(condition)
         cur = connection.cursor()
@@ -134,18 +152,43 @@ class MC16aCPReport:
         #Progress calculation
         JediEventsR = {}
         JediEventsR['title'] = 'Overall events processing summary'
+
+        if 'Evgen' in orderedjobsevsummary and 'finished' in orderedjobsevsummary['Evgen']:
+            JediEventsR['evgened'] = orderedjobsevsummary['Evgen']['finished']
+            JediEventsR['evgenedprogr'] = round(JediEventsR['evgened'] / float(inputevents) * 100, 2)
+
+        if 'Evgen Merge' in orderedjobsevsummary and 'finished' in orderedjobsevsummary['Evgen Merge']:
+            JediEventsR['evgenmerged'] = orderedjobsevsummary['Evgen Merge']['finished']
+            JediEventsR['evgenmergededprogr'] = round(JediEventsR['evgenmerged'] / float(inputevents) * 100, 2)
+
+
         JediEventsR['simulated'] = orderedjobsevsummary['Simul']['finished']
         JediEventsR['simulatedprogr'] = round( JediEventsR['simulated']/float(inputevents)*100, 2)
-        JediEventsR['reconstructed'] = orderedjobsevsummary['Reco']['finished']
+        if 'finished' in orderedjobsevsummary['Reco']:
+            JediEventsR['reconstructed'] = orderedjobsevsummary['Reco']['finished']
+        else:
+            JediEventsR['reconstructed'] = 0
         JediEventsR['reconstructedprog'] = round(JediEventsR['reconstructed']/float(inputevents)*100, 2)
         JediEventsR['mergeHits'] = orderedjobsevsummary['Merge']['finished']
         JediEventsR['mergeHitsprog'] = round(JediEventsR['mergeHits']/float(inputevents)*100, 2)
-        JediEventsR['merge'] = orderedjobsevsummary['Rec Merge']['finished']
+        if 'finished' in orderedjobsevsummary['Rec Merge']:
+            JediEventsR['merge'] = orderedjobsevsummary['Rec Merge']['finished']
+        else:
+            JediEventsR['merge'] = 0
         JediEventsR['mergeprog'] = round(JediEventsR['merge']/float(inputevents)*100, 2)
-        JediEventsR['deriv'] = orderedjobsevsummary['Deriv']['finished']
-        JediEventsR['derivprog'] = round(orderedjobsevsummary['Deriv']['finished']/float(inputevents)*100, 2)
-        JediEventsR['derivmerge'] = orderedjobsevsummary['Deriv Merge']['finished']
-        JediEventsR['derivmergeprog'] = round(orderedjobsevsummary['Deriv Merge']['finished']/float(inputevents)*100, 2)
+        if 'finished' in orderedjobsevsummary['Deriv']:
+            JediEventsR['deriv'] = orderedjobsevsummary['Deriv']['finished']
+            JediEventsR['derivprog'] = round(orderedjobsevsummary['Deriv']['finished'] / float(inputevents) * 100, 2)
+        else:
+            JediEventsR['deriv'] = 0
+            JediEventsR['derivprog'] = 0
+
+        if 'finished' in orderedjobsevsummary['Deriv Merge']:
+            JediEventsR['derivmerge'] = orderedjobsevsummary['Deriv Merge']['finished']
+            JediEventsR['derivmergeprog'] = round(orderedjobsevsummary['Deriv Merge']['finished']/float(inputevents)*100, 2)
+        else:
+            JediEventsR['derivmerge'] = 0
+            JediEventsR['derivmergeprog'] = 0
 
         JediEventsR['input'] = inputevents
 
@@ -165,8 +208,7 @@ class MC16aCPReport:
                       WHEN t1.TASKNAME LIKE '%.evgen.%' THEN 'evgen'
                       END AS STEP
             
-            FROM ATLAS_PANDA.JEDI_TASKS t1, ATLAS_PANDA.JEDI_DATASETS t2 WHERE campaign like 'MC16%'
-            and t1.status not in ('failed','aborted','broken') and  t1.JEDITASKID=t2.JEDITASKID and t2.MASTERID IS NULL and t2.TYPE IN ('input', 'pseudo_input') {0} 
+            FROM ATLAS_PANDA.JEDI_TASKS t1, ATLAS_PANDA.JEDI_DATASETS t2 WHERE  t1.status not in ('failed','aborted','broken') and  t1.JEDITASKID=t2.JEDITASKID and t2.MASTERID IS NULL and t2.TYPE IN ('input', 'pseudo_input') {0} 
             )group by STEP
         )t1 where STEP IS NOT NULL
         '''
@@ -211,7 +253,7 @@ class MC16aCPReport:
           WHEN TASKNAME LIKE '%.evgen.%' THEN 'evgen'
           END AS STEP,
           /*s.INPUT_EVENTS,*/ t.TOTAL_REQ_EVENTS, t.TOTAL_EVENTS, t.STATUS
-          FROM ATLAS_DEFT.T_PRODUCTION_TASK t, ATLAS_DEFT.T_PRODUCTION_STEP s WHERE s.STEP_ID=t.STEP_ID and CAMPAIGN LIKE 'MC16%' and not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {0}
+          FROM ATLAS_DEFT.T_PRODUCTION_TASK t, ATLAS_DEFT.T_PRODUCTION_STEP s WHERE s.STEP_ID=t.STEP_ID and  not TASKNAME LIKE '%valid%' and TASKNAME LIKE 'mc16_%' {0}
         )t1 where STEP IS NOT NULL
         '''
 
@@ -261,7 +303,7 @@ class MC16aCPReport:
     def getTasksDEFTSummary(self, condition):
         sqlRequest = '''
 
-            SELECT count(t1.STATUS), t1.STATUS, t3.STEP_NAME FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID and campaign like 'MC16%' {0} 
+            SELECT count(t1.STATUS), t1.STATUS, t3.STEP_NAME FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID {0} 
             group by t1.STATUS, t3.STEP_NAME
         '''
         sqlRequestFull = sqlRequest.format(condition)
@@ -289,7 +331,7 @@ class MC16aCPReport:
             (
             SELECT DISTINCT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, HS06SEC, STEP, COMPUTINGSITE FROM (
             WITH selectedTasks AS (
-              SELECT t1.STATUS, t1.taskid, t3.STEP_NAME as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID and campaign like 'MC16%' {0} 
+              SELECT t1.STATUS, t1.taskid, t3.STEP_NAME as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID {0} 
             )
             SELECT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, CASE WHEN HS06SEC is null THEN 0 ELSE HS06SEC END as HS06SEC, JOBSTATUS, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.taskid=t2.JEDITASKID and JOBSTATUS='failed'
             UNION ALL
@@ -344,7 +386,7 @@ class MC16aCPReport:
             (
             SELECT DISTINCT PANDAID, ISACTIVATED, ISRUNNING, STEP, COMPUTINGSITE FROM (
             WITH selectedTasks AS (
-              SELECT t1.STATUS, t1.taskid, t3.STEP_NAME as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID and campaign like 'MC16%' {0} 
+              SELECT t1.STATUS, t1.taskid, t3.STEP_NAME as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID {0} 
             )
             SELECT PANDAID, CASE JOBSTATUS WHEN 'activated' THEN 1 ELSE 0 END as ISACTIVATED, CASE JOBSTATUS WHEN 'running' THEN 1 ELSE 0 END as ISRUNNING, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.taskid=t2.JEDITASKID and JOBSTATUS in ('activated', 'running')
             UNION ALL
@@ -380,7 +422,7 @@ class MC16aCPReport:
             (
             SELECT DISTINCT PANDAID, ISASSIGNED, ISRUNNING, STEP, COMPUTINGSITE FROM (
             WITH selectedTasks AS (
-              SELECT t1.STATUS, t1.taskid, t3.STEP_NAME as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID and campaign like 'MC16%' {0} 
+              SELECT t1.STATUS, t1.taskid, t3.STEP_NAME as STEP FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID {0} 
             )
             SELECT PANDAID, CASE JOBSTATUS WHEN 'assigned' THEN 1 ELSE 0 END as ISASSIGNED, CASE JOBSTATUS WHEN 'running' THEN 1 ELSE 0 END as ISRUNNING, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.taskid=t2.JEDITASKID and JOBSTATUS in ('assigned', 'running')
             UNION ALL
@@ -415,15 +457,15 @@ class MC16aCPReport:
             (
             SELECT DISTINCT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, HS06SEC, STEP, COMPUTINGSITE FROM (
             WITH selectedTasks AS (
-            SELECT JEDITASKID, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.recon.%' {0}
+            SELECT JEDITASKID, 'recon' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE  TASKNAME LIKE '%.recon.%' {0}
             UNION ALL
-            SELECT JEDITASKID, 'simul' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.simul.%' {0}
+            SELECT JEDITASKID, 'simul' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE  TASKNAME LIKE '%.simul.%' {0}
             UNION ALL
-            SELECT JEDITASKID, 'evgen' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.evgen.%' {0}
+            SELECT JEDITASKID, 'evgen' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE  TASKNAME LIKE '%.evgen.%' {0}
             UNION ALL
-            SELECT JEDITASKID, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
+            SELECT JEDITASKID, 'merge' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE  TASKNAME LIKE '%.merge.%' and substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
             UNION ALL
-            SELECT JEDITASKID, 'mergeHits' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE campaign like 'MC16%' and TASKNAME LIKE '%.merge.%' and not substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
+            SELECT JEDITASKID, 'mergeHits' as STEP FROM ATLAS_PANDA.JEDI_TASKS t1 WHERE  TASKNAME LIKE '%.merge.%' and not substr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),instr(substr(TASKNAME,instr(TASKNAME,'.',-1) + 1),'_',-1) + 1) like 'r%' {0}
             )
             SELECT PANDAID, PILOTERRORCODE, TASKBUFFERERRORCODE, transexitcode, exeerrorcode, jobdispatchererrorcode, ddmerrorcode, CASE WHEN HS06SEC is null THEN 0 ELSE HS06SEC END as HS06SEC, JOBSTATUS, selectedTasks.STEP as STEP, COMPUTINGSITE FROM ATLAS_PANDA.JOBSACTIVE4 t2, selectedTasks WHERE selectedTasks.JEDITASKID=t2.JEDITASKID and JOBSTATUS='failed'
             UNION ALL
@@ -467,7 +509,9 @@ class MC16aCPReport:
         siteActRun = self.topSitesActivatedRunning(10, 'and t1.PR_ID IN %s' % requestList)
         siteAssignRun = self.topSitesAssignedRunning(10, 'and t1.PR_ID IN %s' % requestList)
 
-        data = {"requestList":requestList,
+        data = {
+                'title':'MC16a',
+                "requestList":requestList,
                 'viewParams': request.session['viewParams'],
                 "JediEventsR":JediEventsR,
                 "totalEvents": totalEvents,
@@ -488,8 +532,56 @@ class MC16aCPReport:
                 "taskstatelistRecent":self.taskstatelistRecent,
                 "built": datetime.now().strftime("%d %b %Y %H:%M:%S")}
         self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 180*60)
-
         return render_to_response('reportCampaign.html', data, RequestContext(request))
+
+
+    def prepareReportJEDIMC16c(self, request):
+        selectCond = "(TASKID IN (SELECT t2.TASKID FROM ATLAS_DEFT.T_HT_TO_TASK t2, ATLAS_DEFT.T_HASHTAG t3 WHERE t2.HT_ID=t3.HT_ID AND t3.HASHTAG='MC16c_CP' AND t3.HASHTAG IS NOT NULL))"
+        data = self.getCacheEntry(request, "prepareReportMC16c")
+        if data is not None:
+            data = json.loads(data)
+            data['request'] = request
+            response = render_to_response('reportCampaignHash.html', data, RequestContext(request))
+            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+            return response
+
+        (totalJobs, totalEvents, hepspecJobs, JediEventsR) = self.jobsQuery('and %s' % selectCond, campaign='MC16c')
+
+        recentTasks = self.recentProgressReportDEFT('and %s' % selectCond)
+        recentTasks['title'] = 'Tasks updated during last 24 hours'
+        totalTasks = self.getTasksDEFTSummary('and %s' % selectCond)
+        totalTasks['title'] = 'Tasks processing summary'
+
+        worstSite = self.topSitesFailureRate(10, 'and %s' % selectCond)
+        siteActRun = self.topSitesActivatedRunning(10, 'and %s' % selectCond)
+        siteAssignRun = self.topSitesAssignedRunning(10, 'and %s' % selectCond)
+
+        data = {
+                'title': 'MC16c',
+                'primaryHash':'MC16c_CP',
+                "selectCond":selectCond,
+                'viewParams': request.session['viewParams'],
+                "JediEventsR":JediEventsR,
+                "totalEvents": totalEvents,
+                "totalTasks":totalTasks,
+                "totalJobs":totalJobs,
+                #"JediEventsHashsTable":jediEventsHashsTable,
+                #"hashTable":hashTable,
+                "recentTasks":recentTasks,
+                "hepspecJobs":hepspecJobs,
+                "worstSite":worstSite,
+                "siteActRun":siteActRun,
+                "siteAssignRun":siteAssignRun,
+                "taskstatelist":self.taskstatelist,
+                "taskstatelistDEFT": self.taskstatelistDEFT,
+                "jobstatelist": self.jobstatelist,
+                "steps":self.steps,
+                "stepsLabels":self.stepsLabels,
+                "taskstatelistRecent":self.taskstatelistRecent,
+                "built": datetime.now().strftime("%d %b %Y %H:%M:%S")}
+        self.setCacheEntry(request, "prepareReportMC16c", json.dumps(data, cls=self.DateEncoder), 180*60)
+        return render_to_response('reportCampaignHash.html', data, RequestContext(request))
+
 
 
     def recentProgressReportDEFT(self, condition):
@@ -521,7 +613,7 @@ class MC16aCPReport:
 
 
         sqlRequest = """
-        SELECT count(t1.STATUS), t1.STATUS, t3.STEP_NAME FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID and timestamp >= SYS_EXTRACT_UTC(systimestamp) - 1 and campaign like 'MC16%' {0} 
+        SELECT count(t1.STATUS), t1.STATUS, t3.STEP_NAME FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID and timestamp >= SYS_EXTRACT_UTC(systimestamp) - 1 {0} 
         group by t1.STATUS, t3.STEP_NAME
         """
         sqlRequestFull = sqlRequest.format(condition)
@@ -548,7 +640,7 @@ class MC16aCPReport:
 
 
         sqlRequest = """
-        SELECT count(t1.STATUS), t1.STATUS, t3.STEP_NAME FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID and t1.STATUS in ('running','waiting', 'submitting') and campaign like 'MC16%' {0} 
+        SELECT count(t1.STATUS), t1.STATUS, t3.STEP_NAME FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID and t1.STATUS in ('running','waiting', 'submitting') {0} 
         group by t1.STATUS, t3.STEP_NAME
         """
         sqlRequestFull = sqlRequest.format(condition)
@@ -571,10 +663,8 @@ class MC16aCPReport:
                     fullSummary[summaryRow[1]+'**'][summaryRow[2]] = 0
                 fullSummary[summaryRow[1]+'**'][summaryRow[2]] += summaryRow[0]
 
-
-
         sqlRequest = """
-        SELECT count(t1.STATUS), t1.STATUS, t3.STEP_NAME FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID and t1.STATUS in ('running', 'waiting', 'submitting') and t1.SUBMIT_TIME >= SYS_EXTRACT_UTC(systimestamp) - 1 and campaign like 'MC16%' {0} 
+        SELECT count(t1.STATUS), t1.STATUS, t3.STEP_NAME FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_STEP t2, ATLAS_DEFT.T_STEP_TEMPLATE t3 WHERE t1.STEP_ID=t2.STEP_ID and t2.STEP_T_ID=t3.STEP_T_ID and t1.STATUS in ('running', 'waiting', 'submitting') and t1.SUBMIT_TIME >= SYS_EXTRACT_UTC(systimestamp) - 1 {0} 
         group by t1.STATUS, t3.STEP_NAME
         """
         sqlRequestFull = sqlRequest.format(condition)
@@ -582,12 +672,9 @@ class MC16aCPReport:
         cur.execute(sqlRequestFull)
         campaignsummary = cur.fetchall()
 
-
         for summaryRow in campaignsummary:
 #            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
                 orderedsummary[summaryRow[2]][summaryRow[1]+'***'] += summaryRow[0]
-
-
 
         for summaryRow in campaignsummary:
 #            if summaryRow[2] not in ['Deriv Merge', 'Deriv']:
@@ -596,12 +683,7 @@ class MC16aCPReport:
                 if summaryRow[2] not in fullSummary[summaryRow[1]+'***']:
                     fullSummary[summaryRow[1]+'***'][summaryRow[2]] = 0
                 fullSummary[summaryRow[1]+'***'][summaryRow[2]] += summaryRow[0]
-
         return orderedsummary
-
-
-
-
 
 
     def prepareReport(self):
@@ -611,7 +693,6 @@ class MC16aCPReport:
 
         tasksCondition = "tasktype = 'prod' and WORKINGGROUP NOT IN('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT') and " \
                          "processingtype in ('evgen', 'pile', 'simul', 'recon') and REQID in %s" % requestList
-
 
         sqlRequest = '''
         select sum(enev), STATUS from (
