@@ -1,5 +1,5 @@
 {% extends "_base_core.html" %}
-
+{% load staticfiles %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA logger{% endblock %}
 {% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA logger{{ viewParams.selection|safe }}
@@ -13,7 +13,6 @@
 {{ res }}
 {{ viewParams.header }}
 
-    <p>
 {% if requestParams.category %} <br><b>Log category: {{ requestParams.category }}</b> {% endif %}
 {% if requestParams.type %} <br><b>Log type: {{ requestParams.type }}</b> {% endif %}
 {% if requestParams.level %} <br><b>Log level: <span class="{{ requestParams.level }}">{{ requestParams.level }}</span></b> {% endif %}
@@ -21,42 +20,10 @@
 {% if requestParams.jeditaskid %} <br><b>Task ID: <a href="{% url 'taskInfo' requestParams.jeditaskid %}">{{ requestParams.jeditaskid }}</a></b> {% endif %}
 {% if requestParams.site %} <br><b>Site: <a href="{% url 'siteInfo' requestParams.site %}">{{ requestParams.site }}</a></b> {% endif %}
 {% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-</p>
 
+<link rel="stylesheet" href="{% static "css/logtypetooltip.css" %}">
 {% if jedi or panda %}
-<p>
 
-<table valign="top"  style="display: inline-block; width: 250px; border: 0px">
-  <tr class='tablesection' ><th colspan=20>Job Broker Logs Linked to Task</th></tr>
-  <tr>
-    <td> Jedi TaskID: <input type="text" id="jediTaskID0" value=""> <input type="button" value="Search"  onclick="searchJedi()"></td>
-  </tr>
-</table>
-
-<table valign="top"  style="display: inline-block; width: 250px;margin-left: 20px; border: 0px">
-  <tr class='tablesection'><th colspan=20>Task brokerage</th></tr>
-  <tr>
-    <td> Jedi TaskID: <input type="text" id="jediTaskID1" value=""> <input type="button" value="Search"  onclick="searchTaskBr()"></td>
-  </tr>
-</table>
-<table id="jediTask" >
-   <caption  style="height: 30px;vertical-align: middle">JediTaskID in JEDI ({{ time }})</caption>
-     <thead>
-                <th>jediTaskID</th>
-                <th>Type</th>
-                <th>LevelName</th>
-                <th>Count</th>
-     </thead>
-     <tbody></tbody>
-    <tfoot>
-    <tr>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
-    </tr>
-    </tfoot>
-    </table>
 <br/>
 <script>
 function searchJedi() {
@@ -64,7 +31,7 @@ function searchJedi() {
     if (input){
         taskid = input.replace(/\s/g, '');
         url = "https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:"+taskid+"')),sort:!('timeEvent',asc))"
-        window.location.href=url;
+        window.open(url);
     }
 }
 
@@ -72,38 +39,55 @@ function searchTaskBr() {
     input = document.getElementById("jediTaskID1").value;
     if (input){
         taskid = input.replace(/\s/g, '');
-        url = "https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:"+taskid+"%20AND%20logLevel:%22INFO%22')),sort:!('timeEvent',asc))"
-        window.location.href=url;
+        url = "https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'(type:%22atlasanaljobbroker%22%20OR%20type:%22atlasprodjobbroker%22)%20AND%20jediTaskID:"+taskid+"')),sort:!('timeEvent',asc))"
+        //window.location.href=url;
+        window.open(url);
     }
 }
 </script>
 
-
-
-
-  <link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
-  <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
-  <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
+<div id="tabs">
+  <ul>
+    <li><a href="#tabs-1" class="ui-tabs-anchor">Logs</a></li>
+    <li><a href="#tabs-2" class="ui-tabs-anchor">Tasks and Jobs</a></li>
+    <li><a href="#tabs-3" class="ui-tabs-anchor">Prod job brokerage</a></li>
+    <li><a href="#tabs-4" class="ui-tabs-anchor">Analy job brokerage</a></li>
+    <li><a href="#tabs-5" class="ui-tabs-anchor">Throttle: queued vs running</a></li>
+  </ul>
+  <div id="tabs-1">
 <table  style="display: inline-block; width: 550px; border: 0px; vertical-align: top;">
 <tr class='tablesection'><th colspan=20>JEDI</th></tr>
 <tr class='tablesection'>
     <th> Type </th>
     <th> Level(count) </th>
 </tr>
-{% for name,types in jedi.items %}
+{% for cat,cats in jedi.items %}
+{% for name,types in cats.items %}
 
 {% for type,levels in types.items %}
 
 <tr bgcolor="#FCFCFC">
 
-<td> <a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22')),sort:!('timeEvent',asc))" target="_blank"> {% if type == "stdout" %}{{ type }} ({{name}}) {% else %}{{ type }}{% endif %}</a> </td><td>
-
+<td style="width: 200px"> <a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22')),sort:!('timeEvent',asc))" target="_blank"> {% if type == "stdout" %}{{ type }} ({{name}}) {% else %}{{ type }}{% endif %}</a>
+{% for k,v in jedidesc.items %}
+    {% if k ==  name%}
+    <span class="hasTooltip"> (?)
+<table>
+      <tr>
+          <td>{{ v.1 }}</td>
+      </tr>
+  </table>
+     </span>
+  {% endif %}
+{% endfor %}
+</td><td>
 {% for key,level in levels.items %}
 <a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('timeEvent',asc))" target="_blank">
 <span class="{% if  level.logLevel|lower == "error" %}errspan {% else %}{{ level.logLevel|lower }}{% endif %}">{{ level.logLevel }}</span>({{ level.lcount }})
 </a> &nbsp;
 {% endfor %}
 </td></tr>
+{% endfor %}
 {% endfor %}
 <tr height=20></tr>
 {% endfor %}
@@ -115,12 +99,28 @@ function searchTaskBr() {
     <th> Type </th>
     <th> Level(count) </th>
 </tr>
-{% for name,types in panda.items %}
+{% for cat,cats in panda.items %}
+{% for name,types in cats.items %}
 
 {% for type,levels in types.items %}
 <tr bgcolor="#FCFCFC">
 
-<td> <a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,type,logLevel,message),index:'atlas_pandalogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22')),sort:!('timeEvent',asc))" target="_blank">{{ type }}</a> </td><td>
+<td>
+
+    <a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,type,logLevel,message),index:'atlas_pandalogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22')),sort:!('timeEvent',asc))" target="_blank">{{ type }}</a>
+{% for k,v in pandadesc.items %}
+    {% if k ==  name%}
+    <span class="hasTooltip"> (?)
+<table>
+      <tr>
+          <td>{{ v.1 }}</td>
+      </tr>
+  </table>
+     </span>
+  {% endif %}
+{% endfor %}
+</td>
+    <td>
 
 {% for key,level in levels.items %}
 <a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,type,logLevel,message),index:'atlas_pandalogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('timeEvent',asc))" target="_blank">
@@ -129,21 +129,74 @@ function searchTaskBr() {
 {% endfor %}
 </td></tr>
 {% endfor %}
+{% endfor %}
 <tr height=20></tr>
 {% endfor %}
 </table>
-</p>
 
+  </div>
+  <div id="tabs-2">
+
+  </div>
+  <div id="tabs-3">
+  </div>
+  <div id="tabs-4">
+  </div>
+  <div id="tabs-5">
+  </div>
+</div>
+
+  <link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
+  <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
+  <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
 <script type="text/javascript">
 
+$( "#tabs" ).on( "tabsactivate", function( event, ui ) {
+        $( "#tabs-2" ).empty();
+        $( "#tabs-3" ).empty();
+        $( "#tabs-4" ).empty();
+        $( "#tabs-5" ).empty();
 
+        switch(ui.newPanel.selector) {
+            case '#tabs-2':
 
+                $("#tabs-2").append("<table valign=\"top\"  style=\"display: inline-block; width: 250px; border: 0px\">  <tr class='tablesection' ><th colspan=20>Task brokerage</th></tr> <tr> <td> Jedi TaskID: <input type=\"text\" id=\"jediTaskID0\" value=\"\"> <input type=\"button\" value=\"Search\"  onclick=\"searchJedi()\"></td> </tr> </table> <table valign=\"top\"  style=\"display: inline-block; width: 250px;margin-left: 20px; border: 0px\"> <tr class='tablesection'><th colspan=20>Job brokerage</th></tr> <tr> <td> Jedi TaskID: <input type=\"text\" id=\"jediTaskID1\" value=\"\"> <input type=\"button\" value=\"Search\"  onclick=\"searchTaskBr()\"></td> </tr> </table> <table id=\"jediTask\" width=\"100%\"> <caption  style=\"height: 30px;vertical-align: middle\">Job brokerage Log lookup by Task ({{ time }})</caption><thead> <th>jediTaskID</th><th>Type</th> <th>LevelName</th> <th>Count</th> </thead> <tbody></tbody> <tfoot> <tr> <th></th> <th></th> <th></th> <th></th> </tr> </tfoot> </table>");
+                DisplayjediDataTableTableData();
+                break;
+            case '#tabs-3':
+                if(/chrom(e|ium)/.test(navigator.userAgent.toLowerCase())==false){
+                    //$( "#tabs" ).tabs( { disabled: [2, 3,4] } );
+                    $("#tabs-3").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>")
+                    $("#tabs-3").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_prodjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod job brokerage</a><br/><br/>")
+                }
+                $( "#tabs-3" ).append( "<iframe src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_prodjobbrokerage?embed=true&_g=()\" height=\"1000\" width=\"100%\"></iframe>" );
+                break;
+            case '#tabs-4':
+                if(/chrom(e|ium)/.test(navigator.userAgent.toLowerCase())==false){
+                    $("#tabs-4").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>")
+                    $("#tabs-4").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_analyjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Analy job brokerage</a><br/><br/>")
+                }
+                $( "#tabs-4" ).append( "<iframe src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_analyjobbrokerage?embed=true&_g=()\" height=\"1000\" width=\"100%\"></iframe>" )
+                break;
+            case '#tabs-5':
+                 if(/chrom(e|ium)/.test(navigator.userAgent.toLowerCase())==false){
+                     $("#tabs-5").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>")
+                     $("#tabs-5").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Throttle: queued vs running</a><br/><br/>")
+                }
+                $( "#tabs-5" ).append( "<iframe src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?embed=true&_g=()\" height=\"1000\" width=\"100%\"></iframe>" )
+                break;
+        }
+    });
 var jediDataTable;
 $(document).ready(function () {
-        DisplayjediDataTableTableData();
-        $("#jediTask_wrapper").css("width","1050px");
+        $( "#tabs" ).tabs();
+        //DisplayjediDataTableTableData();
+       // $("#jediTask_wrapper").css("width","1050px");
         $( ".has-dropdown" ).addClass("has-dropdown not-click");
+        $('#tabs-1 a').css ({"color": "#0a47ff"});
     });
 function DisplayjediDataTableTableData() {
     jediDataTable = $('#jediTask').dataTable({
@@ -163,7 +216,7 @@ function DisplayjediDataTableTableData() {
             {
                 "data": "jediTaskID",
                 "render": function(data, type, full, meta) {
-                    return  '<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'timeEvent\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:'+data+'\')),sort:!(\'timeEvent\',asc))" target="_blank">' + full['jediTaskID'] + '</a>'
+                    return  '<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'timeEvent\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:'+data+'\')),sort:!(\'timeEvent\',asc))" target="_blank" style="color: #0a47ff">' + full['jediTaskID'] + '</a>'
                     //return '<a href="ab.aspx?emp_id=' + data + '">"' + full['Type'] + '"</a>';
             },
                 sDefaultContent: ""
@@ -172,14 +225,14 @@ function DisplayjediDataTableTableData() {
                 "data": "Type",
                 sDefaultContent: "",
                 "render": function(data, type, full, meta) {
-                     return '<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'timeEvent\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:' +  full['jediTaskID'] + '%20AND%20type:%22'+full['Type']+'%22\')),sort:!(\'timeEvent\',asc))" target="_blank">' + full['Type'] + '</a>'
+                     return '<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'timeEvent\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:' +  full['jediTaskID'] + '%20AND%20type:%22'+full['Type']+'%22\')),sort:!(\'timeEvent\',asc))" target="_blank" style="color: #0a47ff">' + full['Type'] + '</a>'
                  }
             },
             {
                 "data": "LevelName",
                 sDefaultContent: "",
                 "render": function(data, type, full, meta) {
-                     return '<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'timeEvent\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:' +  full['jediTaskID'] + '%20AND%20type:%22'+full['Type']+'%22%20AND%20logLevel:%22'+full['LevelName']+'%22\')),sort:!(\'timeEvent\',asc))" target="_blank">' + full['LevelName'] + '</a>'
+                     return '<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'timeEvent\',logName,type,logLevel,message),index:\'atlas_jedilogs-*\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:' +  full['jediTaskID'] + '%20AND%20type:%22'+full['Type']+'%22%20AND%20logLevel:%22'+full['LevelName']+'%22\')),sort:!(\'timeEvent\',asc))" target="_blank" style="color: #0a47ff">' + full['LevelName'] + '</a>'
                 }
             },
             {

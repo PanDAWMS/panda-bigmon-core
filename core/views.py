@@ -9080,6 +9080,75 @@ def esatlasPandaLogger(request):
         retry_on_timeout=True,
     )
     today = time.strftime("%Y.%m.%d")
+    pandaDesc = {
+        "panda.log.RetrialModule":["cat1","Retry module to apply rules on failed jobs"],
+
+        "panda.log.Serveraccess":["cat2","Apache request log"],
+        "panda.log.Servererror":["cat2","Apache errors"],
+        "panda.log.PilotRequests": ["cat2", "Pilot requests"],
+        "panda.log.Entry":["cat2","Entry point to the PanDA server"],
+        "panda.log.UserIF": ["cat2", "User interface"],
+        "panda.log.DBProxy": ["cat2", "Filtered messages of DB interactions"],
+
+        "panda.log.Adder": ["cat3", "Add output files to datasets and trigger output aggregation"],
+        "panda.log.Finisher": ["cat3", "Finalization procedures for jobs"],
+        "panda.log.Closer": ["cat3", "Close internal datasets once all associated jobs are done"],
+        "panda.log.Setupper": ["cat3", "Setup internal datasets for data transfers"],
+        "panda.log.copyArchive": ["cat3", "Various actions, such as kill and poll based on timeout parameters"],
+        "panda.log.DynDataDistributer": ["cat3", "PD2P"],
+        "panda.log.Activator": ["cat3", "Activates jobs based on input transfers"],
+        "panda.log.datasetManager": ["cat3", "Manages datasets states"],
+
+        "panda.log.broker": ["cat4", "Brokerage"],
+        "panda.log.runRebro": ["cat4", "Identifies jobs to rebroker"],
+        "panda.log.prioryMassage": ["cat4", "Priority management for user jobs"],
+
+        "panda.log.Initializer": ["cat8", "Initializes connections to the DB"],
+        "panda.log.ConBridge": ["cat5", "DB connections"],
+
+        "panda.log.ProcessLimiter": ["cat6", "Limit number of forked processes in PanDA"],
+
+        "panda.log.Utils": ["cat8", "Aux functions"],
+        "panda.log.Notifier": ["cat7", "User email notification agent"],
+
+        "panda.log.Panda": ["cat8", "Some messages are redirected here "],
+    }
+    pandaCat = ['cat1','cat2','cat3','cat4','cat5','cat6','cat7','cat8']
+
+    jediDesc = {
+        "panda.log.AtlasProdTaskBroker":["cat1","Production task brokerage"],
+        "panda.log.TaskBroker":["cat7","Task brokerage factory"],
+        "panda.log.AtlasProdJobBroker":["cat1","Production job brokerage"],
+        "panda.log.AtlasAnalJobBroker": ["cat1", "Analysis job brokerage"],
+        "panda.log.JobBroker":["cat7","Job brokerage factory"],
+
+
+        "panda.log.AtlasProdJobThrottler": ["cat2", "Throttles generation of production jobs based on defined limits"],
+        "panda.log.JobThrottler": ["cat7", "Job throttler factory"],
+        "panda.log.JobGenerator": ["cat2", "Generates job for a task"],
+        "panda.log.JobSplitter": ["cat2", "Job splitter, used by the job generator"],
+
+        "panda.log.TaskRefiner": ["cat3", "Generates tasks in JEDI from definitions found in DEFT"],
+        "panda.log.TaskSetupper": ["cat7", "Procedures for task setup. Base class"],
+        "panda.log.AtlasTaskSetupper": ["cat3", "ATLAS procedures for task setup"],
+        "panda.log.TaskCommando": ["cat3", "Executes task commands from DEFT"],
+        "panda.log.PostProcessor": ["cat3", "Post processes tasks"],
+
+        "panda.log.Activator": ["cat4", "Activates jobs based on DDM messages"],
+        "panda.log.Closer": ["cat4", "Closes internal datasets once all associated jobs are done"],
+        "panda.log.ContentsFeeder": ["cat4", "Feeds file contents for tasks"],
+        "panda.log.AtlasDDMClient": ["cat4", "DDM client"],
+
+        "panda.log.AtlasProdWatchDog": ["cat5", "Production task watchdog"],
+        "panda.log.AtlasAnalWatchDog": ["cat5", "Analysis task watchdog"],
+        "panda.log.WatchDog": ["cat5", "Watchdog"],
+
+        "panda.log.JediDBProxy": ["cat6", "Filtered JEDI DB interactions"],
+        "panda.log.TaskBuffer": ["cat7", "PanDA server task buffer"],
+        "panda.log.JediTaskBuffer": ["cat7", "JEDI task buffer"],
+        "panda.log.DBProxyPool": ["cat7", "DB connection pool interactions"],
+    }
+    jediCat = ['cat1','cat2','cat3','cat4','cat5','cat6','cat7']
 
     logindexpanda = 'atlas_pandalogs-'
     logindexjedi = 'atlas_jedilogs-'
@@ -9109,37 +9178,46 @@ def esatlasPandaLogger(request):
         )
 
         if index == "atlas_pandalogs-":
+            for cat in pandaCat:
+                panda[cat]={}
             for agg in res['aggregations']['logName']['buckets']:
+                cat = pandaDesc[agg['key']][0]
+                    #desc = pandaDesc[agg['key']][1]
                 name = agg['key']
-                panda[name] = {}
+                panda[cat][name] = {}
+                #panda[cat][name]['desc'] = pandaDesc[agg['key']][1]
                 for types in agg['type']['buckets']:
                     type = types['key']
-                    panda[name][type] = {}
+                    panda[cat][name][type] = {}
                     for levelnames in types['logLevel']['buckets']:
                         levelname = levelnames['key']
-                        panda[name][type][levelname] = {}
-                        panda[name][type][levelname]['logLevel'] = levelname
-                        panda[name][type][levelname]['lcount'] = str(levelnames['doc_count'])
+                        panda[cat][name][type][levelname] = {}
+                        panda[cat][name][type][levelname]['logLevel'] = levelname
+                        panda[cat][name][type][levelname]['lcount'] = str(levelnames['doc_count'])
         elif index == "atlas_jedilogs-":
+            for cat in jediCat:
+                jedi[cat]={}
             for agg in res['aggregations']['logName']['buckets']:
+                cat = jediDesc[agg['key']][0]
                 name = agg['key']
-                jedi[name] = {}
+                jedi[cat][name] = {}
                 for types in agg['type']['buckets']:
                     type = types['key']
-                    jedi[name][type] = {}
+                    jedi[cat][name][type] = {}
                     for levelnames in types['logLevel']['buckets']:
                         levelname = levelnames['key']
-                        jedi[name][type][levelname] = {}
-                        jedi[name][type][levelname]['logLevel'] = levelname
-                        jedi[name][type][levelname]['lcount'] = str(levelnames['doc_count'])
-
+                        jedi[cat][name][type][levelname] = {}
+                        jedi[cat][name][type][levelname]['logLevel'] = levelname
+                        jedi[cat][name][type][levelname]['lcount'] = str(levelnames['doc_count'])
     data = {
         'request': request,
         'viewParams': request.session['viewParams'],
         'requestParams': request.session['requestParams'],
         'user': None,
         'panda': panda,
+        'pandadesc':pandaDesc,
         'jedi': jedi,
+        'jedidesc':jediDesc,
         'time': time.strftime("%Y-%m-%d"),
     }
 
