@@ -6911,40 +6911,6 @@ def report(request):
     step = 0
     response = None
 
-    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16':
-        reportGen = MC16aCPReport.MC16aCPReport()
-        response = reportGen.prepareReportJEDI(request)
-        endSelfMonitor(request)
-        return response
-
-    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16C':
-        reportGen = MC16aCPReport.MC16aCPReport()
-        response = reportGen.prepareReportJEDIMC16c(request)
-        endSelfMonitor(request)
-        return response
-
-
-    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16A' and 'type' in request.session['requestParams'] and request.session['requestParams']['type'].upper() == 'DCC':
-        reportGen = MC16aCPReport.MC16aCPReport()
-        resp = reportGen.getDKBEventsSummaryRequestedBreakDownHashTag(request)
-        dump = json.dumps(resp, cls=DateEncoder)
-        return HttpResponse(dump, content_type='text/html')
-
-
-    if 'requestParams' in request.session and 'obstasks' in request.session['requestParams']:
-        reportGen = ObsoletedTasksReport.ObsoletedTasksReport()
-        response = reportGen.prepareReport(request)
-        endSelfMonitor(request)
-        return response
-
-    if 'requestParams' in request.session and 'step' in request.session['requestParams']:
-        step = int(request.session['requestParams']['step'])
-    if step == 0:
-        response = render_to_response('reportWizard.html', {'nevents': 0}, content_type='text/html')
-    else:
-        if 'reporttype' in request.session['requestParams'] and request.session['requestParams']['reporttype'] == 'rep0':
-            reportGen = MC16aCPReport.MC16aCPReport()
-            response = reportGen.prepareReport()
     endSelfMonitor(request)
     return response
 
