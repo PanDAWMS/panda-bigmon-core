@@ -544,6 +544,7 @@
                             <th>Site<br><a href="{{ nosorturl }}sortby=site-desc" class="headerSortDown"></a> <a
                                     href="{{ nosorturl }}sortby=site-asc" class="headerSortUp"></a></th>{% endif %}
                     {% endif %}
+                    <th>Hastags</th>
                 </tr>
                 {% for task in tasks %}
                     <tr>
@@ -613,6 +614,22 @@
                         {% if requestParams.site %}
                             <td>{% if task.site %} <a href="{{ xurl }}site={{ task.site }}">{{ task.site }}</a> {% else %} --- {% endif %}</td>
                         {% endif %}
+                        <td>
+                            {% if 'hashtaglist' in task %}
+
+                                {% for hashtag in task.hashtaglist %}
+                                    {% if 'hashtags' in requestParams %}
+                                        <a href="{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},{{ hashtag }}">{{ hashtag }}</a>
+                                    {% else %}
+                                        <a href="{{ xurl }}hashtags={{ hashtag }}">{{ hashtag }}</a>
+                                    {% endif %}
+                                    {% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+
+                            {% else %}
+                                <a href="{{ xurl }}hashtags={{ task.hashtags }}">{{ task.hashtags }}</a>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </table>

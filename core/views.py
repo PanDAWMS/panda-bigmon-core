@@ -471,6 +471,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             if (field.get_internal_type() == 'CharField'):
                 if not (field.name == 'modificationhost' or (excludeWGFromWildCard and field.name == 'workinggroup') or (excludeSiteFromWildCard and field.name == 'site')):
                     wildSearchFields.append(field.name)
+
     deepquery = False
     fields = standard_fields
     if 'limit' in request.session['requestParams']:
@@ -4565,7 +4566,6 @@ def siteInfo(request, site=''):
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
-        nickName = ''
         attrs = []
         if siterec:
             attrs.append({'name': 'GOC name', 'value': siterec.gocname})
@@ -4588,7 +4588,6 @@ def siteInfo(request, site=''):
 
             if siterec.nickname != site:
                 attrs.append({'name': 'Queue (nickname)', 'value': siterec.nickname})
-                nickName = siterec.nickname
             if len(sites) > 1:
                 attrs.append({'name': 'Total queues for this site', 'value': len(sites)})
             attrs.append({'name': 'Status', 'value': siterec.status})
@@ -4632,7 +4631,6 @@ def siteInfo(request, site=''):
             'attrs': attrs,
             'incidents': incidents,
             'name': site,
-            'nickName': nickName,
             'njobhours': njobhours,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
@@ -6919,13 +6917,6 @@ def report(request):
         endSelfMonitor(request)
         return response
 
-    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16C':
-        reportGen = MC16aCPReport.MC16aCPReport()
-        response = reportGen.prepareReportJEDIMC16c(request)
-        endSelfMonitor(request)
-        return response
-
-
     if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16A' and 'type' in request.session['requestParams'] and request.session['requestParams']['type'].upper() == 'DCC':
         reportGen = MC16aCPReport.MC16aCPReport()
         resp = reportGen.getDKBEventsSummaryRequestedBreakDownHashTag(request)
@@ -6939,6 +6930,8 @@ def report(request):
         endSelfMonitor(request)
         return response
 
+
+
     if 'requestParams' in request.session and 'step' in request.session['requestParams']:
         step = int(request.session['requestParams']['step'])
     if step == 0:
@@ -6949,6 +6942,7 @@ def report(request):
             response = reportGen.prepareReport()
     endSelfMonitor(request)
     return response
+
 
 def runningMCProdTasks(request):
     valid, response = initRequest(request)
@@ -7150,6 +7144,7 @@ def runningProdTasks(request):
     else:
         xurl += '?'
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
+    nohashtagurl = removeParam(xurl, 'hashtags', mode='extensible')
     exquery = {}
 
     productiontype = ''
@@ -7178,7 +7173,7 @@ def runningProdTasks(request):
     tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=0, limit=9999999, querytype='task',
                                                             wildCardExt=True)
 
-    if 'workinggroup' in tquery and request.session['requestParams']['preset'] == 'MC' and ',' in tquery['workinggroup']:
+    if 'workinggroup' in tquery and 'preset' in request.session['requestParams'] and request.session['requestParams']['preset'] == 'MC' and ',' in tquery['workinggroup']:
         #     excludeWGList = list(str(wg[1:]) for wg in request.session['requestParams']['workinggroup'].split(','))
         #     exquery['workinggroup__in'] = excludeWGList
         try:
@@ -7196,7 +7191,22 @@ def runningProdTasks(request):
         except:
             pass
         exquery['site__isnull'] = True
-
+    if 'hashtags' in request.session['requestParams']:
+        wildCardExtension += ' AND ('
+        wildCards = request.session['requestParams']['hashtags'].split(',')
+        currentCardCount = 1
+        countCards = len(wildCards)
+        for card in wildCards:
+            if '*' not in card:
+                card = '*' + card + '*'
+            elif card.startswith('*'):
+                card = card + '*'
+            elif card.endswith('*'):
+                card = '*' + card
+            wildCardExtension += preprocessWildCardString(card, 'hashtags')
+            if (currentCardCount < countCards): wildCardExtension += ' AND '
+            currentCardCount += 1
+        wildCardExtension += ')'
     if 'sortby' in request.session['requestParams'] and '-' in request.session['requestParams']['sortby'] :
         sortby = request.session['requestParams']['sortby']
     else:
@@ -7269,6 +7279,10 @@ def runningProdTasks(request):
             if not task['processingtype'] in neventsByProcessingType.keys():
                 neventsByProcessingType[str(task['processingtype'])] = 0
             neventsByProcessingType[str(task['processingtype'])] += task['nevents'] if task['nevents'] is not None else 0
+        if 'hashtags' in task and len(task['hashtags']) > 1:
+            task['hashtaglist'] = []
+            for hashtag in task['hashtags'].split(','):
+                task['hashtaglist'].append(hashtag)
 
     plotageshistogram = 1
     if sum(ages) == 0: plotageshistogram = 0
@@ -7286,6 +7300,7 @@ def runningProdTasks(request):
             'requestParams': request.session['requestParams'],
             'xurl': xurl,
             'nosorturl': nosorturl,
+            'nohashtagurl': nohashtagurl,
             'tasks': tasks,
             'ntasks': ntasks,
             'sortby': sortby,
