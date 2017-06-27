@@ -374,14 +374,23 @@
                     {% else %}
                         <th>RJobs<br><a href="{{ nosorturl }}sortby=rjobs-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=rjobs-asc" class="headerSortUp"></a></th>{% endif %}
-                    {% if sortby == 'status-desc' %}
-                        <th>Status<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=status-asc"
+                    {% if sortby == 'superstatus-desc' %}
+                        <th>Status (ProdSys)<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=superstatus-asc"
                                                                                 class="headerSortUp"></a></th>
-                    {% elif sortby == 'status-asc' %}
-                        <th>Status<br><a href="{{ nosorturl }}sortby=status-desc" class="headerSortDown"></a> <span
+                    {% elif sortby == 'superstatus-asc' %}
+                        <th>Status (ProdSys)<br><a href="{{ nosorturl }}sortby=superstatus-desc" class="headerSortDown"></a> <span
                                 class="headerSortedUp"></span></th>
                     {% else %}
-                        <th>Status<br><a href="{{ nosorturl }}sortby=status-desc" class="headerSortDown"></a> <a
+                        <th>Status (ProdSys)<br><a href="{{ nosorturl }}sortby=superstatus-desc" class="headerSortDown"></a> <a
+                                href="{{ nosorturl }}sortby=superstatus-asc" class="headerSortUp"></a></th>{% endif %}
+                    {% if sortby == 'status-desc' %}
+                        <th>Status (JEDI)<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=status-asc"
+                                                                                class="headerSortUp"></a></th>
+                    {% elif sortby == 'status-asc' %}
+                        <th>Status (JEDI)<br><a href="{{ nosorturl }}sortby=status-desc" class="headerSortDown"></a> <span
+                                class="headerSortedUp"></span></th>
+                    {% else %}
+                        <th>Status (JEDI)<br><a href="{{ nosorturl }}sortby=status-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=status-asc" class="headerSortUp"></a></th>{% endif %}
                     {% if requestParams.preset != 'DPD' %}
                         {% if sortby == 'processingtype-desc' %}
@@ -559,6 +568,8 @@
                         <td>{% if task.rjobs > 0 %}
                             <a href="/jobs/?jeditaskid={{ task.jeditaskid }}&jobstatus=running">{{ task.rjobs }}</a> {% else %}
                             {{ task.rjobs }}{% endif %}</td>
+                        <td class='{{ task.superstatus }}_fill'><a
+                                href="{{ xurl }}status={{ task.superstatus }}" class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</a></td>
                         <td class='{{ task.status }}_fill'><a
                                 href="{{ xurl }}status={{ task.status }}" class="{{ task.status }}_tooltip">{{ task.status }}</a></td>
                         {% if requestParams.preset != 'DPD' %}
