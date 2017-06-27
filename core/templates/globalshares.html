@@ -23,8 +23,8 @@
         <th>Actual HS06</th>
         <th>Target HS06</th>
         <th>HS06 ratio</th>
-        <th>Actual share</th>
         <th>Queued HS06</th>
+        <th>Actual share</th>
         <th>Target share</th>
     </tr>
     {% for row in tablerows %}
@@ -35,8 +35,8 @@
                 <td style="text-align:right">{% if row.executing %}{{ row.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
                 <td style="text-align:right">{% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
                 <td style="text-align:right">{% if row.ratio %} {{ row.ratio |floatformat:2|intcomma }} % {% else %} --- {% endif %}</td>
-                <td style="text-align:right">{% if row.used %} {{ row.used |floatformat:2|intcomma }} % {% else %} --- {% endif %}</td>
                 <td style="text-align:right">{% if row.queued %}{{ row.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td style="text-align:right">{% if row.used %} {{ row.used |floatformat:2|intcomma }} % {% else %} --- {% endif %}</td>
                 <td style="text-align:right">{% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}</td>
 
             </tr>
