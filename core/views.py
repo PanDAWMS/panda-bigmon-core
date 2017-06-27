@@ -11122,17 +11122,17 @@ def stripTree(node, rows):
     row = {}
     if node.level > 0:
         if node.level == 1:
-            row['level1'] = node.name + ' [' + ("%0.1f" % node.value) + '%]'
+            row['level1'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
             row['level2'] = ''
             row['level3'] = ''
         if node.level == 2:
             row['level1'] = ''
-            row['level2'] = node.name + ' [' + ("%0.1f" % node.value) + '%]'
+            row['level2'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
             row['level3'] = ''
         if node.level == 3:
             row['level1'] = ''
             row['level2'] = ''
-            row['level3'] = node.name + ' [' + ("%0.1f" % node.value) + '%]'
+            row['level3'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
         row['executing'] = node.executing
         row['pledged'] = node.pledged
         row['delta'] = node.delta

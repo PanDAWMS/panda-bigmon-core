@@ -61,6 +61,7 @@ class Share(Node):
     def __init__(self, name, value, parent, prodsourcelabel, workinggroup, campaign, processingtype):
         Node.__init__(self)
         self.name = name
+        self.rawvalue = value
         self.value = value
         self.parent = parent
         self.prodsourcelabel = prodsourcelabel
