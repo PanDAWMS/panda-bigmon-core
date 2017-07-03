@@ -201,7 +201,8 @@ def getObjectStoresNames():
     for OSname, OSdescr in data.iteritems():
         if "resource" in OSdescr and "bucket_id" in OSdescr["resource"]:
             objectStoresNames[OSdescr["resource"]["bucket_id"]] = OSname
-            objectStoresSites[OSname] = OSdescr["site"]
+        objectStoresNames[OSdescr["id"]] = OSname
+        objectStoresSites[OSname] = OSdescr["site"]
 
 
 
@@ -5976,13 +5977,16 @@ def dashboard(request, view='production'):
             getObjectStoresNames()
 
         sqlRequest = """
-        SELECT ES, JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, OBJSTORE_ID, COMPUTINGSITE FROM (
-        SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, OBJSTORE_ID 
-        FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID
-        WHERE t1.ES in (1) and CLOUD='WORLD' and MODIFICATIONTIME > (sysdate - interval '13' hour)
-        )
-        GROUP BY JOBSTATUS, JOBSTATUS, OBJSTORE_ID, ES, COMPUTINGSITE order by OBJSTORE_ID
+        SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE FROM (
+        SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, CASE WHEN t2.OBJSTORE_ID > 0 THEN TO_CHAR(t2.OBJSTORE_ID) ELSE t3.destinationse END AS OBJSE  
+        FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 
+        LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID = t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0)
+        LEFT JOIN ATLAS_PANDA.filestable4 t3 ON (t3.pandaid = t2.pandaid and t3.JEDITASKID = t2.JEDITASKID and t3.row_id=t2.ziprow_id) 
+        WHERE t1.ES in (1) and t1.CLOUD='WORLD' and t1.MODIFICATIONTIME > (sysdate - interval '13' hour) 
+        ) WHERE NOT OBJSE IS NULL
+        GROUP BY JOBSTATUS, JOBSTATUS, COMPUTINGSITE, OBJSE order by OBJSE
         """
+
         cur = connection.cursor()
         cur.execute(sqlRequest)
         rawsummary = cur.fetchall()
@@ -5991,13 +5995,13 @@ def dashboard(request, view='production'):
         if len(rawsummary) > 0:
             for row in rawsummary:
 
-                if not row[3] is None and row[3] in objectStoresNames:
-                    osName = objectStoresNames[row[3]]
+                if not row[3] is None and int(row[3]) in objectStoresNames:
+                    osName = objectStoresNames[int(row[3])]
                 else:
                     osName = "Not defined"
-                compsite = row[4]
-                status = row[1]
-                count = row[2]
+                compsite = row[2]
+                status = row[0]
+                count = row[1]
 
                 if osName in mObjectStores:
                     if not compsite in mObjectStores[osName]:
@@ -6032,7 +6036,7 @@ def dashboard(request, view='production'):
         }
         endSelfMonitor(request)
         response = render_to_response('dashObjectStore.html', data, content_type='text/html')
-        setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 20)
+        setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 25)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
