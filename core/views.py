@@ -5995,8 +5995,14 @@ def dashboard(request, view='production'):
         if len(rawsummary) > 0:
             for row in rawsummary:
 
-                if not row[3] is None and int(row[3]) in objectStoresNames:
-                    osName = objectStoresNames[int(row[3])]
+                id = -1
+                try:
+                    id = int(row[3])
+                except ValueError:
+                    pass
+
+                if not row[3] is None and id in objectStoresNames:
+                    osName = objectStoresNames[id]
                 else:
                     osName = "Not defined"
                 compsite = row[2]

@@ -20,11 +20,11 @@
 <td class="tablesection">starting</td>
 <td class="tablesection">running</td>
 <td class="tablesection">holding</td>
+<td class="tablesection">merging</td>
 <td class="tablesection">transferring</td>
 <td class="tablesection">finished</td>
 <td class="tablesection">failed</td>
 <td class="tablesection">cancelled</td>
-<td class="tablesection">merging</td>
 <td class="tablesection">closed</td>
 </tr>
 
@@ -49,22 +49,22 @@
 {% for ostore, osval in mObjectStores.items %}
 <tr height=10 colspan=12></tr>
 <tr>
-<td class="tablesection"> <a name="ostore_{{ ostore }}">{{ ostore }} ObjectStore</a>, Queue </td>
-<td class="tablesection">defined</td>
-<td class="tablesection">waiting</td>
-<td class="tablesection">assigned</td>
-<td class="tablesection">throttled</td>
-<td class="tablesection">activated</td>
-<td class="tablesection">sent</td>
-<td class="tablesection">starting</td>
-<td class="tablesection">running</td>
-<td class="tablesection">holding</td>
-<td class="tablesection">transferring</td>
-<td class="tablesection">finished</td>
-<td class="tablesection">failed</td>
-<td class="tablesection">cancelled</td>
-<td class="tablesection">merging</td>
-<td class="tablesection">closed</td>
+    <td class="tablesection"> <a name="ostore_{{ ostore }}">{{ ostore }} ObjectStore</a>, Queue </td>
+    <td class="tablesection">defined</td>
+    <td class="tablesection">waiting</td>
+    <td class="tablesection">assigned</td>
+    <td class="tablesection">throttled</td>
+    <td class="tablesection">activated</td>
+    <td class="tablesection">sent</td>
+    <td class="tablesection">starting</td>
+    <td class="tablesection">running</td>
+    <td class="tablesection">holding</td>
+    <td class="tablesection">merging</td>
+    <td class="tablesection">transferring</td>
+    <td class="tablesection">finished</td>
+    <td class="tablesection">failed</td>
+    <td class="tablesection">cancelled</td>
+    <td class="tablesection">closed</td>
 </tr>
 
     {% for computingsite, computingsiteval in osval.items %}
