@@ -11186,3 +11186,30 @@ def getChildStat(node, hs_distribution_dict, level):
         ratio = None
 
     node.ratio = ratio
+
+from PIL import Image
+import urllib2 as urllib
+import io
+
+whitelist = ["triumf.ca", "cern.ch"]
+def image(request):
+    if ('url' in request.GET):
+        param = request.build_absolute_uri()
+        url = param[param.index("=")+1:len(param)]
+        for urlw in whitelist:
+            pattern = "^((http[s]?):\/)?\/?([^:\/\s]+"+urlw+")"
+            urlConfim = re.findall(pattern,url)
+            if (len(urlConfim)>0):
+                break
+        if (len(urlConfim)==0):
+            return redirect('/static/images/22802286-denied-red-grunge-stamp.jpg')
+        try:
+            fd = urllib.urlopen(url)
+            image_file = io.BytesIO(fd.read())
+            im = Image.open(image_file)
+            response = HttpResponse(content_type='image/jpg')
+            im.save(response, "JPEG")
+            return response
+        except:return redirect('/static/images/404-not-found-site.gif')
+    else:
+        return redirect('/static/images/error_z0my4n.png')

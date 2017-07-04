@@ -59,11 +59,17 @@ $(function () {
 		}]
 	}, 
 	function (chart) { // on complete
-		{% if startdate %}
-			chart.renderer.image('http://bigpanda.cern.ch/static/images/favicon.png', 20, 70, 30, 30)
+        var prt = 'http://'
+        if ("https:" == document.location.protocol) {
+        prt = 'https://'
+        } else {
+        prt = 'http://'
+        }
+        {% if startdate %}
+			chart.renderer.image(prt+'bigpanda.cern.ch/static/images/favicon.png', 20, 70, 30, 30)
 				.add();
 		{% else %}
-			chart.renderer.image('http://bigpanda.cern.ch/static/images/favicon.png', 20, 60, 30, 30)
+			chart.renderer.image(prt+'bigpanda.cern.ch/static/images/favicon.png', 20, 60, 30, 30)
 				.add();
 		{% endif %}
 		{% if not data|length %}

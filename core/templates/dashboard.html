@@ -1,6 +1,5 @@
 {% extends "_base_core.html" %}
 
-
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
 {% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA {{view}} {{ requestParams.mode }} dashboard{{ viewParams.selection|safe }}
@@ -420,7 +419,7 @@ of all jobs
 {% for cloud in summary %}
 <tr height=10 colspan=12></tr>
 <tr>
-<th  bgcolor=whitesmoke> {% if cloud.name != 'All' %}{% if cloud.name != '' %}<a href="#cloud_{{ cloud.name }}"><span class="{{cloud.status}}">{{ cloud.name }}</span></a> <a onclick='PopUp("SITE={{ cloud.name }}&SIZE=medium", "{{ cloud.name }}", "day")'><img src='http://tjweb.org/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assigned {% endif %} {% else %}  All clouds {% endif %}</th>
+<th  bgcolor=whitesmoke> {% if cloud.name != 'All' %}{% if cloud.name != '' %}<a href="#cloud_{{ cloud.name }}"><span class="{{cloud.status}}">{{ cloud.name }}</span></a> <a onclick='PopUp("SITE={{ cloud.name }}&SIZE=medium", "{{ cloud.name }}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assigned {% endif %} {% else %}  All clouds {% endif %}</th>
 <th  bgcolor=whitesmoke> <span class="{{cloud.status}}">{{ cloud.status }}</span> </th>
 <th  bgcolor=whitesmoke align='right'>{{ cloud.count }}</th>
 {% if cloudview == 'region' %}
@@ -479,7 +478,7 @@ of all jobs
 </tr>
 {% for site in cloud.summary %}
 <tr  {% if site.status == 'offline' or site.status == 'brokeroff'%} class="hideofflinerow" {% endif %}>
-<td> {% if site.name %} <a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={{ site.name }}&SIZE=medium", "{{ site.name }}", "day")'>                        <img src='http://tjweb.org/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assignment {% endif %} </td>
+<td> {% if site.name %} <a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={{ site.name }}&SIZE=medium", "{{ site.name }}", "day")'>                        <img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assignment {% endif %} </td>
 <td><span class="{{site.status}}">{{ site.status  }}</span> </td>
 <td align='right'><a href="{% url 'jobList' %}?{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&computingsite={{ site.name }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&hours={{hours}}&jobtype={{ view }}&display_limit=100{{ estailtojobslinks }}">{{ site.count }} </a></td>
 {% if cloudview == 'region' %}
@@ -539,16 +538,23 @@ of all jobs
 {% endif %}
 
 <script language="javascript"> var newWin;function PopUp(ref, site, type) {
+var prt = 'http://'
+if ("https:" == document.location.protocol) {
+    prt = 'https://'
+} else {
+    prt = 'http://'
+}
 var strFeatures="toolbar=no,status=no,menubar=no,location=no"
 strFeatures=strFeatures+",scrollbars=no,resizable=no,height=500,width=500"
 if (!newWin || newWin.closed) {newWin = window.open(ref,'TellObj',strFeatures);
 if (!newWin.opener) {newWin.opener = window; }
-newWin.document.write('<img src="http://gridinfo.triumf.ca/panglia/sites/day.php?'+ref+'" id="show_image"><p>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/hour.php?'+ref+'"; value=Hour>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/day.php?'+ref+'"; value=Day>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/week.php?'+ref+'"; value=Week>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/month.php?'+ref+'"; value=Month>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/year.php?'+ref+'"; value=Year>');
+
+newWin.document.write('<img src="{% url 'img' %}?url=http://gridinfo.triumf.ca/panglia/sites/day.php?'+ref+'" id="show_image"><p>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://gridinfo.triumf.ca/panglia/sites/hour.php?'+ref+'"; value=Hour>');;
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://gridinfo.triumf.ca/panglia/sites/day.php?'+ref+'"; value=Day>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://gridinfo.triumf.ca/panglia/sites/week.php?'+ref+'"; value=Week>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://gridinfo.triumf.ca/panglia/sites/month.php?'+ref+'"; value=Month>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://gridinfo.triumf.ca/panglia/sites/year.php?'+ref+'"; value=Year>');
 newWin.document.write('<p><input type=button value="Close" onclick="window.close();return false;">');
 newWin.document.close(); 
 }else { 

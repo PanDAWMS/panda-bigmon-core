@@ -125,6 +125,8 @@ urlpatterns = [
 
     url(r'^memoryplot/', memmon.getPlots, name='memoryplot'),
 
+    ###Images###
+    url('^img/',coremon_views.image, name='img')
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
