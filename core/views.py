@@ -275,15 +275,15 @@ def initRequest(request):
                     user.set_unusable_password()
                     user.save()
 
-    # if VOMODE == 'devtest':
-    #     request.session['ADFS_FULLNAME'] = ''
-    #     request.session['ADFS_EMAIL'] = ''
-    #     request.session['ADFS_FIRSTNAME'] = ''
-    #     request.session['ADFS_LASTNAME'] = ''
-    #     request.session['ADFS_LOGIN'] = ''
-    #     user = None
-    #     user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
-    #     request.session['IS_TESTER'] = user.is_tester
+    if VOMODE == 'devtest':
+        request.session['ADFS_FULLNAME'] = ''
+        request.session['ADFS_EMAIL'] = ''
+        request.session['ADFS_FIRSTNAME'] = ''
+        request.session['ADFS_LASTNAME'] = ''
+        request.session['ADFS_LOGIN'] = ''
+        # user = None
+        user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
+        request.session['IS_TESTER'] = user.is_tester
 
 
     viewParams = {}
