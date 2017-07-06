@@ -250,8 +250,8 @@ def initRequest(request):
 
     VOMODE = ''
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        # VOMODE = 'atlas'
-        VOMODE = 'devtest'
+        VOMODE = 'atlas'
+        # VOMODE = 'devtest'
     request.session['IS_TESTER'] = False
 
     if VOMODE == 'atlas':
@@ -280,7 +280,7 @@ def initRequest(request):
         request.session['ADFS_EMAIL'] = ''
         request.session['ADFS_FIRSTNAME'] = ''
         request.session['ADFS_LASTNAME'] = ''
-        request.session['ADFS_LOGIN'] = 'tkorchug'
+        request.session['ADFS_LOGIN'] = ''
         # user = None
         user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
         request.session['IS_TESTER'] = user.is_tester
