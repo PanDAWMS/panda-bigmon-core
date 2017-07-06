@@ -10,11 +10,12 @@
 
 	<title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
 
-  <script src="{% static 'js/vendor/modernizr.js' %}"></script>
-  <script src="{% static 'js/jquery/jquery-3.2.1.min.js' %}"></script>
-  <script src="{% static 'js/vendor/what-input.js' %}"></script>
-  <script src="{% static 'js/vendor/foundation.min.js' %}"></script>
-  <script src="{% static 'js/d3.v3.min.js' %}"></script>
+<script src="{% static 'js/vendor/modernizr.js' %}"></script>
+<script src="{% static 'js/jquery/jquery-3.2.1.min.js' %}"></script>
+<script src="{% static 'js/vendor/what-input.js' %}"></script>
+<script src="{% static 'js/vendor/foundation.min.js' %}"></script>
+<script src="{% static 'js/d3.v3.min.js' %}"></script>
+<script src="{% static 'js/user-settings.js' %}"></script>
 
 {% block extra_js_hepsw %}
 
@@ -64,6 +65,7 @@
 	</script>
 
 
+{# Form to send new settings on action on 'Save and Update' button #}
 <form id="form-usersettings" action="{{ request.get_full_path }}" method="POST">
     {% csrf_token %}
     <input type="hidden" name="tables" value=""/>
@@ -465,11 +467,8 @@
   <script>
     $(document).foundation();
   </script>
-
-
 </head>
 <body>
-
   <!-- sub-title and bread-crumbs -->
 
 <div class="top-subbar">
@@ -523,7 +522,7 @@
 
 
   <!-- Main Grid Section -->
-      {% block bottom_info %} 
+      {% block bottom_info %}
       {% comment %} {% if query %} Query: <i>{{ query }}</i> {% endif %}  {% endcomment %}
       {% endblock %}
 <br>
