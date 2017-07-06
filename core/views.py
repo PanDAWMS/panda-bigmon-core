@@ -8894,7 +8894,8 @@ def errorSummary(request):
         data.update(getContextVariables(request))
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
         # Filtering data due to user settings
-        if request.session['ADFS_LOGIN'] and request.session['IS_TESTER']:
+        if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and \
+                request.session['IS_TESTER']:
             data = filterErrorData(request, data)
         ##self monitor
         endSelfMonitor(request)
