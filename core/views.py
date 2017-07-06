@@ -8639,7 +8639,7 @@ def errorSummary(request):
         data = json.loads(data)
         data['request'] = request
         # Filtering data due to user settings
-        if request.session['ADFS_LOGIN'] and request.session['IS_TESTER']:
+        if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and request.session['IS_TESTER']:
             data = filterErrorData(request, data)
         response = render_to_response('errorSummary.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
