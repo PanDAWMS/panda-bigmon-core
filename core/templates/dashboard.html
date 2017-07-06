@@ -107,7 +107,7 @@ Click on column titles to sort.
     var startshift = -1;
 
     {% if cloudview == 'region' %}
-        startshift = 0
+        startshift = 0;
     {% endif %}
 
 
@@ -313,10 +313,10 @@ Click on column titles to sort.
     });
     function hideoffline(){
         if ($(".hideofflinerow").is(':visible')){
-            $(".hideofflinerow").hide()
+            $(".hideofflinerow").hide();
             document.getElementById('hidebutton').innerHTML='Show offline and brokeroff queues'}
         else {
-            $(".hideofflinerow").show()
+            $(".hideofflinerow").show();
             document.getElementById('hidebutton').innerHTML='Hide offline and brokeroff queues'}
     }
 </script>
