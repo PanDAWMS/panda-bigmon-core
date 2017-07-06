@@ -88,6 +88,8 @@ h4 {
 hr {
     background-color: rgba(53,86,129, 0.8);
     height: 3px;
+    width: 100%;
+    max-width: 100%;
 }
 .killbutton {
   display: inline-block;
