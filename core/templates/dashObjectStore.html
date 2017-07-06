@@ -69,7 +69,7 @@
 
     {% for computingsite, computingsiteval in osval.items %}
         <tr>
-            <td>{{ computingsite }}</td>
+            <td><a href="{% url 'siteInfo' %}{{ computingsite }}/">{{ computingsite }}</a></td>
             {%  for jobstatus in statelist %}
                 <td  {% if computingsiteval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}>{{ computingsiteval|get_item:jobstatus }}</td>
             {% endfor %}
