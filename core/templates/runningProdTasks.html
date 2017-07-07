@@ -560,11 +560,20 @@
                 </tr>
                 {% for task in tasks %}
                     <tr>
-                        <td><a href="{{ xurl }}campaign={{ task.campaign }}">{{ task.cutcampaign }}</a></td>
-                        <td><a href="{{ xurl }}reqid={{ task.reqid }}">{{ task.reqid }}</a>
+                        <td>{% if task.campaign %}
+                            <a href="{{ xurl }}campaign={{ task.campaign }}">{{ task.cutcampaign }}</a>
+                            {% else %}---{% endif %}
+                        </td>
+                        <td>{% if task.reqid %}
+                            <a href="{{ xurl }}reqid={{ task.reqid }}">{{ task.reqid }}</a>
                             <a href="https://prodtask-dev.cern.ch/reqtask/{{task.reqid}}/"
-                               target="_blank"> &rArr;</a></td>
-                        <td><a href="{{ xurl }}inputdataset={{ task.inputdataset }}">{{ task.inputdataset }}</a></td>
+                               target="_blank"> &rArr;</a>
+                            {% else %}---{% endif %}
+                        </td>
+                        <td>{% if task.inputdataset %}
+                            <a href="{{ xurl }}inputdataset={{ task.inputdataset }}">{{ task.inputdataset }}</a>
+                            {% else %}---{% endif %}
+                        </td>
                         <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>
                             <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
                                target="_blank"> &rArr;</a></td>

@@ -7295,7 +7295,8 @@ def runningProdTasks(request):
             task['cutcampaign'] = task['campaign'].split(':')[1]
         else:
             task['cutcampaign'] = task['campaign'].split(':')[0]
-
+        if 'reqid' in task and 'jeditaskid' in task and task['reqid'] == task['jeditaskid']:
+            task['reqid'] = None
         if 'runnumber' in task:
             task['inputdataset'] = task['runnumber']
         else:
