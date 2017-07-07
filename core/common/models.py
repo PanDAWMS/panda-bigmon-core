@@ -652,6 +652,7 @@ class RunningProdTasksModel(models.Model):
     simtype = models.CharField(max_length=72, db_column='SIMTYPE', blank=True)
     gshare = models.CharField(max_length=72, db_column='GSHARE', blank=True)
     hashtags = models.CharField(max_length=400, db_column='HASHTAGS', blank=True)
+    eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODTASKS"'
 
