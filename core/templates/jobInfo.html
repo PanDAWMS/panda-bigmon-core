@@ -256,7 +256,7 @@ job <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{
 <a href="{% url 'jobList' %}?parentid={{ job.pandaid }}">child jobs</a>
 </td>
 
-{% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus ==  'cancelled' or job.jobstatus ==  'aborted'  %}
+{% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus ==  'cancelled' or job.jobstatus ==  'aborted' or job.jobstatus == 'merging' %}
 <td>
 <a href="{% url 'memoryplot' %}?pandaid={{ job.pandaid }}" target="_blank">Memory and IO plots</a>
 </td>
