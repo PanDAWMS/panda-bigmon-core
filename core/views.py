@@ -6813,18 +6813,25 @@ def getErrorSummaryForEvents(request):
 
         new_cur = connection.cursor()
         new_cur.execute(
-            """select e.error_code, sum(e.neventsinjob) as nevents, sum(nerrorsinjob) as nerrors , count(e.pandaid) as njobs,
-                  LISTAGG(case when e.aff <= 10 then e.pandaid end,',' ) WITHIN group (order by error_code, e.aff) as pandaidlist
-                  from (select pandaid, error_code,
+            """select error_code,
+                  sum(neventsinjob) as nevents,
+                  sum(nerrorsinjob) as nerrors,
+                  count(pandaid) as njobs,
+                  LISTAGG(case when aff <= 10 then pandaid end,',' ) WITHIN group (order by error_code, aff) as pandaidlist
+                from (
+                  select  pandaid, error_code, neventsinjob, nerrorsinjob,
+                    row_number() over (partition by error_code ORDER BY neventsinjob desc) as aff
+                  from (
+                      (select pandaid, error_code,
                         sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) as neventsinjob,
-                        count(*) as nerrorsinjob,
-                        row_number() over (partition by error_code ORDER BY sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) desc) as aff
-                          from ATLAS_PANDA.Jedi_events
-                          where jeditaskid=%i and ERROR_CODE is not null
-                          group by error_code, pandaid) e ,
-                        (select ID, TRANSACTIONKEY from %s ) j
-                    where j.TRANSACTIONKEY=%i and e.pandaid = j.ID
-                    group by e.error_code
+                        count(*) as nerrorsinjob
+                      from ATLAS_PANDA.Jedi_events
+                      where jeditaskid=%i and ERROR_CODE is not null
+                      group by error_code, pandaid ) e
+                    join
+                      (select ID from %s where TRANSACTIONKEY=%i ) j
+                    on e.pandaid = j.ID))
+                group by error_code
             """ % (jeditaskid, tmpTableName, transactionKey)
         )
         eventsErrorsUP = dictfetchall(new_cur)
@@ -6865,7 +6872,7 @@ def getErrorSummaryForEvents(request):
                 eventserror['error_description'] = ''
         except:
             eventserror['error_description'] = ''
-        if len(eventserror['pandaidlist']) > 0:
+        if eventserror['pandaidlist'] and len(eventserror['pandaidlist']) > 0:
             eventserror['pandaidlist'] = eventserror['pandaidlist'].split(',')
 
 
