@@ -91,6 +91,7 @@ urlpatterns = [
     url(r'^killtasks/$', coremon_views.killtasks, name='killtasks'),
     url(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
 
+    url(r'^savesettings/$', coremon_views.saveSettings, name='saveSettings'),
     #url(r'^globalsharesnew/$', coremon_views.globalsharesnew, name='globalsharesnew'),
                        #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
     ### data product catalog prototyping                                                                                                                                                         

@@ -17,22 +17,33 @@ function getSettings(name) {
     }
     return settingsStr;
 }
-function saveSettings() {
-    var settingTables = getSettings('switch-table');
-    var settingJobAttr = getSettings('switch-jobsattr');
-    var url = window.location.href;
-    if (settingTables.length > 1) {
-        url += '&tables=' + settingTables;
-    }
-    if (settingJobAttr.length > 1) {
-        url += '&jobattr=' + settingJobAttr;
-    }
-    var usersettingsForm = document.forms['form-usersettings'];
-    usersettingsForm.elements["tables"].value = settingTables;
-    usersettingsForm.elements["jobattr"].value = settingJobAttr;
-
-    document.getElementById("form-usersettings").submit();
-}
+// function saveSettings() {
+//     var settingTables = getSettings('switch-table');
+//     var settingJobAttr = getSettings('switch-jobsattr');
+//     var url = window.location.href;
+//     if (settingTables.length > 1) {
+//         url += '&tables=' + settingTables;
+//     }
+//     if (settingJobAttr.length > 1) {
+//         url += '&jobattr=' + settingJobAttr;
+//     }
+//     window.location = url;
+//
+//     $.ajax({
+//         url: {% url 'savesettings' %},
+//         data: nosorturl.replace('/tasks/?',''),
+//         async: true
+//     })
+//     .done(function (response) {
+//         $('#div-sum').html(response);
+//     });
+//
+//     // var usersettingsForm = document.forms['form-usersettings'];
+//     // usersettingsForm.elements["tables"].value = settingTables;
+//     // usersettingsForm.elements["jobattr"].value = settingJobAttr;
+//     //
+//     // document.getElementById("form-usersettings").submit();
+// }
 
 function disableDetails(inputid,name,menuid,menuitemid) {
     var input = document.getElementById(inputid);

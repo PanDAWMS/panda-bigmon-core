@@ -65,13 +65,6 @@
 	</script>
 
 
-{# Form to send new settings on action on 'Save and Update' button #}
-<form id="form-usersettings" action="{{ request.get_full_path }}" method="POST">
-    {% csrf_token %}
-    <input type="hidden" name="tables" value=""/>
-    <input type="hidden" name="jobattr" value=""/>
-</form>
-
 <div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="large">
   <button class="menu-icon" type="button" data-toggle="main-menu"></button>
   <div class="title-bar-title">Menu</div>
@@ -260,7 +253,31 @@
   <button type="button" class="save button" onclick="saveSettings()">Save & Reload</button>
 {% endif %}
 </div>
+<script>
+    function saveSettings() {
+        var settingTables = getSettings('switch-table');
+        var settingJobAttr = getSettings('switch-jobsattr');
+{#        var url = window.location.href;#}
+        var url = '';
+        if (settingTables.length > 1) {
+            url += '&tables=' + settingTables;
+        }
+        if (settingJobAttr.length > 1) {
+            url += '&jobattr=' + settingJobAttr;
+        }
+        url+='&page=' + 'errors';
+{#        window.location = url;#}
 
+        $.ajax({
+            url: {% url 'saveSettings' %},
+            data: url,
+            async: true,
+            success: function() {
+                window.location = window.location.href
+            }
+        });
+    }
+</script>
 
 <div class="top-bar stacked-for-large" id="main-menu">
   <div class="top-bar-title">

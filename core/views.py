@@ -275,15 +275,15 @@ def initRequest(request):
                     user.set_unusable_password()
                     user.save()
 
-    if VOMODE == 'devtest':
-        request.session['ADFS_FULLNAME'] = ''
-        request.session['ADFS_EMAIL'] = ''
-        request.session['ADFS_FIRSTNAME'] = ''
-        request.session['ADFS_LASTNAME'] = ''
-        request.session['ADFS_LOGIN'] = ''
-        # user = None
-        user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
-        request.session['IS_TESTER'] = user.is_tester
+    # if VOMODE == 'devtest':
+    #     request.session['ADFS_FULLNAME'] = ''
+    #     request.session['ADFS_EMAIL'] = ''
+    #     request.session['ADFS_FIRSTNAME'] = ''
+    #     request.session['ADFS_LASTNAME'] = ''
+    #     request.session['ADFS_LOGIN'] = 'tkorchug'
+    #     # user = None
+    #     user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
+    #     request.session['IS_TESTER'] = user.is_tester
 
 
     viewParams = {}
@@ -903,6 +903,54 @@ def saveUserSettings(request, page):
             except BPUserSettings.DoesNotExist:
                 userSetting = BPUserSettings(page=page, userid=userid, preferences=json.dumps(preferences))
                 userSetting.save()
+
+def saveSettings(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+    data = {}
+    if 'page' in request.session['requestParams']:
+        page = request.session['requestParams']['page']
+        if page == 'errors':
+            errorspage_tables = ['jobattrsummary', 'errorsummary', 'siteerrorsummary', 'usererrorsummary',
+                                'taskerrorsummary']
+            preferences = {}
+            if 'jobattr' in request.session['requestParams']:
+                preferences["jobattr"] = request.session['requestParams']['jobattr'].split(",")
+                try:
+                    del request.session['requestParams']['jobattr']
+                    request.session.pop('jobattr')
+                except:
+                    pass
+            else:
+                preferences["jobattr"] = standard_errorfields
+            if 'tables' in request.session['requestParams']:
+                preferences['tables'] = request.session['requestParams']['tables'].split(",")
+                try:
+                    del request.session['requestParams']['tables']
+                    request.session.pop('tables')
+                except:
+                    pass
+            else:
+                preferences['tables'] = errorspage_tables
+            query = {}
+            query['page']= str(page)
+            if ('ADFS_LOGIN' in request.session):
+                userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
+                try:
+                    userSetting = BPUserSettings.objects.get(page=page, userid=userid)
+                    userSetting.preferences = json.dumps(preferences)
+                    userSetting.save(update_fields=['preferences'])
+                except BPUserSettings.DoesNotExist:
+                    userSetting = BPUserSettings(page=page, userid=userid, preferences=json.dumps(preferences))
+                    userSetting.save()
+
+        return HttpResponse(status=204)
+    else:
+        data = {"error": "no jeditaskid supplied"}
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+
+
+
 
 def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     # dropping algorithm for jobs belong to single task
@@ -8633,7 +8681,7 @@ def digkey (rq):
     hashkey = hashlib.sha256(str(sk) + ' ' + qt)
     return hashkey.hexdigest()
 
-@csrf_exempt
+
 def errorSummary(request):
     valid, response = initRequest(request)
 
@@ -8654,10 +8702,10 @@ def errorSummary(request):
         endSelfMonitor(request)
         return response
 
-    if 'jobattr' in request.session['requestParams'] or 'tables' in request.session['requestParams']:
-        saveUserSettings(request,'errors')
-        if request.GET:
-            addGetRequestParams(request)
+    # if 'jobattr' in request.session['requestParams'] or 'tables' in request.session['requestParams']:
+    #     saveUserSettings(request,'errors')
+        # if request.GET:
+        #     addGetRequestParams(request)
 
 
 
@@ -8967,32 +9015,6 @@ def filterErrorData(request, data):
 
     return data
 
-def addGetRequestParams(request):
-    for p in request.GET:
-        pval = request.GET[p]
-        pval = pval.replace('+', ' ')
-        if p.lower() != 'batchid':  # Special requester exception
-            pval = pval.replace('#', '')
-        ## is it int, if it's supposed to be?
-        if p.lower() in (
-                'days', 'hours', 'limit', 'display_limit', 'taskid', 'jeditaskid', 'jobsetid', 'corecount',
-                'taskpriority',
-                'priority', 'attemptnr', 'statenotupdated', 'tasknotupdated', 'corepower', 'wansourcelimit',
-                'wansinklimit', 'nqueue', 'nodes', 'queuehours', 'memory', 'maxtime', 'space',
-                'maxinputsize', 'timefloor', 'depthboost', 'idlepilotsupression', 'pilotlimit',
-                'transferringlimit', 'cachedse', 'stageinretry', 'stageoutretry', 'maxwdir', 'minmemory',
-                'maxmemory', 'minrss',
-                'maxrss', 'mintime',):
-            try:
-                i = int(request.GET[p])
-            except:
-                data = {
-                    'viewParams': request.session['viewParams'],
-                    'requestParams': request.session['requestParams'],
-                    "errormessage": "Illegal value '%s' for %s" % (pval, p),
-                }
-                return False, render_to_response('errorPage.html', data, content_type='text/html')
-        request.session['requestParams'][p.lower()] = pval
 
 def removeParam(urlquery, parname, mode='complete'):
     """Remove a parameter from current query"""
