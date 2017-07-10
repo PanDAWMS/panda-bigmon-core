@@ -1742,7 +1742,6 @@ def extensibleURL(request, xurl=''):
     #    xurl += "jobtype=%s&" % requestParams['jobtype']
     return xurl
 
-
 def mainPage(request):
     valid, response = initRequest(request)
     if not valid: return response
