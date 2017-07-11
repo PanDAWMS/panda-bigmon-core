@@ -10,7 +10,7 @@
 
 {{ viewParams.header }}
 
-{% if sumd %}
+
 
 <b>{{ njobs }} jobs found. Show jobs: </b>
 &nbsp;  <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}jobstatus=failed&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>Failed</b></a>
@@ -39,7 +39,7 @@
 
 <p>Job modification times in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b><p>
 
-<p>Go to <a href="#summary">overall</a>, <a href="#sites">site</a>, <a href="#users">user</a>, <a href="#tasks">task</a> summary
+<p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} summary
 
 <script type="text/javascript"
            src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
@@ -75,7 +75,7 @@
     <div id="chart_div" style="height: 500px;"></div>
 
 {% endif %}
-
+{% if sumd %}
 <table>
 <tr class='tablesection'><th colspan=20> Error occurrences by job attribute </th></tr>
 {% for fdict in sumd %}

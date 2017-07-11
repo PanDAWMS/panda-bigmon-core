@@ -8993,6 +8993,11 @@ def filterErrorData(request, data):
                             sumd_new.append(field)
                             continue
                 data['sumd'] = sumd_new
+        else:
+            try:
+                del data['sumd']
+            except:
+                pass
         if 'errorsummary' not in userPreferences['tables']:
             try:
                 del data['errsByCount']

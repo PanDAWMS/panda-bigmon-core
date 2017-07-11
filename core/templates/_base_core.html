@@ -259,12 +259,10 @@
         var settingJobAttr = getSettings('switch-jobsattr');
 {#        var url = window.location.href;#}
         var url = '';
-        if (settingTables.length > 1) {
+        if (settingTables.length > 0) {
             url += '&tables=' + settingTables;
         }
-        if (settingJobAttr.length > 1) {
-            url += '&jobattr=' + settingJobAttr;
-        }
+        url += '&jobattr=' + settingJobAttr;
         url+='&page=' + 'errors';
 {#        window.location = url;#}
 
