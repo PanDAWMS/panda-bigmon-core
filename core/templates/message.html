@@ -1,0 +1,35 @@
+{% extends "_base_core.html" %}
+{% load static %}
+{% block page_title %} {{ viewParams.MON_VO }}{% endblock %}
+{% block subtitle %}<font size=-1>{{ viewParams.selection|safe }}
+</font>
+{% endblock %}
+
+<head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+</head>
+<style>
+html, body, .container {
+    height: 100%;
+}
+.center {
+    right: 50%;
+    bottom: 50%;
+    transform: translate(50%,50%);
+    position: absolute;
+}
+</style>
+{% block body %}
+  <div class="center">
+    <hr/>
+    <p style="text-align:center">
+      <img src="/static/images/baby-panda.jpg" width="500px" height="400px"></img>
+
+    <p style="text-align:center; font-size:30px ">Oops, something went wrong!</p>
+    <p style="text-align:center; font-size:25px">Developers have been notified. Please try again later.</p>
+    <hr/>
+</p>
+
+  </div>
+
+{% endblock %}

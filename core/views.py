@@ -11368,3 +11368,12 @@ def image(request):
         except:return redirect('/static/images/404-not-found-site.gif')
     else:
         return redirect('/static/images/error_z0my4n.png')
+
+def message(request):
+    valid,response = initRequest(request)
+    data = {
+        'request': request,
+        'viewParams': request.session['viewParams'],
+        'built': datetime.now().strftime("%H:%M:%S"),
+    }
+    return render_to_response('message.html', data, content_type='text/html')

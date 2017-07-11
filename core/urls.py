@@ -2,7 +2,7 @@ from django.conf.urls import include, url
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
-
+from django.views.generic import RedirectView
 #import core.settings
 from django.conf import settings
 
@@ -129,7 +129,9 @@ urlpatterns = [
     url(r'^memoryplot/', memmon.getPlots, name='memoryplot'),
 
     ###Images###
-    url('^img/',coremon_views.image, name='img')
+    url('^img/',coremon_views.image, name='img'),
+    ###Messages###
+    url('^errormessage',coremon_views.message, name='errormessage')
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
