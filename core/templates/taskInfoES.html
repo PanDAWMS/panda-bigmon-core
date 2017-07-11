@@ -412,7 +412,7 @@ function toggleRowsDisplay(className) {
 
 {% for dsrec in datasets %}
 	<tr class="type-{{ dsrec.type }} type-all" style="display:all">
-		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{ dsrec.datasetname }}">{{ dsrec.datasetname }}</a></font></td>
+		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetid={{ dsrec.datasetid }}">{{ dsrec.datasetname }}</a></font></td>
 		<td>{{ dsrec.type }}</td>
 		<td>{{ dsrec.streamname }}</td>
 		<td class='{{dsrec.state}}'>{{ dsrec.state }}</td>
