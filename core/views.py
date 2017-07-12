@@ -162,8 +162,8 @@ standard_sitefields = ['region', 'gocname', 'nickname', 'status', 'tier', 'comme
 standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'username', 'transuses',
                        'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
                        'reqid', 'ramcount', 'nucleus', 'eventservice', 'gshare']
-standard_errorfields = ['cloud', 'computingsite', 'produsername', 'taskid', 'jeditaskid', 'processingtype', 'prodsourcelabel',
-             'transformation', 'workinggroup', 'specialhandling', 'jobstatus']
+standard_errorfields = ['cloud', 'computingsite', 'eventservice', 'produsername', 'jeditaskid', 'jobstatus',
+                        'processingtype', 'prodsourcelabel', 'specialhandling', 'taskid', 'transformation', 'workinggroup']
 
 VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
@@ -8970,8 +8970,15 @@ def errorSummary(request):
 
 def filterErrorData(request, data):
     defaultErrorsPreferences = {}
-    defaultErrorsPreferences['errors_standard_fields'] = standard_fields
-    defaultErrorsPreferences['tables'] = []
+    defaultErrorsPreferences['jobattr'] = standard_errorfields
+
+    defaultErrorsPreferences['tables'] = {
+        'jobattrsummary' : 'Job attribute summary',
+        'errorsummary': 'Overall error summary',
+        'siteerrorsummary' : 'Site error summary',
+        'usererrorsummary' : 'User error summary',
+        'taskerrorsummary' : 'Task error summary'
+    }
     userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
     try:
         userSetting = BPUserSettings.objects.get(page='errors', userid=userid)
@@ -8981,7 +8988,8 @@ def filterErrorData(request, data):
         userSetting = BPUserSettings.objects.get(page='errors', userid=userid)
         userPreferences = json.loads(userSetting.preferences)
         # userPreferences = defaultErrorsPreferences
-
+    userPreferences['defaulttables'] = defaultErrorsPreferences['tables']
+    userPreferences['defaultjobattr'] = defaultErrorsPreferences['jobattr']
     data['userPreferences'] = userPreferences
     if 'tables' in userPreferences:
         if 'jobattrsummary' in userPreferences['tables']:
