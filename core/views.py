@@ -182,9 +182,9 @@ def jobSuppression(request):
                 suppressruntime = int(request.session['requestParams']['suppressruntime'])
             except:
                 pass
-            extra = '( not( (JOBDISPATCHERERRORCODE=100 OR ' \
-                    'PILOTERRORCODE in (1200, 1201, 1202, 1203, 1204, 1206, 1207) ) and ((ENDTIME-STARTTIME)*24*60 < ' + str(
-            suppressruntime) + ')))'
+        extra = '( not( (JOBDISPATCHERERRORCODE=100 OR ' \
+                'PILOTERRORCODE in (1200, 1201, 1202, 1203, 1204, 1206, 1207) ) and ((ENDTIME-STARTTIME)*24*60 < ' + str(
+        suppressruntime) + ')))'
     return extra
 
 
