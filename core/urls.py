@@ -2,13 +2,15 @@ from django.conf.urls import include, url
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
-
+from django.views.generic import RedirectView
 #import core.settings
 from django.conf import settings
 
 
 from core import views as coremon_views
 from core import dpviews as dpviews
+from core import MemoryMonitorPlots as memmon
+
 #import core.views as coremon_views
 import core.pandajob.views_support as core_coremon_support_views
 #import core.pandajob.views as core_coremon_views
@@ -48,12 +50,13 @@ urlpatterns = [
     url(r'^errors/$', coremon_views.errorSummary, name='errorSummary'),
     url(r'^incidents/$', coremon_views.incidentList, name='incidentList'),
     url(r'^logger/$', coremon_views.pandaLogger, name='pandaLogger'),
-    url(r'^eslogger/$', coremon_views.esPandaLogger, name='esPandaLogger'),
+    #url(r'^eslogger/$', coremon_views.esPandaLogger, name='esPandaLogger'),
     url(r'^esatlaslogger/$', coremon_views.esatlasPandaLogger, name='esatlasPandaLogger'),
     url(r'^task/(?P<jeditaskid>.*)/$', coremon_views.taskInfo, name='taskInfo'),
     url(r'^dash/$', coremon_views.dashboard, name='dashboard'),
     url(r'^dash/analysis/$', coremon_views.dashAnalysis, name='dashAnalysis'),
     url(r'^dash/production/$', coremon_views.dashProduction, name='dashProduction'),
+    url(r'^dash/objectstore/$', coremon_views.dashObjectStore, name='dashObjectStore'),
     url(r'^workingGroups/$', coremon_views.workingGroups, name='workingGroups'),
     url(r'^fileInfo/$', coremon_views.fileInfo, name='fileInfo'),
     url(r'^fileList/$', coremon_views.fileList, name='fileList'),
@@ -65,6 +68,8 @@ urlpatterns = [
     url(r'^errorslist/$', coremon_views.summaryErrorsList, name='summaryErrorsList'),
 
     url(r'^worldjobs/$', coremon_views.worldjobs, name='worldjobs'),
+
+
 #    url(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
 #    url(r'^worldjobs/production/$', coremon_views.dashWorldProduction, name='dashWorldProduction'),
 
@@ -86,7 +91,8 @@ urlpatterns = [
     url(r'^killtasks/$', coremon_views.killtasks, name='killtasks'),
     url(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
 
-    url(r'^globalsharesnew/$', coremon_views.globalsharesnew, name='globalsharesnew'),
+    url(r'^savesettings/$', coremon_views.saveSettings, name='saveSettings'),
+    #url(r'^globalsharesnew/$', coremon_views.globalsharesnew, name='globalsharesnew'),
                        #    url(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
     ### data product catalog prototyping                                                                                                                                                         
     url(r'^dp/$', dpviews.doRequest, name='doRequest'),
@@ -107,9 +113,9 @@ urlpatterns = [
     #### JSON for Datatables
     url (r'^datatable/data/jeditaskid',coremon_views.esatlasPandaLoggerJson, name='dataTableJediTaskId'),
     url(r'^datatable/data/errorSummaryList', coremon_views.summaryErrorsListJSON, name='summaryErrorsListJSON'),
-    url(r'^datatable/data/globalsharesNewV1JSON', coremon_views.globalsharesNewV1JSON, name='globalsharesNewV1JSON'),
-    url(r'^datatable/data/globalsharesNewV2JSON', coremon_views.globalsharesNewV2JSON, name='globalsharesNewV2JSON'),
-    url(r'^datatable/data/globalsharesNewV3JSON', coremon_views.globalsharesNewV3JSON, name='globalsharesNewV3JSON'),
+    url(r'^datatable/data/detailedInformationJSON', coremon_views.detailedInformationJSON, name='detailedInformationJSON'),
+    url(r'^datatable/data/sharesDistributionJSON', coremon_views.sharesDistributionJSON, name='sharesDistributionJSON'),
+    url(r'^datatable/data/siteWorkQueuesJSON', coremon_views.siteWorkQueuesJSON, name='siteWorkQueuesJSON'),
     ###self monitor
     url(r'^admin/', include('core.admin.urls', namespace='admin')),
 
@@ -117,10 +123,15 @@ urlpatterns = [
     url(r'^api/$', core_coremon_support_views.maxpandaid, name='supportRoot'),
 #    url(r'^api/reprocessing/$', include('core.api.reprocessing.urls')),
 
-
     ### robots.txt
     url('^robots\.txt$', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
 
+    url(r'^memoryplot/', memmon.getPlots, name='memoryplot'),
+
+    ###Images###
+    url('^img/',coremon_views.image, name='img'),
+    ###Messages###
+    url('^errormessage',coremon_views.message, name='errormessage')
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 

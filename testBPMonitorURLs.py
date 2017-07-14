@@ -7,8 +7,8 @@ from urllib2 import HTTPError, URLError
 numOfProcesses = 10  # be careful with this value on production systems
 timeOutForQuery = 300  # in seconds
 
-# monHost = 'aipanda100.cern.ch'
-# monPort = '8001'
+monHost = 'aipanda100.cern.ch'
+monPort = '8001'
 
 # monHost = 'localhost'
 # monPort = '10001'
@@ -68,7 +68,6 @@ tests = [
         'isJSON': False},
     {'url': '/fileInfo/?lfn=group.det-muon.10505609.EXT0._000009.HITS.pool.root&scope=group.det-muon&timestamp=1',
      'isJSON': False},
-    {'url': '/eslogger/?timestamp=1', 'isJSON': False},
     {'url': '/jobs/?jobtype=groupproduction&display_limit=100&computingsite=AGLT2_LMEM&timestamp=1', 'isJSON': False}
 ]
 

@@ -1,0 +1,225 @@
+/* Main  menu style*/
+
+
+.top-bar {
+  background: #333;
+  color: #fefefe;
+  padding:0;
+  margin: 0;
+  border: 0;
+  font-size: 85%;
+  z-index: 10;
+}
+
+.top-bar-title {
+    font-size: 14pt;
+    color: #fefefe;
+    padding-left: 15px;
+}
+
+
+.top-bar .menu {
+  background: #333;
+}
+
+.top-bar .menu a {
+  color: #fefefe;
+  border: 0;
+  padding-right: 15px !important;
+  padding-bottom: 1rem;
+  padding-top: 1rem;
+  height: 100%;
+}
+
+.top-bar .submenu {
+  background: #333;
+}
+
+.top-bar .menu a:hover {
+  background: #272727;
+}
+.top-bar .submenu a:hover {
+  background: #272727;
+  border: 0;
+}
+
+.top-bar .is-dropdown-submenu {
+  border: 0;
+}
+
+.top-bar .js-accordion-back > a::before {
+  border-color: transparent #fefefe transparent transparent;
+}
+
+.top-bar .is-accordion-submenu-parent > a::after {
+  border-color: transparent transparent transparent #fefefe;
+}
+
+.top-bar .dropdown.menu.large-horizontal > li.is-dropdown-submenu-parent > a::after {
+  border: inset 3px;
+  border-color: #fefefe transparent transparent;
+}
+
+
+.title-bar {
+  background: #333;
+  padding: 0.9rem;
+}
+
+.settings-button button{
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 0.3rem;
+  padding-top: 0.3rem;
+  color: darkgray;
+}
+
+.settings-button button:hover{
+  color: #fefefe;
+}
+
+.canvas-settings {
+  background: #333;
+  color: #fefefe;
+  padding: 20px;
+}
+
+.canvas-settings > .menu {
+  margin-bottom: 1rem;
+}
+
+.canvas-settings .menu a {
+  color: rgba(254, 254, 254, 0.6);
+  padding-top: 7px;
+  padding-bottom: 7px;
+  transition: color 0.2s ease-in;
+}
+
+.canvas-settings .menu a:hover {
+  color: #fefefe;
+}
+
+.canvas-settings .is-accordion-submenu-parent > a::after {
+  border-color: rgba(254, 254, 254, 0.6) transparent transparent;
+}
+
+.offCanvasRight-columns {
+  padding: 0;
+  margin: 0;
+  background: #333;
+  color: #fefefe;
+  border-width: 0;
+}
+
+.bp-off-canvas-acc {
+  background: #333;
+  color: #fefefe;
+}
+.accordion {
+  margin-left: 0;
+  background: #333;
+  list-style-type: none; }
+
+.accordion-item:first-child > :first-child {
+  border-radius: 0 0 0 0; }
+
+.accordion-item:last-child > :last-child {
+  border-radius: 0 0 0 0; }
+
+.accordion-title {
+  position: relative;
+  display: block;
+  padding: 1.25rem 1rem;
+  border: 0px solid #e6e6e6;
+  border-bottom: 0;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: #fefefe; }
+  :last-child:not(.is-active) > .accordion-title {
+    border-bottom: 0px solid #e6e6e6;
+    border-radius: 0 0 0 0; }
+  .accordion-title:hover, .accordion-title:focus {
+    background-color: #333; }
+  .accordion-title::before {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    margin-top: -0.5rem;
+    content: '+'; }
+  .is-active > .accordion-title::before {
+    content: '\2013'; }
+
+.accordion-content {
+  display: none;
+  padding: 1rem;
+  border: 0px solid #e6e6e6;
+  border-bottom: 0;
+  background-color: #333;
+  color: #fefefe; }
+  :last-child > .accordion-content:last-child {
+    border-bottom: 0px solid #e6e6e6; }
+
+.off-canvas.is-open {
+    -webkit-transform: translateX(-100%);
+    -ms-transform: translateX(-100%);
+    transform: translateX(-100%);
+}
+
+.off-canvas.position-right {
+  width: 20%;
+  right: -20%;
+}
+
+.switch-toggle-wrapper {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  margin-bottom: 1rem;
+  -webkit-justify-content: space-between;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  -webkit-align-items: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+.switch-toggle-wrapper .switch {
+  margin-bottom: 10px;
+}
+
+.switch input:checked ~ .switch-paddle {
+  background: #4ba173;
+}
+
+.canvas-settings .save {
+    background: #4ba173;
+    color: #fefefe;
+}
+
+.top-subbar {
+  background-color: #DDDDDD;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 1em;
+  padding-right: 1em;
+  height: 1.8em;
+  margin-bottom: 5px;
+}
+
+.top-subbar .right {
+    float: right;
+}
+
+.top-subbar .left {
+    float: left;
+}
+
+.invisible {
+  display: none;
+}
+
+.menu-link {
+  color: #fefefe !important;
+  font-weight: normal;
+  font-size: 12pt;
+}

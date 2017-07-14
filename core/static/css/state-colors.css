@@ -1,0 +1,132 @@
+
+.alarm { color:red }
+.errspan {color: red}
+.error { color:red !important; background-color:white !important; font-size:12pt !important; font-style:normal !important;  }
+.info { color:black }
+.messageinfo { color:forestgreen }
+.debug { color:darkgrey }
+.finished { color:#248F24 }
+.completed { color:#248F24 }
+.done { color:#248F24 }
+.ready { color:#248F24 }
+.cached { color:#248F24 }
+.online { color:#248F24 }
+.merged { color:#248F24 }
+.failed { color:red }
+.aborted { color:red }
+.aborting { color:red }
+.broken { color:red }
+.tobroken { color:red }
+.deleted { color:red }
+.paused { color:darkgrey }
+.brokeroff { color:darkgrey }
+.test { color:darkgrey }
+.offline { color:darkgrey }
+.skipped { color:darkgrey }
+.notcheckedskipped { color:darkgrey }
+.holding { color:#FF9933 }
+.throttled { color:#FF9933 }
+.exhausted { color:#FF9933 }
+.cancelled { color:#FF9933 }
+.warning { color:#FF9933 }
+.timeout { color:#FF9933 }
+.discarded { color:#FF9933 }
+.finishing { color:#FF9933 }
+.running { color:#47D147 }
+.approved { color:#47D147 }
+.merging { color:#47D147 }
+.topreprocess { color:#47D147 }
+.preprocessing { color:#47D147 }
+.prepared { color:#47D147 }
+.starting { color:#47D147 }
+.submitting { color:#47D147 }
+.scouting { color:#47D147 }
+.scouted { color:#47D147 }
+.transferring { color:#47D147 }
+.activated { color:#099999 }
+.assigning { color:#099999 }
+.defined { color:grey }
+.registered { color:grey }
+.assigned { color:black }
+.fatal {color:black}
+.pending { color:grey }
+.waiting { color:grey }
+.toretry { color:grey }
+.toincexec { color:grey }
+.rerefine { color:grey }
+.sent { color:#FF9933 }
+.reassign { color:#FF8174 }
+.ok {color:#0a47ff}
+
+.alarm_fill { color:black;  background-color:#FF8174 }
+.error_fill { color:black;  background-color:#FF8174 }
+
+.broken_fill { color:black;  background-color:#FF8174; position: static; }
+.tobroken_fill { color:black;  background-color:#FF8174; position: static; }
+.reassign_fill { color:black;  background-color:#FF8174 }
+
+.failed_fill { color:black;  background-color:#FFABA2; position: static; }
+.aborted_fill { color:black;  background-color:#FFABA2; position: static; }
+.aborting_fill { color:black;  background-color:#FFABA2; position: static; }
+.deleted_fill { color:black;  background-color:#FFABA2 }
+
+.info_fill { color:black;  color:black }
+.debug_fill { color:black;  color:darkgrey }
+
+.failedscouting_fill { color:white;  background-color:red }
+
+.done_fill { color:black;  background-color:#62AC21; position: static; }
+.toincexec_fill { color:black;  background-color:#62AC21; position: static; }
+.rerefine_fill { color:black;  background-color:#62AC21; position: static; }
+.merged_fill { color:black;  background-color:#62AC21 }
+
+.prepared_fill { color:black;  background-color:#A0D670; position: static; }
+.finished_fill { color:black;  background-color:#A0D670; position: static; }
+.completed_fill { color:black;  background-color:#A0D670 }
+.toretry_fill { color:black; background-color:#A0D670; position: static; }
+.passed_fill { color: black; background-color:white; position: static;}
+
+.running_fill { color:black;  background-color:#C7E9A9; position: static; }
+.pending_fill { color:black;  background-color:#C7E9A9; position: static; }
+.starting_fill { color:black;  background-color:#C7E9A9; position: static; }
+.scouted_fill { color:black;  background-color:#C7E9A9; position: static; }
+.transferring_fill { color:black;  background-color:#C7E9A9 }
+.finishing_fill { color:black;  background-color:#C7E9A9; position: static; }
+.ready_fill { color:black;  background-color:#C7E9A9; position: static; }
+.cached_fill { color:black;  background-color:#C7E9A9 }
+.online_fill { color:black;  background-color:#C7E9A9 }
+.merging_fill { color:black;  background-color:#C7E9A9 }
+
+.scouting_fill { color:black;  background-color:#DBF1C6; position: static;  }
+.topreprocess_fill { color:black;  background-color:#DBF1C6; position: static; }
+.preprocessing_fill { color:black;  background-color:#DBF1C6; position: static; }
+.assigned_fill { color:black;  background-color:#DBF1C6 }
+.activated_fill { color:black;  background-color:#DBF1C6 }
+
+.assigning_fill { color:black;  background-color:#EBF5E2; position: static; }
+.defined_fill { color:black;  background-color:#EBF5E2; position: static; }
+.registered_fill { color:black;  background-color:#EBF5E2; position: static;  }
+.submitting_fill { color:black;  background-color:#EBF5E2; position: static; }
+.approved_fill { color:black;  background-color:#EBF5E2 }
+.processed_fill { color:black;  background-color:#EBF5E2 }
+
+.paused_fill { color:black;  background-color:#DCDCDC; position: static; }
+
+.warning_fill { color:#FFCB2F }
+
+.discarded_fill { color:black; background-color:#FFD65D }
+.timeout_fill { color:black; background-color:#FFD65D }
+.cancelled_fill { color:black; background-color:#FFD65D }
+
+.holding_fill { color:black; background-color:#FFE38E }
+.throttled_fill { color:black; background-color:#FFE38E; position: static; }
+.exhausted_fill { color:black; background-color:#FFE38E; position: static; }
+
+.waiting_fill { color:black; background-color:#FFF5D6 }
+.sent_fill { color:black; background-color:#FFF5D6 }
+
+.fatal_fill {color:white; background-color: black}
+
+.brokeroff_fill { color:darkgrey }
+.test_fill { color:darkgrey }
+.offline_fill { color:darkgrey }

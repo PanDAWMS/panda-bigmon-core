@@ -633,6 +633,7 @@ class RunningProdTasksModel(models.Model):
     slots = models.IntegerField(null=True, db_column='SLOTS', blank=True)
     aslots = models.IntegerField(null=True, db_column='ASLOTS', blank=True)
     status = models.CharField(max_length=192, db_column='STATUS')
+    superstatus = models.CharField(max_length=192, db_column='SUPERSTATUS')
     neventstobeused = models.BigIntegerField(db_column='NEVENTSTOBEUSED')
     neventsused = models.BigIntegerField(db_column='NEVENTSUSED')
     nevents = models.BigIntegerField(db_column='NEVENTS')
@@ -650,6 +651,8 @@ class RunningProdTasksModel(models.Model):
     ptag = models.CharField(max_length=72, db_column='PTAG', blank=True)
     simtype = models.CharField(max_length=72, db_column='SIMTYPE', blank=True)
     gshare = models.CharField(max_length=72, db_column='GSHARE', blank=True)
+    hashtags = models.CharField(max_length=400, db_column='HASHTAGS', blank=True)
+    eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODTASKS"'
 
@@ -666,6 +669,13 @@ class BPUser(AbstractUser):
     last_login = models.DateTimeField(db_column='LAST_LOGIN', auto_now_add=True, blank=False)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."AUTH_USER"'
+
+class BPUserSettings(models.Model):
+    userid = models.IntegerField(db_column='USERID', null=False )
+    page = models.CharField(db_column='PAGE', max_length=100, null=False)
+    preferences = models.CharField(db_column='PREFERENCES', max_length=4000)
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."USER_SETTINGS"'
 
 #class BPToken(models.Model):
 #    key = models.CharField(max_length=40, primary_key=True)

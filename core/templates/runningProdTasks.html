@@ -4,7 +4,10 @@
 {% block page_title %} PanDA tasks{% endblock %}
 {% block subtitle %}Running production task list
 {% endblock %}
-<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js"%}"></script>
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+{% endblock %}
+{#<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js"%}"></script>#}
 {% block body %}
 
     {% if requestParams.campaign %}<br><b>Campaign:</b> {{ requestParams.campaign }} {% endif %}
@@ -168,10 +171,10 @@
                                 {% if requestParams.preset == 'MC' and requestParams.workinggroup != '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
                             >NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
-                            <option value="GP_PHYS"
-                                {% if requestParams.preset == 'DPD' or requestParams.workinggroup == 'GP_PHYS' %} selected="selected" {% endif %}
+                            <option value="GP_*"
+                                {% if requestParams.preset == 'DPD' and requestParams.workinggroup == 'GP_*' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                            >GP_PHYS</option>
+                            >GP_*</option>
 
                             <option value="AP_REPR"
                                 {% if requestParams.preset == 'DATA' or requestParams.workinggroup == 'AP_REPR' %} selected="selected" {% endif %}
@@ -179,11 +182,15 @@
                             >AP_REPR</option>
 
 
-                            {% if requestParams.preset != 'DPD' and requestParams.preset != 'DATA' %}
-                                {% for wg in sumd.3.list %}
-                                    <option value={{ wg.kname }}
-                                        {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>
-                                        {{ wg.kname }} </option>
+                            {% if requestParams.preset != 'DATA' %}
+                                {% for field in sumd %}
+                                    {% if field.field == 'workinggroup' %}
+                                        {% for wg in field.list %}
+                                            <option value={{ wg.kname }}
+                                                {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>
+                                                {{ wg.kname }} </option>
+                                        {% endfor %}
+                                    {% endif %}
                                 {% endfor %}
                             {% endif %}
                         </select>
@@ -196,18 +203,18 @@
                             <option value="evgen|pile|simul|recon"
                                 {% if requestParams.preset == 'MC'  or requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                            >IN ('evgen' , 'pile', 'simul', 'recon')</option>
-                            <option value="merge"
-                                {% if requestParams.preset == 'DPD' or requestParams.processingtype == 'merge' %} selected="selected" {% endif %}
+                            >evgen|pile|simul|recon</option>
+                            <option value="merge|deriv"
+                                {% if requestParams.preset == 'DPD' or requestParams.processingtype == 'merge|deriv' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                            >merge</option>
+                            >merge|deriv</option>
 
                             <option value="reprocessing"
                                 {% if requestParams.processingtype == 'reprocessing' or requestParams.preset == 'DATA' %} selected="selected" {% endif %}
                                 {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
                             >reprocessing</option>
 
-                            {% if requestParams.preset != 'DPD' and requestParams.preset != 'DATA' %}
+                            {% if requestParams.preset != 'DATA' %}
                                 {% for ptype in sumd.1.list %}
                                         <option value={{ ptype.kname }}
                                             {% if ptype.kname == requestParams.processingtype %} selected="selected" {% endif %}>
@@ -246,7 +253,7 @@
                         {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC
                     </td>
                     <td>
-                         <button onclick="go()">Go!</button>
+                        <a onclick="go()" class="button">Go!</a>
                     </td>
                 </tr>
             </table>
@@ -370,14 +377,23 @@
                     {% else %}
                         <th>RJobs<br><a href="{{ nosorturl }}sortby=rjobs-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=rjobs-asc" class="headerSortUp"></a></th>{% endif %}
-                    {% if sortby == 'status-desc' %}
-                        <th>Status<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=status-asc"
+                    {% if sortby == 'superstatus-desc' %}
+                        <th>Status (ProdSys)<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=superstatus-asc"
                                                                                 class="headerSortUp"></a></th>
-                    {% elif sortby == 'status-asc' %}
-                        <th>Status<br><a href="{{ nosorturl }}sortby=status-desc" class="headerSortDown"></a> <span
+                    {% elif sortby == 'superstatus-asc' %}
+                        <th>Status (ProdSys)<br><a href="{{ nosorturl }}sortby=superstatus-desc" class="headerSortDown"></a> <span
                                 class="headerSortedUp"></span></th>
                     {% else %}
-                        <th>Status<br><a href="{{ nosorturl }}sortby=status-desc" class="headerSortDown"></a> <a
+                        <th>Status (ProdSys)<br><a href="{{ nosorturl }}sortby=superstatus-desc" class="headerSortDown"></a> <a
+                                href="{{ nosorturl }}sortby=superstatus-asc" class="headerSortUp"></a></th>{% endif %}
+                    {% if sortby == 'status-desc' %}
+                        <th>Status (JEDI)<br><span class="headerSortedDown"></span> <a href="{{ nosorturl }}sortby=status-asc"
+                                                                                class="headerSortUp"></a></th>
+                    {% elif sortby == 'status-asc' %}
+                        <th>Status (JEDI)<br><a href="{{ nosorturl }}sortby=status-desc" class="headerSortDown"></a> <span
+                                class="headerSortedUp"></span></th>
+                    {% else %}
+                        <th>Status (JEDI)<br><a href="{{ nosorturl }}sortby=status-desc" class="headerSortDown"></a> <a
                                 href="{{ nosorturl }}sortby=status-asc" class="headerSortUp"></a></th>{% endif %}
                     {% if requestParams.preset != 'DPD' %}
                         {% if sortby == 'processingtype-desc' %}
@@ -540,20 +556,32 @@
                             <th>Site<br><a href="{{ nosorturl }}sortby=site-desc" class="headerSortDown"></a> <a
                                     href="{{ nosorturl }}sortby=site-asc" class="headerSortUp"></a></th>{% endif %}
                     {% endif %}
+                    <th>Hastags</th>
                 </tr>
                 {% for task in tasks %}
                     <tr>
-                        <td><a href="{{ xurl }}campaign={{ task.campaign }}">{{ task.cutcampaign }}</a></td>
-                        <td><a href="{{ xurl }}reqid={{ task.reqid }}">{{ task.reqid }}</a>
+                        <td>{% if task.campaign %}
+                            <a href="{{ xurl }}campaign={{ task.campaign }}">{{ task.cutcampaign }}</a>
+                            {% else %}---{% endif %}
+                        </td>
+                        <td>{% if task.reqid %}
+                            <a href="{{ xurl }}reqid={{ task.reqid }}">{{ task.reqid }}</a>
                             <a href="https://prodtask-dev.cern.ch/reqtask/{{task.reqid}}/"
-                               target="_blank"> &rArr;</a></td>
-                        <td><a href="{{ xurl }}inputdataset={{ task.inputdataset }}">{{ task.inputdataset }}</a></td>
+                               target="_blank"> &rArr;</a>
+                            {% else %}---{% endif %}
+                        </td>
+                        <td>{% if task.inputdataset %}
+                            <a href="{{ xurl }}inputdataset={{ task.inputdataset }}">{{ task.inputdataset }}</a>
+                            {% else %}---{% endif %}
+                        </td>
                         <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>
                             <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
                                target="_blank"> &rArr;</a></td>
                         <td>{% if task.rjobs > 0 %}
                             <a href="/jobs/?jeditaskid={{ task.jeditaskid }}&jobstatus=running">{{ task.rjobs }}</a> {% else %}
                             {{ task.rjobs }}{% endif %}</td>
+                        <td class='{{ task.superstatus }}_fill'><a
+                                href="{{ xurl }}status={{ task.superstatus }}" class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</a></td>
                         <td class='{{ task.status }}_fill'><a
                                 href="{{ xurl }}status={{ task.status }}" class="{{ task.status }}_tooltip">{{ task.status }}</a></td>
                         {% if requestParams.preset != 'DPD' %}
@@ -609,6 +637,22 @@
                         {% if requestParams.site %}
                             <td>{% if task.site %} <a href="{{ xurl }}site={{ task.site }}">{{ task.site }}</a> {% else %} --- {% endif %}</td>
                         {% endif %}
+                        <td>
+                            {% if 'hashtaglist' in task %}
+
+                                {% for hashtag in task.hashtaglist %}
+                                    {% if 'hashtags' in requestParams %}
+                                        <a href="{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},{{ hashtag }}">{{ hashtag }}</a>
+                                    {% else %}
+                                        <a href="{{ xurl }}hashtags={{ hashtag }}">{{ hashtag }}</a>
+                                    {% endif %}
+                                    {% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+
+                            {% else %}
+                                <a href="{{ xurl }}hashtags={{ task.hashtags }}">{{ task.hashtags }}</a>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </table>

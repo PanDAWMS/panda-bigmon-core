@@ -1,0 +1,87 @@
+{% extends "_base_core.html" %}
+
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA ES object stores{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA ES object stores dashboard, last 12 hours
+{% endblock %}
+{% block body %}
+
+<p>
+<table id="summary">
+<tr>
+<td class="tablesection">Object Store</td>
+<td class="tablesection">defined</td>
+<td class="tablesection">waiting</td>
+<td class="tablesection">assigned</td>
+<td class="tablesection">throttled</td>
+<td class="tablesection">activated</td>
+<td class="tablesection">sent</td>
+<td class="tablesection">starting</td>
+<td class="tablesection">running</td>
+<td class="tablesection">holding</td>
+<td class="tablesection">merging</td>
+<td class="tablesection">transferring</td>
+<td class="tablesection">finished</td>
+<td class="tablesection">failed</td>
+<td class="tablesection">cancelled</td>
+<td class="tablesection">closed</td>
+</tr>
+
+{% for ostore, osval in mObjectStoresSummary.items %}
+    {% if ostore %}
+        <tr height=10 colspan=12></tr>
+        <tr>
+            <td><a href="#ostore_{{ ostore }}">{{ ostore }}</a></td>
+            {%  for jobstatus in statelist %}
+                    <td  {% if osval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %} >{{ osval|get_item:jobstatus }}</td>
+            {% endfor %}
+        </tr>
+    {% endif %}
+{% endfor %}
+</table>
+
+
+
+
+<p>
+<table id="cloudsitesummary">
+{% for ostore, osval in mObjectStores.items %}
+<tr height=10 colspan=12></tr>
+<tr>
+    <td class="tablesection"> <a name="ostore_{{ ostore }}">{{ ostore }} ObjectStore</a>, Queue </td>
+    <td class="tablesection">defined</td>
+    <td class="tablesection">waiting</td>
+    <td class="tablesection">assigned</td>
+    <td class="tablesection">throttled</td>
+    <td class="tablesection">activated</td>
+    <td class="tablesection">sent</td>
+    <td class="tablesection">starting</td>
+    <td class="tablesection">running</td>
+    <td class="tablesection">holding</td>
+    <td class="tablesection">merging</td>
+    <td class="tablesection">transferring</td>
+    <td class="tablesection">finished</td>
+    <td class="tablesection">failed</td>
+    <td class="tablesection">cancelled</td>
+    <td class="tablesection">closed</td>
+</tr>
+
+    {% for computingsite, computingsiteval in osval.items %}
+        <tr>
+            <td><a href="{% url 'siteInfo' %}{{ computingsite }}/">{{ computingsite }}</a></td>
+            {%  for jobstatus in statelist %}
+                <td  {% if computingsiteval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}>{{ computingsiteval|get_item:jobstatus }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+
+
+{% endfor %}
+
+</table>
+</p>
+
+
+
+{% endblock %}

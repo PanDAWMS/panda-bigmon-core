@@ -3,11 +3,11 @@
 
 
 {% block page_title %} {{ viewParams.MON_VO }} Campaign Report {% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} Campaign Report</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} Campaign Report</a>{% endblock %}
 {% block subtitle %}PanDA {{view}} {{ requestParams.mode }} {{ viewParams.selection|safe }}
 {% endblock %}
 {% block body %}
-    <h1> MC16a Campaign Report<sup>(<a href="#selectioncrit">&#8711;</a>)</sup>
+    <h1> {{ title }} Campaign Report<sup>(<a href="#selectioncrit">&#8711;</a>)</sup>
         <span style="float:right;"><h3>Built on {{ built }} (UTC)</h3></span></h1>
 
     <hr>
@@ -31,18 +31,48 @@
         </tr>
         <tr>
             <th>Input Events</th>
-            <th>Simulated</th>
-            <th>HITS Merged</th>
-            <th>Reconsructed</th>
-            <th>AOD Merged</th>
+            {% if JediEventsR.simulated > 0 %}
+                <th>Simulated</th>
+            {% endif %}
+            {% if JediEventsR.mergeHits > 0 %}
+                <th>HITS Merged</th>
+            {% endif %}
+            {% if JediEventsR.reconstructed > 0 %}
+                <th>Reconsructed</th>
+            {% endif %}
+            {% if JediEventsR.merge > 0 %}
+                <th>AOD Merged</th>
+            {% endif %}
+            {% if JediEventsR.deriv > 0 %}
+                <th>Derived</th>
+            {% endif %}
+            {% if JediEventsR.derivmerge > 0 %}
+                <th>Derivation Merged</th>
+            {% endif %}
+
         </tr>
 
          <tr>
                 <td>{{ JediEventsR.input|intcomma }}</td>
-                <td>{{ JediEventsR.simulated|intcomma }} ({{ JediEventsR.simulatedprogr }}%)</td>
-             <td>{{ JediEventsR.mergeHits|intcomma }} (<sup><a href="#hitsmergedescr">&#8710;</a></sup>)</td>
-                <td>{{ JediEventsR.reconstructed |intcomma}} ({{ JediEventsR.reconstructedprog }}%)</td>
-                <td>{{ JediEventsR.merge|intcomma }} ({{ JediEventsR.mergeprog }}%)</td>
+                {% if JediEventsR.simulated > 0 %}
+                    <td>{{ JediEventsR.simulated|intcomma }} ({{ JediEventsR.simulatedprogr }}%)</td>
+                {% endif %}
+                {% if JediEventsR.mergeHits > 0 %}
+                    <td>{{ JediEventsR.mergeHits|intcomma }} (<sup><a href="#hitsmergedescr">&#8710;</a></sup>)</td>
+                {% endif %}
+                {% if JediEventsR.reconstructed > 0 %}
+                    <td>{{ JediEventsR.reconstructed |intcomma}} ({{ JediEventsR.reconstructedprog }}%)</td>
+                {% endif %}
+                {% if JediEventsR.merge > 0 %}
+                    <td>{{ JediEventsR.merge|intcomma }} ({{ JediEventsR.mergeprog }}%)</td>
+                {% endif %}
+                {% if JediEventsR.deriv > 0 %}
+                    <td>{{ JediEventsR.deriv|intcomma }} ({{ JediEventsR.derivprog }}%)</td>
+                {% endif %}
+                {% if JediEventsR.derivmerge > 0 %}
+                    <td>{{ JediEventsR.derivmerge|intcomma }} ({{ JediEventsR.derivmergeprog }}%)</td>
+                {% endif %}
+
          </tr>
 
     </table>

@@ -1,6 +1,62 @@
 {% extends "_base_core.html" %}
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA job errors{% endblock %}
+
+{% block settings-offcanvas %}
+    <p>
+        <span style="font-weight: bold">Errors page settings</span>
+    </p>
+
+  {% for table, desc in userPreferences.defaulttables.items %}
+          <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-table-{{ table }}" type="checkbox" name="switch-table"
+                      {% if table in userPreferences.tables %} checked="checked" {% endif %}
+                        onchange="disableDetails('switch-table-{{ table }}','switch-jobsattr', 'jobattr-menu', 'jobattr-menu-item');">
+              <label class="switch-paddle" for="switch-table-{{ table }}">
+                <span class="show-for-sr">{{ desc }}</span>
+              </label>
+            </div>
+            <span>{{desc }}</span>
+          </div>
+
+
+  {% endfor %}
+
+
+<div class="row">
+  <div class="columns offCanvasRight-columns">
+    <ul class="accordion " data-accordion data-allow-all-closed="true">
+    <li id="jobattr-menu" class="accordion-item is-active " data-accordion-item><a href="#" class="menu-link" id="jobattr-link" class="accordion-title">JOB ATTRIBUTE SUMMARY TABLE</a>
+     <div class="accordion-content" data-tab-content >
+      <ul id="jobattr-menu-item" class="menu vertical nested">
+
+        {% for attr in userPreferences.defaultjobattr %}
+          <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-{{ attr }}" type="checkbox" name="switch-jobsattr"
+                {% if attr in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-{{ attr }}">
+                <span class="show-for-sr">{{ attr }}</span>
+              </label>
+            </div>
+            <span>{{ attr }}</span>
+          </div>
+        {% endfor %}
+
+
+       </ul>
+     </div>
+    </li>
+  </ul>
+  </div>
+</div>
+
+
+
+{% endblock %}
+
+
 {% block subtitle %}PanDA job error summary{{ viewParams.selection|safe }}
 {% if user %} &nbsp; user={{ user }} {% endif %}
 {% if site %} &nbsp; site={{ site }} {% endif %}
@@ -9,8 +65,30 @@
 {% block body %}
 
 {{ viewParams.header }}
+<script>
+    function saveSettings() {
+        var settingTables = getSettings('switch-table');
+        var settingJobAttr = getSettings('switch-jobsattr');
+{#        var url = window.location.href;#}
+        var url = '';
+        if (settingTables.length > 0) {
+            url += '&tables=' + settingTables;
+        }
+        url += '&jobattr=' + settingJobAttr;
+        url+='&page=' + 'errors';
+{#        window.location = url;#}
 
-{% if sumd %}
+        $.ajax({
+            url: {% url 'saveSettings' %},
+            data: url,
+            async: true,
+            success: function() {
+                window.location = window.location.href
+            }
+        });
+    }
+</script>
+
 
 <b>{{ njobs }} jobs found. Show jobs: </b>
 &nbsp;  <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}jobstatus=failed&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>Failed</b></a>
@@ -39,7 +117,7 @@
 
 <p>Job modification times in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b><p>
 
-<p>Go to <a href="#summary">overall</a>, <a href="#sites">site</a>, <a href="#users">user</a>, <a href="#tasks">task</a> summary
+<p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} summary
 
 <script type="text/javascript"
            src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
@@ -75,7 +153,7 @@
     <div id="chart_div" style="height: 500px;"></div>
 
 {% endif %}
-
+{% if sumd %}
 <table>
 <tr class='tablesection'><th colspan=20> Error occurrences by job attribute </th></tr>
 {% for fdict in sumd %}
@@ -97,8 +175,8 @@
 <tr><th>Category:code</th><th>Job list</th><th>Nerrors</th><th>Sample error description</th></tr>
 {% for errval in errsByCount %}
 <tr>
-    <td> <a href="{{xurlsubst}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> {{ errval.error }} </a> </td>
-    <td> <a href="{{jobsurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> jobs </a> </td>
+    <td> <a href="{{xurlsubst}}{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> {{ errval.error }} </a> </td>
+    <td> <a href="{{jobsurl}}{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> jobs </a> </td>
     <td> {{ errval.count }} </td> <td> {{ errval.diag }} <br/> {% if errval.count > 1%} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %} </td>
 </tr>
 {% endfor %}

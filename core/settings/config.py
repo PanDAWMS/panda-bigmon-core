@@ -169,6 +169,14 @@ LOGGING = {
             'backupCount': 2,
             'formatter': 'verbose',
         },
+        'logfile-error': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_ROOT + "/logfile.error",
+            'maxBytes': LOG_SIZE,
+            'backupCount': 2,
+            'formatter': 'verbose',
+        },
         'logfile-viewdatatables': {
             'level':'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
@@ -224,7 +232,7 @@ LOGGING = {
             'propagate': True,
         },
         'django': {
-            'handlers':['logfile-django'],
+            'handlers':['logfile-django','logfile-error'],
             'propagate': True,
             'level':'DEBUG',
         },

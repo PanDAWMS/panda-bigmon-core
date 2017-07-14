@@ -8,25 +8,26 @@
 
 {% if viewParams.MON_VO == 'ATLAS' %}
 
-<table border='0'>
+
+<table border='0' class="unstriped">
 <tr><td colspan=10>
 <b>Global concurrent running job core counts, all sites, all job types, by cloud, last 1, 7, 30 days</b>
 </td></tr>
 <tr>
 <td width='30%' height='365' class="hide-for-small">
 <!-- Day: -->
-<a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=last24&granularity=Hourly&generic=3&sortBy=3&series=All&type=rmulticores'>
-<img width='447' height='363' src='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=last24&granularity=Hourly&generic=3&sortBy=3&series=All&type=rmulticores' alt='Daily World All Queues'></a>
+ <a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=last24&granularity=Hourly&generic=3&sortBy=3&series=All&type=rmulticores'>
+<img width='447' height='363' src="{% url 'img' %}?url=http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=last24&granularity=Hourly&generic=3&sortBy=3&series=All&type=rmulticores" alt='Daily World All Queues'></a>
 </td>
 <td width='30%' height='365'>
 <!-- Week -->
 <a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastWeek&granularity=Daily&generic=3&sortBy=3&series=All&type=rmulticores'>
-<img width='447' height='363' src='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastWeek&granularity=Daily&generic=3&sortBy=3&series=All&type=rmulticores' alt='Weekly World All Queues'></a>
+<img width='447' height='363' src='{% url 'img' %}?url=http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastWeek&granularity=Daily&generic=3&sortBy=3&series=All&type=rmulticores' alt='Weekly World All Queues'></a>
 </td>
 <td width='30%' height='365'  class="hide-for-small">
 <!-- Month -->
 <a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastMonth&granularity=Daily&generic=3&sortBy=3&series=All&type=rmulticores'>
-<img width='447' height='363' src='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastMonth&granularity=Daily&generic=3&sortBy=3&series=All&type=rmulticores' alt='Monthly World All Queues'></a>
+<img width='447' height='363' src='{% url 'img' %}?url=http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastMonth&granularity=Daily&generic=3&sortBy=3&series=All&type=rmulticores' alt='Monthly World All Queues'></a>
 </td>
 </tr>
 <tr><td colspan=10>
@@ -36,17 +37,17 @@
 <td width='30%' height='365' class="hide-for-small">
 <!-- Day: -->
 <a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=last24&granularity=Hourly&generic=3&sortBy=10&series=All&type=rmulticores'>
-<img width='447' height='363' src='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=last24&granularity=Hourly&generic=3&sortBy=10&series=All&type=rmulticores' alt='Daily World All Queues'></a>
+<img width='447' height='363' src='{% url 'img' %}?url=http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=last24&granularity=Hourly&generic=3&sortBy=10&series=All&type=rmulticores' alt='Daily World All Queues'></a>
 </td>
 <td width='30%' height='365'>
 <!-- Week -->
 <a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastWeek&granularity=Daily&generic=3&sortBy=10&series=All&type=rmulticores'>
-<img width='447' height='363' src='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastWeek&granularity=Daily&generic=3&sortBy=10&series=All&type=rmulticores' alt='Weekly World All Queues'></a>
+<img width='447' height='363' src='{% url 'img' %}?url=http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastWeek&granularity=Daily&generic=3&sortBy=10&series=All&type=rmulticores' alt='Weekly World All Queues'></a>
 </td>
 <td width='30%' height='365'  class="hide-for-small">
 <!-- Month -->
 <a target='_blank' href='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastMonth&granularity=Daily&generic=3&sortBy=10&series=All&type=rmulticores'>
-<img width='447' height='363' src='http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastMonth&granularity=Daily&generic=3&sortBy=10&series=All&type=rmulticores' alt='Monthly World All Queues'></a>
+<img width='447' height='363' src='{% url 'img' %}?url=http://dashb-atlas-job.cern.ch/dashboard/request.py/jobnumbers_individual?sites=All+Sites&sitesCat=All+Countries&resourcetype=All&sitesSort=0&sitesCatSort=0&start=null&end=null&timeRange=lastMonth&granularity=Daily&generic=3&sortBy=10&series=All&type=rmulticores' alt='Monthly World All Queues'></a>
 </td>
 </tr>
 </table>
@@ -103,7 +104,7 @@ PanDA job ID or name</td><td><font size=-1> <input id="pandaid" name="pandaid" s
 Batch ID</td><td><font size=-1> <input id="batchid" name="batchid" size="25" maxlength="200" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
 
 <tr><td><form action="{% url 'taskInfo' %}?" method='get'>
-Task ID </td><td><font size=-1><input id="jeditaskid" name="jeditaskid" size="25" maxlength="15" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+Task ID </td><td><font size=-1><input id="jeditaskid" name="jeditaskid" size="25" maxlength="15" class="inputW" /><input type='hidden'  readonly="readonly" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
 
 <tr><td><form action="{% url 'taskList' %}" method='get'>
 Task name </td><td><font size=-1><input id="taskname" name="taskname" size="25" maxlength="400" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
@@ -128,6 +129,11 @@ Tasks for project </td><td><font size=-1><input id="project" name="project" size
 <tr><td><form action="{% url 'taskList' %}" method='post'>
 {% csrf_token %}
 Tasks for tag </td><td><font size=-1><input id="tag" name="tag" size="25" maxlength="400" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 /><input type='hidden' name="days" readonly="readonly" value="30" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
+<tr><td><form action="{% url 'taskList' %}" method='post'>
+{% csrf_token %}
+Tasks for hashtag </td><td><font size=-1><input id="hashtag" name="hashtag" size="25" maxlength="400" class="inputW" /><input type='hidden' name="display_limit" readonly="readonly" value=200 /><input type='hidden' name="days" readonly="readonly" value="30" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+
 
 <tr><td><form action="{% url 'taskList' %}" method='post'>
 {% csrf_token %}

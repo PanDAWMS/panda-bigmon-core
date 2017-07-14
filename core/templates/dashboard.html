@@ -1,8 +1,7 @@
 {% extends "_base_core.html" %}
 
-
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA {{view}} {{ requestParams.mode }} dashboard{{ viewParams.selection|safe }}
 {% endblock %}
 {% block body %}
@@ -19,7 +18,7 @@ Failure rates above {{ errthreshold }}% are shown in red.
 Click the cloud name in the overall summary to go to the cloud's site summary.
 Click the job counts to go to job listings.
 Click on column titles to sort.
-</tr></td></table>
+</td></tr></table>
 <p>
 
 <div class='section'>VO / Cloud / Site summary</div>
@@ -108,7 +107,7 @@ Click on column titles to sort.
     var startshift = -1;
 
     {% if cloudview == 'region' %}
-        startshift = 0
+        startshift = 0;
     {% endif %}
 
 
@@ -282,9 +281,8 @@ Click on column titles to sort.
 
 
 </script>
-
+<a class="bluebutton" onclick="javascript:toggle('hiderow');" href="#">Select states to show</a>
 <table id="columnstoshow">
-<th><a style="cursor: pointer;" onclick="javascript:toggle('hiderow');" href="#">Select states to show</a></th>
 <tr class='hiderow'><td>defined <input id="defined" type="checkbox" checked/></td>
 <td>waiting <input id="waiting" type="checkbox" checked/></td>
 <td>assigned <input id="assigned" type="checkbox" checked/></td>
@@ -315,16 +313,17 @@ Click on column titles to sort.
     });
     function hideoffline(){
         if ($(".hideofflinerow").is(':visible')){
-            $(".hideofflinerow").hide()
+            $(".hideofflinerow").hide();
             document.getElementById('hidebutton').innerHTML='Show offline and brokeroff queues'}
         else {
-            $(".hideofflinerow").show()
+            $(".hideofflinerow").show();
             document.getElementById('hidebutton').innerHTML='Hide offline and brokeroff queues'}
     }
 </script>
-<table>
-<th><a id="hidebutton" style="cursor: pointer;" onclick="javascript:hideoffline();" href="#">Hide offline and brokeroff queues</a></th>
-</table>
+
+<a id="hidebutton" class="bluebutton" onclick="javascript:hideoffline();" href="#">Hide offline and brokeroff queues</a>
+<br style="clear:both;">
+<p>
 {% endif %}
 
 
@@ -360,9 +359,9 @@ Click on column titles to sort.
 <tr>
 <th  bgcolor=whitesmoke> {{ vo.name }} </th>
 <th bgcolor=whitesmoke> </th>
-<th  bgcolor=whitesmoke align='right'> <a href="{% url 'jobList' %}?vo={{ vo.name }}&hours={{hours}}&jobtype={{ view }}&display_limit=100">{{ vo.count }}</a> </th>
+<th  bgcolor=whitesmoke align='right'> <a href="{% url 'jobList' %}?vo={{ vo.name }}{{ estailtojobslinks }}&hours={{hours}}&jobtype={{ view }}&display_limit=100">{{ vo.count }}</a> </th>
 {% for state in vo.statelist %}
-<th {% if state.count > 0 %} class='{{ state.name }}_fill' {% else %} bgcolor=whitesmoke {% endif %} align='right'> <a href="{% url 'jobList' %}?vo={{ vo.name }}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}">{{ state.count }}</span></a> </th>
+<th {% if state.count > 0 %} class='{{ state.name }}_fill' {% else %} bgcolor=whitesmoke {% endif %} align='right'> <a href="{% url 'jobList' %}?vo={{ vo.name }}{{ estailtojobslinks }}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}">{{ state.count }}</span></a> </th>
 {% endfor %}
 <th  bgcolor=whitesmoke align='right'>  {% if vo.pctfail > errthreshold %} <font color=red>{{ vo.pctfail  }}</font> {% else %} {{ vo.pctfail  }} {% endif %}  </th>
 </tr>
@@ -420,16 +419,16 @@ of all jobs
 {% for cloud in summary %}
 <tr height=10 colspan=12></tr>
 <tr>
-<th  bgcolor=whitesmoke> {% if cloud.name != 'All' %}{% if cloud.name != '' %}<a href="#cloud_{{ cloud.name }}"><span class="{{cloud.status}}">{{ cloud.name }}</span></a> <a onclick='PopUp("SITE={{ cloud.name }}&SIZE=medium", "{{ cloud.name }}", "day")'><img src='http://tjweb.org/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assigned {% endif %} {% else %}  All clouds {% endif %}</th>
+<th  bgcolor=whitesmoke> {% if cloud.name != 'All' %}{% if cloud.name != '' %}<a href="#cloud_{{ cloud.name }}"><span class="{{cloud.status}}">{{ cloud.name }}</span></a> <a onclick='PopUp("SITE={{ cloud.name }}&SIZE=medium", "{{ cloud.name }}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assigned {% endif %} {% else %}  All clouds {% endif %}</th>
 <th  bgcolor=whitesmoke> <span class="{{cloud.status}}">{{ cloud.status }}</span> </th>
-<th  bgcolor=whitesmoke align='right'><a href="{% url 'jobList' %}?cloud={{ cloud.name }}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100">{{ cloud.count }} </a></th>
+<th  bgcolor=whitesmoke align='right'>{{ cloud.count }}</th>
 {% if cloudview == 'region' %}
 <th  bgcolor=whitesmoke align='right'> {{ cloud.pilots }} ({{ cloud.nojobabs }}) </th>
 {% endif %}
 {% for state in cloud.statelist %}
-<th  {% if state.count > 0 %} class='{{ state.name }}_fill' {% else %} bgcolor=whitesmoke {% endif %} align='right'><a href="{% url 'jobList' %}?cloud={{ cloud.name }}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&jobstatus={{ state.name }}{% if state.name == "failed" %}&mode=nodrop{% endif %}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }}</span></a> </td>
+<th  {% if state.count > 0 %} class='{{ state.name }}_fill' {% else %} bgcolor=whitesmoke {% endif %} align='right'><span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }}</span></td>
 {% endfor %}
-<th  bgcolor=whitesmoke align='right'> <a href="{% url 'errorSummary' %}?jobtype={{view}}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&sortby=count&cloud={{cloud.name}}&hours={{hours}}"> {% if cloud.pctfail > errthreshold %} <font color=red>{{ cloud.pctfail  }}</font> {% else %} {{ cloud.pctfail  }} {% endif %} </a></th>
+<th  bgcolor=whitesmoke align='right'> <a href="{% url 'errorSummary' %}?jobtype={{view}}{{ estailtojobslinks }}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&sortby=count&cloud={{cloud.name}}&hours={{hours}}"> {% if cloud.pctfail > errthreshold %} <font color=red>{{ cloud.pctfail  }}</font> {% else %} {{ cloud.pctfail  }} {% endif %} </a></th>
 </tr>
 {% endfor %}
 
@@ -468,27 +467,27 @@ of all jobs
 <tr>
 <th bgcolor=whitesmoke> {{ cloud.name }} all sites {% if cloudview != 'region' and view != 'analysis' %} including MCP {% endif %}</th>
 <th bgcolor=whitesmoke> </th>
-<th bgcolor=whitesmoke align='right'> <a href="{% url 'jobList' %}?cloud={{ cloud.name }}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100">{{ cloud.count }}</a> </th>
+<th bgcolor=whitesmoke align='right'>{{ cloud.count }}</th>
 {% if cloudview == 'region' %}
 <th> {{ cloud.pilots }} ({{ cloud.nojobabs }}) </th>
 {% endif %}
 {% for state in cloud.statelist %}
-<th {% if state.count > 0 %} class='{{ state.name }}_fill' {% else %} bgcolor=whitesmoke {% endif %} align='right'> <a href="{% url 'jobList' %}?cloud={{ cloud.name }}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100"><span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}">{{ state.count }}</span></a> </th>
+<th {% if state.count > 0 %} class='{{ state.name }}_fill' {% else %} bgcolor=whitesmoke {% endif %} align='right'><span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}">{{ state.count }}</span></th>
 {% endfor %}
-<th  bgcolor=whitesmoke align='right'> <a href="{% url 'errorSummary' %}?jobtype={{view}}&sortby=count{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&cloud={{cloud.name}}&hours={{hours}}"> {% if cloud.pctfail > errthreshold %} <font color=red>{{ cloud.pctfail  }}</font> {% else %} {{ cloud.pctfail  }} {% endif %} </a> </th>
+<th  bgcolor=whitesmoke align='right'> <a href="{% url 'errorSummary' %}?jobtype={{view}}{{ estailtojobslinks }}&sortby=count{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&cloud={{cloud.name}}&hours={{hours}}"> {% if cloud.pctfail > errthreshold %} <font color=red>{{ cloud.pctfail  }}</font> {% else %} {{ cloud.pctfail  }} {% endif %} </a> </th>
 </tr>
 {% for site in cloud.summary %}
 <tr  {% if site.status == 'offline' or site.status == 'brokeroff'%} class="hideofflinerow" {% endif %}>
-<td> {% if site.name %} <a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={{ site.name }}&SIZE=medium", "{{ site.name }}", "day")'>                        <img src='http://tjweb.org/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assignment {% endif %} </td>
+<td> {% if site.name %} <a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={{ site.name }}&SIZE=medium", "{{ site.name }}", "day")'>                        <img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assignment {% endif %} </td>
 <td><span class="{{site.status}}">{{ site.status  }}</span> </td>
-<td align='right'><a href="{% url 'jobList' %}?cloud={{cloud.name}}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&computingsite={{ site.name }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&hours={{hours}}&jobtype={{ view }}&display_limit=100">{{ site.count }} </a></td>
+<td align='right'><a href="{% url 'jobList' %}?{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&computingsite={{ site.name }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&hours={{hours}}&jobtype={{ view }}&display_limit=100{{ estailtojobslinks }}">{{ site.count }} </a></td>
 {% if cloudview == 'region' %}
 <td> {{ site.pilots }} ({{ site.nojobabs }}) </td>
 {% endif %}
 {% for state in site.summary %}
-<td class='{{state.name}}{% if state.count > 0 %}_fill{% endif %}' align='right'><a href="{% url 'jobList' %}?computingsite={{ site.name }}{% if cloudview != 'region' and view != 'analysis' %}&cloud={{ cloud.name }}{% endif %}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }} </span></a> </td>
+<td class='{{state.name}}{% if state.count > 0 %}_fill{% endif %}' align='right'><a href="{% url 'jobList' %}?computingsite={{ site.name }}{{ estailtojobslinks }}{% if cloudview != 'region' and view != 'analysis' %}&cloud={{ cloud.name }}{% endif %}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }} </span></a> </td>
 {% endfor %}
-<td> <a href="{% url 'errorSummary' %}?jobtype={{view}}&sortby=count&computingsite={{site.name}}&hours={{hours}}"> {% if site.pctfail > errthreshold %} <font color=red>{{ site.pctfail  }}</font> {% else %} {{ site.pctfail  }} {% endif %} </a> </td>
+<td> <a href="{% url 'errorSummary' %}?jobtype={{view}}{{ estailtojobslinks }}&sortby=count&computingsite={{site.name}}&hours={{hours}}"> {% if site.pctfail > errthreshold %} <font color=red>{{ site.pctfail  }}</font> {% else %} {{ site.pctfail  }} {% endif %} </a> </td>
 </tr>
 {% endfor %}
 
@@ -527,9 +526,9 @@ of all jobs
 <tr>
 <td> <a href="{% url 'taskInfo' task.taskid %}"><span class="{{task.status}}">{{ task.name }}</span></a></td>
 <td> <span class="{{task.status}}{% if task.count > 0 %}_fill{% endif %}">{{ task.status }}</span> </td>
-<td><a href="{% url 'jobList' %}?taskid={{ task.taskid }}&hours={{hours}}&jobtype={{ view }}&display_limit=100"> {{ task.count }} </a></td>
+<td><a href="{% url 'jobList' %}?taskid={{ task.taskid }}{{ estailtojobslinks }}&hours={{hours}}&jobtype={{ view }}&display_limit=100"> {{ task.count }} </a></td>
 {% for state in task.statelist %}
-<td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}><a href="{% url 'jobList' %}?taskid={{ task.taskid }}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }}</span></a> </td>
+<td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}><a href="{% url 'jobList' %}?taskid={{ task.taskid }}{{ estailtojobslinks }}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }}</span></a> </td>
 {% endfor %}
 <td> <a href="{% url 'errorSummary' %}?taskid={{ task.taskid }}&sortby=count&hours={{hours}}"> {% if task.pctfail > errthreshold %} <font color=red>{{ task.pctfail  }}</font> {% else %} {{ task.pctfail  }} {% endif %} </a></td>
 </tr>
@@ -539,16 +538,23 @@ of all jobs
 {% endif %}
 
 <script language="javascript"> var newWin;function PopUp(ref, site, type) {
+var prt = 'http://'
+if ("https:" == document.location.protocol) {
+    prt = 'https://'
+} else {
+    prt = 'http://'
+}
 var strFeatures="toolbar=no,status=no,menubar=no,location=no"
 strFeatures=strFeatures+",scrollbars=no,resizable=no,height=500,width=500"
 if (!newWin || newWin.closed) {newWin = window.open(ref,'TellObj',strFeatures);
 if (!newWin.opener) {newWin.opener = window; }
-newWin.document.write('<img src="http://gridinfo.triumf.ca/panglia/sites/day.php?'+ref+'" id="show_image"><p>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/hour.php?'+ref+'"; value=Hour>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/day.php?'+ref+'"; value=Day>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/week.php?'+ref+'"; value=Week>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/month.php?'+ref+'"; value=Month>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://gridinfo.triumf.ca/panglia/sites/year.php?'+ref+'"; value=Year>');
+
+newWin.document.write('<img src="{% url 'img' %}?url=http://gridinfo.triumf.ca/panglia/sites/day.php?'+ref+'" id="show_image"><p>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://gridinfo.triumf.ca/panglia/sites/hour.php?'+ref+'"; value=Hour>');;
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://gridinfo.triumf.ca/panglia/sites/day.php?'+ref+'"; value=Day>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://gridinfo.triumf.ca/panglia/sites/week.php?'+ref+'"; value=Week>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://gridinfo.triumf.ca/panglia/sites/month.php?'+ref+'"; value=Month>');
+newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://gridinfo.triumf.ca/panglia/sites/year.php?'+ref+'"; value=Year>');
 newWin.document.write('<p><input type=button value="Close" onclick="window.close();return false;">');
 newWin.document.close(); 
 }else { 

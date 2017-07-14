@@ -111,7 +111,6 @@ class RemainedEventsPerCloud3dayswind(models.Model):
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."REMEVPCL3DAYSWIND"'
 
-
 class JobsWorldView(models.Model):
     nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
     computingsite = models.CharField(max_length=384, db_column='COMPUTINGSITE', blank=True) # Field name made lowercase.
@@ -120,6 +119,16 @@ class JobsWorldView(models.Model):
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEW"'
 
+class CombinedWaitActDefArch4(models.Model):
+    nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
+    computingsite = models.CharField(max_length=384, db_column='COMPUTINGSITE', blank=True) # Field name made lowercase.
+    jobstatus = models.CharField(max_length=45, db_column='JOBSTATUS') # Field name made lowercase.
+    tasktype = models.CharField(max_length=64, db_column='TASKTYPE')
+    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME') # Field name made lowercase.
+    es = models.IntegerField(db_column='ES')
+    isarchive = models.IntegerField(db_column='ISARCHIVE')
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."COMBINED_WAIT_ACT_DEF_ARCH4"'
 
 class JobsWorldViewTaskType(models.Model):
     nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
@@ -147,6 +156,7 @@ class PandaJob(models.Model):
     prodserieslabel = models.CharField(max_length=60, db_column='PRODSERIESLABEL', blank=True) # Field name made lowercase.
     prodsourcelabel = models.CharField(max_length=60, db_column='PRODSOURCELABEL', blank=True) # Field name made lowercase.
     produserid = models.CharField(max_length=750, db_column='PRODUSERID', blank=True) # Field name made lowercase.
+    gshare = models.CharField(max_length=750, db_column='GSHARE', blank=True)
     assignedpriority = models.IntegerField(db_column='ASSIGNEDPRIORITY') # Field name made lowercase.
     currentpriority = models.IntegerField(db_column='CURRENTPRIORITY') # Field name made lowercase.
     attemptnr = models.IntegerField(db_column='ATTEMPTNR') # Field name made lowercase.

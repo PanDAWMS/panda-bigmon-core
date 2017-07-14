@@ -10,6 +10,7 @@ import StringIO
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
+import datetime
 
 class TaskProgressPlot:
 
@@ -43,17 +44,59 @@ class TaskProgressPlot:
 
     def get_raw_task_profile_fresh(self,taskid):
         cur = connection.cursor()
-        cur.execute("select starttime, creationtime, endtime, row_number() over (PARTITION BY jeditaskid order by endtime ) as njobs FROM ("
-                    "SELECT DISTINCT starttime, creationtime, endtime, pandaid, jeditaskid FROM JOBSARCHIVED WHERE JEDITASKID={0} and JOBSTATUS='finished' UNION ALL "
-                    "SELECT DISTINCT starttime, creationtime, endtime, pandaid, jeditaskid FROM JOBSARCHIVED4 WHERE JEDITASKID={0} and JOBSTATUS='finished')t1".format(taskid))
+        cur.execute("SELECT  * FROM ("
+                    "SELECT DISTINCT starttime, creationtime, endtime, pandaid, jeditaskid, EVENTSERVICE FROM JOBSARCHIVED WHERE JEDITASKID={0} and JOBSTATUS='finished' UNION ALL "
+                    "SELECT DISTINCT starttime, creationtime, endtime, pandaid, jeditaskid, EVENTSERVICE FROM JOBSARCHIVED4 WHERE JEDITASKID={0} and JOBSTATUS='finished'"
+                    ")t ORDER BY pandaid asc".format(taskid))
         rows = cur.fetchall()
 
+        starttime_run = []
+        creationtime_run = []
+        endtime_run = []
+        idxjobs_run = []
+        idxjobs_runcount = 0
+
+        starttime_merge = []
+        creationtime_merge = []
+        endtime_merge = []
+        idxjobs_merge = []
+        idxjobs_mergecount = 0
+        for row in rows:
+            if row[5] == 2:
+                starttime_merge.append(row[0])
+                creationtime_merge.append(row[1])
+                endtime_merge.append(row[2])
+                idxjobs_merge.append(idxjobs_mergecount)
+                idxjobs_mergecount += 1
+            else:
+                starttime_run.append(row[0])
+                creationtime_run.append(row[1])
+                endtime_run.append(row[2])
+                idxjobs_run.append(idxjobs_runcount)
+                idxjobs_runcount += 1
+
         if len(rows) > 0:
-            data = {'starttime': [row[0] for row in rows],
-                    'creationtime': [row[1] for row in rows],
-                    'endtime': [row[2] for row in rows],
-                    'njobs': [row[3] for row in rows]}
-            return pd.DataFrame(data, columns=['starttime','creationtime','endtime', 'njobs'])
+
+            data_run = {
+                'starttime_run': starttime_run,
+                'creationtime_run': creationtime_run,
+                'endtime_run':endtime_run,
+                'idxjobs_run':idxjobs_run
+            }
+
+            data_merge = {
+                'starttime_merge':starttime_merge,
+                'creationtime_merge':creationtime_merge,
+                'endtime_merge':endtime_merge,
+                'idxjobs_merge':idxjobs_merge
+            }
+
+            return {'run':pd.DataFrame(data_run, columns=['starttime_run','creationtime_run',
+                                               'endtime_run', 'idxjobs_run']),
+                    'merge':pd.DataFrame(data_merge, columns=['starttime_merge', 'creationtime_merge',
+                                                'endtime_merge', 'idxjobs_merge'])
+
+                    }
         else:
             None
 
@@ -68,10 +111,19 @@ class TaskProgressPlot:
                     JOIN JOBSARCHIVED ON t2.PANDAID = JOBSARCHIVED.PANDAID AND JEDITASKID={0} AND JOBSARCHIVED.JOBSTATUS='finished') t3""".format(taskid))
         rows = cur.fetchall()
 
+        modificationtimeList = []
+        neventsList = []
         if len(rows) > 0:
-            data = {'modificationtime': [row[0] for row in rows],
-                    'nevents': [row[1] for row in rows]}
-            return pd.DataFrame(data, columns=['modificationtime','nevents'])
+            for row in rows:
+                if isinstance(row[0], datetime.datetime) and row[0] > (datetime.datetime.now() + datetime.timedelta(-10000)) and (row[0] not in modificationtimeList):
+                    modificationtimeList.append(row[0])
+                    neventsList.append(row[1])
+            data = {'modificationtime': modificationtimeList,
+                    'nevents': neventsList}
+            if len(modificationtimeList) > 10000:
+                return pd.DataFrame(data, columns=['modificationtime','nevents']).sample(n=10000)
+            else:
+                return pd.DataFrame(data, columns=['modificationtime', 'nevents'])
         else:
             None
 
@@ -88,22 +140,27 @@ class TaskProgressPlot:
 
     def make_verbose_profile_graph(self,frame, taskid, status=None, daterange=None):
         plt.style.use('fivethirtyeight')
-        fig = plt.figure(figsize=(20, 15))
+        fig = plt.figure(figsize=(20, 18))
         plt.locator_params(axis='x', nbins=30)
         plt.locator_params(axis='y', nbins=30)
         if status is not None:
-            plt.title('Execution profile for task {0}, NJOBS={1}, STATUS={2}'.format(taskid, len(frame), status),
-                      fontsize=24)
+            plt.title('Execution profile for task {0}, NJOBS={1}, STATUS={2}'.format(taskid, len(frame['run'])+len(frame['merge']), status['status']), fontsize=24)
         else:
-            plt.title('Execution profile for task {0}, NJOBS={1}'.format(taskid, len(frame)), fontsize=24)
+            plt.title('Execution profile for task {0}, NJOBS={1}'.format(taskid, len(frame['run'])+len(frame['merge'])), fontsize=24)
         plt.xlabel("Job completion time", fontsize=18)
         plt.ylabel("Number of completed jobs", fontsize=18)
-        plt.axvline(x=self.get_task_start(taskid)['starttime'], color='b', linewidth=4, label="Task start time")
+        taskstart = self.get_task_start(taskid)['starttime']
+        plt.axvline(x=taskstart, color='b', linewidth=4, label="Task start time")
 
-        min = frame.values[:,0:3].min()
-        max = frame.values[:,0:3].max()
-        plt.xlim(xmax=max)
-        plt.xlim(xmin=min)
+        if len(frame['merge'].values[:,0:2])>0:
+            mint = min(frame['run'].values[:,0:2].min(), frame['merge'].values[:,0:2].min(), taskstart)
+            maxt = max(frame['run'].values[:, 0:3].max(), frame['merge'].values[:, 0:3].max())
+        else:
+            mint = min(frame['run'].values[:,0:3].min(), taskstart)
+            maxt = frame['run'].values[:, 0:3].max()
+
+        plt.xlim(xmax=maxt)
+        plt.xlim(xmin=mint)
         plt.xticks(rotation=25)
 
         ax = plt.gca()
@@ -111,13 +168,19 @@ class TaskProgressPlot:
         ax.xaxis.set_major_formatter(xfmt)
         #plt.xlim(daterange)
 
-        plt.plot(frame.endtime, frame.njobs, '.r', label='Job ENDTIME')
-        plt.plot(frame.starttime, frame.njobs, '.g', label='Job STARTTIME')
-        plt.plot(frame.creationtime, frame.njobs, '.b', label='Job CREATIONTIME')
+        if len(frame['merge'].values[:,0:2])>0:
+            plt.plot(frame['merge'].endtime_merge, frame['merge'].idxjobs_merge, '.r', label='Merge job ENDTIME', marker='+', markersize=8)
+            plt.plot(frame['merge'].starttime_merge, frame['merge'].idxjobs_merge, '.g', label='Merge job STARTTIME', marker='+', markersize=8)
+            plt.plot(frame['merge'].creationtime_merge, frame['merge'].idxjobs_merge, '.b', label='Merge job CREATIONTIME', marker='+', markersize=8)
+        plt.plot(frame['run'].endtime_run, frame['run'].idxjobs_run, '.r', label='Job ENDTIME', markersize=8)
+        plt.plot(frame['run'].starttime_run, frame['run'].idxjobs_run, '.g', label='Job STARTTIME', markersize=8)
+        plt.plot(frame['run'].creationtime_run, frame['run'].idxjobs_run, '.b', label='Job CREATIONTIME', markersize=8)
+
         plt.legend(loc='lower right')
         return fig
 
     def make_es_verbose_profile_graph(self,frame, taskid, status=None, daterange=None):
+        #plt.switch_backend('Cairo')
         plt.style.use('fivethirtyeight')
         fig = plt.figure(figsize=(20, 15))
         plt.locator_params(axis='x', nbins=30)
@@ -128,7 +191,11 @@ class TaskProgressPlot:
         starttime = self.get_task_start(taskid)['starttime']
         plt.axvline(x=starttime, color='b', linewidth=4, label="Task start time")
 
-        min = starttime
+        if not starttime is None:
+            min = starttime
+        else:
+            min = frame.values[:,0].min()
+
         max = frame.values[:,0].max()
         plt.xlim(xmax=max)
         plt.xlim(xmin=min)

@@ -2,7 +2,7 @@
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA {% if viewParams.MON_VO == 'ATLAS' %}
  resource {% else %} site {% endif %} {{ site.siteid }} {% endblock %}
-{% block title %} <a href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA {% if viewParams.MON_VO == 'ATLAS' %}
  resource {% else %} site {% endif %} {{ site.siteid }}{% endblock %}
 
@@ -64,7 +64,7 @@
 </td>
 
 <td>
-<a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!(%27timeEvent%27,type,message),filters:!(),index:%27atlas_jedilogs-*%27,interval:auto,query:(query_string:(analyze_wildcard:!t,query:%27(type:%22atlasanaljobbroker%22%20OR%20type:%22atlasprodjobbroker%22)%20AND%20site:{{site.siteid}}%20%27)),sort:!(%27timeEvent%27,asc),vis:(aggs:!((params:(field:site,orderBy:%272%27,size:20),schema:segment,type:terms),(id:%272%27,schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">brokerage actions (es-atlas)</a>
+<a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!(%27timeEvent%27,type,message),filters:!(),index:%27atlas_jedilogs-*%27,interval:auto,query:(query_string:(analyze_wildcard:!t,query:%27(type:%22atlasanaljobbroker%22%20OR%20type:%22atlasprodjobbroker%22)%20AND%20site:{{site.siteid}}%20%27)),sort:!(%27timeEvent%27,asc),vis:(aggs:!((params:(field:site,orderBy:%272%27,size:20),schema:segment,type:terms),(id:%272%27,schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">brokerage actions (es-atlas)</a>
 </td>
 {% if site.nickname %}
 <td>
@@ -93,7 +93,11 @@ DDM
 </td>
 
 <td>
-<a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{site.siteid}}/full/">Agis link</a>
+    {% if nickName != '' or nickName %}
+    <a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{nickName}}/full/">Agis link</a>
+    {% else %}
+    <a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{site.siteid}}/full/">Agis link</a>
+    {% endif %}
 </td>
 
 

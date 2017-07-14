@@ -113,11 +113,11 @@ function killtasks(taskID, action) {
             <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
         {% endif %}
     {% endif %}
-    <a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,logLevel,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Task brokerage (es-atlas)</a>
+    <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,logLevel,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Task brokerage (es-atlas)</a>
     <a href="{% url 'pandaLogger' %}?type={{ taskbrokerage }}&jeditaskid={{ jeditaskid }}&startdate={{ task.creationdate }}&enddate={{ task.modificationtime }}">Job brokerage</a>
-    <a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Job brokerage (es-atlas)</a>
+    <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Job brokerage (es-atlas)</a>
     <a href="{% url 'pandaLogger' %}?category=panda.mon.jedi&jeditaskid={{ jeditaskid }}">Action logger</a>
-    <a target="_blank" href="https://es-atlas.cern.ch/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{jeditaskid}}')),sort:!('timeEvent',asc))">Action logger (es-atlas)</a>
+    <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{jeditaskid}}')),sort:!('timeEvent',asc))">Action logger (es-atlas)</a>
     <a href="{% url 'errorSummary' %}?jeditaskid={{jeditaskid}}">Error summary</a>
     {% if task.parent_tid != task.jeditaskid and task.parent_tid != None %}
         <a href="{% url 'taskInfo' task.parent_tid %}">Parent task {{ task.parent_tid }}</a>
@@ -248,16 +248,20 @@ This is an event service task<p>
 {% endif %}
 
 
-{% if  plotsDict.maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.maxpsspercore|length > 0 %} <div class="d3splot" id="plot5" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.hs06s|length > 0 %} <div class="d3splot" id="plot7" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.walltimeperevent|length > 0 %} <div class="d3splot" id="plot9" style="float:left;display:none"></div> {% endif %}
+{% if plotsDict.maxpss and plotsDict.maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
+{% if plotsDict.walltime and plotsDict.walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
+{% if plotsDict.maxpsspercore and plotsDict.maxpsspercore|length > 0 %} <div class="d3splot" id="plot5" style="float:left;display:none"></div> {% endif %}
+{% if plotsDict.hs06s and plotsDict.hs06s|length > 0 %} <div class="d3splot" id="plot7" style="float:left;display:none"></div> {% endif %}
+{% if plotsDict.cputime and plotsDict.cputime|length > 0 %} <div class="d3splot" id="plot10" style="float:left;display:none"></div> {% endif %}
+{% if plotsDict.walltimeperevent and plotsDict.walltimeperevent|length > 0 %} <div class="d3splot" id="plot9" style="float:left;display:none"></div> {% endif %}
+{% if plotsDict.cputimeperevent and plotsDict.cputimeperevent|length > 0 %} <div class="d3splot" id="plot11" style="float:left;display:none"></div> {% endif %}
     <br style="clear:both;">
-{% if  plotsDict.maxpssf|length > 0 %} <div class="d3splot" id="plot3" style="clear:both;float:left;display:none"></div> {% endif %}
-{% if  plotsDict.walltimef|length > 0 %} <div class="d3splot" id="plot4" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.maxpsspercoref|length > 0 %} <div class="d3splot" id="plot6" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.hs06sf|length > 0 %} <div class="d3splot" id="plot8" style="float:left;display:none"></div> {% endif %}
+{% if plotsDict.maxpssf and plotsDict.maxpssf|length > 0 %} <div class="d3splot" id="plot3" style="clear:both;float:left;display:none"></div> {% endif %}
+{% if plotsDict.walltimef and plotsDict.walltimef|length > 0 %} <div class="d3splot" id="plot4" style="float:left;display:none"></div> {% endif %}
+{% if plotsDict.maxpsspercoref and plotsDict.maxpsspercoref|length > 0 %} <div class="d3splot" id="plot6" style="float:left;display:none"></div> {% endif %}
+{% if plotsDict.hs06sf and plotsDict.hs06sf|length > 0 %} <div class="d3splot" id="plot8" style="float:left;display:none"></div> {% endif %}
+{% if plotsDict.cputimef and plotsDict.cputimef|length > 0 %} <div class="d3splot" id="plot12" style="float:left;display:none"></div> {% endif %}
+{% if plotsDict.cputimepereventf and plotsDict.cputimepereventf|length > 0 %} <div class="d3splot" id="plot13" style="float:left;display:none"></div> {% endif %}
 <br style="clear: both">
 
 <script src="/static/js/d3jsplot.js"></script>
@@ -271,6 +275,10 @@ This is an event service task<p>
     var values7 = {{ plotsDict.hs06s|safe }};
     var values8 = {{ plotsDict.hs06sf|safe }};
     var values9 = {{ plotsDict.walltimeperevent|safe }};
+    var values10 = {{ plotsDict.cputime|safe }};
+    var values11 = {{ plotsDict.cputimeperevent|safe }};
+    var values12 = {{ plotsDict.cputimef|safe }};
+    var values13 = {{ plotsDict.cputimepereventf|safe }};
     if (values1.length > 0) {pandamonplotHist(values1,  "#plot1", "Maximum PSS histogram");}
     if (values3.length > 0) {pandamonplotHist(values3,  "#plot3", "Maximum PSS histogram (failed jobs)");}
     if (values2.length > 0) {pandamonplotHist(values2,  "#plot2", "Walltime histogram");}
@@ -280,6 +288,10 @@ This is an event service task<p>
     if (values7.length > 0) {pandamonplotHist(values7,  "#plot7", "HS06s histogram");}
     if (values8.length > 0) {pandamonplotHist(values8,  "#plot8", "HS06s histogram (failed jobs)");}
     if (values9.length > 0) {pandamonplotHist(values9,  "#plot9", "Walltime per event histogram");}
+    if (values10.length > 0) {pandamonplotHist(values10,  "#plot10", "CPU time histogram");}
+    if (values11.length > 0) {pandamonplotHist(values11,  "#plot11", "CPU time per event histogram");}
+    if (values12.length > 0) {pandamonplotHist(values12,  "#plot12", "CPU time histogram (failed jobs)");}
+    if (values13.length > 0) {pandamonplotHist(values13,  "#plot13", "CPU time per event histogram (failed jobs)");}
  </script>
 
 
@@ -344,7 +356,7 @@ function toggleRowsDisplay(className) {
 
 {% for dsrec in datasets %}
 	<tr class="type-{{ dsrec.type }} type-all" style="display:none">
-		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{ dsrec.datasetname }}&jeditaskid={{ jeditaskid }}">{{ dsrec.datasetname }}</a></font></td>
+		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetid={{ dsrec.datasetid }}">{{ dsrec.datasetname }}</a></font></td>>
 		<td>{{ dsrec.type }}</td>
 		<td>{{ dsrec.streamname }}</td>
 		<td class='{{dsrec.state}}'>{{ dsrec.state }}</td>
