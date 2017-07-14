@@ -11365,7 +11365,7 @@ def image(request):
             if (len(urlConfim)>0):
                 break
         if (len(urlConfim)==0):
-            return redirect('/static/images/22802286-denied-red-grunge-stamp.jpg')
+            return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
         try:
             fd = urllib.urlopen(url)
             image_file = io.BytesIO(fd.read())
