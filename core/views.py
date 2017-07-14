@@ -11385,3 +11385,10 @@ def message(request):
         'built': datetime.now().strftime("%H:%M:%S"),
     }
     return render_to_response('message.html', data, content_type='text/html')
+
+def handler500(request):
+    response = render_to_response('message.html', {},
+                                  context_instance=RequestContext(request))
+    response.status_code = 500
+    return response
+
