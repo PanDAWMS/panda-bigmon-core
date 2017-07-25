@@ -1,0 +1,45 @@
+{% extends "_base_core.html" %}
+{% load static %}
+{% block page_title %}ART nightly tests{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}">
+{% endblock %}
+{% block body %}
+
+<div class="row">
+  <div class="columns">
+    <ul class="accordion-art" data-accordion data-allow-all-closed="true" data-multi-expand="true">
+      {% for pname,pack in artpackages.items %}
+      <li class="accordion-art-item is-active" data-accordion-item>
+        <a href="#" class="accordion-art-title">{{ pname }}</a>
+        <div class="accordion-art-content" data-tab-content >
+          <table class="no-border">
+              <tr>
+                  <th class="cell" ></th>
+                  {% for tags,files in pack.items %}
+                        <th class="header">{{ tags|date:"d b Y" }}</th>
+                  {% endfor %}
+              </tr>
+              <tr>
+                  <td class="cell">{% if view in requestParams and requestParams.view == 'packages' %}All branches{% else %}All packages{% endif %}</td>
+                  {% for tags,files in pack.items %}
+                      <td class="cell">
+                        <div class="clickable">
+                            <div class="finished">{{ files.finished }}</div>
+                            <div class="failed">{{ files.failed }}</div>
+                            <div class="running">{{ files.running }}</div>
+                            <div class="unrecoverable">{{ files.unrecoverable }}</div>
+                            <a href=""></a>
+                        </div>
+                      </td>
+                  {% endfor %}
+              </tr>
+          </table>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+{% endblock %}

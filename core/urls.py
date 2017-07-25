@@ -10,11 +10,13 @@ from django.conf import settings
 from core import views as coremon_views
 from core import dpviews as dpviews
 from core import MemoryMonitorPlots as memmon
+from core.art import views as art_views
 
 #import core.views as coremon_views
 import core.pandajob.views_support as core_coremon_support_views
 #import core.pandajob.views as core_coremon_views
 #import core.api.reprocessing.views as core_coremon_api_reprocessing_views
+
 
 urlpatterns = [
     url(r'^$', coremon_views.mainPage, name='mainPage'),
@@ -99,7 +101,12 @@ urlpatterns = [
 
     url(r'^report/$', coremon_views.report, name='report'),
 
-                  ### filebrowser
+    ### ART nightly tests
+    url(r'^art/$', art_views.art, name='art-mainPage'),
+    url(r'^art/overview/$', art_views.artOverview, name='artOverview'),
+    url(r'^art/tasks/$', art_views.artTasks, name='artTasks'),
+    url(r'^art/jobs/$', art_views.artJobs, name='artJobs'),
+    ### filebrowser
     url(r'^filebrowser/', include('core.filebrowser.urls'), name='filebrowser'),
     ### PanDA Brokerage Monitor
     url(r'^pbm/', include('core.pbm.urls'), name='pbm'),

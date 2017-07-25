@@ -1,0 +1,130 @@
+{% extends "_base_core.html" %}
+{% load static %}
+
+{% block page_title %}ART nightly tests{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}">
+{% endblock %}
+{% block body %}
+
+
+<div class="row">
+  <div class="large-2 columns">
+      <fieldset class="fieldset">
+          <legend>Select package</legend>
+          <ul class="no-bullet">
+              {% for p in packages %}
+                  <li><input id="{{ p }}" class="package" type="checkbox"><label for="{{ p }}">{{ p }}</label></li>
+              {% endfor %}
+          </ul>
+      </fieldset>
+  </div>
+  <div class="large-4 columns">
+      <fieldset class="fieldset">
+          <legend>Select branch</legend>
+          <ul class="no-bullet">
+              {% for b in branches %}
+                  <li><input id="{{ b }}" class="branch" type="checkbox"><label for="{{ b }}">{{ b }}</label></li>
+              {% endfor %}
+          </ul>
+      </fieldset>
+  </div>
+  <div class="large-2 columns">
+      <fieldset class="fieldset">
+          <legend>Select nightly tag</legend>
+          <ul class="no-bullet">
+              {% for t in ntags %}
+                  <li><input id="{{ t }}" class="ntag" type="checkbox"><label for="{{ t }}">{{ t }}</label></li>
+              {% endfor %}
+              <li><label>From:<input type="date" class="ntag-text" id="ntag_from" min="2017-06-08"></label></li>
+              <li><label>To:<input type="date" class="ntag-text" id="ntag_to"></label></li>
+          </ul>
+      </fieldset>
+  </div>
+  <div class="large-2 columns">
+      <fieldset class="fieldset">
+        <legend>Choose View</legend>
+        <ul class="no-bullet">
+            <li><input type="radio" name="view" class="view" value="overview" id="overview" checked><label for="overview">Overview</label></li>
+            <li><input type="radio" name="view" class="view" value="tasks" id="tasks"><label for="tasks">Task</label></li>
+            <li><input type="radio" name="view" class="view" value="jobs" id="jobs"><label for="jobs">Job</label></li>
+        </ul>
+      </fieldset>
+  </div>
+  <div class="large-2 columns">
+    <fieldset class="fieldset">
+          <legend>Search</legend>
+          <a onclick="searchResults()" class="button">Show me results!</a>
+      </fieldset>
+  </div>
+</div>
+
+<script>
+
+function searchResults() {
+    var packageStr=getParamStr("package");
+    var branchStr=getParamStr("branch");
+    var ntagStr=getParamStr("ntag");
+    var viewStr=getParamStr("view");
+    var ntag_from = getDateFromInput('ntag_from');
+    var ntag_to = getDateFromInput('ntag_to');
+    var query = '';
+    switch(viewStr) {
+        case "overview": {
+            query = '{% url 'artOverview' %}';
+            break;}
+        case "tasks":{
+            query = '{% url 'artTasks' %}';
+            break;}
+        case "jobs":{
+            query = '{% url 'artJobs' %}';
+            break;}
+        default:
+            query = '{% url 'art-mainPage' %}';
+    }
+    if ((packageStr.length>1) || (branchStr.length>1) || (ntagStr.length>1) || (ntag_from.length>1) || (ntag_to.length>1)  ) {
+        query += "?";
+        if (packageStr.length > 1) {
+            query += "package=" + packageStr + "&";
+        }
+        if (branchStr.length > 1) {
+            query += "branch=" + branchStr + "&";
+        }
+        if (ntag_from.length>1 || ntag_to.length>1 ) {
+            if (ntag_from.length>1) {
+                query += "ntag_from=" + ntag_from + "&"
+            }
+            if (ntag_to.length>1) {
+                query += "ntag_to=" + ntag_to + "&"
+            }
+        }
+        else if (ntagStr.length > 1) {
+            query += "ntag=" + ntagStr + "&";
+        }
+
+        query = query.substring(0, query.length - 1);
+    }
+    window.location = query;
+}
+
+function getParamStr(classname) {
+    var paramStr = '';
+    var params = document.getElementsByClassName(classname);
+    for (var i=0; i<params.length; i++) {
+        if (params[i].checked) {
+            paramStr += params[i].id + ','
+        }
+    }
+    if (paramStr.length>0 && paramStr[paramStr.length-1] == ',') { paramStr = paramStr.substring(0, paramStr.length - 1);}
+    return paramStr
+}
+function getDateFromInput(id) {
+    var paramStr = '';
+    var param = document.getElementById(id);
+    paramStr = param.value;
+    return paramStr
+}
+
+
+</script>
+{% endblock %}

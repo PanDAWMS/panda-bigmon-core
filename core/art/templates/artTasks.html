@@ -1,0 +1,55 @@
+{% extends "_base_core.html" %}
+{% load static %}
+{% block page_title %}ART nightly tests{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}">
+{% endblock %}
+{% block body %}
+
+<div class="row">
+  <div class="columns">
+    <ul class="accordion-art" data-accordion data-allow-all-closed="true" data-multi-expand="true">
+      {% for pname,pack in arttasks.items %}
+      <li class="accordion-art-item is-active" data-accordion-item>
+        <a href="#" class="accordion-art-title">{{ pname }}</a>
+        <div class="accordion-art-content" data-tab-content >
+          <table class="no-border">
+              <tr>
+                  <th class="cell" ></th>
+                  {% for brname,tags in pack.items %}
+                      {% if forloop.first %}
+                      {% for ntname,files in tags.items %}
+                        <th class="header">{{ ntname|date:"d b Y" }}</th>
+                      {% endfor %}
+                      {% endif %}
+                  {% endfor %}
+              </tr>
+              {% for brname,tags in pack.items %}
+                  <tr>
+                      <td class="cell">{{ brname }}</td>
+                      {% for ntname,files in tags.items %}
+                          <td class="cell">
+                            <div class="clickable">
+                                <div class="finished">{{ files.finished }}</div>
+                                <div class="failed">{{ files.failed }}</div>
+                                <div class="running">{{ files.running }}</div>
+                                <div class="unrecoverable">{{ files.unrecoverable }}</div>
+                                <a href=""></a>
+                            </div>
+                          </td>
+                      {% endfor %}
+                  </tr>
+              {% endfor %}
+          </table>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+
+
+
+
+{% endblock %}
