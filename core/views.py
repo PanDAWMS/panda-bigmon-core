@@ -6058,7 +6058,7 @@ def dashboard(request, view='production'):
             getObjectStoresNames()
 
         sqlRequest = """
-        SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE FROM (
+        SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE,RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST FROM (
         SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, CASE WHEN t2.OBJSTORE_ID > 0 THEN TO_CHAR(t2.OBJSTORE_ID) ELSE t3.destinationse END AS OBJSE  
         FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 
         LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID = t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0)
@@ -6089,19 +6089,19 @@ def dashboard(request, view='production'):
                 compsite = row[2]
                 status = row[0]
                 count = row[1]
-
+                tk = setData(request, 60*80,pandaid = row[4],compsite = row[2])
                 if osName in mObjectStores:
                     if not compsite in mObjectStores[osName]:
                         mObjectStores[osName][compsite] = {}
                         for state in sitestatelist + ["closed"]:
-                            mObjectStores[osName][compsite][state] = 0
-                    mObjectStores[osName][compsite][status] = count
+                            mObjectStores[osName][compsite][state] = {'count': 0, 'tk': 0}
+                            mObjectStores[osName][compsite][status] = {'count': count, 'tk': tk}
                 else:
                     mObjectStores[osName] = {}
                     mObjectStores[osName][compsite] = {}
                     for state in sitestatelist + ["closed"]:
-                        mObjectStores[osName][compsite][state] = 0
-                    mObjectStores[osName][compsite][status] = count
+                        mObjectStores[osName][compsite][state] = {'count': 0, 'tk': 0}
+                        mObjectStores[osName][compsite][status] = {'count': count, 'tk': tk}
 
         mObjectStoresSummary = {}
         for osName in mObjectStores:
@@ -6109,9 +6109,10 @@ def dashboard(request, view='production'):
             for site in mObjectStores[osName]:
                 for state in mObjectStores[osName][site]:
                     if state in mObjectStoresSummary[osName]:
-                        mObjectStoresSummary[osName][state] += mObjectStores[osName][site][state]
+                        mObjectStoresSummary[osName][state]['count'] += mObjectStores[osName][site][state]['count']
                     else:
-                        mObjectStoresSummary[osName][state] = mObjectStores[osName][site][state]
+                        mObjectStoresSummary[osName][state] = {"count": mObjectStores[osName][site][state]['count'],
+                                                               "tk": mObjectStores[osName][site][state]['tk']}
 
         data = {
             'mObjectStoresSummary': mObjectStoresSummary,
@@ -11393,3 +11394,33 @@ def handler500(request):
     response.status_code = 500
     return response
 
+import uuid
+
+def setData(request,lifetime=60*30,**parametrlist):
+    #transactionKey = random.getrandbits(128)
+    transactionKey = uuid.uuid4().hex
+    dictinoary = {}
+    dictinoary[transactionKey] = {}
+    #if 'pandaid' in parametrlist:
+    #    dictinoary[transactionKey]['pandaid']=str(parametrlist['pandaid'])
+        #dictinoary[transactionKey] = {'pandaid':str(parametrlist['pandaid'])}
+   # if 'compsite' in parametrlist:
+   #     dictinoary[transactionKey]['compsite'] = str(parametrlist['compsite'])
+        #dictinoary[transactionKey] = {'compsite':str(parametrlist['compsite'])}
+
+    for key, value in parametrlist:
+        dictinoary[transactionKey][key] = str(value)
+
+    #print parametrlist
+    #print list(parametrlist)
+
+
+    #data = json.dumps(input, cls=DateEncoder)
+    #data = json.dumps(pandalist, cls=DateEncoder)
+    #setCacheEntry(request, str(transactionKey), data, lifetime)
+    #newdata = getCacheEntry(request, str(transactionKey))
+    #print(newdata)
+    return transactionKey
+def getData(requestid):
+
+    return 0
