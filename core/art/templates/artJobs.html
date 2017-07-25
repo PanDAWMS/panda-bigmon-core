@@ -4,7 +4,22 @@
 {% block extra_css %}
     <link rel="stylesheet" href="{% static "css/art/art-style.css" %}">
 {% endblock %}
+{% block subtitle %}ART nightly tests {{ viewParams.selection|safe }}{% endblock %}
 {% block body %}
+
+<a href="{% url 'art-mainPage' %}" class="button back-to-home"><i class="fi-home"></i> Back to main page</a>
+{% if requestParams.view and requestParams.view == 'branches' %}
+    <a href="{{ noviewurl }}view=packages" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to packages view</a>
+{% else %}
+    <a href="{{ noviewurl }}view=branches" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to branches view</a>
+{% endif %}
+    <br>
+
+{% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
+{% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
+{% if requestParams.ntag %}<b>Listed tests is for {{ requestParams.ntag|date:"d b Y" }}</b> <br>{% endif %}
+{% if requestParams.ntag_from %}<b>Listed tests is from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
+{% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 
 <div class="row">
   <div class="columns">
@@ -15,7 +30,7 @@
         <div class="accordion-art-content" data-tab-content >
           <ul class="accordion-art-nested" data-accordion data-allow-all-closed="true" data-multi-expand="true">
             {% for brname, tests in pack.items %}
-                <li class='accordion-art-nested-item' data-accordion-item>
+                <li class='accordion-art-nested-item is-active' data-accordion-item>
                   <a href="#" class="accordion-art-nested-title">{{ brname }}</a>
                   <div class="accordion-art-nested-content" data-tab-content >
                       <table class="no-border">

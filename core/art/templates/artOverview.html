@@ -6,6 +6,20 @@
 {% endblock %}
 {% block body %}
 
+<a href="{% url 'art-mainPage' %}" class="button back-to-home"><i class="fi-home"></i> Back to main page</a>
+{% if requestParams.view and requestParams.view == 'branches' %}
+    <a href="{{ noviewurl }}view=packages" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to packages view</a>
+{% else %}
+    <a href="{{ noviewurl }}view=branches" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to branches view</a>
+{% endif %}
+    <br>
+
+{% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
+{% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
+{% if requestParams.ntag %}<b>Listed tests is for {{ requestParams.ntag|date:"d b Y" }}</b> <br>{% endif %}
+{% if requestParams.ntag_from %}<b>Listed tests is from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
+{% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
+
 <div class="row">
   <div class="columns">
     <ul class="accordion-art" data-accordion data-allow-all-closed="true" data-multi-expand="true">
@@ -27,9 +41,7 @@
                         <div class="clickable">
                             <div class="finished">{{ files.finished }}</div>
                             <div class="failed">{{ files.failed }}</div>
-                            <div class="running">{{ files.running }}</div>
-                            <div class="unrecoverable">{{ files.unrecoverable }}</div>
-                            <a href=""></a>
+                            <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'pachages' %}?package={{ pname }}{% else %}?&branch={{ pname }}{% endif %}"></a>
                         </div>
                       </td>
                   {% endfor %}

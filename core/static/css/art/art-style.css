@@ -1,12 +1,13 @@
 .row {
     max-width: 100%;
+    margin-top: 1rem;
 }
 
 
 /* stats divs*/
 .clickable {
     margin: auto;
-    background-color: #fefefe;
+    background-color: transparent;
     width: 100px;
     height: 21px;
     position: relative;
@@ -138,10 +139,21 @@
   font-size: 14px;
   font-weight: bold;
 }
+.clickable .closed_job {
+  text-align: center;
+  vertical-align: middle;
+  height: 100%;
+  width: 100%;
+  display: inline-block;
+  background: #e6e6e6;
+  color: black;
+  font-size: 14px;
+  font-weight: bold;
+}
 .nodata {
     text-align: center;
     margin: auto;
-    background-color: #fefefe;
+    background-color: transparent;
     width: 100px;
     height: 21px;
     position: relative;
@@ -259,4 +271,17 @@
 
 .cell.header {
     background: lightsteelblue;
+}
+
+.back-to-home {
+  background: rgba(53,86,129, 0.8);
+  color: #fefefe !important;
+  font-size: 14px;
+}
+.back-to-home:hover, .back-to-home:focus {
+    background-color: rgba(53,86,129, 0.8);
+    color: #fefefe; }
+
+.back-to-home > i {
+  font-size: 20px;
 }

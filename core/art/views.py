@@ -25,7 +25,7 @@ from django.core.cache import cache
 from django.utils import encoding
 from django.conf import settings as djangosettings
 from django.db import connection, transaction
-from core.common.models import ARTTask, ARTTest, ProductionTask, ARTTasks, ARTTests
+from core.common.models import ARTTask, ARTTest, ProductionTask, ARTTasks
 from django.conf import settings as djangosettings
 from django.db.models.functions import Concat, Substr
 from django.db.models import CharField, Value as V, Sum
@@ -35,7 +35,7 @@ from core.settings.local import PRODSYS
 from core.settings.local import ES
 from django.template.defaulttags import register
 
-from core.views import initRequest
+from core.views import initRequest, extensibleURL, removeParam
 
 artdateformat = '%Y-%m-%d'
 
@@ -77,6 +77,11 @@ def setupView(request, querytype='task'):
 
     query['ntag_from'] = startdate.strftime(artdateformat)
     query['ntag_to'] = enddate.strftime(artdateformat)
+    if not 'ntag' in request.session['requestParams']:
+        request.session['requestParams']['ntag_from'] = startdate
+        request.session['requestParams']['ntag_to'] = enddate
+    else:
+        request.session['requestParams']['ntag'] = startdate
 
 
 
@@ -91,6 +96,11 @@ def setupView(request, querytype='task'):
         else:
             querystr += '(1=1)'
         query['strcondition'] = querystr
+    elif querytype == 'task':
+        if 'package' in request.session['requestParams']:
+            query['package'] = request.session['requestParams']['package']
+        if 'branch' in request.session['requestParams']:
+            query['branch'] = request.session['requestParams']['branch']
 
 
 
@@ -177,13 +187,9 @@ def artOverview(request):
                 if len(artpackagesdict[p['package']][p['ntag']]) > 1:
                     artpackagesdict[p['package']][p['ntag']]['finished'] += p['nfilesfinished']
                     artpackagesdict[p['package']][p['ntag']]['failed'] += p['nfilesfailed']
-                    # artpackagesdict[p['package']][p['ntag']]['running'] += p['nfilesonhold']
-                    # artpackagesdict[p['package']][p['ntag']]['unrecoverable'] += 0
                 else:
                     artpackagesdict[p['package']][p['ntag']]['finished'] = p['nfilesfinished']
                     artpackagesdict[p['package']][p['ntag']]['failed'] = p['nfilesfailed']
-                    # artpackagesdict[p['package']][p['ntag']]['running'] = p['nfilesonhold']
-                    # artpackagesdict[p['package']][p['ntag']]['unrecoverable'] = 0
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         packages = ARTTasks.objects.filter(**query).values('branch', 'ntag').annotate(
             nfilesfinished=Sum('nfilesfinished'), nfilesfailed=Sum('nfilesfailed'))
@@ -197,19 +203,17 @@ def artOverview(request):
                 if len(artpackagesdict[p['branch']][p['ntag']]) > 1:
                     artpackagesdict[p['branch']][p['ntag']]['finished'] += p['nfilesfinished']
                     artpackagesdict[p['branch']][p['ntag']]['failed'] += p['nfilesfailed']
-                    # artpackagesdict[p['branch']][p['ntag']]['running'] += p['nfilesonhold']
-                    # artpackagesdict[p['branch']][p['ntag']]['unrecoverable'] += 0
                 else:
                     artpackagesdict[p['branch']][p['ntag']]['finished'] = p['nfilesfinished']
                     artpackagesdict[p['branch']][p['ntag']]['failed'] = p['nfilesfailed']
-                    # artpackagesdict[p['branch']][p['ntag']]['running'] = p['nfilesonhold']
-                    # artpackagesdict[p['branch']][p['ntag']]['unrecoverable'] = 0
         
-
+    xurl = extensibleURL(request)
+    noviewurl = removeParam(xurl, 'view', mode='extensible')
 
     data = {
         'requestParams': request.session['requestParams'],
-        'artpackages': artpackagesdict
+        'artpackages': artpackagesdict,
+        'noviewurl': noviewurl
     }
     response = render_to_response('artOverview.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -218,40 +222,44 @@ def artOverview(request):
 
 def artTasks(request):
     valid, response = initRequest(request)
+    query = setupView(request, 'task')
     
-    
-    sqlquerystr = """select 
-                      ta.package,
-                      ta.branch,
-                      ta.task_id,
-                      ta.ntag,
-                      ta.nightly_tag,
-                      ds.nfilesfinished,
-                      ds.nfilesfailed,
-                      ds.nfilesonhold,
-                      ds.nfilesused,
-                      ds.nfilestobeused
-                      from (
-                        (select TASK_ID,
-                          (NIGHTLY_RELEASE_SHORT || '/' || PLATFORM || '/' || PROJECT) as branch , package, NIGHTLY_TAG,
-                          TO_DATE(SUBSTR(NIGHTLY_TAG, 0, INSTR(NIGHTLY_TAG, 'T')-1), 'YYYY-MM-DD') as NTAG, ART_ID  
-                         from ATLAS_DEFT.T_ART) ta
-                        left join 
-                        (select jeditaskid, nfilesfinished, nfilesfailed, nfilesonhold, nfilesused, nfilestobeused
-                          from ATLAS_PANDA.JEDI_DATASETS where type in ('output') ) ds
-                          on ta.TASK_ID = ds.jeditaskid
-                        ) 
-                        where ta.ntag > (sysdate - 7) 
-                        order by ntag DESC"""
+    # sqlquerystr = """select
+    #                   ta.package,
+    #                   ta.branch,
+    #                   ta.task_id,
+    #                   ta.ntag,
+    #                   ta.nightly_tag,
+    #                   ds.nfilesfinished,
+    #                   ds.nfilesfailed,
+    #                   ds.nfilesonhold,
+    #                   ds.nfilesused,
+    #                   ds.nfilestobeused
+    #                   from (
+    #                     (select TASK_ID,
+    #                       (NIGHTLY_RELEASE_SHORT || '/' || PLATFORM || '/' || PROJECT) as branch , package, NIGHTLY_TAG,
+    #                       TO_DATE(SUBSTR(NIGHTLY_TAG, 0, INSTR(NIGHTLY_TAG, 'T')-1), 'YYYY-MM-DD') as NTAG, ART_ID
+    #                      from ATLAS_DEFT.T_ART) ta
+    #                     left join
+    #                     (select jeditaskid, nfilesfinished, nfilesfailed, nfilesonhold, nfilesused, nfilestobeused
+    #                       from ATLAS_PANDA.JEDI_DATASETS where type in ('output') ) ds
+    #                       on ta.TASK_ID = ds.jeditaskid
+    #                     )
+    #                     where ta.ntag > (sysdate - 7)
+    #                     order by ntag DESC"""
+    #
+    # cur = connection.cursor()
+    # cur.execute(sqlquerystr)
+    # tasks = cur.fetchall()
+    # cur.close()
+    #
+    # artTaskNames = ['package', 'branch', 'task_id', 'ntag', 'nightly_tag', 'nfilesfinished', 'nfilesfailed', 'nfilesonhold', 'nfilesused', 'nfilestobeused']
+    # tasks = [dict(zip(artTaskNames, row)) for row in tasks]
 
-    cur = connection.cursor()
-    cur.execute(sqlquerystr)
-    tasks = cur.fetchall()
-    cur.close()
-
-    artTaskNames = ['package', 'branch', 'task_id', 'ntag', 'nightly_tag', 'nfilesfinished', 'nfilesfailed', 'nfilesonhold', 'nfilesused', 'nfilestobeused']
-    tasks = [dict(zip(artTaskNames, row)) for row in tasks]
+    tasks = ARTTasks.objects.filter(**query).values()
     ntagslist = list(sorted(set([x['ntag'] for x in tasks])))
+
+
 
     arttasksdict = {}
 
@@ -267,13 +275,9 @@ def artTasks(request):
                 if len(arttasksdict[task['package']][task['branch']][task['ntag']]) > 1:
                     arttasksdict[task['package']][task['branch']][task['ntag']]['finished'] += task['nfilesfinished']
                     arttasksdict[task['package']][task['branch']][task['ntag']]['failed'] += task['nfilesfailed']
-                    arttasksdict[task['package']][task['branch']][task['ntag']]['running'] += task['nfilesonhold']
-                    arttasksdict[task['package']][task['branch']][task['ntag']]['unrecoverable'] += 0
                 else:
                     arttasksdict[task['package']][task['branch']][task['ntag']]['finished'] = task['nfilesfinished']
                     arttasksdict[task['package']][task['branch']][task['ntag']]['failed'] = task['nfilesfailed']
-                    arttasksdict[task['package']][task['branch']][task['ntag']]['running'] = task['nfilesonhold']
-                    arttasksdict[task['package']][task['branch']][task['ntag']]['unrecoverable'] = 0
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for task in tasks:
             if task['branch'] not in arttasksdict.keys():
@@ -286,16 +290,16 @@ def artTasks(request):
                 if len(arttasksdict[task['branch']][task['package']][task['ntag']]) > 1:
                     arttasksdict[task['branch']][task['package']][task['ntag']]['finished'] += task['nfilesfinished']
                     arttasksdict[task['branch']][task['package']][task['ntag']]['failed'] += task['nfilesfailed']
-                    arttasksdict[task['branch']][task['package']][task['ntag']]['running'] += task['nfilesonhold']
-                    arttasksdict[task['branch']][task['package']][task['ntag']]['unrecoverable'] += 0
                 else:
                     arttasksdict[task['branch']][task['package']][task['ntag']]['finished'] = task['nfilesfinished']
                     arttasksdict[task['branch']][task['package']][task['ntag']]['failed'] = task['nfilesfailed']
-                    arttasksdict[task['branch']][task['package']][task['ntag']]['running'] = task['nfilesonhold']
-                    arttasksdict[task['branch']][task['package']][task['ntag']]['unrecoverable'] = 0
-        
+
+    xurl = extensibleURL(request)
+    noviewurl = removeParam(xurl, 'view', mode='extensible')
     data = {
-        'arttasks' : arttasksdict
+        'requestParams': request.session['requestParams'],
+        'arttasks' : arttasksdict,
+        'noviewurl': noviewurl
     }
 
 
@@ -349,10 +353,13 @@ def artJobs(request):
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag']]['jobstatus'] = job['jobstatus']
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag']]['origpandaid'] = job['origpandaid']
 
-
+    xurl = extensibleURL(request)
+    noviewurl = removeParam(xurl, 'view', mode='extensible')
 
     data = {
-        'artjobs': artjobsdict
+        'requestParams': request.session['requestParams'],
+        'artjobs': artjobsdict,
+        'noviewurl': noviewurl
     }
     response = render_to_response('artJobs.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)

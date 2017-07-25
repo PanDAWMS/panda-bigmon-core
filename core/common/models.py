@@ -2531,19 +2531,6 @@ class ARTTasks(models.Model):
         db_table = u'"ATLAS_PANDABIGMON"."ARTTasks"'
 
 
-class ARTTests(models.Model):
-    task_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='TASKID')
-    package = models.CharField(max_length=60, db_column='PACKAGE', null=False, blank=True)
-    branch = models.CharField(max_length=150, db_column='BRANCH', null=True)
-    ntag = models.DateTimeField(db_column='NTAG', null=True)
-    nightly_tag = models.CharField(max_length=20, db_column='NIGHTLY_TAG', null=True)
-    testname = models.CharField(max_length=150, db_column='TESTNAME', null=False)
-    status = models.CharField(max_length=60, db_column='STATUS', null=False)
-    pandaid = models.DecimalField(decimal_places=0, max_digits=12, db_column='ORIGPANDAID')
-    class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."ARTTests"'
-
-
 class MCPattern(models.Model):
     STEPS = ['Evgen',
              'Simul',
