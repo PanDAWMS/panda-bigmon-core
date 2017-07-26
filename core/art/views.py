@@ -40,6 +40,8 @@ from core.views import initRequest, extensibleURL, removeParam
 artdateformat = '%Y-%m-%d'
 
 def setupView(request, querytype='task'):
+    if not 'view' in request.session['requestParams']:
+        request.session['requestParams']['view'] = 'packages'
     query = {}
     if 'ntag_from' in request.session['requestParams']:
         startdatestr = request.session['requestParams']['ntag_from']
@@ -75,8 +77,7 @@ def setupView(request, querytype='task'):
     elif 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams'] and (enddate-startdate).days > 7:
         enddate = startdate + timedelta(days=7)
 
-    query['ntag_from'] = startdate.strftime(artdateformat)
-    query['ntag_to'] = enddate.strftime(artdateformat)
+
     if not 'ntag' in request.session['requestParams']:
         request.session['requestParams']['ntag_from'] = startdate
         request.session['requestParams']['ntag_to'] = enddate
@@ -96,11 +97,14 @@ def setupView(request, querytype='task'):
         else:
             querystr += '(1=1)'
         query['strcondition'] = querystr
+        query['ntag_from'] = startdate.strftime(artdateformat)
+        query['ntag_to'] = enddate.strftime(artdateformat)
     elif querytype == 'task':
         if 'package' in request.session['requestParams']:
             query['package'] = request.session['requestParams']['package']
         if 'branch' in request.session['requestParams']:
             query['branch'] = request.session['requestParams']['branch']
+        query['ntag__range'] = [startdate.strftime(artdateformat), enddate.strftime(artdateformat)]
 
 
 
@@ -133,7 +137,7 @@ def art(request):
 
 def artOverview(request):
     valid, response = initRequest(request)
-    query = {}
+    query = setupView(request, 'task')
 
     # sqlquerystr = """select
     #                       ta.package,
@@ -256,7 +260,7 @@ def artTasks(request):
     # artTaskNames = ['package', 'branch', 'task_id', 'ntag', 'nightly_tag', 'nfilesfinished', 'nfilesfailed', 'nfilesonhold', 'nfilesused', 'nfilestobeused']
     # tasks = [dict(zip(artTaskNames, row)) for row in tasks]
 
-    tasks = ARTTasks.objects.filter(**query).values()
+    tasks = ARTTasks.objects.filter(**query).values('package','branch','task_id', 'ntag', 'nfilesfinished', 'nfilesfailed')
     ntagslist = list(sorted(set([x['ntag'] for x in tasks])))
 
 

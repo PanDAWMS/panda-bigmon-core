@@ -2519,8 +2519,6 @@ class ARTTasks(models.Model):
     branch = models.CharField(max_length=150, db_column='BRANCH', null=True)
     ntag = models.DateTimeField(db_column='NTAG', null=True)
     nightly_tag = models.CharField(max_length=20, db_column='NIGHTLY_TAG', null=True)
-    art_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='ART_ID', primary_key=True)
-    sequence_tag = models.CharField(max_length=150, db_column='SEQUENCE_TAG', null=False)
     task_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='TASK_ID')
     nfilesfinished = models.DecimalField(decimal_places=0, max_digits=12, db_column='NFILESFINISHED')
     nfilesfailed = models.DecimalField(decimal_places=0, max_digits=12, db_column='NFILESFAILED')

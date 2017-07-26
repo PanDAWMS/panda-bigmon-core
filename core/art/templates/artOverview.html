@@ -41,7 +41,7 @@
                         <div class="clickable">
                             <div class="finished">{{ files.finished }}</div>
                             <div class="failed">{{ files.failed }}</div>
-                            <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'pachages' %}?package={{ pname }}{% else %}?&branch={{ pname }}{% endif %}"></a>
+                            <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}{% else %}?&branch={{ pname }}{% endif %}"></a>
                         </div>
                       </td>
                   {% endfor %}
