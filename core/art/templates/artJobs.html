@@ -39,7 +39,7 @@
                                 {% for test,tags in tests.items %}
                                   {% if forloop.first %}
                                       {% for ntname,status in tags.items %}
-                                        <th class="header">{{ ntname|date:"d b Y" }}</th>
+                                        <th class="header">{{ status.ntag_hf }}</th>
                                       {% endfor %}
                                   {% endif %}
                                 {% endfor %}

@@ -31,17 +31,22 @@
               <tr>
                   <th class="cell" ></th>
                   {% for tags,files in pack.items %}
-                        <th class="header">{{ tags|date:"d b Y" }}</th>
+                        <th class="header">{{ files.ntag_hf }}</th>
                   {% endfor %}
               </tr>
               <tr>
-                  <td class="cell">{% if view in requestParams and requestParams.view == 'packages' %}All branches{% else %}All packages{% endif %}</td>
+                  <td class="cell">
+                      {% if requestParams.view and requestParams.view == 'packages' %}
+                        <a class="link-in-table" href="{%  url "artTasks" %}?package={{ pname }}&ntag_from={{ requestParams.ntag_from|date:"Y-m-d" }}&ntag_to={{ requestParams.ntag_to|date:"Y-m-d" }}&view={{ requestParams.view }}">All branches</a>
+                      {% else %}
+                        <a class="link-in-table" href="{%  url "artTasks" %}?branch={{ pname }}&ntag_from={{ requestParams.ntag_from|date:"Y-m-d" }}&ntag_to={{ requestParams.ntag_to|date:"Y-m-d" }}&view={{ requestParams.view }}">All packages</a>
+                      {% endif %}</td>
                   {% for tags,files in pack.items %}
                       <td class="cell">
                         <div class="clickable">
                             <div class="finished">{{ files.finished }}</div>
                             <div class="failed">{{ files.failed }}</div>
-                            <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}{% else %}?&branch={{ pname }}{% endif %}"></a>
+                            <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}{% else %}?branch={{ pname }}{% endif %}&ntag={{ tags|date:"Y-m-d" }}"></a>
                         </div>
                       </td>
                   {% endfor %}

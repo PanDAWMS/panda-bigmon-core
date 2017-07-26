@@ -33,7 +33,7 @@
                   {% for brname,tags in pack.items %}
                       {% if forloop.first %}
                       {% for ntname,files in tags.items %}
-                        <th class="header">{{ ntname|date:"d b Y" }}</th>
+                        <th class="header">{{ files.ntag_hf }}</th>
                       {% endfor %}
                       {% endif %}
                   {% endfor %}
@@ -43,11 +43,17 @@
                       <td class="cell">{{ brname }}</td>
                       {% for ntname,files in tags.items %}
                           <td class="cell">
-                            <div class="clickable">
-                                <div class="finished">{{ files.finished }}</div>
-                                <div class="failed">{{ files.failed }}</div>
-                                <a href="{% url 'artJobs' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}&branch={{ brname }}{% else %}?package={{ brname }}&branch={{ pname }}{% endif %}"></a>
-                            </div>
+                            {% if 'finished' in files or 'failed' in files %}
+                                <div class="clickable">
+                                    <div class="finished">{{ files.finished }}</div>
+                                    <div class="failed">{{ files.failed }}</div>
+                                    <a href="{% url 'artJobs' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}&branch={{ brname }}{% else %}?package={{ brname }}&branch={{ pname }}{% endif %}&ntag={{ ntname|date:"Y-m-d" }}&view={{ requestParams.view }}"></a>
+                                </div>
+                            {% else %}
+                                <div class="nodata">
+                                    ---
+                                </div>
+                            {% endif %}
                           </td>
                       {% endfor %}
                   </tr>

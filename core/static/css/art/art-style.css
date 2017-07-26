@@ -285,3 +285,10 @@
 .back-to-home > i {
   font-size: 20px;
 }
+
+.link-in-table {
+    color: #0a0a0a !important;
+}
+.link-in-table:hover, .link-in-table:focus {
+    text-decoration: underline;
+}
