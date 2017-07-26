@@ -321,7 +321,8 @@ class MC16aCPReport:
                 if summaryRow[1] == 'done' or summaryRow[1] == 'finished':
                     orderedsummary[summaryRow[2]]['done+finished'] += summaryRow[0]
                 else:
-                    orderedsummary[summaryRow[2]][summaryRow[1]] += summaryRow[0]
+                    if summaryRow[1] in self.taskstatelistDEFT:
+                        orderedsummary[summaryRow[2]][summaryRow[1]] += summaryRow[0]
         return orderedsummary
 
 

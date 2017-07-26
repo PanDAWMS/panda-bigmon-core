@@ -93,8 +93,8 @@ DDM
 </td>
 
 <td>
-    {% if nickName != '' or nickName %}
-    <a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{nickName}}/full/">Agis link</a>
+    {% if site.nickname and site.nickname != '' %}
+    <a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{site.nickname}}/full/">Agis link</a>
     {% else %}
     <a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{site.siteid}}/full/">Agis link</a>
     {% endif %}
