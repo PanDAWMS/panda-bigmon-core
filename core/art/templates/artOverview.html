@@ -4,6 +4,7 @@
 {% block extra_css %}
     <link rel="stylesheet" href="{% static "css/art/art-style.css" %}">
 {% endblock %}
+{% block subtitle %}Overview of ART nightly tests {{ viewParams.selection|safe }}{% endblock %}
 {% block body %}
 
 <a href="{% url 'art-mainPage' %}" class="button back-to-home"><i class="fi-home"></i> Back to main page</a>
