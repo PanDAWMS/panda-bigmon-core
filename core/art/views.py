@@ -98,6 +98,7 @@ def art(request):
     ntags = ARTTask.objects.values('nightly_tag').annotate(nightly_tag_date=Substr('nightly_tag', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
 
     data = {
+        'viewParams': request.session['viewParams'],
         'packages':[p['package'] for p in packages],
         'branches':[b['branch'] for b in branches],
         'ntags':[t['nightly_tag_date'] for t in ntags]
@@ -168,6 +169,7 @@ def artOverview(request):
 
     data = {
         'requestParams': request.session['requestParams'],
+        'viewParams': request.session['viewParams'],
         'artpackages': artpackagesdict,
         'noviewurl': noviewurl
     }
@@ -233,6 +235,7 @@ def artTasks(request):
     noviewurl = removeParam(xurl, 'view', mode='extensible')
     data = {
         'requestParams': request.session['requestParams'],
+        'viewParams': request.session['viewParams'],
         'arttasks' : arttasksdict,
         'noviewurl': noviewurl
     }
@@ -304,6 +307,7 @@ def artJobs(request):
 
     data = {
         'requestParams': request.session['requestParams'],
+        'viewParams': request.session['viewParams'],
         'artjobs': artjobsdict,
         'noviewurl': noviewurl
     }
