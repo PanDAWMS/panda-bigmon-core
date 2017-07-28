@@ -2498,7 +2498,7 @@ def jobListPDiv(request, mode=None, param=None):
     return response
 
 
-def getCacheEntry(request, viewType, skipCentralRefresh = False):
+def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False):
     is_json = False
 
     # We do this check to always rebuild cache for the page when it called from the crawler
@@ -2511,19 +2511,25 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False):
                 'json' in request.GET)):
         is_json = True
     key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
-    path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-    cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+    if isData==False:
+        path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+    else:
+        cache_key = '%s' % (key_prefix)
     return cache.get(cache_key, None)
 
-def setCacheEntry(request, viewType, data, timeout):
+def setCacheEntry(request, viewType, data, timeout, isData = False):
     is_json = False
     request._cache_update_cache = False
     if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
                 'json' in request.GET)):
         is_json = True
     key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
-    path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-    cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+    if isData==False:
+        path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+    else:
+        cache_key = '%s' % (key_prefix)
     cache.set(cache_key, data, timeout)
 
 
@@ -2574,6 +2580,9 @@ def jobList(request, mode=None, param=None):
         endSelfMonitor(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
+    if 'reqtoken' in request.session['requestParams']:
+        data = getCacheData(request, request.session['requestParams']['reqtoken'])
 
     if not valid: return response
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
@@ -6073,9 +6082,9 @@ def dashboard(request, view='production'):
         rawsummary = cur.fetchall()
 
         mObjectStores = {}
+        mObjectStoresTk = {}
         if len(rawsummary) > 0:
             for row in rawsummary:
-
                 id = -1
                 try:
                     id = int(row[3])
@@ -6089,19 +6098,29 @@ def dashboard(request, view='production'):
                 compsite = row[2]
                 status = row[0]
                 count = row[1]
-                tk = setData(request, 60*80,pandaid = row[4],compsite = row[2])
+                tk = setCacheData(request, 60*80,pandaid = row[4],compsite = row[2])
                 if osName in mObjectStores:
                     if not compsite in mObjectStores[osName]:
                         mObjectStores[osName][compsite] = {}
                         for state in sitestatelist + ["closed"]:
                             mObjectStores[osName][compsite][state] = {'count': 0, 'tk': 0}
-                            mObjectStores[osName][compsite][status] = {'count': count, 'tk': tk}
+                    mObjectStores[osName][compsite][status] = {'count': count, 'tk': tk}
+                    if not status in mObjectStoresTk[osName]:
+                        mObjectStoresTk[osName][status] = []
+                    mObjectStoresTk[osName][status].append(tk)
                 else:
                     mObjectStores[osName] = {}
                     mObjectStores[osName][compsite] = {}
+                    mObjectStoresTk[osName]={}
+                    mObjectStoresTk[osName][status]=[]
                     for state in sitestatelist + ["closed"]:
                         mObjectStores[osName][compsite][state] = {'count': 0, 'tk': 0}
-                        mObjectStores[osName][compsite][status] = {'count': count, 'tk': tk}
+                    mObjectStores[osName][compsite][status] = {'count': count, 'tk': tk}
+                    mObjectStoresTk[osName][status].append(tk)
+        ### Getting tk's for parents ####
+        for osName in mObjectStoresTk:
+            for state in mObjectStoresTk[osName]:
+                mObjectStoresTk[osName][state] = setCacheData(request, 60*80,childtk=','.join(mObjectStoresTk[osName][state]))
 
         mObjectStoresSummary = {}
         for osName in mObjectStores:
@@ -6110,10 +6129,16 @@ def dashboard(request, view='production'):
                 for state in mObjectStores[osName][site]:
                     if state in mObjectStoresSummary[osName]:
                         mObjectStoresSummary[osName][state]['count'] += mObjectStores[osName][site][state]['count']
-                    else:
-                        mObjectStoresSummary[osName][state] = {"count": mObjectStores[osName][site][state]['count'],
-                                                               "tk": mObjectStores[osName][site][state]['tk']}
+                        mObjectStoresSummary[osName][state]['tk'] = 0
 
+                    else:
+                        mObjectStoresSummary[osName][state] = {}
+                        mObjectStoresSummary[osName][state]['count'] = mObjectStores[osName][site][state]['count']
+                        mObjectStoresSummary[osName][state]['tk'] = 0
+        for osName in mObjectStoresSummary:
+            for state in mObjectStoresSummary[osName]:
+                if (mObjectStoresSummary[osName][state]['count'] > 0):
+                    mObjectStoresSummary[osName][state]['tk'] = mObjectStoresTk[osName][state]
         data = {
             'mObjectStoresSummary': mObjectStoresSummary,
             'mObjectStores': mObjectStores,
@@ -11393,34 +11418,49 @@ def handler500(request):
                                   context_instance=RequestContext(request))
     response.status_code = 500
     return response
-
+#### URL Section ####
 import uuid
+from itertools import chain
+from collections import defaultdict
 
-def setData(request,lifetime=60*30,**parametrlist):
+def setCacheData(request,lifetime=60*30,**parametrlist):
     #transactionKey = random.getrandbits(128)
     transactionKey = uuid.uuid4().hex
     dictinoary = {}
     dictinoary[transactionKey] = {}
-    #if 'pandaid' in parametrlist:
-    #    dictinoary[transactionKey]['pandaid']=str(parametrlist['pandaid'])
-        #dictinoary[transactionKey] = {'pandaid':str(parametrlist['pandaid'])}
-   # if 'compsite' in parametrlist:
-   #     dictinoary[transactionKey]['compsite'] = str(parametrlist['compsite'])
-        #dictinoary[transactionKey] = {'compsite':str(parametrlist['compsite'])}
+    keys = parametrlist.keys()
+    for key in keys:
+        dictinoary[transactionKey][key] = str(parametrlist[key])
+    data = json.dumps(dictinoary, cls=DateEncoder)
+    setCacheEntry(request, str(transactionKey), data, lifetime,isData=True)
 
-    for key, value in parametrlist:
-        dictinoary[transactionKey][key] = str(value)
-
-    #print parametrlist
-    #print list(parametrlist)
-
-
-    #data = json.dumps(input, cls=DateEncoder)
-    #data = json.dumps(pandalist, cls=DateEncoder)
-    #setCacheEntry(request, str(transactionKey), data, lifetime)
-    #newdata = getCacheEntry(request, str(transactionKey))
-    #print(newdata)
     return transactionKey
-def getData(requestid):
 
-    return 0
+def getCacheData(request,requestid):
+    data = getCacheEntry(request,str(requestid),isData=True)
+    if data is not None:
+        data = json.loads(data)
+        if 'childtk'in data[requestid]:
+            tklist = defaultdict(list)
+            data = str(data[requestid]['childtk']).split(',')
+            for child in data:
+                ch = getCacheEntry(request,str(child),isData=True)
+                if ch is not None:
+                    ch = json.loads(ch)
+                    for k, v in ch[child].items():
+                        tklist[k].append(v)
+            data = {}
+            for k,v in tklist.items():
+                data[k] =','.join(v)
+        else: data = data[requestid]
+        return data
+        #data = json.loads(data)
+       #data['request'] = request
+    #return data[requestid]
+@register.filter
+def get_count(dict, key):
+    return dict[key]['count']
+@register.filter
+def get_tk(dict, key):
+    return dict[key]['tk']
+############################
