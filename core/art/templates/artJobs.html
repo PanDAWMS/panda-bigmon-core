@@ -46,13 +46,16 @@
                           </tr>
                           {% for test,tags in tests.items %}
                               <tr>
-                              <td class="cell">{{ test }}</td>
+                              <td class="cell-left">{{ test }}</td>
                               {% for ntname,job in tags.items  %}
                                   <td class="cell">
                                     {% if job.jobstatus %}
-                                        <div class="clickable">
-                                            <div class="{{ job.jobstatus }}_job">{{ job.jobstatus }}</div>
-                                            <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
+                                        <div class="with-link-to-logs">
+                                            <div class="clickable">
+                                                <div class="{{ job.jobstatus }}_job">{{ job.jobstatus }}</div>
+                                                <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
+                                            </div>
+{#                                        <a  class="to-logs" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link"></i></a>#}
                                         </div>
                                     {% else %}
                                         <div class="nodata">

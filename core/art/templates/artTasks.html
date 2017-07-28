@@ -41,7 +41,7 @@
               </tr>
               {% for brname,tags in pack.items %}
                   <tr>
-                      <td class="cell">{{ brname }}</td>
+                      <td class="cell-left">{{ brname }}</td>
                       {% for ntname,files in tags.items %}
                           <td class="cell">
                             {% if 'finished' in files or 'failed' in files %}
