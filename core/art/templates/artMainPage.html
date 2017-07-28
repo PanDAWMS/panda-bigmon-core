@@ -10,7 +10,7 @@
 
 
 <div class="row">
-  <div class="large-2 columns">
+  <div class="large-3 columns">
       <fieldset class="fieldset">
           <legend>Select package</legend>
           <ul class="no-bullet">
@@ -52,7 +52,7 @@
         </ul>
       </fieldset>
   </div>
-  <div class="large-2 columns">
+  <div class="large-1 columns">
     <fieldset class="fieldset">
           <legend>Search</legend>
           <a onclick="searchResults()" class="button">Show me results!</a>
@@ -73,6 +73,9 @@ function searchResults() {
     switch(viewStr) {
         case "overview": {
             query = '{% url 'artOverview' %}';
+            if ((packageStr.length>1) && (branchStr.length>1)) {
+                query = '{% url 'artTasks' %}';
+            }
             break;}
         case "tasks":{
             query = '{% url 'artTasks' %}';

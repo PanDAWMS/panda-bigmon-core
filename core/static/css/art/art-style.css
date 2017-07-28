@@ -4,12 +4,20 @@
 }
 
 
-/* stats divs*/
-.clickable {
+.with-link-to-logs {
     margin: auto;
     background-color: transparent;
     width: 100px;
     height: 21px;
+    display: inline-flex;
+}
+
+/* stats divs*/
+.clickable {
+    margin: auto;
+    background-color: transparent;
+    width: 90px;
+    height: 100%;
     position: relative;
     font-size: 0;
 }
@@ -262,6 +270,12 @@
 
 .no-border .cell {
     border: none;
+    text-align: center;
+}
+
+.no-border .cell-left {
+    border: none;
+    text-align: left;
 }
 
 .no-border .header {
@@ -291,4 +305,10 @@
 }
 .link-in-table:hover, .link-in-table:focus {
     text-decoration: underline;
+}
+
+.to-logs {
+    width: 10px;
+    height: 100%;
+    padding-left: 2px;
 }

@@ -825,7 +825,7 @@ pre {
   margin-right: 0;
   margin-left: 0; }
 
-@media print, screen and (min-width: 40em) {
+@media print, screen and (min-width: 50em) {
   .medium-1 {
     width: 8.33333%; }
   .medium-push-1 {
@@ -1038,7 +1038,7 @@ pre {
     margin-right: 0;
     margin-left: 0; } }
 
-@media print, screen and (min-width: 64em) {
+@media print, screen and (min-width: 75em) {
   .large-1 {
     width: 8.33333%; }
   .large-push-1 {
