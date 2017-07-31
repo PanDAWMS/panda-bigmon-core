@@ -708,6 +708,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     else:
                         if (param not in wildSearchFields):
                             query[param] = request.session['requestParams'][param]
+        elif param == 'reqtoken':
+                data = getCacheData(request, request.session['requestParams']['reqtoken'])
+                if 'pandaid' in data:
+                    pid = data['pandaid']
+                    if pid.find(',') >= 0:
+                        pidl = pid.split(',')
+                        query['pandaid__in'] = pidl
+                    else:
+                        query['pandaid'] = int(pid)
+                    #break
         else:
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
@@ -2580,9 +2590,6 @@ def jobList(request, mode=None, param=None):
         endSelfMonitor(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-
-    if 'reqtoken' in request.session['requestParams']:
-        data = getCacheData(request, request.session['requestParams']['reqtoken'])
 
     if not valid: return response
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
@@ -11443,15 +11450,17 @@ def getCacheData(request,requestid):
         if 'childtk'in data[requestid]:
             tklist = defaultdict(list)
             data = str(data[requestid]['childtk']).split(',')
-            for child in data:
-                ch = getCacheEntry(request,str(child),isData=True)
-                if ch is not None:
-                    ch = json.loads(ch)
-                    for k, v in ch[child].items():
-                        tklist[k].append(v)
-            data = {}
-            for k,v in tklist.items():
-                data[k] =','.join(v)
+            if data is not None:
+                for child in data:
+                    ch = getCacheEntry(request,str(child),isData=True)
+                    if ch is not None:
+                        ch = json.loads(ch)
+                        ### merge data
+                        for k, v in ch[child].items():
+                            tklist[k].append(v)
+                data = {}
+                for k,v in tklist.items():
+                    data[k] =','.join(v)
         else: data = data[requestid]
         return data
         #data = json.loads(data)
