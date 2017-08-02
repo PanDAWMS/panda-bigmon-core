@@ -6181,7 +6181,7 @@ def dashboard(request, view='production'):
 
         request.session['max_age_minutes'] = 6
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-            'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])) or ('keephtml' in request.session['requestParams']):
             xurl = extensibleURL(request)
             nosorturl = removeParam(xurl, 'sortby', mode='extensible')
             del request.session['TFIRST']
