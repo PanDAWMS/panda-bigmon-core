@@ -1,0 +1,19 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+
+{% block page_title %} {{ viewParams.MON_VO }} Titan Performance Report {% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">Titan Performance Report</a>{% endblock %}
+{% block subtitle %}PanDA {{view}} {{ requestParams.mode }}
+{% endblock %}
+{% block body %}
+    <h1>Report of weekly Titan processing</h1>
+    <h2>Period of: {{ datefrom }} to {{ dateto }}</h2>
+    <table width=200>
+        <tr><th>Parameter</th><th>Value</th></tr>
+        <tr><td>Number of finished events</td><td>{{ countfinishev|intcomma }}</td></tr>
+        <tr><td>Number of successful jobs</td><td>{{ countfinishedj|intcomma }}</td></tr>
+        <tr><td>Number of failed jobs</td><td>{{ countfailedj|intcomma }}</td></tr>
+        <tr><td>Failure rate</td><td>{{ failrate }} %</td></tr>
+    </table>
+
+{% endblock %}

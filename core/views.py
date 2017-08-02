@@ -88,7 +88,7 @@ errorStages = {}
 
 from django.template.defaulttags import register
 from reports import RunningMCProdTasks
-from reports import MC16aCPReport, ObsoletedTasksReport
+from reports import MC16aCPReport, ObsoletedTasksReport, TitanProgressReport
 from decimal import *
 from collections import OrderedDict
 
@@ -7031,6 +7031,12 @@ def report(request):
 
     if 'requestParams' in request.session and 'obstasks' in request.session['requestParams']:
         reportGen = ObsoletedTasksReport.ObsoletedTasksReport()
+        response = reportGen.prepareReport(request)
+        endSelfMonitor(request)
+        return response
+
+    if 'requestParams' in request.session and 'titanreport' in request.session['requestParams']:
+        reportGen = TitanProgressReport.TitanProgressReport()
         response = reportGen.prepareReport(request)
         endSelfMonitor(request)
         return response
