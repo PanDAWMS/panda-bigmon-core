@@ -710,14 +710,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query[param] = request.session['requestParams'][param]
         elif param == 'reqtoken':
                 data = getCacheData(request, request.session['requestParams']['reqtoken'])
-                if 'pandaid' in data:
-                    pid = data['pandaid']
-                    if pid.find(',') >= 0:
-                        pidl = pid.split(',')
-                        query['pandaid__in'] = pidl
-                    else:
-                        query['pandaid'] = int(pid)
-                    #break
+                if data is not None:
+                    if 'pandaid' in data:
+                        pid = data['pandaid']
+                        if pid.find(',') >= 0:
+                            pidl = pid.split(',')
+                            query['pandaid__in'] = pidl
+                        else:
+                            query['pandaid'] = int(pid)
+                else: return 'reqtoken', None, None
+
         else:
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
@@ -2606,7 +2608,8 @@ def jobList(request, mode=None, param=None):
     if ('noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs'] == '1'):
         noarchjobs = True
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
-
+    if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
+        return render_to_response('message.html', {'desc':'Request token not found or data is outdated. Please reload the original page.'}, content_type='text/html')
     if 'batchid' in request.session['requestParams']:
         query['batchid'] = request.session['requestParams']['batchid']
     jobs = []
@@ -6105,7 +6108,7 @@ def dashboard(request, view='production'):
                 compsite = row[2]
                 status = row[0]
                 count = row[1]
-                tk = setCacheData(request, 60*80,pandaid = row[4],compsite = row[2])
+                tk = setCacheData(request, pandaid = row[4],compsite = row[2])
                 if osName in mObjectStores:
                     if not compsite in mObjectStores[osName]:
                         mObjectStores[osName][compsite] = {}
@@ -6127,7 +6130,7 @@ def dashboard(request, view='production'):
         ### Getting tk's for parents ####
         for osName in mObjectStoresTk:
             for state in mObjectStoresTk[osName]:
-                mObjectStoresTk[osName][state] = setCacheData(request, 60*80,childtk=','.join(mObjectStoresTk[osName][state]))
+                mObjectStoresTk[osName][state] = setCacheData(request, childtk=','.join(mObjectStoresTk[osName][state]))
 
         mObjectStoresSummary = {}
         for osName in mObjectStores:
@@ -11430,7 +11433,7 @@ import uuid
 from itertools import chain
 from collections import defaultdict
 
-def setCacheData(request,lifetime=60*30,**parametrlist):
+def setCacheData(request,lifetime=60*120,**parametrlist):
     #transactionKey = random.getrandbits(128)
     transactionKey = uuid.uuid4().hex
     dictinoary = {}
@@ -11463,6 +11466,8 @@ def getCacheData(request,requestid):
                     data[k] =','.join(v)
         else: data = data[requestid]
         return data
+    else:
+        return None
         #data = json.loads(data)
        #data['request'] = request
     #return data[requestid]
