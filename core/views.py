@@ -2608,8 +2608,10 @@ def jobList(request, mode=None, param=None):
     if ('noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs'] == '1'):
         noarchjobs = True
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
+    ###TODO Rework it?
     if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
-        return render_to_response('message.html', {'desc':'Request token not found or data is outdated. Please reload the original page.'}, content_type='text/html')
+        return render_to_response('message.html', {'desc':'Request token is not found or data is outdated. Please reload the original page.'}, content_type='text/html')
+    ####
     if 'batchid' in request.session['requestParams']:
         query['batchid'] = request.session['requestParams']['batchid']
     jobs = []
@@ -11420,15 +11422,6 @@ def image(request):
     else:
         return redirect('/static/images/error_z0my4n.png')
 
-def message(request):
-    valid,response = initRequest(request)
-    data = {
-        'request': request,
-        'viewParams': request.session['viewParams'],
-        'built': datetime.now().strftime("%H:%M:%S"),
-    }
-    return render_to_response('message.html', data, content_type='text/html')
-
 def handler500(request):
     response = render_to_response('500.html', {},
                                   context_instance=RequestContext(request))
@@ -11474,9 +11467,7 @@ def getCacheData(request,requestid):
         return data
     else:
         return None
-        #data = json.loads(data)
-       #data['request'] = request
-    #return data[requestid]
+
 @register.filter
 def get_count(dict, key):
     return dict[key]['count']
