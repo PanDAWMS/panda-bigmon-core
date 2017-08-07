@@ -11475,3 +11475,36 @@ def get_count(dict, key):
 def get_tk(dict, key):
     return dict[key]['tk']
 ############################
+
+def getBadEventsForTask(request):
+
+    if 'jeditaskid' in request.GET:
+        jeditaskid = int(request.GET['jeditaskid'])
+    else:
+        return HttpResponse("Not jeditaskid supplied", content_type='text/html')
+
+    global errorFields, errorCodes, errorStages
+    if len(errorFields) == 0:
+        codes = ErrorCodes.ErrorCodes()
+        errorFields, errorCodes, errorStages = codes.getErrorCodes()
+
+    data = []
+    cursor = connection.cursor()
+    plsql = """select DATASETID, ERROR_CODE, RTRIM(XMLAGG(XMLELEMENT(E,DEF_MIN_EVENTID,',').EXTRACT('//text()') 
+            ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb, count(*) from 
+            atlas_panda.jedi_events where jeditaskid=%d and attemptnr = 1 group by DATASETID, ERROR_CODE """ % jeditaskid
+    cursor.execute(plsql)
+    evtable = cursor.fetchall()
+
+    for row in evtable:
+        dataitem = {}
+        dataitem['DATASETID'] = row[0]
+        dataitem['ERROR_CODE'] = (errorCodes['piloterrorcode'][row[1]] + " (" +str(row[1])+ ")") if row[1] in errorCodes['piloterrorcode'] else row[1]
+
+        dataitem['EVENTS'] = list(set(str(row[2].read()).split(','))) if not row[2] is None else None
+        dataitem['COUNT'] = row[3]
+        data.append(dataitem)
+    cursor.close()
+    return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+
+

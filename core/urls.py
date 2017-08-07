@@ -68,9 +68,8 @@ urlpatterns = [
     url(r'^preprocess/$', coremon_views.preProcess, name='preprocess'),
     url(r'^g4exceptions/$', coremon_views.g4exceptions, name='g4exceptions'),
     url(r'^errorslist/$', coremon_views.summaryErrorsList, name='summaryErrorsList'),
-
     url(r'^worldjobs/$', coremon_views.worldjobs, name='worldjobs'),
-
+    url(r'^getbadeventsforfask/$', coremon_views.getBadEventsForTask, name='getbadeventsforfask'),
 
 #    url(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
 #    url(r'^worldjobs/production/$', coremon_views.dashWorldProduction, name='dashWorldProduction'),
