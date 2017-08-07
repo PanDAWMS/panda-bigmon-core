@@ -27,10 +27,10 @@ class TitanProgressReport:
         sqlRequestTemplate = """SELECT SUM(CASE WHEN JOBSTATUS='finished' THEN NEVENTS ELSE 0 END) as countfinishev, 
                            SUM(CASE WHEN JOBSTATUS='finished' THEN 1 ELSE 0 END) as countfinishedj,
                            SUM(CASE WHEN JOBSTATUS='failed' THEN 1 ELSE 0 END) as countfailedj,
-                           next_day(trunc(sysdate), 'MONDAY') - 14 datefrom,
-                           next_day(trunc(sysdate), 'MONDAY') - 8 dateto
+                           TRUNC(SYSDATE)-7 datefrom,
+                           TRUNC(SYSDATE) dateto
                            FROM %s WHERE computingsite='ORNL_Titan_MCORE' AND 
-                      ENDTIME >= next_day(trunc(sysdate), 'MONDAY') - 14 and ENDTIME < next_day(trunc(sysdate), 'MONDAY') - 7""";
+                      ENDTIME >= TRUNC(SYSDATE)-7 and ENDTIME < TRUNC(SYSDATE)""";
 
 
         conditions = ["ATLAS_PANDAARCH.JOBSARCHIVED PARTITION (%s)" % partition['COLUMN_VALUE'] for partition in precs]
