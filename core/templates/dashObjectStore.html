@@ -34,7 +34,7 @@
         <tr>
             <td><a href="#ostore_{{ ostore }}">{{ ostore }}</a></td>
             {%  for jobstatus in statelist %}
-                    <td  {% if osval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %} >{{ osval|get_item:jobstatus }}</td>
+                       <td  {% if osval|get_count:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %} >{% if osval|get_count:jobstatus  > 0 %}<a href="{% url 'jobList'  %}?reqtoken={{ osval|get_tk:jobstatus}}">{{ osval|get_count:jobstatus }}</a> {% else %}{{ osval|get_count:jobstatus  }}{% endif %}</td>
             {% endfor %}
         </tr>
     {% endif %}
@@ -71,7 +71,9 @@
         <tr>
             <td><a href="{% url 'siteInfo' %}{{ computingsite }}/">{{ computingsite }}</a></td>
             {%  for jobstatus in statelist %}
-                <td  {% if computingsiteval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}>{{ computingsiteval|get_item:jobstatus }}</td>
+                <td  {% if  computingsiteval|get_count:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}>
+                    {% if computingsiteval|get_count:jobstatus  > 0 %}<a href="{% url 'jobList'  %}?reqtoken={{ computingsiteval|get_tk:jobstatus}}">{{ computingsiteval|get_count:jobstatus }}</a> {% else %}{{ computingsiteval|get_count:jobstatus  }}{% endif %}
+                </td>
             {% endfor %}
         </tr>
     {% endfor %}
