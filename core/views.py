@@ -708,6 +708,18 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     else:
                         if (param not in wildSearchFields):
                             query[param] = request.session['requestParams'][param]
+        elif param == 'reqtoken':
+                data = getCacheData(request, request.session['requestParams']['reqtoken'])
+                if data is not None:
+                    if 'pandaid' in data:
+                        pid = data['pandaid']
+                        if pid.find(',') >= 0:
+                            pidl = pid.split(',')
+                            query['pandaid__in'] = pidl
+                        else:
+                            query['pandaid'] = int(pid)
+                else: return 'reqtoken', None, None
+
         else:
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
@@ -2498,7 +2510,7 @@ def jobListPDiv(request, mode=None, param=None):
     return response
 
 
-def getCacheEntry(request, viewType, skipCentralRefresh = False):
+def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False):
     is_json = False
 
     # We do this check to always rebuild cache for the page when it called from the crawler
@@ -2511,19 +2523,25 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False):
                 'json' in request.GET)):
         is_json = True
     key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
-    path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-    cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+    if isData==False:
+        path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+    else:
+        cache_key = '%s' % (key_prefix)
     return cache.get(cache_key, None)
 
-def setCacheEntry(request, viewType, data, timeout):
+def setCacheEntry(request, viewType, data, timeout, isData = False):
     is_json = False
     request._cache_update_cache = False
     if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
                 'json' in request.GET)):
         is_json = True
     key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
-    path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-    cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+    if isData==False:
+        path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+    else:
+        cache_key = '%s' % (key_prefix)
     cache.set(cache_key, data, timeout)
 
 
@@ -2590,7 +2608,10 @@ def jobList(request, mode=None, param=None):
     if ('noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs'] == '1'):
         noarchjobs = True
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
-
+    ###TODO Rework it?
+    if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
+        return render_to_response('message.html', {'desc':'Request token is not found or data is outdated. Please reload the original page.'}, content_type='text/html')
+    ####
     if 'batchid' in request.session['requestParams']:
         query['batchid'] = request.session['requestParams']['batchid']
     jobs = []
@@ -6058,7 +6079,7 @@ def dashboard(request, view='production'):
             getObjectStoresNames()
 
         sqlRequest = """
-        SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE FROM (
+        SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE,RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST FROM (
         SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, CASE WHEN t2.OBJSTORE_ID > 0 THEN TO_CHAR(t2.OBJSTORE_ID) ELSE t3.destinationse END AS OBJSE  
         FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 
         LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID = t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0)
@@ -6073,9 +6094,9 @@ def dashboard(request, view='production'):
         rawsummary = cur.fetchall()
 
         mObjectStores = {}
+        mObjectStoresTk = {}
         if len(rawsummary) > 0:
             for row in rawsummary:
-
                 id = -1
                 try:
                     id = int(row[3])
@@ -6089,19 +6110,29 @@ def dashboard(request, view='production'):
                 compsite = row[2]
                 status = row[0]
                 count = row[1]
-
+                tk = setCacheData(request, pandaid = row[4],compsite = row[2])
                 if osName in mObjectStores:
                     if not compsite in mObjectStores[osName]:
                         mObjectStores[osName][compsite] = {}
                         for state in sitestatelist + ["closed"]:
-                            mObjectStores[osName][compsite][state] = 0
-                    mObjectStores[osName][compsite][status] = count
+                            mObjectStores[osName][compsite][state] = {'count': 0, 'tk': 0}
+                    mObjectStores[osName][compsite][status] = {'count': count, 'tk': tk}
+                    if not status in mObjectStoresTk[osName]:
+                        mObjectStoresTk[osName][status] = []
+                    mObjectStoresTk[osName][status].append(tk)
                 else:
                     mObjectStores[osName] = {}
                     mObjectStores[osName][compsite] = {}
+                    mObjectStoresTk[osName]={}
+                    mObjectStoresTk[osName][status]=[]
                     for state in sitestatelist + ["closed"]:
-                        mObjectStores[osName][compsite][state] = 0
-                    mObjectStores[osName][compsite][status] = count
+                        mObjectStores[osName][compsite][state] = {'count': 0, 'tk': 0}
+                    mObjectStores[osName][compsite][status] = {'count': count, 'tk': tk}
+                    mObjectStoresTk[osName][status].append(tk)
+        ### Getting tk's for parents ####
+        for osName in mObjectStoresTk:
+            for state in mObjectStoresTk[osName]:
+                mObjectStoresTk[osName][state] = setCacheData(request, childtk=','.join(mObjectStoresTk[osName][state]))
 
         mObjectStoresSummary = {}
         for osName in mObjectStores:
@@ -6109,10 +6140,17 @@ def dashboard(request, view='production'):
             for site in mObjectStores[osName]:
                 for state in mObjectStores[osName][site]:
                     if state in mObjectStoresSummary[osName]:
-                        mObjectStoresSummary[osName][state] += mObjectStores[osName][site][state]
-                    else:
-                        mObjectStoresSummary[osName][state] = mObjectStores[osName][site][state]
+                        mObjectStoresSummary[osName][state]['count'] += mObjectStores[osName][site][state]['count']
+                        mObjectStoresSummary[osName][state]['tk'] = 0
 
+                    else:
+                        mObjectStoresSummary[osName][state] = {}
+                        mObjectStoresSummary[osName][state]['count'] = mObjectStores[osName][site][state]['count']
+                        mObjectStoresSummary[osName][state]['tk'] = 0
+        for osName in mObjectStoresSummary:
+            for state in mObjectStoresSummary[osName]:
+                if (mObjectStoresSummary[osName][state]['count'] > 0):
+                    mObjectStoresSummary[osName][state]['tk'] = mObjectStoresTk[osName][state]
         data = {
             'mObjectStoresSummary': mObjectStoresSummary,
             'mObjectStores': mObjectStores,
@@ -11384,18 +11422,56 @@ def image(request):
     else:
         return redirect('/static/images/error_z0my4n.png')
 
-def message(request):
-    valid,response = initRequest(request)
-    data = {
-        'request': request,
-        'viewParams': request.session['viewParams'],
-        'built': datetime.now().strftime("%H:%M:%S"),
-    }
-    return render_to_response('message.html', data, content_type='text/html')
-
 def handler500(request):
     response = render_to_response('500.html', {},
                                   context_instance=RequestContext(request))
     response.status_code = 500
     return response
+#### URL Section ####
+import uuid
+from itertools import chain
+from collections import defaultdict
 
+def setCacheData(request,lifetime=60*120,**parametrlist):
+    #transactionKey = random.getrandbits(128)
+    transactionKey = uuid.uuid4().hex
+    dictinoary = {}
+    dictinoary[transactionKey] = {}
+    keys = parametrlist.keys()
+    for key in keys:
+        dictinoary[transactionKey][key] = str(parametrlist[key])
+    data = json.dumps(dictinoary, cls=DateEncoder)
+    setCacheEntry(request, str(transactionKey), data, lifetime,isData=True)
+
+    return transactionKey
+
+def getCacheData(request,requestid):
+    data = getCacheEntry(request,str(requestid),isData=True)
+    if data is not None:
+        data = json.loads(data)
+        if 'childtk'in data[requestid]:
+            tklist = defaultdict(list)
+            data = str(data[requestid]['childtk']).split(',')
+            if data is not None:
+                for child in data:
+                    ch = getCacheEntry(request,str(child),isData=True)
+                    if ch is not None:
+                        ch = json.loads(ch)
+                        ### merge data
+                        for k, v in ch[child].items():
+                            tklist[k].append(v)
+                data = {}
+                for k,v in tklist.items():
+                    data[k] =','.join(v)
+        else: data = data[requestid]
+        return data
+    else:
+        return None
+
+@register.filter
+def get_count(dict, key):
+    return dict[key]['count']
+@register.filter
+def get_tk(dict, key):
+    return dict[key]['tk']
+############################

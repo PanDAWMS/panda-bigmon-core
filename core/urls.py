@@ -137,8 +137,7 @@ urlpatterns = [
 
     ###Images###
     url('^img/',coremon_views.image, name='img'),
-    ###Messages###
-    url('^errormessage',coremon_views.message, name='errormessage')
+
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
