@@ -11500,8 +11500,8 @@ def getBadEventsForTask(request):
         dataitem = {}
         dataitem['DATASETID'] = row[0]
         dataitem['ERROR_CODE'] = (errorCodes['piloterrorcode'][row[1]] + " (" +str(row[1])+ ")") if row[1] in errorCodes['piloterrorcode'] else row[1]
-
-        dataitem['EVENTS'] = list(set(str(row[2].read()).split(','))) if not row[2] is None else None
+        dataitem['EVENTS'] = list(set(  str(row[2].read()).split(',')   )) if not row[2] is None else None
+        if dataitem['EVENTS']: dataitem['EVENTS'].sort()
         dataitem['COUNT'] = row[3]
         data.append(dataitem)
     cursor.close()
