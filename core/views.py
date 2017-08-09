@@ -11483,6 +11483,10 @@ def getBadEventsForTask(request):
     else:
         return HttpResponse("Not jeditaskid supplied", content_type='text/html')
 
+    mode = 'drop'
+    if 'mode' in request.GET and request.GET['mode'] == 'nodrop':
+        mode = 'nodrop'
+
     global errorFields, errorCodes, errorStages
     if len(errorFields) == 0:
         codes = ErrorCodes.ErrorCodes()
@@ -11490,9 +11494,18 @@ def getBadEventsForTask(request):
 
     data = []
     cursor = connection.cursor()
+
     plsql = """select DATASETID, ERROR_CODE, RTRIM(XMLAGG(XMLELEMENT(E,DEF_MIN_EVENTID,',').EXTRACT('//text()') 
             ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb, count(*) from 
             atlas_panda.jedi_events where jeditaskid=%d and attemptnr = 1 group by DATASETID, ERROR_CODE """ % jeditaskid
+
+    if mode == 'drop':
+        plsql = """select DATASETID, ERROR_CODE, RTRIM(XMLAGG(XMLELEMENT(E,DEF_MIN_EVENTID,',').EXTRACT('//text()') 
+            ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb, count(*) from 
+            atlas_panda.jedi_events where jeditaskid=%d and attemptnr = 1 
+            and PANDAID IN (SELECT PANDAID FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS where jeditaskid=%d and type in ('input', 'pseudo_input'))
+            group by DATASETID, ERROR_CODE """ % (jeditaskid, jeditaskid)
+
     cursor.execute(plsql)
     evtable = cursor.fetchall()
 
