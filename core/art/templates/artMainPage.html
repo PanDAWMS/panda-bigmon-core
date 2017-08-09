@@ -102,8 +102,11 @@ function searchResults() {
                 query += "ntag_to=" + ntag_to + "&"
             }
         }
-        else if (ntagStr.length > 1) {
+        else if (ntagStr.length > 1 && ntagStr.indexOf(',') < 0) {
             query += "ntag=" + ntagStr + "&";
+        }
+        else if (ntagStr.length > 1 && ntagStr.indexOf(',') > -1) {
+            query += "ntags=" + ntagStr + "&";
         }
 
         query = query.substring(0, query.length - 1);
