@@ -2522,9 +2522,6 @@ class ARTTasks(models.Model):
     task_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='TASK_ID')
     nfilesfinished = models.DecimalField(decimal_places=0, max_digits=12, db_column='NFILESFINISHED')
     nfilesfailed = models.DecimalField(decimal_places=0, max_digits=12, db_column='NFILESFAILED')
-    nfilesonhold = models.DecimalField(decimal_places=0, max_digits=12, db_column='NFILESONHOLD')
-    nfilesused = models.DecimalField(decimal_places=0, max_digits=12, db_column='NFILESUSED')
-    nfilestobeused = models.DecimalField(decimal_places=0, max_digits=12, db_column='NFILESTOBEUSED')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ARTTasks"'
 
