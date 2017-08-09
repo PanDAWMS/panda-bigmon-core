@@ -42,6 +42,15 @@ def setupView(request, querytype='task'):
             startdate = datetime.strptime(startdatestr, artdateformat)
         except:
             del request.session['requestParams']['ntag']
+    if 'ntags' in request.session['requestParams']:
+        dateliststr = request.session['requestParams']['ntags']
+        datelist = []
+        for datestr in dateliststr.split(','):
+            try:
+                datei = datetime.strptime(datestr, artdateformat)
+                datelist.append(datei)
+            except:
+                pass
 
     if 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
         enddate = startdate + timedelta(days=7)
@@ -60,6 +69,11 @@ def setupView(request, querytype='task'):
     if not 'ntag' in request.session['requestParams']:
         request.session['requestParams']['ntag_from'] = startdate
         request.session['requestParams']['ntag_to'] = enddate
+    elif 'ntags' in request.session['requestParams']:
+        request.session['requestParams']['ntags'] = datelist
+        request.session['requestParams']['ntag_from'] = min(datelist)
+        request.session['requestParams']['ntag_to'] = max(datelist)
+
     else:
         request.session['requestParams']['ntag'] = startdate
 
@@ -68,9 +82,28 @@ def setupView(request, querytype='task'):
     querystr = ''
     if querytype == 'job':
         if 'package' in request.session['requestParams']:
-            querystr += '(UPPER(PACKAGE) IN ( UPPER(\'\'' + request.session['requestParams']['package'] + '\'\'))) AND '
+            packages = request.session['requestParams']['package'].split(',')
+            querystr += '(UPPER(PACKAGE) IN ( '
+            for p in packages:
+                querystr += 'UPPER(\'\'' + p + '\'\'), '
+            if querystr.endswith(', '):
+                querystr = querystr[:len(querystr) - 2]
+            querystr += ')) AND '
         if 'branch' in request.session['requestParams']:
-            querystr += '(UPPER(NIGHTLY_RELEASE_SHORT || \'\'/\'\' || PLATFORM || \'\'/\'\' || PROJECT)  IN ( UPPER(\'\'' + request.session['requestParams']['branch'] + '\'\'))) AND '
+            branches = request.session['requestParams']['branch'].split(',')
+            querystr += '(UPPER(NIGHTLY_RELEASE_SHORT || \'\'/\'\' || PLATFORM || \'\'/\'\' || PROJECT)  IN ( '
+            for b in branches:
+                querystr += 'UPPER(\'\'' + b + '\'\'), '
+            if querystr.endswith(', '):
+                querystr = querystr[:len(querystr) - 2]
+            querystr += ')) AND '
+        if 'ntags' in request.session['requestParams']:
+            querystr += '((SUBSTR(NIGHTLY_TAG, 0, INSTR(NIGHTLY_TAG, \'\'T\'\')-1)) IN ('
+            for datei in datelist:
+                querystr+= '\'\'' + datei.strftime(artdateformat) + '\'\', '
+            if querystr.endswith(', '):
+                querystr = querystr[:len(querystr) - 2]
+            querystr += ')) AND '
         if querystr.endswith('AND '):
             querystr = querystr[:len(querystr)-4]
         else:
@@ -79,11 +112,18 @@ def setupView(request, querytype='task'):
         query['ntag_from'] = startdate.strftime(artdateformat)
         query['ntag_to'] = enddate.strftime(artdateformat)
     elif querytype == 'task':
-        if 'package' in request.session['requestParams']:
+        if 'package' in request.session['requestParams'] and not ',' in request.session['requestParams']['package']:
             query['package'] = request.session['requestParams']['package']
-        if 'branch' in request.session['requestParams']:
+        elif 'package' in request.session['requestParams'] and ',' in request.session['requestParams']['package']:
+            query['package__in'] = [p for p in request.session['requestParams']['package'].split(',')]
+        if 'branch' in request.session['requestParams'] and not ',' in request.session['requestParams']['branch']:
             query['branch'] = request.session['requestParams']['branch']
-        query['ntag__range'] = [startdate.strftime(artdateformat), enddate.strftime(artdateformat)]
+        elif 'branch' in request.session['requestParams'] and ',' in request.session['requestParams']['branch']:
+            query['branch__in'] = [b for b in request.session['requestParams']['branch'].split(',')]
+        if not 'ntags' in request.session['requestParams']:
+            query['ntag__range'] = [startdate.strftime(artdateformat), enddate.strftime(artdateformat)]
+        else:
+            query['ntag__in'] = [ntag.strftime(artdateformat) for ntag in datelist]
 
 
 
