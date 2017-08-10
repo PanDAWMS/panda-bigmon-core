@@ -322,13 +322,15 @@ def artJobs(request):
                 for n in ntagslist:
                     artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)] = {}
                     artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
+                    artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)]['jobs'] = {}
             if job['ntag'].strftime(artdateformat) in artjobsdict[job['package']][job['branch']][job['testname']]:
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobstatus'] = job['jobstatus']
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['origpandaid'] = job['origpandaid']
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['computingsite'] = job['computingsite']
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['guid'] = job['guid']
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['scope'] = job['scope']
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['lfn'] = job['lfn']
+                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']] = {}
+                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['jobstatus'] = job['jobstatus']
+                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['origpandaid'] = job['origpandaid']
+                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['computingsite'] = job['computingsite']
+                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['guid'] = job['guid']
+                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['scope'] = job['scope']
+                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['lfn'] = job['lfn']
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for job in jobs:
             if job['branch'] not in artjobsdict.keys():
@@ -340,13 +342,15 @@ def artJobs(request):
                 for n in ntagslist:
                     artjobsdict[job['branch']][job['package']][job['testname']][n.strftime(artdateformat)] = {}
                     artjobsdict[job['branch']][job['package']][job['testname']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
+                    artjobsdict[job['branch']][job['package']][job['testname']][n.strftime(artdateformat)]['jobs'] = {}
             if job['ntag'].strftime(artdateformat) in artjobsdict[job['branch']][job['package']][job['testname']]:
-                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobstatus'] = job['jobstatus']
-                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['origpandaid'] = job['origpandaid']
-                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['computingsite'] = job['computingsite']
-                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['guid'] = job['guid']
-                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['scope'] = job['scope']
-                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['lfn'] = job['lfn']
+                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']] = {}
+                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['jobstatus'] = job['jobstatus']
+                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['origpandaid'] = job['origpandaid']
+                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['computingsite'] = job['computingsite']
+                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['guid'] = job['guid']
+                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['scope'] = job['scope']
+                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['lfn'] = job['lfn']
 
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
