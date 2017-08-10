@@ -33,8 +33,8 @@
                   <th class="cell" ></th>
                   {% for brname,tags in pack.items %}
                       {% if forloop.first %}
-                      {% for ntname,files in tags.items %}
-                        <th class="header">{{ files.ntag_hf }}</th>
+                      {% for ntname,tasks in tags.items %}
+                        <th class="header">{{ tasks.ntag_hf }}</th>
                       {% endfor %}
                       {% endif %}
                   {% endfor %}
@@ -42,14 +42,16 @@
               {% for brname,tags in pack.items %}
                   <tr>
                       <td class="cell-left">{{ brname }}</td>
-                      {% for ntname,files in tags.items %}
+                      {% for ntname,tasks in tags.items %}
                           <td class="cell">
-                            {% if 'finished' in files or 'failed' in files %}
-                                <div class="clickable">
-                                    <div class="finished">{{ files.finished }}</div>
-                                    <div class="failed">{{ files.failed }}</div>
-                                    <a href="{% url 'artJobs' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}&branch={{ brname }}{% else %}?package={{ brname }}&branch={{ pname }}{% endif %}&ntag={{ ntname }}&view={{ requestParams.view }}"></a>
-                                </div>
+                            {% if tasks.tasks|length > 0 %}
+                                {% for taskid, files in tasks.tasks.items %}
+                                    <div class="clickable">
+                                        <div class="finished">{{ files.finished }}</div>
+                                        <div class="failed">{{ files.failed }}</div>
+                                        <a href="{% url 'artJobs' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}&branch={{ brname }}{% else %}?package={{ brname }}&branch={{ pname }}{% endif %}&ntag={{ ntname }}&taskid={{ taskid }}&view={{ requestParams.view }}"></a>
+                                    </div>
+                                {% endfor %}
                             {% else %}
                                 <div class="nodata">
                                     ---

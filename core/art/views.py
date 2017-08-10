@@ -97,6 +97,8 @@ def setupView(request, querytype='task'):
             if querystr.endswith(', '):
                 querystr = querystr[:len(querystr) - 2]
             querystr += ')) AND '
+        if 'taskid' in request.session['requestParams']:
+            querystr += '(a.TASK_ID = ' + request.session['requestParams']['taskid'] + ' ) AND '
         if 'ntags' in request.session['requestParams']:
             querystr += '((SUBSTR(NIGHTLY_TAG, 0, INSTR(NIGHTLY_TAG, \'\'T\'\')-1)) IN ('
             for datei in datelist:
@@ -247,13 +249,11 @@ def artTasks(request):
                 for n in ntagslist:
                     arttasksdict[task['package']][task['branch']][n.strftime(artdateformat)] = {}
                     arttasksdict[task['package']][task['branch']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
+                    arttasksdict[task['package']][task['branch']][n.strftime(artdateformat)]['tasks'] = {}
             if task['ntag'].strftime(artdateformat) in arttasksdict[task['package']][task['branch']]:
-                if len(arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]) > 1:
-                    arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['finished'] += task['nfilesfinished']
-                    arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['failed'] += task['nfilesfailed']
-                else:
-                    arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['finished'] = task['nfilesfinished']
-                    arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['failed'] = task['nfilesfailed']
+                arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']] = {}
+                arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']]['finished'] = task['nfilesfinished']
+                arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']]['failed'] = task['nfilesfailed']
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for task in tasks:
             if task['branch'] not in arttasksdict.keys():
@@ -263,13 +263,11 @@ def artTasks(request):
                 for n in ntagslist:
                     arttasksdict[task['branch']][task['package']][n.strftime(artdateformat)] = {}
                     arttasksdict[task['branch']][task['package']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
+                    arttasksdict[task['branch']][task['package']][n.strftime(artdateformat)]['tasks'] = {}
             if task['ntag'].strftime(artdateformat) in arttasksdict[task['branch']][task['package']]:
-                if 'finished' in arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)] and 'failed' in arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]:
-                    arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['finished'] += task['nfilesfinished']
-                    arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['failed'] += task['nfilesfailed']
-                else:
-                    arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['finished'] = task['nfilesfinished']
-                    arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['failed'] = task['nfilesfailed']
+                arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']] = {}
+                arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']]['finished'] = task['nfilesfinished']
+                arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']]['failed'] = task['nfilesfailed']
 
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
