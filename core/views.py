@@ -11476,6 +11476,8 @@ def get_tk(dict, key):
     return dict[key]['tk']
 ############################
 
+
+#@never_cache
 def getBadEventsForTask(request):
 
     if 'jeditaskid' in request.GET:
@@ -11496,12 +11498,16 @@ def getBadEventsForTask(request):
     cursor = connection.cursor()
 
     plsql = """select DATASETID, ERROR_CODE, RTRIM(XMLAGG(XMLELEMENT(E,DEF_MIN_EVENTID,',').EXTRACT('//text()') 
-            ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb, count(*) from 
+            ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb,
+            RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDAIDS, 
+            count(*) from 
             atlas_panda.jedi_events where jeditaskid=%d and attemptnr = 1 group by DATASETID, ERROR_CODE """ % jeditaskid
 
     if mode == 'drop':
         plsql = """select DATASETID, ERROR_CODE, RTRIM(XMLAGG(XMLELEMENT(E,DEF_MIN_EVENTID,',').EXTRACT('//text()') 
-            ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb, count(*) from 
+            ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb, 
+            RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDAIDS,
+            count(*) from 
             atlas_panda.jedi_events where jeditaskid=%d and attemptnr = 1 
             and PANDAID IN (SELECT PANDAID FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS where jeditaskid=%d and type in ('input', 'pseudo_input'))
             group by DATASETID, ERROR_CODE """ % (jeditaskid, jeditaskid)
@@ -11514,8 +11520,9 @@ def getBadEventsForTask(request):
         dataitem['DATASETID'] = row[0]
         dataitem['ERROR_CODE'] = (errorCodes['piloterrorcode'][row[1]] + " (" +str(row[1])+ ")") if row[1] in errorCodes['piloterrorcode'] else row[1]
         dataitem['EVENTS'] = list(set(  str(row[2].read()).split(',')   )) if not row[2] is None else None
+        dataitem['PANDAIDS'] = list(set(  str(row[3].read()).split(',')   )) if not row[3] is None else None
         if dataitem['EVENTS']: dataitem['EVENTS'].sort()
-        dataitem['COUNT'] = row[3]
+        dataitem['COUNT'] = row[4]
         data.append(dataitem)
     cursor.close()
     return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')

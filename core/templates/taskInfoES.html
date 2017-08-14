@@ -180,10 +180,11 @@ function killtasks(taskID, action) {
     <div class="badevents" ng-app="taskESApps" ng-controller="taskEventsController" style="display:none;">
         <p>
         <table>
-            <tr bgcolor="lightcyan"><th colspan=3>Exhausted events</th></tr>
+            <tr bgcolor="lightcyan"><th colspan=4>Exhausted events</th></tr>
             <tr>
                 <th>Error</th>
                 <th>Count</th>
+                <th>PandaIDs</th>
                 <th>Events</th>
             </tr>
 
@@ -191,6 +192,7 @@ function killtasks(taskID, action) {
                 <tr>
                     <td>{$ row.ERROR_CODE $}</td>
                     <td>{$ row.COUNT $}</td>
+                    <td>{$ row.PANDAIDS.join(', ') $}</td>
                     <td>{$ row.EVENTS.join(', ') $}</td>
                 </tr>
             </tbody>
