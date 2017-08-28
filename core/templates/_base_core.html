@@ -329,10 +329,11 @@
 {% block left_menu %}{% endblock %}
 
     <div style="text-align: center; background:darkred; color: whitesmoke; font-size: 20px; margin: 15px" >
-        The Web interface of BigPanDA monitor will become accessible only via https soon. If your browser produces security warnings during https access please follow to <a href="https://cafiles.cern.ch/cafiles/certificates/list.aspx?ca=cern" target="_blank" style="color: whitesmoke;"><u>instructions of CERN CA</u></a>.
+        As of 04/09/2017 the Web interface of BigPanDA monitor will become accessible only via https. If your browser produces security warnings during https access please follow to <a href="https://cafiles.cern.ch/cafiles/certificates/list.aspx?ca=cern" target="_blank" style="color: whitesmoke;"><u>instructions of CERN CA</u></a>.
         {% if not request.session.ADFS_EMAIL %}
             You may try using <a href={{ request.session.secureurl }} target="_blank" style="color: whitesmoke;"><u>https access now</u></a>.
         {% endif %}
+        Please be advised that due to a major configuration upgrade, a series of service interruptions may occur from 10 to 11 am on 04/09/2017.
     </div>
 
 <div class="large-12 columns" id="content">
