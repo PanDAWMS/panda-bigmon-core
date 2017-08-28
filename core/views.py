@@ -6091,8 +6091,8 @@ def dashboard(request, view='production'):
 
         cur = connection.cursor()
         cur.execute(sqlRequest)
-        rawsummary = cur.fetchall()
-
+        rawsummary = fixLob(cur)
+        #rawsummary = cur.fetchall()
         mObjectStores = {}
         mObjectStoresTk = {}
         if len(rawsummary) > 0:
@@ -6110,6 +6110,7 @@ def dashboard(request, view='production'):
                 compsite = row[2]
                 status = row[0]
                 count = row[1]
+
                 tk = setCacheData(request, pandaid = row[4],compsite = row[2])
                 if osName in mObjectStores:
                     if not compsite in mObjectStores[osName]:
@@ -11474,6 +11475,18 @@ def get_count(dict, key):
 @register.filter
 def get_tk(dict, key):
     return dict[key]['tk']
+
+def fixLob(cur):
+    fixRowsList = []
+    for row in cur:
+        newRow = []
+        for col in row:
+            if type(col).__name__ == 'LOB':
+                newRow.append(str(col))
+            else:
+                newRow.append(col)
+        fixRowsList.append(tuple(newRow))
+    return fixRowsList
 ############################
 
 
