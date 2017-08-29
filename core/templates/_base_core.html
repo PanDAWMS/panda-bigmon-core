@@ -330,7 +330,7 @@
 
     <div style="text-align: center; background:darkred; color: whitesmoke; font-size: 20px; margin: 15px" >
         {% if not request.session.ADFS_EMAIL %}
-            The secure PanDA monitor address is https://bigpanda.cern.ch. This works today, please switch to using it today. As of September 4th 2017 this secure address will be the new baseline for the monitor.
+            The secure PanDA monitor address is <a href="{{ request.session.secureurl }}" style="color: whitesmoke;">https://bigpanda.cern.ch</a>. This works today, please switch to using it today. As of September 4th 2017 this secure address will be the new baseline for the monitor.
         {% endif %}
     </div>
 
