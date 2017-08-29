@@ -772,8 +772,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                                                                                                       request.session[
                                                                                                                           'requestParams'][
                                                                                                                           'mode'] == 'eventservice') or (
-                            'jobtype' in request.session['requestParams'] and request.session['requestParams'][
-                        'jobtype'] == 'eventservice')):
+                                    'jobtype' in request.session['requestParams'] and request.session['requestParams'][
+                                'jobtype'] == 'eventservice')):
                         query['jobstatus__in'] = ('finished', 'cancelled')
                     elif param == 'jobstatus':
                         val = escapeInput(request.session['requestParams'][param])
@@ -2120,7 +2120,6 @@ def jobListP(request, mode=None, param=None):
     if 'json' not in request.session['requestParams']:
         data = {
             'request': request,
-            'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'requesttoken': requestToken,
             'tfirst': request.session['TFIRST'].strftime(defaultDatetimeFormat),
