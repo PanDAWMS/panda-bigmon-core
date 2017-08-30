@@ -11083,13 +11083,13 @@ def endSelfMonitor(request):
     if 'hostname' in request.session:
         reqs = RequestStat(
             server=request.session['hostname'],
-            qtime=request.session['qtime'],
-            load=request.session['load'],
-            mem=request.session['mem'],
-            qduration=request.session['qduration'],
+            qtime=request.session['qtime'] if 'qtime' in request.session else None,
+            load=request.session['load'] if 'load' in request.session else None,
+            mem=request.session['mem'] if 'mem' in request.session else None,
+            qduration=request.session['qduration'] if 'qduration' in request.session else None,
             duration=duration,
-            remote=request.session['remote'],
-            urls=request.session['urls'],
+            remote=request.session['remote'] if 'remote' in request.session else None,
+            urls=request.session['urls'] if 'urls' in request.session else None,
             description=' '
         )
         reqs.save()
