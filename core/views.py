@@ -245,7 +245,7 @@ def setupSiteInfo(request):
                 pass
 
 
-def initRequest(request):
+def initRequest(request, callselfmon = True):
     global VOMODE, ENV, hostname
 
     VOMODE = ''
@@ -309,8 +309,10 @@ def initRequest(request):
         djangosettings.DEBUG = False
 
     if len(hostname) > 0: request.session['hostname'] = hostname
+
     ##self monitor
-    initSelfMonitor(request)
+    if callselfmon:
+        initSelfMonitor(request)
 
     ## Set default page lifetime in the http header, for the use of the front end cache
     request.session['max_age_minutes'] = 10
@@ -2071,6 +2073,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
 def jobListP(request, mode=None, param=None):
     valid, response = initRequest(request)
+    #initSelfMonitor(request)
     #if 'JOB_LIMIT' in request.session:
     #    del request.session['JOB_LIMIT']
     # Hack to void limit caption in the params label
@@ -2126,13 +2129,18 @@ def jobListP(request, mode=None, param=None):
         del request.session['TFIRST']
         del request.session['TLAST']
         response = render_to_response('jobListWrapper.html', data, content_type='text/html')
-        endSelfMonitor(request)
+        #endSelfMonitor(request)
         return response
     else:
         data = getJobList(request,requestToken)
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
+
+
+
+
 
 def getJobList(request,requesttoken=None):
     rawsummary={}
@@ -2479,23 +2487,28 @@ def getJobList(request,requesttoken=None):
             "jobs": jobs,
             "errsByCount": errsByCount,
             }
+
+    if not doRefresh:
+        endSelfMonitor(request)
+
     return data
 
 def jobListPDiv(request, mode=None, param=None):
-    initRequest(request)
+    initRequest(request, False)
     data = getCacheEntry(request, "jobListWrapper")
     if data is not None:
         data = json.loads(data)
         data['request'] = request
         response = render_to_response('jobListWrapper.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
+        #endSelfMonitor(request)
         return response
     data = getJobList(request)
     data.update(getContextVariables(request))
     setCacheEntry(request, "jobListWrapper", json.dumps(data, cls=DateEncoder), 60 * 20)
         ##self monitor
-    endSelfMonitor(request)
+
+    #endSelfMonitor(request)
 
     #    if eventservice:
     #        response = render_to_response('jobListESProto.html', data, RequestContext(request))
