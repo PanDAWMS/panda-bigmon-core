@@ -2073,7 +2073,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
 def jobListP(request, mode=None, param=None):
     valid, response = initRequest(request)
-    #initSelfMonitor(request)
+    initSelfMonitor(request)
     #if 'JOB_LIMIT' in request.session:
     #    del request.session['JOB_LIMIT']
     # Hack to void limit caption in the params label
@@ -11088,8 +11088,8 @@ def endSelfMonitor(request):
             mem=request.session['mem'] if 'mem' in request.session else None,
             qduration=request.session['qduration'] if 'qduration' in request.session else None,
             duration=duration,
-            remote=request.session['remote'] if 'remote' in request.session else None,
-            urls=request.session['urls'] if 'urls' in request.session else None,
+            remote=request.session['remote'] if 'remote' in request.session else '',
+            urls=request.session['urls'] if 'urls' in request.session else '',
             description=' '
         )
         reqs.save()
