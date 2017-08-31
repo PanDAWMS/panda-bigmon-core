@@ -11088,7 +11088,7 @@ def endSelfMonitor(request):
             mem=request.session['mem'] if 'mem' in request.session else None,
             qduration=request.session['qduration'] if 'qduration' in request.session else None,
             duration=duration,
-            remote=request.session['remote'] if 'remote' in request.session else '',
+            remote=request.session['remote'] if 'remote' in request.session and request.session['remote'] is not None else '',
             urls=request.session['urls'] if 'urls' in request.session else '',
             description=' '
         )
