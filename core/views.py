@@ -11080,7 +11080,7 @@ def endSelfMonitor(request):
             request.session['qtime'], "%Y-%m-%d %H:%M:%S.%f")).seconds
     except:
         duration = 0
-    if 'hostname' in request.session:
+    if 'hostname' in request.session and 'remote' in request.session and request.session['remote'] is not None:
         reqs = RequestStat(
             server=request.session['hostname'],
             qtime=request.session['qtime'] if 'qtime' in request.session else None,
@@ -11092,8 +11092,7 @@ def endSelfMonitor(request):
             urls=request.session['urls'] if 'urls' in request.session else '',
             description=' '
         )
-        if 'remote' in request.session and request.session['remote'] is not None:
-            reqs.save()
+        reqs.save()
 
 @never_cache
 def statpixel(request):
