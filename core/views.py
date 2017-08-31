@@ -11092,7 +11092,8 @@ def endSelfMonitor(request):
             urls=request.session['urls'] if 'urls' in request.session else '',
             description=' '
         )
-        reqs.save()
+        if 'remote' in request.session and request.session['remote'] is not None:
+            reqs.save()
 
 @never_cache
 def statpixel(request):
