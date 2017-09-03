@@ -172,14 +172,14 @@ function killtasks(taskID, action) {
 </div>
 
 
-    {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
-        {% if not task.status in finalstatelist %}
-            <div style="float: right">
-                <a onclick="javascript:killtasks({{ task.jeditaskid }}, 0);" class='killbutton'>Finish</a>
-                <a onclick="javascript:killtasks({{ task.jeditaskid }}, 1);" class='killbutton'>Abort</a>
-            </div>
-        {% endif %}
-    {% endwith %}
+{#    {% with 'done finished failed ready broken aborted defined' as finalstatelist %}#}
+{#        {% if not task.status in finalstatelist %}#}
+{#            <div style="float: right">#}
+{#                <a onclick="javascript:killtasks({{ task.jeditaskid }}, 0);" class='killbutton'>Finish</a>#}
+{#                <a onclick="javascript:killtasks({{ task.jeditaskid }}, 1);" class='killbutton'>Abort</a>#}
+{#            </div>#}
+{#        {% endif %}#}
+{#    {% endwith %}#}
 
 <p>
 
