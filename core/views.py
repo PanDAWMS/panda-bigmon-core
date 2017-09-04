@@ -9344,6 +9344,8 @@ def esatlasPandaLogger(request):
         "panda.log.UserIF": ["cat2", "User interface"],
         "panda.log.DBProxy": ["cat2", "Filtered messages of DB interactions"],
 
+
+
         "panda.log.Adder": ["cat3", "Add output files to datasets and trigger output aggregation"],
         "panda.log.Finisher": ["cat3", "Finalization procedures for jobs"],
         "panda.log.Closer": ["cat3", "Close internal datasets once all associated jobs are done"],
@@ -9352,6 +9354,7 @@ def esatlasPandaLogger(request):
         "panda.log.DynDataDistributer": ["cat3", "PD2P"],
         "panda.log.Activator": ["cat3", "Activates jobs based on input transfers"],
         "panda.log.datasetManager": ["cat3", "Manages datasets states"],
+        "panda.log.Watcher": ["cat3", "Watchdog for jobs, e.g. lost heartbeat"],
 
         "panda.log.broker": ["cat4", "Brokerage"],
         "panda.log.runRebro": ["cat4", "Identifies jobs to rebroker"],
@@ -9365,7 +9368,7 @@ def esatlasPandaLogger(request):
         "panda.log.Utils": ["cat8", "Aux functions"],
         "panda.log.Notifier": ["cat7", "User email notification agent"],
 
-        "panda.log.Panda": ["cat8", "Some messages are redirected here "],
+        "panda.log.Panda": ["cat8", "Some messages are redirected here"],
     }
     pandaCat = ['cat1','cat2','cat3','cat4','cat5','cat6','cat7','cat8']
 
@@ -9435,6 +9438,8 @@ def esatlasPandaLogger(request):
             for cat in pandaCat:
                 panda[cat]={}
             for agg in res['aggregations']['logName']['buckets']:
+                if agg['key'] not in pandaDesc:
+                    pandaDesc[agg['key']] = [panda.keys()[-1], "New log type. No description"]
                 cat = pandaDesc[agg['key']][0]
                     #desc = pandaDesc[agg['key']][1]
                 name = agg['key']
@@ -9452,6 +9457,8 @@ def esatlasPandaLogger(request):
             for cat in jediCat:
                 jedi[cat]={}
             for agg in res['aggregations']['logName']['buckets']:
+                if agg['key'] not in jediDesc:
+                    jediDesc[agg['key']] = [jedi.keys()[-1], "New log type. No description"]
                 cat = jediDesc[agg['key']][0]
                 name = agg['key']
                 jedi[cat][name] = {}
