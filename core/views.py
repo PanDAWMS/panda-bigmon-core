@@ -6445,6 +6445,10 @@ def taskList(request):
     else:
         wildCardExtension = wildCardExtension.replace('%20', ' ')
         wildCardExtension = wildCardExtension.replace('%2520', ' ')
+        wildCardExtension = wildCardExtension.replace('%252540', '@')
+        wildCardExtension = wildCardExtension.replace('%2540', '@')
+        wildCardExtension = wildCardExtension.replace('+', ' ')
+
         tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
         listTasks.append(JediTasksOrdered)
         thread = Thread(target=totalCount, args=(listTasks, query, wildCardExtension, dkey))
@@ -8725,8 +8729,11 @@ def totalCount(panJobList, query, wildCardExtension,dkey):
     try:
         tcount.setdefault(dkey,[])
         for panJob in panJobList:
-            wildCardExtension=wildCardExtension.replace('%20', ' ')
-            wildCardExtension=wildCardExtension.replace('%2520', ' ')
+            wildCardExtension = wildCardExtension.replace('%20', ' ')
+            wildCardExtension = wildCardExtension.replace('%2520', ' ')
+            wildCardExtension = wildCardExtension.replace('%252540', '@')
+            wildCardExtension = wildCardExtension.replace('%2540', '@')
+            wildCardExtension = wildCardExtension.replace('+', ' ')
             tcount[dkey].append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
     finally:
         lock.release()
