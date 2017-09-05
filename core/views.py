@@ -2196,7 +2196,7 @@ def getJobList(request,requesttoken=None):
     jobsToList = set()
     njobs = 0
     for shkey in shkeys:
-        if not shkey in ['PANDAID', 'ErrorCode', 'MINRAMCOUNT']:
+        if not shkey in ['PANDAID', 'ErrorCode', 'MINRAMCOUNT','PRIORITYRANGE']:
             # check this condition
             entry = {}
             entry['field'] = shkey
@@ -2210,8 +2210,22 @@ def getJobList(request,requesttoken=None):
                 entrlist.append(subentry)
             entry['list'] = entrlist
             sumd.append(entry)
-
-
+        elif shkey == 'PRIORITYRANGE':
+            entry = {}
+            entry['field'] = shkey
+            entrlist = []
+            sd = summaryhash[shkey].keys()
+            skys = []
+            for k in sd:
+                skys.append({'key': k, 'val': int(k[:k.index(':')])})
+            skys = sorted(skys, key=lambda x: x['val'])
+            for sk in skys:
+                subentry = {}
+                subentry['kname'] = sk['key']
+                subentry['kvalue'] = summaryhash[shkey][sk['key']]
+                entrlist.append(subentry)
+            entry['list'] = entrlist
+            sumd.append(entry)
         elif shkey == 'MINRAMCOUNT':
             entry = {}
             entry['field'] = shkey
