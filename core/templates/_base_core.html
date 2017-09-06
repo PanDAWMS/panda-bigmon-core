@@ -310,13 +310,13 @@
               {% if request.session.hostname %}{{ request.session.hostname }} {% endif %}
               {% if built != None %} {{ built }}, {% endif %}
                <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a>
-              {% if request.session.ADFS_EMAIL %}&nbsp;You are logged as {{ request.session.ADFS_FULLNAME }}(
-                  {% if request.session.ADFS_LOGIN %}{{request.session.ADFS_LOGIN}}{% endif %}
-                  ,
-                  {% if request.session.ADFS_EMAIL %}{{request.session.ADFS_EMAIL}}{% endif %})
-                <a href="https://login.cern.ch/adfs/ls/?wa=wsignout1.0">Logout</a> &nbsp;
-              {% else %}
-                <a href="https://bigpanda.cern.ch{{ request.path }}">Login</a>{% endif %}
+{#              {% if request.session.ADFS_EMAIL %}&nbsp;You are logged as {{ request.session.ADFS_FULLNAME }}(#}
+{#                  {% if request.session.ADFS_LOGIN %}{{request.session.ADFS_LOGIN}}{% endif %}#}
+{#                  ,#}
+{#                  {% if request.session.ADFS_EMAIL %}{{request.session.ADFS_EMAIL}}{% endif %})#}
+{#                <a href="https://login.cern.ch/adfs/ls/?wa=wsignout1.0">Logout</a> &nbsp;#}
+{#              {% else %}#}
+{#                <a href="https://bigpanda.cern.ch{{ request.path }}">Login</a>{% endif %}#}
           </font></span>
     {#      {% endblock %}#}
     </div>
@@ -327,12 +327,6 @@
   <!-- End sub-title and bread-crumbs -->
 
 {% block left_menu %}{% endblock %}
-
-    <div style="text-align: center; background:darkred; color: whitesmoke; font-size: 20px; margin: 15px" >
-        {% if not request.session.ADFS_EMAIL %}
-            The secure PanDA monitor address is <a href="{{ request.session.secureurl }}" style="color: whitesmoke;">https://bigpanda.cern.ch</a>. This works today, please switch to using it today. As of September 4th 2017 this secure address will be the new baseline for the monitor.
-        {% endif %}
-    </div>
 
 <div class="large-12 columns" id="content">
 {% block body %}

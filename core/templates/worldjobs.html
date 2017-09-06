@@ -30,15 +30,7 @@
 </tr>
 
 {% for nucleus, nuclval in nucleussummary.items %}
-    {% if nucleus %}
-        <tr height=10 colspan=12></tr>
-        <tr>
-            <td><a href="#nucleus_{{ nucleus }}">{{ nucleus }}</a></td>
-            {%  for jobstatus in statelist %}
-                    <td  {% if nuclval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}  > <a href="{% url 'jobList' %}?jobstatus={{ jobstatus }}{{ estailtojobslinks }}&nucleus={{nucleus}}&cloud=WORLD&noarchjobs=1&hours={{hours}}&display_limit=100"> {{ nuclval|get_item:jobstatus }} </a> </td>
-            {% endfor %}
-        </tr>
-    {% endif %}
+    {% get_renderedrow type="world_nucleussummary" nucleus=nucleus nuclval=nuclval estailtojobslinks=estailtojobslinks hours=hours%}
 {% endfor %}
 </table>
 
@@ -69,15 +61,7 @@
 <td class="tablesection"> <a href="{{nosorturl}}sortby=closed">closed</a> </td>
 </tr>
 
-    {% for computingsite, computingsiteval in nuclval.items %}
-        <tr>
-            <td>{{ computingsite }}</td>
-            {%  for jobstatus in statelist %}
-                <td  {% if computingsiteval|get_item:jobstatus  > 0 %} class='{{ jobstatus }}_fill' {% endif %}  > <a href="{% url 'jobList' %}?jobstatus={{ jobstatus }}{{ estailtojobslinks }}&nucleus={{nucleus}}&computingsite={{ computingsite }}&cloud=WORLD&noarchjobs=1&hours={{hours}}&display_limit=100"> {{ computingsiteval|get_item:jobstatus }} </a> </td>
-            {% endfor %}
-        </tr>
-    {% endfor %}
-
+   {% get_renderedrow type="world_computingsitesummary" nucleus=nucleus nuclval=nuclval estailtojobslinks=estailtojobslinks hours=hours%}
 
 {% endfor %}
 

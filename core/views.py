@@ -75,6 +75,9 @@ import ErrorCodes
 import GlobalShares
 import hashlib
 
+import Customrenderer
+
+
 from threading import Thread,Lock
 import decimal
 import base64
@@ -92,10 +95,23 @@ from reports import MC16aCPReport, ObsoletedTasksReport, TitanProgressReport
 from decimal import *
 from collections import OrderedDict
 
-
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
+
+
+@register.simple_tag(takes_context=True)
+def get_renderedrow(context, **kwargs):
+    if kwargs['type']=="world_nucleussummary":
+        kwargs['statelist'] = statelist
+        return Customrenderer.world_nucleussummary(context, kwargs)
+
+    if kwargs['type']=="world_computingsitesummary":
+        kwargs['statelist'] = statelist
+        return Customrenderer.world_computingsitesummary(context, kwargs)
+
+
+
 
 try:
     hostname = commands.getoutput('hostname')
@@ -5649,6 +5665,8 @@ def worldjobs(request, view='production'):
     valid, response = initRequest(request)
 
     data = getCacheEntry(request, "worldjobs")
+    #data = None
+
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -5718,6 +5736,7 @@ def worldjobs(request, view='production'):
             'nosorturl': nosorturl,
             'user': None,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'hours':48,
         }
         ##self monitor
         endSelfMonitor(request)
