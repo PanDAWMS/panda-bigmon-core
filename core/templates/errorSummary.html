@@ -1,5 +1,5 @@
 {% extends "_base_core.html" %}
-
+{% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA job errors{% endblock %}
 
 {% block settings-offcanvas %}
@@ -63,7 +63,6 @@
 {% if vo %} &nbsp; VO={{ vo }} {% endif %}
 {% endblock %}
 {% block body %}
-
 {{ viewParams.header }}
 <script>
     function saveSettings() {
@@ -122,7 +121,6 @@
 <script type="text/javascript"
            src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
 </script>
-
 {% if flowstruct %}
 {% include "googleFlowDiagram.html" with struct=flowstruct %}
 {% endif %}
@@ -153,15 +151,26 @@
     <div id="chart_div" style="height: 500px;"></div>
 
 {% endif %}
+<script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+	    $(".comment").shorten();
+	});
+</script>
 {% if sumd %}
 <table>
 <tr class='tablesection'><th colspan=20> Error occurrences by job attribute </th></tr>
 {% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
-{% for item in fdict.list %}
-{% if fdict.field == 'jobstatus' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
-<a href="{{xurlsubst}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp;
-{% endfor %}
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th>
+    <td><div class="comment more">
+        {% for item in fdict.list %}
+            {% if fdict.field == 'jeditaskid' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% else %}
+                    {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
+                    <a href="{{xurlsubst}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
+            &nbsp;{% endif %}
+        {% endfor %}
+    </div>
 </td></tr>
 {% endfor %}
 </table>
