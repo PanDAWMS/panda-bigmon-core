@@ -126,31 +126,27 @@
 {% endif %}
 
 {% if errHist %}
-
     <script type="text/javascript">
       google.setOnLoadCallback(drawChart);
       function drawChart() {
         var data = google.visualization.arrayToDataTable([
           ['Time', 'Count'],
-
-{% for time, count in errHist %}
-          ['{{ time|date:"m-d H:i" }}', {{ count }}],
-{% endfor %}
-
-            ])
+          {% for time, count in errHist %}
+                   ['{{ time|date:"m-d H:i" }}', {{ count }}],
+          {% endfor %}
+        ]);
         var options = {
           title: 'Error count timeline',
           legend: { position: 'none' },
           hAxis: {title: 'Time (empty bins suppressed)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
         };
-
         var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
         chart.draw(data, options);
       }
     </script>
-    <div id="chart_div" style="height: 500px;"></div>
-
+<div id="chart_div" style="height: 500px;"></div>
 {% endif %}
+
 <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
 <script type="text/javascript">
 	$(document).ready(function() {
