@@ -11620,3 +11620,25 @@ def getBadEventsForTask(request):
     return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
 
+def loginauth2(request):
+    response = render_to_response('login.html', {'request': request,}, content_type='text/html')
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
+def loginerror(request):
+    response = render_to_response('login.html', {'request': request,}, content_type='text/html')
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
+
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+@login_required
+def testauth(request):
+    response = render_to_response('testauth.html', {'request': request,}, content_type='text/html')
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
