@@ -85,6 +85,10 @@ import urllib3
 from django.views.decorators.cache import never_cache
 import chainsql
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+
 errorFields = []
 errorCodes = {}
 errorStages = {}
@@ -11630,11 +11634,6 @@ def loginerror(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-
-
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
 
 @login_required
 def testauth(request):
