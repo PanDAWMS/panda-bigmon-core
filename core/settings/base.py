@@ -41,8 +41,10 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',  # for AJAX POST protection with csrf
 
-    #'django.contrib.auth.middleware.AuthenticationMiddleware',
-### added
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+
+    ### added
     #'django.contrib.auth.middleware.RemoteUserMiddleware',  # for APIs: htcondorapi
 ### END added
     'django.contrib.messages.middleware.MessageMiddleware',
