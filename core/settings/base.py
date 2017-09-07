@@ -57,7 +57,9 @@ MIDDLEWARE_CLASSES = (
 #    'django.contrib.messages.middleware.MessageMiddleware',
 #    # Uncomment the next line for simple clickjacking protection:
 #    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
-     'django.middleware.cache.FetchFromCacheMiddleware',
+    'django.middleware.cache.FetchFromCacheMiddleware',
+    'social_django.middleware.SocialAuthExceptionMiddleware',
+
 )
 
 ROOT_URLCONF = 'common.urls'
@@ -65,10 +67,43 @@ ROOT_URLCONF = 'common.urls'
 ### added
 
 
+AUTHENTICATION_BACKENDS = (
+    'core.auth.Cernauth2.Cernauth2',
+    'social_core.backends.google.GoogleOAuth2',
+)
+
+SOCIAL_AUTH_URL_NAMESPACE = 'social'
+SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
+SOCIAL_AUTH_STORAGE = 'social_django.models.DjangoStorage'
+SOCIAL_AUTH_LOGIN_ERROR_URL = '/loginerror/'
+REDIRECT_STATE = False
+LOGIN_URL = 'login'
+
+# Google OAuth2 (google-oauth2)
+SOCIAL_AUTH_GOOGLE_OAUTH2_IGNORE_DEFAULT_SCOPE = True
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile'
+]
+
+
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+    'social_core.pipeline.social_auth.associate_by_email',
+)
+
 
 # installed apps
 INSTALLED_APPS_DJANGO_FRAMEWORK = (
     ### Django framework
+    'social_django',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
