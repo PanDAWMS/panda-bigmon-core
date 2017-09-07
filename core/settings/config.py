@@ -292,4 +292,3 @@ ENV = {
     ### Navigation chain item separator
     'SEPARATOR_NAVIGATION_ITEM': "&nbsp;&#187;&nbsp;" , \
 }
-
