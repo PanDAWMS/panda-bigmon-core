@@ -179,7 +179,7 @@ standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'cor
                        'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
                        'reqid', 'ramcount', 'nucleus', 'eventservice', 'gshare']
 standard_errorfields = ['cloud', 'computingsite', 'eventservice', 'produsername', 'jeditaskid', 'jobstatus',
-                        'processingtype', 'prodsourcelabel', 'specialhandling', 'transformation', 'workinggroup']
+                        'processingtype', 'prodsourcelabel', 'specialhandling','taskid' ,'transformation', 'workinggroup']
 
 VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
@@ -2089,7 +2089,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
 def jobListP(request, mode=None, param=None):
     valid, response = initRequest(request)
-    initSelfMonitor(request)
+  #  initSelfMonitor(request)
     #if 'JOB_LIMIT' in request.session:
     #    del request.session['JOB_LIMIT']
     # Hack to void limit caption in the params label
@@ -2151,6 +2151,7 @@ def jobListP(request, mode=None, param=None):
         data = getJobList(request,requestToken)
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
         return response
 
 
@@ -2518,8 +2519,8 @@ def getJobList(request,requesttoken=None):
             "errsByCount": errsByCount,
             }
 
-    if not doRefresh:
-        endSelfMonitor(request)
+   # if not doRefresh:
+   #     endSelfMonitor(request)
 
     return data
 
@@ -2543,8 +2544,12 @@ def jobListPDiv(request, mode=None, param=None):
     #    if eventservice:
     #        response = render_to_response('jobListESProto.html', data, RequestContext(request))
     #    else:
+
     response = render_to_response('jobListContent.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    if 'doRefresh' in data:
+        if not data['doRefresh']:
+            endSelfMonitor(request)
     return response
 
 
@@ -8521,11 +8526,11 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
             if taskid in tasknamedict:
                 taskname = tasknamedict[taskid]
             tasktype = 'jeditaskid'
-        #else:
-        #    taskid = job['taskid']
-        #    if taskid in tasknamedict:
-        #        taskname = tasknamedict[taskid]
-        #    tasktype = 'taskid'
+        else:
+            taskid = job['taskid']
+            if taskid in tasknamedict:
+                taskname = tasknamedict[taskid]
+            tasktype = 'taskid'
 
         if 'modificationtime' in job and job['jobstatus'] == 'failed':
             tm = job['modificationtime']
@@ -8883,7 +8888,7 @@ def errorSummary(request):
 
     if not testjobs: query['jobstatus__in'] = ['failed', 'holding']
     jobs = []
-    values = 'eventservice', 'produsername', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'currentpriority', 'computingelement','gshare'
+    values = 'eventservice', 'produsername', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid','taskid' 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'currentpriority', 'computingelement','gshare'
     print "step3-1"
     print str(datetime.now())
 
@@ -11116,8 +11121,17 @@ def initSelfMonitor(request):
     try:
         urls = urlProto + request.META['SERVER_NAME'] + request.META['REQUEST_URI']
     except:
-        urls = 'localhost'
-
+        if 'SERVER_PORT' in request.META:
+            port =':' + request.META['SERVER_PORT']
+        else: port = ''
+        if 'PATH_INFO' in request.META:
+            path = request.META['PATH_INFO']
+        else: path=''
+        if 'QUERY_STRING' in request.META and request.META['QUERY_STRING']!="":
+            qstring= '?'+request.META['QUERY_STRING']
+        else: qstring =''
+        urls = urlProto + request.META['SERVER_NAME'] + port + path+qstring
+    print urls
     qtime = str(timezone.now())
     load = psutil.cpu_percent(interval=1)
     mem = psutil.virtual_memory().percent
@@ -11153,7 +11167,7 @@ def endSelfMonitor(request):
 
 @never_cache
 def statpixel(request):
-    valid, response = initRequest(request)
+    valid, response = initRequest(request, callselfmon=False)
 
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
