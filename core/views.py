@@ -11141,13 +11141,16 @@ def initSelfMonitor(request):
     qtime = str(timezone.now())
     load = psutil.cpu_percent(interval=1)
     mem = psutil.virtual_memory().percent
-
+    if 'HTTP_REFERER' in request.META:
+        refferer = request.META['HTTP_REFERER']
+    else:
+        refferer = '-'
     request.session["qtime"] = qtime
     request.session["load"] = load
     request.session["remote"] = remote
     request.session["mem"] = mem
     request.session["urls"] = urls
-
+    request.session["refferer"] = refferer
 
 def endSelfMonitor(request):
     qduration = str(timezone.now())
@@ -11167,7 +11170,8 @@ def endSelfMonitor(request):
             duration=duration,
             remote=request.session['remote'] if 'remote' in request.session and request.session['remote'] is not None else '',
             urls=request.session['urls'] if 'urls' in request.session else '',
-            description=' '
+            description=' ',
+            referrer= request.session['refferer']
         )
         reqs.save()
 
