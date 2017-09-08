@@ -317,6 +317,13 @@
 {#                <a href="https://login.cern.ch/adfs/ls/?wa=wsignout1.0">Logout</a> &nbsp;#}
 {#              {% else %}#}
 {#                <a href="https://bigpanda.cern.ch{{ request.path }}">Login</a>{% endif %}#}
+          {% if request.user and request.user.is_authenticated %}
+              {{ request.user.first_name }} {{ request.user.last_name }}, {{ request.user.email }} <a href="{% url 'logout' %}">Logout</a>
+          {% else %}
+                <a href="{% url 'loginauth2' %}">Login</a>
+          {% endif %}
+
+
           </font></span>
     {#      {% endblock %}#}
     </div>

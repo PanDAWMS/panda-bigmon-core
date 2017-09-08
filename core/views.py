@@ -99,6 +99,8 @@ from reports import MC16aCPReport, ObsoletedTasksReport, TitanProgressReport
 from decimal import *
 from collections import OrderedDict
 
+from django.contrib.auth import logout as auth_logout
+
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
@@ -11624,9 +11626,13 @@ def getBadEventsForTask(request):
     return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
 
+@never_cache
 def loginauth2(request):
-    response = render_to_response('login.html', {'request': request,}, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    if 'HTTP_REFERER' in request.META:
+        next = extensibleURL(request, request.META['HTTP_REFERER'])
+    else:
+        next = '/'
+    response = render_to_response('login.html', {'request': request, 'next':next,'viewParams': request.session['viewParams'],}, content_type='text/html')
     return response
 
 def loginerror(request):
@@ -11641,3 +11647,7 @@ def testauth(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
+def logout(request):
+    """Logs out user"""
+    auth_logout(request)
+    return redirect('/')

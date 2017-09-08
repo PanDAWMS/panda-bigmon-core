@@ -1,6 +1,15 @@
 {% extends '_base_core.html' %}
+{% load static %}
+{% block subtitle %}Login page{% endblock %}
 
 {% block body %}
-    eqwew
-  <a href="{% url 'social:begin' 'cernauth2' %}?next=/jobs/">Login with CERN</a><br>
+
+    <div style="text-align:center; display:block; vertical-align: middle;padding-top: 50px;padding-bottom: 50px">
+        <a href="{% url 'social:begin' 'cernauth2' %}?next={{ next }}"  >
+        <img width="100" width="100" src="{% static "images/cernlogo.jpg"%}"><br>
+            <h6>Login with CERN (recommended)</h6><br>
+        </a>
+    </div>
+
+
 {% endblock %}
