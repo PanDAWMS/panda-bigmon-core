@@ -11136,7 +11136,7 @@ def initSelfMonitor(request):
         if 'QUERY_STRING' in request.META and request.META['QUERY_STRING']!="":
             qstring= '?'+request.META['QUERY_STRING']
         else: qstring =''
-        urls = urlProto + request.META['SERVER_NAME'] + port + path+qstring
+        urls = urlProto + request.META['SERVER_NAME'] + port + path + qstring
     print urls
     qtime = str(timezone.now())
     load = psutil.cpu_percent(interval=1)
@@ -11146,16 +11146,16 @@ def initSelfMonitor(request):
     else:
         refferer = '-'
     if 'HTTP_USER_AGENT' in request.META:
-        refferer = request.META['HTTP_USER_AGENT']
+        useragent = request.META['HTTP_USER_AGENT']
     else:
-        refferer = '-'
+        useragent = '-'
     request.session["qtime"] = qtime
     request.session["load"] = load
     request.session["remote"] = remote
     request.session["mem"] = mem
     request.session["urls"] = urls
     request.session["refferer"] = refferer
-    request.session["useragent"] = refferer
+    request.session["useragent"] = useragent
 
 def endSelfMonitor(request):
     qduration = str(timezone.now())
