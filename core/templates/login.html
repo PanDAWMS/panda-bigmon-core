@@ -9,6 +9,11 @@
         <img width="100" width="100" src="{% static "images/cernlogo.jpg"%}"><br>
             <h6>Login with CERN (recommended)</h6><br>
         </a>
+
+        <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}"  >
+        <img width="200" width="100" src="{% static "images/login-google.png"%}">
+        </a>
+
     </div>
 
 
