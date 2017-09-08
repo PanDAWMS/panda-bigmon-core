@@ -11145,12 +11145,17 @@ def initSelfMonitor(request):
         refferer = request.META['HTTP_REFERER']
     else:
         refferer = '-'
+    if 'HTTP_USER_AGENT' in request.META:
+        refferer = request.META['HTTP_USER_AGENT']
+    else:
+        refferer = '-'
     request.session["qtime"] = qtime
     request.session["load"] = load
     request.session["remote"] = remote
     request.session["mem"] = mem
     request.session["urls"] = urls
     request.session["refferer"] = refferer
+    request.session["useragent"] = refferer
 
 def endSelfMonitor(request):
     qduration = str(timezone.now())
@@ -11171,7 +11176,8 @@ def endSelfMonitor(request):
             remote=request.session['remote'] if 'remote' in request.session and request.session['remote'] is not None else '',
             urls=request.session['urls'] if 'urls' in request.session else '',
             description=' ',
-            referrer= request.session['refferer']
+            referrer=request.session['refferer'],
+            useragent=request.session["useragent"]
         )
         reqs.save()
 

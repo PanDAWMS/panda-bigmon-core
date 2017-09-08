@@ -1605,6 +1605,7 @@ class RequestStat(models.Model):
     urls = models.CharField(max_length=40, db_column='url')
     description = models.CharField(max_length=12000, db_column='description')
     referrer = models.CharField(max_length=4000, db_column='referrer')
+    useragent = models.CharField(max_length=400, db_column='useragent')
     class Meta:
         db_table = u'request_stats'
 
