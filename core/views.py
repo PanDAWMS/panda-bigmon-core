@@ -6131,7 +6131,7 @@ def dashboard(request, view='production'):
             getObjectStoresNames()
 
         sqlRequest = """
-        SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE,RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST FROM (
+        SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE, RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST FROM (
         SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, CASE WHEN t2.OBJSTORE_ID > 0 THEN TO_CHAR(t2.OBJSTORE_ID) ELSE t3.destinationse END AS OBJSE  
         FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 
         LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID = t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0)
@@ -6492,6 +6492,7 @@ def taskList(request):
         wildCardExtension = wildCardExtension.replace('%252540', '@')
         wildCardExtension = wildCardExtension.replace('%2540', '@')
         wildCardExtension = wildCardExtension.replace('+', ' ')
+        wildCardExtension = wildCardExtension.replace('%', ' ')
 
         tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
         listTasks.append(JediTasksOrdered)
@@ -8778,6 +8779,7 @@ def totalCount(panJobList, query, wildCardExtension,dkey):
             wildCardExtension = wildCardExtension.replace('%252540', '@')
             wildCardExtension = wildCardExtension.replace('%2540', '@')
             wildCardExtension = wildCardExtension.replace('+', ' ')
+            wildCardExtension = wildCardExtension.replace('%', ' ')
             tcount[dkey].append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
     finally:
         lock.release()
