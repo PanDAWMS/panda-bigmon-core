@@ -2,6 +2,7 @@ import time
 
 import django.core.exceptions
 import commands
+import random
 
 # We postpone JSON requests is server is overloaded
 # Done for protection from bunch of requests from JSON
@@ -9,8 +10,8 @@ import commands
 
 class DDOSMiddleware(object):
 
-    sleepInterval = 3 #sec
-    maxAllowedHttpProcesses = 500
+    sleepInterval = 5 #sec
+    maxAllowedHttpProcesses = 300
 
     def __init__(self):
         pass
@@ -18,5 +19,5 @@ class DDOSMiddleware(object):
     def process_request(self, request):
         if not request.GET.get('json') is None:
             while (sum([float(pf) for pf in commands.getstatusoutput("ps aux | grep httpd | grep -v grep | awk {'print $3'}")[1].split('\n')]) > self.maxAllowedHttpProcesses):
-                time.sleep(self.sleepInterval)
+                time.sleep(self.sleepInterval+random.randint(0,10))
 
