@@ -16,7 +16,7 @@ class DDOSMiddleware(object):
         pass
 
     def process_request(self, request):
-        if 'json' in request.path:
+        if not request.GET.get('json') is None:
             while (sum([float(pf) for pf in commands.getstatusoutput("ps aux | grep httpd | grep -v grep | awk {'print $3'}")[1].split('\n')]) > self.maxAllowedHttpProcesses):
                 time.sleep(self.sleepInterval)
 
