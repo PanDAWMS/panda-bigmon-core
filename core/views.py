@@ -618,8 +618,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     request.session['TLAST'] = enddate  # enddate[:18]
 
     ### Add any extensions to the query determined from the URL
+    query['vo'] = 'atlas'
     for vo in ['atlas', 'core']:
-        if request.META['HTTP_HOST'].startswith(vo):
+        if 'HTTP_HOST' in request.META and request.META['HTTP_HOST'].startswith(vo):
             query['vo'] = vo
     for param in request.session['requestParams']:
         if param in ('hours', 'days'): continue
