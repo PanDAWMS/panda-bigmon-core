@@ -3,6 +3,11 @@ from django.shortcuts import render_to_response
 from django.db import connection
 from collections import OrderedDict
 from datetime import datetime
+import time
+import scipy.cluster.hierarchy as hcluster
+import numpy as np
+
+
 
 class ObsoletedTasksReport:
     def __init__(self):
@@ -23,21 +28,73 @@ class ObsoletedTasksReport:
             CONNECT BY NOCYCLE PRIOR TASKID=PARENT_TID ORDER SIBLINGS BY TASKID
             ) SELECT RECONSTRUCTEDTASKCHAIN.*, STATUS as DSSTATUS, TIMESTAMP, row_number() OVER(PARTITION BY RECONSTRUCTEDTASKCHAIN.TASKID order by t_production_dataset.TIMESTAMP) AS PART, t_production_dataset.NAME as dsname FROM ATLAS_DEFT.RECONSTRUCTEDTASKCHAIN, ATLAS_DEFT.t_production_dataset  WHERE t_production_dataset.TASKID=RECONSTRUCTEDTASKCHAIN.TASKID
             and instr(t_production_dataset.NAME,'.log.') = 0 
-            ) WHERE '''+uniqueTasksCond+''' PPFLAG>=0 ORDER BY LEV ASC
+            ) WHERE '''+uniqueTasksCond+''' PPFLAG>=0 ORDER BY LEV DESC
         '''
 
         cur = connection.cursor()
         cur.execute(sqlRequest)
         stats = cur.fetchall()
         tasksInfoList = []
+
+        timesecs = []
+
+        i = 0
         for taskEntry in stats:
-            tmpDict = {"reqid": taskEntry[1], "taskid": taskEntry[0], "taskname": taskEntry[2], "dsname": taskEntry[12]}
+            timesecs.append(time.mktime(stats[i][10].timetuple()))
+            i += 1
+
+        minT = min(timesecs)
+        timesecs[:] = [x - minT for x in timesecs]
+
+        thresh = 21600
+
+        data_run = [
+            timesecs,
+        ]
+        np.asarray(data_run)
+
+        clusters = hcluster.fclusterdata(np.transpose(np.asarray(data_run)), thresh, criterion="distance")
+
+
+        cluserssummary = {}
+        i = 0
+        for taskEntry in stats:
+            clusterID = clusters[i]
+            tmpDict = {"reqid": taskEntry[1], "taskid": taskEntry[0], "taskname": taskEntry[2], "dsname": taskEntry[12], "clusterid": clusterID}
             tasksInfoList.append(tmpDict)
+
+            if clusterID not in cluserssummary:
+                cluserssummary[clusterID] = {"obsoleteStart":taskEntry[10], "obsoleteFinish":taskEntry[10], "requests":[taskEntry[1]], "tasks":[taskEntry[0]], "datasets":[taskEntry[12]]}
+            else:
+                if cluserssummary[clusterID]["obsoleteStart"] > taskEntry[10]:
+                    cluserssummary[clusterID]["obsoleteStart"] = taskEntry[10]
+
+                if cluserssummary[clusterID]["obsoleteFinish"] < taskEntry[10]:
+                    cluserssummary[clusterID]["obsoleteFinish"] = taskEntry[10]
+
+                if taskEntry[0] not in cluserssummary[clusterID]["tasks"]:
+                    cluserssummary[clusterID]["tasks"].append(taskEntry[0])
+
+                if taskEntry[12] not in cluserssummary[clusterID]["datasets"]:
+                    cluserssummary[clusterID]["datasets"].append(taskEntry[12])
+
+                if taskEntry[1] not in cluserssummary[clusterID]["requests"]:
+                    cluserssummary[clusterID]["requests"].append(taskEntry[1])
+            i += 1
+
+        cluserssummaryList = []
+        for id, cluster in cluserssummary.items():
+            cluserssummaryList.append(cluster)
+
+        cluserssummaryList = sorted(cluserssummaryList, key=lambda k: k['obsoleteStart'], reverse=True)
+
         data = {}
         data['tasksInfo'] = tasksInfoList
         data['built'] = datetime.now().strftime("%d %b %Y %H:%M:%S")
         data['type'] = type
-        return render_to_response('reportObsoletedTasksv2.html', data, RequestContext(request))
+        data['clusters'] = cluserssummaryList
+
+        return render_to_response('reportObsoletedTasksv3.html', data, RequestContext(request))
 
 
 
@@ -95,9 +152,9 @@ class ObsoletedTasksReport:
 
 
     def prepareReport(self, request):
-        if 'obstasks' in request.session['requestParams'] and request.session['requestParams']['obstasks'] == 'tasksview':
-            return self.prepareReportTasksV1(request, "tasksview")
-        elif 'obstasks' in request.session['requestParams'] and request.session['requestParams']['obstasks'] == 'dsview':
-            return self.prepareReportTasksV1(request, "dsview")
-        else:
-            return self.prepareReportTasksV0(request)
+        # if 'obstasks' in request.session['requestParams'] and request.session['requestParams']['obstasks'] == 'tasksview':
+        #     return self.prepareReportTasksV1(request, "tasksview")
+        # elif 'obstasks' in request.session['requestParams'] and request.session['requestParams']['obstasks'] == 'dsview':
+        #     return self.prepareReportTasksV1(request, "dsview")
+        # else:
+        return self.prepareReportTasksV1(request, "tasksview")
