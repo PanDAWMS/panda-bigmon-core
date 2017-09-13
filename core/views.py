@@ -61,7 +61,7 @@ from core.common.models import JediWorkQueue
 from core.common.models import RequestStat, BPUser, Visits, BPUserSettings
 from core.settings.config import ENV
 from core.common.models import RunningMCProductionTasks
-from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel
+from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel, FrozenProdTasksModel
 
 from time import gmtime, strftime
 from settings.local import dbaccess
@@ -7421,7 +7421,28 @@ def runningProdTasks(request):
         sortby = 'creationdate-desc'
     oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
 
-    tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)
+    if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension and tquery['eventservice'] == 1:
+        setupView(request)
+        excludedTimeQuery = copy.deepcopy(tquery)
+
+        if ('days' in request.GET) and (request.GET['days']):
+            days = int(request.GET['days'])
+            hours = 24 * days
+            startdate = timezone.now() - timedelta(hours=hours)
+            startdate = startdate.strftime(defaultDatetimeFormat)
+            enddate = timezone.now().strftime(defaultDatetimeFormat)
+            tquery['modificationtime__range'] = [startdate, enddate]
+
+        wildCardExtension = wildCardExtension.replace("((UPPER(status)  LIKE UPPER('all')))", "(1=1)")
+        tasks = []
+        tasks.extend(RunningProdTasksModel.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension]).exclude(
+            **exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)[:])
+        tasks.extend(FrozenProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(
+            **exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)[:])
+    else:
+        tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)
+
+
     ntasks = len(tasks)
     slots = 0
     aslots = 0
