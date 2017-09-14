@@ -1,0 +1,48 @@
+/* Styles for buttons on logon page*/
+
+.social.google-plus {
+  background-color: #dd4b39;
+  color: #fefefe;
+  line-height: 100%;
+  vertical-align: middle;
+  width: 300px;
+}
+.social.google-plus > i {
+  font-size: 24pt;
+  vertical-align: middle;
+  line-height: 100%;
+}
+.social.google-plus:hover, .social.google-plus:focus {
+  background-color: #be3221;
+  color: #fefefe;
+}
+
+.social.github {
+  background-color: #333;
+  color: #fefefe;
+  line-height: 100%;
+  vertical-align: middle;
+  width: 300px;
+}
+
+.social.github > i {
+  font-size: 24pt;
+  vertical-align: middle;
+  line-height: 100%;
+}
+
+.social.github:hover, .social.github:focus {
+  background-color: black;
+  color: #fefefe;
+}
+
+.social.cern {
+  background-color: #0053A1;
+  color: #fefefe;
+  width: 300px;
+}
+
+.social.cern:hover, .social.github:focus {
+  background-color: #004d85;
+  color: #fefefe;
+}

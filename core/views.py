@@ -3029,6 +3029,8 @@ def jobList(request, mode=None, param=None):
             "jobs": jobs,
             "errsByCount": errsByCount,
         }
+        ##self monitor
+        endSelfMonitor(request)
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -4064,6 +4066,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 'job': job,
                 'dsfiles': dsfiles,
                 }
+        ##self monitor
+        endSelfMonitor(request)
 
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
     else:
@@ -4225,6 +4229,8 @@ def userList(request):
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = sumd
+        ##self monitor
+        endSelfMonitor(request)
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
 
@@ -4537,6 +4543,8 @@ def userInfo(request, user=''):
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = sumd
+        ##self monitor
+        endSelfMonitor(request)
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
 
@@ -4684,6 +4692,8 @@ def siteList(request):
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = sites
+        ##self monitor
+        endSelfMonitor(request)
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
 
@@ -4805,6 +4815,8 @@ def siteInfo(request, site=''):
         for job in jobList:
             resp.append({'pandaid': job.pandaid, 'status': job.jobstatus, 'prodsourcelabel': job.prodsourcelabel,
                          'produserid': job.produserid})
+        ##self monitor
+        endSelfMonitor(request)
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
 
@@ -5135,6 +5147,8 @@ def wnInfo(request, site, wnname='all'):
             'errthreshold': errthreshold,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
+        ##self monitor
+        endSelfMonitor(request)
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
 
@@ -6124,6 +6138,8 @@ def dashboard(request, view='production'):
                 'nucleussummary': nucleusSummary,
                 'statelist': statelist1,
             }
+        ##self monitor
+        endSelfMonitor(request)
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
     elif view == 'objectstore':
@@ -6299,6 +6315,8 @@ def dashboard(request, view='production'):
                 'rw': rw,
                 'built': datetime.now().strftime("%H:%M:%S"),
             }
+            ##self monitor
+            endSelfMonitor(request)
 
             return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
@@ -6409,6 +6427,8 @@ def dashTasks(request, hours, view='production'):
             'jobsLeft': jobsLeft,
             'remainingWeightedEvents': remainingEventsSet,
         }
+        ##self monitor
+        endSelfMonitor(request)
         return HttpResponse(json.dumps(data), content_type='text/html')
 
 
@@ -6715,6 +6735,8 @@ def taskList(request):
             for ds in dsets:
                 dslist.append(ds)
             tasks[0]['datasets'] = dslist
+        ##self monitor
+        endSelfMonitor(request)
 
         dump = json.dumps(tasks, cls=DateEncoder)
         del request.session['TFIRST']
@@ -7300,6 +7322,8 @@ def runningMCProdTasks(request):
         'json' in request.session['requestParams']):
 
         dump = json.dumps(tasks, cls=DateEncoder)
+        ##self monitor
+        endSelfMonitor(request)
         return HttpResponse(dump, content_type='text/html')
     else:
         data = {
@@ -7522,7 +7546,8 @@ def runningProdTasks(request):
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
-
+        ##self monitor
+        endSelfMonitor(request)
         dump = json.dumps(tasks, cls=DateEncoder)
         return HttpResponse(dump, content_type='text/html')
     else:
@@ -7712,6 +7737,8 @@ def runningDPDProdTasks(request):
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
+        ##self monitor
+        endSelfMonitor(request)
 
         dump = json.dumps(tasks, cls=DateEncoder)
         return HttpResponse(dump, content_type='text/html')
@@ -8196,6 +8223,8 @@ def taskInfo(request, jeditaskid=0):
             'taskparams': taskparams,
             'datasets': dsets,
         }
+        ##self monitor
+        endSelfMonitor(request)
 
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -9107,6 +9136,8 @@ def errorSummary(request):
         for job in jobs:
             resp.append({'pandaid': job.pandaid, 'status': job.jobstatus, 'prodsourcelabel': job.prodsourcelabel,
                          'produserid': job.produserid})
+        ##self monitor
+        endSelfMonitor(request)
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
 def filterErrorData(request, data):
@@ -9322,6 +9353,8 @@ def incidentList(request):
             entry['typekey'] = inc['typekey']
             entry['description'] = inc['description']
             clearedInc.append(entry)
+        ##self monitor
+        endSelfMonitor(request)
         jsonResp = json.dumps(clearedInc)
         return HttpResponse(jsonResp, content_type='text/html')
 def esatlasPandaLoggerJson(request):
@@ -10054,6 +10087,9 @@ def datasetInfo(request):
             columns.append(pair)
     del request.session['TFIRST']
     del request.session['TLAST']
+
+    ##self monitor
+    endSelfMonitor(request)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
         data = {
@@ -10066,8 +10102,6 @@ def datasetInfo(request):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
-        ##self monitor
-        endSelfMonitor(request)
         response = render_to_response('datasetInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -10109,6 +10143,8 @@ def datasetList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
+        ##self monitor
+        endSelfMonitor(request)
         return HttpResponse(json.dumps(dsrec), content_type='text/html')
 
 
@@ -10238,6 +10274,8 @@ def fileInfo(request):
         files = sorted(files, key=lambda k: (-k['jeditaskid'], k['startevent']))
     if frec and 'creationdate' in frec and frec['creationdate'] is None:
         frec['creationdate'] = frec['creationdate'].strftime(defaultDatetimeFormat)
+    ##self monitor
+    endSelfMonitor(request)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
         data = {
@@ -10251,8 +10289,6 @@ def fileInfo(request):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
-        ##self monitor
-        endSelfMonitor(request)
         response = render_to_response('fileInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -10412,6 +10448,8 @@ def fileList(request):
 
     del request.session['TFIRST']
     del request.session['TLAST']
+    ##self monitor
+    endSelfMonitor(request)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
         xurl = extensibleURL(request)
@@ -10427,8 +10465,6 @@ def fileList(request):
             'limitexceeded': limitexceeded,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        ##self monitor
-        endSelfMonitor(request)
         data.update(getContextVariables(request))
         response = render_to_response('fileList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -10460,6 +10496,8 @@ def workQueues(request):
 
     del request.session['TFIRST']
     del request.session['TLAST']
+    ##self monitor
+    endSelfMonitor(request)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
         data = {
@@ -10470,8 +10508,6 @@ def workQueues(request):
             'xurl': extensibleURL(request),
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        ##self monitor
-        endSelfMonitor(request)
         response = render_to_response('workQueues.html', data, content_type='text/html')
         setCacheEntry(request, "workQueues", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -11264,6 +11300,8 @@ def globalshares(request):
 
     del request.session['TFIRST']
     del request.session['TLAST']
+    ##self monitor
+    endSelfMonitor(request)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
         data = {
@@ -11276,8 +11314,6 @@ def globalshares(request):
             'tablerows':tablerows,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        ##self monitor
-        endSelfMonitor(request)
         response = render_to_response('globalshares.html', data, content_type='text/html')
         setCacheEntry(request, "globalshares", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
