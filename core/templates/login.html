@@ -1,6 +1,10 @@
 {% extends '_base_core.html' %}
 {% load static %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static "css/login-buttons.css" %}">
+{% endblock %}
 {% block subtitle %}Login page{% endblock %}
+
 
 {% block body %}
 
@@ -14,7 +18,20 @@
         <img width="200" width="100" src="{% static "images/login-google.png"%}">
         </a>
 
+{#        <a href="{% url 'social:begin' 'cernauth2' %}?next={{ next }}" class="button social cern" >#}
+{#            <img width="40" width="40" src="{% static "images/cern-logo.png"%}">#}
+{#            Login with CERN (recommended)#}
+{#        </a><br>#}
+{#        <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}" class="button social google-plus">#}
+{#          <i class="fi-social-google-plus" aria-hidden="true"></i> Log in with Google+#}
+{#        </a><br>#}
+{#        <a href="#" class="button social github">#}
+{#          <i class="fi-social-github" aria-hidden="true"></i> Log in with Github#}
+{#        </a><br>#}
+
     </div>
+
+
 
 
 {% endblock %}
