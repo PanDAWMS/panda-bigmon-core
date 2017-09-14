@@ -6436,6 +6436,7 @@ def taskList(request):
     dkey = digkey(request)
     # Here we try to get cached data
     data = getCacheEntry(request, "taskList")
+    #data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -6493,7 +6494,8 @@ def taskList(request):
         wildCardExtension = wildCardExtension.replace('%252540', '@')
         wildCardExtension = wildCardExtension.replace('%2540', '@')
         wildCardExtension = wildCardExtension.replace('+', ' ')
-        wildCardExtension = wildCardExtension.replace('%', ' ')
+        if not "%%" in wildCardExtension:
+            wildCardExtension = wildCardExtension.replace('%', ' ')
 
         tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
         listTasks.append(JediTasksOrdered)
