@@ -456,6 +456,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     LAST_N_HOURS_MAX = 0
 
+    for paramName, paramVal  in request.session['requestParams'].iteritems():
+        request.session['requestParams'][paramName] = urllib.unquote(paramVal)
+
     excludeJobNameFromWildCard = True
     if 'jobname' in request.session['requestParams']:
         jobrequest = request.session['requestParams']['jobname']
@@ -6509,14 +6512,6 @@ def taskList(request):
     if 'statenotupdated' in request.session['requestParams']:
         tasks = taskNotUpdated(request, query, wildCardExtension)
     else:
-        wildCardExtension = wildCardExtension.replace('%20', ' ')
-        wildCardExtension = wildCardExtension.replace('%2520', ' ')
-        wildCardExtension = wildCardExtension.replace('%252540', '@')
-        wildCardExtension = wildCardExtension.replace('%2540', '@')
-        wildCardExtension = wildCardExtension.replace('+', ' ')
-        if not "%%" in wildCardExtension:
-            wildCardExtension = wildCardExtension.replace('%', ' ')
-
         tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
         listTasks.append(JediTasksOrdered)
         thread = Thread(target=totalCount, args=(listTasks, query, wildCardExtension, dkey))
