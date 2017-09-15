@@ -11704,7 +11704,7 @@ def loginauth2(request):
         next = extensibleURL(request, request.META['HTTP_REFERER'])
     else:
         next = '/'
-    response = render_to_response('login.html', {'request': request, 'next':next,'viewParams': request.session['viewParams'],}, content_type='text/html')
+    response = render_to_response('login.html', {'request': request, 'next':next,}, content_type='text/html')
     return response
 
 def loginerror(request):
