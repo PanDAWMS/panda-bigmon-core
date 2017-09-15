@@ -1637,7 +1637,7 @@ class RequestStat(models.Model):
     duration = models.IntegerField(db_column='duration')
     load = models.CharField(max_length=40, db_column='load')
     mem = models.CharField(max_length=40, db_column='mem')
-    urls = models.CharField(max_length=40, db_column='url')
+    urls = models.CharField(max_length=2500, db_column='url')
     description = models.CharField(max_length=12000, db_column='description')
     referrer = models.CharField(max_length=4000, db_column='referrer')
     useragent = models.CharField(max_length=250, db_column='useragent')

@@ -3,6 +3,24 @@
     margin-top: 1rem;
 }
 
+/* ART Main Menu styles */
+fieldset.artmenu {
+    margin: 1rem 0.3rem;
+    padding: 0.5rem 0.5rem;
+}
+
+li.artmenu-item {
+    margin-bottom: 0.5rem;
+}
+
+li.artmenu-item > input {
+    vertical-align: middle;
+    margin: 0;
+}
+
+li.artmenu-item > label {
+    vertical-align: middle;
+}
 
 .with-link-to-logs {
     margin: auto;
@@ -32,51 +50,6 @@
   .clickable a:hover {
       border-color: black;
   }
-/*.clickable .finished {*/
-  /*text-align: center;*/
-  /*vertical-align: middle;*/
-  /*height: 100%;*/
-  /*width: 25%;*/
-  /*display: inline-block;*/
-  /*background: #3adb76;*/
-  /*color: black;*/
-  /*font-size: 14px;*/
-  /*font-weight: bold;*/
-
-/*}*/
-/*.clickable .failed {*/
-  /*text-align: center;*/
-  /*vertical-align: middle;*/
-  /*height: 100%;*/
-  /*width: 25%;*/
-  /*display: inline-block;*/
-  /*background: tomato;*/
-  /*color: black;*/
-  /*font-size: 14px;*/
-  /*font-weight: bold;*/
-/*}*/
-/*.clickable .running {*/
-  /*text-align: center;*/
-  /*vertical-align: middle;*/
-  /*height: 100%;*/
-  /*width: 25%;*/
-  /*display: inline-block;*/
-  /*background: cornflowerblue;*/
-  /*color: black;*/
-  /*font-size: 14px;*/
-  /*font-weight: bold;*/
-/*}*/
-/*.clickable .unrecoverable {*/
-  /*text-align: center;*/
-  /*vertical-align: middle;*/
-  /*height: 100%;*/
-  /*width: 25%;*/
-  /*display: inline-block;*/
-  /*background:  	khaki;*/
-  /*color: black;*/
-  /*font-size: 14px;*/
-  /*font-weight: bold;*/
-/*}*/
 
 .clickable .finished {
   text-align: center;
@@ -212,9 +185,6 @@
   color: #0a0a0a; }
   :last-child > .accordion-art-content:last-child {
     border-bottom: 1px solid rgba(53,86,129, 0.8); }
-
-
-
 
 
 

@@ -74,6 +74,7 @@ ROOT_URLCONF = 'common.urls'
 AUTHENTICATION_BACKENDS = (
     'core.auth.Cernauth2.Cernauth2',
     'social_core.backends.google.GoogleOAuth2',
+    'social_core.backends.github.GithubOAuth2',
 )
 
 SOCIAL_AUTH_URL_NAMESPACE = 'social'

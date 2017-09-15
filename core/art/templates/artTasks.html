@@ -33,31 +33,39 @@
                   <th class="cell" ></th>
                   {% for brname,tags in pack.items %}
                       {% if forloop.first %}
-                      {% for ntname,tasks in tags.items %}
-                        <th class="header">{{ tasks.ntag_hf }}</th>
-                      {% endfor %}
+                          {% for ntag in ntaglist %}
+                              {% for ntname,tasks in tags.items %}
+                                {% if ntname == ntag %}
+                                    <th class="header">{{ tasks.ntag_hf }}</th>
+                                {% endif %}
+                              {% endfor %}
+                          {% endfor %}
                       {% endif %}
                   {% endfor %}
               </tr>
               {% for brname,tags in pack.items %}
                   <tr>
                       <td class="cell-left">{{ brname }}</td>
-                      {% for ntname,tasks in tags.items %}
-                          <td class="cell">
-                            {% if tasks.tasks|length > 0 %}
-                                {% for taskid, files in tasks.tasks.items %}
-                                    <div class="clickable">
-                                        <div class="finished">{{ files.finished }}</div>
-                                        <div class="failed">{{ files.failed }}</div>
-                                        <a href="{% url 'artJobs' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}&branch={{ brname }}{% else %}?package={{ brname }}&branch={{ pname }}{% endif %}&ntag={{ ntname }}&taskid={{ taskid }}&view={{ requestParams.view }}"></a>
-                                    </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="nodata">
-                                    ---
-                                </div>
-                            {% endif %}
-                          </td>
+                      {% for ntag in ntaglist %}
+                          {% for ntname,tasks in tags.items %}
+                              {% if ntname == ntag %}
+                                  <td class="cell">
+                                    {% if tasks.tasks|length > 0 %}
+                                        {% for taskid, files in tasks.tasks.items %}
+                                            <div class="clickable">
+                                                <div class="finished">{{ files.finished }}</div>
+                                                <div class="failed">{{ files.failed }}</div>
+                                                <a href="{% url 'artJobs' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}&branch={{ brname }}{% else %}?package={{ brname }}&branch={{ pname }}{% endif %}&ntag={{ ntname }}&taskid={{ taskid }}&view={{ requestParams.view }}"></a>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="nodata">
+                                            ---
+                                        </div>
+                                    {% endif %}
+                                  </td>
+                              {% endif %}
+                          {% endfor %}
                       {% endfor %}
                   </tr>
               {% endfor %}
