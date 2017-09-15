@@ -9,33 +9,33 @@
 {% block body %}
 
 
-<div class="row">
+<div class="row collapse">
   <div class="large-3 columns">
-      <fieldset class="fieldset">
+      <fieldset class="fieldset artmenu">
           <legend>Select package</legend>
           <ul class="no-bullet">
               {% for p in packages %}
-                  <li><input id="{{ p }}" class="package" type="checkbox"><label for="{{ p }}">{{ p }}</label></li>
+                  <li class="artmenu-item"><input id="{{ p }}" class="package" type="checkbox"><label for="{{ p }}">{{ p }}</label></li>
               {% endfor %}
           </ul>
       </fieldset>
   </div>
   <div class="large-4 columns">
-      <fieldset class="fieldset">
+      <fieldset class="fieldset artmenu">
           <legend>Select branch</legend>
           <ul class="no-bullet">
               {% for b in branches %}
-                  <li><input id="{{ b }}" class="branch" type="checkbox"><label for="{{ b }}">{{ b }}</label></li>
+                  <li class="artmenu-item"><input id="{{ b }}" class="branch" type="checkbox"><label for="{{ b }}">{{ b }}</label></li>
               {% endfor %}
           </ul>
       </fieldset>
   </div>
   <div class="large-2 columns">
-      <fieldset class="fieldset">
+      <fieldset class="fieldset artmenu">
           <legend>Select nightly tag</legend>
           <ul class="no-bullet">
               {% for t in ntags %}
-                  <li><input id="{{ t }}" class="ntag" type="checkbox"><label for="{{ t }}">{{ t }}</label></li>
+                  <li class="artmenu-item"><input id="{{ t }}" class="ntag" type="checkbox"><label for="{{ t }}">{{ t }}</label></li>
               {% endfor %}
               <li><label>From:<input type="date" class="ntag-text" id="ntag_from" min="2017-06-08"></label></li>
               <li><label>To:<input type="date" class="ntag-text" id="ntag_to"></label></li>
@@ -43,17 +43,17 @@
       </fieldset>
   </div>
   <div class="large-2 columns">
-      <fieldset class="fieldset">
+      <fieldset class="fieldset artmenu">
         <legend>Choose View</legend>
         <ul class="no-bullet">
-            <li><input type="radio" name="view" class="view" value="overview" id="overview" checked><label for="overview">Overview</label></li>
-            <li><input type="radio" name="view" class="view" value="tasks" id="tasks"><label for="tasks">Task</label></li>
-            <li><input type="radio" name="view" class="view" value="jobs" id="jobs"><label for="jobs">Job</label></li>
+            <li class="artmenu-item"><input type="radio" name="view" class="view" value="overview" id="overview" checked><label for="overview">Overview</label></li>
+            <li class="artmenu-item"><input type="radio" name="view" class="view" value="tasks" id="tasks"><label for="tasks">Task</label></li>
+            <li class="artmenu-item"><input type="radio" name="view" class="view" value="jobs" id="jobs"><label for="jobs">Job</label></li>
         </ul>
       </fieldset>
   </div>
   <div class="large-1 columns">
-    <fieldset class="fieldset">
+    <fieldset class="fieldset artmenu">
           <legend>Search</legend>
           <a onclick="searchResults()" class="button">Show me results!</a>
       </fieldset>

@@ -31,8 +31,12 @@
           <table class="no-border">
               <tr>
                   <th class="cell" ></th>
-                  {% for tags,files in pack.items %}
-                        <th class="header">{{ files.ntag_hf }}</th>
+                  {% for ntag in ntaglist %}
+                      {% for tags,files in pack.items %}
+                        {% if tags == ntag %}
+                            <th class="header">{{ files.ntag_hf }}</th>
+                        {% endif %}
+                      {% endfor %}
                   {% endfor %}
               </tr>
               <tr>
@@ -42,14 +46,24 @@
                       {% else %}
                         <a class="link-in-table" href="{%  url "artTasks" %}?branch={{ pname }}&ntag_from={{ requestParams.ntag_from }}&ntag_to={{ requestParams.ntag_to}}&view={{ requestParams.view }}">All packages</a>
                       {% endif %}</td>
-                  {% for tags,files in pack.items %}
-                      <td class="cell">
-                        <div class="clickable">
-                            <div class="finished">{{ files.finished }}</div>
-                            <div class="failed">{{ files.failed }}</div>
-                            <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}{% else %}?branch={{ pname }}{% endif %}&ntag={{ tags }}"></a>
-                        </div>
-                      </td>
+                  {% for ntag in ntaglist %}
+                      {% for tags,files in pack.items %}
+                          {% if tags == ntag %}
+                              <td class="cell">
+                                {% if files|length > 1 %}
+                                    <div class="clickable">
+                                        <div class="finished">{{ files.finished }}</div>
+                                        <div class="failed">{{ files.failed }}</div>
+                                        <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}{% else %}?branch={{ pname }}{% endif %}&ntag={{ tags }}"></a>
+                                    </div>
+                                {% else %}
+                                    <div class="nodata">
+                                        ---
+                                    </div>
+                                {% endif %}
+                              </td>
+                          {% endif %}
+                      {% endfor %}
                   {% endfor %}
               </tr>
           </table>

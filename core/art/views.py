@@ -213,7 +213,8 @@ def artOverview(request):
         'requestParams': request.session['requestParams'],
         'viewParams': request.session['viewParams'],
         'artpackages': artpackagesdict,
-        'noviewurl': noviewurl
+        'noviewurl': noviewurl,
+        'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
     }
     setCacheEntry(request, "artOverview", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
     response = render_to_response('artOverview.html', data, content_type='text/html')
@@ -275,7 +276,8 @@ def artTasks(request):
         'requestParams': request.session['requestParams'],
         'viewParams': request.session['viewParams'],
         'arttasks' : arttasksdict,
-        'noviewurl': noviewurl
+        'noviewurl': noviewurl,
+        'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
     }
 
     setCacheEntry(request, "artTasks", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
@@ -359,7 +361,8 @@ def artJobs(request):
         'requestParams': request.session['requestParams'],
         'viewParams': request.session['viewParams'],
         'artjobs': artjobsdict,
-        'noviewurl': noviewurl
+        'noviewurl': noviewurl,
+        'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
     }
     setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
     response = render_to_response('artJobs.html', data, content_type='text/html')

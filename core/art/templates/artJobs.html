@@ -38,8 +38,12 @@
                               <th class="cell" ></th>
                                 {% for test,tags in tests.items %}
                                   {% if forloop.first %}
-                                      {% for ntname,status in tags.items %}
-                                        <th class="header">{{ status.ntag_hf }}</th>
+                                      {% for ntag in ntaglist %}
+                                          {% for ntname,status in tags.items %}
+                                              {% if ntname == ntag %}
+                                                <th class="header">{{ status.ntag_hf }}</th>
+                                              {% endif %}
+                                          {% endfor %}
                                       {% endfor %}
                                   {% endif %}
                                 {% endfor %}
@@ -47,32 +51,36 @@
                           {% for test,tags in tests.items %}
                               <tr>
                               <td class="cell-left">{{ test }}</td>
-                              {% for ntname,jobs in tags.items  %}
-                                  <td class="cell">
-                                    {% if jobs.jobs|length > 0 %}
-                                        {% for pandaid,job in jobs.jobs.items %}
-                                            {% if job.jobstatus %}
-                                                <div class="with-link-to-logs">
-                                                    <div class="clickable">
-                                                        <div class="{{ job.jobstatus }}_job">{{ job.jobstatus }}</div>
-                                                        <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
+                              {% for ntag in ntaglist %}
+                                  {% for ntname,jobs in tags.items  %}
+                                    {% if ntname == ntag %}
+                                      <td class="cell">
+                                        {% if jobs.jobs|length > 0 %}
+                                            {% for pandaid,job in jobs.jobs.items %}
+                                                {% if job.jobstatus %}
+                                                    <div class="with-link-to-logs">
+                                                        <div class="clickable">
+                                                            <div class="{{ job.jobstatus }}_job">{{ job.jobstatus }}</div>
+                                                            <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
+                                                        </div>
+                                                        <a  class="to-logs" target="_blank" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link"></i></a>
                                                     </div>
-                                                    <a  class="to-logs" target="_blank" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link"></i></a>
-                                                </div>
-                                                {% if jobs.jobs|length > 1 %} <br> {% endif %}
-                                            {% else %}
-                                                <div class="nodata">
-                                                    ---
-                                                </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    {% else %}
-                                        <div class="nodata">
-                                            ---
-                                        </div>
+                                                    {% if jobs.jobs|length > 1 %} <br> {% endif %}
+                                                {% else %}
+                                                    <div class="nodata">
+                                                        ---
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="nodata">
+                                                ---
+                                            </div>
+                                        {% endif %}
+                                      </td>
                                     {% endif %}
-                                  </td>
-                              {%  endfor %}
+                                  {%  endfor %}
+                              {% endfor %}
                               </tr>
                           {% endfor %}
                       </table>
