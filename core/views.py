@@ -11709,7 +11709,7 @@ def loginauth2(request):
 
 def loginerror(request):
     response = render_to_response('login.html', {'request': request,}, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
 
