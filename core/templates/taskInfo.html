@@ -324,17 +324,15 @@ This is an event service task<p>
 {% if datasets %}
 <script type="text/javascript">    
 function toggleRowsDisplay(className) {                                                                                                                                                                                    
-   el = document.getElementsByClassName(className)
+   el = document.getElementsByClassName(className);
    for (i=0; i<el.length; i++) {   
      el[i].style.display = (el[i].style.display=="none") ? "" : "none";                                                                                           
    }
 }   
 </script>
-
 <table>
-
 {% if dstypes %}
-<tr bgcolor='lightcyan'> <th colspan=20> 
+<tr bgcolor='lightcyan'> <th colspan=20>
 {{ datasets|length }} datasets, show/hide by type:
 &nbsp; <a style="cursor: pointer;" onclick="javascript:toggleRowsDisplay('type-all');">all</a>
 {% for dst in dstypes %}
@@ -342,7 +340,6 @@ function toggleRowsDisplay(className) {
 {% endfor %}
 </th> </tr>
 {% endif %}
-
 <tr bgcolor='lightcyan' >
 	<th>Dataset, container name</th>
 	<th>Type</th>
@@ -352,11 +349,9 @@ function toggleRowsDisplay(className) {
 	<th>Nfiles</th>
 	<th>Created</th>
 	<th>Modified</th>
-</tr>
-
-{% for dsrec in datasets %}
+</tr>{% for dsrec in datasets %}
 	<tr class="type-{{ dsrec.type }} type-all" style="display:none">
-		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetid={{ dsrec.datasetid }}">{{ dsrec.datasetname }}</a></font></td>>
+		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetid={{ dsrec.datasetid }}">{{ dsrec.datasetname }}</a></font></td>
 		<td>{{ dsrec.type }}</td>
 		<td>{{ dsrec.streamname }}</td>
 		<td class='{{dsrec.state}}'>{{ dsrec.state }}</td>
@@ -366,6 +361,9 @@ function toggleRowsDisplay(className) {
 		<td>{{ dsrec.modificationtime }}</td>
 	</tr>
 {% endfor %}
+
+
+
 </table>
 </p>
 

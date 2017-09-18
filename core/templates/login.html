@@ -9,25 +9,25 @@
 {% block body %}
 
     <div style="text-align:center; display:block; vertical-align: middle;padding-top: 50px;padding-bottom: 50px">
-        <a href="{% url 'social:begin' 'cernauth2' %}?next={{ next }}"  >
-        <img width="100" width="100" src="{% static "images/cernlogo.jpg"%}"><br>
-            <h6>Login with CERN (recommended)</h6><br>
-        </a>
+{#        <a href="{% url 'social:begin' 'cernauth2' %}?next={{ next }}"  >#}
+{#        <img width="100" width="100" src="{% static "images/cernlogo.jpg"%}"><br>#}
+{#            <h6>Login with CERN (recommended)</h6><br>#}
+{#        </a>#}
+{##}
+{#        <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}"  >#}
+{#        <img width="200" width="100" src="{% static "images/login-google.png"%}">#}
+{#        </a>#}
 
-        <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}"  >
-        <img width="200" width="100" src="{% static "images/login-google.png"%}">
-        </a>
-
-{#        <a href="{% url 'social:begin' 'cernauth2' %}?next={{ next }}" class="button social cern" >#}
-{#            <img width="40" width="40" src="{% static "images/cern-logo.png"%}">#}
-{#            Login with CERN (recommended)#}
-{#        </a><br>#}
-{#        <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}" class="button social google-plus">#}
-{#          <i class="fi-social-google-plus" aria-hidden="true"></i> Log in with Google+#}
-{#        </a><br>#}
-{#        <a href="#" class="button social github">#}
-{#          <i class="fi-social-github" aria-hidden="true"></i> Log in with Github#}
-{#        </a><br>#}
+        <a href="{% url 'social:begin' 'cernauth2' %}?next={{ next }}" class="button social cern" >
+            <img width="40" width="40" src="{% static "images/cern-logo.png"%}">
+            Login with CERN (recommended)
+        </a><br>
+        <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}" class="button social google-plus">
+          <i class="fi-social-google-plus" aria-hidden="true"></i> Log in with Google+
+        </a><br>
+        <a href="{% url 'social:begin' 'github' %}?next={{ next }}" class="button social github">
+          <i class="fi-social-github" aria-hidden="true"></i> Log in with Github
+        </a><br>
 
     </div>
 

@@ -4236,7 +4236,7 @@ def userList(request):
         endSelfMonitor(request)
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
-
+@login_required(login_url='loginauth2')
 def userInfo(request, user=''):
     valid, response = initRequest(request)
     if not valid: return response
@@ -11697,6 +11697,8 @@ def getBadEventsForTask(request):
 def loginauth2(request):
     if 'HTTP_REFERER' in request.META:
         next = extensibleURL(request, request.META['HTTP_REFERER'])
+    elif 'next' in request.GET:
+        next = str(request.GET['next'])
     else:
         next = '/'
     response = render_to_response('login.html', {'request': request, 'next':next,}, content_type='text/html')
