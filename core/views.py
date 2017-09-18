@@ -457,7 +457,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     LAST_N_HOURS_MAX = 0
 
     for paramName, paramVal  in request.session['requestParams'].iteritems():
-        request.session['requestParams'][paramName] = urllib.unquote(paramVal)
+        try:
+            request.session['requestParams'][paramName] = urllib.unquote(paramVal)
+        except: request.session['requestParams'][paramName] = paramVal
 
     excludeJobNameFromWildCard = True
     if 'jobname' in request.session['requestParams']:
