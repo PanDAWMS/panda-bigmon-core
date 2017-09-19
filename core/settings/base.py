@@ -80,7 +80,7 @@ AUTHENTICATION_BACKENDS = (
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
 SOCIAL_AUTH_STORAGE = 'social_django.models.DjangoStorage'
-SOCIAL_AUTH_LOGIN_ERROR_URL = '/loginerror/'
+#SOCIAL_AUTH_LOGIN_ERROR_URL = '/loginerror/'
 REDIRECT_STATE = False
 LOGIN_URL = 'login'
 

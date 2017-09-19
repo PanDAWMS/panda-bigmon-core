@@ -376,6 +376,14 @@ def initRequest(request, callselfmon = True):
     else:
         for p in request.GET:
             pval = request.GET[p]
+            ####if injection###
+            if 'script' in pval.lower() or '</' in pval.lower() or '/>' in pval.lower():
+                data = {
+                    'viewParams': request.session['viewParams'],
+                    'requestParams': request.session['requestParams'],
+                    "errormessage": "Illegal value '%s' for %s" % (pval, p),
+                }
+                return False, render_to_response('errorPage.html', data, content_type='text/html')
             pval = pval.replace('+', ' ')
             if p.lower() != 'batchid':  # Special requester exception
                 pval = pval.replace('#', '')
