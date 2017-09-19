@@ -10628,13 +10628,24 @@ def getErrorDescription(job, mode='html', provideProcessedCodes = False):
     txt = ''
     codesDescribed = []
 
-    if 'metastruct' in job and job['metastruct']['exitCode'] != 0:
-        meta = job['metastruct']
-        txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])
-        if provideProcessedCodes:
-            return txt, codesDescribed
+    if 'metastruct' in job:
+        if type(job['metastruct']) is unicode:
+            meta = json.loads(job['metastruct'])
+            if meta['exitCode']==0:
+                txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])
+                if provideProcessedCodes:
+                    return txt, codesDescribed
+                else:
+                    return txt
         else:
-            return txt
+            meta = job['metastruct']
+            if meta['exitCode'] != 0:
+                meta = job['metastruct']
+                txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])
+                if provideProcessedCodes:
+                    return txt, codesDescribed
+                else:
+                    return txt
 
     for errcode in errorCodes.keys():
         errval = 0
