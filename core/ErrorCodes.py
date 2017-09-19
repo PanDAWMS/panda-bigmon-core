@@ -3,6 +3,7 @@ Created on Jun 29, 2009
 
 @author: Torre Wenaus
 '''
+import logging
 
 class ErrorCodes:
     
@@ -270,9 +271,14 @@ class ErrorCodes:
         self.errorStages['exeerrorcode'][100] = 'ddm-start'
         
         for code in range ( 1000, 2000 ):
-            if self.errorCodes['piloterrorcode'].has_key(code) or self.errorStages['piloterrorcode'].has_key(code):
-               self.errorCodes['exeerrorcode'][code]  = self.errorCodes['piloterrorcode'][code]
-               self.errorStages['exeerrorcode'][code] = self.errorStages['piloterrorcode'][code] 
+            #try:
+            if self.errorCodes['piloterrorcode'].has_key(code):
+                self.errorCodes['exeerrorcode'][code] = self.errorCodes['piloterrorcode'][code]
+            if self.errorStages['piloterrorcode'].has_key(code):
+                self.errorStages['exeerrorcode'][code] = self.errorStages['piloterrorcode'][code]
+            #except Exception as e:
+                # print e.__class__, e.__doc__, e.message, 'bigpanda_logstash'
+                #logging.error(e)
 
     # errors at http://alxr.usatlas.bnl.gov/lxr/source/atlas/Tools/PyJobTransformsCore/share/atlas_error_categories.db?v=current
         self.errorCodes['exeerrorcode'][60000] = 'segmentation violation'
@@ -698,8 +704,10 @@ class ErrorCodes:
         self.errorStages['transexitcode'][223] = 'athena-during'
     
         for code in ( 1008, 1098, 1112, 1116, 1117, 1118, 1119, 1163, 1177, 1178 ):
-            self.errorCodes['transexitcode'][code] = self.errorCodes['piloterrorcode'][code]
-            self.errorStages['transexitcode'][code] = self.errorStages['piloterrorcode'][code]
+            if self.errorCodes['piloterrorcode'].has_key(code):
+                self.errorCodes['transexitcode'][code] = self.errorCodes['piloterrorcode'][code]
+            if self.errorStages['piloterrorcode'].has_key(code):
+                self.errorStages['transexitcode'][code] = self.errorStages['piloterrorcode'][code]
 
         self.errorCodes['transexitcode'][1198] = 'Can\'t check the child process status from the heartbeat process'
         self.errorStages['transexitcode'][1198] = 'athena-during'
