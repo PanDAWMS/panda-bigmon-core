@@ -2742,8 +2742,12 @@ def jobList(request, mode=None, param=None):
                     listJobs.append(Jobsarchived)
                     totalJobs = len(archJobs)
                     jobs.extend(archJobs)
-        thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
-        thread.start()
+        if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+                    'json' not in request.session['requestParams'])):
+            thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
+            thread.start()
+        else:
+            thread = None
 
     ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
     taskids = {}
@@ -2925,18 +2929,18 @@ def jobList(request, mode=None, param=None):
         if job['computingsite'] in siteHash.keys():
             job['computingsitestatus'] = siteHash[job['computingsite']][0]
             job['computingsitecomment'] = siteHash[job['computingsite']][1]
-
-    try:
-        thread.join()
-        jobsTotalCount = sum(tcount[dkey])
-        print dkey
-        print tcount[dkey]
-        del tcount[dkey]
-        print tcount
-        print jobsTotalCount
-
-    except:
-        jobsTotalCount = -1
+    if thread != None:
+        try:
+            thread.join()
+            jobsTotalCount = sum(tcount[dkey])
+            print dkey
+            print tcount[dkey]
+            del tcount[dkey]
+            print tcount
+            print jobsTotalCount
+        except:
+            jobsTotalCount = -1
+    else: jobsTotalCount = -1
 
     listPar =[]
     for key, val in request.session['requestParams'].iteritems():
@@ -6524,9 +6528,12 @@ def taskList(request):
     else:
         tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
         listTasks.append(JediTasksOrdered)
-        thread = Thread(target=totalCount, args=(listTasks, query, wildCardExtension, dkey))
-        thread.start()
-
+        if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+                    'json' not in request.session['requestParams'])):
+            thread = Thread(target=totalCount, args=(listTasks, query, wildCardExtension, dkey))
+            thread.start()
+        else:
+            thread = None
     # Getting hashtags for task selection
     taskl = []
     for task in tasks:
@@ -6689,16 +6696,18 @@ def taskList(request):
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     nohashtagurl = removeParam(xurl, 'hashtag', mode='extensible')
-    try:
-        thread.join()
-        tasksTotalCount = sum(tcount[dkey])
-        print dkey
-        print tcount[dkey]
-        del tcount[dkey]
-        print tcount
-        print tasksTotalCount
-    except:
-        tasksTotalCount = -1
+    if thread!=None:
+        try:
+            thread.join()
+            tasksTotalCount = sum(tcount[dkey])
+            print dkey
+            print tcount[dkey]
+            del tcount[dkey]
+            print tcount
+            print tasksTotalCount
+        except:
+            tasksTotalCount = -1
+    else: tasksTotalCount = -1
 
     listPar = []
     for key, val in request.session['requestParams'].iteritems():
@@ -8954,7 +8963,7 @@ def errorSummary(request):
 
     if not testjobs: query['jobstatus__in'] = ['failed', 'holding']
     jobs = []
-    values = 'eventservice', 'produsername', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid','taskid', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'currentpriority', 'computingelement','gshare'
+    values = 'eventservice', 'produsername','produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid','taskid', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'currentpriority', 'computingelement','gshare'
     print "step3-1"
     print str(datetime.now())
 
@@ -8981,9 +8990,13 @@ def errorSummary(request):
             Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
                 *values))
         listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4, Jobsarchived
+    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+        'json' not in request.session['requestParams'])):
+        thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
+        thread.start()
+    else:
+        thread = None
 
-    thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
-    thread.start()
 
     print "step3-1-0"
     print str(datetime.now())
@@ -9054,14 +9067,17 @@ def errorSummary(request):
 
     print "step3-3"
     print str(datetime.now())
-
-    thread.join()
-    jobsErrorsTotalCount = sum(tcount[dkey])
-    print dkey
-    print tcount[dkey]
-    del tcount[dkey]
-    print tcount
-    print jobsErrorsTotalCount
+    if thread!=None:
+        try:
+            thread.join()
+            jobsErrorsTotalCount = sum(tcount[dkey])
+            print dkey
+            print tcount[dkey]
+            del tcount[dkey]
+            print tcount
+            print jobsErrorsTotalCount
+        except: jobsErrorsTotalCount = -1
+    else: jobsErrorsTotalCount = -1
 
     listPar =[]
     for key, val in request.session['requestParams'].iteritems():
@@ -9074,7 +9090,7 @@ def errorSummary(request):
     print listPar
     del listPar
     if (math.fabs(njobs-jobsErrorsTotalCount)<1000):
-        jobsErrorsTotalCount=None
+        jobsErrorsTotalCount = None
     else:
         jobsErrorsTotalCount = int(math.ceil((jobsErrorsTotalCount+10000)/10000)*10000)
     request.session['max_age_minutes'] = 6
@@ -9139,8 +9155,8 @@ def errorSummary(request):
         del request.session['TLAST']
         resp = []
         for job in jobs:
-            resp.append({'pandaid': job.pandaid, 'status': job.jobstatus, 'prodsourcelabel': job.prodsourcelabel,
-                         'produserid': job.produserid})
+            resp.append({'pandaid': job['pandaid'], 'status': job['jobstatus'], 'prodsourcelabel': job['prodsourcelabel'],
+                         'produserid': job['produserid']})
         ##self monitor
         endSelfMonitor(request)
         return HttpResponse(json.dumps(resp), content_type='text/html')
@@ -10640,7 +10656,6 @@ def getErrorDescription(job, mode='html', provideProcessedCodes = False):
         else:
             meta = job['metastruct']
             if meta['exitCode'] != 0:
-                meta = job['metastruct']
                 txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])
                 if provideProcessedCodes:
                     return txt, codesDescribed
