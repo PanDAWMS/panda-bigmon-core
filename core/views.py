@@ -2643,6 +2643,7 @@ def cache_filter(timeout):
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
     dkey = digkey(request)
+    thread = None
     #Here we try to get data from cache
     data = getCacheEntry(request, "jobList")
     if data is not None:
@@ -6470,6 +6471,7 @@ def taskESExtendedInfo(request):
 @csrf_exempt
 def taskList(request):
     valid, response = initRequest(request)
+    thread = None
     dkey = digkey(request)
     # Here we try to get cached data
     data = getCacheEntry(request, "taskList")
@@ -7853,7 +7855,6 @@ def taskInfo(request, jeditaskid=0):
     nomodeurl = removeParam(furl, 'mode')
     nomodeurl = extensibleURL(request, nomodeurl)
     if not valid: return response
-
     # Here we try to get cached data. We get any cached data is available
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
     if data is not None:
@@ -8863,7 +8864,7 @@ def digkey (rq):
 
 def errorSummary(request):
     valid, response = initRequest(request)
-
+    thread = None
     dkey = digkey(request)
 
     if not valid: return response
