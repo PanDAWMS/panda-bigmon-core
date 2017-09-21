@@ -610,10 +610,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         time_from_struct = time.strptime(request.session['requestParams']['date_to'], '%Y-%m-%d')
         enddate = datetime.utcfromtimestamp(time.mktime(time_from_struct))
     if 'earlierthan' in request.session['requestParams']:
-        enddate = timezone.now() - timedelta(hours=int(request.session['requestParams']['earlierthan']))
+        enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthan']))
     # enddate = enddate.strftime(defaultDatetimeFormat)
     if 'earlierthandays' in request.session['requestParams']:
-        enddate = timezone.now() - timedelta(hours=int(request.session['requestParams']['earlierthandays']) * 24)
+        enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthandays']) * 24)
     # enddate = enddate.strftime(defaultDatetimeFormat)
     if enddate == None:
         enddate = timezone.now()  # .strftime(defaultDatetimeFormat)
