@@ -41,15 +41,15 @@
                 </td>
                 <td>
                 <div class="comment more">
-                {% for task in cluster.tasks %}
-                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.taskid }}">{{ task.taskid }}</a>,
+                {% for taskid, taskstatus in cluster.tasks.items %}
+                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ taskid }}">{{ taskid }}({{ taskstatus }})</a>,
                 {% endfor %}
                 </div>
                 </td>
                 <td>
                 <div class="comment more">
-                    {% for dataset in cluster.datasets %}
-                    <a href="https://bigpanda.cern.ch/datasetInfo/?datasetname={{ dataset.dsname }}" target="_blank">{{ dataset.dsname }} ({{ dataset.status }})</a>,
+                    {% for dsname,dstatus in cluster.datasets.items %}
+                    <a href="https://bigpanda.cern.ch/datasetInfo/?datasetname={{ dsname }}" target="_blank">{{ dsname }} ({{ dstatus }})</a>,
                     {% endfor %}
                 </div>
                 </td>

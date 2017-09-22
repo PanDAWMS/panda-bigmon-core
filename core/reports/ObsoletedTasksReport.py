@@ -55,12 +55,12 @@ class ObsoletedTasksReport:
             if clusterID in clustersSummary:
                 currCluster = clustersSummary[clusterID]
                 currCluster["req"].append(dsEntry[3])
-                currCluster["datasets"].append({"dsname":dsEntry[5], "status":dsEntry[4]})
-                currCluster["tasks"].append({"taskid":dsEntry[0], "status":dsEntry[2]})
+                currCluster["datasets"][dsEntry[5]]=dsEntry[4]
+                currCluster["tasks"][dsEntry[0]]=dsEntry[2]
                 currCluster["obsoleteStart"] = dsEntry[1]
 
             else:
-                currCluster = {"req":[dsEntry[3]], "tasks":[{"taskid":dsEntry[0], "status":dsEntry[2]}], "datasets":[{"dsname":dsEntry[5], "status":dsEntry[4]}], "obsoleteStart":dsEntry[1]}
+                currCluster = {"req":[dsEntry[3]], "tasks":{dsEntry[0]:dsEntry[2]}, "datasets":{dsEntry[5]:dsEntry[4]}, "obsoleteStart":dsEntry[1]}
             clustersSummary[clusterID] = currCluster
             i+=1
 
