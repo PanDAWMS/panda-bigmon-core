@@ -19,7 +19,7 @@ def collectData(pandaID):
     if len(logFiles) == 0:
         logFiles.extend(FilestableArch.objects.filter(pandaid=pandaID, type='log').values())
     if not len(logFiles) == 1:
-        return -1
+        return HttpResponse('Log files for pandaid=%s not found'% pandaID)
 
     logfile = logFiles[0]
     guid = logfile['guid']
