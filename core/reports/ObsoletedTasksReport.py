@@ -13,6 +13,71 @@ class ObsoletedTasksReport:
     def __init__(self):
         pass
 
+
+    def prepareReportTasksV4(self, request, type):
+        # 1. Select obsolete tasks
+        # 2. Select obsolete datasets
+        # 3. Select tasks related to obsolete datasets
+        # 4. Show datasets, their status, tasks, status
+
+        dataSetsSQLQuery = "SELECT t1.TASKID, t1.TIMESTAMP, t1.STATUS, t1.PR_ID, t2.STATUS, t2.NAME FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_DATASET t2 WHERE t2.TASKID=t1.TASKID and t1.TIMESTAMP>add_months(sysdate,-1) and t1.STATUS IN ('obsolete') and instr(t2.NAME,'.log.') = 0"
+
+        cur = connection.cursor()
+        cur.execute(dataSetsSQLQuery)
+        statsDataSets = cur.fetchall()
+
+        i = 0
+        timesecs = []
+
+        for taskEntry in statsDataSets:
+            timesecs.append(time.mktime(taskEntry[1].timetuple()))
+            i += 1
+
+
+        minT = min(timesecs)
+        timesecs[:] = [x - minT for x in timesecs]
+
+        thresh = 21600
+
+        dataTmp = [
+            timesecs,
+        ]
+        np.asarray(dataTmp)
+        clusters = hcluster.fclusterdata(np.transpose(np.asarray(dataTmp)), thresh, criterion="distance")
+
+        clustersSummary = {}
+
+        i = 0
+
+        for dsEntry in statsDataSets:
+            clusterID = clusters[i]
+
+            if clusterID in clustersSummary:
+                currCluster = clustersSummary[clusterID]
+                currCluster["req"].append(dsEntry[3])
+                currCluster["datasets"].append({"dsname":dsEntry[5], "status":dsEntry[4]})
+                currCluster["tasks"].append({"taskid":dsEntry[0], "status":dsEntry[2]})
+                currCluster["obsoleteStart"] = dsEntry[1]
+
+            else:
+                currCluster = {"req":[dsEntry[3]], "tasks":[{"taskid":dsEntry[0], "status":dsEntry[2]}], "datasets":[{"dsname":dsEntry[5], "status":dsEntry[4]}], "obsoleteStart":dsEntry[1]}
+            clustersSummary[clusterID] = currCluster
+            i+=1
+
+
+        clustersSummary = clustersSummary.values()
+
+        cluserssummaryList = sorted(clustersSummary, key=lambda k: k['obsoleteStart'], reverse=True)
+
+        data = {}
+        data['built'] = datetime.now().strftime("%d %b %Y %H:%M:%S")
+        data['type'] = type
+        data['clusters'] = cluserssummaryList
+
+        return render_to_response('reportObsoletedTasksv4.html', data, RequestContext(request))
+
+
+
     def prepareReportTasksV1(self, request, type):
 
         uniqueTasksCond = ""
@@ -157,4 +222,4 @@ class ObsoletedTasksReport:
         # elif 'obstasks' in request.session['requestParams'] and request.session['requestParams']['obstasks'] == 'dsview':
         #     return self.prepareReportTasksV1(request, "dsview")
         # else:
-        return self.prepareReportTasksV1(request, "tasksview")
+        return self.prepareReportTasksV4(request, "tasksview")

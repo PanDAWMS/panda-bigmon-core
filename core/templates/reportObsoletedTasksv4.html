@@ -1,0 +1,60 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %} {{ viewParams.MON_VO }} Obsolete {% if type == 'dsview' %}datasets{% elif type == 'tasksview' %}tasks{% endif %}
+{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} Obsolete {% if type == 'dsview' %}datasets{% elif type == 'tasksview' %}tasks{% endif %}</a>{% endblock %}
+{% block subtitle %}PanDA {{view}} {{ requestParams.mode }} {{ viewParams.selection|safe }}
+{% endblock %}
+{% block body %}
+
+    <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+
+    <script type="text/javascript">
+
+        $(document).ready(function() {
+            $(".comment").shorten();
+        });
+
+    </script>
+
+
+
+    <h1> Obsolete tasks and datasets<span style="float:right;"><h3>Built on {{ built }} (UTC)</h3></span></h1>
+
+    {% for cluster in clusters%}
+        <table>
+            <tr><th colspan="3">Obsolete action at {{cluster.obsoleteStart}}</th></tr>
+            <tr>
+                <td>Affected Requests:</td>
+                <td>Tasks</td>
+                <td>Datasets</td>
+            </tr>
+            <tr>
+                <td>
+                <div class="comment more">
+                {% for req in cluster.req %}
+                    <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ req }}/"  target="_blank">{{ req }}</a>,
+                {% endfor %}
+                </div>
+                </td>
+                <td>
+                <div class="comment more">
+                {% for task in cluster.tasks %}
+                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.taskid }}">{{ task.taskid }}</a>,
+                {% endfor %}
+                </div>
+                </td>
+                <td>
+                <div class="comment more">
+                    {% for dataset in cluster.datasets %}
+                    <a href="https://bigpanda.cern.ch/datasetInfo/?datasetname={{ dataset.dsname }}" target="_blank">{{ dataset.dsname }} ({{ dataset.status }})</a>,
+                    {% endfor %}
+                </div>
+                </td>
+            </tr>
+        </table>
+    {% endfor %}
+
+{% endblock %}
