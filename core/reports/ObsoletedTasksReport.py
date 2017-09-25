@@ -37,7 +37,7 @@ class ObsoletedTasksReport:
         minT = min(timesecs)
         timesecs[:] = [x - minT for x in timesecs]
 
-        thresh = 21600
+        thresh = 60
 
         dataTmp = [
             timesecs,
@@ -58,7 +58,7 @@ class ObsoletedTasksReport:
                 currCluster["datasets"][dsEntry[5]]=dsEntry[4]
                 currCluster["tasks"][dsEntry[0]]=dsEntry[2]
                 currCluster["obsoleteStart"] = dsEntry[1]
-                currCluster["leastParent"] = dsEntry[6] if not dsEntry[6] < currCluster["leastParent"] else currCluster["leastParent"]
+                currCluster["leastParent"] = dsEntry[6] if dsEntry[6] < currCluster["leastParent"] else currCluster["leastParent"]
 
             else:
                 currCluster = {"req":[dsEntry[3]], "tasks":{dsEntry[0]:dsEntry[2]},
