@@ -172,11 +172,12 @@ $( "#tabs" ).on( "tabsactivate", function( event, ui ) {
                     $("#tabs-3").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>");
                     $("#tabs-3").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_prodjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod job brokerage</a><br/><br/>");
                 }
-                $("#tabs-3").append("<input id=\"refresh\" type=\"submit\" value=\"Refresh\"><br/><br/>");
+                $("#tabs-3").append("<input id=\"refresh\" type=\"submit\" value=\"Refresh\">&nbsp;&nbsp;");
+                $("#tabs-3").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_prodjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod job brokerage (es-atlas.cern.ch)</a><br/><br/>");
                 //$( "#tabs-3" ).append( "<iframe id=\"prodjobbrokerage\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_prodjobbrokerage?embed=true&g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-24h%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>" );
-                $( "#tabs-3" ).append("<iframe id=\"prodjobbrokerage\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_prodjobbrokerage?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
-                $( "#refresh" ).button();
-                $( "#refresh" ).click( function( event ) {
+                $("#tabs-3" ).append("<iframe id=\"prodjobbrokerage\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_prodjobbrokerage?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
+                $("#refresh" ).button();
+                $("#refresh" ).click( function( event ) {
                     $( '#prodjobbrokerage' ).attr( 'src', function ( i, val ) { return val; });
                 } );
                 break;
@@ -185,11 +186,12 @@ $( "#tabs" ).on( "tabsactivate", function( event, ui ) {
                     $("#tabs-4").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>")
                     $("#tabs-4").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_analyjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Analy job brokerage</a><br/><br/>");
                 }
-                $( "#tabs-4").append("<input id=\"refresh\" type=\"submit\" value=\"Refresh\"><br/><br/>");
+                $("#tabs-4").append("<input id=\"refresh\" type=\"submit\" value=\"Refresh\">&nbsp;&nbsp;");
+                $("#tabs-4").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_analyjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Analy job brokerage (es-atlas.cern.ch)</a><br/><br/>");
                 //$( "#tabs-4" ).append( "<iframe id=\"analyjobbrokerage\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_analyjobbrokerage?embed=true&_g=()\" height=\"1000\" width=\"100%\"></iframe>" )
-                $( "#tabs-4" ).append( "<iframe id=\"analyjobbrokerage\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_analyjobbrokerage?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
-                $( "#refresh" ).button();
-                $( "#refresh" ).click( function( event ) {
+                $("#tabs-4" ).append( "<iframe id=\"analyjobbrokerage\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_analyjobbrokerage?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
+                $("#refresh" ).button();
+                $("#refresh" ).click( function( event ) {
                     $( '#analyjobbrokerage' ).attr( 'src', function ( i, val ) { return val; });
                 } );
                 break;
@@ -198,11 +200,12 @@ $( "#tabs" ).on( "tabsactivate", function( event, ui ) {
                      $("#tabs-5").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>");
                      $("#tabs-5").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Throttle: queued vs running</a><br/><br/>");
                 }
-                $( "#tabs-5").append("<input id=\"refresh\" type=\"submit\" value=\"Refresh\"><br/><br/>");
+                $("#tabs-5").append("<input id=\"refresh\" type=\"submit\" value=\"Refresh\">&nbsp;&nbsp;");
+                $("#tabs-5").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Throttle: queued vs running (es-atlas.cern.ch)</a><br/><br/>");
                 //$( "#tabs-5" ).append( "<iframe id=\"throttle\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?embed=true&_g=()\" height=\"1000\" width=\"100%\"></iframe>" )
-                $( "#tabs-5" ).append("<iframe id=\"throttle\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
-                $( "#refresh" ).button();
-                $( "#refresh" ).click( function( event ) {
+                $("#tabs-5" ).append("<iframe id=\"throttle\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
+                $("#refresh" ).button();
+                $("#refresh" ).click( function( event ) {
                     $( '#throttle' ).attr( 'src', function ( i, val ) { return val; });
                 } )
                 break;
