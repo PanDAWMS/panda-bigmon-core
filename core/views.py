@@ -7931,6 +7931,8 @@ def taskInfo(request, jeditaskid=0):
     jobsummaryPMERGE = []
     eventsdict=[]
     objectStoreDict=[]
+    eventsChain = []
+
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
         request.session['requestParams']['jeditaskid'])
     if jeditaskid == 0:
@@ -7979,6 +7981,9 @@ def taskInfo(request, jeditaskid=0):
                 objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
                 for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
 
+            eventsChainsValues = 'lfn', 'attemptnr', 'startevent', 'endevent'
+            queryChain = {'jeditaskid':jeditaskid, 'startevent__isnull':False}
+            eventsChain.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues)[:20])
 
 
         else:
@@ -8288,6 +8293,7 @@ def taskInfo(request, jeditaskid=0):
             'vomode': VOMODE,
             'eventservice': eventservice,
             'tk': transactionKey,
+            'eventsChain':eventsChain,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
         }
         data.update(getContextVariables(request))
