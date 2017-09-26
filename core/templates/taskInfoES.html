@@ -567,7 +567,8 @@ No datasets were found for this task
 
     {% if eventsChain and eventsChain|length > 0 %}
     <table>
-    <a name="eventchaintable">Events chain attempts</a>
+    <a name="eventchaintable"></a>
+        <tr bgcolor='lightcyan'><th colspan=20>Events chain attempts</th></tr>
         <tr><th>LFN</th><th>Attempts</th><th>Start Event</th><th>End Event</th></tr>
         {% for chain in eventsChain %}
             <tr><td>{{ chain.lfn }}</td><td>{{ chain.attemptnr }}</td><td>{{ chain.startevent }}</td><td>{{ chain.endevent }}</td></tr>
