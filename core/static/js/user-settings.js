@@ -19,20 +19,24 @@ function getSettings(name) {
 }
 
 
-function disableDetails(inputid,name,menuid,menuitemid) {
+function disableDetails(tablename) {
+    var basename = tablename.replace(/ *?summary/g,'');
+    var inputid = 'switch-table-' + tablename;
     var input = document.getElementById(inputid);
-    var switches = document.getElementsByName(name);
+    var switchmenuid = basename + '-menu';
+    var switchname = 'switch-' + basename;
+    var switches = document.getElementsByName(switchname);
     if (!input.checked) {
         for (var sw = 0; sw<switches.length; sw++ ) {
             if (switches[sw].hasAttribute('checked')) {
                 switches[sw].removeAttribute('checked');
             }
         }
-        document.getElementById(menuid).setAttribute('aria-expanded', 'false');
-        document.getElementById(menuid).classList.add('invisible');
+        document.getElementById(switchmenuid).setAttribute('aria-expanded', 'false');
+        document.getElementById(switchmenuid).classList.add('invisible');
     }
     else {
-        document.getElementById(menuid).classList.remove('invisible');
+        document.getElementById(switchmenuid).classList.remove('invisible');
         // var userSettings = {{ userPreferences.jobattr | safe }} ;
         // for (var i = 0; i<switches.length; i++ ) {
         //     if (userSettings.indexOf(switches[i].id.split('-')[2]) != -1) {
@@ -41,5 +45,3 @@ function disableDetails(inputid,name,menuid,menuitemid) {
         // }
     }
 }
-
-

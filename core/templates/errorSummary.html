@@ -12,7 +12,7 @@
             <div class="switch tiny">
               <input class="switch-input" id="switch-table-{{ table }}" type="checkbox" name="switch-table"
                       {% if table in userPreferences.tables %} checked="checked" {% endif %}
-                        onchange="disableDetails('switch-table-{{ table }}','switch-jobsattr', 'jobattr-menu', 'jobattr-menu-item');">
+                        onchange="disableDetails('{{ table }}');">
               <label class="switch-paddle" for="switch-table-{{ table }}">
                 <span class="show-for-sr">{{ desc }}</span>
               </label>

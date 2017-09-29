@@ -163,6 +163,7 @@ errorcodelist = [
 ]
 
 _logger = logging.getLogger('bigpandamon')
+# logging.basicConfig()
 
 notcachedRemoteAddress = ['188.184.185.129']
 
@@ -942,8 +943,8 @@ def saveUserSettings(request, page):
             preferences['tables'] = errorspage_tables
         query = {}
         query['page']= str(page)
-        if ('ADFS_LOGIN' in request.session):
-            userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
+        if request.user.is_authenticated():
+            userid = BPUser.objects.get(email=request.user.email).id
             try:
                 userSetting = BPUserSettings.objects.get(page=page, userid=userid)
                 userSetting.preferences = json.dumps(preferences)
@@ -983,7 +984,7 @@ def saveSettings(request):
             query = {}
             query['page']= str(page)
             if ('ADFS_LOGIN' in request.session):
-                userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
+                userid = BPUser.objects.get(email=request.user.email).id
                 try:
                     userSetting = BPUserSettings.objects.get(page=page, userid=userid)
                     userSetting.preferences = json.dumps(preferences)
@@ -4393,8 +4394,8 @@ def userInfo(request, user=''):
     # getting most relevant links based on visit statistics
     #
     links = {'task': [], 'job': [], 'other': []}
-    if 'ADFS_LOGIN' in request.session:
-        userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
+    if request.user.is_authenticated():
+        userid = BPUser.objects.get(email=request.user.email).id
         sqlquerystr = """select pagegroup, pagename,visitrank, url
                           from (
                             select sum(w) as visitrank, pagegroup, pagename,row_number() over (partition by pagegroup ORDER BY sum(w) desc) as rn, url
@@ -8881,7 +8882,8 @@ def errorSummary(request):
         data = json.loads(data)
         data['request'] = request
         # Filtering data due to user settings
-        if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and request.session['IS_TESTER']:
+        # if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and request.session['IS_TESTER']:
+        if request.user.is_authenticated() and request.user.is_tester:
             data = filterErrorData(request, data)
         if data['errHist']:
             for list in data['errHist']:
@@ -9149,8 +9151,9 @@ def errorSummary(request):
         data.update(getContextVariables(request))
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
         # Filtering data due to user settings
-        if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and \
-                request.session['IS_TESTER']:
+        if request.user.is_authenticated() and request.user.is_tester:
+        # if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and \
+        #         request.session['IS_TESTER']:
             data = filterErrorData(request, data)
         ##self monitor
         endSelfMonitor(request)
@@ -9179,7 +9182,7 @@ def filterErrorData(request, data):
         'usererrorsummary' : 'User error summary',
         'taskerrorsummary' : 'Task error summary'
     }
-    userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
+    userid = BPUser.objects.get(email=request.user.email).id
     try:
         userSetting = BPUserSettings.objects.get(page='errors', userid=userid)
         userPreferences = json.loads(userSetting.preferences)
@@ -11294,8 +11297,8 @@ def statpixel(request):
         url = request.META['HTTP_REFERER']
         service = 0
         userid = -1
-        if ('ADFS_LOGIN' in request.session):
-            userid = BPUser.objects.get(username=request.session['ADFS_LOGIN']).id
+        if request.user.is_authenticated():
+            userid = BPUser.objects.get(email=request.user.email).id
         Visits.objects.create(url=url, service=service, remote=ip, time=str(timezone.now()), userid=userid)
 
     #user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'],

@@ -273,7 +273,7 @@
                 <li><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a>
             </ul>
             </li>
-            {% if request.session.ADFS_LOGIN and request.session.IS_TESTER and '/errors/' in request.path %}
+            {% if request.user and request.user.is_authenticated and request.user.is_tester and '/errors/' in request.path %}
             <li class="settings-button">
              <button type="button" data-open="offCanvasRight"><i class="fi-widget"></i></button>
             </li>
