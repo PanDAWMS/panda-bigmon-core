@@ -4252,7 +4252,7 @@ def userList(request):
         endSelfMonitor(request)
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
-@login_required(login_url='loginauth2')
+#@login_required(login_url='loginauth2')
 def userInfo(request, user=''):
     valid, response = initRequest(request)
     if not valid: return response

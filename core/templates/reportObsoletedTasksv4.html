@@ -49,7 +49,7 @@
                 <td>
                 <div class="comment more">
                     {% for dsname,dstatus in cluster.datasets.items %}
-                    <a href="https://bigpanda.cern.ch/datasetInfo/?datasetname={{ dsname }}" target="_blank">{{ dsname }} ({{ dstatus }})</a>,
+                    <a href="https://bigpanda.cern.ch/datasetInfo/?datasetname={{ dsname }}" target="_blank" {% if dstatus == 'Deleted' %}style="color: gray;"{% endif %}>{{ dsname }} ({{ dstatus }})</a>,
                     {% endfor %}
                 </div>
                 </td>
