@@ -11298,7 +11298,7 @@ def statpixel(request):
         service = 0
         userid = -1
         if request.user.is_authenticated():
-            userid = BPUser.objects.get(email=request.user.email).id
+            userid = request.user.id #BPUser.objects.get(email=request.user.email).id
         Visits.objects.create(url=url, service=service, remote=ip, time=str(timezone.now()), userid=userid)
 
     #user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'],
