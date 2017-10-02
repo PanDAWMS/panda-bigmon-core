@@ -15,7 +15,7 @@
 
 
 <p>
-{% if request.session.ADFS_LOGIN %}
+{% if request.user and request.user.is_authenticated %}
 {% if links.task|length > 0 or links.job|length > 0 or links.other|length > 0 %}
 <h2>Inspired by history</h2>
 {% if links.task|length > 0 %}
