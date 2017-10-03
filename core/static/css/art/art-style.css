@@ -25,7 +25,7 @@ li.artmenu-item > label {
 .with-link-to-logs {
     margin: auto;
     background-color: transparent;
-    width: 100px;
+    width: 130px;
     height: 21px;
     display: inline-flex;
 }
@@ -34,7 +34,7 @@ li.artmenu-item > label {
 .clickable {
     margin: auto;
     background-color: transparent;
-    width: 90px;
+    width: 80px;
     height: 100%;
     position: relative;
     font-size: 0;
@@ -153,6 +153,11 @@ li.artmenu-item > label {
 }
 
 /*Accordion for pages*/
+
+.columns .accordion-art-container {
+    padding-left: 0;
+    padding-right: 0;
+}
 .accordion-art {
   margin-left: 0;
   background: rgba(53,86,129, 0.8);
@@ -295,7 +300,7 @@ li.artmenu-item > label {
 }
 
 .tarindex {
-    width: 25px;
+    width: 35px;
     height: 100%;
     padding-left: 2px;
     text-decoration: underline;

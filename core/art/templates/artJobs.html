@@ -22,7 +22,7 @@
 {% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 
 <div class="row">
-  <div class="columns">
+  <div class="columns accordion-art-container">
     <ul class="accordion-art" data-accordion data-allow-all-closed="true" data-multi-expand="true">
       {% for pname,pack in artjobs.items %}
       <li class="accordion-art-item is-active" data-accordion-item>
