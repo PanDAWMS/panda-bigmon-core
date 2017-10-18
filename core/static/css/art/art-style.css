@@ -25,7 +25,7 @@ li.artmenu-item > label {
 .with-link-to-logs {
     margin: auto;
     background-color: transparent;
-    width: 100px;
+    width: 130px;
     height: 21px;
     display: inline-flex;
 }
@@ -34,7 +34,7 @@ li.artmenu-item > label {
 .clickable {
     margin: auto;
     background-color: transparent;
-    width: 90px;
+    width: 80px;
     height: 100%;
     position: relative;
     font-size: 0;
@@ -109,6 +109,17 @@ li.artmenu-item > label {
   font-weight: bold;
 
 }
+.clickable .running_job {
+  text-align: center;
+  vertical-align: middle;
+  height: 100%;
+  width: 100%;
+  display: inline-block;
+  background: cornflowerblue;
+  color: black;
+  font-size: 14px;
+  font-weight: bold;
+}
 .clickable .failed_job {
   text-align: center;
   vertical-align: middle;
@@ -142,6 +153,11 @@ li.artmenu-item > label {
 }
 
 /*Accordion for pages*/
+
+.columns .accordion-art-container {
+    padding-left: 0;
+    padding-right: 0;
+}
 .accordion-art {
   margin-left: 0;
   background: rgba(53,86,129, 0.8);
@@ -278,7 +294,54 @@ li.artmenu-item > label {
 }
 
 .to-logs {
-    width: 10px;
+    width: 15px;
     height: 100%;
     padding-left: 2px;
+}
+
+.tarindex {
+    width: 35px;
+    height: 100%;
+    padding-left: 2px;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+.tarindex_tooltip {
+  position: relative;
+}
+.tarindex_tooltip:hover {
+    cursor: hand;
+    text-decoration:underline;
+}
+.tarindex_tooltip:after {
+    content: 'index of tar file';
+    display:none;
+    width: 100px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: -5px;
+    left: 110%;
+}
+.tarindex_tooltip:before {
+    content: '';
+    position: absolute;
+    display:none;
+    top: 50%;
+    right: -10%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+.tarindex_tooltip:hover:before {
+   display: inline-block;
+}
+.tarindex_tooltip:hover:after {
+   display: inline-block;
 }

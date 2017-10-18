@@ -22,7 +22,7 @@
 {% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 
 <div class="row">
-  <div class="columns">
+  <div class="columns accordion-art-container">
     <ul class="accordion-art" data-accordion data-allow-all-closed="true" data-multi-expand="true">
       {% for pname,pack in artjobs.items %}
       <li class="accordion-art-item is-active" data-accordion-item>
@@ -63,6 +63,7 @@
                                                             <div class="{{ job.jobstatus }}_job">{{ job.jobstatus }}</div>
                                                             <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
                                                         </div>
+                                                        <span class="tarindex tarindex_tooltip"> {{ job.tarindex }}</span>
                                                         <a  class="to-logs" target="_blank" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link"></i></a>
                                                     </div>
                                                     {% if jobs.jobs|length > 1 %} <br> {% endif %}

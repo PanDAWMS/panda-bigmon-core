@@ -944,7 +944,8 @@ def saveUserSettings(request, page):
         query = {}
         query['page']= str(page)
         if request.user.is_authenticated():
-            userid = BPUser.objects.get(email=request.user.email).id
+            userids = BPUser.objects.filter(email=request.user.email).values('id')
+            userid = userids[0]['id']
             try:
                 userSetting = BPUserSettings.objects.get(page=page, userid=userid)
                 userSetting.preferences = json.dumps(preferences)
@@ -983,8 +984,9 @@ def saveSettings(request):
                 preferences['tables'] = errorspage_tables
             query = {}
             query['page']= str(page)
-            if ('ADFS_LOGIN' in request.session):
-                userid = BPUser.objects.get(email=request.user.email).id
+            if request.user.is_authenticated():
+                userids = BPUser.objects.filter(email=request.user.email).values('id')
+                userid = userids[0]['id']
                 try:
                     userSetting = BPUserSettings.objects.get(page=page, userid=userid)
                     userSetting.preferences = json.dumps(preferences)
@@ -4262,9 +4264,12 @@ def userInfo(request, user=''):
         if 'user' in request.session['requestParams']: user = request.session['requestParams']['user']
         if 'produsername' in request.session['requestParams']: user = request.session['requestParams']['produsername']
         if user == '':
-            if 'ADFS_LOGIN' in request.session:
-                login = user = request.session['ADFS_LOGIN']
-                fullname = request.session['ADFS_FULLNAME']
+            if request.user.is_authenticated():
+                login = user = request.user.username
+                fullname = request.user.first_name + ' ' + request.user.last_name
+            # if 'ADFS_LOGIN' in request.session:
+            #     login = user = request.session['ADFS_LOGIN']
+            #     fullname = request.session['ADFS_FULLNAME']
 
     if 'days' in request.session['requestParams']:
         days = int(request.session['requestParams']['days'])
@@ -9184,7 +9189,8 @@ def filterErrorData(request, data):
         'usererrorsummary' : 'User error summary',
         'taskerrorsummary' : 'Task error summary'
     }
-    userid = BPUser.objects.get(email=request.user.email).id
+    userids = BPUser.objects.filter(email=request.user.email).values('id')
+    userid = userids[0]['id']
     try:
         userSetting = BPUserSettings.objects.get(page='errors', userid=userid)
         userPreferences = json.loads(userSetting.preferences)

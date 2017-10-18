@@ -141,7 +141,6 @@ urlpatterns = [
     url(r'^testauth/$', coremon_views.testauth, name='testauth'),
     url(r'^login/$', coremon_views.loginauth2, name='loginauth2'),
     url(r'^logout/$', coremon_views.logout, name='logout'),
-
     url(r'^loginerror/$', coremon_views.loginerror, name='loginerror'),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
