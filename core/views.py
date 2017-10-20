@@ -11816,7 +11816,7 @@ def serverStatusHealth(request):
     else:
         data = json.loads(data)
         q = pickle.loads(data['q'])
-        lastupdate = data['lastupdate']
+        lastupdate = datetime.strptime(data['lastupdate'], defaultDatetimeFormat)
 
     # end of test filling
 
@@ -11836,7 +11836,7 @@ def serverStatusHealth(request):
 
                 data = {}
                 data['q'] = pickle.dumps(q)
-                data['lastupdate'] = datetime.now()
+                data['lastupdate'] = datetime.now().strftime(defaultDatetimeFormat)
                 setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
 
                 print "serverStatusHealth ", "Normal operation0"
