@@ -100,6 +100,8 @@ urlpatterns = [
 
     url(r'^report/$', coremon_views.report, name='report'),
 
+    url(r'^serverstatushealth/$', coremon_views.serverStatusHealth, name='serverStatusHealth'),
+
     ### ART nightly tests
     url(r'^art/$', art_views.art, name='art-mainPage'),
     url(r'^art/overview/$', art_views.artOverview, name='artOverview'),
