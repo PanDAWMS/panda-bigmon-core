@@ -2598,7 +2598,12 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
         is_json = True
     key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
     if isData==False:
-        path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        try:
+            if request.method == "POST":
+                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path() + '?' + request.body)))
+            else:
+                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        except: path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
         cache_key = '%s.%s' % (key_prefix, path.hexdigest())
     else:
         cache_key = '%s' % (key_prefix)
@@ -2612,7 +2617,12 @@ def setCacheEntry(request, viewType, data, timeout, isData = False):
         is_json = True
     key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
     if isData==False:
-        path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        try:
+            if request.method == "POST":
+                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path() + '?' + request.body)))
+            else:
+                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        except: path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
         cache_key = '%s.%s' % (key_prefix, path.hexdigest())
     else:
         cache_key = '%s' % (key_prefix)
