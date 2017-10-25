@@ -42,7 +42,14 @@
                 <td>
                 <div class="comment more">
                 {% for taskid, taskstatus in cluster.tasks.items %}
-                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ taskid }}">{{ taskid }}({{ taskstatus }})</a>,
+                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ taskid }}"
+                       {% if taskstatus == 'done' %}style="color: green;"{% endif %}
+                       {% if taskstatus == 'finished' %}style="color: green;"{% endif %}
+                       {% if taskstatus == 'failed' %}style="color: red;"{% endif %}
+                       {% if taskstatus == 'aborted' %}style="color: red;"{% endif %}
+                       {% if taskstatus == 'broken' %}style="color: red;"{% endif %}
+
+                    >{{ taskid }}({{ taskstatus }})</a>,
                 {% endfor %}
                 </div>
                 </td>

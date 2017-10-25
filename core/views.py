@@ -11773,7 +11773,7 @@ def serverStatusHealth(request):
     This function dymanically calculates status of a particular server in order to make it idle and give an opportunity
     to restart wsgi daemon.
 
-    WSGIDaemonProcess: inactivity-timeout=30 (this is for nginx health) restart-interval=60*60*4 (the last one is for guarging from blocking requests)
+    WSGIDaemonProcess: inactivity-timeout=60 (this is for nginx health) restart-interval=14400 (the last one is for guarging from blocking requests)
 
     Nginx: https://www.nginx.com/resources/admin-guide/http-health-check/
 
@@ -11787,7 +11787,7 @@ def serverStatusHealth(request):
 
     location / {
         proxy_pass http://backend;
-        health_check match=server_ok uri=/serverstatushealth/ interval=600 fails=100 passes=1;
+        health_check match=server_ok uri=/serverstatushealth/ interval=600 fails=10000 passes=1;
     }
 
     Then healthping = 10 min,
@@ -11795,6 +11795,7 @@ def serverStatusHealth(request):
 
     initRequest(request)
     periodOfAllServWorkRestart = 15 #minutes.
+    restartTimeWindow = 5
 
     debug = True
 
@@ -11807,12 +11808,15 @@ def serverStatusHealth(request):
 
     if data is None:
         q = collections.deque()
-        #q.append("aipanda100")
+        q.append("aipanda100")
         q.append("aipanda105")
         q.append("aipanda106")
         q.append("aipanda107")
         q.append("aipanda108")
-        lastupdate = datetime.now() - timedelta(minutes=periodOfAllServWorkRestart+1)
+        lastupdate = datetime.now()
+        data['q'] = pickle.dumps(q)
+        data['lastupdate'] = lastupdate
+        setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
     else:
         data = json.loads(data)
         q = pickle.loads(data['q'])
@@ -11823,35 +11827,50 @@ def serverStatusHealth(request):
     currenthost = q.popleft()
     runninghost = request.session["hostname"]
 
-    if (currenthost == runninghost) and (datetime.now() - lastupdate) > timedelta(minutes=periodOfAllServWorkRestart):
-        rows = subprocess.check_output('ps -eo cmd,lstart --sort=start_time | grep httpd', shell=True).split('\n')[:-2]
+    if (currenthost == runninghost):
+        if (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart)) and \
+                        (datetime.now() - lastupdate) < timedelta(minutes=(periodOfAllServWorkRestart+restartTimeWindow)):
+            return HttpResponse("Awaiting restart", content_type='text/html')
+        elif (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart)) and \
+                        (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart+restartTimeWindow)):
+            data = {}
+            q.append(currenthost)
+            data['q'] = pickle.dumps(q)
+            data['lastupdate'] = datetime.now().strftime(defaultDatetimeFormat)
+            setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
+            return HttpResponse("Normal operation", content_type='text/html')
 
-        print "serverStatusHealth ", datetime.now(), " rows:", rows
 
-        if len(rows) > 0:
-            httpdStartTime = list(datefinder.find_dates(rows[0]))[0]
-            if (datetime.now() - httpdStartTime) < timedelta(minutes=periodOfAllServWorkRestart):
 
-                print "serverStatusHealth ", "httpdStartTime", httpdStartTime
-
-                data = {}
-                data['q'] = pickle.dumps(q)
-                data['lastupdate'] = datetime.now().strftime(defaultDatetimeFormat)
-                setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
-
-                print "serverStatusHealth ", "Normal operation0"
-                return HttpResponse("Normal operation", content_type='text/html')
-                # We think that wsgi daemon recently restarted and we can change order to the next server
-                # q.put(currenthost)
-                # q. put to cache
-                # lastupdate put to cache
-                # return success
-
-        # we return failed by default
-        print "serverStatusHealth ", "Awaiting restart"
-        return HttpResponse("Awaiting restart", content_type='text/html')
-
-    print "serverStatusHealth ", "Normal operations1"
+    # rows = subprocess.check_output('ps -eo cmd,lstart --sort=start_time | grep httpd', shell=True).split('\n')[:-2]
+    # print "serverStatusHealth ", datetime.now(), " rows:", rows
+    #
+    # if (currenthost == runninghost) and (datetime.now() - lastupdate) > timedelta(minutes=periodOfAllServWorkRestart):
+    #
+    #     if len(rows) > 0:
+    #         httpdStartTime = list(datefinder.find_dates(rows[0]))[0]
+    #         if (datetime.now() - httpdStartTime) < timedelta(minutes=periodOfAllServWorkRestart):
+    #
+    #             print "serverStatusHealth ", "httpdStartTime", httpdStartTime
+    #
+    #             data = {}
+    #             data['q'] = pickle.dumps(q)
+    #             data['lastupdate'] = datetime.now().strftime(defaultDatetimeFormat)
+    #             setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
+    #
+    #             print "serverStatusHealth ", "Normal operation0"
+    #             return HttpResponse("Normal operation", content_type='text/html')
+    #             # We think that wsgi daemon recently restarted and we can change order to the next server
+    #             # q.put(currenthost)
+    #             # q. put to cache
+    #             # lastupdate put to cache
+    #             # return success
+    #
+    #     # we return failed by default
+    #     print "serverStatusHealth ", "Awaiting restart"
+    #     return HttpResponse("Awaiting restart", content_type='text/html')
+    #
+    # print "serverStatusHealth ", "Normal operations1"
     return HttpResponse("Normal operation", content_type='text/html')
 
 

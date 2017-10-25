@@ -20,7 +20,7 @@ class ObsoletedTasksReport:
         # 3. Select tasks related to obsolete datasets
         # 4. Show datasets, their status, tasks, status
 
-        dataSetsSQLQuery = "SELECT t1.TASKID, t1.TIMESTAMP, t1.STATUS, t1.PR_ID, t2.STATUS, t2.NAME, t1.PARENT_TID FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_DATASET t2 WHERE t2.TASKID=t1.TASKID and t1.TIMESTAMP>add_months(sysdate,-1) and t1.STATUS IN ('obsolete') and instr(t2.NAME,'.log.') = 0"
+        dataSetsSQLQuery = "SELECT t1.TASKID, t1.TIMESTAMP, t1.STATUS, t1.PR_ID, t2.STATUS, t2.NAME, t1.PARENT_TID FROM ATLAS_DEFT.T_PRODUCTION_TASK t1, ATLAS_DEFT.T_PRODUCTION_DATASET t2 WHERE t2.TASKID=t1.TASKID and t1.TIMESTAMP>add_months(sysdate,-1) and (t1.STATUS IN ('obsolete') or (t2.STATUS IN ('toBeDeleted')))and instr(t2.NAME,'.log.') = 0"
 
         cur = connection.cursor()
         cur.execute(dataSetsSQLQuery)
