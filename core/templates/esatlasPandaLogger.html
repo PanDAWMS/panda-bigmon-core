@@ -51,8 +51,10 @@ function searchTaskBr() {
     <li><a href="#tabs-1" class="ui-tabs-anchor">Logs</a></li>
     <li><a href="#tabs-2" class="ui-tabs-anchor">Tasks and Jobs</a></li>
     <li><a href="#tabs-3" class="ui-tabs-anchor">Prod job brokerage</a></li>
+    <li><a href="#tabs-6" class="ui-tabs-anchor">Prod task brokerage</a></li>
     <li><a href="#tabs-4" class="ui-tabs-anchor">Analy job brokerage</a></li>
     <li><a href="#tabs-5" class="ui-tabs-anchor">Throttle: queued vs running</a></li>
+
   </ul>
   <div id="tabs-1">
 <table  style="display: inline-block; width: 550px; border: 0px; vertical-align: top;">
@@ -136,13 +138,14 @@ function searchTaskBr() {
 
   </div>
   <div id="tabs-2">
-
   </div>
   <div id="tabs-3">
   </div>
   <div id="tabs-4">
   </div>
   <div id="tabs-5">
+  </div>
+  <div id="tabs-6">
   </div>
 </div>
 
@@ -159,14 +162,13 @@ $( "#tabs" ).on( "tabsactivate", function( event, ui ) {
         $( "#tabs-3" ).empty();
         $( "#tabs-4" ).empty();
         $( "#tabs-5" ).empty();
-
-        switch(ui.newPanel.selector) {
-            case '#tabs-2':
-
+        $( "#tabs-6" ).empty();
+        switch(ui.newPanel.attr('id')) {
+            case 'tabs-2':
                 $("#tabs-2").append("<table valign=\"top\"  style=\"display: inline-block; width: 250px; border: 0px\">  <tr class='tablesection' ><th colspan=20>Task brokerage</th></tr> <tr> <td> Jedi TaskID: <input type=\"text\" id=\"jediTaskID0\" value=\"\"> <input type=\"button\" value=\"Search\"  onclick=\"searchJedi()\"></td> </tr> </table> <table valign=\"top\"  style=\"display: inline-block; width: 250px;margin-left: 20px; border: 0px\"> <tr class='tablesection'><th colspan=20>Job brokerage</th></tr> <tr> <td> Jedi TaskID: <input type=\"text\" id=\"jediTaskID1\" value=\"\"> <input type=\"button\" value=\"Search\"  onclick=\"searchTaskBr()\"></td> </tr> </table> <table id=\"jediTask\" width=\"100%\"> <caption  style=\"height: 30px;vertical-align: middle\">Log lookup by Task ({{ time }})</caption><thead> <th>jediTaskID</th><th>Type</th> <th>LevelName</th> <th>Count</th> </thead> <tbody></tbody> <tfoot> <tr> <th></th> <th></th> <th></th> <th></th> </tr> </tfoot> </table>");
                 DisplayjediDataTableTableData();
                 break;
-            case '#tabs-3':
+            case 'tabs-3':
                 if(/chrom(e|ium)/.test(navigator.userAgent.toLowerCase())==false){
                     //$( "#tabs" ).tabs( { disabled: [2, 3,4] } );
                     $("#tabs-3").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>");
@@ -181,7 +183,7 @@ $( "#tabs" ).on( "tabsactivate", function( event, ui ) {
                     $( '#prodjobbrokerage' ).attr( 'src', function ( i, val ) { return val; });
                 } );
                 break;
-            case '#tabs-4':
+            case 'tabs-4':
                 if(/chrom(e|ium)/.test(navigator.userAgent.toLowerCase())==false){
                     $("#tabs-4").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>")
                     $("#tabs-4").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_analyjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Analy job brokerage</a><br/><br/>");
@@ -195,7 +197,7 @@ $( "#tabs" ).on( "tabsactivate", function( event, ui ) {
                     $( '#analyjobbrokerage' ).attr( 'src', function ( i, val ) { return val; });
                 } );
                 break;
-            case '#tabs-5':
+            case 'tabs-5':
                  if(/chrom(e|ium)/.test(navigator.userAgent.toLowerCase())==false){
                      $("#tabs-5").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>");
                      $("#tabs-5").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Throttle: queued vs running</a><br/><br/>");
@@ -207,6 +209,20 @@ $( "#tabs" ).on( "tabsactivate", function( event, ui ) {
                 $("#refresh" ).button();
                 $("#refresh" ).click( function( event ) {
                     $( '#throttle' ).attr( 'src', function ( i, val ) { return val; });
+                } )
+                break;
+            case 'tabs-6':
+                 if(/chrom(e|ium)/.test(navigator.userAgent.toLowerCase())==false){
+                     $("#tabs-6").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>");
+                     $("#tabs-6").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/929a9770-b7e8-11e7-a6d6-5b89f03c2dd6?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod task brokerage</a><br/><br/>");
+                }
+                $("#tabs-6").append("<input id=\"refresh\" type=\"submit\" value=\"Refresh\">&nbsp;&nbsp;");
+                $("#tabs-6").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/929a9770-b7e8-11e7-a6d6-5b89f03c2dd6?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod task brokerage (es-atlas.cern.ch)</a><br/><br/>");
+                //$( "#tabs-5" ).append( "<iframe id=\"throttle\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?embed=true&_g=()\" height=\"1000\" width=\"100%\"></iframe>" )
+                $("#tabs-6" ).append("<iframe id=\"prodtaskbroker\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/929a9770-b7e8-11e7-a6d6-5b89f03c2dd6?embed=true&showSearch=true&_g=()\" height=\"1000\" width=\"100%\"></iframe>");
+                $("#refresh" ).button();
+                $("#refresh" ).click( function( event ) {
+                    $( '#prodtaskbroker' ).attr( 'src', function ( i, val ) { return val; });
                 } )
                 break;
         }
