@@ -7959,7 +7959,7 @@ def taskInfo(request, jeditaskid=0):
     jobsummaryPMERGE = []
     eventsdict=[]
     objectStoreDict=[]
-    eventsChain = []
+    eventsChains = []
 
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
         request.session['requestParams']['jeditaskid'])
@@ -7980,8 +7980,10 @@ def taskInfo(request, jeditaskid=0):
 
             extra = jobSuppression(request)
 
+            auxiliaryDict = {}
+
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge')
+                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', auxiliaryDict=auxiliaryDict)
             plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary2(
                 query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
             for state in eventservicestatelist:
@@ -8009,10 +8011,12 @@ def taskInfo(request, jeditaskid=0):
                 objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
                 for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
 
-            eventsChainsValues = 'lfn', 'attemptnr', 'startevent', 'endevent'
+            eventsChainsValues = 'lfn', 'attemptnr', 'startevent', 'endevent', 'pandaid'
             queryChain = {'jeditaskid':jeditaskid, 'startevent__isnull':False}
-            eventsChain.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues)[:20])
-
+            eventsChains.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues)[:20])
+            for eventsChain in eventsChains:
+                if eventsChain['pandaid'] in auxiliaryDict:
+                    eventsChain['jobsetid'] = auxiliaryDict[eventsChain['pandaid']]
 
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
@@ -8321,7 +8325,7 @@ def taskInfo(request, jeditaskid=0):
             'vomode': VOMODE,
             'eventservice': eventservice,
             'tk': transactionKey,
-            'eventsChain':eventsChain,
+            'eventsChain':eventsChains,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
         }
         data.update(getContextVariables(request))
@@ -8398,7 +8402,7 @@ def ganttTaskChain(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype=''):
+def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None):
     jobs = []
     jobScoutIDs = {}
     jobScoutIDs['cputimescoutjob'] = []
@@ -8441,6 +8445,9 @@ def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceF
     hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
     cpuTimeCurrent = []
     for job in jobs:
+
+        if not auxiliaryDict is None:
+            auxiliaryDict[job['pandaid']] = job['jobsetid']
 
         if not job['pandaid'] in jobsSet:
             jobsSet[job['pandaid']] = job['jobstatus']
