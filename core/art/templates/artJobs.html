@@ -60,7 +60,7 @@
                                                 {% if job.jobstatus %}
                                                     <div class="with-link-to-logs">
                                                         <div class="clickable">
-                                                            <div class="{{ job.jobstatus }}_job">{{ job.jobstatus }}</div>
+                                                            <div {% if job.jobstatus == 'failed' or job.jobstatus == 'finished' %} class="{{ job.jobstatus }}_job">{{ job.jobstatus }} {% else %} class="active_job"> active {% endif %}  </div>
                                                             <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
                                                         </div>
                                                         <span class="tarindex tarindex_tooltip"> {{ job.tarindex }}</span>

@@ -76,7 +76,7 @@ import GlobalShares
 import hashlib
 
 import Customrenderer
-
+import collections, pickle
 
 from threading import Thread,Lock
 import decimal
@@ -88,6 +88,8 @@ import chainsql
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
+import subprocess
+import datefinder
 
 errorFields = []
 errorCodes = {}
@@ -1509,7 +1511,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 kys = []
                 for sk in skys:
                     kys.append(sk['key'])
-            elif f in ('attemptnr', 'jeditaskid', 'taskid',):
+            elif f in ('attemptnr', 'jeditaskid', 'taskid','noutputdatafiles'):
                 kys = sorted(kys, key=lambda x: int(x))
             else:
                 kys.sort()
@@ -1517,7 +1519,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
             if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
                 iteml = sorted(iteml, key=lambda x: x['kvalue'], reverse=True)
-            elif f not in ('priorityrange', 'jobsetrange', 'attemptnr', 'jeditaskid', 'taskid',):
+            elif f not in ('priorityrange', 'jobsetrange', 'attemptnr', 'jeditaskid', 'taskid','noutputdatafiles'):
                 iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
         itemd['list'] = iteml
         suml.append(itemd)
@@ -2070,7 +2072,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
 
 
-    for item in standard_fields+['corecount']:
+    for item in standard_fields+['corecount']+['noutputdatafiles']:
         if ((item + '__in') in query):
             plsql += " " + item.upper() + "=>'" + str(query[item+'__in'][0]) + "', "
         if ((item + '__endswith') in query and item=='transformation'):
@@ -2236,7 +2238,7 @@ def getJobList(request,requesttoken=None):
     jobsToList = set()
     njobs = 0
     for shkey in shkeys:
-        if not shkey in ['PANDAID', 'ErrorCode', 'MINRAMCOUNT','PRIORITYRANGE']:
+        if not shkey in ['PANDAID', 'ErrorCode', 'MINRAMCOUNT','PRIORITYRANGE','CORECOUNT','NOUTPUTDATAFILES']:
             # check this condition
             entry = {}
             entry['field'] = shkey
@@ -2300,6 +2302,14 @@ def getJobList(request,requesttoken=None):
                 if len(error) > 0 and error[0] in errorCodes and int(errval['codeval']) in errorCodes[error[0]]:
                     errval['diag'] = errorCodes[error[0]][int(errval['codeval'])]
                 errsByCount.append(errval)
+        elif shkey in ['CORECOUNT','NOUTPUTDATAFILES']:
+            entry = {}
+            entry['field'] = shkey
+            entrlist = []
+            for subshkey in sorted(summaryhash[shkey], key = int):
+                entrlist.append({'kname': subshkey, 'kvalue': summaryhash[shkey][subshkey]})
+            entry['list'] = entrlist
+            sumd.append(entry)
 
     if sumd:
         for item in sumd:
@@ -2328,9 +2338,9 @@ def getJobList(request,requesttoken=None):
                     'requestParams' in request.session and 'json' in request.session['requestParams']):
             values = [f.name for f in Jobsactive4._meta.get_fields()]
         elif eventservice:
-            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice','gshare'
+            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice','gshare','noutputdatafiles'
         else:
-            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice','gshare'
+            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice','gshare','noutputdatafiles'
 
         jobs.extend(Jobsdefined4.objects.filter(**newquery).values(*values))
         jobs.extend(Jobsactive4.objects.filter(**newquery).values(*values))
@@ -2590,7 +2600,12 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
         is_json = True
     key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
     if isData==False:
-        path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        try:
+            if request.method == "POST":
+                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path() + '?' + request.body)))
+            else:
+                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        except: path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
         cache_key = '%s.%s' % (key_prefix, path.hexdigest())
     else:
         cache_key = '%s' % (key_prefix)
@@ -2604,7 +2619,12 @@ def setCacheEntry(request, viewType, data, timeout, isData = False):
         is_json = True
     key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
     if isData==False:
-        path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        try:
+            if request.method == "POST":
+                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path() + '?' + request.body)))
+            else:
+                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        except: path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
         cache_key = '%s.%s' % (key_prefix, path.hexdigest())
     else:
         cache_key = '%s' % (key_prefix)
@@ -2687,9 +2707,9 @@ def jobList(request, mode=None, param=None):
         'json' in request.session['requestParams']):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     elif eventservice:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles'
     else:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles'
 
     JOB_LIMITS = request.session['JOB_LIMIT']
     totalJobs = 0
@@ -2889,7 +2909,7 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     # Sort in order to see the most important tasks
-    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount'])
+    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount']+['noutputdatafiles'])
     if sumd:
         for item in sumd:
             if item['field'] == 'jeditaskid':
@@ -7939,7 +7959,7 @@ def taskInfo(request, jeditaskid=0):
     jobsummaryPMERGE = []
     eventsdict=[]
     objectStoreDict=[]
-    eventsChain = []
+    eventsChains = []
 
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
         request.session['requestParams']['jeditaskid'])
@@ -7960,8 +7980,10 @@ def taskInfo(request, jeditaskid=0):
 
             extra = jobSuppression(request)
 
+            auxiliaryDict = {}
+
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge')
+                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', auxiliaryDict=auxiliaryDict)
             plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary2(
                 query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
             for state in eventservicestatelist:
@@ -7989,10 +8011,12 @@ def taskInfo(request, jeditaskid=0):
                 objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
                 for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
 
-            eventsChainsValues = 'lfn', 'attemptnr', 'startevent', 'endevent'
+            eventsChainsValues = 'lfn', 'attemptnr', 'startevent', 'endevent', 'pandaid'
             queryChain = {'jeditaskid':jeditaskid, 'startevent__isnull':False}
-            eventsChain.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues)[:20])
-
+            eventsChains.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues)[:20])
+            for eventsChain in eventsChains:
+                if eventsChain['pandaid'] in auxiliaryDict:
+                    eventsChain['jobsetid'] = auxiliaryDict[eventsChain['pandaid']]
 
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
@@ -8301,7 +8325,7 @@ def taskInfo(request, jeditaskid=0):
             'vomode': VOMODE,
             'eventservice': eventservice,
             'tk': transactionKey,
-            'eventsChain':eventsChain,
+            'eventsChain':eventsChains,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
         }
         data.update(getContextVariables(request))
@@ -8378,7 +8402,7 @@ def ganttTaskChain(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype=''):
+def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None):
     jobs = []
     jobScoutIDs = {}
     jobScoutIDs['cputimescoutjob'] = []
@@ -8421,6 +8445,9 @@ def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceF
     hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
     cpuTimeCurrent = []
     for job in jobs:
+
+        if not auxiliaryDict is None:
+            auxiliaryDict[job['pandaid']] = job['jobsetid']
 
         if not job['pandaid'] in jobsSet:
             jobsSet[job['pandaid']] = job['jobstatus']
@@ -11748,6 +11775,115 @@ def getBadEventsForTask(request):
     return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
 
+def serverStatusHealth(request):
+    """
+    This function dymanically calculates status of a particular server in order to make it idle and give an opportunity
+    to restart wsgi daemon.
+
+    WSGIDaemonProcess: inactivity-timeout=60 (this is for nginx health) restart-interval=14400 (the last one is for guarging from blocking requests)
+
+    Nginx: https://www.nginx.com/resources/admin-guide/http-health-check/
+
+
+    match server_ok {
+        status 200;
+        header Content-Type = text/html;
+        body ~ "Normal operation";
+    }
+
+
+    location / {
+        proxy_pass http://backend;
+        health_check match=server_ok uri=/serverstatushealth/ interval=600 fails=10000 passes=1;
+    }
+
+    Then healthping = 10 min,
+    """
+
+    initRequest(request)
+    periodOfAllServWorkRestart = 15 #minutes.
+    restartTimeWindow = 5
+
+    debug = True
+
+    # Here we should load all the servers from the settingsdjangosettings.
+    # next is just for tests
+
+    data = getCacheEntry(request, "StatusHealth")
+
+    print "serverStatusHealth ", datetime.now(), " runninghost:", request.session["hostname"], " ", data
+
+    if data is None:
+        q = collections.deque()
+        q.append("aipanda100")
+        q.append("aipanda105")
+        q.append("aipanda106")
+        q.append("aipanda107")
+        q.append("aipanda108")
+        lastupdate = datetime.now()
+        data['q'] = pickle.dumps(q)
+        data['lastupdate'] = lastupdate
+        setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
+    else:
+        data = json.loads(data)
+        q = pickle.loads(data['q'])
+        lastupdate = datetime.strptime(data['lastupdate'], defaultDatetimeFormat)
+
+    # end of test filling
+
+    currenthost = q.popleft()
+    runninghost = request.session["hostname"]
+
+    if (currenthost == runninghost):
+        if (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart)) and \
+                        (datetime.now() - lastupdate) < timedelta(minutes=(periodOfAllServWorkRestart+restartTimeWindow)):
+            return HttpResponse("Awaiting restart", content_type='text/html')
+        elif (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart)) and \
+                        (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart+restartTimeWindow)):
+            data = {}
+            q.append(currenthost)
+            data['q'] = pickle.dumps(q)
+            data['lastupdate'] = datetime.now().strftime(defaultDatetimeFormat)
+            setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
+            return HttpResponse("Normal operation", content_type='text/html')
+
+
+
+    # rows = subprocess.check_output('ps -eo cmd,lstart --sort=start_time | grep httpd', shell=True).split('\n')[:-2]
+    # print "serverStatusHealth ", datetime.now(), " rows:", rows
+    #
+    # if (currenthost == runninghost) and (datetime.now() - lastupdate) > timedelta(minutes=periodOfAllServWorkRestart):
+    #
+    #     if len(rows) > 0:
+    #         httpdStartTime = list(datefinder.find_dates(rows[0]))[0]
+    #         if (datetime.now() - httpdStartTime) < timedelta(minutes=periodOfAllServWorkRestart):
+    #
+    #             print "serverStatusHealth ", "httpdStartTime", httpdStartTime
+    #
+    #             data = {}
+    #             data['q'] = pickle.dumps(q)
+    #             data['lastupdate'] = datetime.now().strftime(defaultDatetimeFormat)
+    #             setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
+    #
+    #             print "serverStatusHealth ", "Normal operation0"
+    #             return HttpResponse("Normal operation", content_type='text/html')
+    #             # We think that wsgi daemon recently restarted and we can change order to the next server
+    #             # q.put(currenthost)
+    #             # q. put to cache
+    #             # lastupdate put to cache
+    #             # return success
+    #
+    #     # we return failed by default
+    #     print "serverStatusHealth ", "Awaiting restart"
+    #     return HttpResponse("Awaiting restart", content_type='text/html')
+    #
+    # print "serverStatusHealth ", "Normal operations1"
+    return HttpResponse("Normal operation", content_type='text/html')
+
+
+
+#import logging
+#logging.basicConfig()
 @never_cache
 def loginauth2(request):
     if 'HTTP_REFERER' in request.META:

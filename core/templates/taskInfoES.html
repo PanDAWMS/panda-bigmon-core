@@ -569,9 +569,9 @@ No datasets were found for this task
     <table>
     <a name="eventchaintable"></a>
         <tr bgcolor='lightcyan'><th colspan=20>Events chain attempts</th></tr>
-        <tr><th>LFN</th><th>Attempts</th><th>Start Event</th><th>End Event</th></tr>
+        <tr><th>Jobsets</th><th>LFN</th><th>Attempts</th><th>Start Event</th><th>End Event</th></tr>
         {% for chain in eventsChain %}
-            <tr><td>{{ chain.lfn }}</td><td>{{ chain.attemptnr }}</td><td>{{ chain.startevent }}</td><td>{{ chain.endevent }}</td></tr>
+            <tr><td><a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobsetid={{ chain.jobsetid }}">{{ chain.jobsetid }}</a></td><td>{{ chain.lfn }}</td><td>{{ chain.attemptnr }}</td><td>{{ chain.startevent }}</td><td>{{ chain.endevent }}</td></tr>
         {% endfor %}
     </table>
     {% endif %}

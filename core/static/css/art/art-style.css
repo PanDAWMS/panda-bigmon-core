@@ -109,7 +109,7 @@ li.artmenu-item > label {
   font-weight: bold;
 
 }
-.clickable .running_job {
+.clickable .active_job {
   text-align: center;
   vertical-align: middle;
   height: 100%;
