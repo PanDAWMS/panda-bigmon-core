@@ -60,7 +60,7 @@ from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
 from core.common.models import RequestStat, BPUser, Visits, BPUserSettings
 from core.settings.config import ENV
-from core.common.models import RunningMCProductionTasks
+from core.common.models import RunningMCProductionTasks, HarvesterWorkers
 from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel, FrozenProdTasksModel
 
 from time import gmtime, strftime
@@ -148,6 +148,11 @@ taskstatelist = ['registered', 'defined', 'assigning', 'ready', 'pending', 'scou
                  'tobroken', 'broken', 'toretry', 'toincexec', 'rerefine']
 taskstatelist_short = ['reg', 'def', 'assgn', 'rdy', 'pend', 'scout', 'sctd', 'run', 'prep', 'done', 'fail', 'finish',
                        'abrtg', 'abrtd', 'finishg', 'toprep', 'preprc', 'tobrok', 'broken', 'retry', 'incexe', 'refine']
+
+harvWorkStatuses = [
+    'missed', 'submitted', 'ready', 'running', 'idle', 'finished', 'failed', 'cancelled'
+]
+
 taskstatedict = []
 for i in range(0, len(taskstatelist)):
     tsdict = {'state': taskstatelist[i], 'short': taskstatelist_short[i]}
@@ -8346,6 +8351,46 @@ def taskInfo(request, jeditaskid=0):
             response = render_to_response('taskInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
+
+def harvesterworkers(request):
+    valid, response = initRequest(request)
+    hours = 24*7
+    if 'days' in request.session['requestParams']:
+        days = int(request.session['requestParams']['days'])
+        hours = 24 * days
+    startdate = timezone.now() - timedelta(hours=hours)
+    startdate = startdate.strftime(defaultDatetimeFormat)
+    enddate = timezone.now().strftime(defaultDatetimeFormat)
+    tquery = {}
+    tquery['submittime__range'] = [startdate, enddate]
+    harvesterWorkers = []
+    harvesterWorkers.extend(HarvesterWorkers.objects.values('computingsite','status').filter(**tquery).annotate(Count('status')).order_by('computingsite'))
+
+    statusesSummary = OrderedDict()
+    for harvesterWorker in harvesterWorkers:
+        if not harvesterWorker['computingsite'] in statusesSummary:
+            statusesSummary[harvesterWorker['computingsite']] = OrderedDict()
+            for harwWorkStatus in harvWorkStatuses:
+                statusesSummary[harvesterWorker['computingsite']][harwWorkStatus] = 0
+            statusesSummary[harvesterWorker['computingsite']][harvesterWorker['status']] = harvesterWorker['status__count']
+
+    data = {
+        'hours': hours,
+        'statusesSummary': statusesSummary,
+        'harvWorkStatuses':harvWorkStatuses,
+        'request': request,
+        'viewParams': request.session['viewParams'],
+        'requestParams': request.session['requestParams'],
+        'built': datetime.now().strftime("%H:%M:%S"),
+    }
+    endSelfMonitor(request)
+    response = render_to_response('harvworksummary.html', data, content_type='text/html')
+    return response
+
+
+# SELECT COMPUTINGSITE,STATUS, count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS WHERE SUBMITTIME > (sysdate - interval '35' day) group by COMPUTINGSITE,STATUS
+
 
 
 def taskchain(request):
