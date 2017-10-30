@@ -8355,15 +8355,12 @@ def taskInfo(request, jeditaskid=0):
 
 def harvesterworkers(request):
     valid, response = initRequest(request)
-    hours = 24*7
-    if 'days' in request.session['requestParams']:
-        days = int(request.session['requestParams']['days'])
-        hours = 24 * days
-    startdate = timezone.now() - timedelta(hours=hours)
-    startdate = startdate.strftime(defaultDatetimeFormat)
-    enddate = timezone.now().strftime(defaultDatetimeFormat)
+    query= setupView(request, hours=24*7, wildCardExt=False)
+
     tquery = {}
-    tquery['submittime__range'] = [startdate, enddate]
+    if 'modification__range' in query:
+        tquery['submittime__range'] = query['modification__range']
+
     harvesterWorkers = []
     harvesterWorkers.extend(HarvesterWorkers.objects.values('computingsite','status').filter(**tquery).annotate(Count('status')).order_by('computingsite'))
 
@@ -8375,8 +8372,9 @@ def harvesterworkers(request):
                 statusesSummary[harvesterWorker['computingsite']][harwWorkStatus] = 0
             statusesSummary[harvesterWorker['computingsite']][harvesterWorker['status']] = harvesterWorker['status__count']
 
+    # SELECT computingsite,status, workerid, LASTUPDATE, row_number() over (partition by workerid, computingsite ORDER BY LASTUPDATE ASC) partid FROM ATLAS_PANDA.HARVESTER_WORKERS /*GROUP BY WORKERID ORDER BY COUNT(WORKERID) DESC*/
+
     data = {
-        'hours': hours,
         'statusesSummary': statusesSummary,
         'harvWorkStatuses':harvWorkStatuses,
         'request': request,
