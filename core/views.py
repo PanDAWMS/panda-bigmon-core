@@ -4430,7 +4430,7 @@ def userInfo(request, user=''):
         userid = userids[0]['id']
         sqlquerystr = """select pagegroup, pagename,visitrank, url
                           from (
-                            select sum(w) as visitrank, pagegroup, pagename,row_number() over (partition by pagegroup ORDER BY sum(w) desc) as rn, url
+                            select sum(w) as visitrank, pagegroup, pagename, ORDER BY sum(w) desc) as rn, url
                             from (
                               select exp(-(SYSdate - cast(time as date))*24/12) as w,
                               SUBSTR(url,
@@ -8023,6 +8023,13 @@ def taskInfo(request, jeditaskid=0):
                 if eventsChain['pandaid'] in auxiliaryDict:
                     eventsChain['jobsetid'] = auxiliaryDict[eventsChain['pandaid']]
 
+
+#SELECT * FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS WHERE JEDITASKID=12380658 and pandaid=3665826228
+
+#SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV FROM (
+#SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=12380658 and RELATIONTYPE='jobset_retry'
+#)t1 CONNECT BY NOCYCLE OLDPANDAID=PRIOR NEWPANDAID ;
+
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
             exclude = {'processingtype': 'pmerge'}
@@ -8355,11 +8362,11 @@ def taskInfo(request, jeditaskid=0):
 
 def harvesterworkers(request):
     valid, response = initRequest(request)
-    query= setupView(request, hours=24*7, wildCardExt=False)
+    query= setupView(request, hours=24*3, wildCardExt=False)
 
     tquery = {}
     if 'modification__range' in query:
-        tquery['submittime__range'] = query['modification__range']
+        tquery['lastupdate__range'] = query['modification__range']
 
     harvesterWorkers = []
     harvesterWorkers.extend(HarvesterWorkers.objects.values('computingsite','status').filter(**tquery).annotate(Count('status')).order_by('computingsite'))
@@ -8370,7 +8377,7 @@ def harvesterworkers(request):
             statusesSummary[harvesterWorker['computingsite']] = OrderedDict()
             for harwWorkStatus in harvWorkStatuses:
                 statusesSummary[harvesterWorker['computingsite']][harwWorkStatus] = 0
-            statusesSummary[harvesterWorker['computingsite']][harvesterWorker['status']] = harvesterWorker['status__count']
+        statusesSummary[harvesterWorker['computingsite']][harvesterWorker['status']] = harvesterWorker['status__count']
 
     # SELECT computingsite,status, workerid, LASTUPDATE, row_number() over (partition by workerid, computingsite ORDER BY LASTUPDATE ASC) partid FROM ATLAS_PANDA.HARVESTER_WORKERS /*GROUP BY WORKERID ORDER BY COUNT(WORKERID) DESC*/
 
