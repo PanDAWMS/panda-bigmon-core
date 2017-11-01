@@ -8365,11 +8365,19 @@ def harvesterworkers(request):
     query= setupView(request, hours=24*3, wildCardExt=False)
 
     tquery = {}
+    tquery['status__in'] = ['missed', 'submitted', 'idle', 'finished', 'failed', 'cancelled']
     if 'modificationtime__range' in query:
         tquery['lastupdate__range'] = query['modificationtime__range']
 
     harvesterWorkers = []
     harvesterWorkers.extend(HarvesterWorkers.objects.values('computingsite','status').filter(**tquery).annotate(Count('status')).order_by('computingsite'))
+
+    # This is for exclusion of intermediate states from time window
+    tquery = {}
+    tquery['status__in'] = ['ready', 'running']
+    harvesterWorkers.extend(HarvesterWorkers.objects.values('computingsite','status').filter(**tquery).annotate(Count('status')).order_by('computingsite'))
+
+
 
     statusesSummary = OrderedDict()
     for harvesterWorker in harvesterWorkers:
