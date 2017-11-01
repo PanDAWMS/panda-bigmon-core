@@ -8365,8 +8365,8 @@ def harvesterworkers(request):
     query= setupView(request, hours=24*3, wildCardExt=False)
 
     tquery = {}
-    if 'modification__range' in query:
-        tquery['lastupdate__range'] = query['modification__range']
+    if 'modificationtime__range' in query:
+        tquery['lastupdate__range'] = query['modificationtime__range']
 
     harvesterWorkers = []
     harvesterWorkers.extend(HarvesterWorkers.objects.values('computingsite','status').filter(**tquery).annotate(Count('status')).order_by('computingsite'))
