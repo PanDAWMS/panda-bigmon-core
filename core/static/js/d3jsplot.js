@@ -1111,8 +1111,8 @@ var data = $.map(values, function(value, key) { if (value>0) {return value} });
 var labels = $.map(values, function(value, key) { if (value>0) {return key} });
 var tot = 0;
 for (var i = 0; i < data.length; i++) { tot += data[i];}
-var margin = {top: 0, right: 100, bottom: 0, left: 0},
-    w = 350 - margin.left - margin.right,
+var margin = {top: 0, right: 40, bottom: 0, left: 0},
+    w = 280 - margin.left - margin.right,
     h = 200 - margin.top - margin.bottom,
     r = Math.min(w, h) / 2,
     color = d3.scale.category20()
