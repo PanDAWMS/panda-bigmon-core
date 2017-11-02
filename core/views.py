@@ -674,9 +674,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             val = request.session['requestParams'][param]
             query['taskname__icontains'] = val
 
+        elif param == 'harvesterid':
+            val = request.session['requestParams'][param]
+            val = escapeInput(request.session['requestParams'][param])
+            values = val.split(',')
+            query['harvesterid__in'] = values
+
         elif param in ('tag',) and querytype == 'task':
             val = request.session['requestParams'][param]
             query['taskname__endswith'] = val
+
 
         elif param == 'reqid_from':
             val = int(request.session['requestParams'][param])
@@ -8362,22 +8369,22 @@ def taskInfo(request, jeditaskid=0):
 
 def harvesterworkers(request):
     valid, response = initRequest(request)
+
     query= setupView(request, hours=24*3, wildCardExt=False)
 
     tquery = {}
     tquery['status__in'] = ['missed', 'submitted', 'idle', 'finished', 'failed', 'cancelled']
-    if 'modificationtime__range' in query:
-        tquery['lastupdate__range'] = query['modificationtime__range']
+    tquery['lastupdate__range'] = query['modificationtime__range']
+    if 'harvesterid__in' in query:
+        tquery['harvesterid__in'] = query['harvesterid__in']
 
     harvesterWorkers = []
     harvesterWorkers.extend(HarvesterWorkers.objects.values('computingsite','status').filter(**tquery).annotate(Count('status')).order_by('computingsite'))
 
     # This is for exclusion of intermediate states from time window
-    tquery = {}
     tquery['status__in'] = ['ready', 'running']
+    del tquery['lastupdate__range']
     harvesterWorkers.extend(HarvesterWorkers.objects.values('computingsite','status').filter(**tquery).annotate(Count('status')).order_by('computingsite'))
-
-
 
     statusesSummary = OrderedDict()
     for harvesterWorker in harvesterWorkers:
