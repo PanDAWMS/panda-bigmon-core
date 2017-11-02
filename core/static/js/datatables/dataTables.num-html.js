@@ -24,7 +24,7 @@
 
 jQuery.extend( jQuery.fn.dataTableExt.oSort, {
 	"num-html-pre": function ( a ) {
-		var x = String(a).replace( /,/, "" ).replace( /<[\s\S]*?>/g, "" );
+		var x = String(a).replace( /<[\s\S]*?>/g, "" ).replace( /[,]*/g, "");
 		return parseFloat( (x == "---") ? -1 : x );
 	},
 
