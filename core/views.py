@@ -8023,13 +8023,34 @@ def taskInfo(request, jeditaskid=0):
                 objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
                 for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
 
+
+            # We reconstruct here jobsets retries
+
+            sqlRequest = """ SELECT OLDPANDAID, NEWPANDAID, MAX(LEV) as LEV, MIN(PTH) as PTH FROM (
+            SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV, CONNECT_BY_ISLEAF as IL, SYS_CONNECT_BY_PATH(OLDPANDAID, ',') PTH FROM (
+            SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=%s and RELATIONTYPE='jobset_retry')t1 CONNECT BY OLDPANDAID=PRIOR NEWPANDAID
+            )t2 GROUP BY OLDPANDAID, NEWPANDAID;"""% str(jeditaskid)
+
+            cur = connection.cursor()
+            cur.execute(sqlRequest)
+            datasetsChains = cur.fetchall()
+            cur.close()
+
+            jobsetretries = {}
+            lastNewPandaID = -1
+            tmpjobsetretries = None
+
+            for datasetsChain in datasetsChains:
+                jobsetretries[datasetsChain[1]] = datasetsChain[3].split(',')[1:]
+
             eventsChainsValues = 'lfn', 'attemptnr', 'startevent', 'endevent', 'pandaid'
             queryChain = {'jeditaskid':jeditaskid, 'startevent__isnull':False}
-            eventsChains.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues)[:20])
+            eventsChains.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues))
             for eventsChain in eventsChains:
                 if eventsChain['pandaid'] in auxiliaryDict:
                     eventsChain['jobsetid'] = auxiliaryDict[eventsChain['pandaid']]
-
+                    if eventsChain['jobsetid'] in jobsetretries:
+                        eventsChain['prevAttempts'] = jobsetretries[eventsChain['jobsetid']]
 
 #SELECT * FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS WHERE JEDITASKID=12380658 and pandaid=3665826228
 
