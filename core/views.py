@@ -8045,7 +8045,7 @@ def taskInfo(request, jeditaskid=0):
 
             eventsChainsValues = 'lfn', 'attemptnr', 'startevent', 'endevent', 'pandaid'
             queryChain = {'jeditaskid':jeditaskid, 'startevent__isnull':False}
-            eventsChains.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues))[:40]
+            eventsChains.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues)[:40])
             for eventsChain in eventsChains:
                 if eventsChain['pandaid'] in auxiliaryDict:
                     eventsChain['jobsetid'] = auxiliaryDict[eventsChain['pandaid']]
