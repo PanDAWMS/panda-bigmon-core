@@ -565,6 +565,21 @@ No datasets were found for this task
 {% endfor %}
 </table>
 
+    {% if currentlyRunningDataSets and currentlyRunningDataSets|length > 0 %}
+        <table>
+        <tr bgcolor='lightcyan'><th colspan=20>Currently running jobsets</th></tr>
+        <tr>
+        <td>
+        {% for currentlyRunningDataSet in currentlyRunningDataSets %}
+            <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobsetid={{ currentlyRunningDataSet }}">{{ currentlyRunningDataSet }}</a>,
+        {% endfor %}
+        </td>
+        </tr>
+        </table>
+    {% endif %}
+
+
+
     {% if eventsChain and eventsChain|length > 0 %}
     <table>
     <a name="eventchaintable"></a>

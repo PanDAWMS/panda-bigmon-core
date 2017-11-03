@@ -8039,18 +8039,25 @@ def taskInfo(request, jeditaskid=0):
             jobsetretries = {}
             lastNewPandaID = -1
             tmpjobsetretries = None
+            currentlyRunningDataSets = []
 
             for datasetsChain in datasetsChains:
                 jobsetretries[datasetsChain[1]] = datasetsChain[3].split(',')[1:]
 
-            eventsChainsValues = 'lfn', 'attemptnr', 'startevent', 'endevent', 'pandaid'
-            queryChain = {'jeditaskid':jeditaskid, 'startevent__isnull':False}
-            eventsChains.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues)[:40])
+            eventsChainsValues = 'lfn', 'attemptnr', 'startevent', 'endevent', 'pandaid', 'status'
+            queryChain = {'jeditaskid':jeditaskid, 'startevent__isnull':False, 'type':'input'}
+            eventsChains.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues))
             for eventsChain in eventsChains:
                 if eventsChain['pandaid'] in auxiliaryDict:
                     eventsChain['jobsetid'] = auxiliaryDict[eventsChain['pandaid']]
+                    if eventsChain['status'] == 'running':
+                        currentlyRunningDataSets.append(eventsChain['jobsetid'])
+
                     if eventsChain['jobsetid'] in jobsetretries:
                         eventsChain['prevAttempts'] = jobsetretries[eventsChain['jobsetid']]
+
+            eventsChains = eventsChains[:40]
+
 
 #SELECT * FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS WHERE JEDITASKID=12380658 and pandaid=3665826228
 
@@ -8366,6 +8373,7 @@ def taskInfo(request, jeditaskid=0):
             'eventservice': eventservice,
             'tk': transactionKey,
             'eventsChain':eventsChains,
+            'currentlyRunningDataSets':currentlyRunningDataSets,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
         }
         data.update(getContextVariables(request))
