@@ -7972,6 +7972,7 @@ def taskInfo(request, jeditaskid=0):
     eventsdict=[]
     objectStoreDict=[]
     eventsChains = []
+    currentlyRunningDataSets = []
 
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
         request.session['requestParams']['jeditaskid'])
