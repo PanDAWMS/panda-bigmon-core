@@ -308,6 +308,7 @@
                         <p> All tasks age is 0 days</p> {% endif %} </td>
             </tr>
             </table>
+            <script src="/static/js/d3jsplot.js"></script>
             <script>
                 var progressBarR = $('#runningprogressbar');
                 var progressBarW = $('#waitingprogressbar');
@@ -415,8 +416,8 @@
                         {% if requestParams.preset != 'DPD' %}
                             <td><a href="{{ xurl }}processingtype={{ task.processingtype }}"> {{ task.processingtype }} </a></td>
                         {% endif %}
-                        <td>{% if task.nevents %}{{ task.nevents|intcomma }}{% else %}---{% endif %}</td>
-                        <td>{% if task.nevents %}{{ task.neventsused|intcomma }}{% else %}---{% endif %}</td>
+                        <td>{% if task.nevents %}{{ task.nevents }}{% else %}---{% endif %}</td>
+                        <td>{% if task.nevents %}{{ task.neventsused}}{% else %}---{% endif %}</td>
                         <td><div id="{{ task.jeditaskid }}"></div></td>
                         <script>
                             $.ajax({
@@ -444,7 +445,7 @@
                             });
 
                         </script>
-                        <td>{% if task.nevents %}{{ task.neventstobeused|intcomma }}{% else %}---{% endif %}</td>
+                        <td>{% if task.nevents %}{{ task.neventstobeused }}{% else %}---{% endif %}</td>
                         <td>{% if task.nevents %}{{ task.percentage }}{% else %}---{% endif %}</td>
                         <td>{% if task.nfilesfailed %}{{ task.nfilesfailed }}{% else %}0{% endif %}</td>
                         <td>{{ task.currentpriority }}</td>
