@@ -54,6 +54,7 @@
                                         {% for taskid, files in tasks.tasks.items %}
                                             <div class="clickable">
                                                 <div class="finished">{{ files.finished }}</div>
+                                                <div class="active">{{ files.active }}</div>
                                                 <div class="failed">{{ files.failed }}</div>
                                                 <a href="{% url 'artJobs' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}&branch={{ brname }}{% else %}?package={{ brname }}&branch={{ pname }}{% endif %}&ntag={{ ntname }}&taskid={{ taskid }}&view={{ requestParams.view }}"></a>
                                             </div>

@@ -50,10 +50,11 @@
                       {% for tags,files in pack.items %}
                           {% if tags == ntag %}
                               <td class="cell">
-                                {% if files|length > 1 %}
+                                {% if files.finished > 0 or files.failed > 0 or files.active > 0 %}
                                     <div class="clickable">
                                         <div class="finished">{{ files.finished }}</div>
                                         <div class="failed">{{ files.failed }}</div>
+                                        <div class="active">{{ files.active }}</div>
                                         <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}{% else %}?branch={{ pname }}{% endif %}&ntag={{ tags }}"></a>
                                     </div>
                                 {% else %}
