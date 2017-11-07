@@ -84,6 +84,7 @@ REDIRECT_STATE = False
 LOGIN_URL = 'login'
 
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/loginerror/'
+LOGIN_REDIRECT_URL = '/'
 
 
 # Google OAuth2 (google-oauth2)
