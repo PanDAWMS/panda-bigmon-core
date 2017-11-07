@@ -4361,7 +4361,7 @@ def userList(request):
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
 #@login_required(login_url='loginauth2')
-#@login_customrequired
+@login_customrequired
 def userInfo(request, user=''):
     valid, response = initRequest(request)
     if not valid: return response
