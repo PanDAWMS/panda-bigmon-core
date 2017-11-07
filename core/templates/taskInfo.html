@@ -4,7 +4,7 @@
 {% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <b>{{ task.taskname }}</b>{% endblock %}
 
 {% block body %}
-
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
 {% if columns %}
 <table>
 <tr bgcolor='lightcyan'><th colspan=20> {{ jeditaskid }} task: {{ taskname }} </th></tr>
@@ -198,19 +198,31 @@ function killtasks(taskID, action) {
 {% for state in jobsummary %}
 <td class="{{ state.name}}"> <b> {{ state.name }} </b> </td>
 {% endfor %}
-</tr><tr>
+</tr>
+ <tr>
 {% for state in jobsummary %}
+{% if newjobsummary %}
+
+{% for newstate in newjobsummary %}
+{% if forloop.counter == forloop.parentloop.counter %}
+<td {% if state.count > 0 or newstate.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 or newstate.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&jobstatus={{state.name}}&display_limit=100"><span class='{{state.name}}_fill'>{{ state.count }} ({{ newstate.count }})</span></a> </b> {% endif %} </td>
+{%  endif %}
+
+{% endfor %}
+
+{% else %}
+
 <td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&jobstatus={{state.name}}&display_limit=100"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+
+{% endif %}
 
 {% comment "Removed in order of consistency between task and jobs page" %}
     {% ifequal state.name 'failed' %}&mode=drop{%  endifequal %}{% ifequal state.name 'finished' %}&mode=drop{%  endifequal %}
 {% endcomment %}
-
 {% endfor %}
+</tr>
 </table>
 {% endif %}
-
-
 
 {% if jobsummaryPMERGE %}
 
@@ -224,8 +236,18 @@ function killtasks(taskID, action) {
 {% endfor %}
 </tr><tr>
 {% for state in jobsummaryPMERGE %}
-<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&display_limit=100&processingtype=pmerge"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+{% if newjobsummaryPMERGE %}
+{% for newstate in newjobsummaryPMERGE %}
+{% if forloop.counter == forloop.parentloop.counter %}
+{% endif %}
+<td {% if state.count > 0 or newstate.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 or newstate.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&display_limit=100&processingtype=pmerge"><span class='{{state.name}}_fill'>{{ state.count }} ({{ newstate.count }}</span></a> </b> {% endif %} </td>
 {% endfor %}
+{% else %}
+<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&display_limit=100&processingtype=pmerge"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+
+ {% endif %}
+{% endfor %}
+</tr>
 </table>
 {% endif %}
 
@@ -264,7 +286,7 @@ This is an event service task<p>
 {% if plotsDict.cputimepereventf and plotsDict.cputimepereventf|length > 0 %} <div class="d3splot" id="plot13" style="float:left;display:none"></div> {% endif %}
 <br style="clear: both">
 
-<script src="/static/js/d3jsplot.js"></script>
+<script  type="text/javascript" src="/static/js/d3jsplot.js"></script>
 <script>
     var values1 = {{ plotsDict.maxpss|safe }};
     var values2 = {{ plotsDict.walltime|safe }};

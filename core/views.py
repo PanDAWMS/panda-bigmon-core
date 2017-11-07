@@ -199,7 +199,21 @@ VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
 VOMODE = ' '
 
+def login_customrequired(function):
+  def wrap(request, *args, **kwargs):
+      if request.user.is_authenticated() or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
+          return function(request, *args, **kwargs)
+      else:
+          return HttpResponseRedirect('/login/?next='+request.get_full_path())
+  wrap.__doc__=function.__doc__
+  wrap.__name__=function.__name__
+  return wrap
 
+def datetime_handler(x):
+    import datetime
+    if isinstance(x, datetime.datetime):
+        return x.isoformat()
+    raise TypeError("Unknown type")
 
 def jobSuppression(request):
 
@@ -1015,7 +1029,57 @@ def saveSettings(request):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
 
+def dropRetrielsJobsV2(jobs,jeditaskid,isReturnDroppedPMerge):
 
+    droppedPmerge = set()
+
+    sqlRequest = '''
+    select pandaid, status from (select fileid, pandaid, status, attemptnr, max(attemptnr) over (partition by fileid) as lastattempt  
+    from atlas_panda.filestable4 
+    where  jeditaskid = %i  and type like 'input') WHERE lastattempt!= attemptnr
+    ''' %(jeditaskid)
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+    droppedIDs = cur.fetchall()
+
+
+    hashDroppedIDs  = {}
+    cntDropIDsStatus = {}
+    pandaDropIDList = set()
+    for droppedID in droppedIDs:
+        hashDroppedIDs.setdefault(droppedID[1], set()).add(droppedID[0])
+        pandaDropIDList.add(droppedID[0])
+    for status in hashDroppedIDs.keys():
+        cntDropIDsStatus[status] = len(hashDroppedIDs[status])
+
+    newjobs = []
+    for job in jobs:
+        pandaid = job['pandaid']
+        if not isEventService(job):
+            if pandaid not in pandaDropIDList:
+                if not isReturnDroppedPMerge:
+                    if not (job['processingtype'] == 'pmerge'):
+                        newjobs.append(job)
+                    else:
+                        droppedPmerge.add(pandaid)
+                else: newjobs.append(job)
+        else:
+            #if (job['pandaid'] in pandaDropIDList and job['jobstatus'] in ('finished', 'merging')):
+                #if (hashRetries[job['pandaid']]['relationtype'] == ('retry')):
+                #    dropJob = 1
+            #if (job['jobsetid'] in hashRetries) and (hashRetries[job['jobsetid']]['relationtype'] in ('jobset_retry')):
+            # if (hashRetries[job['pandaid']]['relationtype'] == 'es_merge' and (
+            #        job['jobsubstatus'] == 'es_merge')):
+            #        dropJob = 1
+            if (job['jobstatus'] != 'closed' and (job['jobsubstatus'] not in ('es_unused', 'es_inaction'))) or (job['jobstatus'] in ('finished', 'merging')):
+                if pandaid not in pandaDropIDList:
+                    if not isReturnDroppedPMerge:
+                        if not (job['processingtype'] == 'pmerge'):
+                            newjobs.append(job)
+                        else:
+                            droppedPmerge.add(pandaid)
+                    else: newjobs.append(job)
+    return newjobs, cntDropIDsStatus, pandaDropIDList, droppedPmerge
 
 def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     # dropping algorithm for jobs belong to single task
@@ -2799,9 +2863,14 @@ def jobList(request, mode=None, param=None):
     if 'processingtype' in request.session['requestParams'] and \
         request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge=True
     droplist = []
+    newdroplist = []
     droppedPmerge = set()
+    newdroppedPmerge = set()
+    cntStatus = []
     if dropmode and (len(taskids) == 1):
         jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs,taskids.keys()[0],isReturnDroppedPMerge)
+        if request.user.is_authenticated() and request.user.is_tester and False:
+            newjobs, cntStatus, newdroplist, newdroppedPmerge = dropRetrielsJobsV2(jobs,taskids.keys()[0],isReturnDroppedPMerge)
 
     jobs = cleanJobList(request, jobs)
 
@@ -3052,6 +3121,11 @@ def jobList(request, mode=None, param=None):
             'jobsTotalCount': jobsTotalCount,
             'requestString': urlParametrs,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'newndrop': len(newdroplist) if len(newdroplist) > 0 else (- len(newdroppedPmerge)),
+            'cntStatus': cntStatus,
+            'ndropPmerge':len(newdroppedPmerge),
+            'droppedPmerge2':newdroppedPmerge,
+            'pandaIDList':newdroplist,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -4287,6 +4361,7 @@ def userList(request):
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
 #@login_required(login_url='loginauth2')
+#@login_customrequired
 def userInfo(request, user=''):
     valid, response = initRequest(request)
     if not valid: return response
@@ -4536,10 +4611,9 @@ def userInfo(request, user=''):
                         link['otherparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
                                                        importance=flag))
 
-
+    sumd = userSummaryDict(jobs)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
-        sumd = userSummaryDict(jobs)
         flist = ['jobstatus', 'prodsourcelabel', 'processingtype', 'specialhandling', 'transformation', 'jobsetid',
                  'jeditaskid', 'computingsite', 'cloud', 'workinggroup', 'homepackage', 'inputfileproject',
                  'inputfiletype', 'attemptnr', 'priorityrange', 'jobsetrange']
@@ -4603,8 +4677,7 @@ def userInfo(request, user=''):
         resp = sumd
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(resp), content_type='text/html')
-
+        return HttpResponse(json.dumps(resp,default=datetime_handler),content_type='text/html')
 
 def siteList(request):
     valid, response = initRequest(request)
@@ -7897,6 +7970,7 @@ def taskInfo(request, jeditaskid=0):
     if not valid: return response
     # Here we try to get cached data. We get any cached data is available
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
+
     if data is not None:
         data = json.loads(data)
         doRefresh = False
@@ -7974,6 +8048,11 @@ def taskInfo(request, jeditaskid=0):
     eventsChains = []
     currentlyRunningDataSets = []
 
+    newjobsummary =[]
+    newjobsummaryESMerge = []
+    newjobsummaryPMERGE = []
+    neweventsdict =[]
+
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
         request.session['requestParams']['jeditaskid'])
     if jeditaskid == 0:
@@ -7996,14 +8075,26 @@ def taskInfo(request, jeditaskid=0):
             auxiliaryDict = {}
 
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', auxiliaryDict=auxiliaryDict)
+                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
             plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary2(
-                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
+                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isOld')
+            if request.user.is_authenticated() and request.user.is_tester and False:
+                newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
+                    query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isNew')
+                newplotsDictESMerge, newjobsummaryESMerge, neweventssummaryESM, newtransactionKeyESM, newjobScoutIDsESM, newhs06sSumESM = jobSummary2(
+                    query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isNew')
+                for state in eventservicestatelist:
+                    eventstatus = {}
+                    eventstatus['statusname'] = state
+                    eventstatus['count'] = neweventssummary[state]
+                    neweventsdict.append(eventstatus)
+
             for state in eventservicestatelist:
                 eventstatus = {}
                 eventstatus['statusname'] = state
                 eventstatus['count'] = eventssummary[state]
                 eventsdict.append(eventstatus)
+
             if mode=='nodrop':
                 sqlRequest = """select j.computingsite, j.COMPUTINGELEMENT,e.objstore_id,e.status,count(*) as nevents
                                       from atlas_panda.jedi_events e
@@ -8073,9 +8164,14 @@ def taskInfo(request, jeditaskid=0):
             if 'mode' in request.session['requestParams']:
                 mode = request.session['requestParams']['mode']
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                query, exclude=exclude, mode=mode)
+                query, exclude=exclude, mode=mode,algorithm='isOld')
             plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary2(
-                query, exclude={}, mode=mode, processingtype='pmerge')
+                query, exclude={}, mode=mode, processingtype='pmerge',algorithm='isOld')
+            if request.user.is_authenticated() and request.user.is_tester and False:
+                newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
+                    query, exclude=exclude, mode=mode,algorithm='isNew')
+                newplotsDictPMERGE, newjobsummaryPMERGE, neweventssummaryPM, newtransactionKeyPM, newjobScoutIDsPMERGE, newhs06sSumPMERGE = jobSummary2(
+                    query, exclude={}, mode=mode, processingtype='pmerge',algorithm='isNew')
 
 
     elif 'taskname' in request.session['requestParams']:
@@ -8376,6 +8472,10 @@ def taskInfo(request, jeditaskid=0):
             'eventsChain':eventsChains,
             'currentlyRunningDataSets':currentlyRunningDataSets,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
+            'newjobsummary': newjobsummary,
+            'newjobsummaryPMERGE':newjobsummaryPMERGE,
+            'newjobsummaryESMerge': newjobsummaryESMerge,
+            'neweventssummary':neweventsdict,
         }
         data.update(getContextVariables(request))
         cacheexpiration = 60*20 #second/minute * minutes
@@ -8497,7 +8597,7 @@ def ganttTaskChain(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None):
+def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None, algorithm = 'isOld'):
     jobs = []
     jobScoutIDs = {}
     jobScoutIDs['cputimescoutjob'] = []
@@ -8588,8 +8688,11 @@ def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceF
 
     if mode == 'drop' and len(jobs) < 300000:
         print 'filtering retries'
-        jobs, droplist, droppedPMerge = dropRetrielsJobs(jobs, newquery['jeditaskid'], isReturnDroppedPMerge)
-
+        if algorithm == 'isNew':
+            jobs, cntStatus, droplist, droppedPMerge = dropRetrielsJobsV2(jobs, newquery['jeditaskid'], isReturnDroppedPMerge)
+            print('new algorithm!')
+        else:
+            jobs, droplist, droppedPMerge = dropRetrielsJobs(jobs, newquery['jeditaskid'], isReturnDroppedPMerge)
     plotsDict = {}
     plotsDict['maxpss'] = []
     plotsDict['maxpssf'] = []

@@ -251,9 +251,18 @@ function killtasks(taskID, action) {
 {% endfor %}
 </tr><tr>
 {% for state in jobsummary %}
-<td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&eventservice=not2&display_limit=100"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+{% if newjobsummary %}
+{% for newstate in newjobsummary %}
+{% if forloop.counter == forloop.parentloop.counter %}
+<td {% if state.count > 0 or newstate.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 or newstate.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&eventservice=not2&display_limit=100"><span class='{{state.name}}_fill'>{% if state.count > 0 %}{{ state.count }} ({{ newstate.count }}) {% else %} 0 ({{ newstate.count }}) {% endif %}</span></a> </b> {% endif %} </td>
+{% endif %}
+{% endfor %}
+{% else %}
+ <td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&eventservice=not2&display_limit=100"><span class='{{state.name}}_fill'>{% if state.count > 0 %}{{ state.count }} {% endif %}</span></a> </b> {% endif %} </td>
+{% endif %}
 {% endfor %}
 </table>
+
 {% endif %}
 
 {% if jobsummaryESMerge %}
@@ -268,7 +277,15 @@ function killtasks(taskID, action) {
 {% endfor %}
 </tr><tr>
 {% for state in jobsummaryESMerge %}
+{% if newjobsummaryESMerge %}
+{% for newstate in newjobsummaryESMerge %}
+{% if forloop.counter == forloop.parentloop.counter %}
+<td {% if state.count > 0 or newstate.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 or newstate.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&display_limit=100&eventservice=2"><span class='{{state.name}}_fill'>{% if state.count > 0 %}{{ state.count }} ({{ newstate.count }}) {% else %} 0 ({{ newstate.count }}) {% endif%}</span></a> </b> {% endif %} </td>
+{% endif %}
+{% endfor %}
+{% else %}
 <td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&display_limit=100&eventservice=2"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>
+{% endif %}
 {% endfor %}
 </table>
 {% endif %}
@@ -301,8 +318,27 @@ function killtasks(taskID, action) {
     </span>
 </td>
 {% endfor %}
-</tr><tr>
+</tr>
+    <tr>
 {% for state in eventssummary %}
+{% if neweventssummary %}
+{% for newstate in neweventssummary %}
+{% if forloop.counter == forloop.parentloop.counter %}
+<td {% if state.count > 0 or newstate.count > 0 %} class='{{state.statusname}}_fill' {% endif %}> {% if state.count > 0 or newstate.count > 0 %}
+    <b> <span class='{{state.statusname}}_fill'>
+        {% if state.statusname == 'failed' and state.count > 0 %}
+            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} ({{ newstate.count }}) </a>
+         {% elif  newstate.statusname == 'failed' and newstate.count > 0%}
+             <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} ({{ newstate.count }}) </a>
+        {% else %} {{ state.count }} ({{ newstate.count }})
+        {% endif %}
+    </span></b>
+    {% endif %}
+</td>
+
+{% endif %}
+{% endfor %}
+{% else %}
 <td {% if state.count > 0 %} class='{{state.statusname}}_fill' {% endif %}> {% if state.count > 0 %}
     <b> <span class='{{state.statusname}}_fill'>
         {% if state.statusname == 'failed' and state.count > 0 %}
@@ -312,6 +348,7 @@ function killtasks(taskID, action) {
     </span></b>
     {% endif %}
 </td>
+ {% endif %}
 {% endfor %}</tr>
 {% if ossummary|length > 0 %}
 <tr class="showeventsdetailsrow" >
