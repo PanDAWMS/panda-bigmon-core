@@ -13,6 +13,7 @@ from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, Sum
 from core.views import initRequest, extensibleURL, removeParam
 from core.views import setCacheEntry, getCacheEntry, DateEncoder, endSelfMonitor
+from core.art.jobSubResults import getJobReport
 
 artdateformat = '%Y-%m-%d'
 humandateformat = '%d %b %Y'
@@ -425,3 +426,25 @@ def artJobs(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     endSelfMonitor(request)
     return response
+
+def getJobSubResults(request):
+    valid, response = initRequest(request)
+
+
+    guid = request.session['requestParams']['guid'] if 'guid' in request.session['requestParams'] else ''
+    lfn = request.session['requestParams']['lfn'] if 'lfn' in request.session['requestParams'] else ''
+    scope = request.session['requestParams']['scope'] if 'scope' in request.session['requestParams'] else ''
+    results = getJobReport(guid, lfn, scope)
+
+
+
+    data = {
+        'requestParams': request.session['requestParams'],
+        'viewParams': request.session['viewParams'],
+        'jobSubResults': results
+    }
+    response = render_to_response('artJobSubResults.html', data, content_type='text/html')
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    endSelfMonitor(request)
+    return response
+
