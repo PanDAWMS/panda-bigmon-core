@@ -6937,10 +6937,9 @@ def killtasks(request):
         response = HttpResponse(dump, content_type='text/plain')
         return response
 
-
-    if 'ADFS_FULLNAME' in request.session and 'ADFS_LOGIN' in request.session:
-        username = request.session['ADFS_LOGIN']
-        fullname = request.session['ADFS_FULLNAME']
+    if request.user.is_authenticated():
+        username = request.user.username
+        fullname = request.user.first_name+' '+request.user.last_name
 
     else:
         resp = {"detail": "User not authenticated. Please login to bigpanda mon"}
