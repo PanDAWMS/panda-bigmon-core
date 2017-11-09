@@ -5,6 +5,10 @@
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block extra_js %}
 <script  type="text/javascript" src="/static/js/d3jsplot.js"></script>
+<link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
+<script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
+<script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
+
 <script>
 function toggleDetailDisplay(className) {
    el = document.getElementsByClassName(className);
@@ -358,11 +362,88 @@ function buildPlots(classname) {
 </table>
 {% endif %}
 
-{% if eventssummary|length > 0 %}
+
+
 <script type="text/javascript">
     $(document).ready(function() {
+
+     eventchunktable = $('#eventchunktable').dataTable( {
+        "aaSorting": [[ 4, "desc" ]],
+        "aoColumns": [
+            { "mData":"jobsetid",
+              sDefaultContent: "",
+              "render": function (chunk, type, full)  {
+                   return '<a href="'+{% url 'jobList' %}+'?jeditaskid={{ jeditaskid }}&jobsetid='+full['jobsetid']+'">' + full['jobsetid'] + '</a>';
+              },
+
+            },
+            {
+               "mData":"status",
+               sDefaultContent: "",
+            },
+            {
+                "mData":"attemptnr",
+                sDefaultContent: "",
+            },
+            {
+              "mData":"lfn",
+              sDefaultContent: ""
+            },
+            {
+                "mData":"startevent",
+                 sDefaultContent: "",
+            },
+            {
+                "mData":"endevent",
+                sDefaultContent: "",
+            },
+        ],
+
+        "bServerSide": false,
+        "searching": true,
+
+         "ajax": {
+                 "processing": true,
+                 "url": "{% url 'eventschunks' %}?jeditaskid={{ jeditaskid }}",
+                 "dataSrc" : ''},
+
+        "bStateSave" : true, // optional
+
+
+      initComplete: function () {
+            this.api().columns([1]).every( function () {
+                var column = this;
+                var select = $('<select><option value="">Show all</option></select>')
+                    .appendTo( $(column.header()).empty() )
+                    .on( 'change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+
+                        column
+                            .search( val ? '^'+val+'$' : '', true, false )
+                            .draw();
+                    } );
+
+                column.data().unique().sort().each( function ( d, j ) {
+                    select.append( '<option value="'+d+'">'+d+'</option>' )
+                } );
+            } );
+
+        }
+    });
+    $('#eventchunktable').click(function() { // only if you don't hardcode column widths
+        eventchunktable.fnAdjustColumnSizing();
+    });
+
+
+
+        {% if eventssummary|length > 0 %}
+
         if ($(".showeventsdetailsrow").is(':visible'))
                 $(".showeventsdetailsrow").hide();
+
+        {% endif %}
     });
     function showEventsDetails(){
         if (!$(".showeventsdetailsrow").is(':visible')){
@@ -371,6 +452,9 @@ function buildPlots(classname) {
             $(".showeventsdetailsrow").hide()}
     }
 </script>
+
+
+{% if eventssummary|length > 0 %}
 <table>
 <tr bgcolor="lightcyan"><th colspan=20>
 <b>States of events in this task</b>  {% if requestParams.mode and requestParams.mode == 'nodrop' %} <a style="cursor: pointer;" onclick="javascript:showEventsDetails();" href="#">  Show details</a> {% endif %} &nbsp
@@ -641,32 +725,21 @@ No datasets were found for this task
 
 
 
-    {% if eventsChain and eventsChain|length > 0 %}
-    <table>
-    <a name="eventchaintable"></a>
-        <tr bgcolor='lightcyan'><th colspan=20>Events chain attempts</th></tr>
-        <tr><th>Last jobset</th><th>Jobset attempts chain</th><th>Count</th><th>Count DS</th><th>LFN</th><th>Start Event</th><th>End Event</th></tr>
-        {% for chain in eventsChain %}
-            <tr><td><a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobsetid={{ chain.jobsetid }}">{{ chain.jobsetid }}</a></td>
-            <td>
-            {% if chain.prevAttempts %}
-                {% for retry in chain.prevAttempts %}
-                    <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobsetid={{ retry }}">{{ retry }}</a> <-
-                {% endfor %}
-                <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobsetid={{ chain.jobsetid }}">{{ chain.jobsetid }}</a>
 
-            {% endif %}
-            </td>
-            <td>
-            {% if chain.prevAttempts %}
-                {{ chain.prevAttempts|length|add:1 }}
-            {% endif %}
-            </td>
-            <td>{{ chain.attemptnr }}</td>
-            <td>{{ chain.lfn }}</td><td>{{ chain.startevent }}</td><td>{{ chain.endevent }}</td></tr>
-        {% endfor %}
+
+    <table class="table table-striped table-bordered" id="eventchunktable" style="clear: both;">
+    <thead>
+        <tr>
+            <th>Last jobset</th>
+            <th>DS Status</th>
+            <th>Count attempts from DS</th>
+            <th>LFN</th>
+            <th>Start Event</th>
+            <th>End Event</th>
+        </tr>
+    </thead>
     </table>
-    {% endif %}
+
 
 
 {% else %}

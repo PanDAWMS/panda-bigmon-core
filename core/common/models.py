@@ -413,6 +413,8 @@ class JediDatasetContents(models.Model):
     firstevent = models.IntegerField(null=True, db_column='FIRSTEVENT', blank=True)
     boundaryid = models.BigIntegerField(null=True, db_column='BOUNDARYID', blank=True)
     pandaid = models.BigIntegerField(db_column='PANDAID', blank=True)
+    jobsetid = models.BigIntegerField(db_column='JOBSETID', blank=True)
+
     class Meta:
         db_table = u'jedi_dataset_contents'
         unique_together = ('jeditaskid', 'datasetid', 'fileid')

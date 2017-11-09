@@ -147,6 +147,7 @@ urlpatterns = [
     url(r'^loginerror/$', coremon_views.loginerror, name='loginerror'),
 
     url(r'^harvesterworkers/$', coremon_views.harvesterworkers, name='harvesterworkers'),
+    url(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

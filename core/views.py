@@ -8115,39 +8115,6 @@ def taskInfo(request, jeditaskid=0):
                 for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
 
 
-            # We reconstruct here jobsets retries
-
-            sqlRequest = """ SELECT OLDPANDAID, NEWPANDAID, MAX(LEV) as LEV, MIN(PTH) as PTH FROM (
-            SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV, CONNECT_BY_ISLEAF as IL, SYS_CONNECT_BY_PATH(OLDPANDAID, ',') PTH FROM (
-            SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=%s and RELATIONTYPE='jobset_retry')t1 CONNECT BY OLDPANDAID=PRIOR NEWPANDAID
-            )t2 GROUP BY OLDPANDAID, NEWPANDAID;"""% str(jeditaskid)
-
-            cur = connection.cursor()
-            cur.execute(sqlRequest)
-            datasetsChains = cur.fetchall()
-            cur.close()
-
-            jobsetretries = {}
-            lastNewPandaID = -1
-            tmpjobsetretries = None
-            currentlyRunningDataSets = []
-
-            for datasetsChain in datasetsChains:
-                jobsetretries[datasetsChain[1]] = datasetsChain[3].split(',')[1:]
-
-            eventsChainsValues = 'lfn', 'attemptnr', 'startevent', 'endevent', 'pandaid', 'status'
-            queryChain = {'jeditaskid':jeditaskid, 'startevent__isnull':False, 'type':'input'}
-            eventsChains.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues))
-            for eventsChain in eventsChains:
-                if eventsChain['pandaid'] in auxiliaryDict:
-                    eventsChain['jobsetid'] = auxiliaryDict[eventsChain['pandaid']]
-                    if eventsChain['status'] == 'running':
-                        currentlyRunningDataSets.append(eventsChain['jobsetid'])
-
-                    if eventsChain['jobsetid'] in jobsetretries:
-                        eventsChain['prevAttempts'] = jobsetretries[eventsChain['jobsetid']]
-
-            eventsChains = eventsChains[:40]
 
 
 #SELECT * FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS WHERE JEDITASKID=12380658 and pandaid=3665826228
@@ -8468,8 +8435,6 @@ def taskInfo(request, jeditaskid=0):
             'vomode': VOMODE,
             'eventservice': eventservice,
             'tk': transactionKey,
-            'eventsChain':eventsChains,
-            'currentlyRunningDataSets':currentlyRunningDataSets,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
             'newjobsummary': newjobsummary,
             'newjobsummaryPMERGE':newjobsummaryPMERGE,
@@ -11970,6 +11935,42 @@ def getBadEventsForTask(request):
         data.append(dataitem)
     cursor.close()
     return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+
+
+def getEventsChunks(request):
+    if 'jeditaskid' in request.GET:
+        jeditaskid = int(request.GET['jeditaskid'])
+    else:
+        return HttpResponse("Not jeditaskid supplied", content_type='text/html')
+
+    # We reconstruct here jobsets retries
+
+    sqlRequest = """ SELECT OLDPANDAID, NEWPANDAID, MAX(LEV) as LEV, MIN(PTH) as PTH FROM (
+    SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV, CONNECT_BY_ISLEAF as IL, SYS_CONNECT_BY_PATH(OLDPANDAID, ',') PTH FROM (
+    SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=%s and RELATIONTYPE='jobset_retry')t1 CONNECT BY OLDPANDAID=PRIOR NEWPANDAID
+    )t2 GROUP BY OLDPANDAID, NEWPANDAID;""" % str(jeditaskid)
+
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+    datasetsChunks = cur.fetchall()
+    cur.close()
+
+    jobsetretries = {}
+    eventsChunks = []
+
+    for datasetsChunk in datasetsChunks:
+        jobsetretries[datasetsChunk[1]] = datasetsChunk[3].split(',')[1:]
+
+    eventsChunksValues = 'lfn', 'attemptnr', 'startevent', 'endevent', 'pandaid', 'status', 'jobsetid'
+    queryChunks = {'jeditaskid': jeditaskid, 'startevent__isnull': False, 'type': 'input'}
+    eventsChunks.extend(
+        JediDatasetContents.objects.filter(**queryChunks).order_by('attemptnr').reverse().values(*eventsChunksValues))
+
+    for eventsChunk in eventsChunks:
+        if eventsChunk['jobsetid'] in jobsetretries:
+            eventsChunk['prevAttempts'] = jobsetretries[eventsChunk['jobsetid']]
+
+    return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='text/html')
 
 
 def serverStatusHealth(request):
