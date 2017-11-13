@@ -377,12 +377,27 @@ function buildPlots(classname) {
               },
 
             },
+            { "mData":"attemptnrDS",
+              sDefaultContent: "",
+              "render": function (chunk, type, full)  {
+                   var reStr = "";
+                   full['prevAttempts'].forEach(function(entry) {
+                        reStr += '<- <a href="'+{% url 'jobList' %}+'?jeditaskid={{ jeditaskid }}&jobsetid='+entry+'">' + entry + '</a>';
+                   });
+                   return reStr;
+              },
+
+            },
             {
                "mData":"status",
                sDefaultContent: "",
             },
             {
                 "mData":"attemptnr",
+                sDefaultContent: "",
+            },
+            {
+                "mData":"attemptnrDS",
                 sDefaultContent: "",
             },
             {
@@ -395,6 +410,18 @@ function buildPlots(classname) {
             },
             {
                 "mData":"endevent",
+                sDefaultContent: "",
+            },
+            {
+                "mData":"failedattempt",
+                sDefaultContent: "",
+            },
+            {
+                "mData":"maxfailure",
+                sDefaultContent: "",
+            },
+            {
+                "mData":"maxattempt",
                 sDefaultContent: "",
             },
         ],
@@ -411,7 +438,7 @@ function buildPlots(classname) {
 
 
       initComplete: function () {
-            this.api().columns([1]).every( function () {
+            this.api().columns([2]).every( function () {
                 var column = this;
                 var select = $('<select><option value="">Show all</option></select>')
                     .appendTo( $(column.header()).empty() )
@@ -731,11 +758,17 @@ No datasets were found for this task
     <thead>
         <tr>
             <th>Last jobset</th>
+            <th>Previous<br> JobSets attempts</th>
             <th>DS Status</th>
-            <th>Count attempts from DS</th>
-            <th>LFN</th>
-            <th>Start Event</th>
-            <th>End Event</th>
+            <th>Count attempts<br> from DS</th>
+            <th>Count attempts from<br> retries reconstruction</th>
+            <th>The logical filename (lfn)</th>
+            <th>The starting event number used in the file (Start Event)</th>
+            <th>The ending event number used in the file (End Event)</th>
+            <th>How many times the file failed so far (Failedattempt)</th>,
+            <th>How many times the file can be failed at most(Maxfailure)</th>,
+            <th>How many times the file can be failed at most(Maxattempt)</th>
+
         </tr>
     </thead>
     </table>

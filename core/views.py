@@ -11945,7 +11945,7 @@ def getEventsChunks(request):
 
     # We reconstruct here jobsets retries
 
-    sqlRequest = """ SELECT OLDPANDAID, NEWPANDAID, MAX(LEV) as LEV, MIN(PTH) as PTH FROM (
+    sqlRequest = """SELECT OLDPANDAID, NEWPANDAID, MAX(LEV) as LEV, MIN(PTH) as PTH FROM (
     SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV, CONNECT_BY_ISLEAF as IL, SYS_CONNECT_BY_PATH(OLDPANDAID, ',') PTH FROM (
     SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=%s and RELATIONTYPE='jobset_retry')t1 CONNECT BY OLDPANDAID=PRIOR NEWPANDAID
     )t2 GROUP BY OLDPANDAID, NEWPANDAID;""" % str(jeditaskid)
@@ -11961,7 +11961,7 @@ def getEventsChunks(request):
     for datasetsChunk in datasetsChunks:
         jobsetretries[datasetsChunk[1]] = datasetsChunk[3].split(',')[1:]
 
-    eventsChunksValues = 'lfn', 'attemptnr', 'startevent', 'endevent', 'pandaid', 'status', 'jobsetid'
+    eventsChunksValues = 'lfn', 'attemptnr', 'startevent', 'endevent', 'pandaid', 'status', 'jobsetid', 'failedattempt', 'maxfailure', 'maxattempt'
     queryChunks = {'jeditaskid': jeditaskid, 'startevent__isnull': False, 'type': 'input'}
     eventsChunks.extend(
         JediDatasetContents.objects.filter(**queryChunks).order_by('attemptnr').reverse().values(*eventsChunksValues))
@@ -11969,6 +11969,12 @@ def getEventsChunks(request):
     for eventsChunk in eventsChunks:
         if eventsChunk['jobsetid'] in jobsetretries:
             eventsChunk['prevAttempts'] = jobsetretries[eventsChunk['jobsetid']]
+            eventsChunk['attemptnrDS'] = len(jobsetretries[eventsChunk['jobsetid']])
+        else:
+            eventsChunk['prevAttempts'] = []
+            eventsChunk['attemptnrDS'] = 0
+
+
 
     return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='text/html')
 

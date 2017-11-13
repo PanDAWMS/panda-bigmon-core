@@ -414,6 +414,8 @@ class JediDatasetContents(models.Model):
     boundaryid = models.BigIntegerField(null=True, db_column='BOUNDARYID', blank=True)
     pandaid = models.BigIntegerField(db_column='PANDAID', blank=True)
     jobsetid = models.BigIntegerField(db_column='JOBSETID', blank=True)
+    maxfailure = models.IntegerField(null=True, db_column='MAXFAILURE', blank=True)
+    failedattempt = models.IntegerField(null=True, db_column='FAILEDATTEMPT', blank=True)
 
     class Meta:
         db_table = u'jedi_dataset_contents'
