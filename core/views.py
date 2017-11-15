@@ -6937,12 +6937,14 @@ def killtasks(request):
         response = HttpResponse(dump, content_type='text/plain')
         return response
 
-    if request.user.is_authenticated():
-        username = request.user.username
-        fullname = request.user.first_name+' '+request.user.last_name
+    user = request.user
+    if user.is_authenticated() and (not user.social_auth is None) and (not user.social_auth.get(provider='cernauth2') is None) \
+            and (not user.social_auth.get(provider='cernauth2').extra_data is None) and ('username' in user.social_auth.get(provider='cernauth2').extra_data):
+        username = user.social_auth.get(provider='cernauth2').extra_data['username']
+        fullname = user.social_auth.get(provider='cernauth2').extra_data['name']
 
     else:
-        resp = {"detail": "User not authenticated. Please login to bigpanda mon"}
+        resp = {"detail": "User not authenticated. Please login to bigpanda mon with CERN"}
         dump = json.dumps(resp, cls=DateEncoder)
         response = HttpResponse(dump, content_type='text/plain')
         return response
@@ -11973,8 +11975,6 @@ def getEventsChunks(request):
         else:
             eventsChunk['prevAttempts'] = []
             eventsChunk['attemptnrDS'] = 0
-
-
 
     return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='text/html')
 

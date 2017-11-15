@@ -16,7 +16,7 @@ class Cernauth2(BaseOAuth2):
     ]
 
     def get_user_details(self, response):
-         """Return user details from GitHub account"""
+         """Return user details from CERN account"""
          return {'username': response.get('username'),
                  'email': response.get('email') or '',
                  'first_name': response.get('first_name'),
@@ -36,3 +36,12 @@ class Cernauth2(BaseOAuth2):
 
     def get_auth_header(self, access_token):
         return {'Authorization': 'Bearer {0}'.format(access_token)}
+
+    def extra_data(self, user, uid, response, details=None, *args, **kwargs):
+        """Return users extra data"""
+        return {'username': response.get('username'),
+                 'email': response.get('email') or '',
+                 'first_name': response.get('first_name'),
+                 'last_name' : response.get('last_name'),
+                 'federation' : response.get('federation'),
+                 'name' : response.get('name'),}
