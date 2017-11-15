@@ -13,6 +13,7 @@ from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, Sum
 from core.views import initRequest, extensibleURL, removeParam
 from core.views import setCacheEntry, getCacheEntry, DateEncoder, endSelfMonitor
+from core.art.jobSubResults import getJobReport
 
 artdateformat = '%Y-%m-%d'
 humandateformat = '%d %b %Y'
@@ -153,7 +154,7 @@ def art(request):
 
 def artOverview(request):
     valid, response = initRequest(request)
-    query = setupView(request, 'task')
+    query = setupView(request, 'job')
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artOverview")
@@ -165,47 +166,65 @@ def artOverview(request):
         endSelfMonitor(request)
         return response
 
-    packages = ARTTasks.objects.filter(**query).values('package', 'ntag').annotate(nfilesfinished=Sum('nfilesfinished'), nfilesfailed=Sum('nfilesfailed'))
-    ntagslist=list(sorted(set([x['ntag'] for x in packages])))
-            
+
+    statestocount = ['finished', 'failed', 'active']
+    # packages = ARTTasks.objects.filter(**query).values('package', 'ntag').annotate(nfilesfinished=Sum('nfilesfinished'), nfilesfailed=Sum('nfilesfailed'))
+
     artpackagesdict = {}
     if not 'view' in request.session['requestParams'] or (
             'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
-        packages = ARTTasks.objects.filter(**query).values('package', 'ntag').annotate(
-            nfilesfinished=Sum('nfilesfinished'), nfilesfailed=Sum('nfilesfailed'))
+        query_raw = """SELECT package, ntag, status, count(*) as njobs FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))
+                      group by package, ntag, status""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
+        cur = connection.cursor()
+        cur.execute(query_raw)
+        tasks_raw = cur.fetchall()
+        cur.close()
+        artJobs = ['package', 'ntag', 'status', 'njobs']
+        packages = [dict(zip(artJobs, row)) for row in tasks_raw]
+        ntagslist = list(sorted(set([x['ntag'] for x in packages])))
+        # packages = ARTTasks.objects.filter(**query).values('package', 'ntag').annotate(
+        #     nfilesfinished=Sum('nfilesfinished'), nfilesfailed=Sum('nfilesfailed'))
         for p in packages:
             if p['package'] not in artpackagesdict.keys():
                 artpackagesdict[p['package']] = {}
                 for n in ntagslist:
                     artpackagesdict[p['package']][n.strftime(artdateformat)] = {}
                     artpackagesdict[p['package']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
+                    for state in statestocount:
+                        artpackagesdict[p['package']][n.strftime(artdateformat)][state] = 0
     
             if p['ntag'].strftime(artdateformat) in artpackagesdict[p['package']]:
-                if 'finished' in artpackagesdict[p['package']][p['ntag'].strftime(artdateformat)] and 'failed' in \
-                        artpackagesdict[p['package']][p['ntag'].strftime(artdateformat)]:
-                    artpackagesdict[p['package']][p['ntag'].strftime(artdateformat)]['finished'] += p['nfilesfinished']
-                    artpackagesdict[p['package']][p['ntag'].strftime(artdateformat)]['failed'] += p['nfilesfailed']
+
+                if p['status'] in ('finished', 'failed'):
+                    artpackagesdict[p['package']][p['ntag'].strftime(artdateformat)][p['status']] += p['njobs']
                 else:
-                    artpackagesdict[p['package']][p['ntag'].strftime(artdateformat)]['finished'] = p['nfilesfinished']
-                    artpackagesdict[p['package']][p['ntag'].strftime(artdateformat)]['failed'] = p['nfilesfailed']
+                    artpackagesdict[p['package']][p['ntag'].strftime(artdateformat)]['active'] = p['njobs']
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
-        packages = ARTTasks.objects.filter(**query).values('branch', 'ntag').annotate(
-            nfilesfinished=Sum('nfilesfinished'), nfilesfailed=Sum('nfilesfailed'))
+        query_raw = """SELECT branch, ntag, status, count(*) as njobs FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))
+                        group by branch, ntag, status""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
+        cur = connection.cursor()
+        cur.execute(query_raw)
+        tasks_raw = cur.fetchall()
+        cur.close()
+        artJobs = ['branch', 'ntag', 'status', 'njobs']
+        packages = [dict(zip(artJobs, row)) for row in tasks_raw]
+        ntagslist = list(sorted(set([x['ntag'] for x in packages])))
+        # packages = ARTTasks.objects.filter(**query).values('branch', 'ntag').annotate(
+        #     nfilesfinished=Sum('nfilesfinished'), nfilesfailed=Sum('nfilesfailed'))
         for p in packages:
             if p['branch'] not in artpackagesdict.keys():
                 artpackagesdict[p['branch']] = {}
                 for n in ntagslist:
                     artpackagesdict[p['branch']][n.strftime(artdateformat)] = {}
                     artpackagesdict[p['branch']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
+                    for state in statestocount:
+                        artpackagesdict[p['branch']][n.strftime(artdateformat)][state] = 0
 
             if p['ntag'].strftime(artdateformat) in artpackagesdict[p['branch']]:
-                if 'finished' in artpackagesdict[p['branch']][p['ntag'].strftime(artdateformat)] and 'failed' in \
-                        artpackagesdict[p['branch']][p['ntag'].strftime(artdateformat)]:
-                    artpackagesdict[p['branch']][p['ntag'].strftime(artdateformat)]['finished'] += p['nfilesfinished']
-                    artpackagesdict[p['branch']][p['ntag'].strftime(artdateformat)]['failed'] += p['nfilesfailed']
+                if p['status'] in ('finished', 'failed'):
+                    artpackagesdict[p['branch']][p['ntag'].strftime(artdateformat)][p['status']] += p['njobs']
                 else:
-                    artpackagesdict[p['branch']][p['ntag'].strftime(artdateformat)]['finished'] = p['nfilesfinished']
-                    artpackagesdict[p['branch']][p['ntag'].strftime(artdateformat)]['failed'] = p['nfilesfailed']
+                    artpackagesdict[p['branch']][p['ntag'].strftime(artdateformat)]['active'] = p['njobs']
         
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
@@ -226,7 +245,7 @@ def artOverview(request):
 
 def artTasks(request):
     valid, response = initRequest(request)
-    query = setupView(request, 'task')
+    query = setupView(request, 'job')
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artTasks")
@@ -238,9 +257,20 @@ def artTasks(request):
         endSelfMonitor(request)
         return response
 
-    tasks = ARTTasks.objects.filter(**query).values('package','branch','task_id', 'ntag', 'nfilesfinished', 'nfilesfailed')
-    ntagslist = list(sorted(set([x['ntag'] for x in tasks])))
+    cur = connection.cursor()
+    query_raw = """SELECT package, branch, ntag, taskid, status, count(*) as njobs FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))
+        group by package, branch, ntag, taskid, status""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
 
+    cur.execute(query_raw)
+    tasks_raw = cur.fetchall()
+    cur.close()
+
+    artJobs = ['package', 'branch', 'ntag', 'task_id', 'status', 'njobs']
+    tasks = [dict(zip(artJobs, row)) for row in tasks_raw]
+
+    # tasks = ARTTasks.objects.filter(**query).values('package','branch','task_id', 'ntag', 'nfilesfinished', 'nfilesfailed')
+    ntagslist = list(sorted(set([x['ntag'] for x in tasks])))
+    statestocount = ['finished', 'failed', 'active']
     arttasksdict = {}
     if not 'view' in request.session['requestParams'] or ('view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
         for task in tasks:
@@ -253,9 +283,17 @@ def artTasks(request):
                     arttasksdict[task['package']][task['branch']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
                     arttasksdict[task['package']][task['branch']][n.strftime(artdateformat)]['tasks'] = {}
             if task['ntag'].strftime(artdateformat) in arttasksdict[task['package']][task['branch']]:
-                arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']] = {}
-                arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']]['finished'] = task['nfilesfinished']
-                arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']]['failed'] = task['nfilesfailed']
+                if task['task_id'] not in arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks']:
+                    arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']] = {}
+                    for state in statestocount:
+                        arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks'][
+                            task['task_id']][state] = 0
+                if task['status'] in ('finished','failed'):
+                    arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks'][
+                        task['task_id']][task['status']] += task['njobs']
+                else:
+                    arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks'][
+                        task['task_id']]['active'] += task['njobs']
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for task in tasks:
             if task['branch'] not in arttasksdict.keys():
@@ -267,9 +305,16 @@ def artTasks(request):
                     arttasksdict[task['branch']][task['package']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
                     arttasksdict[task['branch']][task['package']][n.strftime(artdateformat)]['tasks'] = {}
             if task['ntag'].strftime(artdateformat) in arttasksdict[task['branch']][task['package']]:
-                arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']] = {}
-                arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']]['finished'] = task['nfilesfinished']
-                arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']]['failed'] = task['nfilesfailed']
+                if task['task_id'] not in arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks']:
+                    arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']] = {}
+                    for state in statestocount:
+                        arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks'][
+                            task['task_id']][state] = 0
+                if task['status'] in ('finished', 'failed'):
+                    arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']][task['status']] = task['njobs']
+                else:
+                    arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks'][
+                        task['task_id']]['active'] = task['njobs']
 
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
@@ -381,3 +426,25 @@ def artJobs(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     endSelfMonitor(request)
     return response
+
+def getJobSubResults(request):
+    valid, response = initRequest(request)
+
+
+    guid = request.session['requestParams']['guid'] if 'guid' in request.session['requestParams'] else ''
+    lfn = request.session['requestParams']['lfn'] if 'lfn' in request.session['requestParams'] else ''
+    scope = request.session['requestParams']['scope'] if 'scope' in request.session['requestParams'] else ''
+    results = getJobReport(guid, lfn, scope)
+
+
+
+    data = {
+        'requestParams': request.session['requestParams'],
+        'viewParams': request.session['viewParams'],
+        'jobSubResults': results
+    }
+    response = render_to_response('artJobSubResults.html', data, content_type='text/html')
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    endSelfMonitor(request)
+    return response
+

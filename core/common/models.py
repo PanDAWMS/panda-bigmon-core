@@ -413,6 +413,10 @@ class JediDatasetContents(models.Model):
     firstevent = models.IntegerField(null=True, db_column='FIRSTEVENT', blank=True)
     boundaryid = models.BigIntegerField(null=True, db_column='BOUNDARYID', blank=True)
     pandaid = models.BigIntegerField(db_column='PANDAID', blank=True)
+    jobsetid = models.BigIntegerField(db_column='JOBSETID', blank=True)
+    maxfailure = models.IntegerField(null=True, db_column='MAXFAILURE', blank=True)
+    failedattempt = models.IntegerField(null=True, db_column='FAILEDATTEMPT', blank=True)
+
     class Meta:
         db_table = u'jedi_dataset_contents'
         unique_together = ('jeditaskid', 'datasetid', 'fileid')
@@ -2561,6 +2565,27 @@ class ARTTasks(models.Model):
     nfilesfailed = models.DecimalField(decimal_places=0, max_digits=12, db_column='NFILESFAILED')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ARTTasks"'
+
+
+class HarvesterWorkers(models.Model):
+    harvesterid = models.CharField(max_length=50, db_column='HARVESTERID', null=False, blank=True)
+    workerid = models.DecimalField(decimal_places=0, max_digits=11, db_column='WORKERID', null=False)
+    lastupdate = models.DateTimeField(null=True, db_column='LASTUPDATE', blank=True)
+    status = models.CharField(max_length=80, db_column='STATUS', null=False, blank=True)
+    batchid = models.CharField(max_length=80, db_column='BATCHID', null=False, blank=True)
+    nodeid = models.CharField(max_length=80, db_column='NODEID', null=False, blank=True)
+    queuename = models.CharField(max_length=80, db_column='QUEUENAME', null=False, blank=True)
+    computingsite = models.CharField(max_length=128, db_column='COMPUTINGSITE', null=False, blank=True)
+    submittime = models.DateTimeField(null=True, db_column='SUBMITTIME', blank=True)
+    starttime = models.DateTimeField(null=True, db_column='STARTTIME', blank=True)
+    endtime = models.DateTimeField(null=True, db_column='ENDTIME', blank=True)
+    ncore = models.DecimalField(decimal_places=0, max_digits=6, db_column='NCORE', null=False)
+    errorcode = models.DecimalField(decimal_places=0, max_digits=7, db_column='ERRORCODE', null=False)
+    stdout = models.CharField(max_length=250, db_column='STDOUT', null=True, blank=True)
+    stderr = models.CharField(max_length=250, db_column='STDERR', null=True, blank=True)
+    batchlog = models.CharField(max_length=250, db_column='BATCHLOG', null=True, blank=True)
+    class Meta:
+        db_table = u'"ATLAS_PANDA"."HARVESTER_WORKERS"'
 
 
 class MCPattern(models.Model):

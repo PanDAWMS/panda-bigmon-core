@@ -55,7 +55,7 @@ li.artmenu-item > label {
   text-align: center;
   vertical-align: middle;
   height: 100%;
-  width: 50%;
+  width: 33%;
   display: inline-block;
   background: #3adb76;
   color: black;
@@ -67,18 +67,18 @@ li.artmenu-item > label {
   text-align: center;
   vertical-align: middle;
   height: 100%;
-  width: 50%;
+  width: 33%;
   display: inline-block;
   background: tomato;
   color: black;
   font-size: 14px;
   font-weight: bold;
 }
-.clickable .running {
+.clickable .active {
   text-align: center;
   vertical-align: middle;
   height: 100%;
-  width: 0%;
+  width: 33%;
   display: inline-block;
   background: cornflowerblue;
   color: black;

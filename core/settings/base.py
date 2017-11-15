@@ -80,9 +80,12 @@ AUTHENTICATION_BACKENDS = (
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
 SOCIAL_AUTH_STORAGE = 'social_django.models.DjangoStorage'
-#SOCIAL_AUTH_LOGIN_ERROR_URL = '/loginerror/'
 REDIRECT_STATE = False
 LOGIN_URL = 'login'
+
+SOCIAL_AUTH_LOGIN_ERROR_URL = '/loginerror/'
+LOGIN_REDIRECT_URL = '/'
+
 
 # Google OAuth2 (google-oauth2)
 SOCIAL_AUTH_GOOGLE_OAUTH2_IGNORE_DEFAULT_SCOPE = True

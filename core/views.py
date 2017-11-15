@@ -60,7 +60,7 @@ from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
 from core.common.models import RequestStat, BPUser, Visits, BPUserSettings
 from core.settings.config import ENV
-from core.common.models import RunningMCProductionTasks
+from core.common.models import RunningMCProductionTasks, HarvesterWorkers
 from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel, FrozenProdTasksModel
 
 from time import gmtime, strftime
@@ -148,6 +148,11 @@ taskstatelist = ['registered', 'defined', 'assigning', 'ready', 'pending', 'scou
                  'tobroken', 'broken', 'toretry', 'toincexec', 'rerefine']
 taskstatelist_short = ['reg', 'def', 'assgn', 'rdy', 'pend', 'scout', 'sctd', 'run', 'prep', 'done', 'fail', 'finish',
                        'abrtg', 'abrtd', 'finishg', 'toprep', 'preprc', 'tobrok', 'broken', 'retry', 'incexe', 'refine']
+
+harvWorkStatuses = [
+    'missed', 'submitted', 'ready', 'running', 'idle', 'finished', 'failed', 'cancelled'
+]
+
 taskstatedict = []
 for i in range(0, len(taskstatelist)):
     tsdict = {'state': taskstatelist[i], 'short': taskstatelist_short[i]}
@@ -194,7 +199,21 @@ VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
 VOMODE = ' '
 
+def login_customrequired(function):
+  def wrap(request, *args, **kwargs):
+      if request.user.is_authenticated() or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
+          return function(request, *args, **kwargs)
+      else:
+          return HttpResponseRedirect('/login/?next='+request.get_full_path())
+  wrap.__doc__=function.__doc__
+  wrap.__name__=function.__name__
+  return wrap
 
+def datetime_handler(x):
+    import datetime
+    if isinstance(x, datetime.datetime):
+        return x.isoformat()
+    raise TypeError("Unknown type")
 
 def jobSuppression(request):
 
@@ -669,9 +688,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             val = request.session['requestParams'][param]
             query['taskname__icontains'] = val
 
+        elif param == 'harvesterid':
+            val = request.session['requestParams'][param]
+            val = escapeInput(request.session['requestParams'][param])
+            values = val.split(',')
+            query['harvesterid__in'] = values
+
         elif param in ('tag',) and querytype == 'task':
             val = request.session['requestParams'][param]
             query['taskname__endswith'] = val
+
 
         elif param == 'reqid_from':
             val = int(request.session['requestParams'][param])
@@ -1003,7 +1029,57 @@ def saveSettings(request):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
 
+def dropRetrielsJobsV2(jobs,jeditaskid,isReturnDroppedPMerge):
 
+    droppedPmerge = set()
+
+    sqlRequest = '''
+    select pandaid, status from (select fileid, pandaid, status, attemptnr, max(attemptnr) over (partition by fileid) as lastattempt  
+    from atlas_panda.filestable4 
+    where  jeditaskid = %i  and type like 'input') WHERE lastattempt!= attemptnr
+    ''' %(jeditaskid)
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+    droppedIDs = cur.fetchall()
+
+
+    hashDroppedIDs  = {}
+    cntDropIDsStatus = {}
+    pandaDropIDList = set()
+    for droppedID in droppedIDs:
+        hashDroppedIDs.setdefault(droppedID[1], set()).add(droppedID[0])
+        pandaDropIDList.add(droppedID[0])
+    for status in hashDroppedIDs.keys():
+        cntDropIDsStatus[status] = len(hashDroppedIDs[status])
+
+    newjobs = []
+    for job in jobs:
+        pandaid = job['pandaid']
+        if not isEventService(job):
+            if pandaid not in pandaDropIDList:
+                if not isReturnDroppedPMerge:
+                    if not (job['processingtype'] == 'pmerge'):
+                        newjobs.append(job)
+                    else:
+                        droppedPmerge.add(pandaid)
+                else: newjobs.append(job)
+        else:
+            #if (job['pandaid'] in pandaDropIDList and job['jobstatus'] in ('finished', 'merging')):
+                #if (hashRetries[job['pandaid']]['relationtype'] == ('retry')):
+                #    dropJob = 1
+            #if (job['jobsetid'] in hashRetries) and (hashRetries[job['jobsetid']]['relationtype'] in ('jobset_retry')):
+            # if (hashRetries[job['pandaid']]['relationtype'] == 'es_merge' and (
+            #        job['jobsubstatus'] == 'es_merge')):
+            #        dropJob = 1
+            if (job['jobstatus'] != 'closed' and (job['jobsubstatus'] not in ('es_unused', 'es_inaction'))) or (job['jobstatus'] in ('finished', 'merging')):
+                if pandaid not in pandaDropIDList:
+                    if not isReturnDroppedPMerge:
+                        if not (job['processingtype'] == 'pmerge'):
+                            newjobs.append(job)
+                        else:
+                            droppedPmerge.add(pandaid)
+                    else: newjobs.append(job)
+    return newjobs, cntDropIDsStatus, pandaDropIDList, droppedPmerge
 
 def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     # dropping algorithm for jobs belong to single task
@@ -2787,9 +2863,14 @@ def jobList(request, mode=None, param=None):
     if 'processingtype' in request.session['requestParams'] and \
         request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge=True
     droplist = []
+    newdroplist = []
     droppedPmerge = set()
+    newdroppedPmerge = set()
+    cntStatus = []
     if dropmode and (len(taskids) == 1):
         jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs,taskids.keys()[0],isReturnDroppedPMerge)
+        if request.user.is_authenticated() and request.user.is_tester and False:
+            newjobs, cntStatus, newdroplist, newdroppedPmerge = dropRetrielsJobsV2(jobs,taskids.keys()[0],isReturnDroppedPMerge)
 
     jobs = cleanJobList(request, jobs)
 
@@ -3040,6 +3121,11 @@ def jobList(request, mode=None, param=None):
             'jobsTotalCount': jobsTotalCount,
             'requestString': urlParametrs,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'newndrop': len(newdroplist) if len(newdroplist) > 0 else (- len(newdroppedPmerge)),
+            'cntStatus': cntStatus,
+            'ndropPmerge':len(newdroppedPmerge),
+            'droppedPmerge2':newdroppedPmerge,
+            'pandaIDList':newdroplist,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -4275,6 +4361,7 @@ def userList(request):
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
 #@login_required(login_url='loginauth2')
+@login_customrequired
 def userInfo(request, user=''):
     valid, response = initRequest(request)
     if not valid: return response
@@ -4425,7 +4512,7 @@ def userInfo(request, user=''):
         userid = userids[0]['id']
         sqlquerystr = """select pagegroup, pagename,visitrank, url
                           from (
-                            select sum(w) as visitrank, pagegroup, pagename,row_number() over (partition by pagegroup ORDER BY sum(w) desc) as rn, url
+                            select sum(w) as visitrank, pagegroup, pagename, row_number() over (partition by pagegroup ORDER BY sum(w) desc) as rn, url
                             from (
                               select exp(-(SYSdate - cast(time as date))*24/12) as w,
                               SUBSTR(url,
@@ -4524,10 +4611,9 @@ def userInfo(request, user=''):
                         link['otherparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
                                                        importance=flag))
 
-
+    sumd = userSummaryDict(jobs)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
-        sumd = userSummaryDict(jobs)
         flist = ['jobstatus', 'prodsourcelabel', 'processingtype', 'specialhandling', 'transformation', 'jobsetid',
                  'jeditaskid', 'computingsite', 'cloud', 'workinggroup', 'homepackage', 'inputfileproject',
                  'inputfiletype', 'attemptnr', 'priorityrange', 'jobsetrange']
@@ -4591,8 +4677,7 @@ def userInfo(request, user=''):
         resp = sumd
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(resp), content_type='text/html')
-
+        return HttpResponse(json.dumps(resp,default=datetime_handler),content_type='text/html')
 
 def siteList(request):
     valid, response = initRequest(request)
@@ -6852,10 +6937,9 @@ def killtasks(request):
         response = HttpResponse(dump, content_type='text/plain')
         return response
 
-
-    if 'ADFS_FULLNAME' in request.session and 'ADFS_LOGIN' in request.session:
-        username = request.session['ADFS_LOGIN']
-        fullname = request.session['ADFS_FULLNAME']
+    if request.user.is_authenticated():
+        username = request.user.username
+        fullname = request.user.first_name+' '+request.user.last_name
 
     else:
         resp = {"detail": "User not authenticated. Please login to bigpanda mon"}
@@ -7885,6 +7969,7 @@ def taskInfo(request, jeditaskid=0):
     if not valid: return response
     # Here we try to get cached data. We get any cached data is available
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
+
     if data is not None:
         data = json.loads(data)
         doRefresh = False
@@ -7960,6 +8045,12 @@ def taskInfo(request, jeditaskid=0):
     eventsdict=[]
     objectStoreDict=[]
     eventsChains = []
+    currentlyRunningDataSets = []
+
+    newjobsummary =[]
+    newjobsummaryESMerge = []
+    newjobsummaryPMERGE = []
+    neweventsdict =[]
 
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
         request.session['requestParams']['jeditaskid'])
@@ -7983,14 +8074,26 @@ def taskInfo(request, jeditaskid=0):
             auxiliaryDict = {}
 
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', auxiliaryDict=auxiliaryDict)
+                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
             plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary2(
-                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge')
+                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isOld')
+            if request.user.is_authenticated() and request.user.is_tester and False:
+                newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
+                    query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isNew')
+                newplotsDictESMerge, newjobsummaryESMerge, neweventssummaryESM, newtransactionKeyESM, newjobScoutIDsESM, newhs06sSumESM = jobSummary2(
+                    query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isNew')
+                for state in eventservicestatelist:
+                    eventstatus = {}
+                    eventstatus['statusname'] = state
+                    eventstatus['count'] = neweventssummary[state]
+                    neweventsdict.append(eventstatus)
+
             for state in eventservicestatelist:
                 eventstatus = {}
                 eventstatus['statusname'] = state
                 eventstatus['count'] = eventssummary[state]
                 eventsdict.append(eventstatus)
+
             if mode=='nodrop':
                 sqlRequest = """select j.computingsite, j.COMPUTINGELEMENT,e.objstore_id,e.status,count(*) as nevents
                                       from atlas_panda.jedi_events e
@@ -8011,12 +8114,14 @@ def taskInfo(request, jeditaskid=0):
                 objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
                 for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
 
-            eventsChainsValues = 'lfn', 'attemptnr', 'startevent', 'endevent', 'pandaid'
-            queryChain = {'jeditaskid':jeditaskid, 'startevent__isnull':False}
-            eventsChains.extend(JediDatasetContents.objects.filter(**queryChain).order_by('attemptnr').reverse().values(*eventsChainsValues)[:20])
-            for eventsChain in eventsChains:
-                if eventsChain['pandaid'] in auxiliaryDict:
-                    eventsChain['jobsetid'] = auxiliaryDict[eventsChain['pandaid']]
+
+
+
+#SELECT * FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS WHERE JEDITASKID=12380658 and pandaid=3665826228
+
+#SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV FROM (
+#SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=12380658 and RELATIONTYPE='jobset_retry'
+#)t1 CONNECT BY NOCYCLE OLDPANDAID=PRIOR NEWPANDAID ;
 
         else:
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
@@ -8025,9 +8130,14 @@ def taskInfo(request, jeditaskid=0):
             if 'mode' in request.session['requestParams']:
                 mode = request.session['requestParams']['mode']
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                query, exclude=exclude, mode=mode)
+                query, exclude=exclude, mode=mode,algorithm='isOld')
             plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary2(
-                query, exclude={}, mode=mode, processingtype='pmerge')
+                query, exclude={}, mode=mode, processingtype='pmerge',algorithm='isOld')
+            if request.user.is_authenticated() and request.user.is_tester and False:
+                newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
+                    query, exclude=exclude, mode=mode,algorithm='isNew')
+                newplotsDictPMERGE, newjobsummaryPMERGE, neweventssummaryPM, newtransactionKeyPM, newjobScoutIDsPMERGE, newhs06sSumPMERGE = jobSummary2(
+                    query, exclude={}, mode=mode, processingtype='pmerge',algorithm='isNew')
 
 
     elif 'taskname' in request.session['requestParams']:
@@ -8325,8 +8435,11 @@ def taskInfo(request, jeditaskid=0):
             'vomode': VOMODE,
             'eventservice': eventservice,
             'tk': transactionKey,
-            'eventsChain':eventsChains,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
+            'newjobsummary': newjobsummary,
+            'newjobsummaryPMERGE':newjobsummaryPMERGE,
+            'newjobsummaryESMerge': newjobsummaryESMerge,
+            'neweventssummary':neweventsdict,
         }
         data.update(getContextVariables(request))
         cacheexpiration = 60*20 #second/minute * minutes
@@ -8346,6 +8459,52 @@ def taskInfo(request, jeditaskid=0):
             response = render_to_response('taskInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
+
+def harvesterworkers(request):
+    valid, response = initRequest(request)
+
+    query= setupView(request, hours=24*3, wildCardExt=False)
+
+    tquery = {}
+    tquery['status__in'] = ['missed', 'submitted', 'idle', 'finished', 'failed', 'cancelled']
+    tquery['lastupdate__range'] = query['modificationtime__range']
+    if 'harvesterid__in' in query:
+        tquery['harvesterid__in'] = query['harvesterid__in']
+
+    harvesterWorkers = []
+    harvesterWorkers.extend(HarvesterWorkers.objects.values('computingsite','status').filter(**tquery).annotate(Count('status')).order_by('computingsite'))
+
+    # This is for exclusion of intermediate states from time window
+    tquery['status__in'] = ['ready', 'running']
+    del tquery['lastupdate__range']
+    harvesterWorkers.extend(HarvesterWorkers.objects.values('computingsite','status').filter(**tquery).annotate(Count('status')).order_by('computingsite'))
+
+    statusesSummary = OrderedDict()
+    for harvesterWorker in harvesterWorkers:
+        if not harvesterWorker['computingsite'] in statusesSummary:
+            statusesSummary[harvesterWorker['computingsite']] = OrderedDict()
+            for harwWorkStatus in harvWorkStatuses:
+                statusesSummary[harvesterWorker['computingsite']][harwWorkStatus] = 0
+        statusesSummary[harvesterWorker['computingsite']][harvesterWorker['status']] = harvesterWorker['status__count']
+
+    # SELECT computingsite,status, workerid, LASTUPDATE, row_number() over (partition by workerid, computingsite ORDER BY LASTUPDATE ASC) partid FROM ATLAS_PANDA.HARVESTER_WORKERS /*GROUP BY WORKERID ORDER BY COUNT(WORKERID) DESC*/
+
+    data = {
+        'statusesSummary': statusesSummary,
+        'harvWorkStatuses':harvWorkStatuses,
+        'request': request,
+        'viewParams': request.session['viewParams'],
+        'requestParams': request.session['requestParams'],
+        'built': datetime.now().strftime("%H:%M:%S"),
+    }
+    endSelfMonitor(request)
+    response = render_to_response('harvworksummary.html', data, content_type='text/html')
+    return response
+
+
+# SELECT COMPUTINGSITE,STATUS, count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS WHERE SUBMITTIME > (sysdate - interval '35' day) group by COMPUTINGSITE,STATUS
+
 
 
 def taskchain(request):
@@ -8402,7 +8561,7 @@ def ganttTaskChain(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None):
+def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None, algorithm = 'isOld'):
     jobs = []
     jobScoutIDs = {}
     jobScoutIDs['cputimescoutjob'] = []
@@ -8493,8 +8652,11 @@ def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceF
 
     if mode == 'drop' and len(jobs) < 300000:
         print 'filtering retries'
-        jobs, droplist, droppedPMerge = dropRetrielsJobs(jobs, newquery['jeditaskid'], isReturnDroppedPMerge)
-
+        if algorithm == 'isNew':
+            jobs, cntStatus, droplist, droppedPMerge = dropRetrielsJobsV2(jobs, newquery['jeditaskid'], isReturnDroppedPMerge)
+            print('new algorithm!')
+        else:
+            jobs, droplist, droppedPMerge = dropRetrielsJobs(jobs, newquery['jeditaskid'], isReturnDroppedPMerge)
     plotsDict = {}
     plotsDict['maxpss'] = []
     plotsDict['maxpssf'] = []
@@ -11773,6 +11935,48 @@ def getBadEventsForTask(request):
         data.append(dataitem)
     cursor.close()
     return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+
+
+def getEventsChunks(request):
+    if 'jeditaskid' in request.GET:
+        jeditaskid = int(request.GET['jeditaskid'])
+    else:
+        return HttpResponse("Not jeditaskid supplied", content_type='text/html')
+
+    # We reconstruct here jobsets retries
+
+    sqlRequest = """SELECT OLDPANDAID, NEWPANDAID, MAX(LEV) as LEV, MIN(PTH) as PTH FROM (
+    SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV, CONNECT_BY_ISLEAF as IL, SYS_CONNECT_BY_PATH(OLDPANDAID, ',') PTH FROM (
+    SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=%s and RELATIONTYPE='jobset_retry')t1 CONNECT BY OLDPANDAID=PRIOR NEWPANDAID
+    )t2 GROUP BY OLDPANDAID, NEWPANDAID;""" % str(jeditaskid)
+
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+    datasetsChunks = cur.fetchall()
+    cur.close()
+
+    jobsetretries = {}
+    eventsChunks = []
+
+    for datasetsChunk in datasetsChunks:
+        jobsetretries[datasetsChunk[1]] = datasetsChunk[3].split(',')[1:]
+
+    eventsChunksValues = 'lfn', 'attemptnr', 'startevent', 'endevent', 'pandaid', 'status', 'jobsetid', 'failedattempt', 'maxfailure', 'maxattempt'
+    queryChunks = {'jeditaskid': jeditaskid, 'startevent__isnull': False, 'type': 'input'}
+    eventsChunks.extend(
+        JediDatasetContents.objects.filter(**queryChunks).order_by('attemptnr').reverse().values(*eventsChunksValues))
+
+    for eventsChunk in eventsChunks:
+        if eventsChunk['jobsetid'] in jobsetretries:
+            eventsChunk['prevAttempts'] = jobsetretries[eventsChunk['jobsetid']]
+            eventsChunk['attemptnrDS'] = len(jobsetretries[eventsChunk['jobsetid']])
+        else:
+            eventsChunk['prevAttempts'] = []
+            eventsChunk['attemptnrDS'] = 0
+
+
+
+    return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='text/html')
 
 
 def serverStatusHealth(request):

@@ -1,0 +1,41 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Harvester workers summary{% endblock %}
+{% block title %}PanDA monitor{% endblock %}
+{% block subtitle %}PanDA Harvester Workers Summary<font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+{% block body %}
+
+    <table>
+        <tr>
+            <th colspan=24>Harvester workers summary</th>
+        </tr>
+        <tr>
+            <td></td>
+            {% for state in harvWorkStatuses %}
+                <td class="{{ state }}"> <b> {{ state }} </b> </td>
+            {% endfor %}
+        </tr>
+            {% for compsite,states in statusesSummary.items %}
+                <tr>
+                <td>
+                    {{ compsite }}
+                </td>
+
+
+                {% for state,status__count in states.items %}
+                    <td>
+                         {{ status__count }}
+                    </td>
+                {% endfor %}
+
+
+
+                </tr>
+            {% endfor %}
+
+    </table>
+
+
+{% endblock %}

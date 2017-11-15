@@ -4,6 +4,28 @@
 {% block extra_css %}
     <link rel="stylesheet" href="{% static "css/art/art-style.css" %}">
 {% endblock %}
+{% block extra_js %}
+<script type="text/javascript">
+function loadJobSubResult(testname, urltail) {
+    var id = "div-subresults-" + testname;
+    var div = document.getElementById(id);
+{#    $("#div-subresults-" + testname).html("<img src='{% static "images/load.gif" %}'>  ");#}
+    div.innerHTML = "<img src='{% static "images/load.gif" %}'>  ";
+    $.ajax({
+        url: '{% url 'artJobSubResults' %}',
+        data: urltail,
+        async: true
+    })
+    .done(function (response) {
+{#       $("#div-subresults-" + testname).html(response);#}
+        div.innerHTML = response;
+   })
+    ;
+
+}
+</script>
+{% endblock %}
+
 {% block subtitle %}ART nightly tests {{ viewParams.selection|safe }}{% endblock %}
 {% block body %}
 
@@ -50,7 +72,18 @@
                           </tr>
                           {% for test,tags in tests.items %}
                               <tr>
-                              <td class="cell-left">{{ test }}</td>
+                              <td class="cell-left">
+                                {% if ntaglist|length == 1 %}
+                                    {% for ntname, jobs in tags.items %}{% for pandaid, jobparams in jobs.jobs.items %}
+                                        <a onclick="javascript:loadJobSubResult('{{ test }}','guid={{ jobparams.guid}}&lfn={{ jobparams.lfn }}&scope={{ jobparams.scope }}');">
+                                            <i class="fi-plus"></i>
+                                        </a>
+                                    {% endfor %}{% endfor %}
+                                {% endif %}
+                                {{ test }}
+                                {% if ntaglist|length == 1 %}
+                                    <div id="div-subresults-{{ test }}"></div>
+                                {% endif %}</td>
                               {% for ntag in ntaglist %}
                                   {% for ntname,jobs in tags.items  %}
                                     {% if ntname == ntag %}
@@ -96,5 +129,7 @@
     </ul>
   </div>
 </div>
+
+
 
 {% endblock %}

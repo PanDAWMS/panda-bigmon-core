@@ -107,6 +107,7 @@ urlpatterns = [
     url(r'^art/overview/$', art_views.artOverview, name='artOverview'),
     url(r'^art/tasks/$', art_views.artTasks, name='artTasks'),
     url(r'^art/jobs/$', art_views.artJobs, name='artJobs'),
+    url(r'^art/getjobsubresults/$', art_views.getJobSubResults, name='artJobSubResults'),
     ### filebrowser
     url(r'^filebrowser/', include('core.filebrowser.urls'), name='filebrowser'),
     ### PanDA Brokerage Monitor
@@ -144,6 +145,9 @@ urlpatterns = [
     url(r'^login/$', coremon_views.loginauth2, name='loginauth2'),
     url(r'^logout/$', coremon_views.logout, name='logout'),
     url(r'^loginerror/$', coremon_views.loginerror, name='loginerror'),
+
+    url(r'^harvesterworkers/$', coremon_views.harvesterworkers, name='harvesterworkers'),
+    url(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

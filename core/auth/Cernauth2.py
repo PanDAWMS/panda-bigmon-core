@@ -4,10 +4,10 @@ import urllib
 class Cernauth2(BaseOAuth2):
 
 
-    """CERN OAuth authentication backend"""
+    """CERN OAuth2 authentication backend"""
     name = 'cernauth2'
-    AUTHORIZATION_URL = 'https://oauth.web.cern.ch/OAuth/Authorize'  #'https://github.com/login/oauth/authorize'
-    ACCESS_TOKEN_URL = 'https://oauth.web.cern.ch/OAuth/Token' #'https://github.com/login/oauth/access_token'
+    AUTHORIZATION_URL = 'https://oauth.web.cern.ch/OAuth/Authorize'
+    ACCESS_TOKEN_URL = 'https://oauth.web.cern.ch/OAuth/Token'
     SCOPE_SEPARATOR = ','
     REDIRECT_STATE = False
     EXTRA_DATA = [
@@ -24,13 +24,6 @@ class Cernauth2(BaseOAuth2):
                  'federation' : response.get('federation'),
                  'name' : response.get('name'),
                  }
-
-    # def user_data(self, access_token, *args, **kwargs):
-    #     """Loads user data from service"""
-    #     url = 'https://oauthresource.web.cern.ch/api/User?' + urllib.urlencode({
-    #         'access_token': access_token
-    #     })
-    #     return self.get_json(url)
 
 
 
