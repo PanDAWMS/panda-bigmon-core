@@ -574,7 +574,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         ## Call param overrides default hours, but not a param on the URL
         LAST_N_HOURS_MAX = hours
     ## For site-specific queries, allow longer time window
-    if 'computingsite' in request.session['requestParams']:
+    if 'computingsite' in request.session['requestParams'] and hours is None:
         LAST_N_HOURS_MAX = 12
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         LAST_N_HOURS_MAX = 3 * 24
@@ -689,10 +689,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             query['taskname__icontains'] = val
 
         elif param == 'harvesterid':
-            val = request.session['requestParams'][param]
             val = escapeInput(request.session['requestParams'][param])
             values = val.split(',')
             query['harvesterid__in'] = values
+
+        elif param == 'status':
+            val = escapeInput(request.session['requestParams'][param])
+            values = val.split(',')
+            query['status__in'] = values
+
+
 
         elif param in ('tag',) and querytype == 'task':
             val = request.session['requestParams'][param]
@@ -8463,9 +8469,8 @@ def taskInfo(request, jeditaskid=0):
         return response
 
 
-def harvesterworkers(request):
+def harvesterWorkersDash(request):
     valid, response = initRequest(request)
-
     query= setupView(request, hours=24*3, wildCardExt=False)
 
     tquery = {}
@@ -8501,12 +8506,50 @@ def harvesterworkers(request):
         'built': datetime.now().strftime("%H:%M:%S"),
     }
     endSelfMonitor(request)
-    response = render_to_response('harvworksummary.html', data, content_type='text/html')
+    response = render_to_response('harvworksummarydash.html', data, content_type='text/html')
     return response
 
 
 # SELECT COMPUTINGSITE,STATUS, count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS WHERE SUBMITTIME > (sysdate - interval '35' day) group by COMPUTINGSITE,STATUS
 
+def harvesterWorkList(request):
+    valid, response = initRequest(request)
+    query,extra, LAST_N_HOURS_MAX = setupView(request, hours=24*3, wildCardExt=True)
+
+    statusDefined = False
+    if 'status__in' in query:
+        statusDefined = True
+
+    tquery = {}
+
+    if statusDefined:
+        tquery['status__in'] = list(set(query['status__in']).intersection(['missed', 'submitted', 'idle', 'finished', 'failed', 'cancelled']))
+    else:
+        tquery['status__in'] = ['missed', 'submitted', 'idle', 'finished', 'failed', 'cancelled']
+
+    tquery['lastupdate__range'] = query['modificationtime__range']
+
+    workerslist = []
+    if len(tquery['status__in']) > 0:
+        workerslist.extend(HarvesterWorkers.objects.values('computingsite','status', 'submittime','harvesterid','workerid').filter(**tquery).extra(where=[extra]))
+
+    if statusDefined:
+        tquery['status__in'] = list(set(query['status__in']).intersection(['ready', 'running']))
+
+    del tquery['lastupdate__range']
+    if len(tquery['status__in']) > 0:
+        workerslist.extend(HarvesterWorkers.objects.values('computingsite','status', 'submittime','harvesterid','workerid').filter(**tquery).extra(where=[extra]))
+
+    data = {
+        'workerslist':workerslist,
+        'request': request,
+        'viewParams': request.session['viewParams'],
+        'requestParams': request.session['requestParams'],
+        'built': datetime.now().strftime("%H:%M:%S"),
+    }
+    endSelfMonitor(request)
+    response = render_to_response('harvworkerslist.html', data, content_type='text/html')
+    return response
 
 
 def taskchain(request):
