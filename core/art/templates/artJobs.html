@@ -75,7 +75,7 @@ function loadJobSubResult(testname, urltail) {
                               <td class="cell-left">
                                 {% if ntaglist|length == 1 %}
                                     {% for ntname, jobs in tags.items %}{% for pandaid, jobparams in jobs.jobs.items %}
-                                      {% if job.guid and job.lfn and job.scope %}
+                                      {% if jobparams.guid and jobparams.lfn and jobparams.scope %}
                                         <i id="div-subresults-plussign-{{ test }}-{{ pandaid }}" class="fi-plus"></i>
                                       {% endif %}
                                     {% endfor %}{% endfor %}
