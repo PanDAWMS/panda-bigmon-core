@@ -8471,7 +8471,13 @@ def taskInfo(request, jeditaskid=0):
 
 def harvesterWorkersDash(request):
     valid, response = initRequest(request)
-    query= setupView(request, hours=24*3, wildCardExt=False)
+
+    hours = 24 * 3
+    if 'days' in request.session['requestParams']:
+        days = int(request.session['requestParams']['days'])
+        hours = days*24
+    query= setupView(request, hours=hours, wildCardExt=False)
+
 
     tquery = {}
     tquery['status__in'] = ['missed', 'submitted', 'idle', 'finished', 'failed', 'cancelled']
@@ -8501,6 +8507,7 @@ def harvesterWorkersDash(request):
         'statusesSummary': statusesSummary,
         'harvWorkStatuses':harvWorkStatuses,
         'request': request,
+        'hours':hours,
         'viewParams': request.session['viewParams'],
         'requestParams': request.session['requestParams'],
         'built': datetime.now().strftime("%H:%M:%S"),
@@ -8550,6 +8557,9 @@ def harvesterWorkList(request):
     endSelfMonitor(request)
     response = render_to_response('harvworkerslist.html', data, content_type='text/html')
     return response
+
+
+
 
 
 def taskchain(request):
