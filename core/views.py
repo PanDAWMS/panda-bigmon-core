@@ -60,7 +60,7 @@ from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
 from core.common.models import RequestStat, BPUser, Visits, BPUserSettings
 from core.settings.config import ENV
-from core.common.models import RunningMCProductionTasks, HarvesterWorkers
+from core.common.models import RunningMCProductionTasks, HarvesterWorkers, HarvesterRelJobsWorkers
 from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel, FrozenProdTasksModel
 
 from time import gmtime, strftime
@@ -8557,6 +8557,55 @@ def harvesterWorkList(request):
     endSelfMonitor(request)
     response = render_to_response('harvworkerslist.html', data, content_type='text/html')
     return response
+
+
+def harvesterWorkerInfo(request):
+    valid, response = initRequest(request)
+    harvesterid = None
+    workerid = None
+
+    if 'harvesterid' in request.session['requestParams']:
+        harvesterid = escapeInput(request.session['requestParams']['harvesterid'])
+    if 'workerid' in request.session['requestParams']:
+        workerid = int(request.session['requestParams']['workerid'])
+
+    workerslist = []
+    error = None
+    if harvesterid and workerid:
+        tquery = {}
+        tquery['harvesterid'] = harvesterid
+        tquery['workerid'] = workerid
+        workerslist.extend(HarvesterWorkers.objects.filter(**tquery).values('harvesterid','workerid',
+                                                                            'lastupdate','status','batchid','nodeid',
+                                                                            'queuename', 'computingsite','submittime',
+                                                                            'starttime','endtime','ncore','errorcode',
+                                                                            'stdout','stderr','batchlog'))
+
+        if len(workerslist) > 0:
+            corrJobs = []
+            corrJobs.extend(HarvesterRelJobsWorkers.objects.filter(**tquery).values('pandaid'))
+            workerinfo = workerslist[0]
+            workerinfo['corrJobs'] = []
+            for corrJob in corrJobs:
+                workerinfo['corrJobs'].append(corrJob['pandaid'])
+        else:
+            workerinfo = None
+    else:
+        error = "Harvesterid + Workerid is not specified"
+
+    data = {
+        'error': error,
+        'workerinfo': workerinfo,
+        'viewParams': request.session['viewParams'],
+        'requestParams': request.session['requestParams'],
+        'built': datetime.now().strftime("%H:%M:%S"),
+    }
+
+    endSelfMonitor(request)
+    response = render_to_response('harvworkerinfo.html', data, content_type='text/html')
+    return response
+
+
 
 
 

@@ -23,7 +23,7 @@
                         {{ worker.harvesterid }}
                     </td>
                     <td>
-                        {{ worker.workerid }}
+                        <a href="{% url 'harvesterWorkerInfo' %}?harvesterid={{ worker.harvesterid }}&workerid={{ worker.workerid }}">{{ worker.workerid }}</a>
                     </td>
                     <td>
                         {{ worker.status }}

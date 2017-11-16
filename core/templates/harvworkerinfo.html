@@ -1,0 +1,40 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Harvester workers summary{% endblock %}
+{% block title %}PanDA monitor{% endblock %}
+{% block subtitle %}PanDA Harvester Workers Summary<font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+{% block body %}
+
+    <table>
+        <tr>
+            <th colspan=24>Harvester worker info</th>
+        </tr>
+        <tr bgcolor='lightcyan'>
+            <th>Name</th>
+            <th>Value</th>
+        </tr>
+            {% if error %}
+              <th colspan=24>{{ error}}</th>
+            {% else%}
+                {% for name,value in workerinfo.items %}
+                    {% if name != 'corrJobs' %}
+                        <tr>
+                            <td>{{ name }}</td><td>{{ value }}</td>
+                        </tr>
+                     {% else %}
+                        <tr><td>Correspondent Jobs</td>
+                         <td>
+                            {% for pandaid in value %}
+                               <a href="{% url 'jobInfo' %}?pandaid={{ pandaid }}">{{ pandaid }}</a>
+                            {% endfor %}
+                        </td>
+                        </tr>
+
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+    </table>
+
+{% endblock %}
