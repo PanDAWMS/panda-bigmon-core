@@ -10375,7 +10375,7 @@ def datasetList(request):
     else:
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(dsrec), content_type='text/html')
+        return HttpResponse(json.dumps(dsets), content_type='text/html')
 
 
 def fileInfo(request):

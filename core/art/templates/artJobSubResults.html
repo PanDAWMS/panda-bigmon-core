@@ -1,5 +1,5 @@
 {% if jobSubResults|length > 0 %}
-<ul class="no-bullet">
+<ul class="no-bullet" style="margin-left: 1rem">
     <li>Test exit code: {{ jobSubResults.exit_code }}</li>
     <ol>
         {% for r in jobSubResults.result %}
@@ -8,7 +8,5 @@
     </ol>
 </ul>
 {% else %}
-    <p>
-        No information about sub-jobs results is available.
-    </p>
+
 {% endif %}
