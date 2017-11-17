@@ -75,14 +75,16 @@ function loadJobSubResult(testname, urltail) {
                               <td class="cell-left">
                                 {% if ntaglist|length == 1 %}
                                     {% for ntname, jobs in tags.items %}{% for pandaid, jobparams in jobs.jobs.items %}
-                                        <a onclick="javascript:loadJobSubResult('{{ test }}','guid={{ jobparams.guid}}&lfn={{ jobparams.lfn }}&scope={{ jobparams.scope }}');">
-                                            <i class="fi-plus"></i>
-                                        </a>
+                                      {% if jobparams.guid and jobparams.lfn and jobparams.scope %}
+                                        <i id="div-subresults-plussign-{{ test }}-{{ pandaid }}" class="fi-plus"></i>
+                                      {% endif %}
                                     {% endfor %}{% endfor %}
                                 {% endif %}
-                                {{ test }}
+                                    {{ test }}
                                 {% if ntaglist|length == 1 %}
-                                    <div id="div-subresults-{{ test }}"></div>
+                                    {% for ntname, jobs in tags.items %}{% for pandaid, jobparams in jobs.jobs.items %}
+                                        <div id="div-subresults-{{ test }}-{{ pandaid }}"></div>
+                                    {% endfor %}{% endfor %}
                                 {% endif %}</td>
                               {% for ntag in ntaglist %}
                                   {% for ntname,jobs in tags.items  %}
@@ -104,6 +106,19 @@ function loadJobSubResult(testname, urltail) {
                                                     <div class="nodata">
                                                         ---
                                                     </div>
+                                                {% endif %}
+                                                {% if ntaglist|length == 1 and job.guid and job.lfn and job.scope %}
+                                                    <script>
+                                                        $.ajax({
+                                                            url: '{% url 'artJobSubResults' %}',
+                                                            data: 'guid={{ job.guid}}&lfn={{ job.lfn }}&scope={{ job.scope }}',
+                                                            async: true
+                                                        })
+                                                         .done(function (response) {
+                                                            document.getElementById("div-subresults-" + "{{ test }}-" + "{{ pandaid }}").innerHTML = response;
+                                                            document.getElementById("div-subresults-plussign-" + "{{ test }}-" + "{{ pandaid }}").parentNode.removeChild(document.getElementById("div-subresults-plussign-" + "{{ test }}-" + "{{ pandaid }}"));
+                                                        });
+                                                    </script>
                                                 {% endif %}
                                             {% endfor %}
                                         {% else %}

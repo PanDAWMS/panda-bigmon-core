@@ -436,6 +436,12 @@ def getJobSubResults(request):
     scope = request.session['requestParams']['scope'] if 'scope' in request.session['requestParams'] else ''
     results = getJobReport(guid, lfn, scope)
 
+    # protection of format change
+    if 'result' in results and isinstance(results['result'], list):
+        resultlist = []
+        for r in results['result']:
+            resultlist.append({'name': '', 'result': r})
+        results['result'] = resultlist
 
 
     data = {

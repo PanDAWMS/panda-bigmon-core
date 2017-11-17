@@ -60,7 +60,7 @@ from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
 from core.common.models import RequestStat, BPUser, Visits, BPUserSettings
 from core.settings.config import ENV
-from core.common.models import RunningMCProductionTasks, HarvesterWorkers
+from core.common.models import RunningMCProductionTasks, HarvesterWorkers, HarvesterRelJobsWorkers
 from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel, FrozenProdTasksModel
 
 from time import gmtime, strftime
@@ -574,7 +574,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         ## Call param overrides default hours, but not a param on the URL
         LAST_N_HOURS_MAX = hours
     ## For site-specific queries, allow longer time window
-    if 'computingsite' in request.session['requestParams']:
+    if 'computingsite' in request.session['requestParams'] and hours is None:
         LAST_N_HOURS_MAX = 12
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         LAST_N_HOURS_MAX = 3 * 24
@@ -689,10 +689,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             query['taskname__icontains'] = val
 
         elif param == 'harvesterid':
-            val = request.session['requestParams'][param]
             val = escapeInput(request.session['requestParams'][param])
             values = val.split(',')
             query['harvesterid__in'] = values
+
+        elif param == 'status':
+            val = escapeInput(request.session['requestParams'][param])
+            values = val.split(',')
+            query['status__in'] = values
+
+
 
         elif param in ('tag',) and querytype == 'task':
             val = request.session['requestParams'][param]
@@ -6937,12 +6943,14 @@ def killtasks(request):
         response = HttpResponse(dump, content_type='text/plain')
         return response
 
-    if request.user.is_authenticated():
-        username = request.user.username
-        fullname = request.user.first_name+' '+request.user.last_name
+    user = request.user
+    if user.is_authenticated() and (not user.social_auth is None) and (not user.social_auth.get(provider='cernauth2') is None) \
+            and (not user.social_auth.get(provider='cernauth2').extra_data is None) and ('username' in user.social_auth.get(provider='cernauth2').extra_data):
+        username = user.social_auth.get(provider='cernauth2').extra_data['username']
+        fullname = user.social_auth.get(provider='cernauth2').extra_data['name']
 
     else:
-        resp = {"detail": "User not authenticated. Please login to bigpanda mon"}
+        resp = {"detail": "User not authenticated. Please login to bigpanda mon with CERN"}
         dump = json.dumps(resp, cls=DateEncoder)
         response = HttpResponse(dump, content_type='text/plain')
         return response
@@ -8461,10 +8469,15 @@ def taskInfo(request, jeditaskid=0):
         return response
 
 
-def harvesterworkers(request):
+def harvesterWorkersDash(request):
     valid, response = initRequest(request)
 
-    query= setupView(request, hours=24*3, wildCardExt=False)
+    hours = 24 * 3
+    if 'days' in request.session['requestParams']:
+        days = int(request.session['requestParams']['days'])
+        hours = days*24
+    query= setupView(request, hours=hours, wildCardExt=False)
+
 
     tquery = {}
     tquery['status__in'] = ['missed', 'submitted', 'idle', 'finished', 'failed', 'cancelled']
@@ -8494,16 +8507,107 @@ def harvesterworkers(request):
         'statusesSummary': statusesSummary,
         'harvWorkStatuses':harvWorkStatuses,
         'request': request,
+        'hours':hours,
         'viewParams': request.session['viewParams'],
         'requestParams': request.session['requestParams'],
         'built': datetime.now().strftime("%H:%M:%S"),
     }
     endSelfMonitor(request)
-    response = render_to_response('harvworksummary.html', data, content_type='text/html')
+    response = render_to_response('harvworksummarydash.html', data, content_type='text/html')
     return response
 
 
 # SELECT COMPUTINGSITE,STATUS, count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS WHERE SUBMITTIME > (sysdate - interval '35' day) group by COMPUTINGSITE,STATUS
+
+def harvesterWorkList(request):
+    valid, response = initRequest(request)
+    query,extra, LAST_N_HOURS_MAX = setupView(request, hours=24*3, wildCardExt=True)
+
+    statusDefined = False
+    if 'status__in' in query:
+        statusDefined = True
+
+    tquery = {}
+
+    if statusDefined:
+        tquery['status__in'] = list(set(query['status__in']).intersection(['missed', 'submitted', 'idle', 'finished', 'failed', 'cancelled']))
+    else:
+        tquery['status__in'] = ['missed', 'submitted', 'idle', 'finished', 'failed', 'cancelled']
+
+    tquery['lastupdate__range'] = query['modificationtime__range']
+
+    workerslist = []
+    if len(tquery['status__in']) > 0:
+        workerslist.extend(HarvesterWorkers.objects.values('computingsite','status', 'submittime','harvesterid','workerid').filter(**tquery).extra(where=[extra]))
+
+    if statusDefined:
+        tquery['status__in'] = list(set(query['status__in']).intersection(['ready', 'running']))
+
+    del tquery['lastupdate__range']
+    if len(tquery['status__in']) > 0:
+        workerslist.extend(HarvesterWorkers.objects.values('computingsite','status', 'submittime','harvesterid','workerid').filter(**tquery).extra(where=[extra]))
+
+    data = {
+        'workerslist':workerslist,
+        'request': request,
+        'viewParams': request.session['viewParams'],
+        'requestParams': request.session['requestParams'],
+        'built': datetime.now().strftime("%H:%M:%S"),
+    }
+    endSelfMonitor(request)
+    response = render_to_response('harvworkerslist.html', data, content_type='text/html')
+    return response
+
+
+def harvesterWorkerInfo(request):
+    valid, response = initRequest(request)
+    harvesterid = None
+    workerid = None
+
+    if 'harvesterid' in request.session['requestParams']:
+        harvesterid = escapeInput(request.session['requestParams']['harvesterid'])
+    if 'workerid' in request.session['requestParams']:
+        workerid = int(request.session['requestParams']['workerid'])
+
+    workerslist = []
+    error = None
+    if harvesterid and workerid:
+        tquery = {}
+        tquery['harvesterid'] = harvesterid
+        tquery['workerid'] = workerid
+        workerslist.extend(HarvesterWorkers.objects.filter(**tquery).values('harvesterid','workerid',
+                                                                            'lastupdate','status','batchid','nodeid',
+                                                                            'queuename', 'computingsite','submittime',
+                                                                            'starttime','endtime','ncore','errorcode',
+                                                                            'stdout','stderr','batchlog'))
+
+        if len(workerslist) > 0:
+            corrJobs = []
+            corrJobs.extend(HarvesterRelJobsWorkers.objects.filter(**tquery).values('pandaid'))
+            workerinfo = workerslist[0]
+            workerinfo['corrJobs'] = []
+            for corrJob in corrJobs:
+                workerinfo['corrJobs'].append(corrJob['pandaid'])
+        else:
+            workerinfo = None
+    else:
+        error = "Harvesterid + Workerid is not specified"
+
+    data = {
+        'error': error,
+        'workerinfo': workerinfo,
+        'viewParams': request.session['viewParams'],
+        'requestParams': request.session['requestParams'],
+        'built': datetime.now().strftime("%H:%M:%S"),
+    }
+
+    endSelfMonitor(request)
+    response = render_to_response('harvworkerinfo.html', data, content_type='text/html')
+    return response
+
+
+
+
 
 
 
@@ -10373,7 +10477,7 @@ def datasetList(request):
     else:
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(dsrec), content_type='text/html')
+        return HttpResponse(json.dumps(dsets), content_type='text/html')
 
 
 def fileInfo(request):
@@ -11973,8 +12077,6 @@ def getEventsChunks(request):
         else:
             eventsChunk['prevAttempts'] = []
             eventsChunk['attemptnrDS'] = 0
-
-
 
     return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='text/html')
 
