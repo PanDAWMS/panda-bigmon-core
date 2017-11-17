@@ -6685,6 +6685,24 @@ def taskList(request):
     )
     taskhashtags = dictfetchall(new_cur)
 
+
+    eventInfoDict = {}
+    if eventservice:
+        #we get here events data
+        tquery = {}
+        tasksEventInfo = GetEventsForTask.objects.filter(**tquery).extra(
+            where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid', 'totevrem', 'totev')
+
+        #We do it because we intermix raw and queryset queries. With next new_cur.execute tasksEventInfo cleares
+        for tasksEventInfoItem in tasksEventInfo:
+            listItem = {}
+            listItem["jeditaskid"] = tasksEventInfoItem["jeditaskid"]
+            listItem["totevrem"] = tasksEventInfoItem["totevrem"]
+            listItem["totev"] = tasksEventInfoItem["totev"]
+            eventInfoDict[tasksEventInfoItem["jeditaskid"]] = listItem
+
+
+    # clean temporary table
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
 
     taskids = {}
@@ -6702,14 +6720,20 @@ def taskList(request):
                     newtasks.append(task)
         tasks = newtasks
 
-    # Forming hashtag list for summary attribute table
     hashtags = []
     for task in tasks:
+        # Forming hashtag list for summary attribute table
         if task['jeditaskid'] in taskids.keys():
             task['hashtag'] = taskids[task['jeditaskid']]
             for hashtag in taskids[task['jeditaskid']].split(','):
                 if hashtag not in hashtags:
                     hashtags.append(hashtag)
+
+        if eventservice:
+            # Addind event data
+            if task['jeditaskid'] in eventInfoDict.keys():
+                task['eventsData'] = eventInfoDict[task['jeditaskid']]
+
     if len(hashtags) > 0:
         hashtags = sorted(hashtags, key=lambda h: h.lower())
 
