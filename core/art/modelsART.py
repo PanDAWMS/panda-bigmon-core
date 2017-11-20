@@ -58,6 +58,8 @@ class ARTResults(models.Model):
     row_id = models.BigIntegerField(db_column='ROW_ID', primary_key=True)
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID')
     pandaid = models.BigIntegerField(db_column='PANDAID')
-    result = models.CharField(max_length=2000, db_column='RESULT', null=True)
+    result = models.CharField(max_length=2000, db_column='RESULT_JSON', null=True)
+    is_task_finished = models.BigIntegerField(db_column='IS_TASK_FINISHED')
+    is_job_finished = models.BigIntegerField(db_column='IS_JOB_FINISHED')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."ARTResults"'
+        db_table = u'"ATLAS_PANDABIGMON"."ART_RESULTS"'
