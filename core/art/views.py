@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.db import connection, transaction
-from core.common.models import ARTTask, ARTTasks
+from core.art.modelsART import ARTTask, ARTTasks
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, Sum
 from core.views import initRequest, extensibleURL, removeParam
