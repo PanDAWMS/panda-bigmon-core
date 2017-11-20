@@ -5,10 +5,11 @@
 import json
 import re
 from datetime import datetime, timedelta
+from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.db import connection, transaction
-from core.art.modelsART import ARTTask, ARTTasks
+from core.art.modelsART import ARTTask, ARTTasks, ARTResults
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, Sum
 from core.views import initRequest, extensibleURL, removeParam
@@ -385,6 +386,26 @@ def artJobs(request):
                 except:
                     artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs'][job['origpandaid']]['tarindex'] = ''
+                # if len(ntagslist) == 1 and job['guid'] is not None and job['lfn'] is not None and job['scope'] is not None:
+                #     try:
+                #         results = getJobReport(job['guid'], job['lfn'], job['scope'])
+                #
+                #         # protection of format change
+                #         if 'result' in results and isinstance(results['result'], list):
+                #             resultlist = []
+                #             for r in results['result']:
+                #                 resultlist.append({'name': '', 'result': r})
+                #             results['result'] = resultlist
+                #
+                #         artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
+                #             'jobs'][job['origpandaid']]['testexitcode'] = results['exit_code']
+                #         artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
+                #             'jobs'][job['origpandaid']]['testresult'] = results['result']
+                #     except:
+                #         artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
+                #             'jobs'][job['origpandaid']]['testexitcode'] = None
+                #         artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
+                #             'jobs'][job['origpandaid']]['testresult'] = None
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for job in jobs:
             if job['branch'] not in artjobsdict.keys():
@@ -426,6 +447,70 @@ def artJobs(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     endSelfMonitor(request)
     return response
+
+def updateaARTJobList(request):
+    valid, response = initRequest(request)
+    query = setupView(request, 'job')
+
+    ### Getting full list of jobs
+    cur = connection.cursor()
+    cur.execute("SELECT taskid, ntag, pandaid, taskstatus, status as jobstatus FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
+    jobs = cur.fetchall()
+    cur.close()
+
+    artJobsNames = ['taskid', 'ntag', 'pandaid', 'taskstatus', 'jobstatus']
+    fulljoblist = [dict(zip(artJobsNames, row)) for row in jobs]
+    ntagslist = list(sorted(set([x['ntag'] for x in fulljoblist])))
+
+    ### Getting list of existed jobs
+    extra = 'jeditaskid in ( '
+    fulljoblistdict = {}
+    for job in fulljoblist:
+        if job['taskid'] not in fulljoblistdict.keys():
+            fulljoblistdict[job['taskid']] = {}
+            extra +=  str(job['taskid']) + ','
+        fulljoblistdict[job['taskid']][job['pandaid']] = []
+    if extra.endswith(','):
+        extra = extra[:-1]
+    extra += ' ) '
+
+    existedjoblist = ARTResults.objects.extra(where=[extra]).values()
+
+    executionData = []
+
+    if len(existedjoblist) > 0:
+        print ('to be filtered')
+
+
+    else:
+        print ('preparing data to insert into artresults table')
+
+
+        for j in fulljoblist:
+            tflag = 0
+            if j['taskstatus'] in ('done', 'finished', 'failed', 'aborted'):
+                tflag = 1
+            jflag = 0
+            if j['taskstatus'] in ('finished', 'failed', 'cancelled', 'closed'):
+                jflag = 1
+            if j['pandaid'] is not None and j['taskid'] is not None:
+                executionData.append((j['taskid'], j['pandaid'], tflag, jflag))
+
+
+    if len(executionData) > 0:
+        tmpTableName = 'ATLAS_PANDABIGMON.ART_RESULTS'
+        new_cur = connection.cursor()
+        query = """INSERT INTO """ + tmpTableName + """(JEDITASKID,PANDAID,IS_TASK_FINISHED,IS_JOB_FINISHED) VALUES (%s, %s, %s, %s)"""
+        new_cur.executemany(query, executionData)
+
+
+
+
+    result = True
+    data = {
+        'result': result,
+    }
+    return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
 def getJobSubResults(request):
     valid, response = initRequest(request)
