@@ -108,7 +108,7 @@ urlpatterns = [
     url(r'^art/tasks/$', art_views.artTasks, name='artTasks'),
     url(r'^art/jobs/$', art_views.artJobs, name='artJobs'),
     url(r'^art/getjobsubresults/$', art_views.getJobSubResults, name='artJobSubResults'),
-    url(r'^art/updatejoblist/$', art_views.updateARTJobList),
+    url(r'^art/updatejoblist/$', art_views.updateaARTJobList),
 
 
     ### filebrowser
