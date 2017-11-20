@@ -6207,8 +6207,8 @@ def dashboard(request, view='production'):
         jobsarch4statuses = ['finished', 'failed', 'cancelled', 'closed']
         if ('modificationtime__range' in excludedTimeQuery and not 'date_to' in request.session['requestParams']):
             del excludedTimeQuery['modificationtime__range']
-        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**excludedTimeQuery).values(*values).extra(where=[extra]).exclude(isarchive=1).annotate(countjobsinstate=Count('jobstatus')))
-        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values).extra(where=[extra]).exclude(isarchive=0).annotate(countjobsinstate=Count('jobstatus')))
+        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**excludedTimeQuery).values(*values).extra(where=[extra]).exclude(isarchive=1).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
+        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values).extra(where=[extra]).exclude(isarchive=0).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
         nucleus = {}
         statelist1 = statelist
         #    del statelist1[statelist1.index('jclosed')]
@@ -6219,17 +6219,32 @@ def dashboard(request, view='production'):
                 if jobs['nucleus'] in nucleus:
                     if jobs['computingsite'] in nucleus[jobs['nucleus']]:
                         nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] += jobs['countjobsinstate']
+                        if (jobs['jobstatus'] in ('finished', 'failed','merging')):
+                            nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ jobs['jobstatus']] += jobs['counteventsinstate']
+
                     else:
                         nucleus[jobs['nucleus']][jobs['computingsite']] = {}
                         for state in statelist1:
                             nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
+                            if (state in ('finished', 'failed','merging')):
+                                nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ state] = 0
+
                         nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
+                        if (state in ('finished', 'failed', 'merging')):
+                            nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ state] = jobs['counteventsinstate']
+
                 else:
                     nucleus[jobs['nucleus']] = {}
                     nucleus[jobs['nucleus']][jobs['computingsite']] = {}
                     for state in statelist1:
                         nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
+                        if (state in ('finished', 'failed', 'merging')):
+                            nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ state] = 0
+
                     nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
+                    if (state in ('finished', 'failed', 'merging')):
+                        nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ jobs['jobstatus']] = jobs['counteventsinstate']
+
 
         nucleusSummary = {}
         for nucleusInfo in nucleus:

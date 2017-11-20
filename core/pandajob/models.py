@@ -126,6 +126,7 @@ class CombinedWaitActDefArch4(models.Model):
     tasktype = models.CharField(max_length=64, db_column='TASKTYPE')
     modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME') # Field name made lowercase.
     es = models.IntegerField(db_column='ES')
+    nevents = models.IntegerField(db_column='NEVENTS')
     isarchive = models.IntegerField(db_column='ISARCHIVE')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."COMBINED_WAIT_ACT_DEF_ARCH4"'

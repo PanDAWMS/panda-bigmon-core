@@ -23,6 +23,11 @@ def world_nucleussummary(context, kwargs):
             if nuclval.get(jobstatus) > 0:
                 retStr += """class ='{0}_fill'""".format(jobstatus)
             retStr +="""> <a href="{0}?jobstatus={1}{2}&nucleus={3}&cloud=WORLD&noarchjobs=1&hours={4}&display_limit=100">{5}</a></td>""".format(reverse('jobList'),jobstatus, estailtojobslinks, nucleus, hours, nuclval.get(jobstatus))
+        if ('eventsfailed' in nuclval and len(estailtojobslinks) > 0):
+            retStr += """<td>"""+str(nuclval.get('eventsfailed'))+"""</td>"""
+            retStr += """<td>"""+str(nuclval.get('eventsfinished'))+"""</td>"""
+            retStr += """<td>"""+str(nuclval.get('eventsmerging'))+"""</td>"""
+
         retStr += """</tr>"""
 
     return Template(retStr).render(context)
@@ -42,6 +47,12 @@ def world_computingsitesummary(context, kwargs):
             if computingsiteval.get(jobstatus) > 0:
                 retStr += """class ='{0}_fill'""".format(jobstatus)
             retStr += """> <a href="{0}?jobstatus={1}{2}&nucleus={3}&computingsite={6}&cloud=WORLD&noarchjobs=1&hours={4}&display_limit=100">{5}</a></td>""".format(reverse('jobList'),jobstatus, estailtojobslinks, nucleus, hours, computingsiteval.get(jobstatus), computingsite)
+
+        if ('eventsfailed' in computingsiteval and len(estailtojobslinks) > 0):
+            retStr += """<td>"""+str(computingsiteval.get('eventsfailed'))+"""</td>"""
+            retStr += """<td>"""+str(computingsiteval.get('eventsfinished'))+"""</td>"""
+            retStr += """<td>"""+str(computingsiteval.get('eventsmerging'))+"""</td>"""
+
         retStr += """</tr>"""
 
     return Template(retStr).render(context)
