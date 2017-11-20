@@ -352,7 +352,7 @@ def artJobs(request):
     jobs = cur.fetchall()
     cur.close()
 
-    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'computingsite', 'guid', 'scope', 'lfn']
+    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'computingsite', 'guid', 'scope', 'lfn', 'taskstatus']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
     ntagslist=list(sorted(set([x['ntag'] for x in jobs])))
@@ -440,7 +440,10 @@ def getJobSubResults(request):
     if 'result' in results and isinstance(results['result'], list):
         resultlist = []
         for r in results['result']:
-            resultlist.append({'name': '', 'result': r})
+            if not isinstance(r, dict):
+                resultlist.append({'name': '', 'result': r})
+            else:
+                resultlist.append({'name': r['name'] if 'name' in r else '', 'result': r['result'] if 'result' in r else r})
         results['result'] = resultlist
 
 
