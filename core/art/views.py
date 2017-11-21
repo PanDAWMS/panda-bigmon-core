@@ -15,6 +15,7 @@ from django.db.models import Value as V, Sum
 from core.views import initRequest, extensibleURL, removeParam
 from core.views import setCacheEntry, getCacheEntry, DateEncoder, endSelfMonitor
 from core.art.jobSubResults import getJobReport
+from core.settings import defaultDatetimeFormat
 
 artdateformat = '%Y-%m-%d'
 humandateformat = '%d %b %Y'
@@ -448,17 +449,17 @@ def artJobs(request):
     endSelfMonitor(request)
     return response
 
-def updateaARTJobList(request):
+def updateARTJobList(request):
     valid, response = initRequest(request)
     query = setupView(request, 'job')
 
     ### Getting full list of jobs
     cur = connection.cursor()
-    cur.execute("SELECT taskid, ntag, pandaid, taskstatus, status as jobstatus FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
+    cur.execute("SELECT taskid, ntag, pandaid, taskstatus, status as jobstatus, testname, taskmodificationtime, jobmodificationtime  FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s')) WHERE pandaid is not NULL" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
     jobs = cur.fetchall()
     cur.close()
 
-    artJobsNames = ['taskid', 'ntag', 'pandaid', 'taskstatus', 'jobstatus']
+    artJobsNames = ['jeditaskid', 'ntag', 'pandaid', 'taskstatus', 'jobstatus', 'testname', 'taskmodificationtime', 'jobmodificationtime']
     fulljoblist = [dict(zip(artJobsNames, row)) for row in jobs]
     ntagslist = list(sorted(set([x['ntag'] for x in fulljoblist])))
 
@@ -466,43 +467,70 @@ def updateaARTJobList(request):
     extra = 'jeditaskid in ( '
     fulljoblistdict = {}
     for job in fulljoblist:
-        if job['taskid'] not in fulljoblistdict.keys():
-            fulljoblistdict[job['taskid']] = {}
-            extra +=  str(job['taskid']) + ','
-        fulljoblistdict[job['taskid']][job['pandaid']] = []
+        if job['jeditaskid'] not in fulljoblistdict.keys():
+            fulljoblistdict[job['jeditaskid']] = {}
+            extra +=  str(job['jeditaskid']) + ','
+        fulljoblistdict[job['jeditaskid']][job['pandaid']] = []
     if extra.endswith(','):
         extra = extra[:-1]
     extra += ' ) '
 
     existedjoblist = ARTResults.objects.extra(where=[extra]).values()
+    existedjobdict = {}
+    for job in existedjoblist:
+        if job['jeditaskid'] not in existedjobdict.keys():
+            existedjobdict[job['jeditaskid']] = {}
+        if job['testname'] not in existedjobdict[job['jeditaskid']].keys():
+            existedjobdict[job['jeditaskid']][job['testname']] = {}
+        existedjobdict[job['jeditaskid']][job['testname']][job['pandaid']] = job
 
-    executionData = []
-
+    tableName = 'ATLAS_PANDABIGMON.ART_RESULTS'
+    ###
+    insertData = []
+    updateData = []
     if len(existedjoblist) > 0:
         print ('to be filtered')
 
+        for j in fulljoblist:
+            if j['jeditaskid'] in existedjobdict.keys():
+                ### check whether a job was retried
+                if j['pandaid'] not in existedjobdict[j['jeditaskid']][j['testname']].keys():
+                    ### add to update list
+                    tflag = 1 if j['taskstatus'] in ('done', 'finished', 'failed', 'aborted') else 0
+                    jflag = 1 if j['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
+                    updateData.append((j['pandaid'], tflag, jflag, datetime.now().strftime(defaultDatetimeFormat), j['taskid'], j['testname']))
+
+
+            else:
+                ### a new task that needs to be added to insert list
+                tflag = 1 if j['taskstatus'] in ('done', 'finished', 'failed', 'aborted') else 0
+                jflag = 1 if j['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
+                insertData.append((j['taskid'], j['pandaid'], tflag, jflag, j['testname'],
+                                   datetime.now().strftime(defaultDatetimeFormat),
+                                   datetime.now().strftime(defaultDatetimeFormat)))
 
     else:
         print ('preparing data to insert into artresults table')
 
 
         for j in fulljoblist:
-            tflag = 0
-            if j['taskstatus'] in ('done', 'finished', 'failed', 'aborted'):
-                tflag = 1
-            jflag = 0
-            if j['taskstatus'] in ('finished', 'failed', 'cancelled', 'closed'):
-                jflag = 1
-            if j['pandaid'] is not None and j['taskid'] is not None:
-                executionData.append((j['taskid'], j['pandaid'], tflag, jflag))
+            tflag = 1 if j['taskstatus'] in ('done', 'finished', 'failed', 'aborted') else 0
+            jflag = 1 if j['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
+            if j['pandaid'] is not None and j['jeditaskid'] is not None:
+                insertData.append((j['jeditaskid'], j['pandaid'], tflag, jflag, j['testname'], datetime.now().strftime(defaultDatetimeFormat), datetime.now().strftime(defaultDatetimeFormat)))
 
 
-    if len(executionData) > 0:
-        tmpTableName = 'ATLAS_PANDABIGMON.ART_RESULTS'
+    if len(insertData) > 0:
         new_cur = connection.cursor()
-        query = """INSERT INTO """ + tmpTableName + """(JEDITASKID,PANDAID,IS_TASK_FINISHED,IS_JOB_FINISHED) VALUES (%s, %s, %s, %s)"""
-        new_cur.executemany(query, executionData)
+        insert_query = """INSERT INTO """ + tableName + """(JEDITASKID,PANDAID,IS_TASK_FINISHED,IS_JOB_FINISHED,TESTNAME,TASK_FLAG_UPDATED,JOB_FLAG_UPDATED ) VALUES (%s, %s, %s, %s, %s, TO_TIMESTAMP( %s , 'YYYY-MM-DD HH24:MI:SS' ), TO_TIMESTAMP( %s , 'YYYY-MM-DD HH24:MI:SS' ))"""
+        new_cur.executemany(insert_query, insertData)
+        print ('data inserted (%s)' % (len(insertData)))
 
+    if len(updateData) > 0:
+        new_cur = connection.cursor()
+        insert_query = """UPDATE """ + tableName + """SET PANDAID = %s, IS_TASK_FINISHED = %s ,IS_JOB_FINISHED = %s , JOB_FLAG_UPDATED = TO_TIMESTAMP( %s , 'YYYY-MM-DD HH24:MI:SS' ) WHERE JEDITASKID = %s AND TESTNAME = %s """
+        new_cur.executemany(insert_query, insertData)
+        print ('data updated (%s rows updated)' % (len(updateData)))
 
 
 
