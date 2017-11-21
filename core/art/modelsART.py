@@ -61,5 +61,8 @@ class ARTResults(models.Model):
     result = models.CharField(max_length=2000, db_column='RESULT_JSON', null=True)
     is_task_finished = models.BigIntegerField(db_column='IS_TASK_FINISHED')
     is_job_finished = models.BigIntegerField(db_column='IS_JOB_FINISHED')
+    testname = models.CharField(max_length=300, db_column='TESTNAME', null=True)
+    task_flag_updated = models.DateTimeField(null=True, db_column='TASK_FLAG_UPDATED', blank=True)
+    job_flag_updated = models.DateTimeField(null=True, db_column='JOB_FLAG_UPDATED', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ART_RESULTS"'
