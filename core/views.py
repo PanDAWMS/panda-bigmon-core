@@ -1379,6 +1379,54 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
     return jobs
 
 
+def reconstructJobsConsumersHelper(chainsDict):
+    reconstructionDict = {}
+    modified = False
+    for pandaid, parentids in chainsDict.iteritems():
+        if parentids and parentids[-1] in chainsDict:
+            if chainsDict[parentids[-1]]:
+                reconstructionDict[pandaid] = parentids + chainsDict[parentids[-1]]
+                modified = True
+            else:
+                reconstructionDict[pandaid] = parentids
+        else:
+            reconstructionDict[pandaid] = parentids
+
+    if modified:
+        return reconstructJobsConsumersHelper(reconstructionDict)
+    else:
+        return reconstructionDict
+
+
+
+def reconstructJobsConsumers(jobsList):
+    consumers = []
+    jobsInheritance = {}
+    chainsList = {}
+
+    #Fill out all possible consumers
+    for job in jobsList:
+        jobsInheritance[job['pandaid']] = [job['parentid']]
+
+    chains = reconstructJobsConsumersHelper(jobsInheritance)
+    cleanChain = {}
+    for name, value in chains.iteritems():
+        if len(value) > 1:
+            cleanChain[name] = value[-2]
+            for pandaid in value[:-2]:
+                cleanChain[pandaid] = value[-2]
+
+    
+    for job in jobsList:
+        if job['pandaid'] in cleanChain:
+            job['consumer'] = cleanChain[job['pandaid']]
+        else:
+            job['consumer'] = None
+
+    return jobsList
+    
+
+
 def cleanTaskList(request, tasks):
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
@@ -2789,9 +2837,9 @@ def jobList(request, mode=None, param=None):
         'json' in request.session['requestParams']):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     elif eventservice:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid'
     else:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid'
 
     JOB_LIMITS = request.session['JOB_LIMIT']
     totalJobs = 0
@@ -2879,6 +2927,7 @@ def jobList(request, mode=None, param=None):
             newjobs, cntStatus, newdroplist, newdroppedPmerge = dropRetrielsJobsV2(jobs,taskids.keys()[0],isReturnDroppedPMerge)
 
     jobs = cleanJobList(request, jobs)
+    jobs = reconstructJobsConsumers(jobs)
 
     njobs = len(jobs)
     jobtype = ''
