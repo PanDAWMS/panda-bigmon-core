@@ -6112,7 +6112,7 @@ def worldhs06s(request):
 
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
-
+@login_customrequired
 def dashboard(request, view='production'):
     valid, response = initRequest(request)
     if not valid: return response
@@ -6521,17 +6521,17 @@ def dashboard(request, view='production'):
 
             return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
-
+@login_customrequired
 def dashAnalysis(request):
     return dashboard(request, view='analysis')
 
-
+@login_customrequired
 def dashProduction(request):
     return dashboard(request, view='production')
 
+@login_customrequired
 def dashObjectStore(request):
     return dashboard(request, view='objectstore')
-
 
 def dashTasks(request, hours, view='production'):
     valid, response = initRequest(request)
@@ -8556,7 +8556,7 @@ def taskInfo(request, jeditaskid=0):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-
+@login_customrequired
 def harvesterWorkersDash(request):
     valid, response = initRequest(request)
 
@@ -8606,7 +8606,7 @@ def harvesterWorkersDash(request):
 
 
 # SELECT COMPUTINGSITE,STATUS, count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS WHERE SUBMITTIME > (sysdate - interval '35' day) group by COMPUTINGSITE,STATUS
-
+@login_customrequired
 def harvesterWorkList(request):
     valid, response = initRequest(request)
     query,extra, LAST_N_HOURS_MAX = setupView(request, hours=24*3, wildCardExt=True)
@@ -8646,7 +8646,7 @@ def harvesterWorkList(request):
     response = render_to_response('harvworkerslist.html', data, content_type='text/html')
     return response
 
-
+@login_customrequired
 def harvesterWorkerInfo(request):
     valid, response = initRequest(request)
     harvesterid = None
@@ -10351,6 +10351,7 @@ def ttc(request):
 
 
 #@cache_page(60 * 20)
+@login_customrequired
 def workingGroups(request):
     valid, response = initRequest(request)
     if not valid: return response
