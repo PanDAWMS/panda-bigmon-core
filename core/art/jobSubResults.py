@@ -31,8 +31,7 @@ def getJobReport(guid, lfn, scope):
 
 def getARTjobSubResults(data):
     jobSubResult = {}
-
-    if isinstance(data, dict) and  'art' in data:
+    if 'art' in data:
         jobSubResult = data['art']
 
     # protection of json format change from list to list of dicts
