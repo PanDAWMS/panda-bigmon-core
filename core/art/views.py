@@ -14,7 +14,7 @@ from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, Sum
 from core.views import initRequest, extensibleURL, removeParam
 from core.views import setCacheEntry, getCacheEntry, DateEncoder, endSelfMonitor
-from core.art.jobSubResults import getJobReport
+from core.art.jobSubResults import getJobReport, getARTjobSubResults
 from core.settings import defaultDatetimeFormat
 
 artdateformat = '%Y-%m-%d'
@@ -354,7 +354,7 @@ def artJobs(request):
     jobs = cur.fetchall()
     cur.close()
 
-    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'computingsite', 'guid', 'scope', 'lfn', 'taskstatus']
+    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'computingsite', 'guid', 'scope', 'lfn', 'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'result']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
     ntagslist=list(sorted(set([x['ntag'] for x in jobs])))
@@ -381,32 +381,20 @@ def artJobs(request):
                 artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['guid'] = job['guid']
                 artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['scope'] = job['scope']
                 artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['lfn'] = job['lfn']
+                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['jeditaskid'] = job['taskid']
                 try:
                     artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs'][job['origpandaid']]['tarindex'] = int(re.search('.([0-9]{6}).log.', job['lfn']).group(1))
                 except:
                     artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs'][job['origpandaid']]['tarindex'] = ''
-                # if len(ntagslist) == 1 and job['guid'] is not None and job['lfn'] is not None and job['scope'] is not None:
-                #     try:
-                #         results = getJobReport(job['guid'], job['lfn'], job['scope'])
-                #
-                #         # protection of format change
-                #         if 'result' in results and isinstance(results['result'], list):
-                #             resultlist = []
-                #             for r in results['result']:
-                #                 resultlist.append({'name': '', 'result': r})
-                #             results['result'] = resultlist
-                #
-                #         artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
-                #             'jobs'][job['origpandaid']]['testexitcode'] = results['exit_code']
-                #         artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
-                #             'jobs'][job['origpandaid']]['testresult'] = results['result']
-                #     except:
-                #         artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
-                #             'jobs'][job['origpandaid']]['testexitcode'] = None
-                #         artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
-                #             'jobs'][job['origpandaid']]['testresult'] = None
+
+                if len(ntagslist) == 1 and job['guid'] is not None and job['lfn'] is not None and job['scope'] is not None:
+                    if 'result' in job and job['result'] is not None:
+                        job['result'] = json.loads(job['result'])
+                        artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = job['result']['exit_code']
+                        artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = job['result']['result']
+
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for job in jobs:
             if job['branch'] not in artjobsdict.keys():
@@ -433,6 +421,12 @@ def artJobs(request):
                 except:
                     artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs'][job['origpandaid']]['tarindex'] = ''
+
+                if len(ntagslist) == 1 and job['guid'] is not None and job['lfn'] is not None and job['scope'] is not None:
+                    if 'result' in job and job['result'] is not None:
+                        job['result'] = json.loads(job['result'])
+                        artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = job['result']['exit_code']
+                        artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = job['result']['result']
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
 
@@ -498,7 +492,7 @@ def updateARTJobList(request):
                     ### add to update list
                     tflag = 1 if j['taskstatus'] in ('done', 'finished', 'failed', 'aborted') else 0
                     jflag = 1 if j['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
-                    updateData.append((j['pandaid'], tflag, jflag, datetime.now().strftime(defaultDatetimeFormat), j['taskid'], j['testname']))
+                    updateData.append((j['pandaid'], tflag, jflag, datetime.now().strftime(defaultDatetimeFormat), j['jeditaskid'], j['testname']))
 
 
             else:
@@ -528,8 +522,8 @@ def updateARTJobList(request):
 
     if len(updateData) > 0:
         new_cur = connection.cursor()
-        insert_query = """UPDATE """ + tableName + """SET PANDAID = %s, IS_TASK_FINISHED = %s ,IS_JOB_FINISHED = %s , JOB_FLAG_UPDATED = TO_TIMESTAMP( %s , 'YYYY-MM-DD HH24:MI:SS' ) WHERE JEDITASKID = %s AND TESTNAME = %s """
-        new_cur.executemany(insert_query, insertData)
+        update_query = """UPDATE """ + tableName + """ SET PANDAID = %s, IS_TASK_FINISHED = %s ,IS_JOB_FINISHED = %s , JOB_FLAG_UPDATED = TO_TIMESTAMP( %s , 'YYYY-MM-DD HH24:MI:SS' ), RESULT_JSON = NULL WHERE JEDITASKID = %s AND TESTNAME = %s """
+        new_cur.executemany(update_query, updateData)
         print ('data updated (%s rows updated)' % (len(updateData)))
 
 
@@ -547,18 +541,12 @@ def getJobSubResults(request):
     guid = request.session['requestParams']['guid'] if 'guid' in request.session['requestParams'] else ''
     lfn = request.session['requestParams']['lfn'] if 'lfn' in request.session['requestParams'] else ''
     scope = request.session['requestParams']['scope'] if 'scope' in request.session['requestParams'] else ''
-    results = getJobReport(guid, lfn, scope)
-
-    # protection of format change
-    if 'result' in results and isinstance(results['result'], list):
-        resultlist = []
-        for r in results['result']:
-            if not isinstance(r, dict):
-                resultlist.append({'name': '', 'result': r})
-            else:
-                resultlist.append({'name': r['name'] if 'name' in r else '', 'result': r['result'] if 'result' in r else r})
-        results['result'] = resultlist
-
+    pandaid = request.session['requestParams']['pandaid'] if 'pandaid' in request.session['requestParams'] else None
+    jeditaskid = request.session['requestParams']['jeditaskid'] if 'jeditaskid' in request.session['requestParams'] else None
+    data = getJobReport(guid, lfn, scope)
+    results = getARTjobSubResults(data)
+    if len(results) > 0:
+        saveJobSubResults(results,jeditaskid, pandaid)
 
     data = {
         'requestParams': request.session['requestParams'],
@@ -569,4 +557,14 @@ def getJobSubResults(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     endSelfMonitor(request)
     return response
+
+def saveJobSubResults(results,jeditaskid,pandaid):
+    updateData = []
+    updateData.append((json.dumps(results),jeditaskid,pandaid))
+    tableName = 'ATLAS_PANDABIGMON.ART_RESULTS'
+    new_cur = connection.cursor()
+    update_query = """UPDATE """ + tableName + """ SET RESULT_JSON = %s WHERE JEDITASKID = %s AND PANDAID = %s """
+    new_cur.executemany(update_query, updateData)
+    print ('data updated (%s rows updated)' % (len(updateData)))
+    return True
 
