@@ -82,7 +82,7 @@ SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
 SOCIAL_AUTH_STORAGE = 'social_django.models.DjangoStorage'
 REDIRECT_STATE = False
 LOGIN_URL = 'login'
-SOCIAL_AUTH_EXTRA_DATA = True
+#SOCIAL_AUTH_EXTRA_DATA = True
 
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/loginerror/'
 LOGIN_REDIRECT_URL = '/'
