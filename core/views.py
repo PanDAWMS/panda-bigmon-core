@@ -11701,6 +11701,8 @@ def statpixel(request):
     return HttpResponse(pixel_, content_type='image/gif')
 
 #@cache_page(60 * 20)
+
+@login_customrequired
 def globalshares(request):
     valid, response = initRequest(request)
     data = getCacheEntry(request, "globalshares")
