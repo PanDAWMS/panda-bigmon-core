@@ -1379,6 +1379,54 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
     return jobs
 
 
+def reconstructJobsConsumersHelper(chainsDict):
+    reconstructionDict = {}
+    modified = False
+    for pandaid, parentids in chainsDict.iteritems():
+        if parentids and parentids[-1] in chainsDict:
+            if chainsDict[parentids[-1]]:
+                reconstructionDict[pandaid] = parentids + chainsDict[parentids[-1]]
+                modified = True
+            else:
+                reconstructionDict[pandaid] = parentids
+        else:
+            reconstructionDict[pandaid] = parentids
+
+    if modified:
+        return reconstructJobsConsumersHelper(reconstructionDict)
+    else:
+        return reconstructionDict
+
+
+
+def reconstructJobsConsumers(jobsList):
+    consumers = []
+    jobsInheritance = {}
+    chainsList = {}
+
+    #Fill out all possible consumers
+    for job in jobsList:
+        jobsInheritance[job['pandaid']] = [job['parentid']]
+
+    chains = reconstructJobsConsumersHelper(jobsInheritance)
+    cleanChain = {}
+    for name, value in chains.iteritems():
+        if len(value) > 1:
+            cleanChain[name] = value[-2]
+            for pandaid in value[:-2]:
+                cleanChain[pandaid] = value[-2]
+
+    
+    for job in jobsList:
+        if job['pandaid'] in cleanChain:
+            job['consumer'] = cleanChain[job['pandaid']]
+        else:
+            job['consumer'] = None
+
+    return jobsList
+    
+
+
 def cleanTaskList(request, tasks):
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
@@ -2789,9 +2837,9 @@ def jobList(request, mode=None, param=None):
         'json' in request.session['requestParams']):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     elif eventservice:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid'
     else:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid'
 
     JOB_LIMITS = request.session['JOB_LIMIT']
     totalJobs = 0
@@ -2879,6 +2927,7 @@ def jobList(request, mode=None, param=None):
             newjobs, cntStatus, newdroplist, newdroppedPmerge = dropRetrielsJobsV2(jobs,taskids.keys()[0],isReturnDroppedPMerge)
 
     jobs = cleanJobList(request, jobs)
+    jobs = reconstructJobsConsumers(jobs)
 
     njobs = len(jobs)
     jobtype = ''
@@ -6063,7 +6112,7 @@ def worldhs06s(request):
 
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
-
+@login_customrequired
 def dashboard(request, view='production'):
     valid, response = initRequest(request)
     if not valid: return response
@@ -6207,8 +6256,8 @@ def dashboard(request, view='production'):
         jobsarch4statuses = ['finished', 'failed', 'cancelled', 'closed']
         if ('modificationtime__range' in excludedTimeQuery and not 'date_to' in request.session['requestParams']):
             del excludedTimeQuery['modificationtime__range']
-        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**excludedTimeQuery).values(*values).extra(where=[extra]).exclude(isarchive=1).annotate(countjobsinstate=Count('jobstatus')))
-        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values).extra(where=[extra]).exclude(isarchive=0).annotate(countjobsinstate=Count('jobstatus')))
+        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**excludedTimeQuery).values(*values).extra(where=[extra]).exclude(isarchive=1).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
+        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values).extra(where=[extra]).exclude(isarchive=0).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
         nucleus = {}
         statelist1 = statelist
         #    del statelist1[statelist1.index('jclosed')]
@@ -6219,17 +6268,32 @@ def dashboard(request, view='production'):
                 if jobs['nucleus'] in nucleus:
                     if jobs['computingsite'] in nucleus[jobs['nucleus']]:
                         nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] += jobs['countjobsinstate']
+                        if (jobs['jobstatus'] in ('finished', 'failed','merging')):
+                            nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ jobs['jobstatus']] += jobs['counteventsinstate']
+
                     else:
                         nucleus[jobs['nucleus']][jobs['computingsite']] = {}
                         for state in statelist1:
                             nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
+                            if (state in ('finished', 'failed','merging')):
+                                nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ state] = 0
+
                         nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
+                        if (state in ('finished', 'failed', 'merging')):
+                            nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ state] = jobs['counteventsinstate']
+
                 else:
                     nucleus[jobs['nucleus']] = {}
                     nucleus[jobs['nucleus']][jobs['computingsite']] = {}
                     for state in statelist1:
                         nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
+                        if (state in ('finished', 'failed', 'merging')):
+                            nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ state] = 0
+
                     nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
+                    if (state in ('finished', 'failed', 'merging')):
+                        nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ jobs['jobstatus']] = jobs['counteventsinstate']
+
 
         nucleusSummary = {}
         for nucleusInfo in nucleus:
@@ -6457,17 +6521,17 @@ def dashboard(request, view='production'):
 
             return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
-
+@login_customrequired
 def dashAnalysis(request):
     return dashboard(request, view='analysis')
 
-
+@login_customrequired
 def dashProduction(request):
     return dashboard(request, view='production')
 
+@login_customrequired
 def dashObjectStore(request):
     return dashboard(request, view='objectstore')
-
 
 def dashTasks(request, hours, view='production'):
     valid, response = initRequest(request)
@@ -6685,6 +6749,24 @@ def taskList(request):
     )
     taskhashtags = dictfetchall(new_cur)
 
+
+    eventInfoDict = {}
+    if eventservice:
+        #we get here events data
+        tquery = {}
+        tasksEventInfo = GetEventsForTask.objects.filter(**tquery).extra(
+            where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid', 'totevrem', 'totev')
+
+        #We do it because we intermix raw and queryset queries. With next new_cur.execute tasksEventInfo cleares
+        for tasksEventInfoItem in tasksEventInfo:
+            listItem = {}
+            listItem["jeditaskid"] = tasksEventInfoItem["jeditaskid"]
+            listItem["totevrem"] = tasksEventInfoItem["totevrem"]
+            listItem["totev"] = tasksEventInfoItem["totev"]
+            eventInfoDict[tasksEventInfoItem["jeditaskid"]] = listItem
+
+
+    # clean temporary table
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
 
     taskids = {}
@@ -6702,14 +6784,20 @@ def taskList(request):
                     newtasks.append(task)
         tasks = newtasks
 
-    # Forming hashtag list for summary attribute table
     hashtags = []
     for task in tasks:
+        # Forming hashtag list for summary attribute table
         if task['jeditaskid'] in taskids.keys():
             task['hashtag'] = taskids[task['jeditaskid']]
             for hashtag in taskids[task['jeditaskid']].split(','):
                 if hashtag not in hashtags:
                     hashtags.append(hashtag)
+
+        if eventservice:
+            # Addind event data
+            if task['jeditaskid'] in eventInfoDict.keys():
+                task['eventsData'] = eventInfoDict[task['jeditaskid']]
+
     if len(hashtags) > 0:
         hashtags = sorted(hashtags, key=lambda h: h.lower())
 
@@ -8468,7 +8556,7 @@ def taskInfo(request, jeditaskid=0):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-
+@login_customrequired
 def harvesterWorkersDash(request):
     valid, response = initRequest(request)
 
@@ -8518,7 +8606,7 @@ def harvesterWorkersDash(request):
 
 
 # SELECT COMPUTINGSITE,STATUS, count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS WHERE SUBMITTIME > (sysdate - interval '35' day) group by COMPUTINGSITE,STATUS
-
+@login_customrequired
 def harvesterWorkList(request):
     valid, response = initRequest(request)
     query,extra, LAST_N_HOURS_MAX = setupView(request, hours=24*3, wildCardExt=True)
@@ -8558,7 +8646,7 @@ def harvesterWorkList(request):
     response = render_to_response('harvworkerslist.html', data, content_type='text/html')
     return response
 
-
+@login_customrequired
 def harvesterWorkerInfo(request):
     valid, response = initRequest(request)
     harvesterid = None
@@ -10263,6 +10351,7 @@ def ttc(request):
 
 
 #@cache_page(60 * 20)
+@login_customrequired
 def workingGroups(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -11612,6 +11701,8 @@ def statpixel(request):
     return HttpResponse(pixel_, content_type='image/gif')
 
 #@cache_page(60 * 20)
+
+@login_customrequired
 def globalshares(request):
     valid, response = initRequest(request)
     data = getCacheEntry(request, "globalshares")

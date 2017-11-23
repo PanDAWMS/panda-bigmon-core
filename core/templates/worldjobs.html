@@ -27,6 +27,14 @@
 <td class="tablesection">cancelled</td>
 <td class="tablesection">merging</td>
 <td class="tablesection">closed</td>
+
+{% if requestParams.es %}
+    <td class="tablesection">Events in failed jobs</td>
+    <td class="tablesection">Events in finished jobs</td>
+    <td class="tablesection">Events in merging jobs</td>
+{% endif %}
+
+
 </tr>
 
 {% for nucleus, nuclval in nucleussummary.items %}
@@ -59,6 +67,13 @@
 <td class="tablesection"> <a href="{{nosorturl}}sortby=cancelled">cancelled</a> </td>
 <td class="tablesection"> <a href="{{nosorturl}}sortby=merging">merging</a> </td>
 <td class="tablesection"> <a href="{{nosorturl}}sortby=closed">closed</a> </td>
+
+{% if requestParams.es %}
+    <td class="tablesection">Events in failed jobs</td>
+    <td class="tablesection">Events in finished jobs</td>
+    <td class="tablesection">Events in merging jobs</td>
+{% endif %}
+
 </tr>
 
    {% get_renderedrow type="world_computingsitesummary" nucleus=nucleus nuclval=nuclval estailtojobslinks=estailtojobslinks hours=hours%}
