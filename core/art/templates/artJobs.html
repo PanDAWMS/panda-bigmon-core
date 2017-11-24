@@ -95,7 +95,7 @@ function loadJobSubResult(testname, urltail) {
                                     {% for ntname, jobs in tags.items %}{% for pandaid, jobparams in jobs.jobs.items %}
                                       {% if 'testresult' in jobparams or 'testexitcode' in jobparams %}
                                           <ul class="no-bullet" style="margin-left: 1rem">
-                                            {% if 'testexitcode' in jobparams %}
+                                            {% if 'testexitcode' in jobparams and jobparams.testexitcode %}
                                                 <li>Test exit code: {{ jobparams.testexitcode }}</li>
                                             {% endif %}
                                             <ol>
@@ -132,18 +132,20 @@ function loadJobSubResult(testname, urltail) {
                                                         ---
                                                     </div>
                                                 {% endif %}
-                                                {% if ntaglist|length == 1 and not 'testresult' in job and job.guid and job.lfn and job.scope %}
-                                                    <script>
-                                                        $.ajax({
-                                                            url: '{% url 'artJobSubResults' %}',
-                                                            data: 'guid={{ job.guid}}&lfn={{ job.lfn }}&scope={{ job.scope }}&jeditaskid={{ job.jeditaskid }}&pandaid={{ pandaid }}',
-                                                            async: true
-                                                        })
-                                                         .done(function (response) {
-                                                            document.getElementById("div-subresults-" + "{{ test }}-" + "{{ pandaid }}").innerHTML = response;
-                                                            document.getElementById("div-subresults-plussign-" + "{{ test }}-" + "{{ pandaid }}").parentNode.removeChild(document.getElementById("div-subresults-plussign-" + "{{ test }}-" + "{{ pandaid }}"));
-                                                        });
-                                                    </script>
+                                                {% if ntaglist|length == 1 and not job.testresult and not job.testresult|length == 0 and job.guid and job.lfn and job.scope %}
+                                                    {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
+                                                        <script>
+                                                            $.ajax({
+                                                                url: '{% url 'artJobSubResults' %}',
+                                                                data: 'guid={{ job.guid}}&lfn={{ job.lfn }}&scope={{ job.scope }}&jeditaskid={{ job.jeditaskid }}&pandaid={{ pandaid }}',
+                                                                async: true
+                                                            })
+                                                             .done(function (response) {
+                                                                document.getElementById("div-subresults-" + "{{ test }}-" + "{{ pandaid }}").innerHTML = response;
+                                                                document.getElementById("div-subresults-plussign-" + "{{ test }}-" + "{{ pandaid }}").parentNode.removeChild(document.getElementById("div-subresults-plussign-" + "{{ test }}-" + "{{ pandaid }}"));
+                                                            });
+                                                        </script>
+                                                    {% endif %}
                                                 {% endif %}
                                             {% endfor %}
                                         {% else %}
