@@ -10320,6 +10320,8 @@ def ttc(request):
         taskrec['ttc'] = taskrec['ttcrequested']
 
     taskevents = GetEventsForTask.objects.filter(**query).values('jeditaskid', 'totev', 'totevrem')
+
+    taskev = None
     if len(taskevents) > 0:
         taskev = taskevents[0]
     cur = connection.cursor()
@@ -10339,7 +10341,10 @@ def ttc(request):
         job['ttctime'] = job['endtime']
         job['starttime'] = job['starttime'].strftime("%Y-%m-%d %H:%M:%S")
         neventsSum += job['nevents']
-        job['tobedonepct'] = 100. - neventsSum * 100. / taskev['totev']
+        if taskev:
+            job['tobedonepct'] = 100. - neventsSum * 100. / taskev['totev']
+        else:
+            job['tobedonepct'] = None
     taskprofile.insert(len(taskprofile), {'endtime': taskprofile[len(taskprofile) - 1]['endtime'],
                                           'starttime': taskprofile[len(taskprofile) - 1]['starttime'],
                                           'ttctime': taskrec['ttc'].strftime("%Y-%m-%d %H:%M:%S"),
