@@ -103,6 +103,9 @@ from collections import OrderedDict
 
 from django.contrib.auth import logout as auth_logout
 
+inilock = Lock()
+
+
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
@@ -426,9 +429,11 @@ def initRequest(request, callselfmon = True):
                     return False, render_to_response('errorPage.html', data, content_type='text/html')
             request.session['requestParams'][p.lower()] = pval
     setupSiteInfo(request)
-    if len(errorFields) == 0:
-        codes = ErrorCodes.ErrorCodes()
-        errorFields, errorCodes, errorStages = codes.getErrorCodes()
+
+    with inilock:
+        if len(errorFields) == 0:
+            codes = ErrorCodes.ErrorCodes()
+            errorFields, errorCodes, errorStages = codes.getErrorCodes()
     return True, None
 
 
