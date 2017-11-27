@@ -307,9 +307,9 @@
     <div class="right">
     {#      {% block header-nav-chain %}#}
           <span class="hide-for-small"><font size=-1>
-              {% if request.session.hostname %}{{ request.session.hostname }} {% endif %}
+              {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
               {% if built != None %} {{ built }}, {% endif %}
-               <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a>
+               <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a> |
 {#              {% if request.session.ADFS_EMAIL %}&nbsp;You are logged as {{ request.session.ADFS_FULLNAME }}(#}
 {#                  {% if request.session.ADFS_LOGIN %}{{request.session.ADFS_LOGIN}}{% endif %}#}
 {#                  ,#}
