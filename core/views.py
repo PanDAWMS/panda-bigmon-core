@@ -4422,16 +4422,20 @@ def userInfo(request, user=''):
     if not valid: return response
     fullname = ''
     login = ''
+    userQueryTask = None
+    userQueryJobs = None
+
     if user == '':
         if 'user' in request.session['requestParams']: user = request.session['requestParams']['user']
         if 'produsername' in request.session['requestParams']: user = request.session['requestParams']['produsername']
+
+        # Here we serve only personal user pages. No user parameter specified
         if user == '':
             if request.user.is_authenticated():
                 login = user = request.user.username
                 fullname = request.user.first_name + ' ' + request.user.last_name
-            # if 'ADFS_LOGIN' in request.session:
-            #     login = user = request.session['ADFS_LOGIN']
-            #     fullname = request.session['ADFS_FULLNAME']
+                userQueryTask = Q(username=login) | Q(username__startswith=fullname)
+                userQueryJobs = Q(produsername=login) | Q(produsername__startswith=fullname)
 
     if 'days' in request.session['requestParams']:
         days = int(request.session['requestParams']['days'])
@@ -4449,12 +4453,13 @@ def userInfo(request, user=''):
     enddate = timezone.now().strftime(defaultDatetimeFormat)
     query = {'modificationtime__range': [startdate, enddate]}
 
-    #
-    # TODO: if login we should set exact match
-    #
+    if userQueryTask is None:
+        query['username__icontains'] = user.strip()
+        tasks = JediTasks.objects.filter(**query).values()
+    else:
+        tasks = JediTasks.objects.filter(**query).filter(userQueryTask).values()
 
-    query['username__icontains'] = user.strip()
-    tasks = JediTasks.objects.filter(**query).values()
+
     tasks = sorted(tasks, key=lambda x: -x['jeditaskid'])
     tasks = cleanTaskList(request, tasks)
     ntasks = len(tasks)
@@ -4469,22 +4474,39 @@ def userInfo(request, user=''):
     ## Jobs
     limit = 5000
     query = setupView(request, hours=72, limit=limit)
-    #    query['produsername__icontains'] = user.strip()
-
-    #
-    # TODO:  if login we should set exact match
-    #
-
-    query['produsername__startswith'] = user.strip()
     jobs = []
     values = 'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock',
-    jobs.extend(Jobsdefined4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-    jobs.extend(Jobsactive4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-    jobs.extend(Jobswaiting4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-    jobs.extend(Jobsarchived4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+
+    if userQueryJobs is None:
+        query['produsername__startswith'] = user.strip()
+        jobs.extend(Jobsdefined4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(Jobsactive4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(Jobswaiting4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(Jobsarchived4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+        if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
+            jobs.extend(Jobsarchived.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+    else:
+        jobs.extend(Jobsdefined4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(Jobsactive4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(Jobswaiting4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(Jobsarchived4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
+
+
+        # Here we go to an archive. Separation OR condition is done to enforce Oracle to perform indexed search.
+        if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
+            query['produsername__startswith'] = user.strip() #.filter(userQueryJobs)
+            archjobs = []
+            # This two filters again to force Oracle search
+            archjobs.extend(Jobsarchived.objects.filter(**query).filter(Q(produsername=user.strip()))[:request.session['JOB_LIMIT']].values(*values))
+            if len(archjobs) > 0:
+                jobs = jobs+archjobs
+            elif len(fullname) > 0:
+                #del query['produsername']
+                query['produsername__startswith'] = fullname
+                jobs.extend(Jobsarchived.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+
+
     jobsetids = None
-    if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
-        jobs.extend(Jobsarchived.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
     # if len(jobs) < limit and ntasks == 0:
     #             ## try at least to find some old jobsets
     #             startdate = timezone.now() - timedelta(hours=30*24)
@@ -4493,6 +4515,7 @@ def userInfo(request, user=''):
     #             query = { 'modificationtime__range' : [startdate, enddate] }
     #             query['produsername'] = user
     #             jobsetids = Jobsarchived.objects.filter(**query).values('jobsetid').distinct()
+
     jobs = cleanJobList(request, jobs)
     if fullname != '':
         query = {'name': fullname}
