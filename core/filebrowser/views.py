@@ -39,7 +39,10 @@ def index(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('filebrowser/filebrowser_index.html', data, content_type='text/html')
+        if 'json' not in request.GET:
+            response = render_to_response('filebrowser/filebrowser_index.html', data, content_type='text/html')
+        else:
+            response = HttpResponse(json.dumps(data), content_type='text/html')
         return response
 
     errors = {}
