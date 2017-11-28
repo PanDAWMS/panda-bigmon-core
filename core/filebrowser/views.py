@@ -39,11 +39,7 @@ def index(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        if 'json' not in request.GET:
-            response = render_to_response('filebrowser/filebrowser_index.html', data, content_type='text/html')
-        else:
-            response = HttpResponse(json.dumps(data), content_type='text/html')
-        return response
+        return render_to_response('filebrowser/filebrowser_index.html', data, content_type='text/html')
 
     errors = {}
 
@@ -139,10 +135,11 @@ def index(request):
         'HOSTNAME': get_filebrowser_hostname() \
 #        , 'new_contents': new_contents
     }
-    setCacheEntry(request, "filebrowser", json.dumps(data, cls=DateEncoder), 60 * cacheTime)
+
     if 'json' not in request.GET:
         return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
     else:
+        setCacheEntry(request, "filebrowser", json.dumps(data, cls=DateEncoder), 60 * cacheTime)
         return HttpResponse(json.dumps(data), content_type='text/html')
 
 
