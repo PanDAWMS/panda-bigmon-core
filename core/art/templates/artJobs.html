@@ -83,7 +83,7 @@ function loadJobSubResult(testname, urltail) {
 {#                                    {{ test }}#}
                                 {% if ntaglist|length == 1 %}
                                     {% for ntname, jobs in tags.items %}{% for pandaid, jobparams in jobs.jobs.items %}
-                                      {% if not 'testresult' in jobparams %}
+                                      {% if not jobparams.testresult or not jobparams.testresult|length >= 0 %}
                                           {% if jobparams.guid and jobparams.lfn and jobparams.scope %}
                                             <i id="div-subresults-plussign-{{ test }}-{{ pandaid }}" class="fi-plus"></i>
                                           {% endif %}
@@ -93,7 +93,7 @@ function loadJobSubResult(testname, urltail) {
                                     {{ test }}
                                 {% if ntaglist|length == 1 %}
                                     {% for ntname, jobs in tags.items %}{% for pandaid, jobparams in jobs.jobs.items %}
-                                      {% if 'testresult' in jobparams or 'testexitcode' in jobparams %}
+                                      {% if jobparams.testresult or jobparams.testexitcode %}
                                           <ul class="no-bullet" style="margin-left: 1rem">
                                             {% if 'testexitcode' in jobparams and jobparams.testexitcode %}
                                                 <li>Test exit code: {{ jobparams.testexitcode }}</li>
@@ -132,8 +132,9 @@ function loadJobSubResult(testname, urltail) {
                                                         ---
                                                     </div>
                                                 {% endif %}
-                                                {% if ntaglist|length == 1 and not job.testresult and not job.testresult|length == 0 and job.guid and job.lfn and job.scope %}
-                                                    {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
+                                                {% if ntaglist|length == 1 and job.guid and job.lfn and job.scope %}
+                                                    {% if not job.testresult or not job.testresult|length >= 0 %}
+                                                        {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
                                                         <script>
                                                             $.ajax({
                                                                 url: '{% url 'artJobSubResults' %}',
@@ -145,6 +146,7 @@ function loadJobSubResult(testname, urltail) {
                                                                 document.getElementById("div-subresults-plussign-" + "{{ test }}-" + "{{ pandaid }}").parentNode.removeChild(document.getElementById("div-subresults-plussign-" + "{{ test }}-" + "{{ pandaid }}"));
                                                             });
                                                         </script>
+                                                        {% endif %}
                                                     {% endif %}
                                                 {% endif %}
                                             {% endfor %}

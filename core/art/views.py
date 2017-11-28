@@ -657,8 +657,8 @@ def getJobSubResults(request):
     jeditaskid = request.session['requestParams']['jeditaskid'] if 'jeditaskid' in request.session['requestParams'] else None
     data = getJobReport(guid, lfn, scope)
     results = getARTjobSubResults(data)
-    if len(results) > 0:
-        saveJobSubResults(results,jeditaskid, pandaid)
+    # if len(results) > 0:
+    #     saveJobSubResults(results,jeditaskid, pandaid)
 
     data = {
         'requestParams': request.session['requestParams'],
