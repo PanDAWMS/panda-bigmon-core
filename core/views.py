@@ -7714,7 +7714,8 @@ def runningProdTasks(request):
             enddate = timezone.now().strftime(defaultDatetimeFormat)
             tquery['modificationtime__range'] = [startdate, enddate]
 
-        wildCardExtension = wildCardExtension.replace("((UPPER(status)  LIKE UPPER('all')))", "(1=1)")
+        if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension:
+            wildCardExtension = wildCardExtension.replace("((UPPER(status)  LIKE UPPER('all')))", "(1=1)")
         tasks = []
         tasks.extend(RunningProdTasksModel.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension]).exclude(
             **exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)[:])
