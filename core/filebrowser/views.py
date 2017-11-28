@@ -11,13 +11,14 @@ from django.shortcuts import render_to_response, render
 from django.template import RequestContext, loader
 from django.template.loader import get_template
 from django.conf import settings
+from django.utils.cache import patch_response_headers
 #from django.core.urlresolvers import reverse
 #from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_filebrowser_vo, \
 get_filebrowser_hostname
 
 from core.common.models import Filestable4
-
+from core.views import getCacheEntry, setCacheEntry, DateEncoder
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
 
@@ -30,6 +31,17 @@ def index(request):
         :type request: django.http.HttpRequest
         
     """
+
+    # set cache time to store - 10 days
+    cacheTime = 10*24*60
+    # Here we try to get cached data
+    data = getCacheEntry(request, "filebrowser")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('filebrowser/filebrowser_index.html', data, content_type='text/html')
+        return response
+
     errors = {}
 
     ### check that all expected parameters are in URL
@@ -124,6 +136,7 @@ def index(request):
         'HOSTNAME': get_filebrowser_hostname() \
 #        , 'new_contents': new_contents
     }
+    setCacheEntry(request, "filebrowser", json.dumps(data, cls=DateEncoder), 60 * cacheTime)
     if 'json' not in request.GET:
         return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
     else:
