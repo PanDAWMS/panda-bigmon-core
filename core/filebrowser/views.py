@@ -137,9 +137,9 @@ def index(request):
     }
 
     if 'json' not in request.GET:
+        setCacheEntry(request, "filebrowser", json.dumps(data, cls=DateEncoder), 60 * cacheTime)
         return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
     else:
-        setCacheEntry(request, "filebrowser", json.dumps(data, cls=DateEncoder), 60 * cacheTime)
         return HttpResponse(json.dumps(data), content_type='text/html')
 
 
