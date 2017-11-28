@@ -7703,7 +7703,8 @@ def runningProdTasks(request):
     if 'eventservice' in tquery and tquery['eventservice'] == 1:
 
         setupView(request)
-        del tquery['status__in']
+        if 'status__in' in tquery:
+            del tquery['status__in']
         excludedTimeQuery = copy.deepcopy(tquery)
 
         if ('days' in request.GET) and (request.GET['days']):
