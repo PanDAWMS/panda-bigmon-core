@@ -7699,8 +7699,11 @@ def runningProdTasks(request):
         sortby = 'creationdate-desc'
     oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
 
-    if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension and tquery['eventservice'] == 1:
+#    if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension and tquery['eventservice'] == 1:
+    if tquery['eventservice'] == 1:
+
         setupView(request)
+        del tquery['status__in']
         excludedTimeQuery = copy.deepcopy(tquery)
 
         if ('days' in request.GET) and (request.GET['days']):
