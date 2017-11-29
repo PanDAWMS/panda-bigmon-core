@@ -2681,7 +2681,7 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
     is_json = False
 
     # We do this check to always rebuild cache for the page when it called from the crawler
-    if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
+    if (('HTTP_X_FORWARDED_FOR' in request.META) and (request.META['HTTP_X_FORWARDED_FOR'] in notcachedRemoteAddress) and
                 skipCentralRefresh == False):
         return None
 
@@ -12341,7 +12341,7 @@ def serverStatusHealth(request):
 #logging.basicConfig()
 @never_cache
 def loginauth2(request):
-    
+
     if 'next' in request.GET:
         next = str(request.GET['next'])
     elif 'HTTP_REFERER' in request.META:
