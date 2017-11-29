@@ -206,6 +206,12 @@ VOMODE = ' '
 
 def login_customrequired(function):
   def wrap(request, *args, **kwargs):
+
+      #we check here if it is a crawler:
+      x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+      if x_forwarded_for and x_forwarded_for in notcachedRemoteAddress:
+          return function(request, *args, **kwargs)
+
       if request.user.is_authenticated() or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
           return function(request, *args, **kwargs)
       else:
@@ -2748,7 +2754,7 @@ def cache_filter(timeout):
         return _wrapped_view
     return decorator
 
-
+@login_customrequired
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
     dkey = digkey(request)
@@ -3246,6 +3252,8 @@ def importToken(errsByCount):
         print len(errsByCount)
     return newErrsByCount
 
+
+@login_customrequired
 def summaryErrorsList(request):
     initRequest(request)
     notTkLive = 0
@@ -3771,6 +3779,7 @@ def eventsInfo(request, mode=None, param=None):
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
 
+@login_customrequired
 @csrf_exempt
 def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     valid, response = initRequest(request)
@@ -4259,7 +4268,7 @@ class DateTimeEncoder(json.JSONEncoder):
         if isinstance(o, datetime):
             return o.isoformat()
 
-
+@login_customrequired
 def userList(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -4753,6 +4762,7 @@ def userInfo(request, user=''):
         endSelfMonitor(request)
         return HttpResponse(json.dumps(resp,default=datetime_handler),content_type='text/html')
 
+@login_customrequired
 def siteList(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -4901,7 +4911,7 @@ def siteList(request):
         endSelfMonitor(request)
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
-
+@login_customrequired
 def siteInfo(request, site=''):
     valid, response = initRequest(request)
     if not valid: return response
@@ -5138,7 +5148,7 @@ def wnSummary(query):
         Count('jobstatus')).order_by('modificationhost', 'jobstatus'))
     return summary
 
-
+@login_customrequired
 def wnInfo(request, site, wnname='all'):
     """ Give worker node level breakdown of site activity. Spot hot nodes, error prone nodes. """
 
@@ -5892,6 +5902,7 @@ def dashWorldProduction(request):
     return worldjobs(request, view='production')
 
 
+@login_customrequired
 def worldjobs(request, view='production'):
     valid, response = initRequest(request)
 
@@ -5985,6 +5996,7 @@ def worldjobs(request, view='production'):
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
 
+@login_customrequired
 def worldhs06s(request):
     valid, response = initRequest(request)
 
@@ -6669,7 +6681,7 @@ def taskESExtendedInfo(request):
         estaskstr += " %s(%s) " % (s['statusname'], s['count'])
     return HttpResponse(estaskstr, content_type='text/html')
 
-
+@login_customrequired
 @csrf_exempt
 def taskList(request):
     valid, response = initRequest(request)
@@ -7419,6 +7431,7 @@ def report(request):
     return response
 
 
+@login_customrequired
 def runningMCProdTasks(request):
     valid, response = initRequest(request)
 
@@ -7598,7 +7611,7 @@ def runningMCProdTasks(request):
         return response
 
 
-
+@login_customrequired
 def runningProdTasks(request):
     valid, response = initRequest(request)
 
@@ -7833,7 +7846,7 @@ def runningProdTasks(request):
         return response
 
 
-
+@login_customrequired
 def runningDPDProdTasks(request):
     valid, response = initRequest(request)
 
@@ -8072,7 +8085,7 @@ def taskESprofileplot(request):
         # red.save(response, "JPEG")
         # return response
 
-
+@login_customrequired
 def taskInfo(request, jeditaskid=0):
     try:
         jeditaskid = int(jeditaskid)
@@ -9295,6 +9308,7 @@ def digkey (rq):
     return hashkey.hexdigest()
 
 
+@login_customrequired
 def errorSummary(request):
     valid, response = initRequest(request)
     thread = None
@@ -9676,7 +9690,7 @@ def removeParam(urlquery, parname, mode='complete'):
             if urlquery.endswith('?') or urlquery.endswith('&'): urlquery = urlquery[:len(urlquery) - 1]
     return urlquery
 
-
+@login_customrequired
 def incidentList(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -10496,6 +10510,7 @@ def workingGroups(request):
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
 
+@login_customrequired
 def datasetInfo(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -10572,7 +10587,7 @@ def datasetInfo(request):
     else:
         return HttpResponse(json.dumps(dsrec), content_type='text/html')
 
-
+@login_customrequired
 def datasetList(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -10937,7 +10952,7 @@ def fileList(request):
         return HttpResponse(json.dumps(files), content_type='text/html')
 
 
-#@cache_page(60 * 20)
+@login_customrequired
 def workQueues(request):
     valid, response = initRequest(request)
     data = getCacheEntry(request, "workQueues")
