@@ -116,11 +116,7 @@ function toggleDetailDisplay(className) {
 <a href="{% url 'jobInfo' pmergejob %}">{{ pmergejob }}</a>&nbsp;
 {% endfor %}
 {% endif %}
-<br/><br/>
-<b>Jobs count with different file status: </b><br/>
-{% for mykey,myvalue in cntStatus_test.items %}
-    {{ mykey }} : {{ myvalue }}
-{% endfor %}
+
 </td></tr></table>
 <p>
 
