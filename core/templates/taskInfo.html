@@ -271,9 +271,9 @@ function buildPlots(classname) {
 </tr>
  <tr>
 {% for state in jobsummary %}
-{% if newjobsummary %}
+{% if newjobsummary_test %}
 
-{% for newstate in newjobsummary %}
+{% for newstate in newjobsummary_test %}
 {% if forloop.counter == forloop.parentloop.counter %}
 <td {% if state.count > 0 or newstate.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 or newstate.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&jobstatus={{state.name}}&display_limit=100"><span class='{{state.name}}_fill'>{{ state.count }} ({{ newstate.count }})</span></a> </b> {% endif %} </td>
 {%  endif %}
@@ -306,11 +306,12 @@ function buildPlots(classname) {
 {% endfor %}
 </tr><tr>
 {% for state in jobsummaryPMERGE %}
-{% if newjobsummaryPMERGE %}
-{% for newstate in newjobsummaryPMERGE %}
+{% if newjobsummaryPMERGE_test %}
+{% for newstate in newjobsummaryPMERGE_test %}
 {% if forloop.counter == forloop.parentloop.counter %}
+
+<td {% if state.count > 0 or newstate.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 or newstate.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&display_limit=100&processingtype=pmerge"><span class='{{state.name}}_fill'>{{ state.count }} ({{ newstate.count }})</span></a> </b> {% endif %} </td>
 {% endif %}
-<td {% if state.count > 0 or newstate.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 or newstate.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&display_limit=100&processingtype=pmerge"><span class='{{state.name}}_fill'>{{ state.count }} ({{ newstate.count }}</span></a> </b> {% endif %} </td>
 {% endfor %}
 {% else %}
 <td {% if state.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}&display_limit=100&processingtype=pmerge"><span class='{{state.name}}_fill'>{{ state.count }}</span></a> </b> {% endif %} </td>

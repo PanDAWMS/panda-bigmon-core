@@ -94,31 +94,31 @@ function toggleDetailDisplay(className) {
 {% endif %}
 
 
-{% if newndrop > 0 %}
+{% if newndrop_test > 0 %}
 <table width=900><tr><td class='highlightcell'>
 <b style="font-size: 24px">New drop algorithm</b><br/><br/>
-<b>{{ newndrop }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
+<b>{{ newndrop_test }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('newretries');"><br>Click to show/hide dropped jobs</a>
 <br><a href="{{xurl}}&mode=nodrop">Switch to nodrop mode</a>
 <div class="newretries" style="display:none">
 <font size=-1>
 <br>Dropped:<br>
-{% for pandaID in pandaIDList %}
+{% for pandaID in pandaIDList_test %}
 <a href="{% url 'jobInfo' pandaID %}">{{ pandaID }}</a>&nbsp;
 {% endfor %}
 </font>
 </div>
 
-{% if ndropPmerge > 0 %}
+{% if ndropPmerge_test > 0 %}
  <br/><br/>
-<b>{{ ndropPmerge }} Pmerge jobs. Pmerge jobs:</b><br/>
-{% for pmergejob in droppedPmerge2 %}
+<b>{{ ndropPmerge_test }} Pmerge jobs. Pmerge jobs:</b><br/>
+{% for pmergejob in droppedPmerge2_test %}
 <a href="{% url 'jobInfo' pmergejob %}">{{ pmergejob }}</a>&nbsp;
 {% endfor %}
 {% endif %}
 <br/><br/>
 <b>Jobs count with different file status: </b><br/>
-{% for mykey,myvalue in cntStatus.items %}
+{% for mykey,myvalue in cntStatus_test.items %}
     {{ mykey }} : {{ myvalue }}
 {% endfor %}
 </td></tr></table>

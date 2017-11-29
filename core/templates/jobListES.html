@@ -1,5 +1,5 @@
 {% extends "_base_core.html" %}
-
+{% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA ES jobs{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA Event Service jobs<font size=-1>{{ viewParams.selection|safe }}
@@ -39,17 +39,73 @@
 <br>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.
 {% endif %}
 
+<script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+
+<script type="text/javascript">
+
+function toggleDetailDisplay(className) {
+   el = document.getElementsByClassName(className)
+   for (i=0; i<el.length; i++) {
+     el[i].style.display = (el[i].style.display=="none") ? "" : "none";
+   }
+}
+
+	$(document).ready(function() {
+	    $(".comment").shorten();
+	});
+
+</script>
+
+
 {% if ndrops > 0 %}
 <table width=900><tr><td class='highlightcell'>
 <b>{{ ndrops }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
+<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('retries');"><br>Click to show/hide dropped jobs</a>
+
+<div class="retries" style="display:none">
 <font size=-1>
 <br>Dropped (retry):<br>
 {% for drop in droplist %}
 <a href="{% url 'jobInfo' drop.pandaid %}">{{ drop.pandaid }}</a>&nbsp;(<a href="{% url 'jobInfo' drop.newpandaid %}">{{ drop.newpandaid }}</a>) &nbsp;
 {% endfor %}
 </font>
-</tr></td></table>
+</div>
+</td></tr></table>
 <p>
+{% endif %}
+
+
+{% if newndrop_test > 0 %}
+<table width=900><tr><td class='highlightcell'>
+<b style="font-size: 24px">New drop algorithm</b><br/><br/>
+<b>{{ newndrop_test }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
+<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('newretries');"><br>Click to show/hide dropped jobs</a>
+
+<div class="newretries" style="display:none">
+<font size=-1>
+<br>Dropped:<br>
+{% for pandaID in pandaIDList_test %}
+<a href="{% url 'jobInfo' pandaID %}">{{ pandaID }}</a>&nbsp;
+{% endfor %}
+</font>
+</div>
+
+{% if ndropPmerge_test > 0 %}
+ <br/><br/>
+<b>{{ ndropPmerge_test }} Pmerge jobs. Pmerge jobs:</b><br/>
+{% for pmergejob in droppedPmerge2_test %}
+<a href="{% url 'jobInfo' pmergejob %}">{{ pmergejob }}</a>&nbsp;
+{% endfor %}
+{% endif %}
+{% if cntStatus_test %}
+    <br/><br/>
+<b>Jobs count with different file status: </b><br/>
+{% for mykey,myvalue in cntStatus_test.items %}
+    {{ mykey }} : {{ myvalue }}
+{% endfor %}{% endif %}
+</td></tr></table>
+<p>
+
 {% endif %}
 
 {% if jobList %}

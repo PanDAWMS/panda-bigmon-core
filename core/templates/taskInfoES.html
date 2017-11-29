@@ -324,8 +324,8 @@ function buildPlots(classname) {
 {% endfor %}
 </tr><tr>
 {% for state in jobsummary %}
-{% if newjobsummary %}
-{% for newstate in newjobsummary %}
+{% if newjobsummary_test %}
+{% for newstate in newjobsummary_test %}
 {% if forloop.counter == forloop.parentloop.counter %}
 <td {% if state.count > 0 or newstate.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 or newstate.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&eventservice=not2&display_limit=100"><span class='{{state.name}}_fill'>{% if state.count > 0 %}{{ state.count }} ({{ newstate.count }}) {% else %} 0 ({{ newstate.count }}) {% endif %}</span></a> </b> {% endif %} </td>
 {% endif %}
@@ -350,8 +350,8 @@ function buildPlots(classname) {
 {% endfor %}
 </tr><tr>
 {% for state in jobsummaryESMerge %}
-{% if newjobsummaryESMerge %}
-{% for newstate in newjobsummaryESMerge %}
+{% if newjobsummaryESMerge_test %}
+{% for newstate in newjobsummaryESMerge_test %}
 {% if forloop.counter == forloop.parentloop.counter %}
 <td {% if state.count > 0 or newstate.count > 0 %} class='{{state.name}}_fill' {% endif %}> {% if state.count > 0 or newstate.count > 0 %} <b> <a href="{% url 'jobList' %}?jeditaskid={{task.jeditaskid}}&jobstatus={{state.name}}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{%  endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{%  endifequal %}&display_limit=100&eventservice=2"><span class='{{state.name}}_fill'>{% if state.count > 0 %}{{ state.count }} ({{ newstate.count }}) {% else %} 0 ({{ newstate.count }}) {% endif%}</span></a> </b> {% endif %} </td>
 {% endif %}
@@ -501,8 +501,8 @@ function buildPlots(classname) {
 </tr>
     <tr>
 {% for state in eventssummary %}
-{% if neweventssummary %}
-{% for newstate in neweventssummary %}
+{% if neweventssummary_test %}
+{% for newstate in neweventssummary_test %}
 {% if forloop.counter == forloop.parentloop.counter %}
 <td {% if state.count > 0 or newstate.count > 0 %} class='{{state.statusname}}_fill' {% endif %}> {% if state.count > 0 or newstate.count > 0 %}
     <b> <span class='{{state.statusname}}_fill'>

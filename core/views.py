@@ -103,6 +103,7 @@ from collections import OrderedDict
 
 from django.contrib.auth import logout as auth_logout
 
+from libs import dropalgorithm
 inilock = Lock()
 
 
@@ -1039,59 +1040,6 @@ def saveSettings(request):
         data = {"error": "no jeditaskid supplied"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
-
-def dropRetrielsJobsV2(jobs,jeditaskid,isReturnDroppedPMerge):
-
-    droppedPmerge = set()
-
-    sqlRequest = '''
-    select pandaid, status from (select fileid, pandaid, status, attemptnr, max(attemptnr) over (partition by fileid) as lastattempt  
-    from atlas_panda.filestable4 
-    where  jeditaskid = %i  and type like 'input') WHERE lastattempt!= attemptnr
-    ''' %(jeditaskid)
-    cur = connection.cursor()
-    cur.execute(sqlRequest)
-    droppedIDs = cur.fetchall()
-
-
-    hashDroppedIDs  = {}
-    cntDropIDsStatus = {}
-    pandaDropIDList = set()
-    for droppedID in droppedIDs:
-        hashDroppedIDs.setdefault(droppedID[1], set()).add(droppedID[0])
-        pandaDropIDList.add(droppedID[0])
-    for status in hashDroppedIDs.keys():
-        cntDropIDsStatus[status] = len(hashDroppedIDs[status])
-
-    newjobs = []
-    for job in jobs:
-        pandaid = job['pandaid']
-        if not isEventService(job):
-            if pandaid not in pandaDropIDList:
-                if not isReturnDroppedPMerge:
-                    if not (job['processingtype'] == 'pmerge'):
-                        newjobs.append(job)
-                    else:
-                        droppedPmerge.add(pandaid)
-                else: newjobs.append(job)
-        else:
-            #if (job['pandaid'] in pandaDropIDList and job['jobstatus'] in ('finished', 'merging')):
-                #if (hashRetries[job['pandaid']]['relationtype'] == ('retry')):
-                #    dropJob = 1
-            #if (job['jobsetid'] in hashRetries) and (hashRetries[job['jobsetid']]['relationtype'] in ('jobset_retry')):
-            # if (hashRetries[job['pandaid']]['relationtype'] == 'es_merge' and (
-            #        job['jobsubstatus'] == 'es_merge')):
-            #        dropJob = 1
-            if (job['jobstatus'] != 'closed' and (job['jobsubstatus'] not in ('es_unused', 'es_inaction'))) or (job['jobstatus'] in ('finished', 'merging')):
-                if pandaid not in pandaDropIDList:
-                    if not isReturnDroppedPMerge:
-                        if not (job['processingtype'] == 'pmerge'):
-                            newjobs.append(job)
-                        else:
-                            droppedPmerge.add(pandaid)
-                    else: newjobs.append(job)
-    return newjobs, cntDropIDsStatus, pandaDropIDList, droppedPmerge
-
 def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     # dropping algorithm for jobs belong to single task
     # !!! Necessary job's attributes:
@@ -1121,6 +1069,7 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     for job in jobs:
         dropJob = 0
         pandaid = job['pandaid']
+
         if not isEventService(job):
             if hashRetries.has_key(pandaid):
                 retry = hashRetries[pandaid]
@@ -2723,7 +2672,7 @@ def jobListPDiv(request, mode=None, param=None):
 
 def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False):
     is_json = False
-
+    data = []
     # We do this check to always rebuild cache for the page when it called from the crawler
     if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
                 skipCentralRefresh == False):
@@ -2744,7 +2693,18 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
         cache_key = '%s.%s' % (key_prefix, path.hexdigest())
     else:
         cache_key = '%s' % (key_prefix)
-    return cache.get(cache_key, None)
+    data = cache.get(cache_key, None)
+    ### Filtering data
+    if request.user.is_authenticated() and request.user.is_tester:
+        return data
+    else:
+        if data is not None:
+            data = json.loads(data)
+            for key in data.keys():
+                if '_test' in key:
+                    del data[key]
+            data = json.dumps(data)
+    return data
 
 def setCacheEntry(request, viewType, data, timeout, isData = False):
     is_json = False
@@ -2842,9 +2802,9 @@ def jobList(request, mode=None, param=None):
         'json' in request.session['requestParams']):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     elif eventservice:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr'
     else:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles'
 
     JOB_LIMITS = request.session['JOB_LIMIT']
     totalJobs = 0
@@ -2852,6 +2812,31 @@ def jobList(request, mode=None, param=None):
 
     if 'limit' in request.session['requestParams']:
         request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
+
+    droppedList =[]
+    if request.user.is_authenticated() and request.user.is_tester:
+        #for job in jobs:
+        #    if 'jeditaskid' in job: taskids[job['jeditaskid']] = 1
+    ### For drop
+        taskids = {}
+        tk = 0
+        if 'eventservice' in request.session['requestParams']:
+            isEventTask = True
+            print 'Event Service!'
+        else:
+            isEventTask = False
+        if 'jeditaskid' in request.session['requestParams']:
+            taskids[request.session['requestParams']['jeditaskid']] = 1
+        dropmode = True
+        if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+            'mode'] == 'drop': dropmode = True
+        if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+            'mode'] == 'nodrop': dropmode = False
+        isReturnDroppedPMerge=False
+        if 'processingtype' in request.session['requestParams'] and \
+            request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge=True
+        if dropmode and (len(taskids) == 1):
+            tk,droppedList,wildCardExtension = dropalgorithm.dropRetrielsJobs(taskids.keys()[0],wildCardExtension,isEventTask)
 
     if 'transferringnotupdated' in request.session['requestParams']:
         jobs = stateNotUpdated(request, state='transferring', values=values, wildCardExtension=wildCardExtension)
@@ -2926,10 +2911,24 @@ def jobList(request, mode=None, param=None):
     droppedPmerge = set()
     newdroppedPmerge = set()
     cntStatus = []
+    newjobs = copy.deepcopy(jobs)
     if dropmode and (len(taskids) == 1):
+        start = time.time()
         jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs,taskids.keys()[0],isReturnDroppedPMerge)
-        if request.user.is_authenticated() and request.user.is_tester and False:
-            newjobs, cntStatus, newdroplist, newdroppedPmerge = dropRetrielsJobsV2(jobs,taskids.keys()[0],isReturnDroppedPMerge)
+        print len(jobs)
+        print len(droplist)
+        end = time.time()
+        print(end - start)
+        if request.user.is_authenticated() and request.user.is_tester:
+            if 'eventservice' in request.session['requestParams']:
+                isEventTask = True
+                print 'Event Service!'
+            else:
+                isEventTask = False
+            start = time.time()
+            newjobs,newdroppedPmerge,newdroplist = dropalgorithm.clearDropRetrielsJobs(tk=tk,droplist=droppedList,jobs=newjobs,isEventTask=isEventTask)
+            end = time.time()
+            print(end - start)
 
     jobs = cleanJobList(request, jobs)
     jobs = reconstructJobsConsumers(jobs)
@@ -3181,11 +3180,11 @@ def jobList(request, mode=None, param=None):
             'jobsTotalCount': jobsTotalCount,
             'requestString': urlParametrs,
             'built': datetime.now().strftime("%H:%M:%S"),
-            'newndrop': len(newdroplist) if len(newdroplist) > 0 else (- len(newdroppedPmerge)),
-            'cntStatus': cntStatus,
-            'ndropPmerge':len(newdroppedPmerge),
-            'droppedPmerge2':newdroppedPmerge,
-            'pandaIDList':newdroplist,
+            'newndrop_test': len(newdroplist) if len(newdroplist) > 0 else (- len(newdroppedPmerge)),
+            'cntStatus_test': cntStatus,
+            'ndropPmerge_test':len(newdroppedPmerge),
+            'droppedPmerge2_test':newdroppedPmerge,
+            'pandaIDList_test':newdroplist,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -8203,10 +8202,11 @@ def taskInfo(request, jeditaskid=0):
             auxiliaryDict = {}
 
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
+                query, exclude={},  mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
             plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary2(
-                query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isOld')
-            if request.user.is_authenticated() and request.user.is_tester and False:
+                query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isOld')
+            if request.user.is_authenticated() and request.user.is_tester:
+                tk, droppedList, extra = dropalgorithm.dropRetrielsJobs(jeditaskid, extra, eventservice)
                 newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
                     query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isNew')
                 newplotsDictESMerge, newjobsummaryESMerge, neweventssummaryESM, newtransactionKeyESM, newjobScoutIDsESM, newhs06sSumESM = jobSummary2(
@@ -8253,20 +8253,22 @@ def taskInfo(request, jeditaskid=0):
 #)t1 CONNECT BY NOCYCLE OLDPANDAID=PRIOR NEWPANDAID ;
 
         else:
+            extra = '(1=1)'
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
             exclude = {'processingtype': 'pmerge'}
             mode = 'drop'
             if 'mode' in request.session['requestParams']:
                 mode = request.session['requestParams']['mode']
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                query, exclude=exclude, mode=mode,algorithm='isOld')
+                query, exclude=exclude,extra=extra, mode=mode,algorithm='isOld')
             plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary2(
-                query, exclude={}, mode=mode, processingtype='pmerge',algorithm='isOld')
-            if request.user.is_authenticated() and request.user.is_tester and False:
+                query, exclude={},extra=extra,  mode=mode, processingtype='pmerge',algorithm='isOld')
+            if request.user.is_authenticated() and request.user.is_tester:
+                if mode == 'drop':
+                    tk, droppedList, extra = dropalgorithm.dropRetrielsJobs(jeditaskid, extra=None, isEventTask=False)
                 newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
-                    query, exclude=exclude, mode=mode,algorithm='isNew')
-                newplotsDictPMERGE, newjobsummaryPMERGE, neweventssummaryPM, newtransactionKeyPM, newjobScoutIDsPMERGE, newhs06sSumPMERGE = jobSummary2(
-                    query, exclude={}, mode=mode, processingtype='pmerge',algorithm='isNew')
+                    query, exclude=exclude,extra=extra , mode=mode, algorithm='isNew')
+                newplotsDictPMERGE, newjobsummaryPMERGE, neweventssummaryPM, newtransactionKeyPM, newjobScoutIDsPMERGE, newhs06sSumPMERGE = jobSummary2(query=query, exclude={},extra=extra , mode=mode, processingtype='pmerge', algorithm='isNew')
 
 
     elif 'taskname' in request.session['requestParams']:
@@ -8565,10 +8567,10 @@ def taskInfo(request, jeditaskid=0):
             'eventservice': eventservice,
             'tk': transactionKey,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
-            'newjobsummary': newjobsummary,
-            'newjobsummaryPMERGE':newjobsummaryPMERGE,
-            'newjobsummaryESMerge': newjobsummaryESMerge,
-            'neweventssummary':neweventsdict,
+            'newjobsummary_test': newjobsummary,
+            'newjobsummaryPMERGE_test':newjobsummaryPMERGE,
+            'newjobsummaryESMerge_test': newjobsummaryESMerge,
+            'neweventssummary_test':neweventsdict,
         }
         data.update(getContextVariables(request))
         cacheexpiration = 60*20 #second/minute * minutes
@@ -8808,7 +8810,7 @@ def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceF
         newquery['processingtype'] = 'pmerge'
         isReturnDroppedPMerge=True
 
-    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime'
+    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid','attemptnr'
     # newquery['jobstatus'] = 'finished'
 
     # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
@@ -8879,10 +8881,19 @@ def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceF
     if mode == 'drop' and len(jobs) < 300000:
         print 'filtering retries'
         if algorithm == 'isNew':
-            jobs, cntStatus, droplist, droppedPMerge = dropRetrielsJobsV2(jobs, newquery['jeditaskid'], isReturnDroppedPMerge)
             print('new algorithm!')
+            start = time.time()
+            #jobs, cntStatus, droplist, droppedPMerge = dropRetrielsJobsV2(newjobs, newquery['jeditaskid'], isReturnDroppedPMerge, isEventTask=True)
+            jobs, droppedPMerge,droplist = dropalgorithm.clearDropRetrielsJobs(tk=0, jobs=newjobs, isEventTask=isEventServiceFlag, isReturnDroppedPMerge=isReturnDroppedPMerge)
+            end = time.time()
+            print(end - start)
+
         else:
+            start = time.time()
             jobs, droplist, droppedPMerge = dropRetrielsJobs(jobs, newquery['jeditaskid'], isReturnDroppedPMerge)
+            end = time.time()
+            print(end - start)
+
     plotsDict = {}
     plotsDict['maxpss'] = []
     plotsDict['maxpssf'] = []
