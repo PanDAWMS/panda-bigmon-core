@@ -12341,10 +12341,11 @@ def serverStatusHealth(request):
 #logging.basicConfig()
 @never_cache
 def loginauth2(request):
-    if 'HTTP_REFERER' in request.META:
-        next = extensibleURL(request, request.META['HTTP_REFERER'])
-    elif 'next' in request.GET:
+    
+    if 'next' in request.GET:
         next = str(request.GET['next'])
+    elif 'HTTP_REFERER' in request.META:
+        next = extensibleURL(request, request.META['HTTP_REFERER'])
     else:
         next = '/'
     response = render_to_response('login.html', {'request': request, 'next':next,}, content_type='text/html')
