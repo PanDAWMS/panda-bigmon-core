@@ -104,6 +104,7 @@ from collections import OrderedDict
 from django.contrib.auth import logout as auth_logout
 
 from libs import dropalgorithm
+from libs import exlib
 inilock = Lock()
 
 
@@ -2672,7 +2673,7 @@ def jobListPDiv(request, mode=None, param=None):
 
 def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False):
     is_json = False
-    data = []
+
     # We do this check to always rebuild cache for the page when it called from the crawler
     if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
                 skipCentralRefresh == False):
@@ -2693,18 +2694,8 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
         cache_key = '%s.%s' % (key_prefix, path.hexdigest())
     else:
         cache_key = '%s' % (key_prefix)
-    data = cache.get(cache_key, None)
-    ### Filtering data
-    if request.user.is_authenticated() and request.user.is_tester:
-        return data
-    else:
-        if data is not None:
-            data = json.loads(data)
-            for key in data.keys():
-                if '_test' in key:
-                    del data[key]
-            data = json.dumps(data)
-    return data
+        return cache.get(cache_key, None)
+
 
 def setCacheEntry(request, viewType, data, timeout, isData = False):
     is_json = False
@@ -2766,6 +2757,7 @@ def jobList(request, mode=None, param=None):
     data = getCacheEntry(request, "jobList")
     if data is not None:
         data = json.loads(data)
+        data=exlib.deleteTestData(request,data)
         data['request'] = request
         if data['eventservice'] == True:
             response = render_to_response('jobListES.html', data, content_type='text/html')
@@ -8100,6 +8092,7 @@ def taskInfo(request, jeditaskid=0):
 
     if data is not None:
         data = json.loads(data)
+        data = exlib.deleteTestData(request, data)
         doRefresh = False
 
         plotDict = {}
