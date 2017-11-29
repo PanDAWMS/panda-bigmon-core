@@ -153,7 +153,7 @@ urlpatterns = [
     url(r'^harvesterworkerslist/$', coremon_views.harvesterWorkList, name='harvesterworkerslist'),
     url(r'^harvesterworkerinfo/$', coremon_views.harvesterWorkerInfo, name='harvesterWorkerInfo'),
 
-
+    url(r'^testip/$', coremon_views.testip, name='testip'),
     url(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
