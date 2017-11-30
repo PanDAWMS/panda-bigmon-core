@@ -18,6 +18,7 @@ class DDOSMiddleware(object):
 
     sleepInterval = 5 #sec
     maxAllowedJSONRequstesPerHour = 600
+    notcachedRemoteAddress = ['188.184.185.129']
 
     def __init__(self):
         pass
@@ -27,7 +28,7 @@ class DDOSMiddleware(object):
         # we limit number of requests per hour
         if ('json' in request.GET):
             x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-            if not x_forwarded_for is None:
+            if (not x_forwarded_for is None) and x_forwarded_for not in self.notcachedRemoteAddress:
 #                x_forwarded_for = '141.108.38.22'
                 startdate = timezone.now() - timedelta(hours=2)
                 enddate = timezone.now()
