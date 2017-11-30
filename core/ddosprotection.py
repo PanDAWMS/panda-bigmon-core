@@ -32,7 +32,8 @@ class DDOSMiddleware(object):
                 startdate = timezone.now() - timedelta(hours=2)
                 enddate = timezone.now()
                 query = {'remote':x_forwarded_for,
-                          'qtime__range': [startdate, enddate]}
+                         'qtime__range': [startdate, enddate],
+                         'id__gte':36207430}
                 countRequest = []
                 countRequest.extend(RequestStat.objects.filter(**query).values('remote').annotate(Count('remote')))
                 if len(countRequest) > 0:
