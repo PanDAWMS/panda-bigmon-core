@@ -32,15 +32,6 @@ def index(request):
         
     """
 
-    # set cache time to store - 10 days
-    cacheTime = 10*24*60
-    # Here we try to get cached data
-    data = getCacheEntry(request, "filebrowser")
-    if data is not None:
-        data = json.loads(data)
-        data['request'] = request
-        return render_to_response('filebrowser/filebrowser_index.html', data, content_type='text/html')
-
     errors = {}
 
     ### check that all expected parameters are in URL
@@ -137,7 +128,6 @@ def index(request):
     }
 
     if 'json' not in request.GET:
-        setCacheEntry(request, "filebrowser", json.dumps(data, cls=DateEncoder), 60 * cacheTime)
         return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
     else:
         return HttpResponse(json.dumps(data), content_type='text/html')
