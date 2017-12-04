@@ -85,7 +85,8 @@ def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPM
                 else:
                     newjobs.append(job)
         retryquery = {}
-        retryquery['jeditaskid'] = jobs[0]['jeditaskid']
+        if len(jobs)>0:
+            retryquery['jeditaskid'] = jobs[0]['jeditaskid']
         if len(checkDropJobs)>0:
             random.seed()
             transactionKey = random.randrange(1000000)
