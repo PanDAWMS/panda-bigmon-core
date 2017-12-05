@@ -539,7 +539,8 @@ def updateARTJobList(request):
                                            is_job_finished=getjflag(j), testname=j['testname'],
                                            task_flag_updated=datetime.now(),
                                            job_flag_updated=datetime.now(),
-                                           result=None)
+                                           result=None,
+                                           lock_time=datetime.now())
                     insertRow.save()
                 # if getjflag(j) == 1:
                 #     insertRow.save(update_fields=['pandaid','is_job_finished','task_flag_updated','job_flag_updated','result','is_locked','lock_time'])
