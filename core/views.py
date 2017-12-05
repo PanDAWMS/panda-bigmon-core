@@ -2660,6 +2660,25 @@ def jobListPDiv(request, mode=None, param=None):
         #endSelfMonitor(request)
         return response
     data = getJobList(request)
+
+
+    if 'requesttoken' in request.GET:
+        requesttoken = request.GET['requesttoken']
+
+
+    startdate = timezone.now() - timedelta(hours=2)
+    enddate = timezone.now()
+    query = {'qtime__range': [startdate, enddate],
+             'url__contains': requesttoken,
+             'urlview': '/jobssupt/',
+             }
+    countRequest = []
+    countRequest.extend(RequestStat.objects.filter(**query).annotate(Count('urlview')))
+
+    if len(countRequest) > 0:
+        if countRequest[0]['urlview__count'] > 100:
+            data['doRefresh'] = False
+
     data.update(getContextVariables(request))
     setCacheEntry(request, "jobListWrapper", json.dumps(data, cls=DateEncoder), 60 * 20)
         ##self monitor
