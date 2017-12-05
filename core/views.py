@@ -2914,8 +2914,30 @@ def jobList(request, mode=None, param=None):
     if dropmode and (len(taskids) == 1):
         start = time.time()
         jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs,taskids.keys()[0],isReturnDroppedPMerge)
-        print len(jobs)
-        print len(droplist)
+        ##### For comparison the old and new drop algorithm
+        # tk, droppedList, wildCardExtension = dropalgorithm.dropRetrielsJobs(taskids.keys()[0], wildCardExtension,
+        #                                                                     False)
+        # olddroplist = []
+        # difdroplist = []
+        # for drp in droplist:
+        #     olddroplist.append(drp['pandaid'])
+        # if len(olddroplist)>len(droppedList):
+        #     difdroplist = set(olddroplist)-set(droppedList)
+        # else:
+        #     difdroplist = set(droppedList) - set(olddroplist)
+        # #print ''.join(str(list(difdroplist)))
+        # print len(olddroplist)
+        # print len(droppedList)
+        # random.seed()
+        # tk = random.randrange(1000000)
+        #
+        # new_cur = connection.cursor()
+        # executionData = []
+        # for pandaid in difdroplist:
+        #     executionData.append((pandaid, tk))
+        # insertquery = """INSERT INTO ATLAS_PANDABIGMON.TMP_IDS1Debug(ID,TRANSACTIONKEY) VALUES (%s,%s)"""
+        # new_cur.executemany(insertquery, executionData)
+        # print 'TK: '+ str(tk)
         end = time.time()
         print(end - start)
         if request.user.is_authenticated() and request.user.is_tester:
@@ -2925,7 +2947,7 @@ def jobList(request, mode=None, param=None):
             else:
                 isEventTask = False
             start = time.time()
-            newjobs,newdroppedPmerge,newdroplist = dropalgorithm.clearDropRetrielsJobs(tk=tk,droplist=droppedList,jobs=newjobs,isEventTask=isEventTask)
+            newjobs,newdroppedPmerge,newdroplist = dropalgorithm.clearDropRetrielsJobs(tk=tk,droplist=droppedList,jobs=newjobs,isEventTask=isEventTask,isReturnDroppedPMerge=isReturnDroppedPMerge)
             end = time.time()
             print(end - start)
 

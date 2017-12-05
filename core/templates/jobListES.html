@@ -92,7 +92,7 @@ function toggleDetailDisplay(className) {
 
 {% if ndropPmerge_test > 0 %}
  <br/><br/>
-<b>{{ ndropPmerge_test }} Pmerge jobs. Pmerge jobs:</b><br/>
+<b>{{ ndropPmerge_test }} Dropped Pmerge jobs. Pmerge jobs:</b><br/>
 {% for pmergejob in droppedPmerge2_test %}
 <a href="{% url 'jobInfo' pmergejob %}">{{ pmergejob }}</a>&nbsp;
 {% endfor %}

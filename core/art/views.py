@@ -513,13 +513,17 @@ def updateARTJobList(request):
                     insertRow.save()
 
                     results = getARTjobSubResults(getJobReport(j['guid'], j['lfn'], j['scope'])) if getjflag(j) == 1 else {}
-                    insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'], is_task_finished=gettflag(j),
-                                           is_job_finished=getjflag(j), testname=j['testname'],
-                                           task_flag_updated=datetime.now(),
-                                           job_flag_updated=datetime.now(),
-                                           result=json.dumps(results),
-                                           is_locked=0,
-                                           lock_time = None)
+                    insertRow.result = json.dumps(results)
+                    insertRow.is_locked = 0
+                    insertRow.lock_time = None
+                    insertRow.save(update_fields=['result', 'is_locked','lock_time'])
+                    # insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'], is_task_finished=gettflag(j),
+                    #                        is_job_finished=getjflag(j), testname=j['testname'],
+                    #                        task_flag_updated=datetime.now(),
+                    #                        job_flag_updated=datetime.now(),
+                    #                        result=json.dumps(results),
+                    #                        is_locked=0,
+                    #                        lock_time = None)
                 else:
                     insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
                                            is_task_finished=gettflag(j),
@@ -527,7 +531,12 @@ def updateARTJobList(request):
                                            task_flag_updated=datetime.now(),
                                            job_flag_updated=datetime.now(),
                                            result=None)
-                insertRow.save()
+                    insertRow.save()
+                # if getjflag(j) == 1:
+                #     insertRow.save(update_fields=['pandaid','is_job_finished','task_flag_updated','job_flag_updated','result','is_locked','lock_time'])
+                # else:
+                #     insertRow.save()
+
                 ii += 1
                 print ('%s row inserted (%s out of %s)' % (ii, i, len(fulljoblist)))
 

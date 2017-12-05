@@ -10,7 +10,7 @@ def dropRetrielsJobs(jeditaskid,extra=None,isEventTask=False):
         sqlRequest = '''
         select distinct(pandaid) from (select fileid, pandaid, status, attemptnr, max(attemptnr) over (partition by fileid) as lastattempt  
         from atlas_panda.filestable4 
-        where  jeditaskid = %s ) WHERE lastattempt!= attemptnr
+        where  jeditaskid = %s and DESTINATIONDBLOCKTOKEN is NULL  and Dataset not in ('RNDMSEED')) WHERE lastattempt!= attemptnr
         ''' % (jeditaskid)
         cur = connection.cursor()
         cur.execute(sqlRequest)
@@ -56,14 +56,27 @@ def dropRetrielsJobs(jeditaskid,extra=None,isEventTask=False):
 def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPMerge = False):
     newjobs=[]
     droppedPmerge =[]
+    notDroppetPmerge = set()
     if isEventTask is False:
         for job in jobs:
-            if not isReturnDroppedPMerge:
-                if not (job['processingtype'] == 'pmerge'):
-                    newjobs.append(job)
+            #if not isReturnDroppedPMerge:
+            if not (job['processingtype'] == 'pmerge'):
+                newjobs.append(job)
+            else:
+                droppedPmerge.append(job)
+                    #droplist.append(job['pandaid'])
+            #else: droplist.append(job['pandaid'])
+        retryquery = {}
+        if len(droppedPmerge)>0:
+            if len(jobs) > 0:
+                retryquery['jeditaskid'] = jobs[0]['jeditaskid']
+                droppedPmerge,notDroppetPmerge = clearDropPmergeRetrielsJobs(droppedPmerge, retryquery)
+                if not isReturnDroppedPMerge:
+                    droplist = droplist + list(droppedPmerge)
+                    droppedPmerge = []
                 else:
-                    droppedPmerge.append(job['pandaid'])
-            else: newjobs.append(job)
+                    newjobs = newjobs + list(notDroppetPmerge)
+                    droppedPmerge = []
         new_cur = connection.cursor()
         new_cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i" % (tk))
         return newjobs, droppedPmerge,droplist
@@ -81,7 +94,7 @@ def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPM
                     if not (job['processingtype'] == 'pmerge'):
                         newjobs.append(job)
                     else:
-                        droppedPmerge.append(job['pandaid'])
+                        droppedPmerge.add(job['pandaid'])
                 else:
                     newjobs.append(job)
         retryquery = {}
@@ -121,3 +134,36 @@ def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPM
             pandaDropIDList = list(pandaDropIDList)
 
         return newjobs, droppedPmerge,pandaDropIDList
+
+
+def clearDropPmergeRetrielsJobs(dPmerge,retryquery):
+    dropPmerge = set()
+    notDropPmerge = []
+    random.seed()
+    transactionKey = random.randrange(1000000)
+
+    new_cur = connection.cursor()
+    executionData = []
+    for pandaid in dPmerge:
+        executionData.append((pandaid['pandaid'], transactionKey))
+    query = """INSERT INTO ATLAS_PANDABIGMON.TMP_IDS1Debug(ID,TRANSACTIONKEY) VALUES (%s,%s)"""
+    new_cur.executemany(query, executionData)
+
+    retries = JediJobRetryHistory.objects.filter(**retryquery).extra(
+        where=["OLDPANDAID IN (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i)" % (
+            transactionKey)]).values("oldpandaid", "relationtype")
+
+    retry_list = {}
+    for retry in retries:
+        retry_list[retry["oldpandaid"]] = retry["relationtype"]
+    retry_keys = retry_list.keys()
+    for checkJob in dPmerge:
+        if checkJob['pandaid'] in retry_keys:
+            if retry_list[checkJob['pandaid']] == "retry":
+                dropPmerge.add(checkJob['pandaid'])
+            else:
+                notDropPmerge.append(checkJob)
+        else:
+            notDropPmerge.append(checkJob)
+    new_cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i" % (transactionKey))
+    return dropPmerge,notDropPmerge
