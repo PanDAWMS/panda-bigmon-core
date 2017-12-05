@@ -514,10 +514,13 @@ def updateARTJobList(request):
                     insertRow.save()
 
                     results = getARTjobSubResults(getJobReport(j['guid'], j['lfn'], j['scope'])) if getjflag(j) == 1 else {}
-                    insertRow.result = json.dumps(results)
-                    insertRow.is_locked = 0
-                    insertRow.lock_time = datetime.now()
-                    insertRow.save(update_fields=['result', 'is_locked','lock_time'])
+
+                    get_query['pandaid'] =  j['pandaid']
+                    updateLockedRow =  ARTResults.objects.filter(**get_query).get()
+                    updateLockedRow.result = json.dumps(results)
+                    updateLockedRow.is_locked = 0
+                    updateLockedRow.lock_time = datetime.now()
+                    updateLockedRow.save(update_fields=['result', 'is_locked','lock_time'])
                     # insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'], is_task_finished=gettflag(j),
                     #                        is_job_finished=getjflag(j), testname=j['testname'],
                     #                        task_flag_updated=datetime.now(),
