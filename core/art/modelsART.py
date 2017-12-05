@@ -64,5 +64,9 @@ class ARTResults(models.Model):
     testname = models.CharField(max_length=300, db_column='TESTNAME', null=True)
     task_flag_updated = models.DateTimeField(null=True, db_column='TASK_FLAG_UPDATED', blank=True)
     job_flag_updated = models.DateTimeField(null=True, db_column='JOB_FLAG_UPDATED', blank=True)
+    job_flag_updated = models.DateTimeField(null=True, db_column='JOB_FLAG_UPDATED', blank=True)
+    is_locked = models.IntegerField(db_column='is_locked')
+    lock_time = models.DateTimeField(null=True, db_column='lock_time', blank=True)
+
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ART_RESULTS"'

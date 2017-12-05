@@ -4,7 +4,7 @@
 """
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
@@ -16,6 +16,7 @@ from core.views import initRequest, extensibleURL, removeParam
 from core.views import setCacheEntry, getCacheEntry, DateEncoder, endSelfMonitor
 from core.art.jobSubResults import getJobReport, getARTjobSubResults
 from core.settings import defaultDatetimeFormat
+from django.db.models import Q
 
 artdateformat = '%Y-%m-%d'
 humandateformat = '%d %b %Y'
@@ -489,19 +490,35 @@ def updateARTJobList(request):
             get_query = {}
             get_query['jeditaskid'] = j['jeditaskid']
             get_query['testname'] = j['testname']
+
+            blockedRowsConditions = (~Q(is_locked=1)) | (Q(is_locked=1) & Q(lock_time__lt=(timezone.now() - timedelta(hours=1))))
+
             is_result_update = False
             existedRow = None
             try:
-                existedRow = ARTResults.objects.filter(**get_query).get()
+                existedRow = ARTResults.objects.filter(**get_query).filter(blockedRowsConditions).get()
 
             except:
                 if getjflag(j) == 1:
+
+                    insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
+                                           is_task_finished=None,
+                                           is_job_finished=None, testname=j['testname'],
+                                           task_flag_updated=None,
+                                           job_flag_updated=None,
+                                           result=None,
+                                           is_locked = 1,
+                                           lock_time = datetime.now())
+                    insertRow.save()
+
                     results = getARTjobSubResults(getJobReport(j['guid'], j['lfn'], j['scope'])) if getjflag(j) == 1 else {}
                     insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'], is_task_finished=gettflag(j),
                                            is_job_finished=getjflag(j), testname=j['testname'],
                                            task_flag_updated=datetime.now(),
                                            job_flag_updated=datetime.now(),
-                                           result=json.dumps(results))
+                                           result=json.dumps(results),
+                                           is_locked=0,
+                                           lock_time = None)
                 else:
                     insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
                                            is_task_finished=gettflag(j),
@@ -538,12 +555,17 @@ def updateARTJobList(request):
                         is_result_update = True
 
                 if is_result_update:
+                    existedRow.is_locked = 1
+                    existedRow.lock_time = datetime.now()
+                    existedRow.save(update_fields=['is_locked','lock_time'])
                     results = getARTjobSubResults(getJobReport(j['guid'], j['lfn'], j['scope']))
                     existedRow.is_job_finished = getjflag(j)
                     existedRow.is_task_finished = gettflag(j)
                     existedRow.job_flag_updated = datetime.now()
                     existedRow.result = json.dumps(results)
-                    existedRow.save(update_fields=['pandaid', 'is_task_finished','is_job_finished', 'job_flag_updated', 'result'])
+                    existedRow.is_locked = 0
+                    existedRow.lock_time = None
+                    existedRow.save(update_fields=['pandaid', 'is_task_finished','is_job_finished', 'job_flag_updated', 'result', 'is_locked','lock_time'])
 
                     ci += 1
                     print ('%s row updated (%s out of %s)' % (ci,i,len(fulljoblist)))
