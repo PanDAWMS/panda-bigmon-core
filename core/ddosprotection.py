@@ -28,8 +28,8 @@ class DDOSMiddleware(object):
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
 
         reqs = AllRequests(
-            server = x_forwarded_for,
-            remote = request.META.get('REMOTE_ADDR'),
+            server = request.META.get('HTTP_HOST'),
+            remote = x_forwarded_for,
             qtime = timezone.now(),
             url = request.path,
             referrer = request.META.get('HTTP_REFERER'),
