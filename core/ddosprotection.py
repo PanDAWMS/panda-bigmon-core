@@ -31,7 +31,8 @@ class DDOSMiddleware(object):
             server = request.META.get('HTTP_HOST'),
             remote = x_forwarded_for,
             qtime = timezone.now(),
-            url = request.path,
+            url= request.META.get('QUERY_STRING'),
+            urlview = request.path,
             referrer = request.META.get('HTTP_REFERER'),
             useragent = request.META.get('HTTP_USER_AGENT'),
             is_rejected = 0
