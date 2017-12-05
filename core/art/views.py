@@ -569,7 +569,7 @@ def updateARTJobList(request):
                         is_result_update = True
                 else:
                     ### result is not empty, check whether a job was updated
-                    if j['jobmodificationtime'] > existedRow.job_flag_updated:
+                    if existedRow.job_flag_updated and j['jobmodificationtime'] > existedRow.job_flag_updated:
                         ### job state was updated results needs to be updated too
                         is_result_update = True
 
