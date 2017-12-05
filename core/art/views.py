@@ -490,8 +490,30 @@ def updateARTJobList(request):
             get_query['jeditaskid'] = j['jeditaskid']
             get_query['testname'] = j['testname']
             is_result_update = False
+            existedRow = None
             try:
                 existedRow = ARTResults.objects.filter(**get_query).get()
+
+            except:
+                if getjflag(j) == 1:
+                    results = getARTjobSubResults(getJobReport(j['guid'], j['lfn'], j['scope'])) if getjflag(j) == 1 else {}
+                    insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'], is_task_finished=gettflag(j),
+                                           is_job_finished=getjflag(j), testname=j['testname'],
+                                           task_flag_updated=datetime.now(),
+                                           job_flag_updated=datetime.now(),
+                                           result=json.dumps(results))
+                else:
+                    insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
+                                           is_task_finished=gettflag(j),
+                                           is_job_finished=getjflag(j), testname=j['testname'],
+                                           task_flag_updated=datetime.now(),
+                                           job_flag_updated=datetime.now(),
+                                           result=None)
+                insertRow.save()
+                ii += 1
+                print ('%s row inserted (%s out of %s)' % (ii, i, len(fulljoblist)))
+
+            if existedRow is not None:
                 try:
                     existedResult = json.loads(existedRow.result)
                 except:
@@ -525,25 +547,6 @@ def updateARTJobList(request):
 
                     ci += 1
                     print ('%s row updated (%s out of %s)' % (ci,i,len(fulljoblist)))
-
-            except:
-                if getjflag(j) == 1:
-                    results = getARTjobSubResults(getJobReport(j['guid'], j['lfn'], j['scope'])) if getjflag(j) == 1 else {}
-                    insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'], is_task_finished=gettflag(j),
-                                           is_job_finished=getjflag(j), testname=j['testname'],
-                                           task_flag_updated=datetime.now(),
-                                           job_flag_updated=datetime.now(),
-                                           result=json.dumps(results))
-                else:
-                    insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
-                                           is_task_finished=gettflag(j),
-                                           is_job_finished=getjflag(j), testname=j['testname'],
-                                           task_flag_updated=datetime.now(),
-                                           job_flag_updated=datetime.now(),
-                                           result=None)
-                insertRow.save()
-                ii += 1
-                print ('%s row inserted (%s out of %s)' % (ii, i, len(fulljoblist)))
 
 
 
