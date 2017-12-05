@@ -3,7 +3,7 @@ import time
 import django.core.exceptions
 import commands
 import random
-from core.common.models import RequestStat
+from core.common.models import RequestStat, AllRequests
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Count, Sum
@@ -25,9 +25,22 @@ class DDOSMiddleware(object):
 
     def process_request(self, request):
 
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+
+        reqs = AllRequests(
+            server = request.META.get('SERVER_NAME'),
+            remote = x_forwarded_for,
+            qtime = timezone.now(),
+            url = request.path,
+            referrer = "",
+            useragent = request.META.get('HTTP_USER_AGENT'),
+            is_rejected = 0
+        )
+
+
+
         # we limit number of requests per hour
         if ('json' in request.GET):
-            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
             if (not x_forwarded_for is None) and x_forwarded_for not in self.notcachedRemoteAddress:
 #                x_forwarded_for = '141.108.38.22'
                 startdate = timezone.now() - timedelta(hours=2)
@@ -39,7 +52,11 @@ class DDOSMiddleware(object):
                 countRequest.extend(RequestStat.objects.filter(**query).values('remote').annotate(Count('remote')))
                 if len(countRequest) > 0:
                     if countRequest[0]['remote__count'] > self.maxAllowedJSONRequstesPerHour:
+                        reqs.is_rejected = 1
+                        reqs.save()
                         return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), content_type='text/html')
+
+        reqs.save()
         return None
 
 

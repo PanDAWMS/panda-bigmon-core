@@ -1648,6 +1648,20 @@ class RequestStat(models.Model):
     class Meta:
         db_table = u'request_stats'
 
+class AllRequests(models.Model):
+    id = models.IntegerField(primary_key=True, db_column='ID')
+    server = models.CharField(max_length=40, db_column='server')
+    remote = models.CharField(max_length=40, db_column='remote')
+    qtime = models.DateTimeField(db_column='qtime')
+    url = models.CharField(max_length=2500, db_column='url')
+    referrer = models.CharField(max_length=4000, db_column='referrer')
+    useragent = models.CharField(max_length=250, db_column='useragent')
+    is_rejected = models.IntegerField(db_column='is_rejected')
+
+    class Meta:
+        db_table = u'all_requests'
+
+
 class Savedpages(models.Model):
     name = models.CharField(max_length=90, db_column='NAME', primary_key=True)
     flag = models.CharField(max_length=60, db_column='FLAG', primary_key=True)
