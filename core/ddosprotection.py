@@ -18,7 +18,7 @@ class DDOSMiddleware(object):
 
     sleepInterval = 5 #sec
     maxAllowedJSONRequstesPerHour = 600
-    notcachedRemoteAddress = ['188.184.185.129']
+    notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72']
 
     def __init__(self):
         pass
