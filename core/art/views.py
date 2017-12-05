@@ -516,7 +516,7 @@ def updateARTJobList(request):
                     results = getARTjobSubResults(getJobReport(j['guid'], j['lfn'], j['scope'])) if getjflag(j) == 1 else {}
 
                     get_query['pandaid'] =  j['pandaid']
-                    updateLockedRow =  ARTResults.objects.filter(**get_query).get(insertRow.row_id)
+                    updateLockedRow =  ARTResults.objects.filter(**get_query).get(row_id=insertRow.row_id)
                     updateLockedRow.result = json.dumps(results)
                     updateLockedRow.is_locked = 0
                     updateLockedRow.lock_time = datetime.now()
