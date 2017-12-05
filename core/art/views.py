@@ -583,7 +583,7 @@ def updateARTJobList(request):
                     existedRow.job_flag_updated = datetime.now()
                     existedRow.result = json.dumps(results)
                     existedRow.is_locked = 0
-                    existedRow.lock_time = None
+                    existedRow.lock_time = datetime.now()
                     existedRow.save(update_fields=['pandaid', 'is_task_finished','is_job_finished', 'job_flag_updated', 'result', 'is_locked','lock_time'])
 
                     ci += 1
