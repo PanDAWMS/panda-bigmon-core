@@ -58,7 +58,7 @@ from core.common.models import JediEvents
 from core.common.models import JediDatasets
 from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
-from core.common.models import RequestStat, BPUser, Visits, BPUserSettings
+from core.common.models import RequestStat, BPUser, Visits, BPUserSettings, AllRequests
 from core.settings.config import ENV
 from core.common.models import RunningMCProductionTasks, HarvesterWorkers, HarvesterRelJobsWorkers
 from core.common.models import RunningDPDProductionTasks, RunningProdTasksModel, FrozenProdTasksModel
@@ -2673,7 +2673,7 @@ def jobListPDiv(request, mode=None, param=None):
              'urlview': '/jobssupt/',
              }
     countRequest = []
-    countRequest.extend(RequestStat.objects.filter(**query).annotate(Count('urlview')))
+    countRequest.extend(AllRequests.objects.filter(**query).annotate(Count('urlview')))
 
     if len(countRequest) > 0:
         if countRequest[0]['urlview__count'] > 100:
