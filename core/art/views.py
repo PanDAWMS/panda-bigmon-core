@@ -492,7 +492,7 @@ def updateARTJobList(request):
             get_query['jeditaskid'] = j['jeditaskid']
             get_query['testname'] = j['testname']
 
-            blockedRowsConditions = (~Q(is_locked=1)) | Q(lock_time__lt=(timezone.now() - timedelta(minutes=30))) # This save from rerunning jobs which currnetly (first condition)
+            blockedRowsConditions = (~Q(is_locked=1)) | Q(lock_time__lt=(datetime.now() - timedelta(minutes=30))) # This save from rerunning jobs which currnetly (first condition)
             # or recently (second condition) updated by another worker
 
             is_result_update = False
