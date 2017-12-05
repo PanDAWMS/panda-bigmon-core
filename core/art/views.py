@@ -503,7 +503,14 @@ def updateARTJobList(request):
             except:
                 if getjflag(j) == 1:
 
-                    insertRow = ARTResults.objects.create(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
+                    sqlRequest = "SELECT ATLAS_PANDABIGMON.ART_RESULTS_SEQ.NEXTVAL as my_req_token FROM dual;"
+                    cur = connection.cursor()
+                    cur.execute(sqlRequest)
+                    requestToken = cur.fetchall()
+                    cur.close()
+                    newRowID = requestToken[0][0]
+
+                    insertRow = ARTResults.objects.create(row_id=newRowID, jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
                                            is_task_finished=None,
                                            is_job_finished=None, testname=j['testname'],
                                            task_flag_updated=None,
