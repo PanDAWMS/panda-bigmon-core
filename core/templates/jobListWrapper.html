@@ -44,7 +44,7 @@
                                 },
                                 complete : function(data) {
                                         if ((document.getElementById("doRefresh")) && (document.getElementById("doRefresh").value == "True")) {
-                                            doRequest();
+                                            setTimeout( doRequest(), 3000 );
                                             if (((document.getElementById("findRows")) && (document.getElementById("findRows").value == "False")))
                                                 document.getElementById("content").style.display = 'none';
                                             else
