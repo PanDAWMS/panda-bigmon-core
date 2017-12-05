@@ -503,7 +503,7 @@ def updateARTJobList(request):
             except:
                 if getjflag(j) == 1:
 
-                    insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
+                    insertRow = ARTResults.objects.create(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
                                            is_task_finished=None,
                                            is_job_finished=None, testname=j['testname'],
                                            task_flag_updated=None,
@@ -511,16 +511,14 @@ def updateARTJobList(request):
                                            result=None,
                                            is_locked = 1,
                                            lock_time = datetime.now())
-                    insertRow.save()
 
                     results = getARTjobSubResults(getJobReport(j['guid'], j['lfn'], j['scope'])) if getjflag(j) == 1 else {}
 
-                    get_query['pandaid'] =  j['pandaid']
-                    updateLockedRow =  ARTResults.objects.get(pk=insertRow.row_id)
-                    updateLockedRow.result = json.dumps(results)
-                    updateLockedRow.is_locked = 0
-                    updateLockedRow.lock_time = datetime.now()
-                    updateLockedRow.save(update_fields=['result', 'is_locked','lock_time'])
+                    #updateLockedRow =  ARTResults.objects.get(row_id=insertRow.row_id)
+                    insertRow.result = json.dumps(results)
+                    insertRow.is_locked = 0
+                    insertRow.lock_time = datetime.now()
+                    insertRow.save(update_fields=['result', 'is_locked','lock_time'])
                     # insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'], is_task_finished=gettflag(j),
                     #                        is_job_finished=getjflag(j), testname=j['testname'],
                     #                        task_flag_updated=datetime.now(),
