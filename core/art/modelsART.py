@@ -59,7 +59,7 @@ class ARTResults(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID')
     pandaid = models.BigIntegerField(db_column='PANDAID')
     result = models.CharField(max_length=2000, db_column='RESULT_JSON', null=True)
-    is_task_finished = models.BigIntegerField(db_column='IS_TASK_FINISHED')
+    is_task_finished = models.BigIntegerField(db_column='IS_TASK_FINISHED', null=True)
     is_job_finished = models.BigIntegerField(db_column='IS_JOB_FINISHED')
     testname = models.CharField(max_length=300, db_column='TESTNAME', null=True)
     task_flag_updated = models.DateTimeField(null=True, db_column='TASK_FLAG_UPDATED', blank=True)
