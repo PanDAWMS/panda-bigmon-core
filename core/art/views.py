@@ -492,7 +492,8 @@ def updateARTJobList(request):
             get_query['jeditaskid'] = j['jeditaskid']
             get_query['testname'] = j['testname']
 
-            blockedRowsConditions = (~Q(is_locked=1)) | (Q(is_locked=1) & Q(lock_time__lt=(timezone.now() - timedelta(hours=1))))
+            blockedRowsConditions = (~Q(is_locked=1)) | Q(lock_time__lt=(timezone.now() - timedelta(minutes=30))) # This save from rerunning jobs which currnetly (first condition)
+            # or recently (second condition) updated by another worker
 
             is_result_update = False
             existedRow = None
@@ -515,7 +516,7 @@ def updateARTJobList(request):
                     results = getARTjobSubResults(getJobReport(j['guid'], j['lfn'], j['scope'])) if getjflag(j) == 1 else {}
                     insertRow.result = json.dumps(results)
                     insertRow.is_locked = 0
-                    insertRow.lock_time = None
+                    insertRow.lock_time = datetime.now()
                     insertRow.save(update_fields=['result', 'is_locked','lock_time'])
                     # insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'], is_task_finished=gettflag(j),
                     #                        is_job_finished=getjflag(j), testname=j['testname'],
