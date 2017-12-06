@@ -173,9 +173,9 @@ def compareDropAlgorithm(oldDropDict,newDropList):
     oldDropList = []
     for drp in oldDropDict:
         oldDropList.append(drp['pandaid'])
-    if len(oldDropList)>len(newDropList):
-        difDropList = set(oldDropList)-set(newDropList)
-    elif len(oldDropList)<len(newDropList):
+    if len(oldDropList)>len(newDropList) and (len(oldDropDict) != 0 and len(newDropList) != 0):
+        difDropList = set(oldDropList)- set(newDropList)
+    elif len(oldDropList)<len(newDropList) and (len(oldDropDict)!= 0 and len(newDropList) != 0):
         difDropList = set(newDropList) - set(oldDropList)
     else:
         return difDropList
