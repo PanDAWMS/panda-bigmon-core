@@ -2923,6 +2923,7 @@ def jobList(request, mode=None, param=None):
         request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge=True
     droplist = []
     newdroplist = []
+    difDropList = []
     droppedPmerge = set()
     newdroppedPmerge = set()
     cntStatus = []
@@ -2964,6 +2965,7 @@ def jobList(request, mode=None, param=None):
                 isEventTask = False
             start = time.time()
             newjobs,newdroppedPmerge,newdroplist = dropalgorithm.clearDropRetrielsJobs(tk=tk,droplist=droppedList,jobs=newjobs,isEventTask=isEventTask,isReturnDroppedPMerge=isReturnDroppedPMerge)
+            difDropList = dropalgorithm.compareDropAlgorithm(droplist,newdroplist)
             end = time.time()
             print(end - start)
 
@@ -3222,6 +3224,7 @@ def jobList(request, mode=None, param=None):
             'ndropPmerge_test':len(newdroppedPmerge),
             'droppedPmerge2_test':newdroppedPmerge,
             'pandaIDList_test':newdroplist,
+            'difDropList_test':difDropList,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)

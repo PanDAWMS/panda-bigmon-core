@@ -116,7 +116,21 @@ function toggleDetailDisplay(className) {
 <a href="{% url 'jobInfo' pmergejob %}">{{ pmergejob }}</a>&nbsp;
 {% endfor %}
 {% endif %}
+<br/>
 
+{% if difDropList_test %}
+    Different between old and new drop algorithm.
+    <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('difretries');"><br>Click to show/hide different dropped jobs</a>
+    <div class="difretries" style="display:none">
+<font size=-1>
+{% for pandaID in difDropList_test %}
+
+  <a href="{% url 'jobInfo' pandaID %}">{{ pandaID }}</a>&nbsp;
+{% endfor %}
+    </font>
+</div>
+
+{% endif %}
 </td></tr></table>
 <p>
 
