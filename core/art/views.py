@@ -493,15 +493,16 @@ def updateARTJobList(request):
             get_query['testname'] = j['testname']
 
 
-            blockedRowsConditions = (~Q(is_locked=1)) | Q(lock_time__lt=(datetime.now() - timedelta(minutes=30))) # This save from rerunning jobs which currnetly (first condition)
+            blockedRowsConditions = Q(lock_time__gt=(datetime.now() - timedelta(minutes=30))) # This save from rerunning jobs which currnetly (first condition)
             # or recently (second condition) updated by another worker
 
             is_result_update = False
             existedRow = None
 
             try:
-                existedRow = ARTResults.objects.filter(**get_query).filter(blockedRowsConditions).get()
+                existedRow = ARTResults.objects.filter(**get_query).exclude(blockedRowsConditions).get()
             except:
+                
                 # Here we check if test is really missing, not blocked due to update
                 if ARTResults.objects.filter(**get_query).count() == 0:
                     if getjflag(j) == 1:
