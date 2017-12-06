@@ -2672,12 +2672,9 @@ def jobListPDiv(request, mode=None, param=None):
              'url__contains': requesttoken,
              'urlview': '/jobssupt/',
              }
-    countRequest = []
-    countRequest.extend(AllRequests.objects.filter(**query).annotate(Count('urlview')))
 
-    if len(countRequest) > 0:
-        if countRequest[0]['urlview__count'] > 100:
-            data['doRefresh'] = False
+    if AllRequests.objects.filter(**query).count() > 100:
+        data['doRefresh'] = False
 
     data.update(getContextVariables(request))
     setCacheEntry(request, "jobListWrapper", json.dumps(data, cls=DateEncoder), 60 * 20)
