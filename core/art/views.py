@@ -492,63 +492,65 @@ def updateARTJobList(request):
             get_query['jeditaskid'] = j['jeditaskid']
             get_query['testname'] = j['testname']
 
+
             blockedRowsConditions = (~Q(is_locked=1)) | Q(lock_time__lt=(datetime.now() - timedelta(minutes=30))) # This save from rerunning jobs which currnetly (first condition)
             # or recently (second condition) updated by another worker
 
             is_result_update = False
             existedRow = None
+
             try:
                 existedRow = ARTResults.objects.filter(**get_query).filter(blockedRowsConditions).get()
-
             except:
-                if getjflag(j) == 1:
+                # Here we check if test is really missing, not blocked due to update
+                if ARTResults.objects.filter(**get_query).count() == 0:
+                    if getjflag(j) == 1:
+                        sqlRequest = "SELECT ATLAS_PANDABIGMON.ART_RESULTS_SEQ.NEXTVAL as my_req_token FROM dual;"
+                        cur = connection.cursor()
+                        cur.execute(sqlRequest)
+                        requestToken = cur.fetchall()
+                        cur.close()
+                        newRowID = requestToken[0][0]
 
-                    sqlRequest = "SELECT ATLAS_PANDABIGMON.ART_RESULTS_SEQ.NEXTVAL as my_req_token FROM dual;"
-                    cur = connection.cursor()
-                    cur.execute(sqlRequest)
-                    requestToken = cur.fetchall()
-                    cur.close()
-                    newRowID = requestToken[0][0]
+                        insertRow = ARTResults.objects.create(row_id=newRowID, jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
+                                               is_task_finished=None,
+                                               is_job_finished=None, testname=j['testname'],
+                                               task_flag_updated=None,
+                                               job_flag_updated=None,
+                                               result=None,
+                                               is_locked = 1,
+                                               lock_time = datetime.now())
 
-                    insertRow = ARTResults.objects.create(row_id=newRowID, jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
-                                           is_task_finished=None,
-                                           is_job_finished=None, testname=j['testname'],
-                                           task_flag_updated=None,
-                                           job_flag_updated=None,
-                                           result=None,
-                                           is_locked = 1,
-                                           lock_time = datetime.now())
+                        results = getARTjobSubResults(getJobReport(j['guid'], j['lfn'], j['scope'])) if getjflag(j) == 1 else {}
 
-                    results = getARTjobSubResults(getJobReport(j['guid'], j['lfn'], j['scope'])) if getjflag(j) == 1 else {}
+                        #updateLockedRow =  ARTResults.objects.get(row_id=insertRow.row_id)
+                        insertRow.result = json.dumps(results)
+                        insertRow.is_locked = 0
+                        insertRow.lock_time = datetime.now()
+                        insertRow.save(update_fields=['result', 'is_locked','lock_time'])
+                        # insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'], is_task_finished=gettflag(j),
+                        #                        is_job_finished=getjflag(j), testname=j['testname'],
+                        #                        task_flag_updated=datetime.now(),
+                        #                        job_flag_updated=datetime.now(),
+                        #                        result=json.dumps(results),
+                        #                        is_locked=0,
+                        #                        lock_time = None)
+                    else:
+                        insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
+                                               is_task_finished=gettflag(j),
+                                               is_job_finished=getjflag(j), testname=j['testname'],
+                                               task_flag_updated=datetime.now(),
+                                               job_flag_updated=datetime.now(),
+                                               result=None,
+                                               lock_time=datetime.now())
+                        insertRow.save()
+                    # if getjflag(j) == 1:
+                    #     insertRow.save(update_fields=['pandaid','is_job_finished','task_flag_updated','job_flag_updated','result','is_locked','lock_time'])
+                    # else:
+                    #     insertRow.save()
 
-                    #updateLockedRow =  ARTResults.objects.get(row_id=insertRow.row_id)
-                    insertRow.result = json.dumps(results)
-                    insertRow.is_locked = 0
-                    insertRow.lock_time = datetime.now()
-                    insertRow.save(update_fields=['result', 'is_locked','lock_time'])
-                    # insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'], is_task_finished=gettflag(j),
-                    #                        is_job_finished=getjflag(j), testname=j['testname'],
-                    #                        task_flag_updated=datetime.now(),
-                    #                        job_flag_updated=datetime.now(),
-                    #                        result=json.dumps(results),
-                    #                        is_locked=0,
-                    #                        lock_time = None)
-                else:
-                    insertRow = ARTResults(jeditaskid=j['jeditaskid'], pandaid=j['pandaid'],
-                                           is_task_finished=gettflag(j),
-                                           is_job_finished=getjflag(j), testname=j['testname'],
-                                           task_flag_updated=datetime.now(),
-                                           job_flag_updated=datetime.now(),
-                                           result=None,
-                                           lock_time=datetime.now())
-                    insertRow.save()
-                # if getjflag(j) == 1:
-                #     insertRow.save(update_fields=['pandaid','is_job_finished','task_flag_updated','job_flag_updated','result','is_locked','lock_time'])
-                # else:
-                #     insertRow.save()
-
-                ii += 1
-                print ('%s row inserted (%s out of %s)' % (ii, i, len(fulljoblist)))
+                    ii += 1
+                    print ('%s row inserted (%s out of %s)' % (ii, i, len(fulljoblist)))
 
             if existedRow is not None:
                 try:
