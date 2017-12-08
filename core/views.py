@@ -6419,14 +6419,24 @@ def dashboard(request, view='production'):
             getObjectStoresNames()
 
         sqlRequest = """
-        SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE, RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST FROM (
-        SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, CASE WHEN t2.OBJSTORE_ID > 0 THEN TO_CHAR(t2.OBJSTORE_ID) ELSE t3.destinationse END AS OBJSE  
-        FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 
-        LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID = t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0)
-        LEFT JOIN ATLAS_PANDA.filestable4 t3 ON (t3.pandaid = t2.pandaid and t3.JEDITASKID = t2.JEDITASKID and t3.row_id=t2.ziprow_id) 
-        WHERE t1.ES in (1) and t1.CLOUD='WORLD' and t1.MODIFICATIONTIME > (sysdate - interval '13' hour) 
-        ) WHERE NOT OBJSE IS NULL
-        GROUP BY JOBSTATUS, JOBSTATUS, COMPUTINGSITE, OBJSE order by OBJSE
+        SELECT 
+        JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE, RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('// text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST FROM 
+        (   
+         SELECT
+         DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS,  
+        TASKTYPE, ES, CASE WHEN t2.OBJSTORE_ID > 0 THEN TO_CHAR(t2.OBJSTORE_ID)  
+        ELSE t3.destinationse END AS OBJSE           
+        FROM  
+        ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1
+           LEFT JOIN  
+        ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID =  t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0) 
+           LEFT JOIN ATLAS_PANDA.filestable4 t3 ON (t3.pandaid = t2.pandaid and  t3.JEDITASKID = t2.JEDITASKID and t3.row_id=t2.ziprow_id)           
+        WHERE 
+        t1.ES in (1) and t1.CLOUD='WORLD' and t1.MODIFICATIONTIME >  (sysdate - interval '13' hour)
+        AND t3.MODIFICATIONTIME >  (sysdate - interval '13' hour)        
+        ) 
+        WHERE NOT OBJSE IS NULL        
+        GROUP BY JOBSTATUS, JOBSTATUS, COMPUTINGSITE, OBJSE order by OBJSE ; 
         """
 
         cur = connection.cursor()
