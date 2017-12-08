@@ -96,6 +96,11 @@ errorCodes = {}
 errorStages = {}
 
 from django.template.defaulttags import register
+
+#from django import template
+#register = template.Library()
+
+
 from reports import RunningMCProdTasks
 from reports import MC16aCPReport, ObsoletedTasksReport, TitanProgressReport
 from decimal import *
@@ -106,13 +111,20 @@ from django.contrib.auth import logout as auth_logout
 
 from libs import dropalgorithm
 from libs import exlib
-inilock = Lock()
 
 
-@register.filter
+@register.filter(takes_context=True)
+def get_count(dict, key):
+    return dict[key]['count']
+
+@register.filter(takes_context=True)
+def get_tk(dict, key):
+    return dict[key]['tk']
+
+
+@register.filter(takes_context=True)
 def get_item(dictionary, key):
     return dictionary.get(key)
-
 
 @register.simple_tag(takes_context=True)
 def get_renderedrow(context, **kwargs):
@@ -124,6 +136,7 @@ def get_renderedrow(context, **kwargs):
         kwargs['statelist'] = statelist
         return Customrenderer.world_computingsitesummary(context, kwargs)
 
+inilock = Lock()
 
 
 
@@ -2923,7 +2936,6 @@ def jobList(request, mode=None, param=None):
         request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge=True
     droplist = []
     newdroplist = []
-    difDropList = []
     droppedPmerge = set()
     newdroppedPmerge = set()
     cntStatus = []
@@ -2965,7 +2977,6 @@ def jobList(request, mode=None, param=None):
                 isEventTask = False
             start = time.time()
             newjobs,newdroppedPmerge,newdroplist = dropalgorithm.clearDropRetrielsJobs(tk=tk,droplist=droppedList,jobs=newjobs,isEventTask=isEventTask,isReturnDroppedPMerge=isReturnDroppedPMerge)
-            difDropList = dropalgorithm.compareDropAlgorithm(droplist,newdroplist)
             end = time.time()
             print(end - start)
 
@@ -3224,7 +3235,6 @@ def jobList(request, mode=None, param=None):
             'ndropPmerge_test':len(newdroppedPmerge),
             'droppedPmerge2_test':newdroppedPmerge,
             'pandaIDList_test':newdroplist,
-            'difDropList_test':difDropList,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -6191,7 +6201,6 @@ def dashboard(request, view='production'):
     if not valid: return response
 
     data = getCacheEntry(request, "dashboard")
-    #data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -6421,26 +6430,12 @@ def dashboard(request, view='production'):
         if len(objectStoresNames) == 0:
             getObjectStoresNames()
 
-        sqlRequest = """
-        SELECT 
-        JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE, RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('// text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST FROM 
-        (   
-         SELECT
-         DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS,  
-        TASKTYPE, ES, CASE WHEN t2.OBJSTORE_ID > 0 THEN TO_CHAR(t2.OBJSTORE_ID)  
-        ELSE t3.destinationse END AS OBJSE           
-        FROM  
-        ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1
-           LEFT JOIN  
-        ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID =  t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0) 
-           LEFT JOIN ATLAS_PANDA.filestable4 t3 ON (t3.pandaid = t2.pandaid and  t3.JEDITASKID = t2.JEDITASKID and t3.row_id=t2.ziprow_id)           
-        WHERE 
-        t1.ES in (1) and t1.CLOUD='WORLD' and t1.MODIFICATIONTIME >  (sysdate - interval '13' hour)
-        AND t3.MODIFICATIONTIME >  (sysdate - interval '13' hour)        
-        ) 
-        WHERE NOT OBJSE IS NULL        
-        GROUP BY JOBSTATUS, JOBSTATUS, COMPUTINGSITE, OBJSE order by OBJSE ; 
-        """
+        sqlRequest = """SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE, RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST FROM 
+          (SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, CASE WHEN t2.OBJSTORE_ID > 0 THEN TO_CHAR(t2.OBJSTORE_ID) ELSE t3.destinationse END AS OBJSE 
+          FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 
+          LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID =  t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0) 
+          LEFT JOIN ATLAS_PANDA.filestable4 t3 ON (t3.pandaid = t2.pandaid and  t3.JEDITASKID = t2.JEDITASKID and t3.row_id=t2.ziprow_id) WHERE t1.ES in (1) and t1.CLOUD='WORLD' and t1.MODIFICATIONTIME > (sysdate - interval '13' hour) 
+          AND t3.MODIFICATIONTIME >  (sysdate - interval '13' hour)) WHERE NOT OBJSE IS NULL GROUP BY JOBSTATUS, JOBSTATUS, COMPUTINGSITE, OBJSE order by OBJSE;"""
 
         cur = connection.cursor()
         cur.execute(sqlRequest)
@@ -12169,13 +12164,6 @@ def getCacheData(request,requestid):
         return data
     else:
         return None
-
-@register.filter
-def get_count(dict, key):
-    return dict[key]['count']
-@register.filter
-def get_tk(dict, key):
-    return dict[key]['tk']
 
 def fixLob(cur):
     fixRowsList = []
