@@ -56,7 +56,7 @@ def dropRetrielsJobs(jeditaskid,extra=None,isEventTask=False):
 def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPMerge = False):
     newjobs=[]
     droppedPmerge =[]
-    notDroppetPmerge = set()
+    notDroppedPmerge = set()
     if isEventTask is False:
         for job in jobs:
             #if not isReturnDroppedPMerge:
@@ -75,7 +75,7 @@ def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPM
                     droplist = droplist + list(droppedPmerge)
                     droppedPmerge = []
                 else:
-                    newjobs = newjobs + list(notDroppetPmerge)
+                    newjobs = newjobs + list(notDroppedPmerge)
                     droppedPmerge = []
         new_cur = connection.cursor()
         new_cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i" % (tk))
