@@ -2728,6 +2728,7 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
                 path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
         except: path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
         cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+        return cache.get(cache_key, None)
     else:
         cache_key = '%s' % (key_prefix)
         return cache.get(cache_key, None)
