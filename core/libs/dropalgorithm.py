@@ -167,3 +167,17 @@ def clearDropPmergeRetrielsJobs(dPmerge,retryquery):
             notDropPmerge.append(checkJob)
     new_cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i" % (transactionKey))
     return dropPmerge,notDropPmerge
+
+def compareDropAlgorithm(oldDropDict,newDropList):
+    difDropList = []
+    oldDropList = []
+    for drp in oldDropDict:
+        oldDropList.append(drp['pandaid'])
+    if len(oldDropList)>len(newDropList) and (len(oldDropDict) != 0 and len(newDropList) != 0):
+        difDropList = set(oldDropList)- set(newDropList)
+    elif len(oldDropList)<len(newDropList) and (len(oldDropDict)!= 0 and len(newDropList) != 0):
+        difDropList = set(newDropList) - set(oldDropList)
+    else:
+        return difDropList
+    difDropList  = list(difDropList)
+    return difDropList
