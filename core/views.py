@@ -2794,7 +2794,7 @@ def jobList(request, mode=None, param=None):
     data = getCacheEntry(request, "jobList")
     if data is not None:
         data = json.loads(data)
-        data=exlib.deleteTestData(request,data)
+        #data=exlib.deleteTestData(request,data)
         data['request'] = request
         if data['eventservice'] == True:
             response = render_to_response('jobListES.html', data, content_type='text/html')
