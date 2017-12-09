@@ -7130,7 +7130,7 @@ def killtasks(request):
 
     headers = {'Accept': 'application/json', 'Authorization': 'Token '+prodsysToken}
 
-    conn = urllib3.HTTPSConnectionPool(prodsysHost, timeout=20)
+    conn = urllib3.HTTPSConnectionPool(prodsysHost, timeout=100)
     resp = None
 
 #    if request.session['IS_TESTER']:
