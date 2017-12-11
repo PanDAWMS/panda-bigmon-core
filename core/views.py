@@ -2794,7 +2794,9 @@ def jobList(request, mode=None, param=None):
     data = getCacheEntry(request, "jobList")
     if data is not None:
         data = json.loads(data)
-        #data=exlib.deleteTestData(request,data)
+        try:
+            data=exlib.deleteTestData(request,data)
+        except: pass
         data['request'] = request
         if data['eventservice'] == True:
             response = render_to_response('jobListES.html', data, content_type='text/html')
@@ -8153,7 +8155,9 @@ def taskInfo(request, jeditaskid=0):
 
     if data is not None:
         data = json.loads(data)
-        #data = exlib.deleteTestData(request, data)
+        try:
+            data = exlib.deleteTestData(request, data)
+        except:pass
         doRefresh = False
 
         plotDict = {}
@@ -8588,10 +8592,7 @@ def taskInfo(request, jeditaskid=0):
             attrs.append({'name': 'Status', 'value': taskrec['status']})
         del request.session['TFIRST']
         del request.session['TLAST']
-        newjobsummary =[]
-        newjobsummaryPMERGE =[]
-        newjobsummaryESMerge=[]
-        neweventsdict=[]
+
         data = {
             'furl': furl,
             'nomodeurl': nomodeurl,
