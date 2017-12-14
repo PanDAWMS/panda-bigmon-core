@@ -168,9 +168,6 @@ function buildPlots(classname) {
 </table>
 
 
-<div>
-    <span class="warning" style="float: left; font-weight: bold; padding-top: 10px">!!! All links are here &#x279c; &nbsp; </span>
-</div>
 <div class="dropdownplots">
   <button class="dropdownbutton">Go to</button>
   <div id="dropdown-plotchoice" class="dropdown-plot">
@@ -551,18 +548,35 @@ function buildPlots(classname) {
 </div>
 <p>
 
+
 <p>
 {% if task.errordialog %}
-<table width=1000><tr><td bgcolor="#FFFBDA"><font color='brown'> <b>Logged status: {{ task.errordialog|safe }}</b></font></td></tr>
+<div class="card scrollable">
+    <div class="card-divider errorlog">
+        <h6>Logged status: {{ task.errordialog|safe }}</h6>
+    </div>
 {% if logtxt %}
-<tr><td>
-<font size=-1><pre>
-{{ logtxt }}
-</pre></font>
-</td></tr>
+    <div class="card-section errorlog">
+    <pre>
+    {{ logtxt }}
+    </pre>
+    </div>
 {% endif %}
-</table>
+</div>
 {% endif %}
+
+{#<p>#}
+{#{% if task.errordialog %}#}
+{#<table width=1000><tr><td bgcolor="#FFFBDA"><font color='brown'> <b>Logged status: {{ task.errordialog|safe }}</b></font></td></tr>#}
+{#{% if logtxt %}#}
+{#<tr><td>#}
+{#<font size=-1><pre>#}
+{#{{ logtxt }}#}
+{#</pre></font>#}
+{#</td></tr>#}
+{#{% endif %}#}
+{#</table>#}
+{#{% endif %}#}
 
 
 <p>

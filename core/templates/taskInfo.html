@@ -166,9 +166,6 @@ function buildPlots(classname) {
 <p>
 
 
-<div>
-    <span class="warning" style="float: left; font-weight: bold; padding-top: 10px">!!! All links are here &#x279c; &nbsp; </span>
-</div>
 <div class="dropdownplots">
   <button class="dropdownbutton">Go to</button>
   <div id="dropdown-plotchoice" class="dropdown-plot">
@@ -203,7 +200,8 @@ function buildPlots(classname) {
   <button class="dropdownbutton">Show jobs</button>
   <div id="dropdown-plotchoice" class="dropdown-plot">
     {% if jobsummary %}
-        <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&mode=nodrop&display_limit=100">All (access to job details and logs)</a>
+        <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&mode=nodrop&display_limit=100">All (including retries)</a>
+        <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&mode=drop&display_limit=100">All (retries dropped)</a>
         <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&jobstatus=finished|failed|cancelled">Ended</a>
         <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Active</a>
     {% endif %}
@@ -324,15 +322,18 @@ function buildPlots(classname) {
 
 <p>
 {% if task.errordialog %}
-<table width=1000><tr><td bgcolor="#FFFBDA"><font color='brown'> <b>Logged status: {{ task.errordialog|safe }}</b></font></td></tr>
+<div class="card scrollable">
+    <div class="card-divider errorlog">
+        <h5>Logged status: {{ task.errordialog|safe }}</h5>
+    </div>
 {% if logtxt %}
-<tr><td>
-<font size=-1><pre>
-{{ logtxt }}
-</pre></font>
-</td></tr>
+    <div class="card-section errorlog">
+    <pre>
+    {{ logtxt }}
+    </pre>
+    </div>
 {% endif %}
-</table>
+</div>
 {% endif %}
 
 <p>
@@ -366,7 +367,7 @@ This is an event service task<p>
 </tr>
 {% for dsrec in inctrs %}
 	<tr>
-		<td><font size=-1><a href="{% url 'datasetList' %}?containername={{ dsrec }}">{{ dsrec }}</a></font></td>
+		<td><font size=-1><a href="{% url 'datasetList' %}?containername={{ dsrec }}&jeditaskid={{ jeditaskid }}">{{ dsrec }}</a></font></td>
 	</tr>
 {% endfor %}
 </table>
@@ -379,7 +380,7 @@ This is an event service task<p>
 </tr>
 {% for dsrec in outctrs %}
 	<tr>
-		<td><font size=-1><a href="{% url 'datasetList' %}?containername={{ dsrec }}">{{ dsrec }}</a></font></td>
+		<td><font size=-1><a href="{% url 'datasetList' %}?containername={{ dsrec }}&jeditaskid={{ jeditaskid }}">{{ dsrec }}</a></font></td>
 	</tr>
 {% endfor %}
 </table>
@@ -415,7 +416,7 @@ function toggleRowsDisplay(className) {
 	<th>Modified</th>
 </tr>{% for dsrec in datasets %}
 	<tr class="type-{{ dsrec.type }} type-all" style="display:none">
-		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetid={{ dsrec.datasetid }}">{{ dsrec.datasetname }}</a></font></td>
+		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetid={{ dsrec.datasetid }}&jeditaskid={{ jeditaskid }}">{{ dsrec.datasetname }}</a></font></td>
 		<td>{{ dsrec.type }}</td>
 		<td>{{ dsrec.streamname }}</td>
 		<td class='{{dsrec.state}}'>{{ dsrec.state }}</td>

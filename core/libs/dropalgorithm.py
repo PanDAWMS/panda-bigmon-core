@@ -70,7 +70,7 @@ def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPM
         if len(droppedPmerge)>0:
             if len(jobs) > 0:
                 retryquery['jeditaskid'] = jobs[0]['jeditaskid']
-                droppedPmerge,notDroppetPmerge = clearDropPmergeRetrielsJobs(droppedPmerge, retryquery)
+                droppedPmerge,notDroppedPmerge = clearDropPmergeRetrielsJobs(droppedPmerge, retryquery)
                 if not isReturnDroppedPMerge:
                     droplist = droplist + list(droppedPmerge)
                     droppedPmerge = []

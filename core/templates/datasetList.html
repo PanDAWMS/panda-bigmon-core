@@ -30,7 +30,7 @@
 {% for dsrec in datasets %}
     {% if requestParams.containername != dsrec.datasetname %}
 	<tr>
-		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{ dsrec.datasetname }}">{{ dsrec.datasetname }}</a></font></td>
+		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{ dsrec.datasetname }}&jeditaskid={{ dsrec.jeditaskid }}">{{ dsrec.datasetname }}</a></font></td>
 		<td>{{ dsrec.datasetid }}</td>
 		<td>{{ dsrec.type }}</td>
 		<td>{{ dsrec.streamname }}</td>

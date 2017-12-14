@@ -166,3 +166,20 @@ margin-left: 0;
 margin-right: 0;
 padding: 0;
 float: none !important; }
+
+.card.scrollable {
+  width: 100%;
+  height: 500px;
+  overflow-y: scroll;
+}
+
+.card-divider.errorlog {
+    background-color: #FFFBDA;
+    color: brown;
+    border-bottom: 1px solid #ececec;
+}
+
+.card-section.errorlog {
+    font-size: smaller;
+    background-color: #f1f1f1;
+}
