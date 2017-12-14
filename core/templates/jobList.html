@@ -47,6 +47,9 @@
 <br>Job <b>modification times</b> in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>.
 <br>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.
 {% endif %}
+{% if requestParams.mode == 'nodrop' %}
+<br><a href="{{xurl}}mode=drop">Switch to drop mode</a>
+{% endif %}
 
 {% if flowstruct %}
 
@@ -79,7 +82,7 @@ function toggleDetailDisplay(className) {
 <b>{{ ndrops }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
 
 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('retries');"><br>Click to show/hide dropped jobs</a>
-<br><a href="{{xurl}}&mode=nodrop">Switch to nodrop mode</a>
+<br><a href="{{xurl}}mode=nodrop">Switch to nodrop mode</a>
 <div class="retries" style="display:none">
 <font size=-1>
 <br>Dropped (retry):<br>
@@ -99,7 +102,7 @@ function toggleDetailDisplay(className) {
 <b style="font-size: 24px">New drop algorithm</b><br/><br/>
 <b>{{ newndrop_test }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('newretries');"><br>Click to show/hide dropped jobs</a>
-<br><a href="{{xurl}}&mode=nodrop">Switch to nodrop mode</a>
+<br><a href="{{xurl}}mode=nodrop">Switch to nodrop mode</a>
 <div class="newretries" style="display:none">
 <font size=-1>
 <br>Dropped:<br>
@@ -139,7 +142,7 @@ function toggleDetailDisplay(className) {
 
 {% if ndrops < 0 %}
 <table width=900><tr><td class='highlightcell'>
-    <a href="{{xurl}}&mode=nodrop">Switch to nodrop mode</a>
+    <a href="{{xurl}}mode=nodrop">Switch to nodrop mode</a>
 </table>
 {% endif %}
 

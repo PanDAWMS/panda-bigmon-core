@@ -110,8 +110,9 @@ from django.contrib.auth import logout as auth_logout
 
 
 from libs import dropalgorithm
-from libs import exlib
-
+#from libs import exlib
+from libs.cache import deleteCacheTestData
+#,getCacheEntry,setCacheEntry
 
 @register.filter(takes_context=True)
 def get_count(dict, key):
@@ -2795,7 +2796,7 @@ def jobList(request, mode=None, param=None):
     if data is not None:
         data = json.loads(data)
         try:
-            data=exlib.deleteTestData(request,data)
+            data = deleteCacheTestData(request,data)
         except: pass
         data['request'] = request
         if data['eventservice'] == True:
@@ -3190,6 +3191,7 @@ def jobList(request, mode=None, param=None):
         print xurl
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
+        xurl = removeParam(nosorturl, 'mode', mode='extensible')
 
         TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
@@ -8156,8 +8158,8 @@ def taskInfo(request, jeditaskid=0):
     if data is not None:
         data = json.loads(data)
         try:
-            data = exlib.deleteTestData(request, data)
-        except:pass
+            data = deleteCacheTestData(request, data)
+        except: pass
         doRefresh = False
 
         plotDict = {}

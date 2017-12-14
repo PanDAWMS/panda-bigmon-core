@@ -38,7 +38,9 @@
 <br>Job <b>modification times</b> in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>.
 <br>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.
 {% endif %}
-
+{% if requestParams.mode == 'nodrop' %}
+<br><a href="{{xurl}}&mode=drop">Switch to drop mode</a>
+{% endif %}
 <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
 
 <script type="text/javascript">

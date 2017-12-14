@@ -15,9 +15,12 @@ from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, Sum
 from core.views import initRequest, extensibleURL, removeParam
 from core.views import setCacheEntry, getCacheEntry, DateEncoder, endSelfMonitor
+#from core.views import DateEncoder, endSelfMonitor
 from core.art.jobSubResults import getJobReport, getARTjobSubResults
 from core.settings import defaultDatetimeFormat
 from django.db.models import Q
+
+#from core.libs.cache import setCacheEntry, getCacheEntry
 
 artdateformat = '%Y-%m-%d'
 humandateformat = '%d %b %Y'
