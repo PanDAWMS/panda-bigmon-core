@@ -12424,5 +12424,71 @@ def testip(request):
     #     ip = request.META.get('REMOTE_ADDR')
     return HttpResponse(json.dumps(x_forwarded_for, cls=DateTimeEncoder), content_type='text/html')
 
+def tasksErrorsScattering(request):
+    limit = 1000
+    hours = 4
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
+    tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
+
+    random.seed()
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+    else:
+        tmpTableName = "TMP_IDS1"
+
+    transactionKey = random.randrange(1000000)
+    executionData = []
+    for id in tasks:
+        executionData.append((id['jeditaskid'], transactionKey))
+
+    new_cur = connection.cursor()
+    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    new_cur.executemany(query, executionData)
+    connection.commit()
+
+    query = """
+
+        SELECT SUM(FAILEDC) / SUM(ALLC) as FPERC, COMPUTINGSITE, JEDITASKID from (
+
+            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) group by COMPUTINGSITE, JEDITASKID
+            UNION
+            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) group by COMPUTINGSITE, JEDITASKID
+        ) group by COMPUTINGSITE, JEDITASKID
+    """ % (tmpTableName, transactionKey, tmpTableName, transactionKey)
+
+    new_cur.execute(query)
+
+    errorsRaw = dictfetchall(new_cur)
+    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+
+    computingSites = []
+    taskserrors = {}
+
+
+    for errorEntry in errorsRaw:
+        computingSites.append(errorEntry['COMPUTINGSITE'])
+        jeditaskid = errorEntry['JEDITASKID']
+        if jeditaskid not in taskserrors:
+            taskentry = {}
+            taskserrors[jeditaskid] = taskentry
+        taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']] = (str(int(errorEntry['FPERC'] * 100)) + "%") if errorEntry['FPERC'] else " "
+    computingSites = set(computingSites)
+
+    for jeditaskid,taskentry  in taskserrors.iteritems():
+        for computingSite in computingSites:
+            if not computingSite in taskentry:
+                taskentry[computingSite] = ' '
+
+
+    data = {
+        'computingSites': computingSites,
+        'taskserrors':taskserrors,
+    }
+
+    response = render_to_response('tasksscatteringmatrix.html', data, content_type='text/html')
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
+
 
 

@@ -1,0 +1,34 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Tasks errors scattering{% endblock %}
+{% block title %}Tasks errors scattering{% endblock %}
+{% block subtitle %}Tasks errors scattering <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+{% block body %}
+
+    <table>
+        <tr>
+            <th>JediTaskID</th>
+            {% for computingSite in computingSites %}
+                <th>{{ computingSite }}</th>
+            {% endfor %}
+        </tr>
+
+        {% for jeditaskid, values in taskserrors.items %}
+            <tr>
+              <td><a href="{% url 'taskInfo' jeditaskid %}">{{ jeditaskid }}</a></td>
+
+            {% for computingSite in computingSites %}
+                <td >{{ values|get_item:computingSite }}</td>
+            {% endfor %}
+
+
+            </tr>
+         {% endfor %}
+
+
+
+    </table>
+
+{% endblock %}

@@ -156,7 +156,9 @@ urlpatterns = [
     url(r'^testip/$', coremon_views.testip, name='testip'),
     url(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
 
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    url(r'^taskserrorsscat/$', coremon_views.tasksErrorsScattering, name='tasksErrorsScattering'),
+
+    ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
 if settings.DEBUG:
