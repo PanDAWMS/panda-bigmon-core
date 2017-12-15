@@ -12465,13 +12465,32 @@ def tasksErrorsScattering(request):
     taskserrors = {}
 
 
+    # we fill here the dict
     for errorEntry in errorsRaw:
-        computingSites.append(errorEntry['COMPUTINGSITE'])
         jeditaskid = errorEntry['JEDITASKID']
         if jeditaskid not in taskserrors:
             taskentry = {}
             taskserrors[jeditaskid] = taskentry
         taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']] = (str(int(errorEntry['FPERC'] * 100)) + "%") if errorEntry['FPERC'] else " "
+
+    tasksToDel = []
+
+    #make cleanup of full none erroneous tasks
+    for jeditaskid,taskentry  in taskserrors.iteritems():
+        notNone = False
+        for sitename, siteval in taskentry.iteritems():
+            if siteval != " ":
+                notNone = True
+        if not notNone:
+            tasksToDel.append(jeditaskid)
+
+    for taskToDel in tasksToDel:
+        del taskserrors[taskToDel]
+
+    for jeditaskid,taskentry in taskserrors.iteritems():
+        for sitename, siteval in taskentry.iteritems():
+            computingSites.append(sitename)
+
     computingSites = set(computingSites)
 
     for jeditaskid,taskentry  in taskserrors.iteritems():
