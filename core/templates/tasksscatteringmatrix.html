@@ -7,11 +7,15 @@
 {% block subtitle %}Tasks errors scattering <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
 {% block body %}
 
+		<link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
+
+
+
     <table>
         <tr>
-            <th>JediTaskID</th>
+            <th class="rotate"><div><span>JediTaskID</span></div></th>
             {% for computingSite in computingSites %}
-                <th>{{ computingSite }}</th>
+                <th class="rotate"><div><span>{{ computingSite }}</span></div></th>
             {% endfor %}
         </tr>
 
@@ -20,7 +24,9 @@
               <td><a href="{% url 'taskInfo' jeditaskid %}">{{ jeditaskid }}</a></td>
 
             {% for computingSite in computingSites %}
-                <td >{{ values|get_item:computingSite }}</td>
+                {% if values|get_item:computingSite %}
+                <td><a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&jobstatus=failed&computingsite={{ computingSite }}">{{ values|get_item:computingSite }}</a></td>
+                {% endif %}
             {% endfor %}
 
 

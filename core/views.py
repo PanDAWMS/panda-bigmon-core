@@ -12428,6 +12428,7 @@ def tasksErrorsScattering(request):
     limit = 1000
     hours = 4
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
+    query['tasktype'] = 'prod'
     tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
 
     random.seed()
@@ -12448,7 +12449,7 @@ def tasksErrorsScattering(request):
 
     query = """
 
-        SELECT SUM(FAILEDC) / SUM(ALLC) as FPERC, COMPUTINGSITE, JEDITASKID from (
+        SELECT SUM(FAILEDC) / SUM(ALLC) as FPERC, COMPUTINGSITE, JEDITASKID, SUM(FAILEDC) as FAILEDC from (
 
             SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) group by COMPUTINGSITE, JEDITASKID
             UNION
@@ -12471,7 +12472,8 @@ def tasksErrorsScattering(request):
         if jeditaskid not in taskserrors:
             taskentry = {}
             taskserrors[jeditaskid] = taskentry
-        taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']] = (str(int(errorEntry['FPERC'] * 100)) + "%") if errorEntry['FPERC'] else " "
+        labelForLink = (str(int(errorEntry['FPERC'] * 100)) + "%" + " ("+str(int(errorEntry['FAILEDC']))+")") if errorEntry['FPERC'] else " "
+        taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']] = labelForLink
 
     tasksToDel = []
 
