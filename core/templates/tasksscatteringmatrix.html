@@ -15,7 +15,7 @@
         <tr>
             <th class="rotate"><div><span>JediTaskID</span></div></th>
             {% for computingSite in computingSites %}
-                <th class="rotate"><div><span>{{ computingSite }}</span></div></th>
+                <th class="rotate"><div><span><a href="{% url 'siteInfo' %}{{ computingSite }}/">{{ computingSite }}</a></span></div></th>
             {% endfor %}
         </tr>
 
