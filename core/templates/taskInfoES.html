@@ -546,37 +546,29 @@ function buildPlots(classname) {
 <div id="div-error-sum">
 
 </div>
-<p>
+
 
 
 <p>
 {% if task.errordialog %}
+{% if logtxt %}
 <div class="card scrollable">
     <div class="card-divider errorlog">
-        <h6>Logged status: {{ task.errordialog|safe }}</h6>
+        <h5>Logged status: {{ task.errordialog|safe }}</h5>
     </div>
-{% if logtxt %}
     <div class="card-section errorlog">
     <pre>
     {{ logtxt }}
     </pre>
     </div>
-{% endif %}
 </div>
+{% else %}
+    <div class="card-divider errorlog">
+        <h5>Logged status: {{ task.errordialog|safe }}</h5>
+    </div>
+{% endif %}
 {% endif %}
 
-{#<p>#}
-{#{% if task.errordialog %}#}
-{#<table width=1000><tr><td bgcolor="#FFFBDA"><font color='brown'> <b>Logged status: {{ task.errordialog|safe }}</b></font></td></tr>#}
-{#{% if logtxt %}#}
-{#<tr><td>#}
-{#<font size=-1><pre>#}
-{#{{ logtxt }}#}
-{#</pre></font>#}
-{#</td></tr>#}
-{#{% endif %}#}
-{#</table>#}
-{#{% endif %}#}
 
 
 <p>

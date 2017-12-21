@@ -322,18 +322,22 @@ function buildPlots(classname) {
 
 <p>
 {% if task.errordialog %}
+{% if logtxt %}
 <div class="card scrollable">
     <div class="card-divider errorlog">
         <h5>Logged status: {{ task.errordialog|safe }}</h5>
     </div>
-{% if logtxt %}
     <div class="card-section errorlog">
     <pre>
     {{ logtxt }}
     </pre>
     </div>
-{% endif %}
 </div>
+{% else %}
+    <div class="card-divider errorlog">
+        <h5>Logged status: {{ task.errordialog|safe }}</h5>
+    </div>
+{% endif %}
 {% endif %}
 
 <p>
