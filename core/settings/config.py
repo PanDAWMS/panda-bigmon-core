@@ -138,6 +138,7 @@ FILTER_UI_ENV = {
 #LOG_ROOT = '/data/bigpandamon_virtualhosts/core/logs'
 #LOG_ROOT = '/data/wenaus/logs'
 LOG_ROOT = '/data/wenaus/bigpandamon_virtualhosts/twrpm/logs'
+
 LOG_SIZE = 1000000000
 LOGGING = {
     'version': 1,
@@ -249,6 +250,10 @@ LOGGING = {
         'bigpandamon': {
             'handlers': ['logfile-bigpandamon'],
             'level': 'DEBUG',
+        },
+        'bigpandamon-error': {
+            'handlers': ['logfile-error'],
+            'level': 'ERROR',
         },
         'api_reprocessing':{
             'handlers': ['logfile-api_reprocessing'],

@@ -108,7 +108,6 @@ from collections import OrderedDict
 
 from django.contrib.auth import logout as auth_logout
 
-
 from libs import dropalgorithm
 #from libs import exlib
 from libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry
@@ -3085,7 +3084,12 @@ def jobList(request, mode=None, param=None):
     # Here we getting extended data for site
     jobsToShow = jobs[:njobsmax]
     from libs import exlib
-    #jobsToShow = exlib.fileList(jobsToShow)
+    try:
+        jobsToShow = exlib.fileList(jobsToShow)
+    except Exception as e:
+        pass
+        #logger = logging.getLogger('bigpandamon-error')
+        #logger.error(e)
     ###RESERVE
     distinctComputingSites = []
     for job in jobsToShow:
