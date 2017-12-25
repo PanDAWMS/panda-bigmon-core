@@ -3085,7 +3085,7 @@ def jobList(request, mode=None, param=None):
     # Here we getting extended data for site
     jobsToShow = jobs[:njobsmax]
     from libs import exlib
-    jobsToShow = exlib.fileList(jobsToShow)
+    #jobsToShow = exlib.fileList(jobsToShow)
     ###RESERVE
     distinctComputingSites = []
     for job in jobsToShow:
