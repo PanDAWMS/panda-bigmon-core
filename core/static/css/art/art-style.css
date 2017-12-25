@@ -149,8 +149,8 @@ li.artmenu-item > label {
   font-weight: bold;
 }
 .nodata {
-    text-align: center;
-    margin: auto;
+    text-align: left;
+    margin-left: 30px;
     background-color: transparent;
     max-width: 380px;
     height: 21px;
@@ -272,7 +272,7 @@ li.artmenu-item > label {
 
 .no-border .header {
     border: none;
-    text-align: center;
+    /*text-align: center;*/
 }
 
 .cell.header {

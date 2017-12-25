@@ -17,8 +17,8 @@
 
 {% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
 {% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
-{% if requestParams.ntag %}<b>Listed tests is for {{ requestParams.ntag|date:"d b Y" }}</b> <br>{% endif %}
-{% if requestParams.ntag_from %}<b>Listed tests is from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
+{% if requestParams.ntag %}<b>Listed tests are for {{ requestParams.ntag|date:"d b Y" }}</b> <br>{% endif %}
+{% if requestParams.ntag_from %}<b>Listed tests are from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
 {% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 
 <div class="row">
