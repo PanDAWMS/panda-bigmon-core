@@ -81,36 +81,39 @@ function loadJobSubResult(testname, urltail) {
 {#                                    {% endfor %}{% endfor %}#}
 {#                                {% endif %}#}
 {#                                    {{ test }}#}
-                                {% if ntaglist|length == 1 %}
-                                    {% for ntname, jobs in tags.items %}{% for pandaid, jobparams in jobs.jobs.items %}
-                                      {% if not jobparams.testresult or not jobparams.testresult|length >= 0 %}
-                                          {% if jobparams.guid and jobparams.lfn and jobparams.scope %}
-                                            <i id="div-subresults-plussign-{{ test }}-{{ pandaid }}" class="fi-plus"></i>
-                                          {% endif %}
-                                      {% endif %}
-                                    {% endfor %}{% endfor %}
-                                {% endif %}
+{#                                {% if ntaglist|length == 1 %}#}
+{#                                    {% for ntname, jobs in tags.items %}{% for pandaid, jobparams in jobs.jobs.items %}#}
+{#                                      {% if jobparams.testresult == None or jobparams.testresult|length == 0 and jobparams.testexitcode == None %}#}
+{#                                        {% if jobparams.jobstatus == 'finished' or jobparams.jobstatus == 'failed' %}#}
+{#                                          {% if jobparams.guid and jobparams.lfn and jobparams.scope %}#}
+{#                                            <i id="div-subresults-plussign-{{ test }}-{{ pandaid }}" class="fi-plus"></i>#}
+{#                                          {% endif %}#}
+{#                                        {% endif %}#}
+{#                                      {% endif %}#}
+{#                                    {% endfor %}{% endfor %}#}
+{#                                {% endif %}#}
                                     {{ test }}
-                                {% if ntaglist|length == 1 %}
-                                    {% for ntname, jobs in tags.items %}{% for pandaid, jobparams in jobs.jobs.items %}
-                                      {% if jobparams.testresult or jobparams.testexitcode %}
-                                          <ul class="no-bullet" style="margin-left: 1rem">
-                                            {% if 'testexitcode' in jobparams and jobparams.testexitcode %}
-                                                <li>Test exit code: {{ jobparams.testexitcode }}</li>
-                                            {% endif %}
-                                            <ol>
-                                              {% if 'testresult' in jobparams and jobparams.testresult|length > 0 %}
-                                                {% for r in jobparams.testresult %}
-                                                <li> {% if r.name|length > 1 %} {{ r.name }}: {% endif %} {{ r.result }}</li>
-                                                {% endfor %}
-                                              {% endif %}
-                                            </ol>
-                                        </ul>
-                                      {% else %}
-                                        <div id="div-subresults-{{ test }}-{{ pandaid }}"></div>
-                                      {% endif %}
-                                    {% endfor %}{% endfor %}
-                                {% endif %}</td>
+{#                                {% if ntaglist|length == 1 %}#}
+{#                                    {% for ntname, jobs in tags.items %}{% for pandaid, jobparams in jobs.jobs.items %}#}
+{#                                      {% if jobparams.testresult != None or jobparams.testexitcode != None %}#}
+{#                                        <ul class="no-bullet" style="margin-left: 1rem">#}
+{#                                            {% if jobparams.testexitcode != None %}#}
+{#                                                <li>Test exit code: {{ jobparams.testexitcode }}</li>#}
+{#                                            {% endif %}#}
+{#                                            <ol>#}
+{#                                              {% if 'testresult' in jobparams and jobparams.testresult|length > 0 %}#}
+{#                                                {% for r in jobparams.testresult %}#}
+{#                                                <li> {% if r.name|length > 1 %} {{ r.name }}: {% endif %} {{ r.result }}</li>#}
+{#                                                {% endfor %}#}
+{#                                              {% endif %}#}
+{#                                            </ol>#}
+{#                                        </ul>#}
+{#                                      {% else %}#}
+{#                                        <div id="div-subresults-{{ test }}-{{ pandaid }}"></div>#}
+{#                                      {% endif %}#}
+{#                                    {% endfor %}{% endfor %}#}
+{#                                {% endif %}#}
+                              </td>
                               {% for ntag in ntaglist %}
                                   {% for ntname,jobs in tags.items  %}
                                     {% if ntname == ntag %}
@@ -119,8 +122,14 @@ function loadJobSubResult(testname, urltail) {
                                             {% for pandaid,job in jobs.jobs.items %}
                                                 {% if job.jobstatus %}
                                                     <div class="with-link-to-logs">
-                                                        <div class="clickable">
-                                                            <div {% if job.jobstatus == 'failed' or job.jobstatus == 'finished' %} class="{{ job.jobstatus }}_job">{{ job.jobstatus }} {% else %} class="active_job"> active {% endif %}  </div>
+                                                      {% if ntaglist|length == 1 %}
+                                                        <div class="testsubresultscontainer">
+                                                            <ul>{% for r in job.testresult %}<li class="testsubresultbox {% if r.result > 0 %}failed{% else %}finished{% endif %}test tooltiptestresult">{{ forloop.counter }}<span class="tooltiptext">{% if r.name|length > 1 %} {{ r.name }}:{% endif %}{{ r.result }}</span></li>{% endfor %}</ul>
+                                                        </div>
+                                                      {% endif %}
+                                                        <div class="clickable {% if ntaglist|length != 1 %}nosubresults {% endif %}">
+{#                                                            <div {% if job.jobstatus == 'failed' or job.jobstatus == 'finished' %} class="{{ job.jobstatus }}_job">{{ job.jobstatus }} {% else %} class="active_job"> active {% endif %}  </div>#}
+                                                            <div {% if job.finalresult == 'failed' or job.finalresult == 'finished' %} class="{{ job.finalresult }}_job">{{ job.finalresult }} {% else %} class="active_job"> active {% endif %}  </div>
                                                             <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
                                                         </div>
                                                         <span class="tarindex tarindex_tooltip"> {{ job.tarindex }}</span>
@@ -135,17 +144,17 @@ function loadJobSubResult(testname, urltail) {
                                                 {% if ntaglist|length == 1 and job.guid and job.lfn and job.scope %}
                                                     {% if not job.testresult or not job.testresult|length >= 0 %}
                                                         {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
-                                                        <script>
-                                                            $.ajax({
-                                                                url: '{% url 'artJobSubResults' %}',
-                                                                data: 'guid={{ job.guid}}&lfn={{ job.lfn }}&scope={{ job.scope }}&jeditaskid={{ job.jeditaskid }}&pandaid={{ pandaid }}',
-                                                                async: true
-                                                            })
-                                                             .done(function (response) {
-                                                                document.getElementById("div-subresults-" + "{{ test }}-" + "{{ pandaid }}").innerHTML = response;
-                                                                document.getElementById("div-subresults-plussign-" + "{{ test }}-" + "{{ pandaid }}").parentNode.removeChild(document.getElementById("div-subresults-plussign-" + "{{ test }}-" + "{{ pandaid }}"));
-                                                            });
-                                                        </script>
+{#                                                        <script>#}
+{#                                                            $.ajax({#}
+{#                                                                url: '{% url 'artJobSubResults' %}',#}
+{#                                                                data: 'guid={{ job.guid}}&lfn={{ job.lfn }}&scope={{ job.scope }}&jeditaskid={{ job.jeditaskid }}&pandaid={{ pandaid }}',#}
+{#                                                                async: true#}
+{#                                                            })#}
+{#                                                             .done(function (response) {#}
+{#                                                                document.getElementById("div-subresults-" + "{{ test }}-" + "{{ pandaid }}").innerHTML = response;#}
+{#                                                                document.getElementById("div-subresults-plussign-" + "{{ test }}-" + "{{ pandaid }}").parentNode.removeChild(document.getElementById("div-subresults-plussign-" + "{{ test }}-" + "{{ pandaid }}"));#}
+{#                                                            });#}
+{#                                                        </script>#}
                                                         {% endif %}
                                                     {% endif %}
                                                 {% endif %}

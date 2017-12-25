@@ -399,18 +399,35 @@ def artJobs(request):
                     artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs'][job['origpandaid']]['tarindex'] = ''
 
-                if len(ntagslist) == 1:
-                    try:
-                        job['result'] = json.loads(job['result'])
-                        artjobsdict[job['package']][job['branch']][job['testname']][
-                            job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = \
-                        job['result']['exit_code'] if 'exit_code' in job['result'] else None
-                        artjobsdict[job['package']][job['branch']][job['testname']][
-                            job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = \
-                        job['result']['result'] if 'result' in job['result'] else []
-                    except:
-                        artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = None
-                        artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = None
+
+                if job['jobstatus'] in ('finished', 'failed'):
+                    artjobsdict[job['package']][job['branch']][job['testname']][
+                        job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['finalresult'] = job['jobstatus']
+                try:
+                    job['result'] = json.loads(job['result'])
+                    artjobsdict[job['package']][job['branch']][job['testname']][
+                        job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = \
+                            job['result']['exit_code'] if 'exit_code' in job['result'] else None
+                    artjobsdict[job['package']][job['branch']][job['testname']][
+                        job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = \
+                            job['result']['result'] if 'result' in job['result'] else []
+                except:
+                    job['result'] = None
+                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = None
+                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = None
+
+                if job['result'] is not None:
+                    if 'result' in job['result'] and len(job['result']['result']) > 0:
+                        for r in job['result']['result']:
+                            if int(r['result']) > 0:
+                                artjobsdict[job['package']][job['branch']][job['testname']][
+                                    job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']][
+                                        'finalresult'] = 'failed'
+                    elif 'exit_code' in job['result'] and job['result']['exit_code'] > 0:
+                        artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
+                            'jobs'][job['origpandaid']]['finalresult'] = 'failed'
+
+
 
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for job in jobs:
@@ -439,20 +456,50 @@ def artJobs(request):
                     artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs'][job['origpandaid']]['tarindex'] = ''
 
-                if len(ntagslist) == 1 and job['guid'] is not None and job['lfn'] is not None and job['scope'] is not None:
-                    try:
-                        job['result'] = json.loads(job['result'])
-                        artjobsdict[job['branch']][job['package']][job['testname']][
-                            job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = \
+
+                if job['jobstatus'] in ('finished', 'failed'):
+                    artjobsdict[job['branch']][job['package']][job['testname']][
+                        job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['finalresult'] = job['jobstatus']
+                try:
+                    job['result'] = json.loads(job['result'])
+                    artjobsdict[job['branch']][job['package']][job['testname']][
+                        job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = \
                             job['result']['exit_code'] if 'exit_code' in job['result'] else None
-                        artjobsdict[job['branch']][job['package']][job['testname']][
-                            job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = \
+                    artjobsdict[job['branch']][job['package']][job['testname']][
+                        job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = \
                             job['result']['result'] if 'result' in job['result'] else []
-                    except:
-                        artjobsdict[job['branch']][job['package']][job['testname']][
-                            job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = None
-                        artjobsdict[job['branch']][job['package']][job['testname']][
-                            job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = None
+                except:
+                    job['result'] = None
+                    artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = None
+                    artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = None
+
+                if job['result'] is not None:
+                    if 'result' in job['result'] and len(job['result']['result']) > 0:
+                        for r in job['result']['result']:
+                            if int(r['result']) > 0:
+                                artjobsdict[job['branch']][job['package']][job['testname']][
+                                    job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']][
+                                        'finalresult'] = 'failed'
+                    elif 'exit_code' in job['result'] and job['result']['exit_code'] > 0:
+                        artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)][
+                            'jobs'][job['origpandaid']]['finalresult'] = 'failed'
+
+
+
+                # if len(ntagslist) == 1 and job['guid'] is not None and job['lfn'] is not None and job['scope'] is not None:
+                #     try:
+                #         job['result'] = json.loads(job['result'])
+                #         artjobsdict[job['branch']][job['package']][job['testname']][
+                #             job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = \
+                #             job['result']['exit_code'] if 'exit_code' in job['result'] else None
+                #         artjobsdict[job['branch']][job['package']][job['testname']][
+                #             job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = \
+                #             job['result']['result'] if 'result' in job['result'] else []
+                #     except:
+                #         artjobsdict[job['branch']][job['package']][job['testname']][
+                #             job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = None
+                #         artjobsdict[job['branch']][job['package']][job['testname']][
+                #             job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = None
 
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
