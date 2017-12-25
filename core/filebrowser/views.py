@@ -18,8 +18,8 @@ from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_fi
 get_filebrowser_hostname
 
 from core.common.models import Filestable4
-from core.views import DateEncoder,setCacheEntry, getCacheEntry
-#from core.libs.cache import setCacheEntry, getCacheEntry
+from core.views import DateEncoder
+from core.libs.cache import setCacheEntry, getCacheEntry
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
 

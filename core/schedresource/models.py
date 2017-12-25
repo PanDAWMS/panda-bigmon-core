@@ -15,7 +15,6 @@ class Schedconfig(models.Model):
     environ = models.CharField(max_length=750, db_column='ENVIRON', blank=True)
     gatekeeper = models.CharField(max_length=120, db_column='GATEKEEPER', blank=True)
     jobmanager = models.CharField(max_length=240, db_column='JOBMANAGER', blank=True)
-    se = models.CharField(max_length=1200, db_column='SE', blank=True)
     ddm = models.CharField(max_length=360, db_column='DDM', blank=True)
     jdladd = models.CharField(max_length=1500, db_column='JDLADD', blank=True)
     globusadd = models.CharField(max_length=300, db_column='GLOBUSADD', blank=True)
@@ -41,15 +40,9 @@ class Schedconfig(models.Model):
     nodes = models.IntegerField(db_column='NODES')
     status = models.CharField(max_length=30, db_column='STATUS', blank=True)
     copytool = models.CharField(max_length=240, db_column='COPYTOOL', blank=True)
-    copysetup = models.CharField(max_length=600, db_column='COPYSETUP', blank=True)
     releases = models.CharField(max_length=1500, db_column='RELEASES', blank=True)
-    sepath = models.CharField(max_length=1200, db_column='SEPATH', blank=True)
     envsetup = models.CharField(max_length=600, db_column='ENVSETUP', blank=True)
-    copyprefix = models.CharField(max_length=480, db_column='COPYPREFIX', blank=True)
     lfcpath = models.CharField(max_length=240, db_column='LFCPATH', blank=True)
-    seopt = models.CharField(max_length=1200, db_column='SEOPT', blank=True)
-    sein = models.CharField(max_length=1200, db_column='SEIN', blank=True)
-    seinopt = models.CharField(max_length=1200, db_column='SEINOPT', blank=True)
     lfchost = models.CharField(max_length=240, db_column='LFCHOST', blank=True)
     cloud = models.CharField(max_length=180, db_column='CLOUD', blank=True)
     siteid = models.CharField(max_length=180, db_column='SITEID', blank=True)
@@ -57,18 +50,13 @@ class Schedconfig(models.Model):
     retry = models.CharField(max_length=30, db_column='RETRY', blank=True)
     queuehours = models.IntegerField(db_column='QUEUEHOURS')
     envsetupin = models.CharField(max_length=600, db_column='ENVSETUPIN', blank=True)
-    copytoolin = models.CharField(max_length=540, db_column='COPYTOOLIN', blank=True)
-    copysetupin = models.CharField(max_length=600, db_column='COPYSETUPIN', blank=True)
-    seprodpath = models.CharField(max_length=1200, db_column='SEPRODPATH', blank=True)
     lfcprodpath = models.CharField(max_length=240, db_column='LFCPRODPATH', blank=True)
-    copyprefixin = models.CharField(max_length=1080, db_column='COPYPREFIXIN', blank=True)
     recoverdir = models.CharField(max_length=240, db_column='RECOVERDIR', blank=True)
     memory = models.IntegerField(db_column='MEMORY')
     maxtime = models.IntegerField(db_column='MAXTIME')
     space = models.IntegerField(db_column='SPACE')
     tspace = models.DateTimeField(db_column='TSPACE')
     cmtconfig = models.CharField(max_length=750, db_column='CMTCONFIG', blank=True)
-    setokens = models.CharField(max_length=240, db_column='SETOKENS', blank=True)
     glexec = models.CharField(max_length=30, db_column='GLEXEC', blank=True)
     priorityoffset = models.CharField(max_length=180, db_column='PRIORITYOFFSET', blank=True)
     allowedgroups = models.CharField(max_length=300, db_column='ALLOWEDGROUPS', blank=True)
@@ -121,25 +109,37 @@ class Schedconfig(models.Model):
     httpredirector = models.CharField(null=True, max_length=256, db_column='HTTPREDIRECTOR', blank=True)
     multicloud_append = models.CharField(null=True, max_length=64, db_column='MULTICLOUD_APPEND', blank=True)
     corepower = models.IntegerField(null=True, db_column='COREPOWER', blank=True)
+    #Were added 21.12.17
     directaccesslan = models.CharField(null=True, max_length=64, db_column='DIRECT_ACCESS_LAN', blank=True)
     directaccesswan = models.CharField(null=True, max_length=64, db_column='DIRECT_ACCESS_WAN', blank=True)
-
+    wnconnectivy = models.CharField(null=True, max_length=256, db_column='WNCONNECTIVITY', blank=True)
+    cloudrshare = models.CharField(null=True, max_length=256, db_column='CLOUDRSHARE',  blank=True)
+    sitershare = models.CharField(null=True, max_length=256, db_column='SITERSHARE',  blank=True)
+    autosetup_post = models.CharField(null=True, max_length=512, db_column='AUTOSETUP_POST', blank=True)
+    autosetup_pre = models.CharField(null=True, max_length=512, db_column='AUTOSETUP_PRE', blank=True)
+    use_newmover = models.CharField(null=True, max_length=32, db_column='USE_NEWMOVER', blank=True)
+    pilotversion = models.CharField(null=True, max_length=32, db_column='PILOTVERSION', blank=True)
+    objectstores = models.CharField(null=True, max_length=4000, db_column='OBJECTSTORES', blank=True)
+    container_options = models.CharField(null=True, max_length=1024, db_column='CONTAINER_OPTIONS',blank=True)
+    container_type = models.CharField(null=True, max_length=256, db_column='CONTAINER_TYPE', blank=True)
+    jobseed = models.CharField(null=True, max_length=16, db_column='JOBSEED', blank=True)
+    pilot_manager = models.CharField(null=True, max_length=16, db_column='PILOT_MANAGER', blank=True)
     def __str__(self):
         return 'Schedconfig:' + str(self.nickname)
 
     def getFields(self):
         return ["name", "nickname", "queue", "localqueue", "system", \
-                "sysconfig", "environ", "gatekeeper", "jobmanager", "se", "ddm", \
+                "sysconfig", "environ", "gatekeeper", "jobmanager",  "ddm", \
                 "jdladd", "globusadd", "jdl", "jdltxt", "version", "site", \
                 "region", "gstat", "tags", "cmd", "lastmod", "errinfo", \
                 "nqueue", "comment_", "appdir", "datadir", "tmpdir", "wntmpdir", \
                 "dq2url", "special_par", "python_path", "nodes", "status", \
-                "copytool", "copysetup", "releases", "sepath", "envsetup", \
-                "copyprefix", "lfcpath", "seopt", "sein", "seinopt", "lfchost", \
+                "copytool", "releases", "envsetup", \
+                "lfcpath", "lfchost", \
                 "cloud", "siteid", "proxy", "retry", "queuehours", "envsetupin", \
-                "copytoolin", "copysetupin", "seprodpath", "lfcprodpath", \
-                "copyprefixin", "recoverdir", "memory", "maxtime", "space", \
-                "tspace", "cmtconfig", "setokens", "glexec", "priorityoffset", \
+                "lfcprodpath", \
+                "recoverdir", "memory", "maxtime", "space", \
+                "tspace", "cmtconfig", "glexec", "priorityoffset", \
                 "allowedgroups", "defaulttoken", "pcache", "validatedreleases", \
                 "accesscontrol", "dn", "email", "allowednode", "maxinputsize", \
                  "timefloor", "depthboost", "idlepilotsupression", "pilotlimit", \
@@ -151,7 +151,10 @@ class Schedconfig(models.Model):
                  "maxwdir", "celist", "minmemory", "maxmemory", "mintime", \
                  "allowjem", "catchall", "faxdoor", "wansourcelimit", \
                  "wansinklimit", "auto_mcu", "objectstore", "allowhttp", \
-                 "httpredirector", "multicloud_append","direct_access_lan","direct_access_wan" ]
+                 "httpredirector", "multicloud_append","direct_access_lan","direct_access_wan", \
+                "wnconnectivy", "cloudrshare", "sitershare","autosetup_post","autosetup_pre","use_newmover","pilotversion" \
+                "objectstores","container_options","container_type","jobseed","pilot_manager"
+                ]
 
     def getValuesList(self):
         repre = []

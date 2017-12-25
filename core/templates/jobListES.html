@@ -100,10 +100,10 @@ function toggleDetailDisplay(className) {
 {% endfor %}
 {% endif %}
 
-{% if difDropList_test %}
+{% if difDropList_test > 0 %}
      <br/><br/>
     Difference between old and new drop algorithm.
-    <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('difretries');"><br>Click to show/hide different dropped jobs</a>
+    <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('difretries');"><br>Click to show/hide difference dropped jobs</a>
     <div class="difretries" style="display:none">
 <font size=-1>
 {% for pandaID in difDropList_test %}
@@ -212,6 +212,8 @@ Sort by
 	<th>Mod</th>
 	<th>{% if viewParams.MON_VO == 'ATLAS' %}Cloud {% endif%}Site</th>
 	<th>Priority</th>
+    <th>N input events</th>
+    <th>N input files</th>
 	<th>Job info</th>
 </tr>
     {% for job in jobList %}
@@ -235,7 +237,9 @@ Sort by
 		<td><font size=-1>{{ job.duration }}</font></td>
 		<td><font size=-1>{{ job.modificationtime }}</font></td>
 		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a><span class='{{job.computingsitestatus}}'> {{job.computingsitestatus}}</span> {{job.computingsitecomment}}</font></td>
-		<td>{{ job.currentpriority }}</td>
+        <td>{{ job.currentpriority }}</td>
+        <td>{{ job.nevents }}</td>
+        <td>{{ job.ninputs }}</td>
 		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
 		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}
 		</td>

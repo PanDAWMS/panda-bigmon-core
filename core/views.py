@@ -111,8 +111,7 @@ from django.contrib.auth import logout as auth_logout
 
 from libs import dropalgorithm
 #from libs import exlib
-from libs.cache import deleteCacheTestData
-#,getCacheEntry,setCacheEntry
+from libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry
 
 @register.filter(takes_context=True)
 def get_count(dict, key):
@@ -2427,6 +2426,7 @@ def getJobList(request,requesttoken=None):
     if not doRefresh:
         print len(jobsToList)
         pandaIDVal = [int(val) for val in jobsToList]
+
         newpandaIDVal = importToken(pandaIDVal)
         pandaIDVal = pandaIDVal[:njobsmax]
         newquery = {}
@@ -2706,54 +2706,6 @@ def jobListPDiv(request, mode=None, param=None):
         if not data['doRefresh']:
             endSelfMonitor(request)
     return response
-
-
-def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False):
-    is_json = False
-
-    # We do this check to always rebuild cache for the page when it called from the crawler
-    if (('HTTP_X_FORWARDED_FOR' in request.META) and (request.META['HTTP_X_FORWARDED_FOR'] in notcachedRemoteAddress) and
-                skipCentralRefresh == False):
-        return None
-
-    request._cache_update_cache = False
-    if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
-                'json' in request.GET)):
-        is_json = True
-    key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
-    if isData==False:
-        try:
-            if request.method == "POST":
-                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path() + '?' + request.body)))
-            else:
-                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-        except: path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-        cache_key = '%s.%s' % (key_prefix, path.hexdigest())
-        return cache.get(cache_key, None)
-    else:
-        cache_key = '%s' % (key_prefix)
-        return cache.get(cache_key, None)
-
-
-def setCacheEntry(request, viewType, data, timeout, isData = False):
-    is_json = False
-    request._cache_update_cache = False
-    if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
-                'json' in request.GET)):
-        is_json = True
-    key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
-    if isData==False:
-        try:
-            if request.method == "POST":
-                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path() + '?' + request.body)))
-            else:
-                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-        except: path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-        cache_key = '%s.%s' % (key_prefix, path.hexdigest())
-    else:
-        cache_key = '%s' % (key_prefix)
-    cache.set(cache_key, data, timeout)
-
 
 def cache_filter(timeout):
     # This function provides splitting cache keys depending on conditions above the parameters specified in the URL
@@ -3132,6 +3084,9 @@ def jobList(request, mode=None, param=None):
 
     # Here we getting extended data for site
     jobsToShow = jobs[:njobsmax]
+    from libs import exlib
+    jobsToShow = exlib.fileList(jobsToShow)
+    ###RESERVE
     distinctComputingSites = []
     for job in jobsToShow:
         distinctComputingSites.append(job['computingsite'])
@@ -3199,6 +3154,7 @@ def jobList(request, mode=None, param=None):
         del request.session['TLAST']
         errsByCount = importToken(errsByCount=errsByCount)
         nodropPartURL = cleanURLFromDropPart(xurl)
+        difDropList = dropalgorithm.compareDropAlgorithm(droplist,newdroplist)
         data = {
             'prefix': getPrefix(request),
             'errsByCount': errsByCount,
@@ -3240,6 +3196,7 @@ def jobList(request, mode=None, param=None):
             'ndropPmerge_test':len(newdroppedPmerge),
             'droppedPmerge2_test':newdroppedPmerge,
             'pandaIDList_test':newdroplist,
+            'difDropList_test':difDropList,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -8875,17 +8832,17 @@ def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceF
     # newquery['jobstatus'] = 'finished'
 
     # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
-
-    # print str(datetime.now())
-
+    print algorithm
+    start = time.time()
     jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
 
     jobs.extend(Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
     jobs.extend(Jobswaiting4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
     jobs.extend(Jobsactive4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
     jobs.extend(Jobsarchived4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
+    end = time.time()
+    print(end - start)
 
-    # print str(datetime.now())
 
     jobsSet = {}
     newjobs = []

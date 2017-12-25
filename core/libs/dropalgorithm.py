@@ -85,7 +85,7 @@ def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPM
         checkDropJobs = []
         for job in jobs:
             pandaid = job['pandaid']
-            if job['jobstatus'] == 'closed' and job['jobsubstatus'] in ('es_unused', 'es_inaction'):
+            if job['jobstatus'] == 'closed' and job['jobsubstatus'] in ('es_unused', 'es_inaction','es_retry'):
                 pandaDropIDList.add(pandaid)
             elif job['jobstatus'] == 'failed' or (job['jobstatus'] == 'closed' and job['jobsubstatus'] in ('toreassign','es_noevent')):
                 checkDropJobs.append(job)
@@ -111,7 +111,7 @@ def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPM
             query = """INSERT INTO ATLAS_PANDABIGMON.TMP_IDS1Debug(ID,TRANSACTIONKEY) VALUES (%s,%s)"""
             new_cur.executemany(query, executionData)
             retries = JediJobRetryHistory.objects.filter(**retryquery).extra(
-                where=["OLDPANDAID IN (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i)" % (
+                where=["OLDPANDAID IN (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i) and RElATIONTYPE like 'retry'" % (
                 transactionKey)]).values("oldpandaid","relationtype")
 
             retry_list = {}
@@ -121,13 +121,13 @@ def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPM
             #retry_list = [d["oldpandaid"] for d in list(retries)]
             for checkJob in checkDropJobs:
                 if checkJob["pandaid"] in retry_keys:
-                    if retry_list[checkJob["pandaid"]]=="retry":
-                        pandaDropIDList.add(checkJob["pandaid"])
+                    #if retry_list[checkJob["pandaid"]]=="retry":
+                   pandaDropIDList.add(checkJob["pandaid"])
                    # elif retry_list[failedjob["pandaid"]]=="es_merge" and failedjob["jobstatus"] =="failed"  and failedjob["jobsubstatus"]=="es_merge_failed":
                     #    pandaDropIDList.add(failedjob["pandaid"])
-                    else: newjobs.append(checkJob)
-                else:
-                    newjobs.append(checkJob)
+                else: newjobs.append(checkJob)
+                #else:
+                #    newjobs.append(checkJob)
             new_cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i" % (transactionKey))
             new_cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i" % (tk))
             new_cur.close()
