@@ -3087,9 +3087,8 @@ def jobList(request, mode=None, param=None):
     try:
         jobsToShow = exlib.fileList(jobsToShow)
     except Exception as e:
-        pass
-        #logger = logging.getLogger('bigpandamon-error')
-        #logger.error(e)
+        logger = logging.getLogger('bigpandamon-error')
+        logger.error(e)
     ###RESERVE
     distinctComputingSites = []
     for job in jobsToShow:

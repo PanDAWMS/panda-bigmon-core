@@ -218,6 +218,14 @@ LOGGING = {
             'backupCount': 2,
             'formatter': 'verbose',
         },
+        'logfile-template': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_ROOT + "/logfile.template",
+            'maxBytes': LOG_SIZE,
+            'backupCount': 2,
+            'formatter': 'verbose',
+        },
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
@@ -236,6 +244,11 @@ LOGGING = {
             'handlers':['logfile-django','logfile-error'],
             'propagate': True,
             'level':'DEBUG',
+        },
+        'django.template': {
+            'handlers': ['logfile-template'],
+            'level': 'DEBUG',
+            'propagate': False,
         },
         'django_datatables_view': {
             'handlers':['logfile-viewdatatables'],
