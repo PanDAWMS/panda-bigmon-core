@@ -1523,6 +1523,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         flist = standard_fields
     for job in jobs:
         for f in flist:
+            if f == 'actualcorecount' and job[f] is None: job[f] = 1
             if f in job and job[f]:
                 if f == 'taskid' and int(job[f]) < 1000000 and 'produsername' not in request.session[
                     'requestParams']: continue
@@ -1615,7 +1616,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 kys = []
                 for sk in skys:
                     kys.append(sk['key'])
-            elif f in ('attemptnr', 'jeditaskid', 'taskid','noutputdatafiles'):
+            elif f in ('attemptnr', 'jeditaskid', 'taskid','noutputdatafiles','actualcorecount'):
                 kys = sorted(kys, key=lambda x: int(x))
             else:
                 kys.sort()
@@ -1623,8 +1624,9 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
             if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
                 iteml = sorted(iteml, key=lambda x: x['kvalue'], reverse=True)
-            elif f not in ('priorityrange', 'jobsetrange', 'attemptnr', 'jeditaskid', 'taskid','noutputdatafiles'):
+            elif f not in ('priorityrange', 'jobsetrange', 'attemptnr', 'jeditaskid', 'taskid','noutputdatafiles','actualcorecount'):
                 iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
+
         itemd['list'] = iteml
         suml.append(itemd)
         suml = sorted(suml, key=lambda x: x['field'])
@@ -2176,7 +2178,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
 
 
-    for item in standard_fields+['corecount']+['noutputdatafiles']:
+    for item in standard_fields+['corecount','noutputdatafiles','actualcorecount']:
         if ((item + '__in') in query):
             plsql += " " + item.upper() + "=>'" + str(query[item+'__in'][0]) + "', "
         if ((item + '__endswith') in query and item=='transformation'):
@@ -2443,9 +2445,9 @@ def getJobList(request,requesttoken=None):
                     'requestParams' in request.session and 'json' in request.session['requestParams']):
             values = [f.name for f in Jobsactive4._meta.get_fields()]
         elif eventservice:
-            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice','gshare','noutputdatafiles'
+            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice','gshare','noutputdatafiles','actualcorecount'
         else:
-            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice','gshare','noutputdatafiles'
+            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice','gshare','noutputdatafiles','actualcorecount'
 
         jobs.extend(Jobsdefined4.objects.filter(**newquery).values(*values))
         jobs.extend(Jobsactive4.objects.filter(**newquery).values(*values))
@@ -2761,7 +2763,6 @@ def jobList(request, mode=None, param=None):
     if not valid: return response
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
         return jobParamList(request)
-
     eventservice = False
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         eventservice = True
@@ -2785,9 +2786,9 @@ def jobList(request, mode=None, param=None):
         'json' in request.session['requestParams']):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     elif eventservice:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount'
     else:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','attemptnr'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount'
 
     JOB_LIMITS = request.session['JOB_LIMIT']
     totalJobs = 0
@@ -2798,9 +2799,6 @@ def jobList(request, mode=None, param=None):
 
     droppedList =[]
     if request.user.is_authenticated() and request.user.is_tester:
-        #for job in jobs:
-        #    if 'jeditaskid' in job: taskids[job['jeditaskid']] = 1
-    ### For drop
         taskids = {}
         tk = 0
         if 'eventservice' in request.session['requestParams']:
@@ -2898,30 +2896,6 @@ def jobList(request, mode=None, param=None):
     if dropmode and (len(taskids) == 1):
         start = time.time()
         jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs,taskids.keys()[0],isReturnDroppedPMerge)
-        ##### For comparison the old and new drop algorithm
-        # tk, droppedList, wildCardExtension = dropalgorithm.dropRetrielsJobs(taskids.keys()[0], wildCardExtension,
-        #                                                                     False)
-        # olddroplist = []
-        # difdroplist = []
-        # for drp in droplist:
-        #     olddroplist.append(drp['pandaid'])
-        # if len(olddroplist)>len(droppedList):
-        #     difdroplist = set(olddroplist)-set(droppedList)
-        # else:
-        #     difdroplist = set(droppedList) - set(olddroplist)
-        # #print ''.join(str(list(difdroplist)))
-        # print len(olddroplist)
-        # print len(droppedList)
-        # random.seed()
-        # tk = random.randrange(1000000)
-        #
-        # new_cur = connection.cursor()
-        # executionData = []
-        # for pandaid in difdroplist:
-        #     executionData.append((pandaid, tk))
-        # insertquery = """INSERT INTO ATLAS_PANDABIGMON.TMP_IDS1Debug(ID,TRANSACTIONKEY) VALUES (%s,%s)"""
-        # new_cur.executemany(insertquery, executionData)
-        # print 'TK: '+ str(tk)
         end = time.time()
         print(end - start)
         if request.user.is_authenticated() and request.user.is_tester:
@@ -3054,7 +3028,7 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     # Sort in order to see the most important tasks
-    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount']+['noutputdatafiles'])
+    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount','noutputdatafiles','actualcorecount'])
     if sumd:
         for item in sumd:
             if item['field'] == 'jeditaskid':
@@ -12349,7 +12323,6 @@ def serverStatusHealth(request):
 #logging.basicConfig()
 @never_cache
 def loginauth2(request):
-
     if 'next' in request.GET:
         next = str(request.GET['next'])
     elif 'HTTP_REFERER' in request.META:

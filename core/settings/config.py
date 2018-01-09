@@ -226,6 +226,14 @@ LOGGING = {
             'backupCount': 2,
             'formatter': 'verbose',
         },
+        'social': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_ROOT + "/logfile.social",
+            'maxBytes': LOG_SIZE,
+            'backupCount': 2,
+            'formatter': 'verbose',
+        },
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
@@ -279,6 +287,11 @@ LOGGING = {
         'bigpandamon-pbm':{
             'handlers': ['logfile-pbm'],
             'level': 'DEBUG',
+        },
+        'social':{
+            'handlers': ['social'],
+            'level': 'DEBUG',
+            'propagate': False,
         }
     },
     'formatters': {
