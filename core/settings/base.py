@@ -62,6 +62,7 @@ MIDDLEWARE_CLASSES = (
 #    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
+    'core.auth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
 
 
 )

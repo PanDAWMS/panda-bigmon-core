@@ -289,18 +289,18 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'social':{
-            'handlers': ['social'],
+            'handlers': ['logfile-error','social'],
             'level': 'DEBUG',
-            'propagate': False,
-        }
+            'propagate': True,
+        },
     },
     'formatters': {
         'verbose': {
 #            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
-            'format': '%(asctime)s %(module)s %(name)-12s:%(lineno)d %(levelname)-5s %(message)s'
+            'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
         },
         'simple': {
-            'format': '%(levelname)s %(name)-12s:%(lineno)d %(message)s'
+            'format': '%(levelname)s %(name)-1s:%(lineno)d %(message)s'
         },
     },
     'logfile': {
