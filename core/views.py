@@ -2344,7 +2344,7 @@ def getJobList(request,requesttoken=None):
     jobsToList = set()
     njobs = 0
     for shkey in shkeys:
-        if not shkey in ['PANDAID', 'ErrorCode', 'MINRAMCOUNT','PRIORITYRANGE','CORECOUNT','NOUTPUTDATAFILES']:
+        if not shkey in ['PANDAID', 'ErrorCode', 'MINRAMCOUNT','PRIORITYRANGE','CORECOUNT','NOUTPUTDATAFILES','ACTUALCORECOUNT']:
             # check this condition
             entry = {}
             entry['field'] = shkey
@@ -2408,7 +2408,7 @@ def getJobList(request,requesttoken=None):
                 if len(error) > 0 and error[0] in errorCodes and int(errval['codeval']) in errorCodes[error[0]]:
                     errval['diag'] = errorCodes[error[0]][int(errval['codeval'])]
                 errsByCount.append(errval)
-        elif shkey in ['CORECOUNT','NOUTPUTDATAFILES']:
+        elif shkey in ['CORECOUNT','NOUTPUTDATAFILES','ACTUALCORECOUNT']:
             entry = {}
             entry['field'] = shkey
             entrlist = []
