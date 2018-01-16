@@ -125,7 +125,10 @@ INSTALLED_APPS_DJANGO_FRAMEWORK = (
 #### django-debug-toolbar
 #    'debug_toolbar',
 )
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+
+SESSION_SERIALIZER = "core.libs.CustomJSONSerializer.CustomJSONSerializer"
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+
 INSTALLED_APPS_DJANGO_PLUGINS = (
     ### Django plugins
     'rest_framework',  #pip install djangorestframework, version 2.3.10
