@@ -313,6 +313,9 @@ LOGGING = {
     },
 }
 
+SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = ['state']
+SESSION_COOKIE_SECURE = False
+
 ENV = {
     ### Application name
     'APP_NAME': "PanDA Monitor", \
