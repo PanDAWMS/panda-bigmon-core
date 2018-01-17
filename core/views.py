@@ -11800,7 +11800,7 @@ def globalshares(request):
             ordtablerows[level1][level2][level3] = {}
             ordtablerows[level1][level2]['level3'].append(level3)
     newTablesRow =[]
-    for ordValueLevel1 in ordtablerows['level1']:
+    for ordValueLevel1 in sorted(ordtablerows['level1']):
         for shareValue in tablerows:
             if ordValueLevel1 in shareValue['level1']:
                 newTablesRow.append(shareValue)
@@ -11812,7 +11812,7 @@ def globalshares(request):
                     newTablesRow.append(shareValue)
                     tablerows.remove(shareValue)
                     break
-            for ordValueLevel3 in ordtablerows[ordValueLevel1][ordValueLevel2]['level3']:
+            for ordValueLevel3 in sorted(ordtablerows[ordValueLevel1][ordValueLevel2]['level3']):
                 for shareValue in tablerows:
                     if ordValueLevel3 in shareValue['level3']:
                         newTablesRow.append(shareValue)
