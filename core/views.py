@@ -11779,6 +11779,46 @@ def globalshares(request):
 
     for shareValue in tablerows:
         shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue else None
+    ordtablerows ={}
+    ordtablerows['level1']=[]
+    level1=''
+    level2=''
+    level3=''
+    for shareValue in tablerows:
+        if len(shareValue['level1'])!=0:
+            level1 = shareValue['level1']
+            ordtablerows[level1] = {}
+            ordtablerows['level1'].append(level1)
+            ordtablerows[level1]['level2'] = []
+        if len(shareValue['level2'])!=0:
+            level2 = shareValue['level2']
+            ordtablerows[level1][level2] = {}
+            ordtablerows[level1]['level2'].append(level2)
+            ordtablerows[level1][level2]['level3'] = []
+        if len(shareValue['level3'])!=0:
+            level3 = shareValue['level3']
+            ordtablerows[level1][level2][level3] = {}
+            ordtablerows[level1][level2]['level3'].append(level3)
+    newTablesRow =[]
+    for ordValueLevel1 in ordtablerows['level1']:
+        for shareValue in tablerows:
+            if ordValueLevel1 in shareValue['level1']:
+                newTablesRow.append(shareValue)
+                tablerows.remove(shareValue)
+                break
+        for ordValueLevel2 in sorted(ordtablerows[ordValueLevel1]['level2']):
+            for shareValue in tablerows:
+                if ordValueLevel2 in shareValue['level2']:
+                    newTablesRow.append(shareValue)
+                    tablerows.remove(shareValue)
+                    break
+            for ordValueLevel3 in ordtablerows[ordValueLevel1][ordValueLevel2]['level3']:
+                for shareValue in tablerows:
+                    if ordValueLevel3 in shareValue['level3']:
+                        newTablesRow.append(shareValue)
+                        tablerows.remove(shareValue)
+                        break
+    tablerows = newTablesRow
 
     del request.session['TFIRST']
     del request.session['TLAST']
