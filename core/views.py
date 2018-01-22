@@ -3874,6 +3874,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         pandaid = job['pandaid']
         colnames = job.keys()
         colnames.sort()
+        produsername = ''
         for k in colnames:
             val = job[k]
             if job[k] == None:
@@ -3881,6 +3882,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 continue
             pair = {'name': k, 'value': val}
             columns.append(pair)
+            if k == 'produsername':
+                produsername = job[k]
     except IndexError:
         job = {}
 
@@ -4224,6 +4227,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'esjobstr': esjobstr,
             'fileSummary': fileSummary,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'produsername':produsername,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)

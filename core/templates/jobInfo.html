@@ -389,7 +389,7 @@ But if you want, you can check.
 <td> <span class="{{ ev.status }}">{{ ev.status }}</span> </td>
 <td> {{ ev.job_processid }} </td>
 <td> {{ ev.attemptnr }} </td>
-<td> <font size=-1><a href="{% url 'fileInfo' %}?filename={{ ev.fileid }}">{{ ev.fileid }}</font> </td>
+<td> <font size=-1><a href="{% url 'fileInfo' %}?filename={{ ev.fileid }}"> {{ ev.fileid }}</font> </td>
 <td> <font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{ ev.datasetid }}">{{ ev.datasetid }}</a></font> </td>
 </tr>
 {% endfor %}
@@ -442,7 +442,7 @@ But if you want, you can check.
 <table>
 <tr><th colspan=20 bgcolor='lightcyan'> All job parameters </th></tr>
 {% for col in columns %}
-<tr><th>{{ col.name }}</th><td> {{ col.value }} </td></tr>
+<tr><th>{{ col.name }}</th><td> {% if col.name == 'jobsetid' %} <a href="{% url 'jobList' %}?produsername={{ produsername }}&jobsetid={{ col.value }}">{{ col.value }}</a>  {% else %}{{ col.value }} {% endif %}</td></tr>
 {% endfor %}
 </table>
 
