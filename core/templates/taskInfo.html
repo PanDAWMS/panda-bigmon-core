@@ -420,7 +420,12 @@ function toggleRowsDisplay(className) {
 	<th>Modified</th>
 </tr>{% for dsrec in datasets %}
 	<tr class="type-{{ dsrec.type }} type-all" style="display:none">
-		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetid={{ dsrec.datasetid }}&jeditaskid={{ jeditaskid }}">{{ dsrec.datasetname }}</a></font></td>
+		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetid={{ dsrec.datasetid }}&jeditaskid={{ jeditaskid }}">{{ dsrec.datasetname }}</a></font>
+        {% if  'tmpl' not in dsrec.type  %}
+        <br/>
+        <a href="https://rucio-ui.cern.ch/did?scope={{ dsrec.scope }}&name={{ dsrec.datasetname }}" target="_blank"> Dataset (Rucio)</a>
+        {% endif %}
+        </td>
 		<td>{{ dsrec.type }}</td>
 		<td>{{ dsrec.streamname }}</td>
 		<td class='{{dsrec.state}}'>{{ dsrec.state }}</td>
