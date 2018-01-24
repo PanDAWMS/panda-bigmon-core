@@ -11827,12 +11827,22 @@ def globalshares(request):
         for ordValueLevel2 in sorted(ordtablerows[ordValueLevel1]['level2']):
             for shareValue in tablerows:
                 if ordValueLevel2 in shareValue['level2']:
+                    if len(ordtablerows[ordValueLevel1][ordValueLevel2]['level3'])==0:
+                        ord1Short = re.sub('\[(.*)\]','',ordValueLevel1).rstrip().lower()
+                        ord2Short = re.sub('\[(.*)\]', '', ordValueLevel2).rstrip().lower()
+                        link = "?jobtype=%s&display_limit=100&gshare=%s"%(ord1Short,ord2Short)
+                        shareValue['link'] = link
                     newTablesRow.append(shareValue)
                     tablerows.remove(shareValue)
                     break
             for ordValueLevel3 in sorted(ordtablerows[ordValueLevel1][ordValueLevel2]['level3']):
                 for shareValue in tablerows:
                     if ordValueLevel3 in shareValue['level3']:
+                        if len(ordtablerows[ordValueLevel1][ordValueLevel2]['level3']) > 0:
+                            ord1Short = re.sub('\[(.*)\]', '', ordValueLevel1).rstrip().lower()
+                            ord3Short = re.sub('\[(.*)\]', '', ordValueLevel3).rstrip().lower()
+                            link = "?jobtype=%s&display_limit=100&gshare=%s" % (ord1Short, ord3Short)
+                            shareValue['link'] = link
                         newTablesRow.append(shareValue)
                         tablerows.remove(shareValue)
                         break
