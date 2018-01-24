@@ -43,8 +43,8 @@
     {% for row in tablerows %}
             <tr>
                 <td>{{row.level1}}</td>
-                <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}">{{row.level2}}</a> {% else %}{{row.level2}} {% endif %}</td>
-                <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}">{{row.level3}}</a> {% else %}{{row.level3}} {% endif %}</td>
+                <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{row.level2}}</a> {% else %}{{row.level2}} {% endif %}</td>
+                <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{row.level3}}</a> {% else %}{{row.level3}} {% endif %}</td>
                 <td style="text-align:right">{% if row.executing %}{{ row.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
                 <td style="text-align:right">{% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
                 <td style="text-align:right">{% if row.ratio %} {{ row.ratio |floatformat:2|intcomma }} % {% else %} --- {% endif %}</td>

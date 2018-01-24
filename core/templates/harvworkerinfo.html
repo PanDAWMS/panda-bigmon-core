@@ -21,7 +21,7 @@
                 {% for name,value in workerinfo.items %}
                     {% if name != 'corrJobs' %}
                         <tr>
-                            <td>{{ name }}</td><td>{{ value }}</td>
+                            <td>{{ name }}</td><td>{% if 'http' in value or 'https' in value and value %} <a href="{{ value }}" target="_blank">{{ value }}</a>{% else %} {{ value }} {% endif %}</td>
                         </tr>
                      {% else %}
                         <tr><td>Correspondent Jobs</td>
