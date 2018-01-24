@@ -447,7 +447,7 @@
                         <td>{% if task.nevents %}{{ task.neventstobeused|intcomma }}{% else %}---{% endif %}</td>
                         <td>{% if task.nevents %}{{ task.percentage }}{% else %}---{% endif %}</td>
                         <td>{% if task.nfilesfailed %}{{ task.nfilesfailed }}{% else %}0{% endif %}</td>
-                        <td>{{ task.currentpriority }}</td>
+                        <td>{{ task.priority }}</td>
                         {% if requestParams.preset == 'DPD' %}
                             <td><a href="{{ xurl }}ptag={{ task.ptag }}">{{ task.ptag }}</a></td>
                             <td>{{ task.outputtypes }}</td>
