@@ -153,6 +153,49 @@
         //"bRetrieve": true,
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         paging: true,
+         dom: 'Bfrtip',
+         buttons: [
+             {
+                extend: 'csvHtml5',
+                filename: function(){
+                var today = new Date();
+                var dd = today.getDate();
+                var mm = today.getMonth()+1; //January is 0!
+                var yyyy = today.getFullYear();
+
+                if(dd<10) {
+                    dd = '0'+dd
+                }
+
+                if(mm<10) {
+                    mm = '0'+mm
+                }
+
+                today = dd + '_' + mm + '_' + yyyy;
+                return 'Shares_distribution_' + today;
+            },
+            },
+             {
+                 extend: 'pdfHtml5',
+                 filename: function () {
+                     var today = new Date();
+                     var dd = today.getDate();
+                     var mm = today.getMonth() + 1; //January is 0!
+                     var yyyy = today.getFullYear();
+
+                     if (dd < 10) {
+                         dd = '0' + dd
+                     }
+
+                     if (mm < 10) {
+                         mm = '0' + mm
+                     }
+
+                     today = dd + '_' + mm + '_' + yyyy;
+                     return 'Shares_distribution_' + today;
+                 }
+             }
+        ],
         //"bProcessing": true,
         //"bAutoWidth": false,
         //"bStateSave": true,
@@ -188,6 +231,10 @@
             {
                 "data": "hs06",
                 sDefaultContent: "",
+            },
+            {
+                "data": "hs06/count",
+                sDefaultContent: "",
             }
         ],
          "createdRow": function ( row, data, index ) {
@@ -198,6 +245,7 @@
                 $('td', row).eq(3).addClass('running_fill');
                 $('td', row).eq(4).addClass('running_fill');
                 $('td', row).eq(5).addClass('running_fill');
+                $('td', row).eq(6).addClass('running_fill');
             }},
       initComplete: function () {
             this.api().columns([0,1,2,3]).every( function () {
@@ -301,10 +349,12 @@
                 <th>Job status</th>
                 <th>COUNT</th>
                 <th>HS06</th>
+                <th>HS06/COUNT</th>
      </thead>
      <tbody></tbody>
                 <tfoot>
 					<tr>
+                <th></th>
                 <th></th>
                 <th></th>
                 <th></th>

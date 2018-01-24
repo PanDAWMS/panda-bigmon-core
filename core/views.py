@@ -3462,6 +3462,7 @@ order by gshare,COMPUTINGSITE, corecount, jobstatus
     cur = connection.cursor()
     cur.execute(sqlRequest)
     globalSharesList = cur.fetchall()
+    hs06count  = 0
     for gs in globalSharesList:
         if gs[2] == 1:
             corecount = 'Singlecore'
@@ -3469,7 +3470,11 @@ order by gshare,COMPUTINGSITE, corecount, jobstatus
             corecount = 'Multicore'
         else:
             corecount = 'Multicore (' + str(gs[2]) + ')'
-        rowDict = {"gshare": gs[0],"computingsite": gs[1], "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4], "hs06":gs[5]}
+        if gs[5] != None:
+            hs06count= gs[5] / gs[4]
+        else:
+            hs06count= 0
+        rowDict = {"gshare": gs[0],"computingsite": gs[1], "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4], "hs06":gs[5],"hs06/count": hs06count}
         fullListGS.append(rowDict)
     return HttpResponse(json.dumps(fullListGS), content_type='text/html')
 
