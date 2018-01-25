@@ -94,7 +94,8 @@ No dynamic usage information found.
 <tr>
 <th> <a href="{{url}}?sortby=name">User</a> </th>
 <th> <a href="{{url}}?sortby=njobs">nJobs</a> </th>
-<th> <a href="{{url}}?sortby=date">Latest</a> </th>
+<th> <a href="{{url}}?sortby=date">Last modification</a> </th>
+{#<th> <a href="{{url}}?sortby=date">Latest</a> </th>#}
 <th> <a href="{{url}}?sortby=cpua1">Personal CPU-hrs<br>1 day</a> </th>
 <th> <a href="{{url}}?sortby=cpua7">Personal CPU-hrs<br>7 days</a> </th>
 <th> <a href="{{url}}?sortby=cpup1">Group CPU-hrs<br>1 day</a> </th>
@@ -105,7 +106,8 @@ No dynamic usage information found.
 <tr>
 <td> <a href="{% url 'userInfo' user.name %}?display_limit=200">{{user.name}}</a> </td>
 <td> {% if user.njobsa %}{{ user.njobsa }} {% endif %}</td>
-<td>{{ user.latestjob }}</td>
+<td>{{ user.lastmod }}</td>
+{#<td>{{ user.latestjob }}</td>#}
 
 {% comment %}
 <td class='finished'> {{ user.nfinished }} </td>

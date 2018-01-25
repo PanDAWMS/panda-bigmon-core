@@ -4291,7 +4291,7 @@ def userList(request):
         startdate = timezone.now() - timedelta(hours=nhours)
         startdate = startdate.strftime(defaultDatetimeFormat)
         enddate = timezone.now().strftime(defaultDatetimeFormat)
-        query = {'latestjob__range': [startdate, enddate]}
+        query = {'lastmod__range': [startdate, enddate]}
         # viewParams['selection'] = ", last %d days" % (float(nhours)/24.)
         ## Use the users table
         if 'sortby' in request.session['requestParams']:
@@ -4301,7 +4301,7 @@ def userList(request):
             elif sortby == 'njobs':
                 userdb = Users.objects.filter(**query).order_by('njobsa').reverse()
             elif sortby == 'date':
-                userdb = Users.objects.filter(**query).order_by('latestjob').reverse()
+                userdb = Users.objects.filter(**query).order_by('lastmod').reverse()
             elif sortby == 'cpua1':
                 userdb = Users.objects.filter(**query).order_by('cpua1').reverse()
             elif sortby == 'cpua7':
@@ -4333,6 +4333,7 @@ def userList(request):
             if u.cpup7: udict['cpup7'] = "%0.1f" % (int(u.cpup7) / 3600.)
             if u.latestjob:
                 udict['latestjob'] = u.latestjob.strftime(defaultDatetimeFormat)
+                udict['lastmod'] = u.lastmod.strftime(defaultDatetimeFormat)
             userdbl.append(udict)
 
             if u.njobsa > 0: anajobs += u.njobsa
