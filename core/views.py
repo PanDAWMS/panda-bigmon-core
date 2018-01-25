@@ -4324,6 +4324,7 @@ def userList(request):
         nrecent90 = 0
         ## Move to a list of dicts and adjust CPU unit
         for u in userdb:
+            u.latestjob = u.lastmod
             udict = {}
             udict['name'] = u.name
             udict['njobsa'] = u.njobsa
