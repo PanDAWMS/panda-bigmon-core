@@ -21,20 +21,33 @@ def deleteCacheTestData(request,data):
 
 
 import socket
+import uuid
+import logging
 
-def cacheIsAvailable():
+def cacheIsAvailable(request):
     hostname = "bigpanda-redis.cern.ch"
     port = "6379"
     try:
         host = socket.gethostbyname(hostname)
         s = socket.create_connection((host, port), 2)
-        return True
-    except:
+        if(s):
+            cache_key = uuid.uuid4()
+            from core.views import DateEncoder
+            data = json.dumps({"message":"ping-pong"}, cls=DateEncoder)
+            timeout = 0.5
+            cache.set(cache_key, data, timeout)
+            data = cache.get(cache_key, None)
+            return True
+    except Exception as e:
+        logger = logging.getLogger('bigpandamon-error')
+        message = "Internal Servicer Error: %s | Error in Reddis: %s" %(str(request),e)
+        #e = 'Internal Server Error: Reddis! '+ e
+        logger.error(message)
         pass
     return False
 
 def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False):
-    isCache = cacheIsAvailable()
+    isCache = cacheIsAvailable(request)
     if isCache:
         is_json = False
 
@@ -65,7 +78,7 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
 
 
 def setCacheEntry(request, viewType, data, timeout, isData = False):
-    isCache = cacheIsAvailable()
+    isCache = cacheIsAvailable(request)
     if isCache:
         is_json = False
         request._cache_update_cache = False
