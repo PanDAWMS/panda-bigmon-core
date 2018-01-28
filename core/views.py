@@ -228,8 +228,8 @@ def login_customrequired(function):
       if request.user.is_authenticated() or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
           return function(request, *args, **kwargs)
       else:
-          return function(request, *args, **kwargs)
-          #return HttpResponseRedirect('/login/?next='+request.get_full_path())
+          #return function(request, *args, **kwargs)
+          return HttpResponseRedirect('/login/?next='+request.get_full_path())
   wrap.__doc__=function.__doc__
   wrap.__name__=function.__name__
   return wrap

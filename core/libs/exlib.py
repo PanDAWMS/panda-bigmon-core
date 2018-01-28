@@ -1,6 +1,8 @@
 from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch
 from core.views import isEventService
 import math
+
+
 def fileList(jobs):
     newjobs = []
     if (len(jobs)>0):
@@ -53,25 +55,33 @@ def fileList(jobs):
         listpandaidsF4 = pandaLFN.keys()
         for job in jobs:
             if job['pandaid'] in listpandaidsDS:
-                job['nevents'] = int(math.fabs(job['nevents']-njob[job['pandaid']]['nevents']))
+                # job['nevents'] = int(math.fabs(job['nevents']-njob[job['pandaid']]['nevents']))
+                job['nevents'] = njob[job['pandaid']]['nevents']
                 if 'ninputs' in njob[job['pandaid']]:
                     job['ninputs'] = len(njob[job['pandaid']]['ninputs'])
                 else:
-                    job['ninputs'] = 0
+                    job['ninputs'] = 0 #0
                     if job['processingtype'] == 'pmerge':
                         if len(job['jobinfo']) == 0:
                             job['jobinfo'] = 'Pmerge job'
                         else:
                             job['jobinfo'] += 'Pmerge job'
             else:
-                if isEventService(job):
+                #if isEventService(job):
+                if job['pandaid'] in listpandaidsF4:
                     job['ninputs'] = len(pandaLFN[job['pandaid']])
                 else: job['ninputs'] = 0
-            if (job['jobstatus'] == 'finished' and job['nevents'] == 0) or (job['jobstatus'] == 'cancelled' and job['nevents'] == 0):
-                job['ninputs'] = 0
-            if job['jobstatus'] == 'finished' and job['pandaid'] not in listpandaidsDS:
-                job['ninputs'] = 0
-                job['nevents'] = 0
+            if job['pandaid'] in listpandaidsF4 and 'ninputs' not in job:
+                 job['ninputs'] = len(pandaLFN[job['pandaid']])
+            #print str(job['pandaid'])+' '+str(job['ninputs'])
+            #if job['ninputs']==0:
+            #    job['ninputs'] = len(pandaLFN[job['pandaid']])
+                #else: job['ninputs'] = len(pandaLFN[job['pandaid']])
+            # if (job['jobstatus'] == 'finished' and job['nevents'] == 0) or (job['jobstatus'] == 'cancelled' and job['nevents'] == 0):
+            #     job['ninputs'] = 0
+            # if job['jobstatus'] == 'finished' and job['pandaid'] not in listpandaidsDS:
+            #     job['ninputs'] = 0
+            #     job['nevents'] = 0
             if job['nevents']!= 0 and 'ninputs' not in job and job['pandaid'] in listpandaidsF4:
                 job['ninputs'] = len(pandaLFN[job['pandaid']])
 
