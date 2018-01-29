@@ -106,37 +106,42 @@ class Cernauth2(BaseOAuth2):
             self.social_logger()
             raise AuthStateMissing(self, 'state')
         elif not request_state == state:
+            self.social_logger()
             raise AuthStateForbidden(self)
         else:
             return state
 
     def social_logger(self):
         message = 'Session report'+'\n'
-        if self.data:
-            message += 'Code in data: '+ self.data['code'] + '\n'
-            message += 'State in data: ' + self.data['state'] + '\n'
-        else : message = 'Code and state in data are not existing \n'
-        if self.strategy.session:
-            message += 'Session is existing' + '\n'
-            if self.strategy.session.cache_key:
+        if hasattr(self,'data'):
+            if 'code' in self.data:
+                message += 'Code in data: '+ self.data['code'] + '\n'
+            else: message += 'Code in data: None \n'
+            if 'state' in self.data:
+                message += 'State in data: ' + self.data['state'] + '\n'
+            else: message += 'State in data: None \n'
+        else: message = 'Data not exists \n'
+        if hasattr(self.strategy,'session'):
+            message += 'Session exists' + '\n'
+            if hasattr(self.strategy.session,'cache_key'):
                 message += 'Cache key: ' + self.strategy.session.cache_key + '\n'
             else:
                 message += 'Cache key:  None \n'
-            if self.strategy.session.session_key:
+            if hasattr(self.strategy.session,'session_key'):
                 message += 'Session key: ' + self.strategy.session.session_key + '\n'
             else:
-                message += 'Session key:  None \n'
-            if self.strategy.session._SessionBase__session_key:
+                message += 'Session key: None \n'
+            if hasattr(self.strategy.session,'_SessionBase__session_key'):
                 message += '_SessionBase__session_key: ' + self.strategy.session._SessionBase__session_key + '\n'
             else:
                 message += '_SessionBase__session_key:  None \n'
-            if self.strategy.session._session:
-                message += '_session in the session object is existing' + '\n'
+            if hasattr(self.strategy.session,'_session'):
+                message += '_session in the session object exists' + '\n'
                 for v in dict(self.strategy.session._session):
                     message+= v+':'+ str(self.strategy.session._session[v]) + '\n'
             else:
-                message += '_session in the session object is not existing' + '\n'
+                message += '_session in the session object not exists' + '\n'
         else:
-            message += 'Session is NOT existing' + '\n'
+            message += 'Session NOT exists' + '\n'
         logger = logging.getLogger('social')
         logger.debug(message)
