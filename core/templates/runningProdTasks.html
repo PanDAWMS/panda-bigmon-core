@@ -104,6 +104,7 @@
                     var presetQ = "";
                     var statusQ = "";
                     var hpcsitesQ = "";
+                    var esQ = "";
                     var workinggroup = document.getElementById ("workinggroup");
                     var processingtype = document.getElementById ("processingtype");
                     var campaign = document.getElementById ("campaign");
@@ -111,7 +112,7 @@
                     var query = {% url 'runningProdTasks' %} ;
                     var status = document.getElementById ("status");
                     var hpcsites = document.getElementById('hpc');
-
+                    var es = document.getElementById('es');
 
                     if (workinggroup.value.length > 0) workinggroupQ = "workinggroup="+workinggroup.value;
                     if (processingtype.value.length > 0) processingtypeQ = "processingtype="+processingtype.value;
@@ -119,6 +120,7 @@
                     if (presetChoice.value.length > 0) presetQ = "preset="+presetChoice.value;
                     if (status.value.length > 0) statusQ = "status="+status.value;
                     if (hpcsites.checked) hpcsitesQ = "site="+hpcsites.value;
+                    if (es.checked) esQ = "eventservice="+es.value;
 
                     if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1) || (presetQ.length > 1) || (statusQ.length > 1)) {
                         query += "?";
@@ -140,6 +142,9 @@
                         if (hpcsitesQ.length > 1) {
                             query += hpcsitesQ+"&";
                         }
+                        if (esQ.length > 1) {
+                            query += esQ+"&";
+                        }
                         query = query.substring(0, query.length - 1);
                     }
                     window.location = query;
@@ -157,6 +162,7 @@
                     <th>Processing type</th>
                     <th>Campaign</th>
                     <th>Status</th>
+                    <th></th>
                     <th></th>
                     <th></th>
                 </tr>
@@ -266,6 +272,10 @@
                     <td>
                         <input type="checkbox" id="hpc" name="hpc" value="hpc" onchange="onSubElementChoice()"
                         {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC
+                    </td>
+                    <td>
+                        <input type="checkbox" id="es" name="es" value="1" onchange="onSubElementChoice()"
+                        {% if requestParams.eventservice == '1' %} checked {% endif %}>ES
                     </td>
                     <td>
                         <a onclick="go()" class="button">Go!</a>
