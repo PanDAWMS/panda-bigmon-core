@@ -122,7 +122,7 @@
                     if (hpcsites.checked) hpcsitesQ = "site="+hpcsites.value;
                     if (es.checked) esQ = "eventservice="+es.value;
 
-                    if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1) || (presetQ.length > 1) || (statusQ.length > 1)) {
+                    if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1) || (presetQ.length > 1) || (statusQ.length > 1) || (hpcsitesQ.length > 1) || (esQ.length > 1)) {
                         query += "?";
                         if (presetQ.length > 1) {
                             query += presetQ+"&";
