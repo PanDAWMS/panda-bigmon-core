@@ -55,7 +55,7 @@
                                         <div class="finished">{{ files.finished }}</div>
                                         <div class="failed">{{ files.failed }}</div>
                                         <div class="active">{{ files.active }}</div>
-                                        <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}{% else %}?branch={{ pname }}{% endif %}&ntag={{ tags }}"></a>
+                                        <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}{% if requestParams.branch  %}&branch={{ requestParams.branch }}{% endif %}{% else %}?branch={{ pname }}{% if requestParams.package  %}&package={{ requestParams.package }}{% endif %}{% endif %}&ntag={{ tags }}"></a>
                                     </div>
                                 {% else %}
                                     <div class="nodata">
