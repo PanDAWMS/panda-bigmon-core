@@ -98,3 +98,13 @@ def setCacheEntry(request, viewType, data, timeout, isData = False):
             cache_key = '%s' % (key_prefix)
         cache.set(cache_key, data, timeout)
     else:None
+
+def preparePlotData(data):
+    oldPlotData = data
+    if isinstance(oldPlotData, dict):
+        newPlotData = {}
+        for key, value in oldPlotData.iteritems():
+            newPlotData[str(key)] = float(value)
+    else:
+        newPlotData = oldPlotData
+    return newPlotData

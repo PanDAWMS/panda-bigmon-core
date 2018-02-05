@@ -110,7 +110,7 @@ from django.contrib.auth import logout as auth_logout
 
 from libs import dropalgorithm
 #from libs import exlib
-from libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry
+from libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, preparePlotData
 
 @register.filter(takes_context=True)
 def get_count(dict, key):
@@ -7618,11 +7618,21 @@ def runningProdTasks(request):
     valid, response = initRequest(request)
 
     # Here we try to get cached data
-    #data = getCacheEntry(request, "runningProdTasks")
+    # data = getCacheEntry(request, "runningProdTasks")
     data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
+        if 'ages' in data:
+            data['ages'] = preparePlotData(data['ages'])
+        if 'neventsFStasksSum' in data:
+            data['neventsFStasksSum'] = preparePlotData(data['neventsFStasksSum'])
+        if 'neventsAFIItasksSum' in data:
+            data['neventsAFIItasksSum'] = preparePlotData(data['neventsAFIItasksSum'])
+        if 'neventsByProcessingType' in data:
+            data['neventsByProcessingType'] = preparePlotData(data['neventsByProcessingType'])
+        if 'aslotsByType' in data:
+            data['aslotsByType'] = preparePlotData(data['aslotsByType'])
         response = render_to_response('runningProdTasks.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
@@ -7731,7 +7741,7 @@ def runningProdTasks(request):
     else:
         tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)
 
-
+    task_list = [t for t in tasks]
     ntasks = len(tasks)
     slots = 0
     aslots = 0
@@ -7744,7 +7754,7 @@ def runningProdTasks(request):
     neventsUsedTotSum = 0
     rjobs1coreTot = 0
     rjobs8coreTot = 0
-    for task in tasks:
+    for task in task_list:
         task['rjobs'] = 0 if task['rjobs'] is None else task['rjobs']
         task['percentage'] = round(100 * task['percentage'],1)
         neventsTotSum += task['nevents'] if task['nevents'] is not None else 0
@@ -7805,7 +7815,7 @@ def runningProdTasks(request):
 
     plotageshistogram = 1
     if sum(ages) == 0: plotageshistogram = 0
-    sumd = taskSummaryDict(request, tasks, ['status','workinggroup','cutcampaign', 'processingtype'])
+    sumd = taskSummaryDict(request, task_list, ['status','workinggroup','cutcampaign', 'processingtype'])
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
@@ -7821,7 +7831,7 @@ def runningProdTasks(request):
             'xurl': xurl,
             'nosorturl': nosorturl,
             'nohashtagurl': nohashtagurl,
-            'tasks': tasks,
+            'tasks': task_list,
             'ntasks': ntasks,
             'sortby': sortby,
             'ages': ages,
