@@ -73,6 +73,18 @@ def setupView(request, querytype='task'):
     elif 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams'] and (enddate-startdate).days > 7:
         enddate = startdate + timedelta(days=7)
 
+    if 'days' in request.session['requestParams']:
+        try:
+            ndays = int(request.session['requestParams']['days'])
+        except:
+            ndays = 7
+        enddate = datetime.now()
+        if ndays <= 7:
+            startdate = enddate - timedelta(days=ndays)
+        else:
+            startdate = enddate - timedelta(days=7)
+
+
 
     if not 'ntag' in request.session['requestParams']:
         request.session['requestParams']['ntag_from'] = startdate
@@ -84,6 +96,7 @@ def setupView(request, querytype='task'):
 
     else:
         request.session['requestParams']['ntag'] = startdate
+
 
 
 
@@ -366,7 +379,7 @@ def artTasks(request):
 
 def artJobs(request):
     valid, response = initRequest(request)
-    query = setupView(request, 'job')
+    if not valid: return response
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artJobs")
@@ -390,6 +403,9 @@ def artJobs(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
         return response
+
+
+    query = setupView(request, 'job')
 
     cur = connection.cursor()
     cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
