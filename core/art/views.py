@@ -412,7 +412,7 @@ def artJobs(request):
     jobs = cur.fetchall()
     cur.close()
 
-    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'computingsite', 'creationtime', 'starttime' , 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn', 'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'result']
+    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'computingsite', 'endtime', 'starttime' , 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn', 'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'result']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
     ntagslist=list(sorted(set([x['ntag'] for x in jobs])))
@@ -440,6 +440,14 @@ def artJobs(request):
                 artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['scope'] = job['scope']
                 artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['lfn'] = job['lfn']
                 artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['jeditaskid'] = job['taskid']
+                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['maxvmem'] = round(job['maxvmem']*1.0/1000,1) if job['maxvmem'] is not None else '---'
+                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['cpuconsumptiontime'] = job['cpuconsumptiontime'] if job['jobstatus'] in ('finished', 'failed') else '---'
+                if job['jobstatus'] in ('finished', 'failed'):
+                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
+                        'jobs'][job['origpandaid']]['duration'] = job['endtime'] - job['starttime']
+                else:
+                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
+                        'jobs'][job['origpandaid']]['duration'] = str(datetime.now() - job['starttime']).split('.')[0]
                 try:
                     artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs'][job['origpandaid']]['tarindex'] = int(re.search('.([0-9]{6}).log.', job['lfn']).group(1))
@@ -476,6 +484,14 @@ def artJobs(request):
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['guid'] = job['guid']
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['scope'] = job['scope']
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['lfn'] = job['lfn']
+                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['maxvmem'] = round(job['maxvmem']*1.0/1000,1)
+                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['cpuconsumptiontime'] = job['cpuconsumptiontime']
+                if job['jobstatus'] in ('finished', 'failed'):
+                    artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)][
+                        'jobs'][job['origpandaid']]['duration'] = job['endtime'] - job['starttime']
+                else:
+                    artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)][
+                        'jobs'][job['origpandaid']]['duration'] = datetime.now() - job['starttime']
                 try:
                     artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs'][job['origpandaid']]['tarindex'] = int(re.search('.([0-9]{6}).log.', job['lfn']).group(1))
