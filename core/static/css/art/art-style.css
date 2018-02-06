@@ -272,7 +272,7 @@ li.artmenu-item > label {
 
 .no-border .header {
     border: none;
-    /*text-align: center;*/
+    text-align: center;
 }
 
 .cell.header {
