@@ -2842,7 +2842,11 @@ def jobList(request, mode=None, param=None):
         if not noarchjobs:
             queryFrozenStates = []
             if 'jobstatus' in request.session['requestParams']:
-                queryFrozenStates = filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
+                if isEventTask:
+                    queryFrozenStates = filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
+                                           ['finished', 'failed', 'cancelled', 'closed', 'merging'])
+                else:
+                    queryFrozenStates = filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
                                            ['finished', 'failed', 'cancelled', 'closed'])
             ##hard limit is set to 2K
             if ('jobstatus' not in request.session['requestParams'] or len(queryFrozenStates) > 0):
