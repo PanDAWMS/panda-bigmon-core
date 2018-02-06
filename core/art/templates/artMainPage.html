@@ -37,6 +37,7 @@
               {% for t in ntags %}
                   <li class="artmenu-item"><input id="{{ t }}" class="ntag" type="checkbox"><label for="{{ t }}">{{ t }}</label></li>
               {% endfor %}
+              <li><label>Last days:<input type="number" class="ntag" id="ntag_days" value="7"></label></li>
               <li><label>From:<input type="date" class="ntag-text" id="ntag_from" min="2017-06-08"></label></li>
               <li><label>To:<input type="date" class="ntag-text" id="ntag_to"></label></li>
           </ul>
@@ -67,6 +68,7 @@ function searchResults() {
     var branchStr=getParamStr("branch");
     var ntagStr=getParamStr("ntag");
     var viewStr=getParamStr("view");
+    var days=getDateFromInput("ntag_days");
     var ntag_from = getDateFromInput('ntag_from');
     var ntag_to = getDateFromInput('ntag_to');
     var query = '';
@@ -86,10 +88,10 @@ function searchResults() {
         default:
             query = '{% url 'art-mainPage' %}';
     }
-    if ((packageStr.length>1) || (branchStr.length>1) || (ntagStr.length>1) || (ntag_from.length>1) || (ntag_to.length>1)  ) {
+    if ((packageStr.length>1) || (branchStr.length>1) || (ntagStr.length>1) || (ntag_from.length>1) || (ntag_to.length>1) || (days.length>0)   ) {
         query += "?";
         if (packageStr.length > 1) {
-            query += "package=" + packageStr + "&";
+            query += "package=" + packageStr + "&"
         }
         if (branchStr.length > 1) {
             query += "branch=" + branchStr + "&";
@@ -107,6 +109,9 @@ function searchResults() {
         }
         else if (ntagStr.length > 1 && ntagStr.indexOf(',') > -1) {
             query += "ntags=" + ntagStr + "&";
+        }
+        else if (days.length>0) {
+            query += "days=" + days + "&"
         }
 
         query = query.substring(0, query.length - 1);
