@@ -791,7 +791,7 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True):
         errtxt += err
 
     ### get command to copy file
-    cmd = 'export RUCIO_ACCOUNT=atlpan; export X509_USER_PROXY=%s; rucio download --dir=%s %s:%s' % (get_x509_proxy(),logdir,scope,lfn)
+    cmd = 'export RUCIO_ACCOUNT=atlpan; export X509_USER_PROXY=%s;export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase;source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh;source ${ATLAS_LOCAL_ROOT_BASE}/utilities/oldAliasSetup.sh rucio; rucio download --dir=%s %s:%s' % (get_x509_proxy(),logdir,scope,lfn)
     if not len(cmd):
         _logger.warning('Command to fetch the file is empty!')
 
