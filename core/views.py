@@ -2745,6 +2745,7 @@ def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
     dkey = digkey(request)
     thread = None
+    isEventTask = False
     #Here we try to get data from cache
     data = getCacheEntry(request, "jobList")
     if data is not None:
