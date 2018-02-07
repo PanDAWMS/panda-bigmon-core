@@ -7619,8 +7619,8 @@ def runningProdTasks(request):
     valid, response = initRequest(request)
 
     # Here we try to get cached data
-    # data = getCacheEntry(request, "runningProdTasks")
-    data = None
+    data = getCacheEntry(request, "runningProdTasks")
+    # data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
