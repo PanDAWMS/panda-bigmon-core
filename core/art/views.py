@@ -447,7 +447,7 @@ def artJobs(request):
                         'jobs'][job['origpandaid']]['duration'] = job['endtime'] - job['starttime']
                 else:
                     artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
-                        'jobs'][job['origpandaid']]['duration'] = str(datetime.now() - job['starttime']).split('.')[0]
+                        'jobs'][job['origpandaid']]['duration'] = str(datetime.now() - job['starttime']).split('.')[0] if job['starttime'] is not None else "---"
                 try:
                     artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs'][job['origpandaid']]['tarindex'] = int(re.search('.([0-9]{6}).log.', job['lfn']).group(1))
@@ -484,14 +484,14 @@ def artJobs(request):
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['guid'] = job['guid']
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['scope'] = job['scope']
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['lfn'] = job['lfn']
-                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['maxvmem'] = round(job['maxvmem']*1.0/1000,1)
+                artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['maxvmem'] = round(job['maxvmem']*1.0/1000,1) if job['maxvmem'] is not None else '---'
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['cpuconsumptiontime'] = job['cpuconsumptiontime']
                 if job['jobstatus'] in ('finished', 'failed'):
                     artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs'][job['origpandaid']]['duration'] = job['endtime'] - job['starttime']
                 else:
                     artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)][
-                        'jobs'][job['origpandaid']]['duration'] = datetime.now() - job['starttime']
+                        'jobs'][job['origpandaid']]['duration'] = str(datetime.now() - job['starttime']).split('.')[0] if job['starttime'] is not None else "---"
                 try:
                     artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs'][job['origpandaid']]['tarindex'] = int(re.search('.([0-9]{6}).log.', job['lfn']).group(1))
