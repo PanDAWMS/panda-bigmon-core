@@ -6688,6 +6688,8 @@ def taskESExtendedInfo(request):
 @csrf_exempt
 def taskList(request):
     valid, response = initRequest(request)
+    if not valid: return response
+
     thread = None
     dkey = digkey(request)
     # Here we try to get cached data
@@ -6711,7 +6713,6 @@ def taskList(request):
         if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'pctfailed':
             limit = 50000
 
-    if not valid: return response
     if 'tasktype' in request.session['requestParams'] and request.session['requestParams']['tasktype'].startswith(
             'anal'):
         hours = 3 * 24
