@@ -96,7 +96,7 @@ class Cernauth2(BaseOAuth2):
             return None
         state = self.get_session_state()
         request_state = self.get_request_state()
-        #self.social_error_logger()
+        self.social_error_logger()
         if not request_state:
             #self.social_logger()
             self.social_error_logger()
@@ -121,6 +121,7 @@ class Cernauth2(BaseOAuth2):
         global message
         logger = logging.getLogger('social')
         logger.error(message)
+        del globals()['message']
 
     messsage = ''
 
@@ -146,11 +147,6 @@ class Cernauth2(BaseOAuth2):
                 newattr = attr
             for subattr in newattr:
                 message += subattr+ ':'+ str(newattr[subattr]) + '\n'
-            #if 'method-wrapper' not in str(type(getattr(self,attr))) and 'instancemethod' not in str(type(getattr(self,attr))) and attr=='__dict__':
-                #dictattr[attr] = getattr(self,attr)
-                #message += attr +':'+ str(getattr(self,attr)) +'\n'
-        #dictattr.update(vars(self))
-
 
     def social_error_logger(self):
         global message
