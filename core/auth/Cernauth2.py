@@ -96,13 +96,13 @@ class Cernauth2(BaseOAuth2):
             return None
         state = self.get_session_state()
         request_state = self.get_request_state()
-        self.social_error_logger()
+        #self.social_error_logger('Missing needed parameter')
         if not request_state:
             #self.social_logger()
-            self.social_error_logger()
+            self.social_error_logger('Missing needed parameter')
             raise AuthMissingParameter(self, 'state')
         elif not state:
-            self.social_error_logger()
+            self.social_error_logger('Session value state missing.')
             raise AuthStateMissing(self, 'state')
             # name = self.name + '_state'
             # state = self.data['state']
@@ -112,7 +112,7 @@ class Cernauth2(BaseOAuth2):
             #     raise AuthStateMissing(self, 'state')
             # else: return state
         elif not request_state == state:
-            self.self.social_error_logger()
+            self.self.social_error_logger('Wrong state parameter given')
             raise AuthStateForbidden(self)
         else:
             return state
@@ -148,14 +148,16 @@ class Cernauth2(BaseOAuth2):
             for subattr in newattr:
                 message += subattr+ ':'+ str(newattr[subattr]) + '\n'
 
-    def social_error_logger(self):
+    def social_error_logger(self,errmess):
         global message
+
         try:
             if 'HTTP_REFERER' in self.strategy.request.META:
-                message = 'Internal Server Error: ' + self.strategy.request.META['HTTP_REFERER']+ '\n'
-            else: message = 'Internal Server Error: -' + '\n'
+                message += 'Internal Server Error: ' + self.strategy.request.META['HTTP_REFERER']+ '\n'
+            else: message += 'Internal Server Error: -' + '\n'
         except:
-            message = 'Internal Server Error: -' + '\n'
+            message += 'Internal Server Error: -' + '\n'
+        message = 'EXCEPTION:' + errmess + '\n\n'
         self.self_to_message()
         message+= 'SESSION INFO:'+'\n'
         if hasattr(self,'data'):
