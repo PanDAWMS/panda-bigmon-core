@@ -62,8 +62,8 @@ MIDDLEWARE_CLASSES = (
 #    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
-    'core.auth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
-
+    # 'core.auth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
+    # 'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
 
 )
 
@@ -76,6 +76,7 @@ AUTHENTICATION_BACKENDS = (
     'core.auth.Cernauth2.Cernauth2',
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
 )
 
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
@@ -101,13 +102,11 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
-    'social_core.pipeline.social_auth.associate_by_email',
     'social_core.pipeline.user.get_username',
     'social_core.pipeline.user.create_user',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.social_auth.load_extra_data',
     'social_core.pipeline.user.user_details',
-
 )
 
 
@@ -127,7 +126,7 @@ INSTALLED_APPS_DJANGO_FRAMEWORK = (
 )
 
 SESSION_SERIALIZER = "core.libs.CustomJSONSerializer.CustomJSONSerializer"
-SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
 INSTALLED_APPS_DJANGO_PLUGINS = (
     ### Django plugins
