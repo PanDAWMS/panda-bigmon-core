@@ -96,10 +96,10 @@ class Cernauth2(BaseOAuth2):
             return None
         state = self.get_session_state()
         request_state = self.get_request_state()
-        #self.social_error_logger('Missing needed parameter')
+        self.social_error_logger('Missing needed parameter')
         if not request_state:
             #self.social_logger()
-            self.social_error_logger('Missing needed parameter')
+            self.social_error_logger(AuthMissingParameter(self, 'state').__str__())
             raise AuthMissingParameter(self, 'state')
         elif not state:
             self.social_error_logger('Session value state missing.')
@@ -150,13 +150,9 @@ class Cernauth2(BaseOAuth2):
 
     def social_error_logger(self,errmess):
         global message
-        try:
-            if 'HTTP_REFERER' in self.strategy.request.META:
-                message += 'Internal Server Error: ' + self.strategy.request.META['HTTP_REFERER']+ '\n'
-            else: message += 'Internal Server Error: -' + '\n'
-        except:
-            global message
-            message += 'Internal Server Error: -' + '\n'
+        if 'HTTP_REFERER' in self.strategy.request.META:
+            message += 'Internal Server Error: ' + self.strategy.request.META['HTTP_REFERER']+ '\n'
+        else: message += 'Internal Server Error: -' + '\n'
         message += 'EXCEPTION:' + errmess + '\n\n'
         self.self_to_message()
         message+= 'SESSION INFO:'+'\n'
