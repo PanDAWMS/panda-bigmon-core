@@ -578,7 +578,7 @@ class JediTasksBase(models.Model):
     resquetime = models.DateTimeField(null=True, db_column='RESCUETIME', blank=True)
     requesttype = models.CharField(max_length=72, db_column='REQUESTTYPE', blank=True)
     resourcetype = models.CharField(max_length=300, db_column='RESOURCE_TYPE', blank=True)
-    usejumbo = models.CharField(max_length=10, db_column='USEJUMBO', blank=True)
+#    usejumbo = models.CharField(max_length=10, db_column='USEJUMBO', blank=True)
 #    diskio = models.IntegerField(null=True, db_column='DISKIO', blank=True)
 #    diskiounit = models.CharField(max_length=96, db_column='DISKIOUNIT', blank=True)
     class Meta:
