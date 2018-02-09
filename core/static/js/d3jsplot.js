@@ -1507,7 +1507,7 @@ vis.append("g")
             .attr("transform", function(d, i) {
                 maxLegendWidth = 200;
                 maxLegendHeight = Math.floor(i) * 20;
-                return "translate(" + (r + margin.left) + ", " + (- r/2 - margin.top  + maxLegendHeight) + ")";
+                return "translate(" + (r + margin.left) + ", " + (- r + maxLegendHeight) + ")";
             });
 
     legend.append("rect")
