@@ -149,9 +149,12 @@ class Cernauth2(BaseOAuth2):
 
     def social_error_logger(self,errmess):
         global message
-        if 'HTTP_REFERER' in self.strategy.request.META:
-            message += 'Internal Server Error: ' + self.strategy.request.META['HTTP_REFERER']+ '\n'
-        else: message += 'Internal Server Error: -' + '\n'
+        message = ''
+        try:
+            if 'HTTP_REFERER' in self.strategy.request.META:
+                message += 'Internal Server Error: ' + self.strategy.request.META['HTTP_REFERER']+ '\n'
+            else: message += 'Internal Server Error: -' + '\n'
+        except: message += 'Internal Server Error: -' + '\n'
         message += 'EXCEPTION:' + errmess + '\n\n'
         self.self_to_message()
         message+= 'SESSION INFO:'+'\n'

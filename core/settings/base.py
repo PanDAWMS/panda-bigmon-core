@@ -63,7 +63,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.cache.FetchFromCacheMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
     # 'core.auth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
-    # 'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
+    'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
 
 )
 
