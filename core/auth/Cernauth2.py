@@ -81,12 +81,8 @@ class Cernauth2(BaseOAuth2):
         except ConnectionError as err:
             raise AuthFailed(self, str(err))
         response.raise_for_status()
-        try:
-            if 'message' in globals():
-                self.general_to_message(kwargs,response)
-                self.message_write()
-        except:
-            pass
+        self.general_to_message(kwargs,response)
+        self.message_write()
         return response
 
     def validate_state(self):
@@ -119,7 +115,7 @@ class Cernauth2(BaseOAuth2):
         global message
         logger = logging.getLogger('social')
         logger.error(message)
-        del globals()['message']
+        #del globals()['message']
 
     messsage = ''
 
@@ -146,7 +142,7 @@ class Cernauth2(BaseOAuth2):
             for subattr in newattr:
                 message += subattr+ ':'+ str(newattr[subattr]) + '\n'
 
-    def social_error_logger(self,errmess):
+    def social_error_logger(self, errmess):
         global message
         message = ''
         try:
@@ -154,7 +150,7 @@ class Cernauth2(BaseOAuth2):
                 message += 'Internal Server Error: ' + self.strategy.request.META['HTTP_REFERER']+ '\n'
             else: message += 'Internal Server Error: -' + '\n'
         except: message += 'Internal Server Error: -' + '\n'
-        message += 'EXCEPTION:' + errmess + '\n\n'
+        message += 'EXCEPTION:' + errmess + '\n'
         self.self_to_message()
         message+= 'SESSION INFO:'+'\n'
         if hasattr(self,'data'):
