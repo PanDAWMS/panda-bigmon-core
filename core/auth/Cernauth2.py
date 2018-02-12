@@ -83,9 +83,9 @@ class Cernauth2(BaseOAuth2):
         response.raise_for_status()
         try:
             self.general_to_message(kwargs,response)
+            self.message_write()
         except:
             pass
-        self.message_write()
         return response
 
     def validate_state(self):
