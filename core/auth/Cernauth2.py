@@ -97,7 +97,6 @@ class Cernauth2(BaseOAuth2):
         state = self.get_session_state()
         request_state = self.get_request_state()
         if not request_state:
-            #self.social_logger()
             self.social_error_logger(AuthMissingParameter(self, 'state').__str__())
             raise AuthMissingParameter(self, 'state')
         elif not state:
