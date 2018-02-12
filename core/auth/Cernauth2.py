@@ -81,7 +81,10 @@ class Cernauth2(BaseOAuth2):
         except ConnectionError as err:
             raise AuthFailed(self, str(err))
         response.raise_for_status()
-        self.general_to_message(kwargs,response)
+        try:
+            self.general_to_message(kwargs,response)
+        except:
+            pass
         self.message_write()
         return response
 
