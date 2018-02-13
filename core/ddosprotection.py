@@ -39,11 +39,13 @@ class DDOSMiddleware(object):
             useragent = request.META.get('HTTP_USER_AGENT'),
             is_rejected = 0
         )
-
-        for client in self.clients:
-            if client in request.META.get('HTTP_USER_AGENT') and 'json' not in request.GET:
-                self.isForbidden = True
-                self.maxAllowedJSONRequstesPerHour = 200
+        try:
+            for client in self.clients:
+                if client in request.META.get('HTTP_USER_AGENT') and ('json' not in request.GET):
+                    self.isForbidden = True
+                    self.maxAllowedJSONRequstesPerHour = 200
+        except:
+            pass
 
         # we limit number of requests per hour
         if ('json' in request.GET) or self.isForbidden:
