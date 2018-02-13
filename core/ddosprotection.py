@@ -19,6 +19,8 @@ class DDOSMiddleware(object):
     sleepInterval = 5 #sec
     maxAllowedJSONRequstesPerHour = 600
     notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72']
+    blacklist = ['130.132.21.90']
+
 
     def __init__(self):
         pass
@@ -52,7 +54,7 @@ class DDOSMiddleware(object):
             countRequest = []
             countRequest.extend(RequestStat.objects.filter(**query).values('remote').annotate(Count('remote')))
             if len(countRequest) > 0:
-                if countRequest[0]['remote__count'] > self.maxAllowedJSONRequstesPerHour:
+                if countRequest[0]['remote__count'] > self.maxAllowedJSONRequstesPerHour or x_forwarded_for in self.blacklist:
                     reqs.is_rejected = 1
                     reqs.save()
                     return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), content_type='text/html')
