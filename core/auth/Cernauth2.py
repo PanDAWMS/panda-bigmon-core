@@ -8,7 +8,6 @@ import logging
 
 from social_core.utils import SSLHttpAdapter
 
-
 class Cernauth2(BaseOAuth2):
 
 
@@ -82,8 +81,9 @@ class Cernauth2(BaseOAuth2):
             raise AuthFailed(self, str(err))
         response.raise_for_status()
         try:
-            self.general_to_message(kwargs,response)
-            self.message_write()
+            if self.message!='':
+                self.general_to_message(kwargs,response)
+                self.message_write()
         except:
             pass
         return response
@@ -95,6 +95,7 @@ class Cernauth2(BaseOAuth2):
             return None
         state = self.get_session_state()
         request_state = self.get_request_state()
+        # self.social_error_logger('Session value state missing.')
         if not request_state:
             self.social_error_logger(AuthMissingParameter(self, 'state').__str__())
             raise AuthMissingParameter(self, 'state')
@@ -115,76 +116,69 @@ class Cernauth2(BaseOAuth2):
             return state
 
     def message_write(self):
-        global message
         logger = logging.getLogger('social')
-        logger.error(message)
-        #del globals()['message']
-
-    messsage = ''
+        logger.error(self.message)
+        self.message=''
 
     def self_to_message(self):
         dictattr = {}
-        global message
-        message += 'SELF OBJECT:'+'\n'
+        self.message += 'SELF OBJECT:'+'\n'
         for attr in dir(self):
             if attr.isupper():
             #if 'method-wrapper' not in str(type(getattr(self,attr))) and 'instancemethod' not in str(type(getattr(self,attr))) and attr=='__dict__':
                 dictattr[attr] = getattr(self,attr)
-                message += attr +':'+ str(getattr(self,attr)) +'\n'
-        dictattr.update(vars(self))
+                self.message += attr +':'+ str(getattr(self,attr)) +'\n'
+        # for attr in vars(self):
+        #     self.message += attr + ':' + str(getattr(self, attr)) + '\n'
+        #dictattr.update(vars(self))
 
     def general_to_message(self,*attrs):
-        global message
         #dictattr = {}
         for attr in attrs:
-            message+= '================ADDITIONAL INFORMATION==================='+'\n'
+            self.message+= '================ADDITIONAL INFORMATION==================='+'\n'
             try:
                 newattr = vars(attr)
             except:
                 newattr = attr
             for subattr in newattr:
-                message += subattr+ ':'+ str(newattr[subattr]) + '\n'
-
+                self.message += subattr+ ':'+ str(newattr[subattr]) + '\n'
+    message = ''
     def social_error_logger(self, errmess):
-        global message
-        message = ''
         try:
             if 'HTTP_REFERER' in self.strategy.request.META:
-                message += 'Internal Server Error: ' + self.strategy.request.META['HTTP_REFERER']+ '\n'
-            else: message += 'Internal Server Error: -' + '\n'
-        except: message += 'Internal Server Error: -' + '\n'
-        message += 'EXCEPTION:' + errmess + '\n'
+                self.message += 'Internal Server Error: ' + self.strategy.request.META['HTTP_REFERER']+ '\n'
+            else: self.message += 'Internal Server Error: -' + '\n'
+        except: self.message += 'Internal Server Error: -' + '\n'
+        self.message += 'EXCEPTION:' + errmess + '\n'
         self.self_to_message()
-        message+= 'SESSION INFO:'+'\n'
+        self.message+= 'SESSION INFO:'+'\n'
         if hasattr(self,'data'):
             if 'code' in self.data:
-                message += 'Code in data: '+ self.data['code'] + '\n'
-            else: message += 'Code in data: None \n'
+                self.message += 'Code in data: '+ self.data['code'] + '\n'
+            else: self.message += 'Code in data: None \n'
             if 'state' in self.data:
-                message += 'State in data: ' + self.data['state'] + '\n'
-            else: message += 'State in data: None \n'
-        else: message = 'Data not exists \n'
+                self.message += 'State in data: ' + self.data['state'] + '\n'
+            else: self.message += 'State in data: None \n'
+        else: self.message += 'Data not exists \n'
         if hasattr(self.strategy,'session'):
-            message += 'Session exists' + '\n'
+            self.message += 'Session exists' + '\n'
             if hasattr(self.strategy.session,'cache_key'):
-                message += 'Cache key: ' + self.strategy.session.cache_key + '\n'
+                self.message += 'Cache key: ' + self.strategy.session.cache_key + '\n'
             else:
-                message += 'Cache key:  None \n'
+                self.message += 'Cache key:  None \n'
             if hasattr(self.strategy.session,'session_key'):
-                message += 'Session key: ' + self.strategy.session.session_key + '\n'
+                self.message += 'Session key: ' + self.strategy.session.session_key + '\n'
             else:
-                message += 'Session key: None \n'
+                self.message += 'Session key: None \n'
             if hasattr(self.strategy.session,'_SessionBase__session_key'):
-                message += '_SessionBase__session_key: ' + self.strategy.session._SessionBase__session_key + '\n'
+                self.message += '_SessionBase__session_key: ' + self.strategy.session._SessionBase__session_key + '\n'
             else:
-                message += '_SessionBase__session_key:  None \n'
+                self.message += '_SessionBase__session_key:  None \n'
             if hasattr(self.strategy.session,'_session'):
-                message += '_session in the session object exists' + '\n'
+                self.message += '_session in the session object exists' + '\n'
                 for v in dict(self.strategy.session._session):
-                    message+= v+':'+ str(self.strategy.session._session[v]) + '\n'
+                    self.message+= v+':'+ str(self.strategy.session._session[v]) + '\n'
             else:
-                message += '_session in the session object not exists' + '\n'
+                self.message += '_session in the session object not exists' + '\n'
         else:
-            message += 'Session NOT exists' + '\n'
-        #logger = logging.getLogger('social')
-        #logger.debug(message)
+            self.message += 'Session NOT exists' + '\n'
