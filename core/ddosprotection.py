@@ -17,10 +17,8 @@ import json
 class DDOSMiddleware(object):
 
     sleepInterval = 5 #sec
-    maxAllowedJSONRequstesPerHour = 200
+    maxAllowedJSONRequstesPerHour = 600
     notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72']
-    clients = ['curl','PycURL','Python-urllib']
-    isForbidden = False
 
     def __init__(self):
         pass
@@ -39,16 +37,11 @@ class DDOSMiddleware(object):
             useragent = request.META.get('HTTP_USER_AGENT'),
             is_rejected = 0
         )
-        try:
-            for client in self.clients:
-                if client in request.META.get('HTTP_USER_AGENT') and ('json' not in request.GET):
-                    self.isForbidden = True
-                    self.maxAllowedJSONRequstesPerHour = 50
-        except:
-            pass
+
+
 
         # we limit number of requests per hour
-        if ('json' in request.GET) or self.isForbidden:
+        #if ('json' in request.GET):
             if (not x_forwarded_for is None) and x_forwarded_for not in self.notcachedRemoteAddress:
 #                x_forwarded_for = '141.108.38.22'
                 startdate = timezone.now() - timedelta(hours=2)
