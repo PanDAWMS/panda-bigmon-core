@@ -42,20 +42,20 @@ class DDOSMiddleware(object):
 
         # we limit number of requests per hour
         #if ('json' in request.GET):
-            if (not x_forwarded_for is None) and x_forwarded_for not in self.notcachedRemoteAddress:
+        if (not x_forwarded_for is None) and x_forwarded_for not in self.notcachedRemoteAddress:
 #                x_forwarded_for = '141.108.38.22'
-                startdate = timezone.now() - timedelta(hours=2)
-                enddate = timezone.now()
-                query = {'remote':x_forwarded_for,
-                         'qtime__range': [startdate, enddate],
-                         'id__gte':36207430}
-                countRequest = []
-                countRequest.extend(RequestStat.objects.filter(**query).values('remote').annotate(Count('remote')))
-                if len(countRequest) > 0:
-                    if countRequest[0]['remote__count'] > self.maxAllowedJSONRequstesPerHour:
-                        reqs.is_rejected = 1
-                        reqs.save()
-                        return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), content_type='text/html')
+            startdate = timezone.now() - timedelta(hours=2)
+            enddate = timezone.now()
+            query = {'remote':x_forwarded_for,
+                     'qtime__range': [startdate, enddate],
+                     'id__gte':36207430}
+            countRequest = []
+            countRequest.extend(RequestStat.objects.filter(**query).values('remote').annotate(Count('remote')))
+            if len(countRequest) > 0:
+                if countRequest[0]['remote__count'] > self.maxAllowedJSONRequstesPerHour:
+                    reqs.is_rejected = 1
+                    reqs.save()
+                    return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), content_type='text/html')
 
         reqs.save()
         return None
