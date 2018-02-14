@@ -84,7 +84,12 @@ class Cernauth2(BaseOAuth2):
             if self.message!='':
                 self.general_to_message(kwargs,response)
                 self.message_write()
-        except:
+            else:
+                logger = logging.getLogger('social')
+                logger.error('Message is Empty!')
+        except Exception as ex:
+            logger = logging.getLogger('social')
+            logger.error(ex)
             pass
         return response
 
@@ -95,7 +100,7 @@ class Cernauth2(BaseOAuth2):
             return None
         state = self.get_session_state()
         request_state = self.get_request_state()
-        # self.social_error_logger('Session value state missing.')
+        self.social_error_logger('Test Error Message.')
         if not request_state:
             self.social_error_logger(AuthMissingParameter(self, 'state').__str__())
             raise AuthMissingParameter(self, 'state')
