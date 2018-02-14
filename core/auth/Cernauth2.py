@@ -100,13 +100,15 @@ class Cernauth2(BaseOAuth2):
             return None
         state = self.get_session_state()
         request_state = self.get_request_state()
-        self.social_error_logger('Test Error Message.')
+        #self.social_error_logger('Test Error Message.')
         if not request_state:
-            self.social_error_logger(AuthMissingParameter(self, 'state').__str__())
-            raise AuthMissingParameter(self, 'state')
+            self.errordesc = AuthMissingParameter(self, 'state').__str__()
+            self.social_error_logger(self.errordesc)
+            #raise AuthMissingParameter(self, 'state')
         elif not state:
-            self.social_error_logger('Session value state missing.')
-            raise AuthStateMissing(self, 'state')
+            self.errordesc = 'Session value state missing.'
+            self.social_error_logger(self.errordesc)
+            #raise AuthStateMissing(self, 'state')
             # name = self.name + '_state'
             # state = self.data['state']
             # self.strategy.session_set(name, state)
@@ -115,8 +117,9 @@ class Cernauth2(BaseOAuth2):
             #     raise AuthStateMissing(self, 'state')
             # else: return state
         elif not request_state == state:
-            self.self.social_error_logger('Wrong state parameter given')
-            raise AuthStateForbidden(self)
+            self.errordesc = 'Wrong state parameter given'
+            self.self.social_error_logger(self.errordesc)
+            #raise AuthStateForbidden(self)
         else:
             return state
 
@@ -124,6 +127,12 @@ class Cernauth2(BaseOAuth2):
         logger = logging.getLogger('social')
         logger.error(self.message)
         self.message=''
+        # if self.errordesc=='Session value state missing.':
+        #     raise AuthStateMissing(self, 'state')
+        # elif self.errordesc=='Wrong state parameter given':
+        #     raise AuthStateForbidden(self)
+        # else:
+        #     raise AuthMissingParameter(self, 'state')
 
     def self_to_message(self):
         dictattr = {}
@@ -148,6 +157,7 @@ class Cernauth2(BaseOAuth2):
             for subattr in newattr:
                 self.message += subattr+ ':'+ str(newattr[subattr]) + '\n'
     message = ''
+    errordesc =''
     def social_error_logger(self, errmess):
         try:
             if 'HTTP_REFERER' in self.strategy.request.META:
