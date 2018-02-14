@@ -444,7 +444,13 @@ def initRequest(request, callselfmon = True):
             'maxinputsize','timefloor','depthboost','idlepilotsupression','pilotlimit','transferringlimit','cachedse','stageinretry','stageoutretry','maxwdir','minmemory','maxmemory','minrss',
             'maxrss','mintime',):
                 try:
-                    i = int(request.GET[p])
+                    requestVal = request.GET[p]
+                    if '|' in requestVal:
+                        values = requestVal.split('|')
+                        for value in values:
+                            i = int(value)
+                    else:
+                        i = int(requestVal)
                 except:
                     data = {
                         'viewParams': request.session['viewParams'],
@@ -782,6 +788,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         elif ttype.startswith('prod'):
                             ttype = 'prod'
                         query[param] = ttype
+                    elif param == 'jeditaskid':
+                        val = escapeInput(request.session['requestParams'][param])
+                        values = val.split('|')
+                        query['jeditaskid__in'] = values
                     elif param == 'superstatus':
                         val = escapeInput(request.session['requestParams'][param])
                         values = val.split('|')
