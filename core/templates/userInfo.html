@@ -2,7 +2,16 @@
 {% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA user {{ user }} {% endblock %}
 {% block subtitle %}PanDA user <b>{{ user }}</b>{{ viewParams.selection|safe }}{% endblock %}
+{% block extra_js %}
+    <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+    <script type="text/javascript">
 
+    $(document).ready(function() {
+	    $(".comment").shorten();
+	});
+
+</script>
+{% endblock %}
 {% block body %}
 
 
@@ -53,7 +62,7 @@
 <tr class='tablesection'><th colspan=20>Stats from the user DB (updated every few hours)</th></tr>
 <tr class='tablesection'>
 <th> User </th>
-<th> Jobs in last week </th>
+{#<th> Jobs in last week </th>#}
 <th> Latest job in the DB stats </th>
 <th> Personal CPU-hrs - 1 day </th>
 <th> Personal CPU-hrs - 7 days </th>
@@ -63,8 +72,8 @@
 
 <tr>
 <td> {{ userstats.name }} </td>
-<td> {% if userstats.njobsa %}{{ userstats.njobsa }} {% endif %}</td>
-<td>{{ userstats.latestjob }}</td>
+{#<td> {% if userstats.njobsa %}{{ userstats.njobsa }} {% endif %}</td>#}
+<td>{{ userstats.lastmod }}</td>
 
 {% comment %}
 <td class='finished'> {{ userstats.nfinished }} </td>
@@ -91,11 +100,12 @@
 <tr class='tablesection'><th colspan=20><a name="tasks"></a> Task attribute summary, {{ ntasks }} tasks </th></tr>
 {% for fdict in tasksumd %}
 <tr><th> {% if fdict.field == 'superstatus' %} status {% else %} {{ fdict.field }} {% endif %} ({{ fdict.list|length }}) </th><td>
+<div class="comment more">
 {% for item in fdict.list %}
-<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
+<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}} item' {% else %} class="item" {% endif %}> {{ item.kname }} </span>
 <a href="{% url 'taskList' %}?username={{ user }}&{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
 {% endfor %}
-</td></tr>
+</div></td></tr>
 {% endfor %}
 </table>
 {% endif %}
@@ -105,10 +115,10 @@
 
 
 <table>
-<tr class='tablesection'><th colspan=20> {{ ntasks }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
-{% if display_limit %} {% if tasks|length >= display_limit %}
-&nbsp; &nbsp; <font size=-1>Only the most recent {{ display_limit }} tasks are shown. <a href="{{ url_nolimit }}">Remove the limit</a></font>
-{% endif %} {% endif %}
+<tr class='tablesection'><th colspan=20> {{ tasks|length }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
+{% if ntasks >= display_limit_tasks %}
+&nbsp; &nbsp; <font size=-1>Only the most recent {{ display_limit_tasks }} tasks are shown. <a href="{{ url_nolimit_tasks }}">Remove the limit</a></font>
+{% endif %}
 
 &nbsp; &nbsp; <a href="{% url 'taskList' %}?tasktype=analy&username={{ user }}&days=7&display_limit=300">Show in task list page</a>
 </th></tr>
@@ -120,6 +130,7 @@
 	<th>Input files <br><a href="{{nosorturl}}sortby=pctfinished#tasks"><span class='finished'>finish%</span></a> <a href="{{nosorturl}}sortby=pctfailed#tasks"><span class='failed'>fail%</span></a>
 <br>	<a href="{{nosorturl}}sortby=pctfinished#tasks"><span class='finished'>Nfinish</span></a> <a href="{{nosorturl}}sortby=pctfailed#tasks"><span class='failed'>Nfail</span></a>
 	</th>
+    <th><a href="{{nosorturl}}sortby=starttime-descending#tasks">Started</a></th>
 	<th><a href="{{nosorturl}}sortby=time-descending#tasks">Modified</a></th>
 	<th><a href="{{nosorturl}}sortby=statetime-descending#tasks">State changed</a></th>
 	<th><a href="{{nosorturl}}sortby=priority#tasks">Priority</a></th>
@@ -142,6 +153,7 @@
         <td>{% if task.dsinfo.nfilesfinished > 0 %}<span  class='finished'>{{task.dsinfo.pctfinished}}%</span>{% endif %} {% if task.dsinfo.nfilesfailed > 0 %}<a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span class='failed'> {{task.dsinfo.pctfailed}}%</span>{% endif %}</a>
         <br> {% if task.dsinfo.nfilesfinished > 0 %} <span  class='finished'>{{ task.dsinfo.nfilesfinished }}</span> {% endif %} &nbsp; {% if task.dsinfo.nfilesfailed > 0 %} <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span  class='failed'>{{ task.dsinfo.nfilesfailed }}</span></a> {% endif %}
 		</td>
+        <td><font size=-1>{{ task.starttime }}</font></td>
 		<td><font size=-1>{{ task.modificationtime }}</font></td>
 		<td><font size=-1>{{ task.statechangetime }}</font></td>
 		<td>{{ task.taskpriority }}</td>
@@ -212,29 +224,28 @@
 <div class='section'><a href="{% url 'errorSummary' %}?produsername={{ user }}">Show recent job errors</a></div><p>
 
 
+{% if jobsumd %}
 <table>
 <tr class='tablesection'><th colspan=20> Recent job attributes </th></tr>
 {% for fdict in jobsumd %}
 {% if fdict.field %}
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
-
-{% if fdict.list|length > 300 %}
-{{ fdict.list|length }} {{ fdict.field }} values is too many to show
-{% else %}
+<div class="comment more">
 {% for item in fdict.list %}
-{% if fdict.field == 'jobstatus' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
+{% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
 <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
 {% endfor %}
-{% endif %}
+</div>
 </td></tr>
 {% endif %}
 {% endfor %}
 </table>
+{% endif %}
 
 
 <table>
-<tr class='tablesection'><th colspan=20> Recent jobs {% if display_limit < jobList|length %} &nbsp; &nbsp; 
-Only the most recent {{ display_limit }} jobs are shown. <a href="{{ url_nolimit }}">Remove the limit</a>
+<tr class='tablesection'><th colspan=20> {{ jobList|length }} recent jobs {% if display_limit_jobs < njobs %} &nbsp; &nbsp;
+Only the most recent {{ display_limit_jobs }} jobs are shown. <a href="{{ url_nolimit_jobs }}">Remove the limit</a>
 {% endif %}
 &nbsp; &nbsp; &nbsp; Note that with JEDI, tasks are the best tool to monitor the progress of your submissions! <a href="#doc"><span class='helpdark'>See the help section below.</span></a>
 </th></tr>

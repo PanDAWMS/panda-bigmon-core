@@ -4488,12 +4488,21 @@ def userInfo(request, user=''):
     tasks = cleanTaskList(request, tasks)
     ntasks = len(tasks)
     tasksumd = taskSummaryDict(request, tasks)
-    tasks = getTaskScoutingInfo(tasks, ntasks)
+
+    if 'display_limit_tasks' not in request.session['requestParams']:
+        display_limit_tasks = 100
+    else:
+        display_limit_tasks = int(request.session['requestParams']['display_limit_tasks'])
+    ntasksmax = display_limit_tasks
+    url_nolimit_tasks = request.get_full_path() + "&display_limit_tasks=" + str(ntasks)
+
+    tasks = getTaskScoutingInfo(tasks, ntasksmax)
+
+    timestamp_vars = ['modificationtime', 'statechangetime', 'starttime']
     for task in tasks:
-        if task['modificationtime']:
-            task['modificationtime'] = task['modificationtime'].strftime(defaultDatetimeFormat)
-        if task['statechangetime']:
-            task['statechangetime'] = task['statechangetime'].strftime(defaultDatetimeFormat)
+        for tsv in timestamp_vars:
+            if tsv in task and task[tsv]:
+                task[tsv] = task[tsv].strftime(defaultDatetimeFormat)
 
     ## Jobs
     limit = 5000
@@ -4594,15 +4603,15 @@ def userInfo(request, user=''):
         jobsetl.append(jobsets[jobset])
 
     njobsmax = len(jobs)
-    if 'display_limit' in request.session['requestParams'] and int(
-            request.session['requestParams']['display_limit']) < len(jobs):
-        display_limit = int(request.session['requestParams']['display_limit'])
-        njobsmax = display_limit
-        url_nolimit = removeParam(request.get_full_path(), 'display_limit')
+    if 'display_limit_jobs' in request.session['requestParams'] and int(
+            request.session['requestParams']['display_limit_jobs']) < len(jobs):
+        display_limit_jobs = int(request.session['requestParams']['display_limit_jobs'])
+        njobsmax = display_limit_jobs
+        url_nolimit_jobs = removeParam(request.get_full_path(), 'display_limit_jobs') + 'display_limit_jobs=' + str(len(jobs))
     else:
-        display_limit = 3000
-        njobsmax = display_limit
-        url_nolimit = request.get_full_path()
+        display_limit_jobs = 100
+        njobsmax = display_limit_jobs
+        url_nolimit_jobs = request.get_full_path() + 'display_limit_jobs=' + str(len(jobs))
 
     #
     # getting most relevant links based on visit statistics
@@ -4723,16 +4732,16 @@ def userInfo(request, user=''):
             flist.append('vo')
         else:
             flist.append('atlasrelease')
-        jobsumd = jobSummaryDict(request, jobs, flist)
-        njobsetmax = 200
+        jobsumd, esjobssumd = jobSummaryDict(request, jobs, flist)
+        njobsetmax = 100
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
 
+        timestamp_vars = ['modificationtime', 'creationtime']
         for job in jobs:
-            if job['creationtime']:
-                job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
-            if job['modificationtime']:
-                job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
+            for tsv in timestamp_vars:
+                if tsv in job and job[tsv]:
+                    job[tsv] = job[tsv].strftime(defaultDatetimeFormat)
 
         TFIRST = request.session['TFIRST']
         TLAST = request.session['TLAST']
@@ -4750,6 +4759,8 @@ def userInfo(request, user=''):
             'jobsumd': jobsumd,
             'jobList': jobs[:njobsmax],
             'njobs': len(jobs),
+            'display_limit_jobs': display_limit_jobs,
+            'url_nolimit_jobs': url_nolimit_jobs,
             'query': query,
             'userstats': userstats,
             'tfirst': TFIRST.strftime(defaultDatetimeFormat),
@@ -4759,9 +4770,9 @@ def userInfo(request, user=''):
             'jobsets': jobsetl[:njobsetmax - 1],
             'njobsetmax': njobsetmax,
             'njobsets': len(jobsetl),
-            'url_nolimit': url_nolimit,
-            'display_limit': display_limit,
-            'tasks': tasks,
+            'url_nolimit_tasks': url_nolimit_tasks,
+            'display_limit_tasks': display_limit_tasks,
+            'tasks': tasks[:ntasksmax],
             'ntasks': ntasks,
             'tasksumd': tasksumd,
             'built': datetime.now().strftime("%H:%M:%S"),
