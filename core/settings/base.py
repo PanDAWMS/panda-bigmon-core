@@ -38,7 +38,8 @@ MIDDLEWARE_CLASSES = (
     'core.ddosprotection.DDOSMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    #'django.contrib.sessions.middleware.SessionMiddleware',
+    'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',  # for AJAX POST protection with csrf
 
@@ -63,7 +64,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.cache.FetchFromCacheMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
     'core.auth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
-    'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
+    #'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
 
 )
 

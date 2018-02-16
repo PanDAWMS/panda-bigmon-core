@@ -197,3 +197,5 @@ class Cernauth2(BaseOAuth2):
                 self.message += '_session in the session object not exists' + '\n'
         else:
             self.message += 'Session NOT exists' + '\n'
+        logger = logging.getLogger('social')
+        logger.error(self.message)

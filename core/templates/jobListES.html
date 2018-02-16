@@ -130,6 +130,8 @@ function toggleDetailDisplay(className) {
     <td><div class="comment more">
         {% for item in fdict.list %}
             {% if fdict.field == 'jeditaskid' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+             {% elif fdict.field  == 'jobsetid'%} <a href="{% url 'jobList' %}?jobsetid={{ item.kname }}">{{ item.kname }}</a> <a href="{{xurl}}{{fdict.field}}={{item.kname}}" > ({{ item.kvalue }}) </a>
+
             {% else %}
                 {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
                 {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
