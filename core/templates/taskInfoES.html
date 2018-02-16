@@ -105,6 +105,13 @@ function buildPlots(classname) {
     }
 }
 
+$(document).ready(function () {
+    var url = window.location.href;
+    if (url.indexOf("#jobsconsumptionplots") > -1) {
+        buildPlots('d3splot');
+    }
+})
+
 </script>
 {% endblock %}
 
