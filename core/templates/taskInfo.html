@@ -102,6 +102,14 @@ function buildPlots(classname) {
        toggleDetailDisplay(classname);
     }
 }
+
+$(document).ready(function () {
+    var url = window.location.href;
+    if (url.indexOf("#jobsconsumptionplots") > -1) {
+        buildPlots('d3splot');
+    }
+})
+
 </script>
 {% endblock %}
 {% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <b>{{ task.taskname }}</b>{% endblock %}
