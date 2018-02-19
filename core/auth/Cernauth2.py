@@ -100,7 +100,7 @@ class Cernauth2(BaseOAuth2):
             return None
         state = self.get_session_state()
         request_state = self.get_request_state()
-        #self.social_error_logger('Test Error Message.')
+        self.social_error_logger('Test Error Message.')
         if not request_state:
             self.errordesc = AuthMissingParameter(self, 'state').__str__()
             self.social_error_logger(self.errordesc)
@@ -191,7 +191,10 @@ class Cernauth2(BaseOAuth2):
                 self.message += '_SessionBase__session_key:  None \n'
             if hasattr(self.strategy.session,'_session'):
                 self.message += '_session in the session object exists' + '\n'
-                self.message += '_session size: ' + len(self.strategy.session._session) + '\n'
+                if self.strategy.session._session is not None:
+                    self.message += '_session size: ' + str(len(self.strategy.session._session)) + '\n'
+                else:
+                    self.message += '_session size: None'+'\n'
                 for v in dict(self.strategy.session._session):
                     self.message+= v+':'+ str(self.strategy.session._session[v]) + '\n'
             else:
