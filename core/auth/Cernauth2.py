@@ -191,11 +191,12 @@ class Cernauth2(BaseOAuth2):
                 self.message += '_SessionBase__session_key:  None \n'
             if hasattr(self.strategy.session,'_session'):
                 self.message += '_session in the session object exists' + '\n'
+                self.message += '_session size: ' + len(self.strategy.session._session) + '\n'
                 for v in dict(self.strategy.session._session):
                     self.message+= v+':'+ str(self.strategy.session._session[v]) + '\n'
             else:
                 self.message += '_session in the session object not exists' + '\n'
         else:
             self.message += 'Session NOT exists' + '\n'
-        logger = logging.getLogger('social')
-        logger.error(self.message)
+        # logger = logging.getLogger('social')
+        # logger.error(self.message)

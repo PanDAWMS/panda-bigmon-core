@@ -12,6 +12,7 @@ from core import dpviews as dpviews
 from core import MemoryMonitorPlots as memmon
 from core.art import views as art_views
 
+from core.monitor import views as monitor_views
 #import core.views as coremon_views
 import core.pandajob.views_support as core_coremon_support_views
 #import core.pandajob.views as core_coremon_views
@@ -157,6 +158,8 @@ urlpatterns = [
     url(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
 
     url(r'^taskserrorsscat/$', coremon_views.tasksErrorsScattering, name='tasksErrorsScattering'),
+    ###Monitor###
+    url(r'^bigpandamonitor/$', monitor_views.monitorJson, name='bigpandamonitor'),
 
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
