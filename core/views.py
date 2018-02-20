@@ -439,7 +439,7 @@ def initRequest(request, callselfmon = True):
                 pval = pval.replace('#', '')
             ## is it int, if it's supposed to be?
             if p.lower() in (
-            'days', 'hours', 'limit', 'display_limit', 'taskid', 'jeditaskid', 'jobsetid', 'corecount', 'taskpriority',
+            'days', 'hours', 'limit', 'display_limit', 'taskid', 'jeditaskid', 'jobsetid', 'reqid', 'corecount', 'taskpriority',
             'priority', 'attemptnr', 'statenotupdated', 'tasknotupdated','corepower','wansourcelimit','wansinklimit','nqueue','nodes','queuehours','memory','maxtime','space',
             'maxinputsize','timefloor','depthboost','idlepilotsupression','pilotlimit','transferringlimit','cachedse','stageinretry','stageoutretry','maxwdir','minmemory','maxmemory','minrss',
             'maxrss','mintime',):
