@@ -11,6 +11,14 @@ function toggleDetailDisplay(className) {
    }
 }
 
+(function($) {
+    $.fn.goTo = function() {
+        $('html, body').animate({
+            scrollTop: $(this).offset().top + 'px'
+        }, 'fast');
+        return this;
+    }
+})(jQuery);
 
 function killtasks(taskID, action) {
     var message = ''
@@ -97,6 +105,7 @@ function buildPlots(classname) {
         }
         $("#jobsconsumptionplots").html("");
         toggleDetailDisplay(classname);
+        $('#jobsconsumptionplots').goTo();
     }
     else {
        toggleDetailDisplay(classname);
@@ -107,6 +116,7 @@ $(document).ready(function () {
     var url = window.location.href;
     if (url.indexOf("#jobsconsumptionplots") > -1) {
         buildPlots('d3splot');
+        $('#jobsconsumptionplots').goTo();
     }
 })
 
@@ -234,7 +244,7 @@ $(document).ready(function () {
 <div class="dropdownplots">
   <button class="dropdownbutton">Open plot</button>
   <div id="dropdown-plotchoice" class="dropdown-plot">
-    <a style="cursor: pointer;" onclick="javascript:buildPlots('d3splot');">Memory and Walltime usage</a>
+    <a style="cursor: pointer;" href="#jobsconsumptionplots" onclick="javascript:buildPlots('d3splot');">Memory and Walltime usage</a>
     <a href="http://atlas-kibana.mwt2.org:5601/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))" target="_blank">Memory and Walltime usage (Kibana)</a>
     {% if not task.tasktype == 'anal' %}
         <a href="{% url 'ganttTaskChain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Gantt diagram)</a>
