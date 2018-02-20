@@ -363,6 +363,7 @@ li.artmenu-item > label {
     display:table;
     text-align: right;
     z-index: 2;
+    height: 100%;
 }
 
 .testsubresultscontainer  ul {
@@ -380,7 +381,7 @@ li.artmenu-item > label {
 }
 .testsubresultbox {
     width: 20px;
-    border: 1px solid #0003;
+    border: 1px solid #dbdbdb;
 }
 
 .testsubresultbox.finishedtest {

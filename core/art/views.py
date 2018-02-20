@@ -416,6 +416,7 @@ def artJobs(request):
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
     ntagslist=list(sorted(set([x['ntag'] for x in jobs])))
+    jeditaskids = list(sorted(set([x['taskid'] for x in jobs])))
 
     artjobsdict={}
     if not 'view' in request.session['requestParams'] or (
@@ -518,6 +519,7 @@ def artJobs(request):
         'artjobs': artjobsdict,
         'noviewurl': noviewurl,
         'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
+        'taskids' : jeditaskids,
     }
     setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
     response = render_to_response('artJobs.html', data, content_type='text/html')

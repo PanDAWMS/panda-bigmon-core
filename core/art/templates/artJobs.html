@@ -35,6 +35,11 @@ function loadJobSubResult(testname, urltail) {
 {% else %}
     <a href="{{ noviewurl }}view=branches" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to branches view</a>
 {% endif %}
+{% if taskids|length == 1 %}
+    <div style="float: right">
+        <a href="{% url 'taskInfo' taskids.0 %}#jobsconsumptionplots" class="button back-to-home"><i class="fi-graph-bar"></i> Show job consumption plots</a>
+    </div>
+{% endif %}
     <br>
 
 {% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
