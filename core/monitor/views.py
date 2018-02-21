@@ -39,7 +39,7 @@ def monitorJson(request):
     #all_tables = soup.find_all('table')
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
         return response
-    return HttpResponse(json.dumps({'Forbidden!'}), content_type='text/html')
+    return HttpResponse(json.dumps({'message':'Forbidden!'}), content_type='text/html')
 
 
 
