@@ -8144,7 +8144,7 @@ def taskInfo(request, jeditaskid=0):
     if data is not None:
         data = json.loads(data)
 
-        if 'built' in data:
+        if 'built' in data and 'eventservice' in data and data['eventservice']:
             builtDate = datetime.strptime('2018-'+data['built'], defaultDatetimeFormat)
             if builtDate < datetime.strptime('2018-02-21 15:00:00', defaultDatetimeFormat):
                 data = None
