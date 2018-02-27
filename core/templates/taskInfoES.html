@@ -72,8 +72,8 @@ function loadErrorSummaryData(jeditaskid, mode, tk) {
 
 function buildNeventsPlot(idname, classname) {
     if ( !document.getElementById(idname).innerHTML ) {
-        var nevents = {{ plotsDict.nevents|safe }};
-        if (nevents.length > 0) {pandamonplotHist(nevents, "#plot0", "Number of events histogram (finished non-merge jobs)");}
+        var data = {{ plotsDict|safe }};
+        if ('nevents' in data) {pandamonplotHistNew(data['nevents'], "#plot0", "Number of events histogram (finished non-merge jobs)");}
         toggleDetailDisplay(classname)
     }
     else {
@@ -90,24 +90,34 @@ function buildPlots(classname) {
    }
     if (flag > 0) {
         $("#jobsconsumptionplots").html("<img src='{% static "images/load.gif" %}'>  ");
-        var values1 = {{ plotsDict.maxpss|safe }};
-        var values2 = {{ plotsDict.walltime|safe }};
-        var values3 = {{ plotsDict.maxpssf|safe }};
-        var values4 = {{ plotsDict.walltimef|safe }};
-        var values5 = {{ plotsDict.maxpsspercore|safe }};
-        var values6 = {{ plotsDict.maxpsspercoref|safe }};
-        var values7 = {{ plotsDict.hs06s|safe }};
-        var values8 = {{ plotsDict.hs06sf|safe }};
-        var values9 = {{ plotsDict.walltimeperevent|safe }};
-        if (values1.length > 0) {pandamonplotHist(values1,  "#plot1", "Maximum PSS histogram");}
-        if (values3.length > 0) {pandamonplotHist(values3,  "#plot3", "Maximum PSS histogram (failed jobs)");}
-        if (values2.length > 0) {pandamonplotHist(values2,  "#plot2", "Walltime histogram");}
-        if (values4.length > 0) {pandamonplotHist(values4,  "#plot4", "Walltime histogram (failed jobs)");}
-        if (values5.length > 0) {pandamonplotHist(values5,  "#plot5", "Maximum PSS per core histogram");}
-        if (values6.length > 0) {pandamonplotHist(values6,  "#plot6", "Maximum PSS per core histogram (failed jobs)");}
-        if (values7.length > 0) {pandamonplotHist(values7,  "#plot7", "HS06s histogram");}
-        if (values8.length > 0) {pandamonplotHist(values8,  "#plot8", "HS06s histogram (failed jobs)");}
-        if (values9.length > 0) {pandamonplotHist(values9,  "#plot9", "Walltime per event histogram");}
+        var values = {{ plotsDict|safe }};
+        if ('maxpss' in values) {
+            pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
+        }
+        if ('maxpssf' in values) {
+            pandamonplotHistNew(values['maxpssf'], "#plot3", "Maximum PSS histogram (failed jobs)");
+        }
+        if ('walltime' in values) {
+            pandamonplotHistNew(values['walltime'], "#plot2", "Walltime histogram");
+        }
+        if ('walltimef' in values) {
+            pandamonplotHistNew(values['walltimef'], "#plot4", "Walltime histogram (failed jobs)");
+        }
+        if ('maxpsspercore' in values) {
+            pandamonplotHistNew(values['maxpsspercore'], "#plot5", "Maximum PSS per core histogram");
+        }
+        if ('maxpsspercoref' in values) {
+            pandamonplotHistNew(values['maxpsspercoref'], "#plot6", "Maximum PSS per core histogram (failed jobs)");
+        }
+        if ('hs06s' in values) {
+            pandamonplotHistNew(values['hs06s'], "#plot7", "HS06s histogram");
+        }
+        if ('hs06sf' in values) {
+            pandamonplotHistNew(values['hs06sf'], "#plot8", "HS06s histogram (failed jobs)");
+        }
+        if ('walltimeperevent' in values) {
+            pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
+        }
         $("#jobsconsumptionplots").html("");
         toggleDetailDisplay(classname);
         $('#jobsconsumptionplots').goTo();
@@ -379,8 +389,8 @@ $(document).ready(function () {
 <div class="dropdownplots">
   <button class="dropdownbutton">Open plot</button>
   <div id="dropdown-plotchoice" class="dropdown-plot">
-{#    <a style="cursor: pointer;" onclick="javascript:buildNeventsPlot('plot0' ,'nevents_plot');">Number of events distribution plot</a>#}
-{#    <a style="cursor: pointer;" href="#jobsconsumptionplots" onclick="javascript:buildPlots('d3splot');">Memory and Walltime usage</a>#}
+    <a style="cursor: pointer;" onclick="javascript:buildNeventsPlot('plot0' ,'nevents_plot');">Number of events distribution plot</a>
+    <a style="cursor: pointer;" href="#jobsconsumptionplots" onclick="javascript:buildPlots('d3splot');">Memory and Walltime usage</a>
     <a href="http://atlas-kibana.mwt2.org:5601/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))" target="_blank">Memory and Walltime usage (Kibana)</a>
     {% if not task.tasktype == 'anal' %}
         <a href="{% url 'ganttTaskChain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Gantt diagram)</a>
@@ -605,19 +615,19 @@ $(document).ready(function () {
 
 <p>
 <div id="jobsconsumptionplots"></div>
-{% if  plotsDict.nevents|length > 0 %} <div class="nevents_plot" id="plot0" style="align:left;display:none;font-size: 12px"></div><br style="clear:both;"> {% endif %}
+{% if  'nevents' in plotsDict %} <div class="nevents_plot" id="plot0" style="align:left;display:none;font-size: 12px"></div><br style="clear:both;"> {% endif %}
 
-{% if  plotsDict.maxpss|length > 0 %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.walltime|length > 0 %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.maxpsspercore|length > 0 %} <div class="d3splot" id="plot5" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.hs06s|length > 0 %} <div class="d3splot" id="plot7" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.walltimeperevent|length > 0 %} <div class="d3splot" id="plot9" style="float:left;display:none"></div> {% endif %}
+{% if 'maxpss' in plotsDict %} <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
+{% if 'walltime' in plotsDict %} <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
+{% if 'maxpsspercore' in plotsDict %} <div class="d3splot" id="plot5" style="float:left;display:none"></div> {% endif %}
+{% if 'hs06s' in plotsDict %} <div class="d3splot" id="plot7" style="float:left;display:none"></div> {% endif %}
+{% if 'walltimeperevent' in plotsDict %} <div class="d3splot" id="plot9" style="float:left;display:none"></div> {% endif %}
     <br style="clear:both;">
-{% if  plotsDict.maxpssf|length > 0 %} <div class="d3splot" id="plot3" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.walltimef|length > 0 %} <div class="d3splot" id="plot4" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.maxpsspercoref|length > 0 %} <div class="d3splot" id="plot6" style="float:left;display:none"></div> {% endif %}
-{% if  plotsDict.hs06sf|length > 0 %} <div class="d3splot" id="plot8" style="float:left;display:none"></div> {% endif %}
-<br style="clear: both;">
+{% if 'maxpssf' in plotsDict %} <div class="d3splot" id="plot3" style="clear:both;float:left;display:none"></div> {% endif %}
+{% if 'walltimef' in plotsDict %} <div class="d3splot" id="plot4" style="float:left;display:none"></div> {% endif %}
+{% if 'maxpsspercoref' in plotsDict %} <div class="d3splot" id="plot6" style="float:left;display:none"></div> {% endif %}
+{% if 'hs06sf' in plotsDict %} <div class="d3splot" id="plot8" style="float:left;display:none"></div> {% endif %}
+    <br style="clear: both;">
 
 
 {% if inctrs %}

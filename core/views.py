@@ -5,6 +5,7 @@ import time
 import json
 import copy
 import itertools, random
+import numpy as np
 import string as strm
 import math
 from urllib import urlencode, unquote
@@ -8145,9 +8146,9 @@ def taskInfo(request, jeditaskid=0):
     if data is not None:
         data = json.loads(data)
 
-        if 'built' in data and 'eventservice' in data and data['eventservice']:
+        if 'built' in data:
             builtDate = datetime.strptime('2018-'+data['built'], defaultDatetimeFormat)
-            if builtDate < datetime.strptime('2018-02-21 15:00:00', defaultDatetimeFormat):
+            if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
                 data = None
                 setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 1)
 
@@ -8159,14 +8160,14 @@ def taskInfo(request, jeditaskid=0):
 
         plotDict = {}
         if 'plotsDict' in data:
-            oldPlotDict = data['plotsDict']
+            oldPlotDict = json.loads(data['plotsDict'])
             for plotName, plotData in oldPlotDict.iteritems():
-                plotDict[str(plotName)] = []
-                if len(plotData) > 0:
-                    for dictSiteValue in plotData:
+                if 'sites' in plotData and 'ranges' in plotData:
+                    plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
+                    for dictSiteName, listValues in plotData['sites'].iteritems():
                         try:
-                            plotDict[str(plotName)].append(
-                                {'site': str(dictSiteValue['site']), 'value': int(dictSiteValue['value'])})
+                            plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
+                            plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
                         except:
                             pass
             data['plotsDict'] = plotDict
@@ -8606,7 +8607,7 @@ def taskInfo(request, jeditaskid=0):
             'showtaskprof': showtaskprof,
             'jobsummaryESMerge': jobsummaryESMerge,
             'jobsummaryPMERGE': jobsummaryPMERGE,
-            'plotsDict': plotsDict,
+            'plotsDict': json.dumps(plotsDict),
             'taskbrokerage': taskbrokerage,
             'jobscoutids' : jobScoutIDs,
             'request': request,
@@ -8959,55 +8960,94 @@ def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceF
             end = time.time()
             print(end - start)
 
+    plotsNames = ['maxpss', 'maxpsspercore', 'nevents', 'walltime', 'walltimeperevent', 'hs06s', 'cputime', 'cputimeperevent', 'maxpssf', 'maxpsspercoref', 'walltimef', 'hs06sf', 'cputimef', 'cputimepereventf']
     plotsDict = {}
-    plotsDict['maxpss'] = []
-    plotsDict['maxpssf'] = []
-    plotsDict['maxpsspercore'] = []
-    plotsDict['maxpsspercoref'] = []
-    plotsDict['nevents'] = []
-    plotsDict['walltime'] = []
-    plotsDict['walltimef'] = []
-    plotsDict['hs06s'] = []
-    plotsDict['hs06sf'] = []
-    plotsDict['walltimeperevent'] = []
-    plotsDict['cputime'] = []
-    plotsDict['cputimeperevent'] = []
-    plotsDict['cputimef'] = []
-    plotsDict['cputimepereventf'] = []
-    if not isEventServiceFlag:
-        for job in jobs:
-            if job['actualcorecount'] is None:
-                job['actualcorecount'] = 1
-            if job['maxpss'] is not None and job['maxpss'] != -1:
-                if job['jobstatus'] == 'finished':
-                    if job['actualcorecount'] and job['actualcorecount']>0:
-                        plotsDict['maxpsspercore'].append(
-                            {'value': job['maxpss'] / 1024 / job['actualcorecount'], 'site': str(job['computingsite'])})
-                    plotsDict['nevents'].append({'value': job['nevents'], 'site': str(job['computingsite'])})
-                    plotsDict['maxpss'].append({'value': job['maxpss'] / 1024, 'site': str(job['computingsite'])})
-                if job['jobstatus'] == 'failed':
-                    plotsDict['maxpssf'].append({'value': job['maxpss'] / 1024, 'site': str(job['computingsite'])})
-                    if job['actualcorecount'] and job['actualcorecount']>0:
-                        plotsDict['maxpsspercoref'].append(
-                            {'value': job['maxpss'] / 1024 / job['actualcorecount'], 'site': str(job['computingsite'])})
-            if 'duration' in job and job['duration']:
-                if job['jobstatus'] == 'finished':
-                    plotsDict['walltime'].append({'value': job['duration'], 'site': str(job['computingsite'])})
-                    plotsDict['hs06s'].append({'value': job['hs06sec'], 'site': str(job['computingsite'])})
-                    if 'walltimeperevent' in job:
-                        plotsDict['walltimeperevent'].append({'value': job['walltimeperevent'], 'site': str(job['computingsite'])})
-                if job['jobstatus'] == 'failed':
-                    plotsDict['walltimef'].append({'value': job['duration'], 'site': str(job['computingsite'])})
-                    plotsDict['hs06sf'].append({'value': job['hs06sec'], 'site': str(job['computingsite'])})
-            if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
-                if job['jobstatus'] == 'finished':
-                    plotsDict['cputime'].append({'value': job['cpuconsumptiontime'], 'site': str(job['computingsite'])})
-                    if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
-                        plotsDict['cputimeperevent'].append({'value': round(job['cpuconsumptiontime']/(job['nevents']*1.0),2), 'site': str(job['computingsite'])})
-                if job['jobstatus'] == 'failed':
-                    plotsDict['cputimef'].append({'value': job['cpuconsumptiontime'], 'site': str(job['computingsite'])})
-                    if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
-                        plotsDict['cputimepereventf'].append({'value': round(job['cpuconsumptiontime']/(job['nevents']*1.0),2), 'site': str(job['computingsite'])})
+
+    for pname in plotsNames:
+        plotsDict[pname] = {'sites': {}, 'ranges': {}}
+
+    for job in jobs:
+        if job['actualcorecount'] is None:
+            job['actualcorecount'] = 1
+        if job['maxpss'] is not None and job['maxpss'] != -1:
+            if job['jobstatus'] == 'finished':
+                if job['computingsite'] not in plotsDict['maxpsspercore']['sites']:
+                    plotsDict['maxpsspercore']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['nevents']['sites']:
+                    plotsDict['nevents']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['maxpss']['sites']:
+                    plotsDict['maxpss']['sites'][job['computingsite']] = []
+
+                if job['actualcorecount'] and job['actualcorecount'] > 0:
+                    plotsDict['maxpsspercore']['sites'][job['computingsite']].append(job['maxpss'] / 1024 / job['actualcorecount'])
+                plotsDict['maxpss']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
+                plotsDict['nevents']['sites'][job['computingsite']].append(job['nevents'])
+            elif job['jobstatus'] == 'failed':
+                if job['computingsite'] not in plotsDict['maxpsspercoref']['sites']:
+                    plotsDict['maxpsspercoref']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['maxpssf']['sites']:
+                    plotsDict['maxpssf']['sites'][job['computingsite']] = []
+                if job['actualcorecount'] and job['actualcorecount'] > 0:
+                    plotsDict['maxpsspercoref']['sites'][job['computingsite']].append(job['maxpss'] / 1024 / job['actualcorecount'])
+                plotsDict['maxpssf']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
+        if 'duration' in job and job['duration']:
+            if job['jobstatus'] == 'finished':
+                if job['computingsite'] not in plotsDict['walltime']['sites']:
+                    plotsDict['walltime']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['hs06s']['sites']:
+                    plotsDict['hs06s']['sites'][job['computingsite']] = []
+                plotsDict['walltime']['sites'][job['computingsite']].append(job['duration'])
+                plotsDict['hs06s']['sites'][job['computingsite']].append(job['hs06sec'])
+                if 'walltimeperevent' in job:
+                    if job['computingsite'] not in plotsDict['walltimeperevent']['sites']:
+                        plotsDict['walltimeperevent']['sites'][job['computingsite']] = []
+                    plotsDict['walltimeperevent']['sites'][job['computingsite']].append(job['walltimeperevent'])
+            if job['jobstatus'] == 'failed':
+                if job['computingsite'] not in plotsDict['walltimef']['sites']:
+                    plotsDict['walltimef']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['hs06sf']['sites']:
+                    plotsDict['hs06sf']['sites'][job['computingsite']] = []
+                plotsDict['walltimef']['sites'][job['computingsite']].append(job['duration'])
+                plotsDict['hs06sf']['sites'][job['computingsite']].append(job['hs06sec'])
+        if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
+            if job['jobstatus'] == 'finished':
+                if job['computingsite'] not in plotsDict['cputime']['sites']:
+                    plotsDict['cputime']['sites'][job['computingsite']] = []
+                plotsDict['cputime']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
+                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
+                    if job['computingsite'] not in plotsDict['cputimeperevent']['sites']:
+                        plotsDict['cputimeperevent']['sites'][job['computingsite']] = []
+                    plotsDict['cputimeperevent']['sites'][job['computingsite']].append(round(job['cpuconsumptiontime']/(job['nevents']*1.0), 2))
+            if job['jobstatus'] == 'failed':
+                if job['computingsite'] not in plotsDict['cputimef']['sites']:
+                    plotsDict['cputimef']['sites'][job['computingsite']] = []
+                plotsDict['cputimef']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
+                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
+                    if job['computingsite'] not in plotsDict['cputimepereventf']['sites']:
+                        plotsDict['cputimepereventf']['sites'][job['computingsite']] = []
+                    plotsDict['cputimepereventf']['sites'][job['computingsite']].append(round(job['cpuconsumptiontime']/(job['nevents']*1.0), 2))
+
+    nbinsmax = 100
+    for pname in plotsNames:
+        rawdata = []
+        for k,d in plotsDict[pname]['sites'].iteritems():
+            rawdata.extend(d)
+        if len(rawdata) > 0:
+            plotsDict[pname]['stats'] = []
+            plotsDict[pname]['stats'].append(np.average(rawdata))
+            plotsDict[pname]['stats'].append(np.std(rawdata))
+            bins, ranges = np.histogram(rawdata, bins='auto')
+            if len(ranges) > nbinsmax + 1:
+                bins, ranges = np.histogram(rawdata, bins=nbinsmax)
+            plotsDict[pname]['ranges'] = list(np.ceil(ranges))
+            for site in plotsDict[pname]['sites'].keys():
+                sitedata = [x for x in plotsDict[pname]['sites'][site]]
+                plotsDict[pname]['sites'][site] = list(np.histogram(sitedata, ranges)[0])
+        else:
+            try:
+                del(plotsDict[pname])
+            except:
+                pass
 
     jobstates = []
     global statelist
