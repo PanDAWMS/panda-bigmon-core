@@ -58,10 +58,10 @@ class CustomSessionMiddleware(SessionMiddleware):
                                 # return self.create()
                             # if must_create:
                             #     func = self._cache.add
-                            if request.session._cache.get(request.session.cache_key) is None and self.session_key is not None:
-                                result = request.session._cache.set(request.session.cache_key,
-                                        request.session._get_session(no_load=True),
-                                        request.session.get_expiry_age())
+                            # if request.session._cache.get(request.session.cache_key) is None and self.session_key is not None:
+                            #     result = request.session._cache.set(request.session.cache_key,
+                            #             request.session._get_session(no_load=True),
+                            #             request.session.get_expiry_age())
                             request.session.save()
                         except UpdateError:
                             # The user is now logged out; redirecting to same
