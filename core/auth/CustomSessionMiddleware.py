@@ -24,6 +24,9 @@ class CustomSessionMiddleware(SessionMiddleware):
         session every time, save the changes and set a session cookie or delete
         the session cookie if the session has been emptied.
         """
+        if ('statpixel' in request.META['PATH_INFO']):
+            return response
+
         try:
             accessed = request.session.accessed
             modified = request.session.modified
