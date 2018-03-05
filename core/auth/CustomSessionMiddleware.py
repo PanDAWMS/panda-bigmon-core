@@ -54,12 +54,25 @@ class CustomSessionMiddleware(SessionMiddleware):
                     # Skip session save for 500 responses, refs #3881.
                     if response.status_code != 500:
                         try:
+                            # if self.session_key is None:
+                                # return self.create()
+                            # if must_create:
+                            #     func = self._cache.add
+                            if request.session._cache.get(request.session.cache_key) is None and self.session_key is not None:
+                                result = request.session._cache.set(request.session.cache_key,
+                                        request.session._get_session(no_load=True),
+                                        request.session.get_expiry_age())
                             request.session.save()
                         except UpdateError:
                             # The user is now logged out; redirecting to same
                             # page will result in a redirect to the login page
                             # if required.
-                            return redirect(request.path)
+                            #return redirect(request.path)
+                            raise SuspiciousOperation(
+                                "The request's session was deleted before the "
+                                "request completed. The user may have logged "
+                                "out in a concurrent request, for example."
+                            )
                         response.set_cookie(
                             settings.SESSION_COOKIE_NAME,
                             request.session.session_key, max_age=max_age,
