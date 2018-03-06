@@ -459,6 +459,18 @@ def initRequest(request, callselfmon = True):
                         "errormessage": "Illegal value '%s' for %s" % (pval, p),
                     }
                     return False, render_to_response('errorPage.html', data, content_type='text/html')
+            if p.lower() in ('date_from', 'date_to'):
+                try:
+                    requestVal = request.GET[p]
+                    i = datetime.strptime(requestVal, '%Y-%m-%d')
+                except:
+                    data = {
+                        'viewParams': request.session['viewParams'],
+                        'requestParams': request.session['requestParams'],
+                        "errormessage": "Illegal value '%s' for %s" % (pval, p),
+                    }
+                    return False, render_to_response('errorPage.html', data, content_type='text/html')
+
             request.session['requestParams'][p.lower()] = pval
     setupSiteInfo(request)
 
@@ -2755,6 +2767,7 @@ def cache_filter(timeout):
 @login_customrequired
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
+    if not valid: return response
     dkey = digkey(request)
     thread = None
     isEventTask = False
@@ -2774,7 +2787,7 @@ def jobList(request, mode=None, param=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    if not valid: return response
+
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
         return jobParamList(request)
     eventservice = False
