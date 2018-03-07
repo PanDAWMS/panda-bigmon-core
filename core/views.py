@@ -12533,6 +12533,8 @@ def testip(request):
     #     ip = request.META.get('REMOTE_ADDR')
     return HttpResponse(json.dumps(x_forwarded_for, cls=DateTimeEncoder), content_type='text/html')
 
+
+@login_required
 def tasksErrorsScattering(request):
     limit = 1000
     hours = 4
