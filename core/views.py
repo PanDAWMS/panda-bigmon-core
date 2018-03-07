@@ -12534,12 +12534,14 @@ def testip(request):
     return HttpResponse(json.dumps(x_forwarded_for, cls=DateTimeEncoder), content_type='text/html')
 
 
-@login_required
+#@login_required
 def tasksErrorsScattering(request):
-    limit = 1000
+    initRequest(request)
+    limit = 100000
     hours = 4
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'
+    query['superstatus__in'] = ['submitting', 'running']
     tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
 
     random.seed()
