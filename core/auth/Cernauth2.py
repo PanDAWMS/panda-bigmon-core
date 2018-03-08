@@ -118,7 +118,7 @@ class Cernauth2(BaseOAuth2):
             # else: return state
         elif not request_state == state:
             self.errordesc = 'Wrong state parameter given'
-            self.self.social_error_logger(self.errordesc)
+            self.social_error_logger(self.errordesc)
             #raise AuthStateForbidden(self)
         else:
             return state
