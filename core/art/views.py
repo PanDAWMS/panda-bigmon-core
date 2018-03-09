@@ -833,7 +833,7 @@ def getjflag(job):
 def registerARTTest(request):
     ### API to register ART tests
     ### Example of curl command:
-    ### curl -X POST -d "pandaid=XXX" -d "testname=test_XXXXX.sh" http://aipanda100.cern.ch:8001/art/registerarttest/?json
+    ### curl -X POST -d "pandaid=XXX" -d "testname=test_XXXXX.sh" http://bigpanda.cern.ch/art/registerarttest/?json
 
     valid,response = initRequest(request)
     pandaid = -1
