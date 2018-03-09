@@ -122,6 +122,9 @@ class JobsWorldView(models.Model):
         db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEW"'
 
 class CombinedWaitActDefArch4(models.Model):
+    pandaid = models.BigIntegerField(db_column='PANDAID')
+    jeditaskid = models.BigIntegerField(db_column='JEDITASKID')
+    jobname = models.CharField(max_length=384, db_column='JOBNAME', blank=True)
     nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
     computingsite = models.CharField(max_length=384, db_column='COMPUTINGSITE', blank=True) # Field name made lowercase.
     jobstatus = models.CharField(max_length=45, db_column='JOBSTATUS') # Field name made lowercase.
