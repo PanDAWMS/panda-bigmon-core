@@ -10,7 +10,8 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.db import connection, transaction
-from core.art.modelsART import ARTTask, ARTTasks, ARTResults
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from core.art.modelsART import ARTTask, ARTTasks, ARTResults, ARTTests
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, Sum
 from core.views import initRequest, extensibleURL, removeParam
@@ -20,6 +21,8 @@ from core.settings import defaultDatetimeFormat
 from django.db.models import Q
 
 from core.libs.cache import setCacheEntry, getCacheEntry
+
+from core.pandajob.models import CombinedWaitActDefArch4
 
 artdateformat = '%Y-%m-%d'
 humandateformat = '%d %b %Y'
@@ -825,3 +828,95 @@ def gettflag(job):
 
 def getjflag(job):
     return 1 if job['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
+
+@csrf_exempt
+def registerARTTest(request):
+    ### API to register ART tests
+    ### Example of curl command:
+    ### curl -X POST -d "pandaid=XXX" -d "testname=test_XXXXX.sh" http://aipanda100.cern.ch:8001/art/registerarttest/?json
+
+    valid,response = initRequest(request)
+    pandaid = -1
+    testname = ''
+    ### Checking whether params were provided
+    if 'requestParams' in request.session and 'pandaid' in request.session['requestParams'] and 'testname' in request.session['requestParams']:
+            pandaid = request.session['requestParams']['pandaid']
+            testname = request.session['requestParams']['testname']
+    else:
+        data = {'exit_code': -1, 'message': "There were not recieved any pandaid and testname"}
+        return HttpResponse(json.dumps(data), content_type='text/html')
+    ### Checking whether params is valid
+    try:
+        pandaid = int(pandaid)
+    except:
+        data = {'exit_code': -1, 'message': "Illegal pandaid was recieved"}
+        return HttpResponse(json.dumps(data), content_type='text/html')
+
+    if pandaid < 0:
+        data = {'exit_code': -1, 'message': "Illegal pandaid was recieved"}
+        return HttpResponse(json.dumps(data), content_type='text/html')
+
+    if not str(testname).startswith('test_'):
+        data = {'exit_code': -1, 'message': "Illegal test name was recieved"}
+        return HttpResponse(json.dumps(data), content_type='text/html')
+    ### Checking if provided pandaid exists in panda db
+    query={}
+    query['pandaid'] = pandaid
+    values = 'pandaid', 'jeditaskid', 'jobname'
+    try:
+        job = CombinedWaitActDefArch4.objects.filter(**query).values(*values)[0]
+    except:
+        data = {'exit_code': -1, 'message': "Provided pandaid does not exists"}
+        return HttpResponse(json.dumps(data), content_type='text/html')
+
+    ### Checking whether provided pandaid is art job
+    if 'jobname' in job and not job['jobname'].startswith('user.artprod'):
+        data = {'exit_code': -1, 'message': "Provided pandaid is not art job"}
+        return HttpResponse(json.dumps(data), content_type='text/html')
+
+    ### Preparing params to register art job
+    jeditaskid = job['jeditaskid']
+
+    jn = job['jobname'].split('.')
+    nightly_release_short = jn[3]
+    platform = jn[5]
+    project = jn[4]
+    package = jn[8]
+    nightly_tag = jn[6]
+
+    ### table columns:
+    # pandaid
+    # testname
+    # nightly_release_short
+    # platform
+    # project
+    # package
+    # nightly_tag
+    # jeditaskid
+
+    ### Check whether the pandaid has been registered already
+    if ARTTests.objects.filter(pandaid=pandaid).count() == 0:
+
+        ## INSERT ROW
+        try:
+            insertRow = ARTTests.objects.create(pandaid=pandaid,
+                                                jeditaskid=jeditaskid,
+                                                testname=testname,
+                                                nightly_release_short=nightly_release_short,
+                                                nightly_tag=nightly_tag,
+                                                project=project,
+                                                platform=platform,
+                                                package=package
+                                                )
+            insertRow.save()
+            data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}
+        except:
+            data = {'exit_code': 0, 'message': "Provided pandaid is already registered (pk violated)"}
+    else:
+        data = {'exit_code': 0, 'message': "Provided pandaid is already registered"}
+
+
+    return HttpResponse(json.dumps(data), content_type='text/html')
+
+
+

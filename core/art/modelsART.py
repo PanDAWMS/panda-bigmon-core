@@ -70,3 +70,15 @@ class ARTResults(models.Model):
 
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ART_RESULTS"'
+
+class ARTTests(models.Model):
+    pandaid = models.DecimalField(decimal_places=0, max_digits=12, db_column='PANDAID', primary_key=True)
+    jeditaskid = models.DecimalField(decimal_places=0, max_digits=12, db_column='JEDITASKID')
+    testname = models.CharField(max_length=300, db_column='TEST_NAME', null=True)
+    nightly_release_short = models.CharField(max_length=24, db_column='NIGHTLY_RELEASE_SHORT', null=True)
+    project = models.CharField(max_length=256, db_column='PROJECT', null=True)
+    platform = models.CharField(max_length=150, db_column='PLATFORM', null=True)
+    nightly_tag = models.CharField(max_length=20, db_column='NIGHTLY_TAG', null=True)
+    package = models.CharField(max_length=32, db_column='PACKAGE', null=False, blank=True)
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."ART_TESTS"'
