@@ -160,6 +160,8 @@ urlpatterns = [
     url(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
 
     url(r'^taskserrorsscat/$', coremon_views.tasksErrorsScattering, name='tasksErrorsScattering'),
+    url(r'^errorsscat/$', coremon_views.errorsScattering, name='errorsScattering'),
+    # url(r'^taskserrorsscat/(?P<nucleus>.*)/$', coremon_views.tasksErrorsScatteringForNucleus, name='tasksErrorsScatteringForNucleus'),
     ###Monitor###
     url(r'^bigpandamonitor/$', monitor_views.monitorJson, name='bigpandamonitor'),
 
