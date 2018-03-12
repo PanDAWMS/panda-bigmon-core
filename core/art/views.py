@@ -24,6 +24,8 @@ from core.libs.cache import setCacheEntry, getCacheEntry
 
 from core.pandajob.models import CombinedWaitActDefArch4
 
+# from core.art.artTest import ArtTest
+
 artdateformat = '%Y-%m-%d'
 humandateformat = '%d %b %Y'
 cache_timeout = 15
@@ -417,6 +419,11 @@ def artJobs(request):
 
     artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'computingsite', 'endtime', 'starttime' , 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn', 'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'result']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
+
+    # for job in jobs:
+    #     x = ArtTest(job['origpandaid'], job['testname'])
+    #     x.registerArtTest()
+
 
     ntagslist=list(sorted(set([x['ntag'] for x in jobs])))
     jeditaskids = list(sorted(set([x['taskid'] for x in jobs])))
@@ -878,11 +885,26 @@ def registerARTTest(request):
     jeditaskid = job['jeditaskid']
 
     jn = job['jobname'].split('.')
-    nightly_release_short = jn[3]
-    platform = jn[5]
-    project = jn[4]
-    package = jn[8]
-    nightly_tag = jn[6]
+
+    rs = -1
+    try:
+        rs = int(jn[3])
+    except:
+        pass
+
+    if rs < 0:
+        nightly_release_short = jn[3]
+        platform = jn[5]
+        project = jn[4]
+        package = jn[8]
+        nightly_tag = jn[6]
+    elif rs > 0:
+        nightly_release_short = jn[3] + '.' + jn[4]
+        platform = jn[6]
+        project = jn[5]
+        package = jn[9]
+        nightly_tag = jn[7]
+
 
     ### table columns:
     # pandaid
