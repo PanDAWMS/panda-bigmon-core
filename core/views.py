@@ -3874,6 +3874,10 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         jobs.extend(Jobswaiting4.objects.filter(**query).values())
         jobs.extend(Jobsarchived4.objects.filter(**query).values())
         if len(jobs) == 0:
+            try:
+                del query['modificationtime__range']
+            except:
+                pass
             jobs.extend(Jobsarchived.objects.filter(**query).values())
         jobs = cleanJobList(request, jobs, mode='nodrop')
 
