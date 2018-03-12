@@ -24,7 +24,7 @@ from core.libs.cache import setCacheEntry, getCacheEntry
 
 from core.pandajob.models import CombinedWaitActDefArch4
 
-# from core.art.artTest import ArtTest
+from core.art.artTest import ArtTest
 
 artdateformat = '%Y-%m-%d'
 humandateformat = '%d %b %Y'
@@ -892,18 +892,22 @@ def registerARTTest(request):
     except:
         pass
 
-    if rs < 0:
-        nightly_release_short = jn[3]
-        platform = jn[5]
-        project = jn[4]
-        package = jn[8]
-        nightly_tag = jn[6]
-    elif rs > 0:
-        nightly_release_short = jn[3] + '.' + jn[4]
-        platform = jn[6]
-        project = jn[5]
-        package = jn[9]
-        nightly_tag = jn[7]
+    if len(jn) > 8:
+        if rs < 0:
+            nightly_release_short = jn[3]
+            platform = jn[5]
+            project = jn[4]
+            package = jn[8][:len(jn[8])-1] if jn[8].endswith('/') else jn[8]
+            nightly_tag = jn[6]
+        elif rs > 0:
+            nightly_release_short = jn[3] + '.' + jn[4]
+            platform = jn[6]
+            project = jn[5]
+            package = jn[9][:len(jn[9])-1] if jn[9].endswith('/') else jn[9]
+            nightly_tag = jn[7]
+    else:
+        data = {'exit_code': -1, 'message': "Provided pandaid is not art job"}
+        return HttpResponse(json.dumps(data), content_type='text/html')
 
 
     ### table columns:
