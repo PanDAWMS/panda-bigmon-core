@@ -421,7 +421,7 @@ def artJobs(request):
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
     # for job in jobs:
-    #     x = ArtTest(job['origpandaid'], job['testname'])
+    #     x = ArtTest(job['origpandaid'], job['testname'], job['branch'].split('/')[0], job['branch'].split('/')[1],job['branch'].split('/')[2], job['package'], job['nightly_tag'])
     #     x.registerArtTest()
 
 
@@ -838,13 +838,20 @@ def getjflag(job):
 
 @csrf_exempt
 def registerARTTest(request):
-    ### API to register ART tests
-    ### Example of curl command:
-    ### curl -X POST -d "pandaid=XXX" -d "testname=test_XXXXX.sh" http://bigpanda.cern.ch/art/registerarttest/?json
-
+    """
+    API to register ART tests
+    Example of curl command:
+    curl -X POST -d "pandaid=XXX" -d "testname=test_XXXXX.sh" http://bigpanda.cern.ch/art/registerarttest/?json
+    """
     valid,response = initRequest(request)
     pandaid = -1
     testname = ''
+    nightly_release_short = None
+    platform = None
+    project = None
+    package = None
+    nightly_tag = None
+
     ### Checking whether params were provided
     if 'requestParams' in request.session and 'pandaid' in request.session['requestParams'] and 'testname' in request.session['requestParams']:
             pandaid = request.session['requestParams']['pandaid']
@@ -852,6 +859,33 @@ def registerARTTest(request):
     else:
         data = {'exit_code': -1, 'message': "There were not recieved any pandaid and testname"}
         return HttpResponse(json.dumps(data), content_type='text/html')
+
+    if 'nightly_release_short' in request.session['requestParams']:
+        nightly_release_short = request.session['requestParams']['nightly_release_short']
+    else:
+        data = {'exit_code': -1, 'message': "No nightly_release_short provided"}
+        return HttpResponse(json.dumps(data), content_type='text/html')
+    if 'platform' in request.session['requestParams']:
+        platform = request.session['requestParams']['platform']
+    else:
+        data = {'exit_code': -1, 'message': "No platform provided"}
+        return HttpResponse(json.dumps(data), content_type='text/html')
+    if 'project' in request.session['requestParams']:
+        project = request.session['requestParams']['project']
+    else:
+        data = {'exit_code': -1, 'message': "No project provided"}
+        return HttpResponse(json.dumps(data), content_type='text/html')
+    if 'package' in request.session['requestParams']:
+        package = request.session['requestParams']['package']
+    else:
+        data = {'exit_code': -1, 'message': "No package provided"}
+        return HttpResponse(json.dumps(data), content_type='text/html')
+    if 'nightly_tag' in request.session['requestParams']:
+        nightly_tag = request.session['requestParams']['nightly_tag']
+    else:
+        data = {'exit_code': -1, 'message': "No nightly_tag provided"}
+        return HttpResponse(json.dumps(data), content_type='text/html')
+
     ### Checking whether params is valid
     try:
         pandaid = int(pandaid)
@@ -866,6 +900,7 @@ def registerARTTest(request):
     if not str(testname).startswith('test_'):
         data = {'exit_code': -1, 'message': "Illegal test name was recieved"}
         return HttpResponse(json.dumps(data), content_type='text/html')
+
     ### Checking if provided pandaid exists in panda db
     query={}
     query['pandaid'] = pandaid
@@ -882,33 +917,8 @@ def registerARTTest(request):
         return HttpResponse(json.dumps(data), content_type='text/html')
 
     ### Preparing params to register art job
+
     jeditaskid = job['jeditaskid']
-
-    jn = job['jobname'].split('.')
-
-    rs = -1
-    try:
-        rs = int(jn[3])
-    except:
-        pass
-
-    if len(jn) > 8:
-        if rs < 0:
-            nightly_release_short = jn[3]
-            platform = jn[5]
-            project = jn[4]
-            package = jn[8][:len(jn[8])-1] if jn[8].endswith('/') else jn[8]
-            nightly_tag = jn[6]
-        elif rs > 0:
-            nightly_release_short = jn[3] + '.' + jn[4]
-            platform = jn[6]
-            project = jn[5]
-            package = jn[9][:len(jn[9])-1] if jn[9].endswith('/') else jn[9]
-            nightly_tag = jn[7]
-    else:
-        data = {'exit_code': -1, 'message': "Provided pandaid is not art job"}
-        return HttpResponse(json.dumps(data), content_type='text/html')
-
 
     ### table columns:
     # pandaid
