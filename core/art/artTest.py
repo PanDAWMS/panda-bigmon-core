@@ -9,24 +9,25 @@ import requests
 
 
 class ArtTest:
+    url = "http://bigpanda.cern.ch/art/registerarttest/?json"
+    nattempts = 2
+    timeout = 10
+
     def __init__(self, pandaid, testname):
         self.pid = pandaid
         self.tn = testname
 
     def registerArtTest(self):
-        url = "http://bigpanda.cern.ch/art/registerarttest/?json"
-        headers = {}
         payload = {'pandaid': self.pid, 'testname': self.tn}
-        nattempts = 2
-        timeout = 10
-        for i in range(0, nattempts):
-            print i
-            r = requests.post(url, data=payload, timeout=timeout, verify=False)
-            print r.status_code
+        for i in range(0, self.nattempts):
+            print ('%i attempt to register test' % (i+1))
+            r = requests.post(self.url, data=payload, timeout=self.timeout, verify=False)
             if r.status_code == 200:
                 r = r.json()
                 if 'exit_code' in r and r['exit_code'] == 0:
+                    print (r['message'])
                     return True
+        print ('%i attempts to register test failed' % (i+1))
         return False
 
 
