@@ -41,7 +41,7 @@ class ArtTest:
         payload['package'] = self.package
         payload['nightly_tag'] = self.nt
 
-        for i in range(1, self.nattempts):
+        for i in range(0, self.nattempts):
             r = requests.post(self.url, data=payload, timeout=self.timeout, verify=False)
             if r.status_code == 200:
                 try:
