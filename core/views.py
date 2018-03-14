@@ -10481,7 +10481,7 @@ def ttc(request):
         job['ttctime'] = job['endtime']
         job['starttime'] = job['starttime'].strftime("%Y-%m-%d %H:%M:%S")
         neventsSum += job['nevents']
-        if taskev:
+        if taskev and taskev['totev'] > 0:
             job['tobedonepct'] = 100. - neventsSum * 100. / taskev['totev']
         else:
             job['tobedonepct'] = None
@@ -10492,8 +10492,12 @@ def ttc(request):
                                           'ttccoldline': 0})
 
     progressForBar = []
-    taskrec['percentage'] = ((neventsSum) * 100 / taskev['totev'])
-    taskrec['percentageok'] = taskrec['percentage'] - 5
+    if taskev['totev'] > 0:
+        taskrec['percentage'] = ((neventsSum) * 100 / taskev['totev'])
+    else:  taskrec['percentage'] = None
+    if taskrec['percentage'] != None:
+     taskrec['percentageok'] = taskrec['percentage'] - 5
+    else:  taskrec['percentageok'] = None
     if taskrec['status'] == 'running':
         taskrec['ttcbasedpercentage'] = ((datetime.now() - taskrec['starttime']).days * 24 * 3600 + (
         datetime.now() - taskrec['starttime']).seconds) * 100 / (
