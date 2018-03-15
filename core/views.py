@@ -4038,8 +4038,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             logfile['scope'] = file['scope']
         file['fsize'] = int(file['fsize'])
         if file['type'] == 'input':
-            file['attemptnr'] = dcfilesDict[file['fileid']]['attemptnr']
-            file['maxattempt'] = dcfilesDict[file['fileid']]['maxattempt']
+            file['attemptnr'] = dcfilesDict[file['fileid']]['attemptnr'] if file['fileid'] in dcfilesDict else file['attemptnr']
+            file['maxattempt'] = dcfilesDict[file['fileid']]['maxattempt'] if file['fileid'] in dcfilesDict else None
 
     if 'pilotid' in job and job['pilotid'] is not None and job['pilotid'].startswith('http'):
         stdout = job['pilotid'].split('|')[0]
