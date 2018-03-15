@@ -349,7 +349,7 @@ But if you want, you can check.
 <td> <font size=-1>{{ file.scope }}</font> </td>
 <td> {{ file.fsizemb}} </td>
 <td class='{{file.status}}'> {{ file.status }} </td>
-<td> {% if file.attemptnr %} {{ file.attemptnr }} ({{ file.maxattempt }}){% endif %} </td>
+<td> {% if file.attemptnr %} {{ file.attemptnr }} {% if file.maxattempt %} ({{ file.maxattempt }}){% endif %}{% endif %} </td>
 <td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{file.datasetname}}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ file.datasetname }}</a>
 {% if file.dispatchdblock %}
 <br />(dispatch block: {{ file.dispatchdblock }} <a href="https://rucio-ui.cern.ch/did?scope=panda&name={{ file.dispatchdblock }}">rucio</a>) <a href="http://dashb-atlas-ddm.cern.ch/ddm2/#d.dst.site={{file.ddmsite}}{% if file.dsttoken %}&d.dst.token={{ file.dsttoken }}{% endif %}&d.name={{file.lfn}}&d.scope={{ file.scope }}&grouping.dst=(site,token)&tab=details">DDM Dashboard</a>

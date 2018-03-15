@@ -3938,6 +3938,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         logextract = None
 
     files = []
+    fileids = []
     typeFiles = {}
     fileSummary = ''
     inputFilesSize = 0
@@ -3986,7 +3987,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     f['ddmsite'] = parced[0][4:]
                     f['dsttoken'] = parced[1]
 
+
             files = [x for x in files if x['destination'] != 'S3']
+
 
         if len(typeFiles) > 0:
             inputFilesSize = "%0.2f" % inputFilesSize
@@ -4005,6 +4008,17 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 if 'modificationtime' in f: f['oldfiletable'] = 1
                 if 'destinationdblock' in f and f['destinationdblock'] is not None:
                     f['destinationdblock_vis'] = f['destinationdblock'].split('_')[-1]
+
+                fileids.append(f['fileid'])
+
+            dcquery = {}
+            dcquery['pandaid'] = pandaid
+            dcquery['fileid__in'] = fileids
+            dcfiles = JediDatasetContents.objects.filter(**dcquery).values()
+            dcfilesDict = {}
+            if len(dcfiles) > 0:
+                for dcf in dcfiles:
+                    dcfilesDict[dcf['fileid']] = dcf
         files = sorted(files, key=lambda x: x['type'])
     nfiles = len(files)
     logfile = {}
@@ -4023,6 +4037,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     logfile['guid'] = logfilerec[0]['guid']
             logfile['scope'] = file['scope']
         file['fsize'] = int(file['fsize'])
+        if file['type'] == 'input':
+            file['attemptnr'] = dcfilesDict[file['fileid']]['attemptnr']
+            file['maxattempt'] = dcfilesDict[file['fileid']]['maxattempt']
 
     if 'pilotid' in job and job['pilotid'] is not None and job['pilotid'].startswith('http'):
         stdout = job['pilotid'].split('|')[0]
@@ -10975,6 +10992,11 @@ def fileList(request):
             sortOrder = 'attemptnr'
         elif sortby == 'attemptnr-desc':
             sortOrder = 'attemptnr'
+            reverse = True
+        elif sortby == 'maxattempt-asc':
+            sortOrder = 'maxattempt'
+        elif sortby == 'maxattempt-desc':
+            sortOrder = 'maxattempt'
             reverse = True
         elif sortby == 'status-asc':
             sortOrder = 'status'

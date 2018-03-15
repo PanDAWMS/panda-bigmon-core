@@ -68,11 +68,11 @@
         <th>PanDA Job<br><a href="{{nosorturl}}sortby=pandaid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=pandaid-asc" class="headerSortUp"></a></th>
     {% endif %}
     {% if sortby == 'attemptnr-desc' %}
-        <th>Attempt<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=attemptnr-asc" class="headerSortUp"></a></th>
+        <th>Attempt (max)<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=attemptnr-asc" class="headerSortUp"></a></th>
     {% elif sortby == 'attemptnr-asc' %}
-        <th>Attempt<br><a href="{{nosorturl}}sortby=attemptnr-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+        <th>Attempt (max)<br><a href="{{nosorturl}}sortby=attemptnr-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
     {% else %}
-        <th>Attempt<br><a href="{{nosorturl}}sortby=attemptnr-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=attemptnr-asc" class="headerSortUp"></a></th>
+        <th>Attempt (max)<br><a href="{{nosorturl}}sortby=attemptnr-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=attemptnr-asc" class="headerSortUp"></a></th>
     {% endif %}
     {% if sortby == 'status-desc' %}
         <th>Status<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=status-asc" class="headerSortUp"></a></th>
@@ -107,7 +107,7 @@
         <td>{{ frec.nevents }}</td>
 		<td><a href="{% url 'taskInfo' %}?jeditaskid={{ frec.jeditaskid }}">{{ frec.jeditaskid }}</a></td>
 		<td>{% if frec.pandaid %}<a href="{% url 'jobInfo' %}?pandaid={{ frec.pandaid }}">{{ frec.pandaid }}</a> {% endif %}</td>
-		<td>{{ frec.attemptnr }}</td>
+		<td>{{ frec.attemptnr }} {% if frec.maxattempt %} ({{ frec.maxattempt }}){% endif %}</td>
 		<td class='{{frec.status}}'>{{ frec.status }}</td>
 		<td><font size=-1>{{ frec.creationdate }}</font></td>
 		<td><font size=-1>{{ frec.guid }}</font></td>
