@@ -101,21 +101,76 @@ vertical-align: top;
     border-right: 7px solid transparent;
     border-bottom: 7px dashed black;}
 
+#errorsscat {
+    width: 65rem;
+    text-align: center;
+}
+
+#errorsscat tbody th,
+  #errorsscat tbody td {
+    padding: 0.2rem;
+    text-align: center;
+}
+
+#errorsscat tbody td {
+
+    width: 5rem;
+    min-width: 5rem;
+    max-width: 5rem;
+}
+
+
 th.rotate {
   /* Something you can count on */
-  height: 140px;
+  height: 210px;
   white-space: nowrap;
 }
 
 th.rotate > div {
   transform:
     /* Magic Numbers */
-    translate(25px, 51px)
+    translate(-15px, 90px)
     /* 45 is really 360 - 45 */
-    rotate(315deg);
-  width: 30px;
+    rotate(285deg);
+  max-width: 35px;
 }
 th.rotate > div > span {
-  border-bottom: 1px solid #ccc;
+  /*border-bottom: 1px solid #ccc;*/
   padding: 5px 10px;
+}
+
+/*Class to rotate headers of table*/
+
+table.matrix tbody th,
+  table.matrix tbody td {
+    padding: 0.2rem; }
+
+table.matrix tbody td {
+    width: 3rem;
+    min-width: 3rem;
+    max-width: 3rem;
+}
+
+
+div.vertical {
+  margin-left: -8rem;
+  position: relative;
+  width: 295px;
+  transform: rotate(-90deg);
+  -webkit-transform: rotate(-90deg);
+  /* Safari/Chrome */
+  -moz-transform: rotate(-90deg);
+  /* Firefox */
+  -o-transform: rotate(-90deg);
+  /* Opera */
+  -ms-transform: rotate(-90deg);
+  /* IE 9 */
+}
+
+th.vertical {
+  height: 300px;
+  line-height: 14px;
+  padding-bottom: 20px;
+  text-align: left;
+  max-width: 20px;
 }

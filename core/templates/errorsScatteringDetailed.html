@@ -1,0 +1,141 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Tasks errors scattering{% endblock %}
+{% block title %}Tasks errors scattering{% endblock %}
+{% block subtitle %}Tasks errors scattering <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+{% block body %}
+
+		<link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
+
+
+{% if grouping|length == 0 %}
+<div class="table-scroll">
+    <table class="matrix">
+        <tr>
+            <th>JediTaskID</th>
+            {% for computingSite in computingSites %}
+                <th class="vertical"><div class="vertical"><a href="{% url 'siteInfo' %}{{ computingSite }}/">{{ computingSite }}</a></div></th>
+            {% endfor %}
+        </tr>
+
+        {% for jeditaskid, values in taskserrors.items %}
+            <tr>
+              <th><a href="{% url 'taskInfo' jeditaskid %}">{{ jeditaskid }}</a></th>
+
+            {% for computingSite in computingSites %}
+                {% if computingSite in values %}
+                        <td {% for p in values|get_item:computingSite %}{% if forloop.first %}id="{{ p }}"{% if p >= 0 %}{% if p <= 10 %}class="failed_fill"{% else %}{% if p <= 50 %}class="discarded_fill"{% else %}class="finished_fill"{% endif %}{% endif %}{% endif %}{% endif %}{% endfor %}>
+                        {% for p in values|get_item:computingSite %}
+                            {% if forloop.first %}
+                                {% if p >= 0 %}
+                                    <span>
+                                        {% for p in values|get_item:computingSite %}
+                                            {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
+                                        {% endfor %}
+                                    </span>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        </td>
+                    {% else %}
+                        <td> </td>
+                    {% endif %}
+            {% endfor %}
+
+
+            </tr>
+         {% endfor %}
+    </table>
+</div>
+{% elif 'reqid' in grouping %}
+
+<div class="row align-center" style="width: 100%; max-width: 68rem">
+  <div class="column small-12 small-centered">
+    <table id="errorsscat">
+        <tr>
+            <th>Task ID</th>
+                {% for c in clouds %}
+                     <th>
+                         {{ c }} <br>
+                         <a href="{% url 'errorsScatteringDetailed' cloud=c|safe reqid=reqid %}"><i class="fi-plus"></i></a>
+                     </th>
+                {% endfor %}
+        </tr>
+
+        {% for tid, values in taskserrors.items %}
+            <tr>
+              <th><a href="{% url 'taskInfo' %}?jeditaskid={{ tid }}">{{ tid }}</a></th>
+                {% for c in clouds %}
+                    {% if c in values %}
+                        <td {% for p in values|get_item:c %}{% if forloop.first %}id="{{ p }}"{% if p >= 0 %}{% if p <= 10 %}class="failed_fill"{% else %}{% if p <= 50 %}class="discarded_fill"{% else %}class="finished_fill"{% endif %}{% endif %}{% endif %}{% endif %}{% endfor %}>
+                        {% for p in values|get_item:c %}
+                            {% if forloop.first %}
+                                {% if p >= 0 %}
+                                    <span>
+                                        {% for p in values|get_item:c %}
+                                            {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
+                                        {% endfor %}
+                                    </span>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        </td>
+                    {% else %}
+                        <td> </td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+         {% endfor %}
+
+
+
+    </table>
+  </div>
+</div>
+
+{% elif 'cloud' in grouping %}
+
+<div class="table-scroll">
+    <table class="matrix">
+        <tr>
+            <th>Request ID</th>
+            {% for computingSite in computingSites %}
+               <th class="vertical"><div class="vertical"><a href="{% url 'siteInfo' %}{{ computingSite }}/">{{ computingSite }}</a></div></th>
+            {% endfor %}
+        </tr>
+
+        {% for rid, values in reqerrors.items %}
+            <tr>
+              <th><a href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=rid %}"><i class="fi-plus"></i></a>
+                  <a href="{% url 'taskList' %}?reqid={{ rid }}">{{ rid }}</a></th>
+
+            {% for computingSite in computingSites %}
+                {% if computingSite in values %}
+                        <td {% for p in values|get_item:computingSite %}{% if forloop.first %}id="{{ p }}"{% if p >= 0 %}{% if p <= 10 %}class="failed_fill"{% else %}{% if p <= 50 %}class="discarded_fill"{% else %}class="finished_fill"{% endif %}{% endif %}{% endif %}{% endif %}{% endfor %}>
+                        {% for p in values|get_item:computingSite %}
+                            {% if forloop.first %}
+                                {% if p >= 0 %}
+                                    <span>
+                                    {% for p in values|get_item:computingSite %}
+                                        {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
+                                    {% endfor %}
+                                    </span>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        </td>
+                    {% else %}
+                        <td> </td>
+                    {% endif %}
+            {% endfor %}
+
+
+            </tr>
+         {% endfor %}
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}

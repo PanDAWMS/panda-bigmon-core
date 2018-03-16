@@ -10,30 +10,36 @@
 		<link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
 
 
-
-    <table>
+<div class="row align-center" style="width: 100%; max-width: 68rem">
+  <div class="column small-12 small-centered">
+    <table id="errorsscat">
         <tr>
             <th>Request ID</th>
                 {% for c in clouds %}
                      <th>
-                         {{ c }}
-{#                         <a href="{% url 'tasksErrorsScatteringForNucleus' nucleus=nuc %}?tk={{ tk }}">{{ nuc }}</a>#}
+                         {{ c }} <br>
+                         <a href="{% url 'errorsScatteringDetailed' c 'ALL' %}"><i class="fi-plus"></i></a>
                      </th>
                 {% endfor %}
         </tr>
 
         {% for rid, values in reqerrors.items %}
             <tr>
-              <td><a href="{% url 'taskList' %}?reqid={{ rid }}">{{ rid }}</a></td>
+              <td><a href="{% url 'errorsScatteringDetailed' 'ALL' rid %}"><i class="fi-plus"></i></a> <a href="{% url 'taskList' %}?reqid={{ rid }}">{{ rid }}</a></td>
                 {% for c in clouds %}
                     {% if c in values %}
-                        <td {% for p in values|get_item:c %}{% if forloop.first %}id="{{ p }}"{% if p <= 10 %}class="failed_fill"{% else %}{% if p <= 50 %}class="discarded_fill"{% else %}class="finished_fill"{% endif %}{% endif %}{% endif %}{% endfor %}>
-{#                        <span>{{ values.c }}</span>#}
-                        <span>
-                            {% for p in values|get_item:c %}
-                                {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
-                            {% endfor %}
-                        </span>
+                        <td {% for p in values|get_item:c %}{% if forloop.first %}id="{{ p }}"{% if p >= 0 %}{% if p <= 10 %}class="failed_fill"{% else %}{% if p <= 50 %}class="discarded_fill"{% else %}class="finished_fill"{% endif %}{% endif %}{% endif %}{% endif %}{% endfor %}>
+                        {% for p in values|get_item:c %}
+                            {% if forloop.first %}
+                                {% if p >= 0 %}
+                                    <span>
+                                        {% for p in values|get_item:c %}
+                                            {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
+                                        {% endfor %}
+                                    </span>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
                         </td>
                     {% else %}
                         <td> </td>
@@ -45,5 +51,7 @@
 
 
     </table>
+  </div>
+</div>
 
 {% endblock %}

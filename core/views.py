@@ -12566,13 +12566,9 @@ def errorsScattering(request):
         if errorEntry['CLOUD'] not in reqerrors[rid]:
             reqerrors[rid][errorEntry['CLOUD']] = []
         reqerrors[rid][errorEntry['CLOUD']].append(int(
-            errorEntry['FINISHEDC'] * 100. / (errorEntry['FINISHEDC'] + errorEntry['FAILEDC'])) if (errorEntry['FINISHEDC'] + errorEntry['FAILEDC']) > 0 else 0)
+            errorEntry['FINISHEDC'] * 100. / (errorEntry['FINISHEDC'] + errorEntry['FAILEDC'])) if (errorEntry['FINISHEDC'] + errorEntry['FAILEDC']) > 0 else -1)
         reqerrors[rid][errorEntry['CLOUD']].append(errorEntry['FINISHEDC'])
         reqerrors[rid][errorEntry['CLOUD']].append(errorEntry['FAILEDC'])
-        #     reqerrors[rid][errorEntry['CLOUD']] = {}
-        # reqerrors[rid][errorEntry['CLOUD']]['SPER'] = int(errorEntry['FINISHEDC']*100./(errorEntry['FINISHEDC']+errorEntry['FAILEDC'])) if (errorEntry['FINISHEDC']+errorEntry['FAILEDC']) > 0 else 0
-        # reqerrors[rid][errorEntry['CLOUD']]['SC'] = errorEntry['FINISHEDC']
-        # reqerrors[rid][errorEntry['CLOUD']]['FC'] = errorEntry['FAILEDC']
 
 
     reqsToDel = []
@@ -12581,8 +12577,7 @@ def errorsScattering(request):
     for rid,reqentry  in reqerrors.iteritems():
         notNone = False
         for cname, cval in reqentry.iteritems():
-            # if cval['FC'] == 0 and cval['SC'] == 0:
-            if cval[1] == 0 and cval[2] == 0:
+            if cval[1] != 0 or cval[2] != 0:
                 notNone = True
         if not notNone:
             reqsToDel.append(rid)
@@ -12608,219 +12603,225 @@ def errorsScattering(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-# def tasksErrorsScattering(request):
-#     limit = 1000
-#     hours = 8
-#     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
-#     query['tasktype'] = 'prod'
-#     tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
-#
-#     random.seed()
-#     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-#         tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-#     else:
-#         tmpTableName = "TMP_IDS1"
-#
-#     transactionKey = random.randrange(1000000)
-#     executionData = []
-#     for id in tasks:
-#         executionData.append((id['jeditaskid'], transactionKey))
-#
-#     new_cur = connection.cursor()
-#     query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
-#     new_cur.executemany(query, executionData)
-#     connection.commit()
-#
-#     query = """
-#             SELECT (SUM(FAILEDC)/SUM(ALLC)) as FPERC, NUCLEUS, JEDITASKID, SUM(FAILEDC) as FAILEDC from (
-#                     SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, NUCLEUS, JEDITASKID
-#                         FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID in (
-#                                 SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
-#                         group by NUCLEUS, JEDITASKID
-#                     UNION
-#                     SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, NUCLEUS, JEDITASKID
-#                         FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID in (
-#                                 SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
-#                         group by NUCLEUS, JEDITASKID
-#                 ) group by NUCLEUS, JEDITASKID
-#     """ % (tmpTableName, transactionKey, tmpTableName, transactionKey)
-#
-#     # query = """
-#     #
-#     #     SELECT SUM(FAILEDC) / SUM(ALLC) as FPERC, COMPUTINGSITE, JEDITASKID, SUM(FAILEDC) as FAILEDC from (
-#     #
-#     #         SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) group by COMPUTINGSITE, JEDITASKID
-#     #         UNION
-#     #         SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) group by COMPUTINGSITE, JEDITASKID
-#     #     ) group by COMPUTINGSITE, JEDITASKID
-#     # """ % (tmpTableName, transactionKey, tmpTableName, transactionKey)
-#
-#     new_cur.execute(query)
-#
-#     errorsRaw = dictfetchall(new_cur)
-#     # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-#
-#     nucleuses = []
-#     computingSites = []
-#     taskserrors = {}
-#
-#
-#     # we fill here the dict
-#     for errorEntry in errorsRaw:
-#         jeditaskid = errorEntry['JEDITASKID']
-#         if jeditaskid not in taskserrors:
-#             taskentry = {}
-#             taskserrors[jeditaskid] = taskentry
-#         if errorEntry['NUCLEUS'] not in taskserrors[jeditaskid]:
-#             taskserrors[jeditaskid][errorEntry['NUCLEUS']] = {}
-#             # taskserrors[jeditaskid][errorEntry['NUCLEUS']]['sites'] = {}
-#             # taskserrors[jeditaskid][errorEntry['NUCLEUS']]['stats'] = [0,0]
-#         # labelForLink = (str(int(errorEntry['FAILEDC']*100./errorEntry['ALLC'])) + "%" + " ("+str(int(errorEntry['FAILEDC']))+")") if errorEntry['FAILEDC'] > 0 else " "
-#         labelForLink = (str(int(errorEntry['FPERC'] * 100)) + "%" + " (" + str(
-#             int(errorEntry['FAILEDC'])) + ")") if 'FPERC' in errorEntry and errorEntry['FPERC'] > 0 else " "
-#         if '%' in labelForLink:
-#             taskserrors[jeditaskid][errorEntry['NUCLEUS']] = labelForLink
-#         # taskserrors[jeditaskid][errorEntry['NUCLEUS']]['stats'][0] += errorEntry['FAILEDC']
-#         # taskserrors[jeditaskid][errorEntry['NUCLEUS']]['stats'][1] += errorEntry['ALLC']
-#
-#     tasksToDel = []
-#
-#     #make cleanup of full none erroneous tasks
-#     for jeditaskid,taskentry  in taskserrors.iteritems():
-#         notNone = False
-#         for nucname, nucval in taskentry.iteritems():
-#             if '%' in nucval:
-#                 notNone = True
-#         if not notNone:
-#             tasksToDel.append(jeditaskid)
-#
-#     for taskToDel in tasksToDel:
-#         del taskserrors[taskToDel]
-#
-#     for jeditaskid,taskEntry in taskserrors.iteritems():
-#         for nucname, nucEntry in taskEntry.iteritems():
-#             nucleuses.append(nucname)
-#             # nucLabel = (str(int(nucEntry['stats'][0]*100./nucEntry['stats'][1])) + "%" + " ("+str(int(nucEntry['stats'][0]))+")") if 'stats' in nucEntry and nucEntry['stats'][0] > 0 else " "
-#             # nucEntry['stats'] = nucLabel
-#             # for sitename, siteval in nucEntry['sites'].iteritems():
-#             #     computingSites.append(sitename)
-#
-#     nucleuses = sorted(set(nucleuses))
-#     computingSites = sorted(set(computingSites))
-#
-#     for jeditaskid, taskentry  in taskserrors.iteritems():
-#         for nuc in nucleuses:
-#             if not nucleuses in taskentry:
-#                 taskentry[nuc]['stats'] = [0, 0]
-#             for sitename, siteval in nucentry['sites'].iteritems():
-#                 for computingSite in computingSites:
-#                     if not computingSite in taskentry:
-#                         taskentry[computingSite] = ' '
-#
-#
-#     data = {
-#         'nucleuses' : nucleuses,
-#         # 'computingSites': computingSites,
-#         'taskserrors':taskserrors,
-#         'tk': transactionKey,
-#     }
-#
-#     response = render_to_response('tasksscatteringmatrix.html', data, content_type='text/html')
-#     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-#     return response
-#
-# def tasksErrorsScatteringForNucleus(request, nucleus):
-#     valid, response = initRequest(request)
-#     if not valid: return response
-#     if nucleus == '' or len(nucleus)==0:
-#         return HttpResponse("No nucleus supplied", content_type='text/html')
-#     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-#         tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-#     else:
-#         tmpTableName = "TMP_IDS1"
-#     if 'tk' in request.session['requestParams']:
-#         transactionKey = int(request.session['requestParams']['tk'])
-#     else:
-#         limit = 1000
-#         hours = 4
-#         query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
-#         query['tasktype'] = 'prod'
-#         query['nucleus'] = nucleus
-#         tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
-#
-#         random.seed()
-#         transactionKey = random.randrange(1000000)
-#         executionData = []
-#         for id in tasks:
-#             executionData.append((id['jeditaskid'], transactionKey))
-#
-#         new_cur = connection.cursor()
-#         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
-#         new_cur.executemany(query, executionData)
-#         connection.commit()
-#     new_cur = connection.cursor()
-#     query = """
-#     SELECT FPERC, COMPUTINGSITE, JEDITASKID, FAILEDC from (
-#         SELECT SUM(FAILEDC) / SUM(ALLC) as FPERC, COMPUTINGSITE, JEDITASKID, SUM(FAILEDC) as FAILEDC from (
-#
-#             SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) and NUCLEUS = '%s' group by COMPUTINGSITE, JEDITASKID
-#             UNION
-#             SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) and NUCLEUS = '%s' group by COMPUTINGSITE, JEDITASKID
-#         ) group by COMPUTINGSITE, JEDITASKID)
-#     where FAILEDC > 0
-#     """ % (tmpTableName, transactionKey, nucleus, tmpTableName, transactionKey, nucleus)
-#
-#     new_cur.execute(query)
-#
-#     errorsRaw = dictfetchall(new_cur)
-#     # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-#
-#     computingSites = []
-#     taskserrors = {}
-#
-#
-#     # we fill here the dict
-#     for errorEntry in errorsRaw:
-#         jeditaskid = errorEntry['JEDITASKID']
-#         if jeditaskid not in taskserrors:
-#             taskentry = {}
-#             taskserrors[jeditaskid] = taskentry
-#         labelForLink = (str(int(errorEntry['FPERC'] * 100)) + "%" + " ("+str(int(errorEntry['FAILEDC']))+")") if 'FPERC' in errorEntry and errorEntry['FPERC']>0 else " "
-#         taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']] = labelForLink
-#
-#     tasksToDel = []
-#
-#     #make cleanup of full none erroneous tasks
-#     for jeditaskid,taskentry  in taskserrors.iteritems():
-#         notNone = False
-#         for sitename, siteval in taskentry.iteritems():
-#             if '%' in siteval:
-#                 notNone = True
-#         if not notNone:
-#             tasksToDel.append(jeditaskid)
-#
-#     for taskToDel in tasksToDel:
-#         del taskserrors[taskToDel]
-#
-#     for jeditaskid,taskentry in taskserrors.iteritems():
-#         for sitename, siteval in taskentry.iteritems():
-#             computingSites.append(sitename)
-#
-#     computingSites = sorted(set(computingSites))
-#
-#     for jeditaskid,taskentry  in taskserrors.iteritems():
-#         for computingSite in computingSites:
-#             if not computingSite in taskentry:
-#                 taskentry[computingSite] = ' '
-#
-#
-#     data = {
-#         'computingSites': computingSites,
-#         'taskserrors':taskserrors,
-#     }
-#
-#     response = render_to_response('tasksscatteringmatrixfornucleus.html', data, content_type='text/html')
-#     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-#     return response
+def errorsScatteringDetailed(request, cloud, reqid):
+    valid, response = initRequest(request)
+    if not valid: return response
+    grouping = []
+    clouds = list(set(homeCloud.values()))
+    condition = '(1=1)'
+    if cloud == '' or len(cloud)==0:
+        return HttpResponse("No cloud supplied", content_type='text/html')
+    elif cloud == 'ALL':
+        grouping.append('reqid')
+    elif cloud not in clouds:
+        return HttpResponse("The provided cloud name does not exist", content_type='text/html')
+
+    if reqid == '' or len(reqid)==0:
+        return HttpResponse("No request ID supplied", content_type='text/html')
+    elif reqid == 'ALL':
+        grouping.append('cloud')
+    else:
+        try:
+            reqid = int(reqid)
+        except:
+            return HttpResponse("The provided request ID is not valid", content_type='text/html')
+
+    if len(grouping) == 2:
+        return redirect('/errorsscat/')
+
+    limit = 100000
+    hours = 8
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
+    query['tasktype'] = 'prod'
+    query['superstatus__in'] = ['submitting', 'running']
+    if reqid != 'ALL':
+        query['reqid'] = reqid
+    if cloud != 'ALL':
+        cloudstr = ''
+        for sn, cn in homeCloud.iteritems():
+            if cn == cloud:
+                cloudstr += "\'%s\'," % (str(sn))
+        if cloudstr.endswith(','):
+            cloudstr = cloudstr[:-1]
+        condition = "COMPUTINGSITE in ( %s )" % (str(cloudstr))
+    tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
+
+    random.seed()
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+    else:
+        tmpTableName = "TMP_IDS1"
+
+    transactionKey = random.randrange(1000000)
+    executionData = []
+    for id in tasks:
+        executionData.append((id['jeditaskid'], transactionKey))
+
+    new_cur = connection.cursor()
+    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    new_cur.executemany(query, executionData)
+    connection.commit()
+
+    query = """
+            SELECT SUM(FINISHEDC) as FINISHEDC, 
+                   SUM(FAILEDC) as FAILEDC,  
+                   REQID, JEDITASKID, COMPUTINGSITE, sc.cloud as CLOUD from (
+                        SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
+                               SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC,  
+                               COMPUTINGSITE, REQID, JEDITASKID 
+                        FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID in (
+                            SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
+                                group by COMPUTINGSITE, JEDITASKID, REQID
+                        UNION
+                        SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
+                               SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, 
+                               COMPUTINGSITE, REQID, JEDITASKID 
+                        FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID in (
+                              SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
+                                group by COMPUTINGSITE, JEDITASKID, REQID
+            ) j,
+            ( select siteid, cloud from ATLAS_PANDAMETA.SCHEDCONFIG  
+            ) sc
+            where j.computingsite = sc.siteid  AND %s
+            group by jeditaskid, COMPUTINGSITE, REQID, cloud
+    """ % (tmpTableName, transactionKey, tmpTableName, transactionKey, condition)
+
+    new_cur.execute(query)
+
+    errorsRaw = dictfetchall(new_cur)
+    # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+
+    computingSites = []
+    taskserrors = {}
+    reqerrors = {}
+
+
+    if len(grouping) == 0:
+
+        # we fill here the dict
+        for errorEntry in errorsRaw:
+            jeditaskid = errorEntry['JEDITASKID']
+            if jeditaskid not in taskserrors:
+                taskentry = {}
+                taskserrors[jeditaskid] = taskentry
+            if errorEntry['COMPUTINGSITE'] not in taskserrors[jeditaskid]:
+                taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']] = []
+            taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']].append(int(
+            errorEntry['FINISHEDC'] * 100. / (errorEntry['FINISHEDC'] + errorEntry['FAILEDC'])) if (errorEntry['FINISHEDC'] + errorEntry['FAILEDC']) > 0 else -1)
+            taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']].append(errorEntry['FINISHEDC'])
+            taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']].append(errorEntry['FAILEDC'])
+
+
+        tasksToDel = []
+
+        # make cleanup of full none erroneous tasks
+        for jeditaskid, taskentry in taskserrors.iteritems():
+            notNone = False
+            for sitename, siteval in taskentry.iteritems():
+                if siteval[1] !=0 or siteval[2] != 0:
+                    notNone = True
+            if not notNone:
+                tasksToDel.append(jeditaskid)
+
+        for taskToDel in tasksToDel:
+            del taskserrors[taskToDel]
+
+        for jeditaskid, taskentry in taskserrors.iteritems():
+            for sitename, siteval in taskentry.iteritems():
+                computingSites.append(sitename)
+
+        computingSites = sorted(set(computingSites))
+
+    elif 'reqid' in grouping:
+
+        # we fill here the dict
+        for errorEntry in errorsRaw:
+            jeditaskid = errorEntry['JEDITASKID']
+            if jeditaskid not in taskserrors:
+                taskentry = {}
+                taskserrors[jeditaskid] = taskentry
+            if errorEntry['CLOUD'] not in taskserrors[jeditaskid]:
+                taskserrors[jeditaskid][errorEntry['CLOUD']] = [-1, 0, 0]
+            taskserrors[jeditaskid][errorEntry['CLOUD']][1] += errorEntry['FINISHEDC']
+            taskserrors[jeditaskid][errorEntry['CLOUD']][2] += errorEntry['FAILEDC']
+
+        tasksToDel = []
+
+        #make cleanup of full none erroneous tasks
+        for jeditaskid,taskentry  in taskserrors.iteritems():
+            notNone = False
+            for cname, cval in taskentry.iteritems():
+                if cval[1] != 0 or cval[2] != 0:
+                    notNone = True
+            if not notNone:
+                tasksToDel.append(jeditaskid)
+
+        for taskToDel in tasksToDel:
+            del taskserrors[taskToDel]
+
+        for jeditaskid, taskentry  in taskserrors.iteritems():
+            for c in clouds:
+                if not c in taskentry:
+                    taskentry[c] = [-1, 0, 0]
+                else:
+                    taskentry[c][0] = int(math.ceil(taskentry[c][1]*100./(taskentry[c][1]+taskentry[c][2]))) if (taskentry[c][1]+taskentry[c][2]) > 0 else -1
+
+    elif 'cloud' in grouping:
+
+        # we fill here the dict
+        for errorEntry in errorsRaw:
+            rid = errorEntry['REQID']
+            if rid not in reqerrors:
+                reqentry = {}
+                reqerrors[rid] = reqentry
+            if errorEntry['COMPUTINGSITE'] not in reqerrors[rid]:
+                reqerrors[rid][errorEntry['COMPUTINGSITE']] = [-1,0,0]
+            reqerrors[rid][errorEntry['COMPUTINGSITE']][1] += errorEntry['FINISHEDC']
+            reqerrors[rid][errorEntry['COMPUTINGSITE']][2] += errorEntry['FAILEDC']
+
+        reqsToDel = []
+
+        #make cleanup of full none erroneous tasks
+        for rid, reqentry in reqerrors.iteritems():
+            notNone = False
+            for sitename, siteval in reqentry.iteritems():
+                if siteval[1] != 0 or siteval[2] != 0:
+                    notNone = True
+            if not notNone:
+                reqsToDel.append(rid)
+
+        for reqToDel in reqsToDel:
+            del reqerrors[reqToDel]
+
+        for rid, reqentry in reqerrors.iteritems():
+            for sn, sv in reqentry.iteritems():
+                computingSites.append(str(sn))
+
+        computingSites = sorted(set(computingSites))
+
+        for rid, reqentry  in reqerrors.iteritems():
+            for s in computingSites:
+                if not s in reqentry:
+                    reqentry[s] = [-1, 0, 0]
+                    pass
+                else:
+                    reqentry[s][0] = int(math.ceil(reqentry[s][1]*100./(reqentry[s][1]+reqentry[s][2]))) if (reqentry[s][1]+reqentry[s][2]) > 0 else -1
+
+
+    data = {
+        'cloud': cloud,
+        'reqid': reqid,
+        'grouping': grouping,
+        'computingSites': computingSites,
+        'clouds': clouds,
+        'taskserrors': taskserrors,
+        'reqerrors': reqerrors,
+        'tk': transactionKey,
+    }
+
+    response = render_to_response('errorsScatteringDetailed.html', data, content_type='text/html')
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
 
 

@@ -158,7 +158,7 @@ urlpatterns = [
 
     url(r'^taskserrorsscat/$', coremon_views.tasksErrorsScattering, name='tasksErrorsScattering'),
     url(r'^errorsscat/$', coremon_views.errorsScattering, name='errorsScattering'),
-    # url(r'^taskserrorsscat/(?P<nucleus>.*)/$', coremon_views.tasksErrorsScatteringForNucleus, name='tasksErrorsScatteringForNucleus'),
+    url(r'^errorsscat/(?P<cloud>.*)/(?P<reqid>.*)/$', coremon_views.errorsScatteringDetailed, name='errorsScatteringDetailed'),
     ###Monitor###
     url(r'^bigpandamonitor/$', monitor_views.monitorJson, name='bigpandamonitor'),
     ####HARVESTER####

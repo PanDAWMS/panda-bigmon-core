@@ -183,3 +183,48 @@ float: none !important; }
     font-size: smaller;
     background-color: #f1f1f1;
 }
+
+/* Tooltips for task errors scattering matrix */
+
+.tooltiptesm {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltiptesm a {
+    color: #0a0a0a !important;
+}
+
+.tooltiptesm .tooltiptext {
+    visibility: hidden;
+    min-width: 120px;
+    max-width: 400px;
+    background-color: #0a0a0a;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 2px;
+    position: absolute;
+    z-index: 100;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+
+.tooltiptesm .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #0a0a0a transparent transparent transparent;
+}
+
+.tooltiptesm:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
