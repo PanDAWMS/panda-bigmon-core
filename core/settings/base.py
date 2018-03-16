@@ -212,6 +212,7 @@ INSTALLED_APPS_BIGPANDAMON_core = (
     'django_extensions',
     'core.art',
     'core.monitor',
+    'core.harvester',
 )
 INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_core
 

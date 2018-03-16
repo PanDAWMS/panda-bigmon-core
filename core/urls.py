@@ -13,6 +13,7 @@ from core import MemoryMonitorPlots as memmon
 from core.art import views as art_views
 
 from core.monitor import views as monitor_views
+from core.harvester import views as harvester
 #import core.views as coremon_views
 import core.pandajob.views_support as core_coremon_support_views
 #import core.pandajob.views as core_coremon_views
@@ -152,10 +153,6 @@ urlpatterns = [
     url(r'^logout/$', coremon_views.logout, name='logout'),
     url(r'^loginerror/$', coremon_views.loginerror, name='loginerror'),
 
-    url(r'^harvesterworkersdash/$', coremon_views.harvesterWorkersDash, name='harvesterworkersdash'),
-    url(r'^harvesterworkerslist/$', coremon_views.harvesterWorkList, name='harvesterworkerslist'),
-    url(r'^harvesterworkerinfo/$', coremon_views.harvesterWorkerInfo, name='harvesterWorkerInfo'),
-
     url(r'^testip/$', coremon_views.testip, name='testip'),
     url(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
 
@@ -164,6 +161,10 @@ urlpatterns = [
     # url(r'^taskserrorsscat/(?P<nucleus>.*)/$', coremon_views.tasksErrorsScatteringForNucleus, name='tasksErrorsScatteringForNucleus'),
     ###Monitor###
     url(r'^bigpandamonitor/$', monitor_views.monitorJson, name='bigpandamonitor'),
+    ####HARVESTER####
+    url(r'^harvesterworkersdash/$', harvester.harvesterWorkersDash, name='harvesterworkersdash'),
+    url(r'^harvesterworkerslist/$', harvester.harvesterWorkList, name='harvesterworkerslist'),
+    url(r'^harvesterworkerinfo/$', harvester.harvesterWorkerInfo, name='harvesterWorkerInfo'),
 
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
