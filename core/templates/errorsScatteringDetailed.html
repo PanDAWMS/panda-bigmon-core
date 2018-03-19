@@ -2,13 +2,14 @@
 {% load humanize %}
 {% load static %}
 
-{% block page_title %}Tasks errors scattering{% endblock %}
-{% block title %}Tasks errors scattering{% endblock %}
-{% block subtitle %}Tasks errors scattering <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+{% block page_title %}Errors scattering{% endblock %}
+{% block subtitle %}Errors scattering <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
 {% block body %}
 
 		<link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
 
+{% if requestParams.reqid %}<br><b>Request ID: {{ requestParams.reqid }}</b> {% endif %}
+{% if requestParams.region %}<br><b>Region: {{ requestParams.region }}</b> {% endif %}
 
 {% if grouping|length == 0 %}
 <div class="table-scroll">
@@ -77,7 +78,7 @@
                         {% for p in values|get_item:c %}
                             {% if forloop.first %}
                                 {% if p >= 0 %}
-                                    <a class="blacklink" href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ tid }}&region={{ c }}&days=10">
+                                    <a class="blacklink" href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ tid }}&region={{ c }}&days=30">
                                         {% for p in values|get_item:c %}
                                             {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
                                         {% endfor %}
@@ -122,7 +123,7 @@
                         {% for p in values|get_item:computingSite %}
                             {% if forloop.first %}
                                 {% if p >= 0 %}
-                                    <a class="blacklink" href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ rid }}&computingsite={{ computingSite }}&days=30">
+                                    <a class="blacklink" href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ rid }}&computingsite={{ computingSite }}&days=10">
                                     {% for p in values|get_item:computingSite %}
                                         {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
                                     {% endfor %}

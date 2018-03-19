@@ -938,6 +938,21 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     elif jobtype.find('test') >= 0:
         query['prodsourcelabel__icontains'] = jobtype
 
+    if 'region' in request.session['requestParams']:
+        region = request.session['requestParams']['region']
+        siteListForRegion = []
+        try:
+            homeCloud
+        except NameError:
+            setupSiteInfo(request)
+        else:
+            setupSiteInfo(request)
+
+        for sn, rn in homeCloud.iteritems():
+            if rn == region:
+                siteListForRegion.append(str(sn))
+        query['computingsite__in'] = siteListForRegion
+
     if (wildCardExt == False):
         return query
 
@@ -945,6 +960,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         extraQueryString += ' AND '
     except NameError:
         extraQueryString = ''
+
 
     wildSearchFields = (set(wildSearchFields) & set(request.session['requestParams'].keys()))
     wildSearchFields1 = set()
@@ -12594,6 +12610,8 @@ def errorsScattering(request):
 
     data = {
         'request': request,
+        'viewParams': request.session['viewParams'],
+        'requestParams': request.session['requestParams'],
         'clouds' : clouds,
         'reqerrors':reqerrors,
     }
@@ -12637,7 +12655,9 @@ def errorsScatteringDetailed(request, cloud, reqid):
     query['superstatus__in'] = ['submitting', 'running']
     if reqid != 'ALL':
         query['reqid'] = reqid
+        request.session['requestParams']['reqid'] = reqid
     if cloud != 'ALL':
+        request.session['requestParams']['region'] = cloud
         cloudstr = ''
         for sn, cn in homeCloud.iteritems():
             if cn == cloud:
@@ -12645,6 +12665,8 @@ def errorsScatteringDetailed(request, cloud, reqid):
         if cloudstr.endswith(','):
             cloudstr = cloudstr[:-1]
         condition = "COMPUTINGSITE in ( %s )" % (str(cloudstr))
+
+
     tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
 
     random.seed()
@@ -12811,6 +12833,8 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
     data = {
         'request': request,
+        'viewParams': request.session['viewParams'],
+        'requestParams': request.session['requestParams'],
         'cloud': cloud,
         'reqid': reqid,
         'grouping': grouping,

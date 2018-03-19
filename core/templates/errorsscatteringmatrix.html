@@ -3,7 +3,6 @@
 {% load static %}
 
 {% block page_title %}Errors scattering{% endblock %}
-{% block title %}Errors scattering{% endblock %}
 {% block subtitle %}Errors scattering <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
 {% block body %}
 
@@ -32,7 +31,7 @@
                         {% for p in values|get_item:c %}
                             {% if forloop.first %}
                                 {% if p >= 0 %}
-                                    <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ rid }}&region={{ c }}&days=3" class="blacklink">
+                                    <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ rid }}&region={{ c }}&days=5" class="blacklink">
                                         {% for p in values|get_item:c %}
                                             {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
                                         {% endfor %}
