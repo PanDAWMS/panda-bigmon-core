@@ -12,17 +12,19 @@
 
 {% if grouping|length == 0 %}
 <div class="table-scroll">
-    <table class="matrix">
+    <table class="matrix unstriped">
         <tr>
-            <th>JediTaskID</th>
+            <th>Task ID <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' reqid %}"><i class="fi-minus"></i></a><br>
+                <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud 'ALL' %}"><i class="fi-minus"></i></a>
+            </th>
             {% for computingSite in computingSites %}
-                <th class="vertical"><div class="vertical"><a href="{% url 'siteInfo' %}{{ computingSite }}/">{{ computingSite }}</a></div></th>
+                <th class="vertical"><div class="vertical"><a class="blacklink bold" href="{% url 'siteInfo' %}{{ computingSite }}/">{{ computingSite }}</a></div></th>
             {% endfor %}
         </tr>
 
         {% for jeditaskid, values in taskserrors.items %}
             <tr>
-              <th><a href="{% url 'taskInfo' jeditaskid %}">{{ jeditaskid }}</a></th>
+              <th><a class="blacklink bold" href="{% url 'taskInfo' jeditaskid %}">{{ jeditaskid }}</a></th>
 
             {% for computingSite in computingSites %}
                 {% if computingSite in values %}
@@ -30,11 +32,11 @@
                         {% for p in values|get_item:computingSite %}
                             {% if forloop.first %}
                                 {% if p >= 0 %}
-                                    <span>
+                                    <a class="blacklink" href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ jeditaskid }}&computingsite={{ computingSite }}&days=30">
                                         {% for p in values|get_item:computingSite %}
                                             {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
                                         {% endfor %}
-                                    </span>
+                                    </a>
                                 {% endif %}
                             {% endif %}
                         {% endfor %}
@@ -53,31 +55,33 @@
 
 <div class="row align-center" style="width: 100%; max-width: 68rem">
   <div class="column small-12 small-centered">
-    <table id="errorsscat">
+    <table id="errorsscat" class="unstriped">
         <tr>
-            <th>Task ID</th>
+            <th>Task ID<br>
+                <a class="graylink" href="{% url 'errorsScattering' %}"><i class="fi-minus"></i></a>
+            </th>
                 {% for c in clouds %}
                      <th>
                          {{ c }} <br>
-                         <a href="{% url 'errorsScatteringDetailed' cloud=c|safe reqid=reqid %}"><i class="fi-plus"></i></a>
+                         <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=c|safe reqid=reqid %}"><i class="fi-plus"></i></a>
                      </th>
                 {% endfor %}
         </tr>
 
         {% for tid, values in taskserrors.items %}
             <tr>
-              <th><a href="{% url 'taskInfo' %}?jeditaskid={{ tid }}">{{ tid }}</a></th>
+              <th><a class="blacklink bold" href="{% url 'taskInfo' %}?jeditaskid={{ tid }}">{{ tid }}</a></th>
                 {% for c in clouds %}
                     {% if c in values %}
                         <td {% for p in values|get_item:c %}{% if forloop.first %}id="{{ p }}"{% if p >= 0 %}{% if p <= 10 %}class="failed_fill"{% else %}{% if p <= 50 %}class="discarded_fill"{% else %}class="finished_fill"{% endif %}{% endif %}{% endif %}{% endif %}{% endfor %}>
                         {% for p in values|get_item:c %}
                             {% if forloop.first %}
                                 {% if p >= 0 %}
-                                    <span>
+                                    <a class="blacklink" href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ tid }}&region={{ c }}&days=10">
                                         {% for p in values|get_item:c %}
                                             {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
                                         {% endfor %}
-                                    </span>
+                                    </a>
                                 {% endif %}
                             {% endif %}
                         {% endfor %}
@@ -98,18 +102,19 @@
 {% elif 'cloud' in grouping %}
 
 <div class="table-scroll">
-    <table class="matrix">
+    <table class="matrix unstriped">
         <tr>
-            <th>Request ID</th>
+            <th>Request ID <a class="graylink" href="{% url 'errorsScattering' %}"><i class="fi-minus"></i></a>
+            </th>
             {% for computingSite in computingSites %}
-               <th class="vertical"><div class="vertical"><a href="{% url 'siteInfo' %}{{ computingSite }}/">{{ computingSite }}</a></div></th>
+               <th class="vertical"><div class="vertical"><a class="blacklink bold" href="{% url 'siteInfo' %}{{ computingSite }}/">{{ computingSite }}</a></div></th>
             {% endfor %}
         </tr>
 
         {% for rid, values in reqerrors.items %}
             <tr>
-              <th><a href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=rid %}"><i class="fi-plus"></i></a>
-                  <a href="{% url 'taskList' %}?reqid={{ rid }}">{{ rid }}</a></th>
+              <th><a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=rid %}"><i class="fi-plus"></i></a>
+                  <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ rid }}">{{ rid }}</a></th>
 
             {% for computingSite in computingSites %}
                 {% if computingSite in values %}
@@ -117,11 +122,11 @@
                         {% for p in values|get_item:computingSite %}
                             {% if forloop.first %}
                                 {% if p >= 0 %}
-                                    <span>
+                                    <a class="blacklink" href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ rid }}&computingsite={{ computingSite }}&days=30">
                                     {% for p in values|get_item:computingSite %}
                                         {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
                                     {% endfor %}
-                                    </span>
+                                    </a>
                                 {% endif %}
                             {% endif %}
                         {% endfor %}
@@ -130,8 +135,6 @@
                         <td> </td>
                     {% endif %}
             {% endfor %}
-
-
             </tr>
          {% endfor %}
     </table>

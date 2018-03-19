@@ -228,3 +228,15 @@ float: none !important; }
     visibility: visible;
     opacity: 1;
 }
+
+.blacklink {
+    color: #0a0a0a !important;
+}
+
+.blacklink.bold {
+    font-weight: bold;
+}
+
+.graylink {
+    color: grey !important;
+}
