@@ -4522,6 +4522,25 @@ def userInfo(request, user=''):
     startdate = timezone.now() - timedelta(hours=days * 24)
     startdate = startdate.strftime(defaultDatetimeFormat)
     enddate = timezone.now().strftime(defaultDatetimeFormat)
+
+    if 'date_from' in request.session['requestParams']:
+        time_from_struct = time.strptime(request.session['requestParams']['date_from'], '%Y-%m-%d')
+        startdate = datetime.utcfromtimestamp(time.mktime(time_from_struct))
+    if not startdate:
+        startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
+    # startdate = startdate.strftime(defaultDatetimeFormat)
+    if 'date_to' in request.session['requestParams']:
+        time_from_struct = time.strptime(request.session['requestParams']['date_to'], '%Y-%m-%d')
+        enddate = datetime.utcfromtimestamp(time.mktime(time_from_struct))
+    if 'earlierthan' in request.session['requestParams']:
+        enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthan']))
+    # enddate = enddate.strftime(defaultDatetimeFormat)
+    if 'earlierthandays' in request.session['requestParams']:
+        enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthandays']) * 24)
+    # enddate = enddate.strftime(defaultDatetimeFormat)
+    if enddate == None:
+        enddate = timezone.now()  # .strftime(defaultDatetimeFormat)
+
     query = {'modificationtime__range': [startdate, enddate]}
 
     if userQueryTask is None:
