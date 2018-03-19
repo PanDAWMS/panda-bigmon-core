@@ -12525,6 +12525,17 @@ def tasksErrorsScattering(request):
 @login_required
 def errorsScattering(request):
     initRequest(request)
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "errorsScattering")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('errorsScattering.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
     limit = 10000
     hours = 4
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
@@ -12614,9 +12625,12 @@ def errorsScattering(request):
         'requestParams': request.session['requestParams'],
         'clouds' : clouds,
         'reqerrors':reqerrors,
+        'built': datetime.now().strftime("%H:%M:%S"),
     }
-
-    response = render_to_response('errorsscatteringmatrix.html', data, content_type='text/html')
+    ##self monitor
+    endSelfMonitor(request)
+    setCacheEntry(request, "errorsScattering", json.dumps(data, cls=DateEncoder), 60 * 20)
+    response = render_to_response('errorsScattering.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
@@ -12625,6 +12639,17 @@ def errorsScattering(request):
 def errorsScatteringDetailed(request, cloud, reqid):
     valid, response = initRequest(request)
     if not valid: return response
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "errorsScatteringDetailed")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('errorsScatteringDetailed.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
     grouping = []
     clouds = sorted(list(set(homeCloud.values())))
     condition = '(1=1)'
@@ -12842,9 +12867,12 @@ def errorsScatteringDetailed(request, cloud, reqid):
         'clouds': clouds,
         'taskserrors': taskserrors,
         'reqerrors': reqerrors,
-        'tk': transactionKey,
+        'built': datetime.now().strftime("%H:%M:%S"),
     }
 
+    ##self monitor
+    endSelfMonitor(request)
+    setCacheEntry(request, "errorsScatteringDetailed", json.dumps(data, cls=DateEncoder), 60 * 20)
     response = render_to_response('errorsScatteringDetailed.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
