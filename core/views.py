@@ -12600,6 +12600,7 @@ def errorsScattering(request):
     # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
 
     clouds = []
+    clouds = sorted(list(set(homeCloud.values())))
     reqerrors = {}
 
 
@@ -12609,41 +12610,78 @@ def errorsScattering(request):
         if rid not in reqerrors:
             reqentry = {}
             reqerrors[rid] = reqentry
-        if errorEntry['CLOUD'] not in reqerrors[rid]:
-            reqerrors[rid][errorEntry['CLOUD']] = []
-        reqerrors[rid][errorEntry['CLOUD']].append(int(
-            errorEntry['FINISHEDC'] * 100. / (errorEntry['FINISHEDC'] + errorEntry['FAILEDC'])) if (errorEntry['FINISHEDC'] + errorEntry['FAILEDC']) > 0 else -1)
-        reqerrors[rid][errorEntry['CLOUD']].append(errorEntry['FINISHEDC'])
-        reqerrors[rid][errorEntry['CLOUD']].append(errorEntry['FAILEDC'])
+            reqerrors[rid]['reqid'] = rid
+            reqerrors[rid]['totalstats'] = {}
+            reqerrors[rid]['totalstats']['percent'] = 0
+            reqerrors[rid]['totalstats']['finishedc'] = 0
+            reqerrors[rid]['totalstats']['failedc'] = 0
+            reqerrors[rid]['totalstats']['allc'] = 0
+            for cloudname in clouds:
+                reqerrors[rid][cloudname] = {}
+                reqerrors[rid][cloudname]['percent'] = 0
+                reqerrors[rid][cloudname]['finishedc'] = 0
+                reqerrors[rid][cloudname]['failedc'] = 0
+                reqerrors[rid][cloudname]['allc'] = 0
+        reqerrors[rid][errorEntry['CLOUD']]['percent'] = int(
+            errorEntry['FINISHEDC'] * 100. / (errorEntry['FINISHEDC'] + errorEntry['FAILEDC'])) if (errorEntry['FINISHEDC'] + errorEntry['FAILEDC']) > 0 else -1
+        reqerrors[rid][errorEntry['CLOUD']]['finishedc'] = errorEntry['FINISHEDC']
+        reqerrors[rid][errorEntry['CLOUD']]['failedc'] = errorEntry['FAILEDC']
+        reqerrors[rid][errorEntry['CLOUD']]['allc'] = errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+        reqerrors[rid]['totalstats']['finishedc'] += reqerrors[rid][errorEntry['CLOUD']]['finishedc']
+        reqerrors[rid]['totalstats']['failedc'] += reqerrors[rid][errorEntry['CLOUD']]['failedc']
+        reqerrors[rid]['totalstats']['allc'] += reqerrors[rid][errorEntry['CLOUD']]['allc']
 
+    for rid, reqentry in reqerrors.iteritems():
+        reqerrors[rid]['totalstats']['percent'] = int(math.ceil(reqerrors[rid]['totalstats']['finishedc']*100./reqerrors[rid]['totalstats']['allc'])) if reqerrors[rid]['totalstats']['allc'] > 0 else 0
 
     reqsToDel = []
 
     #make cleanup of full none erroneous requests
-    for rid,reqentry  in reqerrors.iteritems():
+    for rid, reqentry in reqerrors.iteritems():
         notNone = False
-        for cname, cval in reqentry.iteritems():
-            if cval[1] != 0 or cval[2] != 0:
-                notNone = True
+        if reqentry['totalstats']['allc'] != 0 or reqentry['totalstats']['allc'] != reqentry['totalstats']['finishedc']:
+            notNone = True
+        # for cname, cval in reqentry.iteritems():
+        #     if cval['allc'] != 0:
+        #         notNone = True
         if not notNone:
             reqsToDel.append(rid)
 
     for reqToDel in reqsToDel:
         del reqerrors[reqToDel]
 
+    ### calculate stats for clouds
+    columnstats = {}
+    for cn in clouds:
+        cns = str(cn)
+        columnstats[cns] = {}
+        columnstats[cns]['percent'] = 0
+        columnstats[cns]['finishedc'] = 0
+        columnstats[cns]['failedc'] = 0
+        columnstats[cns]['allc'] = 0
     for rid,reqEntry in reqerrors.iteritems():
-        for cname, cEntry in reqEntry.iteritems():
-            clouds.append(cname)
+        for cn in clouds:
+            for cname, cEntry in reqEntry.iteritems():
+                if cn == cname:
+                    columnstats[cn]['finishedc'] += cEntry['finishedc']
+                    columnstats[cn]['failedc'] += cEntry['failedc']
+                    columnstats[cn]['allc'] += cEntry['allc']
+    for cn, stats in columnstats.iteritems():
+        columnstats[cn]['percent'] = int(math.ceil(columnstats[cn]['finishedc']*100./columnstats[cn]['allc'])) if columnstats[cn]['allc'] > 0 else 0
 
-    clouds = sorted(set(clouds))
-
+    ### transform requesterrors dict to list for sorting on template
+    reqErrorsList = []
+    for rid, reqEntry in reqerrors.iteritems():
+        reqErrorsList.append(reqEntry)
+    reqErrorsList = sorted(reqErrorsList, key=lambda x: x['totalstats']['percent'])
 
     data = {
         'request': request,
         'viewParams': request.session['viewParams'],
         'requestParams': request.session['requestParams'],
         'clouds' : clouds,
-        'reqerrors':reqerrors,
+        'columnstats': columnstats,
+        'reqerrors': reqErrorsList,
         'built': datetime.now().strftime("%H:%M:%S"),
     }
     ##self monitor
@@ -12692,7 +12730,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
     if len(grouping) == 2:
         return redirect('/errorsscat/')
 
-    limit = 100000
+    limit = 10000
     hours = 8
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'

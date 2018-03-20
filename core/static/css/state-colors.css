@@ -112,7 +112,7 @@
 
 .paused_fill { color:black;  background-color:#DCDCDC; position: static; }
 
-.warning_fill { color:#FFCB2F }
+.warning_fill { color:black;  background-color:#FFCB2F }
 
 .discarded_fill { color:black; background-color:#FFD65D }
 .timeout_fill { color:black; background-color:#FFD65D }

@@ -6,8 +6,7 @@
 {% block subtitle %}Errors scattering <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
 {% block body %}
 
-		<link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
-
+<link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
 
 <div class="row align-center" style="width: 100%; max-width: 68rem">
   <div class="column small-12 small-centered">
@@ -15,34 +14,70 @@
         <tr>
             <th>Request ID</th>
                 {% for c in clouds %}
-                     <th>
+                     <th {% for columnname, stats in columnstats.items %}{% if columnname == c %}
+                         {% if stats.allc > 10 %}
+                            {% if stats.percent < 50 %}class="alarm_fill"
+                            {% else %}
+                                {% if stats.percent < 80 %}class="warning_fill"
+                                {% else %}class="finished_fill"{% endif %}
+                            {% endif %}
+                          {% elif stats.allc > 0 and stats.allc <= 10 %}
+                            {% if stats.percent < 50 %}class="failed_fill"
+                            {% else %}
+                                {% if stats.percent < 80 %}class="exhausted_fill"
+                                {% else %}class="scouting_fill"{% endif %}
+                            {% endif %}
+                          {% endif %}
+                         {% endif %}{% endfor %}>
                          {{ c }} <br>
                          <a class="graylink" href="{% url 'errorsScatteringDetailed' c 'ALL' %}"><i class="fi-plus"></i></a>
                      </th>
                 {% endfor %}
         </tr>
 
-        {% for rid, values in reqerrors.items %}
-            <tr>
-              <th><a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' rid %}"><i class="fi-plus"></i></a> <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ rid }}">{{ rid }}</a></th>
-                {% for c in clouds %}
-                    {% if c in values %}
-                        <td {% for p in values|get_item:c %}{% if forloop.first %}id="{{ p }}"{% if p >= 0 %}{% if p < 50 %}class="failed_fill"{% else %}{% if p < 80 %}class="discarded_fill"{% else %}class="finished_fill"{% endif %}{% endif %}{% endif %}{% endif %}{% endfor %}>
-                        {% for p in values|get_item:c %}
-                            {% if forloop.first %}
-                                {% if p >= 0 %}
-                                    <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ rid }}&region={{ c }}&days=5" class="blacklink">
-                                        {% for p in values|get_item:c %}
-                                            {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
-                                        {% endfor %}
-                                    </a>
-                                {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                        </td>
+        {% for values in reqerrors %}
+            <tr {% if values.totalstats.allc <= 10 %} class="low-stat" {% endif %} >
+              <th {% if values.totalstats.allc > 10 %}
+                    {% if values.totalstats.percent < 50 %}class="alarm_fill"
                     {% else %}
-                        <td> </td>
+                        {% if values.totalstats.percent < 80 %}class="warning_fill"
+                        {% else %}class="finished_fill"{% endif %}
                     {% endif %}
+                  {% elif values.totalstats.allc > 0 and stats.allc <= 10 %}
+                    {% if values.totalstats.percent < 50 %}class="failed_fill"
+                    {% else %}
+                        {% if values.totalstats.percent < 80 %}class="exhausted_fill"
+                        {% else %}class="scouting_fill"{% endif %}
+                    {% endif %}
+                  {% endif %}>
+                  <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' values.reqid %}"><i class="fi-plus"></i></a> <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid }}">{{ values.reqid }}</a></th>
+                {% for c in clouds %}
+                  {% for cn, stats in values.items %}
+                    {% if c == cn %}
+                        <td {% if stats.allc > 10 %}
+                                {% if stats.percent < 50 %}class="alarm_fill"
+                                {% else %}
+                                    {% if stats.percent < 80 %}class="warning_fill"
+                                    {% else %}class="finished_fill"{% endif %}
+                                {% endif %}
+                            {% elif stats.allc > 0 and stats.allc <= 10 %}
+                                {% if stats.percent < 50 %}class="failed_fill"
+                                {% else %}
+                                    {% if stats.percent < 80 %}class="exhausted_fill"
+                                    {% else %}class="scouting_fill"{% endif %}
+                                {% endif %}
+                            {% endif %}>
+                        {% if stats.allc != 0 %}
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ rid }}&region={{ c }}&days=5" class="blacklink">
+                            {{ stats.percent }}%<br>
+                            {{ stats.finishedc }}<br>
+                            {{ stats.failedc }}
+                          </a>
+                        {% endif %}
+                        </td>
+                    {% endif %}
+
+                  {% endfor %}
                 {% endfor %}
             </tr>
          {% endfor %}
