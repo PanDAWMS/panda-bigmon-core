@@ -71,6 +71,9 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
             cache_key = '%s.%s' % (key_prefix, path.hexdigest())
             return cache.get(cache_key, None)
         else:
+            if 'harvester' in request.META['PATH_INFO']:
+                is_json = False
+            key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
             cache_key = '%s' % (key_prefix)
             return cache.get(cache_key, None)
     else:
