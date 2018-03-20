@@ -12556,7 +12556,7 @@ def errorsScattering(request):
         return response
 
     limit = 10000
-    hours = 4
+    hours = 8
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'
     query['superstatus__in'] = ['submitting', 'running']
