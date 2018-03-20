@@ -257,18 +257,28 @@ def artOverview(request):
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
 
-    data = {
-        'requestParams': request.session['requestParams'],
-        'viewParams': request.session['viewParams'],
-        'artpackages': artpackagesdict,
-        'noviewurl': noviewurl,
-        'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
-    }
-    setCacheEntry(request, "artOverview", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
-    response = render_to_response('artOverview.html', data, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    endSelfMonitor(request)
-    return response
+    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+        'json' in request.session['requestParams']):
+
+        data = {
+            'artpackages': artpackagesdict,
+        }
+
+        dump = json.dumps(data, cls=DateEncoder)
+        return HttpResponse(dump, content_type='text/html')
+    else:
+        data = {
+            'requestParams': request.session['requestParams'],
+            'viewParams': request.session['viewParams'],
+            'artpackages': artpackagesdict,
+            'noviewurl': noviewurl,
+            'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
+        }
+        setCacheEntry(request, "artOverview", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
+        response = render_to_response('artOverview.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
 
 
 def artTasks(request):
@@ -367,19 +377,30 @@ def artTasks(request):
 
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
-    data = {
-        'requestParams': request.session['requestParams'],
-        'viewParams': request.session['viewParams'],
-        'arttasks' : arttasksdict,
-        'noviewurl': noviewurl,
-        'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
-    }
 
-    setCacheEntry(request, "artTasks", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
-    response = render_to_response('artTasks.html', data, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    endSelfMonitor(request)
-    return response
+    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+        'json' in request.session['requestParams']):
+
+        data = {
+            'arttasks' : arttasksdict,
+        }
+
+        dump = json.dumps(data, cls=DateEncoder)
+        return HttpResponse(dump, content_type='text/html')
+    else:
+        data = {
+            'requestParams': request.session['requestParams'],
+            'viewParams': request.session['viewParams'],
+            'arttasks' : arttasksdict,
+            'noviewurl': noviewurl,
+            'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
+        }
+
+        setCacheEntry(request, "artTasks", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
+        response = render_to_response('artTasks.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
 
 
 def artJobs(request):
@@ -523,19 +544,29 @@ def artJobs(request):
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
 
-    data = {
-        'requestParams': request.session['requestParams'],
-        'viewParams': request.session['viewParams'],
-        'artjobs': artjobsdict,
-        'noviewurl': noviewurl,
-        'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
-        'taskids' : jeditaskids,
-    }
-    setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
-    response = render_to_response('artJobs.html', data, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    endSelfMonitor(request)
-    return response
+    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+        'json' in request.session['requestParams']):
+
+        data = {
+            'artjobs': artjobsdict,
+        }
+
+        dump = json.dumps(data, cls=DateEncoder)
+        return HttpResponse(dump, content_type='text/html')
+    else:
+        data = {
+            'requestParams': request.session['requestParams'],
+            'viewParams': request.session['viewParams'],
+            'artjobs': artjobsdict,
+            'noviewurl': noviewurl,
+            'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
+            'taskids' : jeditaskids,
+        }
+        setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
+        response = render_to_response('artJobs.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
 
 def getFinalResult(job):
     finalresult = ''
