@@ -1,0 +1,243 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Harvester monitor page{% endblock %}
+{% block title %}PanDA monitor{% endblock %}
+{% block subtitle %}Harvester <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+{% block body %}
+  <link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
+  <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
+  <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
+  <script src="/static/js/d3jsplot.js"></script>
+    {% if  type == 'instances'%}
+
+
+    <table id="harvesterinstances" style="width: 100%">
+          <caption  style="height: 30px;vertical-align: middle">Instances</caption>
+     <thead>
+                <th>Instance</th>
+                <th>Total</th>
+                <th>Recently</th>
+                <th>When</th>
+                <th>Description</th>
+     </thead>
+     <tbody>
+     {% for instance in instances %}
+     <tr>
+     <td>
+         <a href="{% url "harvesterfm" %}?instance={{ instance.instance }}&display_limit_workers=30000">{{ instance.instance }}</a>
+     </td>
+     <td>
+         {{ instance.total }}
+     </td>
+    <td>
+        {{ instance.recently }}
+    </td>
+     <td>
+        {{ instance.when }}
+    </td><td>
+        {{ instance.descr }}
+    </td>
+     </tr>
+
+     {% endfor %}
+     </tbody>
+    </table>
+    <script>
+
+        $(document).ready(function () {
+        $('#harvesterinstances').dataTable();
+
+    });
+    </script>
+     {% elif  type == 'workers'%}
+        <table>
+        {% for name,value in generalInstanseInfo.items %}
+            <tr>
+                {% if name == 'Statuses' or name ==  'Computingsites'%}
+                <td>{{ name }}</td>
+                    <td>
+                    {% for n,v in value.items %}
+                        {{ n }} ({{ v }})
+                    {% endfor %}
+                </td>
+                {% else %}
+                <td>{{ name }}</td><td>{{ value }}</td>
+            {% endif %}
+            </tr>
+        {% endfor %}
+        </table>
+        <hr/>
+
+          <table id="harvesterworkers" style="width: 100%">
+          <caption  style="height: 30px;vertical-align: middle">Workers</caption>
+     <thead>
+                <th>Worker</th>
+                <th>Last update</th>
+                <th>Status</th>
+                <th>BatchID</th>
+                <th>NodeID</th>
+                <th>Queuename</th>
+                <th>Computingsite</th>
+                <th>Submit time</th>
+                <th>Start time</th>
+                <th>End time</th>
+                <th>Ncore</th>
+                <th>Error code</th>
+                <th>Stdout</th>
+                <th>Stderr</th>
+                <th>Batchlog</th>
+                <th>Resource type</th>
+                <th>Nativeexitcode</th>
+                <th>Native status</th>
+                <th>Diag message</th>
+     </thead>
+     <tbody>
+{#     {% for worker in generalWorkersList %}#}
+{#         <tr>#}
+{#            <td>{{ worker.workerid }}</td>#}
+{#            <td>{{ worker.wrklastupdate }}</td>#}
+{#            <td>{{ worker.status }}</td>#}
+{#            <td>{{ worker.batchid }}</td>#}
+{#            <td>{{ worker.nodeid }}</td>#}
+{#            <td>{{ worker.queuename }}</td>#}
+{#            <td>{{ worker.computingsite }}</td>#}
+{#            <td>{{ worker.submittime }}</td>#}
+{#            <td>{{ worker.wrkstarttime }}</td>#}
+{#            <td>{{ worker.wrkendtime }}</td>#}
+{#            <td>{{ worker.ncore }}</td>#}
+{#            <td>{{ worker.errorcode }}</td>#}
+{#            <td>{{ worker.stdout }}</td>#}
+{#            <td>{{ worker.stderr }}</td>#}
+{#            <td>{{ worker.batchlog }}</td>#}
+{#            <td>{{ worker.resourcetype }}</td>#}
+{#            <td>{{ worker.nativeexitcode }}</td>#}
+{#            <td>{{ worker.nativestatus }}</td>#}
+{#            <td>{{ worker.diagmessage }}</td>#}
+{#         </tr>#}
+{##}
+{#     {% endfor %}#}
+     </tbody>
+    </table>
+   <script>
+
+{#        $(document).ready(function () {#}
+{#        $('#harvesterworkers').dataTable();#}
+{##}
+{#    });#}
+{#            }#}
+    $(document).ready(function () {
+    DisplayDT();
+    });
+
+    function DisplayDT() {
+    $('#harvesterworkers').dataTable({
+        //"bRetrieve": true,
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        paging: true,
+                     "ajax": {
+                 "processing": true,
+                 "url": "{% url 'harvesterfm' %}?instance={{ instance }}&json",
+
+                 "dataSrc" : ''},
+        "aoColumns": [
+
+            {
+                "data": "workerid",
+                sDefaultContent: "",
+            },
+            {
+                "data": "wrklastupdate",
+                sDefaultContent: ""
+            },
+            {
+                "data": "status",
+                sDefaultContent: "",
+
+            },
+            {
+                "data": "batchid",
+                sDefaultContent: "",
+            },
+            {
+                "data": "nodeid",
+                sDefaultContent: "",
+            }
+            ,
+            {
+                "data": "queuename",
+                sDefaultContent: "",
+            }
+            ,
+            {
+                "data": "computingsite",
+                sDefaultContent: "",
+            }
+            ,
+            {
+                "data": "submittime",
+                sDefaultContent: "",
+            }
+            ,
+            {
+                "data": "wrkstarttime",
+                sDefaultContent: "",
+            }
+            ,
+            {
+                "data": "wrkendtime",
+                sDefaultContent: "",
+            }
+            ,
+            {
+                "data": "ncore",
+                sDefaultContent: "",
+            }
+            ,
+            {
+                "data": "errorcode",
+                sDefaultContent: "",
+            }
+            ,
+            {
+                "data": "stdout",
+                sDefaultContent: "",
+            }
+            ,
+            {
+                "data": "stderr",
+                sDefaultContent: "",
+            }
+            ,
+            {
+                "data": "batchlog",
+                sDefaultContent: "",
+            }
+            ,
+            {
+                "data": "resourcetype",
+                sDefaultContent: "",
+            }
+            ,
+            {
+                "data": "nativeexitcode",
+                sDefaultContent: "",
+            },
+            {
+                "data": "nativestatus",
+                sDefaultContent: "",
+            } ,
+            {
+                "data": "diagmessage",
+                sDefaultContent: "",
+            }
+        ],
+    });
+    }
+      </script>
+     {% endif %}
+
+{% endblock %}
+
+
