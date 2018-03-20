@@ -27,7 +27,7 @@
               <th><a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' rid %}"><i class="fi-plus"></i></a> <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ rid }}">{{ rid }}</a></th>
                 {% for c in clouds %}
                     {% if c in values %}
-                        <td {% for p in values|get_item:c %}{% if forloop.first %}id="{{ p }}"{% if p >= 0 %}{% if p <= 10 %}class="failed_fill"{% else %}{% if p <= 50 %}class="discarded_fill"{% else %}class="finished_fill"{% endif %}{% endif %}{% endif %}{% endif %}{% endfor %}>
+                        <td {% for p in values|get_item:c %}{% if forloop.first %}id="{{ p }}"{% if p >= 0 %}{% if p < 50 %}class="failed_fill"{% else %}{% if p < 80 %}class="discarded_fill"{% else %}class="finished_fill"{% endif %}{% endif %}{% endif %}{% endif %}{% endfor %}>
                         {% for p in values|get_item:c %}
                             {% if forloop.first %}
                                 {% if p >= 0 %}
