@@ -16,16 +16,16 @@
                 {% for c in clouds %}
                      <th {% for columnname, stats in columnstats.items %}{% if columnname == c %}
                          {% if stats.allc > 10 %}
-                            {% if stats.percent < 50 %}class="alarm_fill"
+                            {% if stats.percent < 50 %}class="sm_alarm_fill"
                             {% else %}
-                                {% if stats.percent < 80 %}class="warning_fill"
-                                {% else %}class="finished_fill"{% endif %}
+                                {% if stats.percent < 80 %}class="sm_warning_fill"
+                                {% else %}class="sm_ok_fill"{% endif %}
                             {% endif %}
                           {% elif stats.allc > 0 and stats.allc <= 10 %}
-                            {% if stats.percent < 50 %}class="failed_fill"
+                            {% if stats.percent < 50 %}class="sm_alarm_light_fill"
                             {% else %}
-                                {% if stats.percent < 80 %}class="exhausted_fill"
-                                {% else %}class="scouting_fill"{% endif %}
+                                {% if stats.percent < 80 %}class="sm_warning_light_fill"
+                                {% else %}class="sm_ok_light_fill"{% endif %}
                             {% endif %}
                           {% endif %}
                          {% endif %}{% endfor %}>
@@ -38,16 +38,16 @@
         {% for values in reqerrors %}
             <tr {% if values.totalstats.allc <= 10 %} class="low-stat" {% endif %} >
               <th {% if values.totalstats.allc > 10 %}
-                    {% if values.totalstats.percent < 50 %}class="alarm_fill"
+                    {% if values.totalstats.percent < 50 %}class="sm_alarm_fill"
                     {% else %}
-                        {% if values.totalstats.percent < 80 %}class="warning_fill"
-                        {% else %}class="finished_fill"{% endif %}
+                        {% if values.totalstats.percent < 80 %}class="sm_warning_fill"
+                        {% else %}class="sm_ok_fill"{% endif %}
                     {% endif %}
                   {% elif values.totalstats.allc > 0 and stats.allc <= 10 %}
-                    {% if values.totalstats.percent < 50 %}class="failed_fill"
+                    {% if values.totalstats.percent < 50 %}class="sm_alarm_light_fill"
                     {% else %}
-                        {% if values.totalstats.percent < 80 %}class="exhausted_fill"
-                        {% else %}class="scouting_fill"{% endif %}
+                        {% if values.totalstats.percent < 80 %}class="sm_warning_light_fill"
+                        {% else %}class="sm_ok_light_fill"{% endif %}
                     {% endif %}
                   {% endif %}>
                   <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' values.reqid %}"><i class="fi-plus"></i></a> <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid }}">{{ values.reqid }}</a></th>
@@ -55,16 +55,16 @@
                   {% for cn, stats in values.items %}
                     {% if c == cn %}
                         <td {% if stats.allc > 10 %}
-                                {% if stats.percent < 50 %}class="alarm_fill"
+                                {% if stats.percent < 50 %}class="sm_alarm_fill"
                                 {% else %}
-                                    {% if stats.percent < 80 %}class="warning_fill"
-                                    {% else %}class="finished_fill"{% endif %}
+                                    {% if stats.percent < 80 %}class="sm_warning_fill"
+                                    {% else %}class="sm_ok_fill"{% endif %}
                                 {% endif %}
                             {% elif stats.allc > 0 and stats.allc <= 10 %}
-                                {% if stats.percent < 50 %}class="failed_fill"
+                                {% if stats.percent < 50 %}class="sm_alarm_light_fill"
                                 {% else %}
-                                    {% if stats.percent < 80 %}class="exhausted_fill"
-                                    {% else %}class="scouting_fill"{% endif %}
+                                    {% if stats.percent < 80 %}class="sm_warning_light_fill"
+                                    {% else %}class="sm_ok_light_fill"{% endif %}
                                 {% endif %}
                             {% endif %}>
                         {% if stats.allc != 0 %}

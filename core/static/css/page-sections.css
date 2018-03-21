@@ -240,3 +240,13 @@ float: none !important; }
 .graylink {
     color: grey !important;
 }
+
+/*Colors for errors scattering matrix*/
+
+.sm_alarm_fill {  color:black;  background-color:#ff6666 }
+.sm_warning_fill { color:black;  background-color:#FFCB2F }
+.sm_ok_fill {color:black;  background-color:#70db70 }
+
+.sm_alarm_light_fill {  color:black;  background-color:#ffcccc }
+.sm_warning_light_fill { color:black;  background-color:#fff0b3 }
+.sm_ok_light_fill {color:black;  background-color:#d6f5d6}

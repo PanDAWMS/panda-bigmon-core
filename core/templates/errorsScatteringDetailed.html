@@ -23,28 +23,36 @@
             {% endfor %}
         </tr>
 
-        {% for jeditaskid, values in taskserrors.items %}
+        {% for values in taskserrors %}
             <tr>
-              <th><a class="blacklink bold" href="{% url 'taskInfo' jeditaskid %}">{{ jeditaskid }}</a></th>
+              <th><a class="blacklink bold" href="{% url 'taskInfo' values.jeditaskid %}">{{ values.jeditaskid }}</a></th>
 
             {% for computingSite in computingSites %}
-                {% if computingSite in values %}
-                        <td {% for p in values|get_item:computingSite %}{% if forloop.first %}id="{{ p }}"{% if p >= 0 %}{% if p < 50 %}class="failed_fill"{% else %}{% if p < 80 %}class="discarded_fill"{% else %}class="finished_fill"{% endif %}{% endif %}{% endif %}{% endif %}{% endfor %}>
-                        {% for p in values|get_item:computingSite %}
-                            {% if forloop.first %}
-                                {% if p >= 0 %}
-                                    <a class="blacklink" href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ jeditaskid }}&computingsite={{ computingSite }}&days=30">
-                                        {% for p in values|get_item:computingSite %}
-                                            {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
-                                        {% endfor %}
-                                    </a>
+                {% for columnName, stats in values.columns.items %}
+                    {% if computingSite == columnName %}
+                        <td {% if stats.allc > 10 %}
+                                {% if stats.percent < 50 %}class="sm_alarm_fill"
+                                {% else %}
+                                    {% if stats.percent < 80 %}class="sm_warning_fill"
+                                    {% else %}class="sm_ok_fill"{% endif %}
                                 {% endif %}
-                            {% endif %}
-                        {% endfor %}
+                            {% elif stats.allc > 0 and stats.allc <= 10 %}
+                                {% if stats.percent < 50 %}class="sm_alarm_light_fill"
+                                {% else %}
+                                    {% if stats.percent < 80 %}class="sm_warning_light_fill"
+                                    {% else %}class="sm_ok_light_fill"{% endif %}
+                                {% endif %}
+                            {% endif %}>
+                        {% if stats.allc != 0 %}
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ values.jeditaskid }}&computingsite={{ computingSite }}&days=30" class="blacklink">
+                            {{ stats.percent }}%<br>
+                            {{ stats.finishedc }}<br>
+                            {{ stats.failedc }}
+                          </a>
+                        {% endif %}
                         </td>
-                    {% else %}
-                        <td> </td>
                     {% endif %}
+                {% endfor %}
             {% endfor %}
 
 
@@ -69,28 +77,36 @@
                 {% endfor %}
         </tr>
 
-        {% for tid, values in taskserrors.items %}
+        {% for values in taskserrors%}
             <tr>
-              <th><a class="blacklink bold" href="{% url 'taskInfo' %}?jeditaskid={{ tid }}">{{ tid }}</a></th>
-                {% for c in clouds %}
-                    {% if c in values %}
-                        <td {% for p in values|get_item:c %}{% if forloop.first %}id="{{ p }}"{% if p >= 0 %}{% if p < 50 %}class="failed_fill"{% else %}{% if p < 80 %}class="discarded_fill"{% else %}class="finished_fill"{% endif %}{% endif %}{% endif %}{% endif %}{% endfor %}>
-                        {% for p in values|get_item:c %}
-                            {% if forloop.first %}
-                                {% if p >= 0 %}
-                                    <a class="blacklink" href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ tid }}&region={{ c }}&days=30">
-                                        {% for p in values|get_item:c %}
-                                            {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
-                                        {% endfor %}
-                                    </a>
+              <th><a class="blacklink bold" href="{% url 'taskInfo' %}?jeditaskid={{ values.jeditaskid }}">{{ values.jeditaskid }}</a></th>
+              {% for c in clouds %}
+                {% for columnName, stats in values.columns.items %}
+                    {% if c == columnName %}
+                        <td {% if stats.allc > 10 %}
+                                {% if stats.percent < 50 %}class="sm_alarm_fill"
+                                {% else %}
+                                    {% if stats.percent < 80 %}class="sm_warning_fill"
+                                    {% else %}class="sm_ok_fill"{% endif %}
                                 {% endif %}
-                            {% endif %}
-                        {% endfor %}
+                            {% elif stats.allc > 0 and stats.allc <= 10 %}
+                                {% if stats.percent < 50 %}class="sm_alarm_light_fill"
+                                {% else %}
+                                    {% if stats.percent < 80 %}class="sm_warning_light_fill"
+                                    {% else %}class="sm_ok_light_fill"{% endif %}
+                                {% endif %}
+                            {% endif %}>
+                        {% if stats.allc != 0 %}
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ values.jeditaskid }}&region={{ c }}&days=30" class="blacklink">
+                            {{ stats.percent }}%<br>
+                            {{ stats.finishedc }}<br>
+                            {{ stats.failedc }}
+                          </a>
+                        {% endif %}
                         </td>
-                    {% else %}
-                        <td> </td>
                     {% endif %}
-                {% endfor %}
+                 {% endfor %}
+              {% endfor %}
             </tr>
          {% endfor %}
 
@@ -112,30 +128,37 @@
             {% endfor %}
         </tr>
 
-        {% for rid, values in reqerrors.items %}
+        {% for values in reqerrors %}
             <tr>
-              <th><a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=rid %}"><i class="fi-plus"></i></a>
-                  <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ rid }}">{{ rid }}</a></th>
-
-            {% for computingSite in computingSites %}
-                {% if computingSite in values %}
-                        <td {% for p in values|get_item:computingSite %}{% if forloop.first %}id="{{ p }}"{% if p >= 0 %}{% if p < 50 %}class="failed_fill"{% else %}{% if p < 80 %}class="discarded_fill"{% else %}class="finished_fill"{% endif %}{% endif %}{% endif %}{% endif %}{% endfor %}>
-                        {% for p in values|get_item:computingSite %}
-                            {% if forloop.first %}
-                                {% if p >= 0 %}
-                                    <a class="blacklink" href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ rid }}&computingsite={{ computingSite }}&days=10">
-                                    {% for p in values|get_item:computingSite %}
-                                        {{ p }}{% if forloop.first %}%{% endif %}{% if not forloop.last %}<br>{% endif %}
-                                    {% endfor %}
-                                    </a>
+              <th><a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=values.reqid %}"><i class="fi-plus"></i></a>
+                  <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid  }}">{{ values.reqid  }}</a></th>
+              {% for computingSite in computingSites %}
+                {% for columnName, stats in values.columns.items %}
+                    {% if computingSite == columnName %}
+                        <td {% if stats.allc > 10 %}
+                                {% if stats.percent < 50 %}class="sm_alarm_fill"
+                                {% else %}
+                                    {% if stats.percent < 80 %}class="sm_warning_fill"
+                                    {% else %}class="sm_ok_fill"{% endif %}
                                 {% endif %}
-                            {% endif %}
-                        {% endfor %}
+                            {% elif stats.allc > 0 and stats.allc <= 10 %}
+                                {% if stats.percent < 50 %}class="sm_alarm_light_fill"
+                                {% else %}
+                                    {% if stats.percent < 80 %}class="sm_warning_light_fill"
+                                    {% else %}class="sm_ok_light_fill"{% endif %}
+                                {% endif %}
+                            {% endif %}>
+                        {% if stats.allc != 0 %}
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&computingsite={{ computingSite }}&days=10" class="blacklink">
+                            {{ stats.percent }}%<br>
+                            {{ stats.finishedc }}<br>
+                            {{ stats.failedc }}
+                          </a>
+                        {% endif %}
                         </td>
-                    {% else %}
-                        <td> </td>
                     {% endif %}
-            {% endfor %}
+                {% endfor %}
+              {% endfor %}
             </tr>
          {% endfor %}
     </table>

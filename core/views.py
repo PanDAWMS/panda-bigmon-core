@@ -12555,12 +12555,14 @@ def errorsScattering(request):
         endSelfMonitor(request)
         return response
 
-    limit = 10000
+    limit = 100000
     hours = 8
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'
     query['superstatus__in'] = ['submitting', 'running']
     tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
+
+    print ('tasks found %i') % len(tasks)
 
     random.seed()
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
@@ -12730,7 +12732,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
     if len(grouping) == 2:
         return redirect('/errorsscat/')
 
-    limit = 10000
+    limit = 100000
     hours = 8
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'
@@ -12750,6 +12752,8 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
 
     tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
+
+    print 'tasks found %i' % (len(tasks))
 
     random.seed()
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
@@ -12797,9 +12801,12 @@ def errorsScatteringDetailed(request, cloud, reqid):
     # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
 
     computingSites = []
+    tasksErrorsList = []
     taskserrors = {}
+    reqErrorsList = []
     reqerrors = {}
 
+    statsParams = ['percent', 'finishedc', 'failedc', 'allc']
 
     if len(grouping) == 0:
 
@@ -12809,33 +12816,67 @@ def errorsScatteringDetailed(request, cloud, reqid):
             if jeditaskid not in taskserrors:
                 taskentry = {}
                 taskserrors[jeditaskid] = taskentry
-            if errorEntry['COMPUTINGSITE'] not in taskserrors[jeditaskid]:
-                taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']] = []
-            taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']].append(int(
-            errorEntry['FINISHEDC'] * 100. / (errorEntry['FINISHEDC'] + errorEntry['FAILEDC'])) if (errorEntry['FINISHEDC'] + errorEntry['FAILEDC']) > 0 else -1)
-            taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']].append(errorEntry['FINISHEDC'])
-            taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']].append(errorEntry['FAILEDC'])
+                taskserrors[jeditaskid]['jeditaskid'] = jeditaskid
+                taskserrors[jeditaskid]['columns'] = {}
+                taskserrors[jeditaskid]['totalstats'] = {}
+                for param in statsParams:
+                    taskserrors[jeditaskid]['totalstats'][param] = 0
+            if errorEntry['COMPUTINGSITE'] not in taskserrors[jeditaskid]['columns']:
+                taskserrors[jeditaskid]['columns'][errorEntry['COMPUTINGSITE']] = {}
+                for param in statsParams:
+                    taskserrors[jeditaskid]['columns'][errorEntry['COMPUTINGSITE']][param] = 0
+            taskserrors[jeditaskid]['columns'][errorEntry['COMPUTINGSITE']]['allc'] = errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+            taskserrors[jeditaskid]['columns'][errorEntry['COMPUTINGSITE']]['percent'] = int(math.ceil(
+                errorEntry['FINISHEDC'] * 100. / taskserrors[jeditaskid]['columns'][errorEntry['COMPUTINGSITE']]['allc'])) if \
+                    taskserrors[jeditaskid]['columns'][errorEntry['COMPUTINGSITE']]['allc'] > 0 else 0
+            taskserrors[jeditaskid]['columns'][errorEntry['COMPUTINGSITE']]['finishedc'] = errorEntry['FINISHEDC']
+            taskserrors[jeditaskid]['columns'][errorEntry['COMPUTINGSITE']]['failedc'] = errorEntry['FAILEDC']
+            taskserrors[jeditaskid]['totalstats']['finishedc'] += errorEntry['FINISHEDC']
+            taskserrors[jeditaskid]['totalstats']['failedc'] += errorEntry['FAILEDC']
+            taskserrors[jeditaskid]['totalstats']['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+
+        ### calculate totalstats
+        for jeditaskid, taskEntry in taskserrors.iteritems():
+            taskserrors[jeditaskid]['totalstats']['percent'] = int(math.ceil(
+                taskEntry['totalstats']['finishedc']*100./taskEntry['totalstats']['allc'])) if taskEntry['totalstats']['allc'] > 0 else 0
+
 
 
         tasksToDel = []
 
         # make cleanup of full none erroneous tasks
-        for jeditaskid, taskentry in taskserrors.iteritems():
+        for jeditaskid, taskEntry in taskserrors.iteritems():
             notNone = False
-            for sitename, siteval in taskentry.iteritems():
-                if siteval[1] !=0 or siteval[2] != 0:
-                    notNone = True
-            if not notNone:
+            if taskEntry['totalstats']['allc'] == 0:
+                notNone = True
+            if notNone:
                 tasksToDel.append(jeditaskid)
 
         for taskToDel in tasksToDel:
             del taskserrors[taskToDel]
 
         for jeditaskid, taskentry in taskserrors.iteritems():
-            for sitename, siteval in taskentry.iteritems():
+            for sitename, siteval in taskentry['columns'].iteritems():
                 computingSites.append(sitename)
 
         computingSites = sorted(set(computingSites))
+
+        ### fill
+        for jeditaskid, taskentry in taskserrors.iteritems():
+            for computingSite in computingSites:
+                if computingSite not in taskentry['columns']:
+                    taskserrors[jeditaskid]['columns'][computingSite] = {}
+                    for param in statsParams:
+                        taskserrors[jeditaskid]['columns'][computingSite][param] = 0
+
+
+        ### transform requesterrors dict to list for sorting on template
+        for jeditaskid, taskEntry in taskserrors.iteritems():
+            tasksErrorsList.append(taskEntry)
+
+        tasksErrorsList = sorted(tasksErrorsList, key=lambda x: x['totalstats']['percent'])
+
+
 
     elif 'reqid' in grouping:
 
@@ -12845,31 +12886,58 @@ def errorsScatteringDetailed(request, cloud, reqid):
             if jeditaskid not in taskserrors:
                 taskentry = {}
                 taskserrors[jeditaskid] = taskentry
-            if errorEntry['CLOUD'] not in taskserrors[jeditaskid]:
-                taskserrors[jeditaskid][errorEntry['CLOUD']] = [-1, 0, 0]
-            taskserrors[jeditaskid][errorEntry['CLOUD']][1] += errorEntry['FINISHEDC']
-            taskserrors[jeditaskid][errorEntry['CLOUD']][2] += errorEntry['FAILEDC']
+                taskserrors[jeditaskid]['jeditaskid'] = jeditaskid
+                taskserrors[jeditaskid]['columns'] = {}
+                taskserrors[jeditaskid]['totalstats'] = {}
+                for param in statsParams:
+                    taskserrors[jeditaskid]['totalstats'][param] = 0
+            if errorEntry['CLOUD'] not in taskserrors[jeditaskid]['columns']:
+                taskserrors[jeditaskid]['columns'][errorEntry['CLOUD']] = {}
+                for param in statsParams:
+                    taskserrors[jeditaskid]['columns'][errorEntry['CLOUD']][param] = 0
+            taskserrors[jeditaskid]['columns'][errorEntry['CLOUD']]['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+            taskserrors[jeditaskid]['columns'][errorEntry['CLOUD']]['finishedc'] += errorEntry['FINISHEDC']
+            taskserrors[jeditaskid]['columns'][errorEntry['CLOUD']]['failedc'] += errorEntry['FAILEDC']
+            taskserrors[jeditaskid]['totalstats']['finishedc'] += errorEntry['FINISHEDC']
+            taskserrors[jeditaskid]['totalstats']['failedc'] += errorEntry['FAILEDC']
+            taskserrors[jeditaskid]['totalstats']['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+
+        ### calculate totalstats
+        for jeditaskid, taskEntry in taskserrors.iteritems():
+            taskserrors[jeditaskid]['totalstats']['percent'] = int(
+                math.ceil(taskEntry['totalstats']['finishedc'] * 100. / taskEntry['totalstats']['allc'])) if \
+                    taskEntry['totalstats']['allc'] > 0 else 0
 
         tasksToDel = []
 
         #make cleanup of full none erroneous tasks
-        for jeditaskid,taskentry  in taskserrors.iteritems():
+        for jeditaskid, taskEntry  in taskserrors.iteritems():
             notNone = False
-            for cname, cval in taskentry.iteritems():
-                if cval[1] != 0 or cval[2] != 0:
-                    notNone = True
-            if not notNone:
+            if taskEntry['totalstats']['allc'] == 0:
+                notNone = True
+            if notNone:
                 tasksToDel.append(jeditaskid)
 
         for taskToDel in tasksToDel:
             del taskserrors[taskToDel]
 
-        for jeditaskid, taskentry  in taskserrors.iteritems():
+
+        for jeditaskid, taskentry in taskserrors.iteritems():
             for c in clouds:
-                if not c in taskentry:
-                    taskentry[c] = [-1, 0, 0]
+                if not c in taskentry['columns']:
+                    taskentry['columns'][c] = {}
+                    for param in statsParams:
+                        taskentry['columns'][c][param] = 0
                 else:
-                    taskentry[c][0] = int(math.ceil(taskentry[c][1]*100./(taskentry[c][1]+taskentry[c][2]))) if (taskentry[c][1]+taskentry[c][2]) > 0 else -1
+                    taskentry['columns'][c]['percent'] = int(math.ceil(taskentry['columns'][c]['finishedc']*100./taskentry['columns'][c]['allc'])) if \
+                        taskentry['columns'][c]['allc'] > 0 else 0
+
+        ### transform requesterrors dict to list for sorting on template
+        for jeditaskid, taskEntry in taskserrors.iteritems():
+            tasksErrorsList.append(taskEntry)
+
+        tasksErrorsList = sorted(tasksErrorsList, key=lambda x: x['totalstats']['percent'])
+
 
     elif 'cloud' in grouping:
 
@@ -12879,39 +12947,61 @@ def errorsScatteringDetailed(request, cloud, reqid):
             if rid not in reqerrors:
                 reqentry = {}
                 reqerrors[rid] = reqentry
-            if errorEntry['COMPUTINGSITE'] not in reqerrors[rid]:
-                reqerrors[rid][errorEntry['COMPUTINGSITE']] = [-1,0,0]
-            reqerrors[rid][errorEntry['COMPUTINGSITE']][1] += errorEntry['FINISHEDC']
-            reqerrors[rid][errorEntry['COMPUTINGSITE']][2] += errorEntry['FAILEDC']
+                reqerrors[rid]['columns'] = {}
+                reqerrors[rid]['reqid'] = rid
+                reqerrors[rid]['totalstats'] = {}
+                for param in statsParams:
+                    reqerrors[rid]['totalstats'][param] = 0
+            if errorEntry['COMPUTINGSITE'] not in reqerrors[rid]['columns']:
+                reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']] = {}
+                for param in statsParams:
+                    reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']][param] = 0
+            reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']]['finishedc'] += errorEntry['FINISHEDC']
+            reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']]['failedc'] += errorEntry['FAILEDC']
+            reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']]['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+            reqerrors[rid]['totalstats']['finishedc'] += reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']]['finishedc']
+            reqerrors[rid]['totalstats']['failedc'] += reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']]['failedc']
+            reqerrors[rid]['totalstats']['allc'] += reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']]['allc']
+
+        for rid, reqentry in reqerrors.iteritems():
+            reqerrors[rid]['totalstats']['percent'] = int(
+                math.ceil(reqerrors[rid]['totalstats']['finishedc'] * 100. / reqerrors[rid]['totalstats']['allc'])) if \
+                    reqerrors[rid]['totalstats']['allc'] > 0 else 0
 
         reqsToDel = []
 
         #make cleanup of full none erroneous tasks
         for rid, reqentry in reqerrors.iteritems():
             notNone = False
-            for sitename, siteval in reqentry.iteritems():
-                if siteval[1] != 0 or siteval[2] != 0:
-                    notNone = True
-            if not notNone:
+            if reqentry['totalstats']['allc'] == 0:
+                notNone = True
+            if notNone:
                 reqsToDel.append(rid)
 
         for reqToDel in reqsToDel:
             del reqerrors[reqToDel]
 
         for rid, reqentry in reqerrors.iteritems():
-            for sn, sv in reqentry.iteritems():
+            for sn, sv in reqentry['columns'].iteritems():
                 computingSites.append(str(sn))
 
         computingSites = sorted(set(computingSites))
 
         for rid, reqentry  in reqerrors.iteritems():
             for s in computingSites:
-                if not s in reqentry:
-                    reqentry[s] = [-1, 0, 0]
-                    pass
+                if not s in reqentry['columns']:
+                    reqentry['columns'][s] = {}
+                    for param in statsParams:
+                        reqentry['columns'][s][param] = 0
                 else:
-                    reqentry[s][0] = int(math.ceil(reqentry[s][1]*100./(reqentry[s][1]+reqentry[s][2]))) if (reqentry[s][1]+reqentry[s][2]) > 0 else -1
+                    reqentry['columns'][s]['percent'] = int(math.ceil(reqentry['columns'][s]['finishedc']*100./reqentry['columns'][s]['allc'])) if \
+                        reqentry['columns'][s]['allc'] > 0 else 0
 
+        ### transform requesterrors dict to list for sorting on template
+        reqErrorsList = []
+        for rid, reqEntry in reqerrors.iteritems():
+            reqErrorsList.append(reqEntry)
+        reqErrorsList = sorted(reqErrorsList, key=lambda x: x['totalstats']['percent'])
 
     data = {
         'request': request,
@@ -12922,8 +13012,8 @@ def errorsScatteringDetailed(request, cloud, reqid):
         'grouping': grouping,
         'computingSites': computingSites,
         'clouds': clouds,
-        'taskserrors': taskserrors,
-        'reqerrors': reqerrors,
+        'taskserrors': tasksErrorsList,
+        'reqerrors': reqErrorsList,
         'built': datetime.now().strftime("%H:%M:%S"),
     }
 
