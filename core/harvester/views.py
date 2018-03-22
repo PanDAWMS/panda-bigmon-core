@@ -1,3 +1,4 @@
+import random
 from collections import OrderedDict
 
 from datetime import datetime
@@ -9,7 +10,8 @@ from pandas import json
 from django.db import connection
 import json
 from core.libs.cache import setCacheEntry, getCacheEntry
-from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder
+from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder, \
+    extensibleURL
 from core.harvester.models import HarvesterWorkers,HarvesterRelJobsWorkers
 
 harvWorkStatuses = [
@@ -158,12 +160,21 @@ def harvesterWorkerInfo(request):
 
 def harvesterfm(request):
     valid, response = initRequest(request)
+    xurl = extensibleURL(request)
     if 'instance' in request.session['requestParams'] and 'workerid' not in request.session['requestParams']:
         instance = request.session['requestParams']['instance']
-        if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
-            data = getCacheEntry(request, instance,isData=True)
+        # if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
+        #     data = getCacheEntry(request, instance,isData=True)
+        #     import json
+        #     return HttpResponse(data, content_type='text/html')
+        if ('dt' in request.session['requestParams'] and 'tk' in request.session['requestParams'] ):
+            tk = request.session['requestParams']['tk']
+            data = getCacheEntry(request, tk,isData=True)
             import json
             return HttpResponse(data, content_type='text/html')
+        status = ''
+        if 'status' in request.session['requestParams']:
+            status = """AND status like '%s'""" %(str(request.session['requestParams']['status']))
 
 
 
@@ -199,9 +210,9 @@ FROM
     atlas_panda.harvester_workers gg,
     atlas_panda.harvester_instances ff
 WHERE
-    ff.harvester_id = gg.harvesterid) where harvester_id like '%s' 
+    ff.harvester_id = gg.harvesterid) where harvester_id like '%s' %s
     order by workerid DESC
-        """ % (str(instance), str(instance))
+        """ % (str(instance), str(instance),status)
         workersList = []
 
         cur = connection.cursor()
@@ -236,10 +247,13 @@ WHERE
                 generalInstanseInfo = {'HarvesterID':worker['harvester_id'], 'Description':worker['description'], 'Starttime': worker['insstarttime'],
                                       'Owner':worker['owner'], 'Hostname':worker['hostname'],'Lastupdate':worker['inslastupdate'], 'Computingsites':computingsites,'Statuses':statuses
                                       }
+                transactionKey = random.randrange(1000000)
                 data = {
                     'generalInstanseInfo':generalInstanseInfo,
                     'type':'workers',
-                    'instance':instance
+                    'instance':instance,
+                    'xurl':xurl,
+                    'tk':transactionKey
                 }
                 import json
                 if 'display_limit_workers' in request.session['requestParams']:
@@ -247,7 +261,7 @@ WHERE
                 else:
                     display_limit_workers = 30000
 
-                setCacheEntry(request, instance, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60,isData=True)
+                setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60,isData=True)
 
         return render_to_response('harvesterfm.html', data, content_type='text/html')
 
@@ -302,7 +316,8 @@ WHERE
         import json
         data = {
             'instances':instanceDicList,
-            'type': 'instances'
+            'type': 'instances',
+            'xurl': xurl,
         }
         #data =json.dumps(data,cls=DateEncoder)
         response = render_to_response('harvesterfm.html', data, content_type='text/html')
