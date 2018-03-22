@@ -55,11 +55,18 @@
         <table>
         {% for name,value in generalInstanseInfo.items %}
             <tr>
-                {% if name == 'Statuses' or name ==  'Computingsites'%}
-                <td>{{ name }}</td>
+                {% if name == 'Statuses'%}
+                <td>{{ name }} ({{ value|length }})</td>
                     <td>
                     {% for n,v in value.items %}
-                        {{ n }} ({{ v }})
+                        {{ n }} <a href="{{xurl}}&status={{ n }}">({{ v }})</a>
+                    {% endfor %}
+                </td>
+                {% elif name ==  'Computingsites' %}
+                    <td>{{ name }} ({{ value|length }})</td>
+                    <td>
+                    {% for n,v in value.items %}
+                        {{ n }} <a href="{{xurl}}&computingsite={{ n }}">({{ v }})</a>
                     {% endfor %}
                 </td>
                 {% else %}
@@ -138,7 +145,7 @@
         paging: true,
                      "ajax": {
                  "processing": true,
-                 "url": "{% url 'harvesterfm' %}?instance={{ instance }}&json",
+                 "url": "{% url 'harvesterfm' %}?instance={{ instance }}&tk={{ tk }}&dt",
 
                  "dataSrc" : ''},
         "aoColumns": [
