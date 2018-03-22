@@ -4,13 +4,71 @@
 
 {% block page_title %}Errors scattering{% endblock %}
 {% block subtitle %}Errors scattering <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+
+
+{% block extra_css %}
+    <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
+{% endblock %}
+{% block extra_js %}
+<script>
+function toggleLowStatsCells(classname) {
+    var classesOfTableCells = ['sm_alarm_fill', 'sm_alarm_light_fill', 'sm_warning_fill', 'sm_warning_light_fill', 'sm_ok_fill', 'sm_ok_light_fill'];
+    if ($("." + classname).is(':visible')) {
+        $("." + classname).hide();
+        $("." + classname).each(function () {
+            var classOfElement = $(this).parent().attr('class');
+            console.log(classOfElement);
+            if (classOfElement.length > 0 && (jQuery.inArray(classOfElement,classesOfTableCells) >= 0)) {
+                $(this).parent().removeClass(classOfElement);
+                classOfElement += '_hidden';
+                $(this).parent().addClass(classOfElement);
+                console.log(classOfElement);
+            }
+        });
+        {# go through rows and hide it if all child cells are hidden or empty   #}
+        $('#errorsscat > tbody').children('tr').each(function () {
+            var isEmpty = true;
+            var parent = $(this);
+            parent.children('td').each(function () {
+                var attr = $(this).attr('class');
+                if ((typeof attr !== typeof undefined && attr !== false) && (!($(this).attr('class').indexOf('_hidden'))) || ($(this).children('a').length > 0 && $(this).children(':first').is(':visible'))) {
+                    isEmpty = false;
+                }
+            });
+            if (isEmpty) {parent.hide()}
+        });
+        document.getElementById('hidebutton').innerHTML = 'Show low statistics cells';
+    }
+    else {
+        $('#errorsscat > tbody').children('tr').each(function () {
+            var parent = $(this);
+            parent.show();
+        });
+        $("." + classname).each(function () {
+            var classOfElement = $(this).parent().attr('class');
+            $(this).parent().removeClass(classOfElement);
+            if (classOfElement.length > 0 && classOfElement.indexOf('_hidden')) {
+                classOfElement = classOfElement.replace('_hidden', '');
+                $(this).parent().addClass(classOfElement);
+            }
+        });
+        $("." + classname).show();
+        document.getElementById('hidebutton').innerHTML = 'Hide low statistics cells';
+    }
+}
+</script>
+{% endblock %}
+
 {% block body %}
 
-<link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
+
+
+<a id="hidebutton" onclick="toggleLowStatsCells('lowstats')" class="button back-to-home"><i class="fi-home"></i> Hide low statistics cells</a>
 
 <div class="row align-center" style="width: 100%; max-width: 68rem">
   <div class="column small-12 small-centered">
     <table id="errorsscat" class="unstriped">
+      <thead>
         <tr>
             <th>Request ID</th>
                 {% for c in clouds %}
@@ -34,9 +92,10 @@
                      </th>
                 {% endfor %}
         </tr>
-
+      </thead>
+      <tbody>
         {% for values in reqerrors %}
-            <tr {% if values.totalstats.allc <= 10 %} class="low-stat" {% endif %} >
+            <tr {% if values.totalstats.allc <= 100 %} class="low-stat" {% endif %} >
               <th {% if values.totalstats.allc > 10 %}
                     {% if values.totalstats.percent < 50 %}class="sm_alarm_fill"
                     {% else %}
@@ -68,7 +127,7 @@
                                 {% endif %}
                             {% endif %}>
                         {% if stats.allc != 0 %}
-                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ rid }}&region={{ c }}&days=5" class="blacklink">
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ rid }}&region={{ c }}&days=5" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
                             {{ stats.percent }}%<br>
                             {{ stats.finishedc }}<br>
                             {{ stats.failedc }}
@@ -81,7 +140,7 @@
                 {% endfor %}
             </tr>
          {% endfor %}
-
+      </tbody>
 
 
     </table>
