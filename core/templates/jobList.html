@@ -203,6 +203,7 @@ function toggleDetailDisplay(className) {
  <a href="https://prodtask-dev.cern.ch/prodjob/{{ xurl|slice:"6:" }}">Prodsys Jobs Handling</a>
 <p>
 
+<div class="table-scroll">
 <table>
 <tr class='tablesection'><th colspan=20>
 <a name="joblist"></a> Job list &nbsp; &nbsp; 
@@ -294,6 +295,7 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 
     {% endfor %}
 </table>
+</div>
 
 {% else %}
 
