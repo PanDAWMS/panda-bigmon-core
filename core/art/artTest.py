@@ -14,8 +14,9 @@ class ArtTest:
     pandaid, testname, nightly_release_short, platform, project, package, nightly_tag
     """
     url = "http://bigpanda.cern.ch/art/registerarttest/?json"
-    nattempts = 3
+    nattempts = 5
     timeout = 10
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
     def __init__(self, pandaid, testname, nightly_release_short,platform, project, package, nightly_tag):
         self.pid = pandaid
@@ -42,7 +43,10 @@ class ArtTest:
         payload['nightly_tag'] = self.nt
 
         for i in range(0, self.nattempts):
-            r = requests.post(self.url, data=payload, timeout=self.timeout, verify=False)
+            try:
+                r = requests.post(self.url, data=payload, timeout=self.timeout, headers=self.headers, verify=False)
+            except:
+                continue
             if r.status_code == 200:
                 try:
                     r = r.json()
