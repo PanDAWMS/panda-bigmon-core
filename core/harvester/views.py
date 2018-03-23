@@ -186,6 +186,8 @@ def harvesterfm(request):
     to_char(ff.starttime, 'dd-mm-yyyy hh24:mi:ss') as "insstarttime",
     ff.owner,
     ff.hostname,
+    ff.sw_version,
+    ff.commit_stamp,
     gg.workerid,
     (select max(lastupdate) from atlas_panda.harvester_workers where harvesterid like '%s') as "inslastupdate",
     gg.status,
@@ -205,7 +207,9 @@ def harvesterfm(request):
     gg.resourcetype,
     gg.nativeexitcode,
     gg.nativestatus,
-    gg.diagmessage
+    gg.diagmessage,
+    (select count(pandaid) from atlas_panda.harvester_rel_jobs_workers where atlas_panda.harvester_rel_jobs_workers.harvesterid =  ff.harvester_id and atlas_panda.harvester_rel_jobs_workers.workerid = gg.workerid) as harvesterpandaids,
+    (select count(pandaid) from atlas_panda.harvester_rel_jobs_workers where  atlas_panda.harvester_rel_jobs_workers.workerid = gg.workerid) as totalpandaids
 FROM
     atlas_panda.harvester_workers gg,
     atlas_panda.harvester_instances ff
@@ -226,16 +230,19 @@ WHERE
             workersList.append(object)
         statuses = {}
         computingsites = {}
-
+        workerIDs= set()
         generalInstanseInfo = {}
 
-        generalWorkersFields = ['workerid','status','batchid','nodeid','queuename','computingsite','submittime','wrklastupdate','wrkstarttime','wrkendtime','ncore','errorcode','stdout','stderr','batchlog']
+        generalWorkersFields = ['workerid','status','batchid','nodeid','queuename','computingsite','submittime','wrklastupdate','wrkstarttime','wrkendtime','ncore','errorcode','stdout','stderr','batchlog','resourcetype','nativeexitcode','nativestatus','diagmessage','totalpandaids', 'harvesterpandaids']
         generalWorkersList = []
         # for worker in workersList:
+        wrkPandaIDs ={}
         for i, worker in enumerate(workersList):
             object = {}
             computingsites.setdefault(worker['computingsite'],[]).append(worker['workerid'])
             statuses.setdefault(worker['status'],[]).append(worker['workerid'])
+            wrkPandaIDs[worker['workerid']] = worker['harvesterpandaids']
+            workerIDs.add(worker['workerid'])
             for field in generalWorkersFields:
                 object[field] = worker[field]
             generalWorkersList.append(object)
@@ -245,23 +252,44 @@ WHERE
                 for status in statuses.keys():
                     statuses[status] = len(statuses[status])
                 generalInstanseInfo = {'HarvesterID':worker['harvester_id'], 'Description':worker['description'], 'Starttime': worker['insstarttime'],
-                                      'Owner':worker['owner'], 'Hostname':worker['hostname'],'Lastupdate':worker['inslastupdate'], 'Computingsites':computingsites,'Statuses':statuses
+                                      'Owner':worker['owner'], 'Hostname':worker['hostname'],'Lastupdate':worker['inslastupdate'], 'Computingsites':computingsites,'Statuses':statuses,'Software version':worker['sw_version'],'Commit stamp':worker['commit_stamp'], 'wrkpandaids':wrkPandaIDs
                                       }
-                transactionKey = random.randrange(1000000)
-                data = {
-                    'generalInstanseInfo':generalInstanseInfo,
-                    'type':'workers',
-                    'instance':instance,
-                    'xurl':xurl,
-                    'tk':transactionKey
-                }
-                import json
-                if 'display_limit_workers' in request.session['requestParams']:
-                    display_limit_workers = int(request.session['requestParams']['display_limit_workers'])
-                else:
-                    display_limit_workers = 30000
 
-                setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60,isData=True)
+
+
+        # pandaIDList = []
+        # sqlquery = """
+        #         SELECT
+        #         workerid,pandaid
+        #         FROM
+        #         atlas_panda.harvester_rel_jobs_workers where harvesterid like '%s'
+        #         """ % (str(instance))
+        # cur = connection.cursor()
+        # cur.execute(sqlquery)
+        # columns = [str(i[0]).lower() for i in cur.description]
+        # pandaids = cur.fetchall()
+        # for pandaid in pandaids:
+        #     object = {}
+        #     for i, col in enumerate(columns):
+        #         object[col] = pandaid[i]
+        #     pandaIDList.append(object)
+
+
+        transactionKey = random.randrange(1000000)
+        data = {
+                'generalInstanseInfo':generalInstanseInfo,
+                'type':'workers',
+                'instance':instance,
+                'xurl':xurl,
+                'tk':transactionKey
+                }
+        import json
+        if 'display_limit_workers' in request.session['requestParams']:
+            display_limit_workers = int(request.session['requestParams']['display_limit_workers'])
+        else:
+            display_limit_workers = 30000
+
+        setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60,isData=True)
 
         return render_to_response('harvesterfm.html', data, content_type='text/html')
 
@@ -280,11 +308,11 @@ WHERE
     to_char(b.lastupdate, 'dd-mm-yyyy hh24:mi:ss') as alldate,
     (SELECT
     to_char(max(O.lastupdate), 'dd-mm-yyyy hh24:mi:ss')
-    FROM atlas_panda.harvester_rel_jobs_workers O where  O.harvesterid = a.harvester_id   Group by O.harvesterid) as recently, 
+    FROM atlas_panda.harvester_workers O where  O.harvesterid = a.harvester_id   Group by O.harvesterid) as recently, 
 
     a.DESCRIPTION as description
     FROM
-     atlas_panda.harvester_rel_jobs_workers b,
+     atlas_panda.harvester_workers b,
     atlas_panda.harvester_instances a
     WHERE a.harvester_id = b.harvesterid
     ) where alldate = recently Group by harvid) W where W.harvid=R.harvid) as recent,
