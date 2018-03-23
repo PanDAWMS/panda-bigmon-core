@@ -4,30 +4,67 @@
 
 {% block page_title %}Errors scattering{% endblock %}
 {% block subtitle %}Errors scattering <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/hideCells.js' %}"></script>
+{% endblock %}
 {% block body %}
-
-		<link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
 
 {% if requestParams.reqid %}<br><b>Request ID: {{ requestParams.reqid }}</b> {% endif %}
 {% if requestParams.region %}<br><b>Region: {{ requestParams.region }}</b> {% endif %}
 
 {% if grouping|length == 0 %}
+<div class="float-right">
+    <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscatdetailed', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
+</div>
 <div class="table-scroll">
-    <table class="matrix unstriped">
+    <table id="errorsscatdetailed" class="matrix unstriped">
+      <thead>
         <tr>
             <th>Task ID <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' reqid %}"><i class="fi-minus"></i></a><br>
                 <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud 'ALL' %}"><i class="fi-minus"></i></a>
             </th>
             {% for computingSite in computingSites %}
-                <th class="vertical"><div class="vertical"><a class="blacklink bold" href="{% url 'siteInfo' %}{{ computingSite }}/">{{ computingSite }}</a></div></th>
+                <th {% for columnname, stats in columnstats.items %}{% if columnname == computingSite %}
+                         {% if stats.allc > 10 %}
+                            {% if stats.percent < 50 %}class="vertical sm_alarm_fill"
+                            {% else %}
+                                {% if stats.percent < 80 %}class="vertical sm_warning_fill"
+                                {% else %}class="vertical sm_ok_fill"{% endif %}
+                            {% endif %}
+                          {% elif stats.allc > 0 and stats.allc <= 10 %}
+                            {% if stats.percent < 50 %}class="vertical sm_alarm_light_fill"
+                            {% else %}
+                                {% if stats.percent < 80 %}class="vertical sm_warning_light_fill"
+                                {% else %}class="vertical sm_ok_light_fill"{% endif %}
+                            {% endif %}
+                          {% endif %}
+                         {% endif %}{% endfor %}>
+                    <div class="vertical"><a class="blacklink bold" href="{% url 'siteInfo' %}{{ computingSite }}/">{{ computingSite }}</a></div></th>
             {% endfor %}
         </tr>
-
+      </thead>
+      <tbody>
         {% for values in taskserrors %}
-            <tr>
-              <th><a class="blacklink bold" href="{% url 'taskInfo' values.jeditaskid %}">{{ values.jeditaskid }}</a></th>
-
-            {% for computingSite in computingSites %}
+            <tr{% if values.totalstats.allc <= 100 %} class="low-stat" {% endif %} >
+              <th {% if values.totalstats.allc > 10 %}
+                    {% if values.totalstats.percent < 50 %}class="sm_alarm_fill"
+                    {% else %}
+                        {% if values.totalstats.percent < 80 %}class="sm_warning_fill"
+                        {% else %}class="sm_ok_fill"{% endif %}
+                    {% endif %}
+                  {% elif values.totalstats.allc > 0 and stats.allc <= 10 %}
+                    {% if values.totalstats.percent < 50 %}class="sm_alarm_light_fill"
+                    {% else %}
+                        {% if values.totalstats.percent < 80 %}class="sm_warning_light_fill"
+                        {% else %}class="sm_ok_light_fill"{% endif %}
+                    {% endif %}
+                  {% endif %}>
+                  <a class="blacklink bold" href="{% url 'taskInfo' values.jeditaskid %}">{{ values.jeditaskid }}</a>
+              </th>
+              {% for computingSite in computingSites %}
                 {% for columnName, stats in values.columns.items %}
                     {% if computingSite == columnName %}
                         <td {% if stats.allc > 10 %}
@@ -44,7 +81,7 @@
                                 {% endif %}
                             {% endif %}>
                         {% if stats.allc != 0 %}
-                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ values.jeditaskid }}&computingsite={{ computingSite }}&days=30" class="blacklink">
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ values.jeditaskid }}&computingsite={{ computingSite }}&days=30" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
                             {{ stats.percent }}%<br>
                             {{ stats.finishedc }}<br>
                             {{ stats.failedc }}
@@ -53,33 +90,63 @@
                         </td>
                     {% endif %}
                 {% endfor %}
-            {% endfor %}
-
-
+              {% endfor %}
             </tr>
          {% endfor %}
+      </tbody>
     </table>
 </div>
 {% elif 'reqid' in grouping %}
-
+<div class="float-right">
+    <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscat', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
+</div>
 <div class="row align-center" style="width: 100%; max-width: 68rem">
   <div class="column small-12 small-centered">
     <table id="errorsscat" class="unstriped">
+      <thead>
         <tr>
             <th>Task ID<br>
                 <a class="graylink" href="{% url 'errorsScattering' %}"><i class="fi-minus"></i></a>
             </th>
                 {% for c in clouds %}
-                     <th>
+                     <th {% for columnname, stats in columnstats.items %}{% if columnname == c %}
+                         {% if stats.allc > 10 %}
+                            {% if stats.percent < 50 %}class="sm_alarm_fill"
+                            {% else %}
+                                {% if stats.percent < 80 %}class="sm_warning_fill"
+                                {% else %}class="sm_ok_fill"{% endif %}
+                            {% endif %}
+                          {% elif stats.allc > 0 and stats.allc <= 10 %}
+                            {% if stats.percent < 50 %}class="sm_alarm_light_fill"
+                            {% else %}
+                                {% if stats.percent < 80 %}class="sm_warning_light_fill"
+                                {% else %}class="sm_ok_light_fill"{% endif %}
+                            {% endif %}
+                          {% endif %}
+                         {% endif %}{% endfor %}>
                          {{ c }} <br>
                          <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=c|safe reqid=reqid %}"><i class="fi-plus"></i></a>
                      </th>
                 {% endfor %}
         </tr>
-
+      </thead>
+      <tbody>
         {% for values in taskserrors%}
-            <tr>
-              <th><a class="blacklink bold" href="{% url 'taskInfo' %}?jeditaskid={{ values.jeditaskid }}">{{ values.jeditaskid }}</a></th>
+            <tr{% if values.totalstats.allc <= 100 %} class="low-stat" {% endif %} >
+              <th {% if values.totalstats.allc > 10 %}
+                    {% if values.totalstats.percent < 50 %}class="sm_alarm_fill"
+                    {% else %}
+                        {% if values.totalstats.percent < 80 %}class="sm_warning_fill"
+                        {% else %}class="sm_ok_fill"{% endif %}
+                    {% endif %}
+                  {% elif values.totalstats.allc > 0 and stats.allc <= 10 %}
+                    {% if values.totalstats.percent < 50 %}class="sm_alarm_light_fill"
+                    {% else %}
+                        {% if values.totalstats.percent < 80 %}class="sm_warning_light_fill"
+                        {% else %}class="sm_ok_light_fill"{% endif %}
+                    {% endif %}
+                  {% endif %}>
+                  <a class="blacklink bold" href="{% url 'taskInfo' %}?jeditaskid={{ values.jeditaskid }}">{{ values.jeditaskid }}</a></th>
               {% for c in clouds %}
                 {% for columnName, stats in values.columns.items %}
                     {% if c == columnName %}
@@ -97,7 +164,7 @@
                                 {% endif %}
                             {% endif %}>
                         {% if stats.allc != 0 %}
-                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ values.jeditaskid }}&region={{ c }}&days=30" class="blacklink">
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ values.jeditaskid }}&region={{ c }}&days=30" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
                             {{ stats.percent }}%<br>
                             {{ stats.finishedc }}<br>
                             {{ stats.failedc }}
@@ -109,28 +176,58 @@
               {% endfor %}
             </tr>
          {% endfor %}
-
-
-
+      </tbody>
     </table>
   </div>
 </div>
 
 {% elif 'cloud' in grouping %}
-
+<div class="float-right">
+    <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscatdetailed', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
+</div>
 <div class="table-scroll">
-    <table class="matrix unstriped">
+    <table id="errorsscatdetailed" class="matrix unstriped">
+      <thead>
         <tr>
             <th>Request ID <a class="graylink" href="{% url 'errorsScattering' %}"><i class="fi-minus"></i></a>
             </th>
             {% for computingSite in computingSites %}
-               <th class="vertical"><div class="vertical"><a class="blacklink bold" href="{% url 'siteInfo' %}{{ computingSite }}/">{{ computingSite }}</a></div></th>
+                <th {% for columnname, stats in columnstats.items %}{% if columnname == computingSite %}
+                         {% if stats.allc > 10 %}
+                            {% if stats.percent < 50 %}class="vertical sm_alarm_fill"
+                            {% else %}
+                                {% if stats.percent < 80 %}class="vertical sm_warning_fill"
+                                {% else %}class="vertical sm_ok_fill"{% endif %}
+                            {% endif %}
+                          {% elif stats.allc > 0 and stats.allc <= 10 %}
+                            {% if stats.percent < 50 %}class="vertical sm_alarm_light_fill"
+                            {% else %}
+                                {% if stats.percent < 80 %}class="vertical sm_warning_light_fill"
+                                {% else %}class="vertical sm_ok_light_fill"{% endif %}
+                            {% endif %}
+                          {% endif %}
+                         {% endif %}{% endfor %}>
+                    <div class="vertical"><a class="blacklink bold" href="{% url 'siteInfo' %}{{ computingSite }}/">{{ computingSite }}</a></div></th>
             {% endfor %}
         </tr>
-
+      </thead>
+      <tbody>
         {% for values in reqerrors %}
-            <tr>
-              <th><a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=values.reqid %}"><i class="fi-plus"></i></a>
+            <tr{% if values.totalstats.allc <= 100 %} class="low-stat" {% endif %} >
+              <th {% if values.totalstats.allc > 10 %}
+                    {% if values.totalstats.percent < 50 %}class="sm_alarm_fill"
+                    {% else %}
+                        {% if values.totalstats.percent < 80 %}class="sm_warning_fill"
+                        {% else %}class="sm_ok_fill"{% endif %}
+                    {% endif %}
+                  {% elif values.totalstats.allc > 0 and stats.allc <= 10 %}
+                    {% if values.totalstats.percent < 50 %}class="sm_alarm_light_fill"
+                    {% else %}
+                        {% if values.totalstats.percent < 80 %}class="sm_warning_light_fill"
+                        {% else %}class="sm_ok_light_fill"{% endif %}
+                    {% endif %}
+                  {% endif %}>
+                  <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=values.reqid %}"><i class="fi-plus"></i></a>
                   <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid  }}">{{ values.reqid  }}</a></th>
               {% for computingSite in computingSites %}
                 {% for columnName, stats in values.columns.items %}
@@ -149,7 +246,7 @@
                                 {% endif %}
                             {% endif %}>
                         {% if stats.allc != 0 %}
-                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&computingsite={{ computingSite }}&days=10" class="blacklink">
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&computingsite={{ computingSite }}&days=10" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
                             {{ stats.percent }}%<br>
                             {{ stats.finishedc }}<br>
                             {{ stats.failedc }}
@@ -161,6 +258,7 @@
               {% endfor %}
             </tr>
          {% endfor %}
+      </tbody>
     </table>
 </div>
 {% endif %}

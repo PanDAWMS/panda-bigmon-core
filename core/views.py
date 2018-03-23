@@ -12562,7 +12562,7 @@ def errorsScattering(request):
     query['superstatus__in'] = ['submitting', 'running']
     tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
 
-    print ('tasks found %i') % len(tasks)
+    # print ('tasks found %i') % len(tasks)
 
     random.seed()
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
@@ -12869,6 +12869,25 @@ def errorsScatteringDetailed(request, cloud, reqid):
                     for param in statsParams:
                         taskserrors[jeditaskid]['columns'][computingSite][param] = 0
 
+        ### calculate stats for column
+        columnstats = {}
+        for cn in computingSites:
+            cns = str(cn)
+            columnstats[cns] = {}
+            for param in statsParams:
+                columnstats[cns][param] = 0
+        for jeditaskid, taskEntry in taskserrors.iteritems():
+            for cs in computingSites:
+                for cname, cEntry in taskEntry['columns'].iteritems():
+                    if cs == cname:
+                        columnstats[cs]['finishedc'] += cEntry['finishedc']
+                        columnstats[cs]['failedc'] += cEntry['failedc']
+                        columnstats[cs]['allc'] += cEntry['allc']
+        for csn, stats in columnstats.iteritems():
+            columnstats[csn]['percent'] = int(
+                math.ceil(columnstats[csn]['finishedc'] * 100. / columnstats[csn]['allc'])) if \
+                    columnstats[csn]['allc'] > 0 else 0
+
 
         ### transform requesterrors dict to list for sorting on template
         for jeditaskid, taskEntry in taskserrors.iteritems():
@@ -12931,6 +12950,25 @@ def errorsScatteringDetailed(request, cloud, reqid):
                 else:
                     taskentry['columns'][c]['percent'] = int(math.ceil(taskentry['columns'][c]['finishedc']*100./taskentry['columns'][c]['allc'])) if \
                         taskentry['columns'][c]['allc'] > 0 else 0
+
+        ### calculate stats for columns
+        columnstats = {}
+        for cn in clouds:
+            cns = str(cn)
+            columnstats[cns] = {}
+            for param in statsParams:
+                columnstats[cns][param] = 0
+        for jeditaskid, taskEntry in taskserrors.iteritems():
+            for cn in clouds:
+                for cname, cEntry in taskEntry['columns'].iteritems():
+                    if cn == cname:
+                        columnstats[cn]['finishedc'] += cEntry['finishedc']
+                        columnstats[cn]['failedc'] += cEntry['failedc']
+                        columnstats[cn]['allc'] += cEntry['allc']
+        for cn, stats in columnstats.iteritems():
+            columnstats[cn]['percent'] = int(
+                math.ceil(columnstats[cn]['finishedc'] * 100. / columnstats[cn]['allc'])) if \
+                    columnstats[cn]['allc'] > 0 else 0
 
         ### transform requesterrors dict to list for sorting on template
         for jeditaskid, taskEntry in taskserrors.iteritems():
@@ -12997,6 +13035,25 @@ def errorsScatteringDetailed(request, cloud, reqid):
                     reqentry['columns'][s]['percent'] = int(math.ceil(reqentry['columns'][s]['finishedc']*100./reqentry['columns'][s]['allc'])) if \
                         reqentry['columns'][s]['allc'] > 0 else 0
 
+        ### calculate stats for columns
+        columnstats = {}
+        for cn in computingSites:
+            cns = str(cn)
+            columnstats[cns] = {}
+            for param in statsParams:
+                columnstats[cns][param] = 0
+        for rid, reqEntry in reqerrors.iteritems():
+            for cn in computingSites:
+                for cname, cEntry in reqEntry['columns'].iteritems():
+                    if cn == cname:
+                        columnstats[cn]['finishedc'] += cEntry['finishedc']
+                        columnstats[cn]['failedc'] += cEntry['failedc']
+                        columnstats[cn]['allc'] += cEntry['allc']
+        for cn, stats in columnstats.iteritems():
+            columnstats[cn]['percent'] = int(
+                math.ceil(columnstats[cn]['finishedc'] * 100. / columnstats[cn]['allc'])) if \
+                    columnstats[cn]['allc'] > 0 else 0
+
         ### transform requesterrors dict to list for sorting on template
         reqErrorsList = []
         for rid, reqEntry in reqerrors.iteritems():
@@ -13012,6 +13069,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
         'grouping': grouping,
         'computingSites': computingSites,
         'clouds': clouds,
+        'columnstats': columnstats,
         'taskserrors': tasksErrorsList,
         'reqerrors': reqErrorsList,
         'built': datetime.now().strftime("%H:%M:%S"),

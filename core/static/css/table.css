@@ -102,18 +102,25 @@ vertical-align: top;
     border-bottom: 7px dashed black;}
 
 #errorsscat {
-    width: 65rem;
+    width: 68rem;
     text-align: center;
 }
 
 #errorsscat tbody th,
+ #errorsscat thead th,
   #errorsscat tbody td {
     padding: 0.2rem;
     text-align: center;
 }
 
-#errorsscat tbody td {
+#errorsscat thead th,
+  #errorsscat tbody th {
+    border: 1px solid #fefefe;
+}
 
+#errorsscat tbody td {
+    border: 1px solid lightgray;
+    line-height: 1.1rem;
     width: 5rem;
     min-width: 5rem;
     max-width: 5rem;
@@ -142,10 +149,25 @@ th.rotate > div > span {
 /*Class to rotate headers of table*/
 
 table.matrix tbody th,
+ table.matrix thead th,
   table.matrix tbody td {
     padding: 0.2rem; }
 
+table.matrix tbody th,
+ table.matrix thead th {
+    border: 1px solid #fefefe;
+}
+
+table.matrix thead th {
+    width: 3rem;
+    min-width: 3rem;
+    max-width: 3rem;
+}
+
 table.matrix tbody td {
+    border: 1px solid lightgray;
+    text-align: center;
+    line-height: 1.1rem;
     width: 3rem;
     min-width: 3rem;
     max-width: 3rem;

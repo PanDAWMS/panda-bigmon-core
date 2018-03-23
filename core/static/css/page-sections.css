@@ -150,7 +150,7 @@ hr {
   min-width: 100px;
   text-align: center;
   font-size: 14px;
-  font-weight: bold;
+  /*font-weight: bold;*/
   text-decoration: none;
   background-color: rgba(53,86,129, 0.8);
   color: white !important;
@@ -238,7 +238,8 @@ float: none !important; }
 }
 
 .graylink {
-    color: grey !important;
+    /*text-shadow: -1px 0 grey, 0 1px grey, 1px 0 grey, 0 -1px grey;*/
+    color: #0a0a0a !important;
 }
 
 /*Colors for errors scattering matrix*/
