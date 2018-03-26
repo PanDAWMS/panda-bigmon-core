@@ -2465,7 +2465,7 @@ def getJobList(request,requesttoken=None):
         print len(jobsToList)
         pandaIDVal = [int(val) for val in jobsToList]
 
-        newpandaIDVal = importToken(pandaIDVal)
+        newpandaIDVal = importToken(request,pandaIDVal)
         pandaIDVal = pandaIDVal[:njobsmax]
         newquery = {}
         newquery['pandaid__in'] = pandaIDVal
@@ -2863,6 +2863,14 @@ def jobList(request, mode=None, param=None):
     elif 'statenotupdated' in request.session['requestParams']:
         jobs = stateNotUpdated(request, values=values, wildCardExtension=wildCardExtension)
 
+    elif 'instance' in request.session['requestParams'] or 'workerid' in request.session['requestParams']:
+        from core.harvester.views import getHarvesterJobs
+        if 'instance' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
+            jobs = getHarvesterJobs(request,request.session['requestParams']['instance'], request.session['requestParams']['workerid'])
+        elif 'instance' in request.session['requestParams'] and 'workerid' not in request.session['requestParams']:
+            jobs = getHarvesterJobs(request, request.session['requestParams']['instance'])
+        elif 'instance' not in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
+            jobs = getHarvesterJobs(request, workerid = request.session['requestParams']['workerid'])
     else:
 
         excludedTimeQuery = copy.deepcopy(query)
@@ -3172,7 +3180,7 @@ def jobList(request, mode=None, param=None):
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
         del request.session['TLAST']
-        errsByCount = importToken(errsByCount=errsByCount)
+        errsByCount = importToken(request,errsByCount=errsByCount)
         nodropPartURL = cleanURLFromDropPart(xurl)
         difDropList = dropalgorithm.compareDropAlgorithm(droplist,newdroplist)
         data = {
@@ -3253,7 +3261,7 @@ def jobList(request, mode=None, param=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-def importToken(errsByCount):
+def importToken(request,errsByCount):
     newErrsByCount = []
     random.seed()
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
@@ -3272,6 +3280,7 @@ def importToken(errsByCount):
                 for key,values in item['pandalist'].iteritems():
             #print item['error'] , key , values
                     executionData.append((key, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
+            setCacheEntry(request,transactionKey,executionData,60*60, isData=True)
         else:
             executionData.append((item, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
             if isListPID == False:
@@ -3308,7 +3317,17 @@ def summaryErrorsList(request):
             except:
                 return redirect('/jobs/?limit=100')
             if (len(errorsList) == 0 or errorsList ==''):
-                notTkLive = 1
+                data = getCacheEntry(request, transactionkey, isData=True)
+                if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+                    tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+                else:
+                    tmpTableName = "TMP_IDS1DEBUG"
+                new_cur = connection.cursor()
+                query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
+                if data is not None:
+                    new_cur.executemany(query, data)
+                else:
+                    notTkLive = 1
             if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
             'json' not in request.session['requestParams'])):
 
@@ -9569,9 +9588,8 @@ def errorSummary(request):
         xurl = extensibleURL(request)
         jobsurl = xurlsubst.replace('/errors/', '/jobs/')
         jobsurlNoSite = xurlsubstNoSite.replace('/errors/', '')
-        print str(datetime.now())
-        errsByCount = importToken(errsByCount=errsByCount)
-        print str(datetime.now())
+
+        errsByCount = importToken(request,errsByCount=errsByCount)
         TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
@@ -11161,7 +11179,10 @@ def getErrorDescription(job, mode='html', provideProcessedCodes = False):
                 codesDescribed.append(errval)
                 errdiag = errcode.replace('errorcode', 'errordiag')
                 if errcode.find('errorcode') > 0:
-                    diagtxt = job[errdiag]
+                    if job[errdiag] is not None:
+                        diagtxt = str(job[errdiag])
+                    else:
+                        diagtxt = ''
                 else:
                     diagtxt = ''
                 if len(diagtxt) > 0:
