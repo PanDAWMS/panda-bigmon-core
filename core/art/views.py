@@ -22,7 +22,7 @@ from django.db.models import Q
 
 from core.libs.cache import setCacheEntry, getCacheEntry
 
-from core.pandajob.models import CombinedWaitActDefArch4
+from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
 
 from core.art.artTest import ArtTest
 
@@ -441,10 +441,13 @@ def artJobs(request):
     artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'computingsite', 'endtime', 'starttime' , 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn', 'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'result']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
+    # i=0
     # for job in jobs:
+    #     i+=1
+    #     print 'registering %i out of %i jobs' % (i, len(jobs))
     #     x = ArtTest(job['origpandaid'], job['testname'], job['branch'].split('/')[0], job['branch'].split('/')[1],job['branch'].split('/')[2], job['package'], job['nightly_tag'])
-    #     x.registerArtTest()
-
+    #     if x.registerArtTest():
+    #         print '%i job registered sucessfully out of %i' % (i, len(jobs))
 
     ntagslist=list(sorted(set([x['ntag'] for x in jobs])))
     jeditaskids = list(sorted(set([x['taskid'] for x in jobs])))
@@ -936,8 +939,13 @@ def registerARTTest(request):
     query={}
     query['pandaid'] = pandaid
     values = 'pandaid', 'jeditaskid', 'jobname'
+    jobs = []
+    jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
+    if len(jobs) == 0:
+        # check archived table
+        jobs.extend(Jobsarchived.objects.filter(**query).values(*values))
     try:
-        job = CombinedWaitActDefArch4.objects.filter(**query).values(*values)[0]
+       job = jobs[0]
     except:
         data = {'exit_code': -1, 'message': "Provided pandaid does not exists"}
         return HttpResponse(json.dumps(data), content_type='text/html')
