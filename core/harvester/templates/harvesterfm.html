@@ -11,7 +11,11 @@
   <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
   <script src="/static/js/d3jsplot.js"></script>
   <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
-
+    <style type="text/css">
+        #myList p{ display:none; }
+        #loadMore {color:blue; cursor:pointer;}
+        #loadMore:hover { color:black;}
+  </style>
 
 
     {% if  type == 'instances'%}
@@ -78,11 +82,12 @@
                 {% elif name ==  'wrkpandaids' %}
                     <td><b>WorkerID (jobs)</b></td>
                     <td>
-                     <div class="comment more">
+                     <div id = 'myList'>
                     {% for n,v in value.items %}
-                         {{ n }} <a href="{% url 'jobList' %}?instance={{ instance }}&workerid={{ n }}">({{ v }})</a>
+                         <p>{{ n }} <a href="{% url 'jobList' %}?instance={{ instance }}&workerid={{ n }}">({{ v }})</a></p>
                     {% endfor %}
                      </div>
+                    <div id="loadMore">Load more</div>
                     </td>
                 {% else %}
                     <td><b>{{ name }}</b></td><td>{{ value }}</td>
@@ -117,42 +122,19 @@
                 <th>Diag message</th>
      </thead>
      <tbody>
-{#     {% for worker in generalWorkersList %}#}
-{#         <tr>#}
-{#            <td>{{ worker.workerid }}</td>#}
-{#            <td>{{ worker.wrklastupdate }}</td>#}
-{#            <td>{{ worker.status }}</td>#}
-{#            <td>{{ worker.batchid }}</td>#}
-{#            <td>{{ worker.nodeid }}</td>#}
-{#            <td>{{ worker.queuename }}</td>#}
-{#            <td>{{ worker.computingsite }}</td>#}
-{#            <td>{{ worker.submittime }}</td>#}
-{#            <td>{{ worker.wrkstarttime }}</td>#}
-{#            <td>{{ worker.wrkendtime }}</td>#}
-{#            <td>{{ worker.ncore }}</td>#}
-{#            <td>{{ worker.errorcode }}</td>#}
-{#            <td>{{ worker.stdout }}</td>#}
-{#            <td>{{ worker.stderr }}</td>#}
-{#            <td>{{ worker.batchlog }}</td>#}
-{#            <td>{{ worker.resourcetype }}</td>#}
-{#            <td>{{ worker.nativeexitcode }}</td>#}
-{#            <td>{{ worker.nativestatus }}</td>#}
-{#            <td>{{ worker.diagmessage }}</td>#}
-{#         </tr>#}
-{##}
-{#     {% endfor %}#}
      </tbody>
     </table>
    <script>
 
-{#        $(document).ready(function () {#}
-{#        $('#harvesterworkers').dataTable();#}
-{##}
-{#    });#}
-{#            }#}
     $(document).ready(function () {
-    workersTable();
-     $(".comment").shorten();
+        var items = 50
+        $('#myList p').slice( 0, items ).show().css("display", "inline");
+        var shown =  50;
+        $('#loadMore').click(function () {
+        items = items + shown
+        $('#myList p').slice( 0, items ).show(10).css("display", "inline");
+    });
+        workersTable();
     });
 
     function workersTable() {

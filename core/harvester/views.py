@@ -206,7 +206,7 @@ def harvesterfm(request):
     gg.diagmessage,
     (select count(pandaid) from atlas_panda.harvester_rel_jobs_workers where atlas_panda.harvester_rel_jobs_workers.harvesterid =  ff.harvester_id and atlas_panda.harvester_rel_jobs_workers.workerid = gg.workerid) as harvesterpandaids,
     (select count(pandaid) from atlas_panda.harvester_rel_jobs_workers where  atlas_panda.harvester_rel_jobs_workers.workerid = gg.workerid) as totalpandaids
-FROM
+ FROM
     atlas_panda.harvester_workers gg,
     atlas_panda.harvester_instances ff
 WHERE
@@ -216,18 +216,22 @@ WHERE
         workersList = []
 
         cur = connection.cursor()
+
         cur.execute(sqlquery)
         columns = [str(i[0]).lower() for i in cur.description]
-        workers = cur.fetchall()
-        for worker in workers:
-            object = {}
-            for i, col in enumerate(columns):
-                object[col] = worker[i]
-            workersList.append(object)
+
+        for worker in cur:
+            workersList.append(dict(zip(columns, worker)))
         statuses = {}
         computingsites = {}
         workerIDs= set()
         generalInstanseInfo = {}
+
+        import json
+        if 'display_limit_workers' in request.session['requestParams']:
+            display_limit_workers = int(request.session['requestParams']['display_limit_workers'])
+        else:
+            display_limit_workers = 30000
 
         generalWorkersFields = ['workerid','status','batchid','nodeid','queuename','computingsite','submittime','wrklastupdate','wrkstarttime','wrkendtime','ncore','errorcode','stdout','stderr','batchlog','resourcetype','nativeexitcode','nativestatus','diagmessage','totalpandaids', 'harvesterpandaids']
         generalWorkersList = []
@@ -248,9 +252,8 @@ WHERE
                 for status in statuses.keys():
                     statuses[status] = len(statuses[status])
                 generalInstanseInfo = {'HarvesterID':worker['harvester_id'], 'Description':worker['description'], 'Starttime': worker['insstarttime'],
-                                      'Owner':worker['owner'], 'Hostname':worker['hostname'],'Lastupdate':worker['inslastupdate'], 'Computingsites':computingsites,'Statuses':statuses,'Software version':worker['sw_version'],'Commit stamp':worker['commit_stamp'], 'wrkpandaids': OrderedDict(sorted(wrkPandaIDs.items(), key=lambda x: x[1], reverse=True))
+                                      'Owner':worker['owner'], 'Hostname':worker['hostname'],'Lastupdate':worker['inslastupdate'], 'Computingsites':computingsites,'Statuses':statuses,'Software version':worker['sw_version'],'Commit stamp':worker['commit_stamp'], 'wrkpandaids': OrderedDict(sorted(wrkPandaIDs.items(), key=lambda x: x[1], reverse=True)[:display_limit_workers])
                                       }
-
         transactionKey = random.randrange(1000000)
         data = {
                 'generalInstanseInfo':generalInstanseInfo,
@@ -259,14 +262,9 @@ WHERE
                 'xurl':xurl,
                 'tk':transactionKey
                 }
-        import json
-        if 'display_limit_workers' in request.session['requestParams']:
-            display_limit_workers = int(request.session['requestParams']['display_limit_workers'])
-        else:
-            display_limit_workers = 30000
+
 
         setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60,isData=True)
-
         return render_to_response('harvesterfm.html', data, content_type='text/html')
 
     elif 'instance' in request.session['requestParams'] and 'workerid' in 'instance' in request.session['requestParams']:
