@@ -1312,7 +1312,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             job['errorinfo'] = ''
         job['jobinfo'] = ''
         if isEventService(job):
-            if job['taskbuffererrordiag'] is None:
+            if 'taskbuffererrordiag' in job and job['taskbuffererrordiag'] is None:
                 job['taskbuffererrordiag'] = ''
             if 'taskbuffererrordiag' in job and len(job['taskbuffererrordiag']) > 0:
                 job['jobinfo'] = job['taskbuffererrordiag']
