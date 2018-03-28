@@ -47,18 +47,18 @@
                   <tr>
                       <td class="cell-left">{{ brname }}</td>
                       {% for ntag in ntaglist %}
-                          {% for ntname,tasks in tags.items %}
+                          {% for ntname,files in tags.items %}
                               {% if ntname == ntag %}
                                   <td class="cell">
-                                    {% if tasks.tasks|length > 0 %}
-                                        {% for taskid, files in tasks.tasks.items %}
+                                    {% if files.finished > 0 or files.active > 0 or files.failed > 0 %}
+{#                                        {% for files in tasks.task %}#}
                                             <div class="clickable">
                                                 <div class="finished">{{ files.finished }}</div>
                                                 <div class="active">{{ files.active }}</div>
                                                 <div class="failed">{{ files.failed }}</div>
                                                 <a href="{% url 'artJobs' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}&branch={{ brname }}{% else %}?package={{ brname }}&branch={{ pname }}{% endif %}&ntag={{ ntname }}&taskid={{ taskid }}&view={{ requestParams.view }}"></a>
                                             </div>
-                                        {% endfor %}
+{#                                        {% endfor %}#}
                                     {% else %}
                                         <div class="nodata">
                                             ---
