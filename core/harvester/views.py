@@ -260,7 +260,10 @@ WHERE
                 'type':'workers',
                 'instance':instance,
                 'xurl':xurl,
-                'tk':transactionKey
+                'tk':transactionKey,
+                'request': request,
+                'requestParams': request.session['requestParams'],
+                'viewParams': request.session['viewParams']
                 }
 
 
@@ -320,6 +323,10 @@ WHERE
             'instances':instanceDicList,
             'type': 'instances',
             'xurl': xurl,
+            'request':request,
+            'requestParams': request.session['requestParams'],
+            'viewParams': request.session['viewParams']
+
         }
         #data =json.dumps(data,cls=DateEncoder)
         response = render_to_response('harvesterfm.html', data, content_type='text/html')

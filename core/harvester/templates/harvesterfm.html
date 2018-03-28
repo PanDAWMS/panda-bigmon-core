@@ -12,9 +12,11 @@
   <script src="/static/js/d3jsplot.js"></script>
   <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
     <style type="text/css">
-        #myList p{ display:none; }
-        #loadMore {color:blue; cursor:pointer;}
+        #workerList p{ display:none; }
+        #loadMore {color:#0a47ff; cursor:pointer;}
         #loadMore:hover { color:black;}
+        #loadAll {color:#0a47ff; cursor:pointer;}
+        #loadAll:hover { color:black;}
   </style>
 
 
@@ -82,12 +84,12 @@
                 {% elif name ==  'wrkpandaids' %}
                     <td><b>WorkerID (jobs)</b></td>
                     <td>
-                     <div id = 'myList'>
+                     <div id = 'workerList'>
                     {% for n,v in value.items %}
                          <p>{{ n }} <a href="{% url 'jobList' %}?instance={{ instance }}&workerid={{ n }}">({{ v }})</a></p>
                     {% endfor %}
                      </div>
-                    <div id="loadMore">Load more</div>
+                    <div id="loadMore" style="display: inline">Load more</div> || <div id="loadAll" style="display: inline">Load all</div>
                     </td>
                 {% else %}
                     <td><b>{{ name }}</b></td><td>{{ value }}</td>
@@ -127,12 +129,17 @@
    <script>
 
     $(document).ready(function () {
-        var items = 50
-        $('#myList p').slice( 0, items ).show().css("display", "inline");
+        var items = 100
+        $('#workerList p').slice( 0, items ).show().css("display", "inline");
         var shown =  50;
         $('#loadMore').click(function () {
+        var pritems = items
         items = items + shown
-        $('#myList p').slice( 0, items ).show(10).css("display", "inline");
+        $('#workerList p').slice( pritems, items ).show().css("display", "inline");
+    });
+        $('#loadAll').click(function () {
+        items = $('#workerList p').length
+        $('#workerList p').slice( 0, items ).show().css("display", "inline");
     });
         workersTable();
     });
