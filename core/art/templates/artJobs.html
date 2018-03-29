@@ -91,7 +91,7 @@ function loadJobSubResult(testname, urltail) {
                                     {% if ntname == ntag %}
                                       <td class="cell">
                                         {% if jobs.jobs|length > 0 %}
-                                            {% for pandaid,job in jobs.jobs.items %}
+                                            {% for job in jobs.jobs %}
                                                 {% if job.jobstatus %}
                                                     <div class="with-link-to-logs">
                                                       {% if ntaglist|length == 1 %}
@@ -121,12 +121,26 @@ function loadJobSubResult(testname, urltail) {
                                         {% endif %}
                                       </td>
                                       {% if ntaglist|length == 1 %}
-                                        {% for pandaid,job in jobs.jobs.items %}
-                                          <td class="cell">{{ job.computingsite }}</td>
-                                          <td class="cell">{{ job.duration }}</td>
-                                          <td class="cell">{{ job.cpuconsumptiontime }}</td>
-                                          <td class="cell">{{ job.maxvmem }}</td>
-                                        {% endfor %}
+                                          <td class="cell" style="line-height:1.8rem;">
+                                            {% for job in jobs.jobs %}
+                                              {{ job.computingsite }}<br>
+                                            {% endfor %}
+                                          </td>
+                                          <td class="cell" style="line-height:1.8rem;">
+                                             {% for job in jobs.jobs %}
+                                              {{ job.duration }}<br>
+                                            {% endfor %}
+                                          </td>
+                                          <td class="cell" style="line-height:1.8rem;">
+                                            {% for job in jobs.jobs %}
+                                              {{ job.cpuconsumptiontime }}<br>
+                                            {% endfor %}
+                                          </td>
+                                          <td class="cell" style="line-height:1.8rem;">
+                                            {% for job in jobs.jobs %}
+                                              {{ job.maxvmem }}<br>
+                                            {% endfor %}
+                                          </td>
                                       {% endif %}
                                     {% endif %}
                                   {%  endfor %}

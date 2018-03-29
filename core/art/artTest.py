@@ -4,7 +4,7 @@ Created on 05.03.2018
 A artTest class to register the ART jobs in pandabigmon database via special view
 """
 
-import requests
+import requests, json
 
 
 class ArtTest:
@@ -44,7 +44,7 @@ class ArtTest:
 
         for i in range(0, self.nattempts):
             try:
-                r = requests.post(self.url, data=payload, timeout=self.timeout, headers=self.headers, verify=False)
+                r = requests.post(self.url, data=payload, timeout=self.timeout, verify=False)
             except:
                 continue
             if r.status_code == 200:

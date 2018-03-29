@@ -435,7 +435,10 @@ def artJobs(request):
     query = setupView(request, 'job')
 
     cur = connection.cursor()
-    cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
+    if datetime.strptime(query['ntag_from'], '%Y-%m-%d') < datetime.strptime('2018-03-20', '%Y-%m-%d'):
+        cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
+    else:
+        cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
     jobs = cur.fetchall()
     cur.close()
 
@@ -466,39 +469,34 @@ def artJobs(request):
                 for n in ntagslist:
                     artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)] = {}
                     artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
-                    artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)]['jobs'] = {}
+                    artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)]['jobs'] = []
             if job['ntag'].strftime(artdateformat) in artjobsdict[job['package']][job['branch']][job['testname']]:
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']] = {}
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['jobstatus'] = job['jobstatus']
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['origpandaid'] = job['origpandaid']
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['computingsite'] = job['computingsite']
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['guid'] = job['guid']
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['scope'] = job['scope']
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['lfn'] = job['lfn']
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['jeditaskid'] = job['taskid']
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['maxvmem'] = round(job['maxvmem']*1.0/1000,1) if job['maxvmem'] is not None else '---'
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['cpuconsumptiontime'] = job['cpuconsumptiontime'] if job['jobstatus'] in ('finished', 'failed') else '---'
+                jobdict = {}
+                jobdict['jobstatus'] = job['jobstatus']
+                jobdict['origpandaid'] = job['origpandaid']
+                jobdict['computingsite'] = job['computingsite']
+                jobdict['guid'] = job['guid']
+                jobdict['scope'] = job['scope']
+                jobdict['lfn'] = job['lfn']
+                jobdict['jeditaskid'] = job['taskid']
+                jobdict['maxvmem'] = round(job['maxvmem']*1.0/1000,1) if job['maxvmem'] is not None else '---'
+                jobdict['cpuconsumptiontime'] = job['cpuconsumptiontime'] if job['jobstatus'] in ('finished', 'failed') else '---'
                 if job['jobstatus'] in ('finished', 'failed'):
-                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
-                        'jobs'][job['origpandaid']]['duration'] = job['endtime'] - job['starttime']
+                    jobdict['duration'] = job['endtime'] - job['starttime']
                 else:
-                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
-                        'jobs'][job['origpandaid']]['duration'] = str(datetime.now() - job['starttime']).split('.')[0] if job['starttime'] is not None else "---"
+                    jobdict['duration'] = str(datetime.now() - job['starttime']).split('.')[0] if job['starttime'] is not None else "---"
                 try:
-                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
-                        'jobs'][job['origpandaid']]['tarindex'] = int(re.search('.([0-9]{6}).log.', job['lfn']).group(1))
+                    jobdict['tarindex'] = int(re.search('.([0-9]{6}).log.', job['lfn']).group(1))
                 except:
-                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
-                        'jobs'][job['origpandaid']]['tarindex'] = ''
+                    jobdict['tarindex'] = ''
 
                 finalresult, testexitcode, subresults = getFinalResult(job)
 
-                artjobsdict[job['package']][job['branch']][job['testname']][
-                    job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['finalresult'] = finalresult
-                artjobsdict[job['package']][job['branch']][job['testname']][
-                    job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testexitcode'] = testexitcode
-                artjobsdict[job['package']][job['branch']][job['testname']][
-                    job['ntag'].strftime(artdateformat)]['jobs'][job['origpandaid']]['testresult'] = subresults
+                jobdict['finalresult'] = finalresult
+                jobdict['testexitcode'] = testexitcode
+                jobdict['testresult'] = subresults
+
+                artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)]['jobs'].append(jobdict)
 
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for job in jobs:
