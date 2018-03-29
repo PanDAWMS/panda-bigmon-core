@@ -15,7 +15,9 @@
           <legend>Select package</legend>
           <ul class="no-bullet">
               {% for p in packages %}
-                  <li class="artmenu-item"><input id="{{ p }}" class="package" type="checkbox"><label for="{{ p }}">{{ p }}</label></li>
+                  {% if 'ncore' not in p %}
+                    <li class="artmenu-item"><input id="{{ p }}" class="package" type="checkbox"><label for="{{ p }}">{{ p }}</label></li>
+                  {% endif %}
               {% endfor %}
           </ul>
       </fieldset>
