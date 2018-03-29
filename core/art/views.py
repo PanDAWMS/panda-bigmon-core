@@ -209,11 +209,11 @@ def artOverview(request):
         endSelfMonitor(request)
         return response
 
+    if datetime.strptime(query['ntag_from'], '%Y-%m-%d') < datetime.strptime('2018-03-20', '%Y-%m-%d'):
+        query_raw = """SELECT package, branch, ntag, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
+    else:
+        query_raw = """SELECT package, branch, ntag, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s'))""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
 
-    
-
-    query_raw = """SELECT package, branch, ntag, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))""" % (
-    query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur = connection.cursor()
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
@@ -334,22 +334,11 @@ def artTasks(request):
                 for n in ntagslist:
                     arttasksdict[job['package']][job['branch']][n.strftime(artdateformat)] = {}
                     arttasksdict[job['package']][job['branch']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
-                    # arttasksdict[job['package']][job['branch']][n.strftime(artdateformat)]['task'] = {}
                     for state in statestocount:
                         arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)][state] = 0
             if job['ntag'].strftime(artdateformat) in arttasksdict[job['package']][job['branch']]:
-                # if job['task_id'] not in arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)]['tasks']:
-                #     arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)]['tasks'][job['task_id']] = {}
-
-                        
                 finalresult, testexitcode, subresults = getFinalResult(job)
                 arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)][finalresult] += 1
-                # if task['status'] in ('finished','failed'):
-                #     arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks'][
-                #         task['task_id']][task['status']] += task['njobs']
-                # else:
-                #     arttasksdict[task['package']][task['branch']][task['ntag'].strftime(artdateformat)]['tasks'][
-                #         task['task_id']]['active'] += task['njobs']
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for job in jobs:
             if job['branch'] not in arttasksdict.keys():
@@ -359,22 +348,11 @@ def artTasks(request):
                 for n in ntagslist:
                     arttasksdict[job['branch']][job['package']][n.strftime(artdateformat)] = {}
                     arttasksdict[job['branch']][job['package']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
-                    # arttasksdict[job['branch']][job['package']][n.strftime(artdateformat)]['task'] = {}
                     for state in statestocount:
                         arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)][state] = 0
             if job['ntag'].strftime(artdateformat) in arttasksdict[job['branch']][job['package']]:
-                # if job['task_id'] not in arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)]['tasks']:
-                #     arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)]['tasks'][job['task_id']] = {}
-
-
                 finalresult, testexitcode, subresults = getFinalResult(job)
                 arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)][finalresult] += 1
-
-                # if task['status'] in ('finished', 'failed'):
-                #     arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks'][task['task_id']][task['status']] = task['njobs']
-                # else:
-                #     arttasksdict[task['branch']][task['package']][task['ntag'].strftime(artdateformat)]['tasks'][
-                #         task['task_id']]['active'] = task['njobs']
 
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')

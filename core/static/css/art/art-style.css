@@ -272,6 +272,18 @@ li.artmenu-item > label {
 
 .no-border .header {
     border: none;
+}
+
+.left-aligned {
+    text-align: left;
+}
+
+.right-aligned-ntag {
+    text-align: right;
+    padding-right: 8rem;
+}
+
+.center-aligned {
     text-align: center;
 }
 

@@ -68,12 +68,12 @@ function loadJobSubResult(testname, urltail) {
                                       {% for ntag in ntaglist %}
                                           {% for ntname,status in tags.items %}
                                               {% if ntname == ntag %}
-                                                <th class="header">{{ status.ntag_hf }}</th>
+                                                <th class="header right-aligned-ntag">{{ status.ntag_hf }}</th>
                                                 {% if ntaglist|length == 1 %}
-                                                    <th class="header">Computing site</th>
-                                                    <th class="header">Duration</th>
-                                                    <th class="header">CPU time, s</th>
-                                                    <th class="header">MaxVMEM, MB</th>
+                                                    <th class="header center-aligned">Computing site</th>
+                                                    <th class="header center-aligned">Duration</th>
+                                                    <th class="header center-aligned">CPU time, s</th>
+                                                    <th class="header center-aligned">MaxVMEM, MB</th>
                                                 {% endif %}
                                               {% endif %}
                                           {% endfor %}
