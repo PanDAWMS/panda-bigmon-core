@@ -162,9 +162,9 @@ def art(request):
     valid, response = initRequest(request)
     tquery = {}
     tquery['platform__endswith'] = 'opt'
-    packages = ARTTask.objects.filter(**tquery).values('package').distinct().order_by('package')
-    branches = ARTTask.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'platform', V('/'), 'project')).values('branch').distinct().order_by('branch')
-    ntags = ARTTask.objects.values('nightly_tag').annotate(nightly_tag_date=Substr('nightly_tag', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
+    packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
+    branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'platform', V('/'), 'project')).values('branch').distinct().order_by('branch')
+    ntags = ARTTests.objects.values('nightly_tag').annotate(nightly_tag_date=Substr('nightly_tag', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
 
 
     data = {
