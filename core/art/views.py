@@ -188,6 +188,7 @@ def artOverview(request):
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artOverview")
+    data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -287,6 +288,7 @@ def artTasks(request):
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artTasks")
+    data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -388,6 +390,7 @@ def artJobs(request):
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artJobs")
+    data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
