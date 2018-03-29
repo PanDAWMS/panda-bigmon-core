@@ -42,9 +42,9 @@
               <tr>
                   <td class="cell-left">
                       {% if requestParams.view and requestParams.view == 'packages' %}
-                        <a class="link-in-table" href="{%  url "artTasks" %}?package={{ pname }}&ntag_from={{ requestParams.ntag_from }}&ntag_to={{ requestParams.ntag_to }}&view={{ requestParams.view }}">All branches</a>
+                        <a class="link-in-table" href="{%  url "artTasks" %}?package={{ pname }}&ntag_from={{ requestParams.ntag_from|date:"Y-m-d" }}&ntag_to={{ requestParams.ntag_to|date:"Y-m-d" }}&view={{ requestParams.view }}">All branches</a>
                       {% else %}
-                        <a class="link-in-table" href="{%  url "artTasks" %}?branch={{ pname }}&ntag_from={{ requestParams.ntag_from }}&ntag_to={{ requestParams.ntag_to}}&view={{ requestParams.view }}">All packages</a>
+                        <a class="link-in-table" href="{%  url "artTasks" %}?branch={{ pname }}&ntag_from={{ requestParams.ntag_from|date:"Y-m-d" }}&ntag_to={{ requestParams.ntag_to|date:"Y-m-d"}}&view={{ requestParams.view }}">All packages</a>
                       {% endif %}</td>
                   {% for ntag in ntaglist %}
                       {% for tags,files in pack.items %}
