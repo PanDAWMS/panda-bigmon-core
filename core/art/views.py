@@ -350,7 +350,7 @@ def artTasks(request):
                     arttasksdict[job['package']][job['branch']][n.strftime(artdateformat)] = {}
                     arttasksdict[job['package']][job['branch']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
                     for state in statestocount:
-                        arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)][state] = 0
+                        arttasksdict[job['package']][job['branch']][n.strftime(artdateformat)][state] = 0
             if job['ntag'].strftime(artdateformat) in arttasksdict[job['package']][job['branch']]:
                 finalresult, testexitcode, subresults = getFinalResult(job)
                 arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)][finalresult] += 1
@@ -364,7 +364,7 @@ def artTasks(request):
                     arttasksdict[job['branch']][job['package']][n.strftime(artdateformat)] = {}
                     arttasksdict[job['branch']][job['package']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
                     for state in statestocount:
-                        arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)][state] = 0
+                        arttasksdict[job['branch']][job['package']][n.strftime(artdateformat)][state] = 0
             if job['ntag'].strftime(artdateformat) in arttasksdict[job['branch']][job['package']]:
                 finalresult, testexitcode, subresults = getFinalResult(job)
                 arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)][finalresult] += 1
