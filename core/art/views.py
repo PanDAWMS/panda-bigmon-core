@@ -160,6 +160,18 @@ def setupView(request, querytype='task'):
 
 def art(request):
     valid, response = initRequest(request)
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "artMain")
+    # data = None
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('artMainPage.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
     tquery = {}
     tquery['platform__endswith'] = 'opt'
     packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
@@ -178,6 +190,7 @@ def art(request):
         response = render_to_response('artMainPage.html', data, content_type='text/html')
     else:
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+    setCacheEntry(request, "artMain", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
