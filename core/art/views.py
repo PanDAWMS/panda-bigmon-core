@@ -117,7 +117,7 @@ def setupView(request, querytype='task'):
             querystr += ')) AND '
         if 'branch' in request.session['requestParams']:
             branches = request.session['requestParams']['branch'].split(',')
-            querystr += '(UPPER(NIGHTLY_RELEASE_SHORT || \'\'/\'\' || PLATFORM || \'\'/\'\' || PROJECT)  IN ( '
+            querystr += '(UPPER(NIGHTLY_RELEASE_SHORT || \'\'/\'\' || PROJECT || \'\'/\'\' || PLATFORM)  IN ( '
             for b in branches:
                 querystr += 'UPPER(\'\'' + b + '\'\'), '
             if querystr.endswith(', '):
@@ -175,7 +175,7 @@ def art(request):
     tquery = {}
     tquery['platform__endswith'] = 'opt'
     packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
-    branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'platform', V('/'), 'project')).values('branch').distinct().order_by('branch')
+    branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('branch')
     ntags = ARTTests.objects.values('nightly_tag').annotate(nightly_tag_date=Substr('nightly_tag', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
 
 
