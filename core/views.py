@@ -1288,13 +1288,13 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
                 job['eventservice'] = 'ordinary'
         if 'destinationdblock' in job:
             ddbfields = job['destinationdblock'].split('.')
-            if len(ddbfields) == 6:
+            if len(ddbfields) == 6 and ddbfields[0] != 'hc_test':
                 job['outputfiletype'] = ddbfields[4]
             elif len(ddbfields) >= 7:
                 job['outputfiletype'] = ddbfields[6]
-            else:
-                job['outputfiletype'] = '?'
-                # print job['destinationdblock'], job['outputfiletype']
+            # else:
+            #     job['outputfiletype'] = None
+            #     print job['destinationdblock'], job['outputfiletype'], job['pandaid']
 
         try:
             job['homecloud'] = homeCloud[job['computingsite']]
