@@ -12605,11 +12605,11 @@ def errorsScattering(request):
 
     query = """
         SELECT SUM(FINISHEDC) as FINISHEDC, REQID, SUM(FAILEDC) as FAILEDC, sc.cloud as CLOUD from (
-            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, SUM(1) as ALLC, COMPUTINGSITE, REQID FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID in (
+            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, SUM(1) as ALLC, COMPUTINGSITE, REQID FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID != REQID AND JEDITASKID in (
                 SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
                     group by COMPUTINGSITE, REQID
             UNION
-            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, SUM(1) as ALLC, COMPUTINGSITE, REQID FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID in (
+            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, SUM(1) as ALLC, COMPUTINGSITE, REQID FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID != REQID AND JEDITASKID in (
                   SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
                     group by COMPUTINGSITE, REQID
         ) j,
