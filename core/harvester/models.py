@@ -30,3 +30,14 @@ class HarvesterWorkers(models.Model):
     batchlog = models.CharField(max_length=250, db_column='BATCHLOG', null=True, blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDA"."HARVESTER_WORKERS"'
+
+class HarvesterDialogs (models.Model):
+    harvesterid = models.CharField(max_length=50, db_column='HARVESTER_ID', null=False, blank=True)
+    diagid = models.IntegerField(db_column='DIAGID', null=False, blank=True)
+    modulename = models.CharField(max_length=100, db_column='MODULENAME')
+    identifier = models.CharField(max_length=100, db_column='IDENTIFIER')
+    creationtime = models.DateTimeField(null=True, db_column='CREATIONTIME', blank=True)
+    messagelevel = models.CharField(max_length=10, db_column='MESSAGELEVEL')
+    diagmessage = models.CharField(max_length=500, db_column='DIAGMESSAGE')
+    class Meta:
+        db_table = u'"ATLAS_PANDA"."HARVESTER_DIALOGS"'

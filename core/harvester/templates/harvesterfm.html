@@ -17,14 +17,13 @@
         #loadMore:hover { color:black;}
         #loadAll {color:#0a47ff; cursor:pointer;}
         #loadAll:hover { color:black;}
+        #reloadDialogs {color:#0a47ff; cursor:pointer;}
+        #reloadDialogs:hover { color:black;}
   </style>
 
-
     {% if  type == 'instances'%}
-
-
     <table id="harvesterinstances" style="width: 100%">
-          <caption  style="height: 30px;vertical-align: middle">Instances</caption>
+          <caption  style="height: 30px;vertical-align: middle">Harvester instances</caption>
      <thead>
                 <th>Instance</th>
                 <th>Total</th>
@@ -35,22 +34,22 @@
      <tbody>
      {% for instance in instances %}
      <tr>
-     <td>
+         <td>
          <a href="{% url "harvesterfm" %}?instance={{ instance.instance }}&display_limit_workers=30000">{{ instance.instance }}</a>
-     </td>
-     <td>
+         </td>
+         <td>
          {{ instance.total }}
-     </td>
-    <td>
-        {{ instance.recently }}
-    </td>
-     <td>
-        {{ instance.when }}
-    </td><td>
+         </td>
+         <td>
+         {{ instance.recently }}
+         </td>
+         <td>
+         {{ instance.when }}
+         </td>
+         <td>
         {{ instance.descr }}
-    </td>
+        </td>
      </tr>
-
      {% endfor %}
      </tbody>
     </table>
@@ -71,7 +70,7 @@
                 <td><b>{{ name }}</b> ({{ value|length }})</td>
                     <td>
                     {% for n,v in value.items %}
-                        {{ n }} <a href="{{xurl}}&status={{ n }}">({{ v }})</a>
+                        <span class='{{ n }} item'>{{ n }}</span> <a href="{{xurl}}status={{ n }}">({{ v }})</a>
                     {% endfor %}
                 </td>
                 {% elif name ==  'Computingsites' %}
@@ -98,10 +97,28 @@
         {% endfor %}
         </table>
         <hr/>
+        <a href="javascript:ReverseDisplay('harvesterdialogsdiv','harvesterdialogslink','harvesterdialogs')" id ="harvesterdialogslink">Show dialog messages</a> <br/><br/>
 
+        <div id="harvesterdialogsdiv" style="display: none">
+        <div id="reloadDialogs" style="display: inline">Reload table</div><br/>
+        <table id="harvesterdialogs" style="width: 100%">
+        <caption  style="height: 30px;vertical-align: middle">Dialog messages from harvester instances</caption>
+        <thead>
+                <th>Creation time</th>
+                <th>Module name</th>
+                <th>Message level</th>
+                <th>Diag message</th>
+          </thead>
+          <tbody>
+
+          </tbody>
+          </table>
+
+          <hr/>
+          </div>
           <table id="harvesterworkers" style="width: 100%">
-          <caption  style="height: 30px;vertical-align: middle">Workers</caption>
-     <thead>
+          <caption  style="height: 30px;vertical-align: middle">Workers submitted by harvesters</caption>
+          <thead>
                 <th>WorkerID (jobs)</th>
                 <th>Total number of jobs</th>
                 <th>Last update</th>
@@ -126,8 +143,8 @@
      <tbody>
      </tbody>
     </table>
-   <script>
 
+   <script>
     $(document).ready(function () {
         var items = 100
         $('#workerList p').slice( 0, items ).show().css("display", "inline");
@@ -135,12 +152,13 @@
         $('#loadMore').click(function () {
         var pritems = items
         items = items + shown
-        $('#workerList p').slice( pritems, items ).show().css("display", "inline");
-    });
+        $('#workerList p').slice( pritems, items ).show().css("display", "inline");});
         $('#loadAll').click(function () {
         items = $('#workerList p').length
-        $('#workerList p').slice( 0, items ).show().css("display", "inline");
-    });
+        $('#workerList p').slice( 0, items ).show().css("display", "inline");});
+        $('#reloadDialogs').click(function () {
+            $('#harvesterdialogs').DataTable().ajax.reload();
+        });
         workersTable();
     });
 
@@ -148,7 +166,7 @@
     $('#harvesterworkers').dataTable({
         //"bRetrieve": true,
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
-        paging: true,
+        "paging": true,
         "scrollX": true,
         "ajax": {
             "processing": true,
@@ -158,9 +176,14 @@
             {
                 "data": "workerid",
                 sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return ''+full['workerid']+'<a href = "{% url 'jobList' %}?instance={{ instance }}&workerid='+full['workerid']+'">'+' ('+full['harvesterpandaids']+')' +'</a>'
-                 }
+                "render": function ( data, type, full, meta ) {
+                    if (type === "sort" || type === 'type') {
+                        return data;
+                    }
+                    else {
+                        return ''+full['workerid']+'<a href = "{% url 'jobList' %}?instance={{ instance }}&workerid='+full['workerid']+'">'+' ('+full['harvesterpandaids']+')' +'</a>'
+                    }
+                }
             },
             {
                 "data": "totalpandaids",
@@ -176,7 +199,6 @@
             {
                 "data": "status",
                 sDefaultContent: "",
-
             },
             {
                 "data": "batchid",
@@ -185,63 +207,78 @@
             {
                 "data": "nodeid",
                 sDefaultContent: "",
-            }
-            ,
+            },
             {
                 "data": "queuename",
                 sDefaultContent: "",
-            }
-            ,
+            },
             {
                 "data": "computingsite",
                 sDefaultContent: "",
-            }
-            ,
+            },
             {
                 "data": "submittime",
                 sDefaultContent: "",
-            }
-            ,
+            },
             {
                 "data": "wrkstarttime",
                 sDefaultContent: "",
-            }
-            ,
+            },
             {
                 "data": "wrkendtime",
                 sDefaultContent: "",
-            }
-            ,
+            },
             {
                 "data": "ncore",
                 sDefaultContent: "",
-            }
-            ,
+            },
             {
                 "data": "errorcode",
                 sDefaultContent: "",
-            }
-            ,
+            },
             {
                 "data": "stdout",
                 sDefaultContent: "",
-            }
-            ,
+                "render": function(data, type, full, meta) {
+                    if (full['stdout']==null)
+                    {
+                        return ""
+                    }
+                    else {
+                        return '<a href = "' + full['stdout'] + '">' + 'Link' + '</a>'
+                    }
+                 }
+            },
             {
                 "data": "stderr",
                 sDefaultContent: "",
-            }
-            ,
+                "render": function(data, type, full, meta) {
+                    if (full['stderr']==null)
+                    {
+                        return ""
+                    }
+                    else {
+                        return '<a href = "' + full['stderr'] + '">' + 'Link' + '</a>'
+                    }
+                 }
+            },
             {
                 "data": "batchlog",
                 sDefaultContent: "",
-            }
-            ,
+                "render": function(data, type, full, meta) {
+                    if (full['batchlog']==null)
+                    {
+                        return ""
+                    }
+                    else {
+                        return '<a href = "' + full['batchlog'] + '">' + 'Link' + '</a>'
+                    }
+                 }
+            },
             {
                 "data": "resourcetype",
                 sDefaultContent: "",
-            }
-            ,
+            },
             {
                 "data": "nativeexitcode",
                 sDefaultContent: "",
@@ -249,17 +286,81 @@
             {
                 "data": "nativestatus",
                 sDefaultContent: "",
-            } ,
+            },
             {
                 "data": "diagmessage",
                 sDefaultContent: "",
             }
         ],
-    });
-    }
-      </script>
-     {% endif %}
+    });}
+    function dialogsTable() {
+        $('#harvesterdialogs').dataTable({
+            "order": [[ 0, "desc" ]],
+            "retrieve": true,
+            "searching": false,
+            "bLengthChange" : false,
+            "ajax": {
+            "processing": true,
+            "url": "{% url 'harvesterfm' %}?instance={{ instance }}&dialogs",
+            "dataSrc" : ''},
+            "aoColumns": [
+            {
+                "data": "creationtime",
+                sDefaultContent: ""
+            },
+            {
+                "data": "modulename",
+                sDefaultContent: ""
+            },
+            {
+                "data": "messagelevel",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    if (type === "sort" || type === 'type') {
+                        return data;
+                    }
+                    else {
+                        var mclass = ''
+                        if (full['messagelevel']=='ERROR')
+                        {
+                            mclass = 'errspan'
+                        }
+                        else {
+                            mclass = full['messagelevel'].toString().toLowerCase()
+                        }
+                        return ' <span class="'+mclass+'">'+full['messagelevel']+'</span>'
+                    }
+                 }
+            },
+            {
+                "data": "diagmessage",
+                "orderable": false,
+                sDefaultContent: "",
+            },
 
+            ],
+        });
+    }
+    function ReverseDisplay(d,hlink, table) {
+        if(document.getElementById(d).style.display == "none") {
+            document.getElementById(d).style.display = "block";
+            var urlname = document.getElementById(hlink).innerText;
+            urlname = urlname.replace("Show","Hide");
+            document.getElementById(hlink).innerText=urlname;
+            if(table=='harvesterdialogs'){
+                dialogsTable();
+            }
+        }
+        else { document.getElementById(d).style.display = "none";
+            var urlname = document.getElementById(hlink).innerText;
+            urlname = urlname.replace("Hide","Show");
+            document.getElementById(hlink).innerText=urlname;
+{#            if(table=='harvesterdialogs'){#}
+{#               $('#harvesterdialogs').dataTable().fnDestroy();#}
+{#            }#}}
+        }
+   </script>
+    {% endif %}
 {% endblock %}
 
 
