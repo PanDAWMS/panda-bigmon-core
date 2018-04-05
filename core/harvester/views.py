@@ -225,14 +225,12 @@ def harvesterfm(request):
         order by workerid DESC
         """ % (str(instance), str(instance),status)
         workersList = []
-
         cur = connection.cursor()
-
         cur.execute(sqlquery)
         columns = [str(i[0]).lower() for i in cur.description]
-
         for worker in cur:
             workersList.append(dict(zip(columns, worker)))
+
         statuses = {}
         computingsites = {}
         workerIDs= set()
@@ -315,16 +313,17 @@ def harvesterfm(request):
         atlas_panda.harvester_instances a
         WHERE a.harvester_id = b.harvesterid) R group by harvid, description,recently
         """
-        instanceDicList = []
+        instanceDictionary = []
         cur = connection.cursor()
         cur.execute(sqlquery)
-        instancesList = cur.fetchall()
-        for ins in instancesList:
-            instanceDicList.append(
-                {'instance': ins[0], 'total': ins[1], 'recently': ins[2], 'when': ins[3], 'descr': ins[4]})
+
+        for instance in cur:
+            instanceDictionary.append(
+                {'instance': instance[0], 'total': instance[1], 'recently': instance[2], 'when': instance[3], 'descr': instance[4]})
+
         import json
         data = {
-            'instances':instanceDicList,
+            'instances':instanceDictionary,
             'type': 'instances',
             'xurl': xurl,
             'request':request,

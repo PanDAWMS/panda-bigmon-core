@@ -12453,7 +12453,7 @@ def loginerror(request):
     return response
 
 
-@login_required
+@login_customrequired
 def testauth(request):
     response = render_to_response('testauth.html', {'request': request,}, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -12473,7 +12473,7 @@ def testip(request):
     return HttpResponse(json.dumps(x_forwarded_for, cls=DateTimeEncoder), content_type='text/html')
 
 
-@login_required
+@login_customrequired
 def tasksErrorsScattering(request):
     initRequest(request)
     limit = 100000
@@ -12564,7 +12564,7 @@ def tasksErrorsScattering(request):
     return response
 
 
-@login_required
+@login_customrequired
 def errorsScattering(request):
     initRequest(request)
 
@@ -12717,7 +12717,7 @@ def errorsScattering(request):
     return response
 
 
-@login_required
+@login_customrequired
 def errorsScatteringDetailed(request, cloud, reqid):
     valid, response = initRequest(request)
     if not valid: return response
