@@ -23,6 +23,20 @@ function loadJobSubResult(testname, urltail) {
     ;
 
 }
+function toggleByID(id, idplus) {
+    if ($("#" + id).is(':visible')){
+        $("#" + id).hide();
+        $("#" + idplus).removeClass('fi-minus');
+        $("#" + idplus).addClass('fi-plus');
+    }
+    else {
+        $("#" + id).show();
+        $("#" + idplus).removeClass('fi-plus');
+        $("#" + idplus).addClass('fi-minus');
+    }
+
+}
+
 </script>
 {% endblock %}
 
@@ -84,7 +98,8 @@ function loadJobSubResult(testname, urltail) {
                           {% for test,tags in tests.items %}
                               <tr>
                               <td class="cell-left">
-                                    {{ test }}
+                                  <a onclick="toggleByID('{{ pname|remove_dot }}-{{ brname|remove_dot }}-{{ test|remove_dot }}','plus-sign-{{ pname|remove_dot }}-{{ brname|remove_dot }}-{{ test|remove_dot }}')" class="bluelink"><i id="plus-sign-{{ pname|remove_dot }}-{{ brname|remove_dot }}-{{ test|remove_dot }}" class="fi-plus"></i></a>
+                                  {{ test }}
                               </td>
                               {% for ntag in ntaglist %}
                                   {% for ntname,jobs in tags.items  %}
@@ -149,6 +164,20 @@ function loadJobSubResult(testname, urltail) {
                                   {%  endfor %}
                               {% endfor %}
                               </tr>
+                              {% if ntaglist|length == 1 %}
+                                  <tr class="test-extra-info" id="{{ pname|remove_dot }}-{{ brname|remove_dot }}-{{ test|remove_dot }}">
+                                    {% for ntname,jobs in tags.items  %}
+                                        {% if jobs.jobs|length > 0 %}
+                                          <td colspan="10">
+                                            {% for job in jobs.jobs %}
+                                                Test directory: {{ job.testdirectory }}<br>
+{#                                                Output container: {{ job.outputds }}#}
+                                            {% endfor %}
+                                          </td>
+                                        {% endif %}
+                                    {% endfor %}
+                                  </tr>
+                              {% endif %}
                           {% endfor %}
                       </table>
                   </div>

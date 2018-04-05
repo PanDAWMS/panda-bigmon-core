@@ -26,6 +26,12 @@ from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
 
 from core.art.artTest import ArtTest
 
+from django.template.defaulttags import register
+
+@register.filter(takes_context=True)
+def remove_dot(value):
+    return value.replace(".", "").replace('/','')
+
 artdateformat = '%Y-%m-%d'
 humandateformat = '%d %b %Y'
 cache_timeout = 15
@@ -251,7 +257,7 @@ def artOverview(request):
                         artpackagesdict[j['package']][n.strftime(artdateformat)][state] = 0
     
             if j['ntag'].strftime(artdateformat) in artpackagesdict[j['package']]:
-                finalresult, testexitcode, subresults = getFinalResult(j)
+                finalresult, testexitcode, subresults, testdirectory = getFinalResult(j)
                 artpackagesdict[j['package']][j['ntag'].strftime(artdateformat)][finalresult] +=1
 
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
@@ -265,7 +271,7 @@ def artOverview(request):
                         artpackagesdict[j['branch']][n.strftime(artdateformat)][state] = 0
 
             if j['ntag'].strftime(artdateformat) in artpackagesdict[j['branch']]:
-                finalresult, testexitcode, subresults = getFinalResult(j)
+                finalresult, testexitcode, subresults, testdirectory = getFinalResult(j)
                 artpackagesdict[j['branch']][j['ntag'].strftime(artdateformat)][finalresult] += 1
         
     xurl = extensibleURL(request)
@@ -352,7 +358,7 @@ def artTasks(request):
                     for state in statestocount:
                         arttasksdict[job['package']][job['branch']][n.strftime(artdateformat)][state] = 0
             if job['ntag'].strftime(artdateformat) in arttasksdict[job['package']][job['branch']]:
-                finalresult, testexitcode, subresults = getFinalResult(job)
+                finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
                 arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)][finalresult] += 1
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for job in jobs:
@@ -366,7 +372,7 @@ def artTasks(request):
                     for state in statestocount:
                         arttasksdict[job['branch']][job['package']][n.strftime(artdateformat)][state] = 0
             if job['ntag'].strftime(artdateformat) in arttasksdict[job['branch']][job['package']]:
-                finalresult, testexitcode, subresults = getFinalResult(job)
+                finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
                 arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)][finalresult] += 1
 
     xurl = extensibleURL(request)
@@ -485,11 +491,12 @@ def artJobs(request):
                 except:
                     jobdict['tarindex'] = ''
 
-                finalresult, testexitcode, subresults = getFinalResult(job)
+                finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
 
                 jobdict['finalresult'] = finalresult
                 jobdict['testexitcode'] = testexitcode
                 jobdict['testresult'] = subresults
+                jobdict['testdirectory'] = testdirectory
 
                 artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
 
@@ -509,6 +516,7 @@ def artJobs(request):
                 jobdict = {}
                 jobdict['jobstatus'] = job['jobstatus']
                 jobdict['origpandaid'] = job['origpandaid']
+                jobdict['linktext'] = job['branch'] + '/' + job['nightly_tag'] + '/' + job['package'] + '/' + job['testname'][:-3]
                 jobdict['computingsite'] = job['computingsite']
                 jobdict['guid'] = job['guid']
                 jobdict['scope'] = job['scope']
@@ -526,11 +534,12 @@ def artJobs(request):
                 except:
                     jobdict['tarindex'] = ''
 
-                finalresult, testexitcode, subresults = getFinalResult(job)
+                finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
 
                 jobdict['finalresult'] = finalresult
                 jobdict['testexitcode'] = testexitcode
                 jobdict['testresult'] = subresults
+                jobdict['testdirectory'] = testdirectory
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
 
 
@@ -565,18 +574,28 @@ def getFinalResult(job):
     finalresult = ''
     testexitcode = None
     subresults = None
+    testdirectory = None
     if job['jobstatus'] in ('finished', 'failed'):
         finalresult = job['jobstatus']
     else:
         finalresult = 'active'
     try:
         job['result'] = json.loads(job['result'])
-        testexitcode = job['result']['exit_code'] if 'exit_code' in job['result'] else None
-        subresults = job['result']['result'] if 'result' in job['result'] else []
     except:
         job['result'] = None
+    try:
+        testexitcode = job['result']['exit_code'] if 'exit_code' in job['result'] else None
+    except:
         testexitcode = None
+    try:
+        subresults = job['result']['result'] if 'result' in job['result'] else []
+    except:
         subresults = None
+    try:
+        testdirectory = job['result']['test_directory'] if 'test_directory' in job['result'] else []
+    except:
+        testdirectory = None
+
 
     if job['result'] is not None:
         if 'result' in job['result'] and len(job['result']['result']) > 0:
@@ -587,7 +606,7 @@ def getFinalResult(job):
             finalresult = 'failed'
 
 
-    return finalresult, testexitcode, subresults
+    return finalresult, testexitcode, subresults, testdirectory
 
 
 def updateARTJobList(request):

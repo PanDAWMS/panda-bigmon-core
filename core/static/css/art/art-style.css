@@ -444,3 +444,14 @@ li.artmenu-item > label {
     visibility: visible;
     opacity: 1;
 }
+
+
+/* Style for extra information about tests */
+
+.bluelink {
+    color: rgba(53,86,129, 0.8) !important;
+}
+
+.test-extra-info {
+    display: none;
+}
