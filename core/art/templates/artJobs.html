@@ -106,6 +106,9 @@ function loadJobSubResult(testname, urltail) {
                                                         </div>
                                                         <span class="tarindex tarindex_tooltip"> {{ job.tarindex }}</span>
                                                         <a  class="to-logs" target="_blank" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link"></i></a>
+                                                        {% if 'InDetPerformanceRTT' in job.linktext %}
+                                                            <a  class="to-logs" target="_blank" href="https://atlas-art-idtracking.web.cern.ch/atlas-art-idtracking/{{job.linktext}}/"><i class="fi-clipboard"></i></a>
+                                                        {% endif %}
                                                     </div>
                                                     {% if jobs.jobs|length > 1 %} <br> {% endif %}
                                                 {% else %}

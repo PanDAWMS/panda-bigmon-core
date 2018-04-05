@@ -175,7 +175,7 @@ def art(request):
     tquery = {}
     tquery['platform__endswith'] = 'opt'
     packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
-    branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('branch')
+    branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
     ntags = ARTTests.objects.values('nightly_tag').annotate(nightly_tag_date=Substr('nightly_tag', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
 
 
@@ -468,6 +468,7 @@ def artJobs(request):
                 jobdict = {}
                 jobdict['jobstatus'] = job['jobstatus']
                 jobdict['origpandaid'] = job['origpandaid']
+                jobdict['linktext'] = job['branch'] + '/' + job['nightly_tag'] + '/' + job['package'] + '/' + job['testname'][:-3]
                 jobdict['computingsite'] = job['computingsite']
                 jobdict['guid'] = job['guid']
                 jobdict['scope'] = job['scope']
