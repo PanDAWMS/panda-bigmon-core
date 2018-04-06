@@ -1,0 +1,153 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+{% block page_title %} PanDA requests{% endblock %}
+{% block subtitle %}Running production request list
+{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <style>
+        #reqlist_wrapper .row {
+            max-width: 100%;
+        }
+        .tablesection {
+            border-bottom-style: none;
+        }
+    </style>
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="/static/js/d3jsplot.js"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+{#<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js"%}"></script>#}
+{% block body %}
+
+{% if requests %}
+
+    <table>
+        <tr class='tablesection'>
+            <th> Global status</th>
+            <th> Total slots</th>
+{#            <th> Task age</th>#}
+        </tr>
+        <tr>
+            <td>
+                <br>
+                Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in
+                <b>{{ ntasks }}</b> tasks <br>
+{#                        Number of currently running events <b id="running"></b><b>M</b>  <progress id="runningprogressbar" value="0" max="100"></progress><br>#}
+{#                        Number of waiting events <b id="waiting"></b><b>M</b> <progress id="waitingprogressbar" value="0" max="100"></progress><br>#}
+{#                        Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs#}
+            </td>
+            {#<td><div class="d3splot" id="slots" style="float:left"></div></td>#}
+            <td>
+{#                        {% if aslotsByType|length > 0 %}<div class="d3splot" id="pieChartSlots"></div>{% endif %}#}
+                Number of allocated slots: {{ aslots }}</td>
+{#                    <td colspan=20>{% if plotageshistogram == 1 %}#}
+{#                        <div class="d3splot" id="sumPlot" style="float:left"></div>{% else %}#}
+{#                        <p> All tasks age is 0 days</p> {% endif %} </td>#}
+    </tr>
+    </table>
+{#            <script>#}
+{#                var progressBarR = $('#runningprogressbar');#}
+{#                var progressBarW = $('#waitingprogressbar');#}
+{#                var ages = {{ ages|safe }};#}
+{#                var productiontype = {{ productiontype | safe }};#}
+{#                var plotageshistogram = {{ plotageshistogram }};#}
+{#                if (plotageshistogram == 1) {#}
+{#                    pandamonProdRunTaskSumPlotFunc(ages, "#sumPlot", 'Task age histogram', 24, productiontype);#}
+{#                }#}
+{#                var neventsFStasksSum ={{ neventsFStasksSum|safe }};#}
+{#                var neventsAFIItasksSum ={{ neventsAFIItasksSum|safe }};#}
+{#                var neventsByProcessingType ={{ neventsByProcessingType|safe }};#}
+{#                if (productiontype == 'MC') {#}
+{#                    runningProdTasksPieChartFunc(neventsFStasksSum, "#pieChartFS", 'FS');#}
+{#                    runningProdTasksPieChartFunc(neventsAFIItasksSum, "#pieChartAFII", 'AFII');#}
+{#                    pandamonPieChartFunc(neventsFStasksSum, "#pieChartFS", 'FS');#}
+{#                    pandamonPieChartFunc(neventsAFIItasksSum, "#pieChartAFII", 'AFII');#}
+{#                }#}
+{#                else {#}
+{#                    runningProdTasksPieChartFunc(neventsByProcessingType, "#pieChartByPT", 'N Events')#}
+{#                }#}
+{##}
+{#                var slots = {{ aslotsByType|safe }};#}
+{#                runningProdTasksPieChartFunc(slots, '#pieChartSlots', 'Slots');#}
+{##}
+        {#var gauges = [];#}
+        {#$(document).ready(function() {#}
+        {#createGauge("slots", "Slots");#}
+        {#gauges['slots'].redraw(slots);});#}
+{##}
+{##}
+{#            </script>#}
+
+
+<table id = 'reqlist'>
+    <thead>
+    <tr class='tablesection'>
+        <th>Req ID</th>
+        <th>N tasks</th>
+        <th>RJobs</th>
+        <th>Evts total</th>
+        <th>Evts done</th>
+        <th>Evts to be used</th>
+        <th>%</th>
+        <th>Failed files</th>
+        <th>AVG Priority</th>
+{#                    <th>Age</th>#}
+        <th>Cores</th>
+        <th>CPU Time per Event</th>
+    </tr>
+    </thead>
+<tbody>
+    {% for req in requests %}
+        <tr>
+            <td>{% if req.reqid %}
+                <a href="{{ xurl }}reqid={{ req.reqid }}">{{ req.reqid }}</a>
+                <a href="https://prodtask-dev.cern.ch/reqtask/{{req.reqid}}/"
+                   target="_blank"> &rArr;</a>
+                {% else %}---{% endif %}
+            </td>
+            <td><a href="{% url 'taskList' %}?reqid={{ req.reqid }}">{{ req.ntasks }}</a>
+                </td>
+            <td>{% if task.rjobs > 0 %}
+                <a href="/jobs/?reqid={{ req.reqid }}&jobstatus=running">{{ req.rjobs }}</a> {% else %}
+                {{ req.rjobs }}{% endif %}</td>
+            <td>{% if req.nevents %}{{ req.nevents|intcomma }}{% else %}---{% endif %}</td>
+            <td>{% if req.nevents %}{{ req.neventsused|intcomma }}{% else %}---{% endif %}</td>
+            <td>{% if req.nevents %}{{ req.neventstobeused|intcomma }}{% else %}---{% endif %}</td>
+            <td>{% if req.nevents %}{{ req.percentage }}{% else %}---{% endif %}</td>
+            <td>{% if req.nfilesfailed %}{{ req.nfilesfailed }}{% else %}0{% endif %}</td>
+            <td>{{ req.avgpriority }}</td>
+{#                        <td>{{ task.age }}</td>#}
+            <td><a href="{{ xurl }}corecount={{ req.corecount }}">{{ req.corecount }}</a></td>
+            <td>{% if req.cputime %} {{ req.cputime }} {% else %} --- {% endif %}</td>
+        </tr>
+    {% endfor %}
+</tbody>
+</table>
+
+
+
+
+{% else %}
+    <p>No matches to query.</p>
+{% endif %}
+
+<script>
+    var hereiam = 1;
+    $(document).ready(function() {
+        $('#reqlist').DataTable({
+            "columnDefs": [
+                {"type": "num-html", "targets": [0,1,2,3,4,5,6,7,8,9,10] }
+            ],
+            "lengthMenu" : [[10, 25, 50, 100, -1], [10 ,25, 50, 100, "All"]] ,
+{#            "scrollX": true#}
+        });
+    });
+</script>
+
+{% endblock %}

@@ -14,6 +14,7 @@ from core.art import views as art_views
 
 from core.monitor import views as monitor_views
 from core.harvester import views as harvester
+from core.runningprod import views as runningprod_views
 #import core.views as coremon_views
 import core.pandajob.views_support as core_coremon_support_views
 #import core.pandajob.views as core_coremon_views
@@ -76,9 +77,10 @@ urlpatterns = [
 #    url(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
 #    url(r'^worldjobs/production/$', coremon_views.dashWorldProduction, name='dashWorldProduction'),
 
-    url(r'^runningmcprodtasks/$', coremon_views.runningMCProdTasks, name='runningMCProdTasks'),
-    url(r'^runningprodtasks/$',coremon_views.runningProdTasks, name='runningProdTasks'),
-    url(r'^runningdpdprodtasks/$', coremon_views.runningDPDProdTasks, name='runningDPDProdTasks'),
+    url(r'^runningmcprodtasks/$', runningprod_views.runningMCProdTasks, name='runningMCProdTasks'),
+    url(r'^runningprodtasks/$', runningprod_views.runningProdTasks, name='runningProdTasks'),
+    url(r'^runningdpdprodtasks/$', runningprod_views.runningDPDProdTasks, name='runningDPDProdTasks'),
+    url(r'^runningprodrequests/$', runningprod_views.runningProdRequests, name='runningProdRequests'),
     url(r'^worldhs06s/$', coremon_views.worldhs06s, name='worldHS06s'),
     url(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),
     url(r'^descendentjoberrsinfo/$', coremon_views.descendentjoberrsinfo, name='descendentjoberrsinfo'),
