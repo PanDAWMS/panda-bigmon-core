@@ -12711,7 +12711,7 @@ def errorsScattering(request):
     ### Introducing unique tk for each reqid
     for rid, reqentry in reqerrors.iteritems():
         if rid in taskListByReq and len(taskListByReq[rid]) > 0:
-            tk = setCacheData(request, jeditaskid=taskListByReq[rid][:-1])
+            tk = setCacheData(request, lifetime=60*20, jeditaskid=taskListByReq[rid][:-1])
             reqentry['tk'] = tk
 
     ### transform requesterrors dict to list for sorting on template
@@ -13106,7 +13106,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
         ### Introducing unique tk for each reqid
         for rid, reqentry in reqerrors.iteritems():
             if rid in taskListByReq and len(taskListByReq[rid]) > 0:
-                tk = setCacheData(request, jeditaskid=taskListByReq[rid][:-1])
+                tk = setCacheData(request, lifetime=60*20, jeditaskid=taskListByReq[rid][:-1])
                 reqentry['tk'] = tk
 
         ### transform requesterrors dict to list for sorting on template
