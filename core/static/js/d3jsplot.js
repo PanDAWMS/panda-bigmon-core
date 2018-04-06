@@ -497,7 +497,7 @@ function pandamonplotHistNew(data, divToShow, title, numberofbins) {
         .attr("x", function (d) {
             return d.x;
         })
-        .attr("width", width / numberofbins - 2)
+        .attr("width", width / numberofbins - 1)
         .attr("y", function (d) {
             return y(d.y0 + d.y);
         })

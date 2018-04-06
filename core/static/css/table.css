@@ -164,6 +164,13 @@ table.matrix thead th {
     max-width: 3rem;
 }
 
+table.matrix tbody th {
+    padding-left: 1rem;
+    width: 6rem;
+    min-width: 6rem;
+    max-width: 6rem;
+}
+
 table.matrix tbody td {
     border: 1px solid lightgray;
     text-align: center;
@@ -195,4 +202,21 @@ th.vertical {
   padding-bottom: 20px;
   text-align: left;
   max-width: 20px;
+}
+
+.legend {
+    width: 2rem;
+    min-width: 2rem;
+    max-width: 2rem;
+}
+
+.no-border {
+    border: none !important;
+}
+
+.lesspadding {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    padding-left: 0.25rem;
+    padding-right: 1rem;
 }

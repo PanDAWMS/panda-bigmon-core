@@ -15,10 +15,48 @@
 
 {% block body %}
 
+<div class="float-left">
+<div class="callout" data-closable style="padding: 0.5rem">
+  <table class="unstriped ledend-table">
+    <tbody class="no-border">
+      <tr class="no-border">
+          <td colspan="6" class="no-border">
+              Number of jobs > 10
+          </td>
+          <td colspan="12" class="no-border">
+              Number of jobs < 10
+          </td>
+      </tr>
+      <tr class="no-border">
+          <td class="sm_alarm_fill legend lesspadding"></td>
+          <td class="no-border lesspadding">Success rate < 50%</td>
+          <td class="sm_warning_fill legend lesspadding"></td>
+          <td class="no-border lesspadding">Success rate < 80%</td>
+          <td class="sm_ok_fill legend lesspadding"></td>
+          <td class="no-border lesspadding">Success rate > 80%</td>
+          <td class="sm_alarm_light_fill legend lesspadding"></td>
+          <td class="no-border lesspadding">Success rate < 50%</td>
+          <td class="sm_warning_light_fill legend lesspadding"></td>
+          <td class="no-border lesspadding">Success rate < 80%</td>
+          <td class="sm_ok_light_fill legend lesspadding"></td>
+          <td class="no-border lesspadding">Success rate > 80%</td>
+    </tbody>
+  </table>
+  <button class="close-button" aria-label="Dismiss alert" type="button" data-close style="font-size: 1.5em">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+</div>
 
 <div class="float-right">
     <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscat', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
 </div>
+
+
+
+
+
+
 
 <div class="row align-center" style="width: 100%; max-width: 68rem">
   <div class="column small-12 small-centered">
@@ -82,7 +120,7 @@
                                 {% endif %}
                             {% endif %}>
                         {% if stats.allc != 0 %}
-                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&region={{ c }}&days=30{% if 'tk' in values  %}&reqtoken={{ values.tk }}{{ endif }}{% if stats.allc > 20000 %}&limit={{ stats.allc }}{% endif %}&mode=nodrop" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&region={{ c }}&days=30{% if 'tk' in values  %}&reqtoken={{ values.tk }}{% endif %}{% if stats.allc > 20000 %}&limit={{ stats.allc }}{% endif %}&mode=nodrop" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
                             {{ stats.percent }}%<br>
                             {{ stats.finishedc }}<br>
                             {{ stats.failedc }}
