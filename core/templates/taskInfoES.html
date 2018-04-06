@@ -723,6 +723,7 @@ No datasets were found for this task
 {% endif %}
 
 {% if jobparams %}
+<div class="table-scroll">
 <table>
 <a name="jobparams"></a>
 <tr bgcolor='lightcyan'><th colspan=20> Job parameters </th></tr>
@@ -730,6 +731,7 @@ No datasets were found for this task
 <tr><td><font size=-1>{{ p|safe }}</font></td></tr>
 {% endfor %}
 </table>
+</div>
 <p>
 {% endif %}
 
