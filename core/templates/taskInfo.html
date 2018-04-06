@@ -211,7 +211,7 @@ $(document).ready(function () {
     {% if jobsummary %}
         <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&mode=nodrop&display_limit=100">All (including retries)</a>
         <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&mode=drop&display_limit=100">All (retries dropped)</a>
-        <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&currentpriority=901">Scouts</a>
+        <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&specialhandling=sj">Scouts</a>
         <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&jobstatus=finished|failed|cancelled">Ended</a>
         <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Active</a>
     {% endif %}

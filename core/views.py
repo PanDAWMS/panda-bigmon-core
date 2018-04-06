@@ -860,7 +860,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query['%s__range' % param] = (int(leftlimit) * 1000, int(rightlimit) * 1000 - 1)
                         else:
                             query[param] = int(request.session['requestParams'][param])
-                    elif param == 'specialhandling':
+                    elif param == 'specialhandling' and not '*' in request.session['requestParams'][param]:
                         query['specialhandling__contains'] = request.session['requestParams'][param]
                     elif param == 'reqid':
                         val = escapeInput(request.session['requestParams'][param])
@@ -976,7 +976,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if not (currenfField.lower() == 'transformation'):
             if not ((currenfField.lower() == 'cloud') & (
             any(card.lower() == 'all' for card in request.session['requestParams'][currenfField].split('|')))):
-                wildSearchFields1.add(currenfField)
+                if not any(currenfField in key for key, value in query.iteritems()):
+                    wildSearchFields1.add(currenfField)
     wildSearchFields = wildSearchFields1
 
     lenWildSearchFields = len(wildSearchFields)
