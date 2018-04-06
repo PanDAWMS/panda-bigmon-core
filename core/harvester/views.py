@@ -9,6 +9,7 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.db import connection
 
+from django.utils.cache import patch_cache_control, patch_response_headers
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder, \
     extensibleURL, DateTimeEncoder
@@ -163,7 +164,8 @@ import json
 
 def harvesterfm(request):
     valid, response = initRequest(request)
-    query, extra, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
+    #query, extra, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
+    extra = '1=1'
     xurl = extensibleURL(request)
     if 'instance' in request.session['requestParams'] and 'workerid' not in request.session['requestParams']:
         instance = request.session['requestParams']['instance']
@@ -171,6 +173,15 @@ def harvesterfm(request):
         #     data = getCacheEntry(request, instance,isData=True)
         #     import json
         #     return HttpResponse(data, content_type='text/html')
+        data = getCacheEntry(request, "harvester")
+        if data is not None:
+            import json
+            data = json.loads(data)
+            data['request'] = request
+            response = render_to_response('harvesterfm.html', data, content_type='text/html')
+            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+            endSelfMonitor(request)
+            return response
         if ('dialogs' in request.session['requestParams'] and 'instance' in request.session['requestParams']):
             dialogs = []
             tquery = {}
@@ -261,7 +272,7 @@ def harvesterfm(request):
                 for status in statuses.keys():
                     statuses[status] = len(statuses[status])
                 generalInstanseInfo = {'HarvesterID':worker['harvester_id'], 'Description':worker['description'], 'Starttime': worker['insstarttime'],
-                                      'Owner':worker['owner'], 'Hostname':worker['hostname'],'Lastupdate':worker['inslastupdate'], 'Computingsites':computingsites,'Statuses':statuses,'Software version':worker['sw_version'],'Commit stamp':worker['commit_stamp'], 'wrkpandaids': OrderedDict(sorted(wrkPandaIDs.items(), key=lambda x: x[1], reverse=True)[:display_limit_workers])
+                                      'Owner':worker['owner'], 'Hostname':worker['hostname'],'Lastupdate':worker['inslastupdate'], 'Computingsites':computingsites,'Statuses':statuses,'Software version':worker['sw_version'],'Commit stamp':worker['commit_stamp'], 'wrkpandaids': OrderedDict(sorted(wrkPandaIDs.items(), key=lambda x: x[1], reverse=True)[:200])
                                       }
         transactionKey = random.randrange(1000000)
         data = {
@@ -272,9 +283,12 @@ def harvesterfm(request):
                 'tk':transactionKey,
                 'request': request,
                 'requestParams': request.session['requestParams'],
-                'viewParams': request.session['viewParams']
+                'viewParams': request.session['viewParams'],
+                'built': datetime.now().strftime("%H:%M:%S"),
                 }
         setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
+        setCacheEntry(request, 'harvester',  json.dumps(data, cls=DateEncoder),60 * 60)
+        endSelfMonitor(request)
         return render_to_response('harvesterfm.html', data, content_type='text/html')
 
     elif 'instance' in request.session['requestParams'] and 'workerid' in 'instance' in request.session['requestParams']:
