@@ -246,7 +246,7 @@
                                 {% endif %}
                             {% endif %}>
                         {% if stats.allc != 0 %}
-                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&computingsite={{ computingSite }}&days=10" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&computingsite={{ computingSite }}&days=30{% if 'tk' in values  %}&reqtoken={{ values.tk }}{{ endif }}{% if stats.allc > 20000 %}&limit={{ stats.allc }}{% endif %}&mode=nodrop" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
                             {{ stats.percent }}%<br>
                             {{ stats.finishedc }}<br>
                             {{ stats.failedc }}

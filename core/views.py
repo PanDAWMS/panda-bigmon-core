@@ -840,6 +840,14 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query['pandaid__in'] = pidl
                         else:
                             query['pandaid'] = int(pid)
+                    elif 'jeditaskid' in data:
+                        tid = data['jeditaskid']
+                        if tid.find(',') >= 0:
+                            tidl = tid.split(',')
+                            query['jeditaskid__in'] = tidl
+                        else:
+                            query['jeditaskid'] = int(tid)
+
                 else: return 'reqtoken', None, None
 
         else:
@@ -12583,7 +12591,7 @@ def errorsScattering(request):
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'
     query['superstatus__in'] = ['submitting', 'running']
-    tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
+    tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid", "reqid")
 
     # print ('tasks found %i') % len(tasks)
 
@@ -12593,10 +12601,15 @@ def errorsScattering(request):
     else:
         tmpTableName = "TMP_IDS1"
 
+    taskListByReq = {}
     transactionKey = random.randrange(1000000)
     executionData = []
     for id in tasks:
         executionData.append((id['jeditaskid'], transactionKey))
+        # full the list of jeditaskids for each reqid to put into cache for consistentcy with jobList
+        if id['reqid'] not in taskListByReq:
+            taskListByReq[id['reqid']] = ''
+        taskListByReq[id['reqid']] += str(id['jeditaskid']) + ','
 
     new_cur = connection.cursor()
     query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
@@ -12694,6 +12707,13 @@ def errorsScattering(request):
     for cn, stats in columnstats.iteritems():
         columnstats[cn]['percent'] = int(math.ceil(columnstats[cn]['finishedc']*100./columnstats[cn]['allc'])) if columnstats[cn]['allc'] > 0 else 0
 
+
+    ### Introducing unique tk for each reqid
+    for rid, reqentry in reqerrors.iteritems():
+        if rid in taskListByReq and len(taskListByReq[rid]) > 0:
+            tk = setCacheData(request, jeditaskid=taskListByReq[rid][:-1])
+            reqentry['tk'] = tk
+
     ### transform requesterrors dict to list for sorting on template
     reqErrorsList = []
     for rid, reqEntry in reqerrors.iteritems():
@@ -12774,7 +12794,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
         condition = "COMPUTINGSITE in ( %s )" % (str(cloudstr))
 
 
-    tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
+    tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid", "reqid")
 
     print 'tasks found %i' % (len(tasks))
 
@@ -12784,10 +12804,16 @@ def errorsScatteringDetailed(request, cloud, reqid):
     else:
         tmpTableName = "TMP_IDS1"
 
+
+    taskListByReq = {}
     transactionKey = random.randrange(1000000)
     executionData = []
     for id in tasks:
         executionData.append((id['jeditaskid'], transactionKey))
+        # full the list of jeditaskids for each reqid to put into cache for consistentcy with jobList
+        if id['reqid'] not in taskListByReq:
+            taskListByReq[id['reqid']] = ''
+        taskListByReq[id['reqid']] += str(id['jeditaskid']) + ','
 
     new_cur = connection.cursor()
     query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
@@ -13076,6 +13102,12 @@ def errorsScatteringDetailed(request, cloud, reqid):
             columnstats[cn]['percent'] = int(
                 math.ceil(columnstats[cn]['finishedc'] * 100. / columnstats[cn]['allc'])) if \
                     columnstats[cn]['allc'] > 0 else 0
+
+        ### Introducing unique tk for each reqid
+        for rid, reqentry in reqerrors.iteritems():
+            if rid in taskListByReq and len(taskListByReq[rid]) > 0:
+                tk = setCacheData(request, jeditaskid=taskListByReq[rid][:-1])
+                reqentry['tk'] = tk
 
         ### transform requesterrors dict to list for sorting on template
         reqErrorsList = []

@@ -64,7 +64,7 @@
                         {% else %}class="sm_ok_light_fill"{% endif %}
                     {% endif %}
                   {% endif %}>
-                  <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' values.reqid %}"><i class="fi-plus"></i></a> <a class="blacklink bold" href="{% url 'jobList' %}?reqid={{ values.reqid }}">{{ values.reqid }}</a></th>
+                  <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' values.reqid %}"><i class="fi-plus"></i></a> <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid }}&superstatus=submitting|running&sortby=pctfailed&hours=8">{{ values.reqid }}</a></th>
                 {% for c in clouds %}
                   {% for cn, stats in values.items %}
                     {% if c == cn %}
@@ -82,7 +82,7 @@
                                 {% endif %}
                             {% endif %}>
                         {% if stats.allc != 0 %}
-                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&region={{ c }}&days=5" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&region={{ c }}&days=30{% if 'tk' in values  %}&reqtoken={{ values.tk }}{{ endif }}{% if stats.allc > 20000 %}&limit={{ stats.allc }}{% endif %}&mode=nodrop" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
                             {{ stats.percent }}%<br>
                             {{ stats.finishedc }}<br>
                             {{ stats.failedc }}
