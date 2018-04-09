@@ -163,6 +163,7 @@ import json
 
 
 def harvesterfm(request):
+    import json
     valid, response = initRequest(request)
     #query, extra, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
     extra = '1=1'
@@ -187,16 +188,17 @@ def harvesterfm(request):
             tquery = {}
             tquery['harvesterid'] = instance
             dialogs.extend(HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime'))
-            import json
             return HttpResponse(json.dumps(dialogs, cls=DateTimeEncoder), content_type='text/html')
         if ('dt' in request.session['requestParams'] and 'tk' in request.session['requestParams'] ):
             tk = request.session['requestParams']['tk']
             data = getCacheEntry(request, tk,isData=True)
-            import json
             return HttpResponse(data, content_type='text/html')
         status = ''
         if 'status' in request.session['requestParams']:
             status = """AND status like '%s'""" %(str(request.session['requestParams']['status']))
+        if 'computingsite' in request.session['requestParams']:
+            computingsite = """AND computingsite like '%s'""" %(str(request.session['requestParams']['computingsite']))
+
         sqlquery = """
         select * from (SELECT
         ff.harvester_id,
@@ -228,13 +230,14 @@ def harvesterfm(request):
         gg.diagmessage,
         (select count(pandaid) from atlas_panda.harvester_rel_jobs_workers where atlas_panda.harvester_rel_jobs_workers.harvesterid =  ff.harvester_id and atlas_panda.harvester_rel_jobs_workers.workerid = gg.workerid) as harvesterpandaids,
         (select count(pandaid) from atlas_panda.harvester_rel_jobs_workers where  atlas_panda.harvester_rel_jobs_workers.workerid = gg.workerid) as totalpandaids
+
         FROM
         atlas_panda.harvester_workers gg,
         atlas_panda.harvester_instances ff
         WHERE
-        ff.harvester_id = gg.harvesterid) where harvester_id like '%s' %s
+        ff.harvester_id = gg.harvesterid) where harvester_id like '%s' %s %s 
         order by workerid DESC
-        """ % (str(instance), str(instance),status)
+        """ % (str(instance), str(instance),status, computingsite)
         workersList = []
         cur = connection.cursor()
         cur.execute(sqlquery)
@@ -247,7 +250,6 @@ def harvesterfm(request):
         workerIDs= set()
         generalInstanseInfo = {}
 
-        import json
         if 'display_limit_workers' in request.session['requestParams']:
             display_limit_workers = int(request.session['requestParams']['display_limit_workers'])
         else:
@@ -335,7 +337,6 @@ def harvesterfm(request):
             instanceDictionary.append(
                 {'instance': instance[0], 'total': instance[1], 'recently': instance[2], 'when': instance[3], 'descr': instance[4]})
 
-        import json
         data = {
             'instances':instanceDictionary,
             'type': 'instances',

@@ -77,7 +77,7 @@
                     <td><b>{{ name }}</b> ({{ value|length }})</td>
                     <td>
                     {% for n,v in value.items %}
-                        {{ n }} <a href="{{xurl}}&computingsite={{ n }}">({{ v }})</a>
+                        {{ n }} <a href="{{xurl}}computingsite={{ n }}">({{ v }})</a>
                     {% endfor %}
                 </td>
                 {% elif name ==  'wrkpandaids' %}
