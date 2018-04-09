@@ -168,6 +168,7 @@ def harvesterfm(request):
     #query, extra, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
     extra = '1=1'
     xurl = extensibleURL(request)
+
     if 'instance' in request.session['requestParams'] and 'workerid' not in request.session['requestParams']:
         instance = request.session['requestParams']['instance']
         # if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
@@ -194,6 +195,7 @@ def harvesterfm(request):
             data = getCacheEntry(request, tk,isData=True)
             return HttpResponse(data, content_type='text/html')
         status = ''
+        computingsite = ''
         if 'status' in request.session['requestParams']:
             status = """AND status like '%s'""" %(str(request.session['requestParams']['status']))
         if 'computingsite' in request.session['requestParams']:
