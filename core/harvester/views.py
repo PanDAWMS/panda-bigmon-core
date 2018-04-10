@@ -187,7 +187,13 @@ def harvesterfm(request):
             dialogs = []
             tquery = {}
             tquery['harvesterid'] = instance
-            dialogs.extend(HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime'))
+            dialogsList = HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime')
+            # dialogs.extend(HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime'))
+            old_format = '%Y-%m-%d %H:%M:%S'
+            new_format = '%d-%m-%Y %H:%M:%S'
+            for dialog in dialogsList:
+                dialog['creationtime'] = datetime.strptime(str(dialog['creationtime']), old_format).strftime(new_format)
+                dialogs.append(dialog)
             return HttpResponse(json.dumps(dialogs, cls=DateTimeEncoder), content_type='text/html')
         if ('dt' in request.session['requestParams'] and 'tk' in request.session['requestParams'] ):
             tk = request.session['requestParams']['tk']
