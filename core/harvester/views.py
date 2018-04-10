@@ -169,7 +169,7 @@ def harvesterfm(request):
     extra = '1=1'
     xurl = extensibleURL(request)
 
-    if 'instance' in request.session['requestParams'] and 'workerid' not in request.session['requestParams']:
+    if 'instance' in request.session['requestParams']:
         instance = request.session['requestParams']['instance']
         # if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams']):
         #     data = getCacheEntry(request, instance,isData=True)
@@ -196,10 +196,13 @@ def harvesterfm(request):
             return HttpResponse(data, content_type='text/html')
         status = ''
         computingsite = ''
+        workerid=''
         if 'status' in request.session['requestParams']:
             status = """AND status like '%s'""" %(str(request.session['requestParams']['status']))
         if 'computingsite' in request.session['requestParams']:
             computingsite = """AND computingsite like '%s'""" %(str(request.session['requestParams']['computingsite']))
+        if 'workerid' in request.session['requestParams']:
+            workerid = """AND workerid in (%s)""" %(request.session['requestParams']['workerid'])
 
         sqlquery = """
         select * from (SELECT
@@ -230,6 +233,8 @@ def harvesterfm(request):
         gg.nativeexitcode,
         gg.nativestatus,
         gg.diagmessage,
+        gg.computingelement,
+        gg.njobs,
         (select count(pandaid) from atlas_panda.harvester_rel_jobs_workers where atlas_panda.harvester_rel_jobs_workers.harvesterid =  ff.harvester_id and atlas_panda.harvester_rel_jobs_workers.workerid = gg.workerid) as harvesterpandaids,
         (select count(pandaid) from atlas_panda.harvester_rel_jobs_workers where  atlas_panda.harvester_rel_jobs_workers.workerid = gg.workerid) as totalpandaids
 
@@ -237,9 +242,9 @@ def harvesterfm(request):
         atlas_panda.harvester_workers gg,
         atlas_panda.harvester_instances ff
         WHERE
-        ff.harvester_id = gg.harvesterid) where harvester_id like '%s' %s %s 
+        ff.harvester_id = gg.harvesterid) where harvester_id like '%s' %s %s %s
         order by workerid DESC
-        """ % (str(instance), str(instance),status, computingsite)
+        """ % (str(instance), str(instance),status, computingsite, workerid)
         workersList = []
         cur = connection.cursor()
         cur.execute(sqlquery)
@@ -295,8 +300,8 @@ def harvesterfm(request):
         endSelfMonitor(request)
         return render_to_response('harvesterfm.html', data, content_type='text/html')
 
-    elif 'instance' in request.session['requestParams'] and 'workerid' in 'instance' in request.session['requestParams']:
-        pass
+    # elif 'instance' in request.session['requestParams'] and 'workerid' in 'instance' in request.session['requestParams']:
+    #     pass
     else:
         sqlquery = """
         select  
@@ -317,6 +322,9 @@ def harvesterfm(request):
         WHERE a.harvester_id = b.harvesterid
         ) WHERE alldate = recently Group by harvid) W WHERE W.harvid=R.harvid) as recent,
         R.recently,
+        R.sw_version,
+        R.commit_stamp,
+        R.lastupdate,
         R.description
         FROM (SELECT
         a.harvester_id as harvid, 
@@ -324,12 +332,15 @@ def harvesterfm(request):
         to_char(b.lastupdate, 'dd-mm-yyyy hh24:mi:ss') as alldate,
         (SELECT
         to_char(max(O.lastupdate), 'dd-mm-yyyy hh24:mi:ss')
-        FROM atlas_panda.harvester_rel_jobs_workers O where  O.harvesterid = a.harvester_id   Group by O.harvesterid) as recently, 
+        FROM atlas_panda.harvester_rel_jobs_workers O where  O.harvesterid = a.harvester_id   Group by O.harvesterid) as recently,
+        a.sw_version,
+        a.commit_stamp,
+        to_char(a.lastupdate, 'dd-mm-yyyy hh24:mi:ss') as lastupdate, 
         a.DESCRIPTION as description
         FROM
         atlas_panda.harvester_workers b,
         atlas_panda.harvester_instances a
-        WHERE a.harvester_id = b.harvesterid) R group by harvid, description,recently
+        WHERE a.harvester_id = b.harvesterid) R group by harvid,recently,sw_version,commit_stamp,lastupdate,description
         """
         instanceDictionary = []
         cur = connection.cursor()
@@ -337,7 +348,7 @@ def harvesterfm(request):
 
         for instance in cur:
             instanceDictionary.append(
-                {'instance': instance[0], 'total': instance[1], 'recently': instance[2], 'when': instance[3], 'descr': instance[4]})
+                {'instance': instance[0], 'total': instance[1], 'recently': instance[2], 'when': instance[3],'sw_version':instance[4],'commit_stamp':instance[5],'lastupdate':instance[6], 'descr': instance[7]})
 
         data = {
             'instances':instanceDictionary,

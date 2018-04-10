@@ -29,6 +29,9 @@
                 <th>Total</th>
                 <th>Recently</th>
                 <th>When</th>
+                <th>SW version</th>
+                <th>Commit stamp</th>
+                <th>Last update</th>
                 <th>Description</th>
      </thead>
      <tbody>
@@ -45,6 +48,15 @@
          </td>
          <td>
          {{ instance.when }}
+         </td>
+         <td>
+         {{ instance.sw_version }}
+         </td>
+         <td>
+         {{ instance.commit_stamp }}
+         </td>
+         <td>
+         {{ instance.lastupdate }}
          </td>
          <td>
         {{ instance.descr }}
@@ -67,14 +79,14 @@
         {% for name,value in generalInstanseInfo.items %}
             <tr>
                 {% if name == 'Statuses'%}
-                <td><b>{{ name }}</b> ({{ value|length }})</td>
+                <td><b>{{ name }} ({{ value|length }})</b></td>
                     <td>
                     {% for n,v in value.items %}
                         <span class='{{ n }} item'>{{ n }}</span> <a href="{{xurl}}status={{ n }}">({{ v }})</a>
                     {% endfor %}
                 </td>
                 {% elif name ==  'Computingsites' %}
-                    <td><b>{{ name }}</b> ({{ value|length }})</td>
+                    <td><b>{{ name }} ({{ value|length }})</b> </td>
                     <td>
                     {% for n,v in value.items %}
                         {{ n }} <a href="{{xurl}}computingsite={{ n }}">({{ v }})</a>
@@ -139,6 +151,7 @@
                 <th>Nativeexitcode</th>
                 <th>Native status</th>
                 <th>Diag message</th>
+                <th>Computing element</th>
      </thead>
      <tbody>
      </tbody>
@@ -290,7 +303,12 @@
             {
                 "data": "diagmessage",
                 sDefaultContent: "",
+            },
+            {
+                "data": "computingelement",
+                sDefaultContent: "",
             }
+
         ],
     });}
     function dialogsTable() {
