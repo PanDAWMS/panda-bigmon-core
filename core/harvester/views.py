@@ -158,9 +158,8 @@ def harvesterWorkerInfo(request):
     endSelfMonitor(request)
     response = render_to_response('harvworkerinfo.html', data, content_type='text/html')
     return response
-from datetime import datetime
+from datetime import datetime,timedelta
 import json
-
 
 def harvesterfm(request):
     import json
@@ -194,6 +193,32 @@ def harvesterfm(request):
             tk = request.session['requestParams']['tk']
             data = getCacheEntry(request, tk,isData=True)
             return HttpResponse(data, content_type='text/html')
+        lastupdateCache = ''
+        workersListCache = []
+
+
+        data = {}
+        setCacheEntry(request, instance, json.dumps(data, cls=DateEncoder), 1, isData=True)
+
+        workersListisEmty = True
+        if 'status' not in request.session['requestParams'] and 'computingsite' not in request.session['requestParams']:
+            data = getCacheEntry(request, instance,isData=True)
+            if data is not None and data !="null":
+                if 'lastupdate'  in data:
+                    data = json.loads(data)
+                    lastupdateCache = data['lastupdate'].replace('T',' ')
+                    lastupdateCache = """ AND "wrklastupdate" >= to_date('%s','yyyy-mm-dd hh24:mi:ss')"""%(lastupdateCache)
+                    workersListCache = data['workersList']
+                    workersListisEmty = False
+
+                    tmpworkerList = data['workersList'].keys()
+                    for worker in tmpworkerList:
+                        if datetime.strptime(data['workersList'][worker]['wrklastupdate'].replace('T',' '), '%Y-%m-%d %H:%M:%S') < datetime.now() - timedelta(days=60):
+                            del data['workersList'][worker]
+        else:
+            lastupdateCache = ''
+            workersListCache = []
+
         status = ''
         computingsite = ''
         workerid=''
@@ -214,16 +239,16 @@ def harvesterfm(request):
         ff.sw_version,
         ff.commit_stamp,
         gg.workerid,
-        (select max(lastupdate) from atlas_panda.harvester_workers where harvesterid like '%s') as "inslastupdate",
+        to_char((select max(lastupdate) from atlas_panda.harvester_workers where harvesterid like '%s'), 'dd-mm-yyyy hh24:mi:ss') as "inslastupdate",
         gg.status,
         gg.batchid,
         gg.nodeid,
         gg.queuename,
         gg.computingsite,
-        gg.submittime,
-        gg.lastupdate as "wrklastupdate",
-        gg.starttime as "wrkstarttime",
-        gg.endtime as "wrkendtime",
+        to_char(gg.submittime, 'dd-mm-yyyy hh24:mi:ss') as "submittime",
+        to_char(gg.lastupdate , 'dd-mm-yyyy hh24:mi:ss') as "wrklastupdate",
+        to_char(gg.starttime , 'dd-mm-yyyy hh24:mi:ss') as "wrkstarttime",
+        to_char(gg.endtime, 'dd-mm-yyyy hh24:mi:ss') as "wrkendtime",
         gg.ncore,
         gg.errorcode,
         gg.stdout,
@@ -242,19 +267,44 @@ def harvesterfm(request):
         atlas_panda.harvester_workers gg,
         atlas_panda.harvester_instances ff
         WHERE
-        ff.harvester_id = gg.harvesterid) where harvester_id like '%s' %s %s %s
+        ff.harvester_id = gg.harvesterid) where harvester_id like '%s' %s %s %s %s
         order by workerid DESC
-        """ % (str(instance), str(instance),status, computingsite, workerid)
+        """ % (str(instance), str(instance),status, computingsite, workerid, lastupdateCache)
         workersList = []
         cur = connection.cursor()
         cur.execute(sqlquery)
         columns = [str(i[0]).lower() for i in cur.description]
-        for worker in cur:
-            workersList.append(dict(zip(columns, worker)))
+        workersDictinoary = {}
+
+        timeLastUpdate = ''
+        if workersListisEmty == False:
+            for worker in cur:
+                object = {}
+                object = dict(zip(columns, worker))
+                workersListCache[int(object['workerid'])] = object
+                timeLastUpdate = object['inslastupdate']
+            workersList = workersListCache.values()
+            workersDictinoary = workersListCache
+
+        else:
+            for worker in cur:
+                object = {}
+                object = dict(zip(columns, worker))
+                workersDictinoary[int(object['workerid'])] = object
+                workersList.append(object)
+                timeLastUpdate = object['inslastupdate']
+
+        # dbCache = {
+        #     "workersList": workersDictinoary,
+        #     "lastupdate": timeLastUpdate
+        # }
+        # print len(workersListCache)
+        # if 'status' not in request.session['requestParams'] and 'computingsite' not in request.session['requestParams'] and 'workerid' not in request.session['requestParams'] :
+        #     setCacheEntry(request, instance, json.dumps(dbCache, cls=DateEncoder), 86400, isData=True)
 
         statuses = {}
         computingsites = {}
-        workerIDs= set()
+        workerIDs = set()
         generalInstanseInfo = {}
 
         if 'display_limit_workers' in request.session['requestParams']:
@@ -262,7 +312,7 @@ def harvesterfm(request):
         else:
             display_limit_workers = 30000
 
-        generalWorkersFields = ['workerid','status','batchid','nodeid','queuename','computingsite','submittime','wrklastupdate','wrkstarttime','wrkendtime','ncore','errorcode','stdout','stderr','batchlog','resourcetype','nativeexitcode','nativestatus','diagmessage','totalpandaids', 'harvesterpandaids']
+        generalWorkersFields = ['workerid','status','batchid','nodeid','queuename','computingsite','submittime','wrklastupdate','wrkstarttime','wrkendtime','ncore','errorcode','stdout','stderr','batchlog','resourcetype','nativeexitcode','nativestatus','diagmessage','totalpandaids', 'harvesterpandaids','njobs','computingelement']
         generalWorkersList = []
 
         wrkPandaIDs ={}
