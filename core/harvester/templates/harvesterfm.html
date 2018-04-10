@@ -11,6 +11,8 @@
   <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
   <script src="/static/js/d3jsplot.js"></script>
   <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+  <script type="text/javascript" src="/static/js/datatables/moment.min.js"> </script>
+  <script type="text/javascript" src="/static/js/datatables/datetime-moment.js"> </script>
     <style type="text/css">
         #workerList p{ display:none; }
         #loadMore {color:#0a47ff; cursor:pointer;}
@@ -159,6 +161,8 @@
 
    <script>
     $(document).ready(function () {
+        $.fn.dataTable.moment( 'DD-MM-YYYY HH:mm:ss' );
+
         var items = 100
         $('#workerList p').slice( 0, items ).show().css("display", "inline");
         var shown =  50;
