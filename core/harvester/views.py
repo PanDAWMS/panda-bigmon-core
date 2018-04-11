@@ -207,7 +207,7 @@ def harvesterfm(request):
         setCacheEntry(request, instance, json.dumps(data, cls=DateEncoder), 1, isData=True)
 
         workersListisEmty = True
-        if 'status' not in request.session['requestParams'] and 'computingsite' not in request.session['requestParams']:
+        if 'status' not in request.session['requestParams'] and 'computingsite' not in request.session['requestParams'] and 'days' not in request.session['requestParams']:
             data = getCacheEntry(request, instance,isData=True)
             if data is not None and data !="null":
                 if 'lastupdate'  in data:
@@ -228,13 +228,15 @@ def harvesterfm(request):
         status = ''
         computingsite = ''
         workerid=''
+        days =''
         if 'status' in request.session['requestParams']:
             status = """AND status like '%s'""" %(str(request.session['requestParams']['status']))
         if 'computingsite' in request.session['requestParams']:
             computingsite = """AND computingsite like '%s'""" %(str(request.session['requestParams']['computingsite']))
         if 'workerid' in request.session['requestParams']:
             workerid = """AND workerid in (%s)""" %(request.session['requestParams']['workerid'])
-
+        if 'days' in request.session['requestParams']:
+            days = """AND to_date("wrklastupdate", 'dd-mm-yyyy hh24:mi:ss') > sysdate - %s """ %(request.session['requestParams']['days'])
         sqlquery = """
         select * from (SELECT
         ff.harvester_id,
@@ -273,9 +275,9 @@ def harvesterfm(request):
         atlas_panda.harvester_workers gg,
         atlas_panda.harvester_instances ff
         WHERE
-        ff.harvester_id = gg.harvesterid) where harvester_id like '%s' %s %s %s %s
+        ff.harvester_id = gg.harvesterid) where harvester_id like '%s' %s %s %s %s %s
         order by workerid DESC
-        """ % (str(instance), str(instance),status, computingsite, workerid, lastupdateCache)
+        """ % (str(instance), str(instance),status, computingsite, workerid, lastupdateCache,days)
         workersList = []
         cur = connection.cursor()
         cur.execute(sqlquery)
