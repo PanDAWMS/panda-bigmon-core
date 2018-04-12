@@ -263,7 +263,14 @@ $(document).ready(function () {
 
 {% if jobsummary %}
 
-<table>
+{% if requestParams.warning %}
+<div class="callout small alert">
+<p style="color:brown">{{ requestParams.warning }}</p>
+{#    Go to correspondent <a href="{% url 'jobListP' %}?jeditaskid={{ jeditaskid }}&mode=drop"> jobsss page</a>#}
+</div>
+{% endif %}
+
+    <table>
 <tr bgcolor="lightcyan"><th colspan=20>
 <b>States of jobs in this task (merge jobs excluded)</b>   &nbsp; &nbsp; &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{jeditaskid}}&mode=nodrop&display_limit=100">Show all jobs</a> &nbsp; &nbsp; &nbsp;
     {% if requestParams.mode and requestParams.mode == 'nodrop' %}

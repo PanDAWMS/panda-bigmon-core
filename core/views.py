@@ -7744,15 +7744,15 @@ def taskInfo(request, jeditaskid=0):
             auxiliaryDict = {}
 
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                query, exclude={},  mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
+                request, query, exclude={},  mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
             plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary2(
-                query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isOld')
+                request, query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isOld')
             if request.user.is_authenticated() and request.user.is_tester:
                 tk, droppedList, extra = dropalgorithm.dropRetrielsJobs(jeditaskid, extra, eventservice)
                 newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
-                    query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isNew')
+                    request, query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isNew')
                 newplotsDictESMerge, newjobsummaryESMerge, neweventssummaryESM, newtransactionKeyESM, newjobScoutIDsESM, newhs06sSumESM = jobSummary2(
-                    query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isNew')
+                    request, query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isNew')
                 for state in eventservicestatelist:
                     eventstatus = {}
                     eventstatus['statusname'] = state
@@ -7802,15 +7802,15 @@ def taskInfo(request, jeditaskid=0):
             if 'mode' in request.session['requestParams']:
                 mode = request.session['requestParams']['mode']
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                query, exclude=exclude,extra=extra, mode=mode,algorithm='isOld')
+                request, query, exclude=exclude,extra=extra, mode=mode,algorithm='isOld')
             plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary2(
-                query, exclude={},extra=extra,  mode=mode, processingtype='pmerge',algorithm='isOld')
+                request, query, exclude={},extra=extra,  mode=mode, processingtype='pmerge',algorithm='isOld')
             if request.user.is_authenticated() and request.user.is_tester:
                 if mode == 'drop':
                     tk, droppedList, extra = dropalgorithm.dropRetrielsJobs(jeditaskid, extra=None, isEventTask=False)
                 newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
-                    query, exclude=exclude,extra=extra , mode=mode, algorithm='isNew')
-                newplotsDictPMERGE, newjobsummaryPMERGE, neweventssummaryPM, newtransactionKeyPM, newjobScoutIDsPMERGE, newhs06sSumPMERGE = jobSummary2(query=query, exclude={},extra=extra , mode=mode, processingtype='pmerge', algorithm='isNew')
+                    request, query, exclude=exclude,extra=extra , mode=mode, algorithm='isNew')
+                newplotsDictPMERGE, newjobsummaryPMERGE, neweventssummaryPM, newtransactionKeyPM, newjobScoutIDsPMERGE, newhs06sSumPMERGE = jobSummary2(request, query=query, exclude={},extra=extra , mode=mode, processingtype='pmerge', algorithm='isNew')
 
 
     elif 'taskname' in request.session['requestParams']:
@@ -8197,7 +8197,7 @@ def ganttTaskChain(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None, algorithm = 'isOld'):
+def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None, algorithm = 'isOld'):
     jobs = []
     jobScoutIDs = {}
     jobScoutIDs['cputimescoutjob'] = []
@@ -8286,7 +8286,7 @@ def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceF
 
     jobs = newjobs
 
-    if mode == 'drop' and len(jobs) < 300000:
+    if mode == 'drop' and len(jobs) < 400000:
         print 'filtering retries'
         if algorithm == 'isNew':
             print('new algorithm!')
@@ -8301,6 +8301,8 @@ def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceF
             jobs, droplist, droppedPMerge = dropRetrielsJobs(jobs, newquery['jeditaskid'], isReturnDroppedPMerge)
             end = time.time()
             print(end - start)
+    elif len(jobs) >= 400000:
+        request.session['requestParams']['warning'] = 'Task has more than 400 000 jobs. Dropping was not done to avoid timeout error!'
 
     plotsNames = ['maxpss', 'maxpsspercore', 'nevents', 'walltime', 'walltimeperevent', 'hs06s', 'cputime', 'cputimeperevent', 'maxpssf', 'maxpsspercoref', 'walltimef', 'hs06sf', 'cputimef', 'cputimepereventf']
     plotsDict = {}
@@ -8408,7 +8410,7 @@ def jobSummary2(query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceF
     transactionKey = -1
     if isEventServiceFlag and not isESMerge:
         print 'getting events states summary'
-        if mode == 'drop':
+        if mode == 'drop' and len(jobs) < 400000:
             esjobs = []
             for job in jobs:
                 esjobs.append(job['pandaid'])
