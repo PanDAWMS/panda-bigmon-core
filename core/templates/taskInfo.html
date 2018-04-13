@@ -124,7 +124,7 @@ $(document).ready(function () {
     {% if task.deftreqid %} <th> Request </th> {% endif %}
 	{% if task.reqid != task.jeditaskid and not task.deftreqid %}<th>Jobset</th>{% endif %}
 	<th>Type</th>
-	<th>WorkingGroup</th><th>User</th>
+	<th>Working Group</th><th>User</th>
 	<th>Destination</th>
 	{% if task.campaign %} <th> Campaign </th> {% endif %}
 	<th>Task status </th>{% if task.superstatus %} {% if task.superstatus != task.status %}<th> Detailed JEDI status </th>{% endif %} {% endif %}
