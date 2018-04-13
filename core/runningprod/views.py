@@ -411,7 +411,7 @@ def runningProdTasks(request):
         'json' in request.session['requestParams']):
         ##self monitor
         endSelfMonitor(request)
-        dump = json.dumps(tasks, cls=DateEncoder)
+        dump = json.dumps(task_list, cls=DateEncoder)
         return HttpResponse(dump, content_type='text/html')
     else:
         data = {
