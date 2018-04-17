@@ -99,13 +99,20 @@ class RunningProdRequestsModel(models.Model):
     slots = models.IntegerField(null=True, db_column='SLOTS', blank=True)
     aslots = models.IntegerField(null=True, db_column='ASLOTS', blank=True)
     neventstobeused = models.BigIntegerField(db_column='NEVENTSTOBEUSED')
+    neventsrunning = models.BigIntegerField(db_column='NEVENTSRUNNING')
     neventsused = models.BigIntegerField(db_column='NEVENTSUSED')
     nevents = models.BigIntegerField(db_column='NEVENTS')
     percentage = models.BigIntegerField(db_column='PERCENTAGE')
+    age = models.IntegerField(db_column='AGE', blank=True)
     nfilesfailed = models.IntegerField(null=True, db_column='NFILESFAILED', blank=True)
     avgpriority = models.IntegerField(null=True, db_column='AVGPRIORITY', blank=True)
-    corecount = models.IntegerField(null=True, db_column='CORECOUNT', blank=True)
     creationdate = models.DateTimeField(db_column='CREATIONDATE')
     cputime = models.IntegerField(null=True,db_column='CPUTIME', blank=True)
+    status = models.CharField(max_length=32, db_column='STATUS', null=False, blank=True)
+    provenance = models.CharField(max_length=32, db_column='PROVENANCE', null=False, blank=True)
+    requesttype = models.CharField(max_length=32, db_column='REQUEST_TYPE', null=False, blank=True)
+    campaign = models.CharField(max_length=32, db_column='CAMPAIGN', null=False, blank=True)
+    subcampaign = models.CharField(max_length=32, db_column='SUB_CAMPAIGN', null=False, blank=True)
+    physgroup = models.CharField(max_length=20, db_column='PHYS_GROUP', null=False, blank=True)
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."RUNNING_PROD_REQUESTS"'
+        db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODREQUESTS"'

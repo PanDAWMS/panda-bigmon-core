@@ -130,3 +130,8 @@
 .brokeroff_fill { color:darkgrey }
 .test_fill { color:darkgrey }
 .offline_fill { color:darkgrey }
+
+/*States of requests*/
+
+.monitoring_fill { color:black;  background-color:#C7E9A9;}
+.working_fill { color:black;  background-color:#C7E9A9;}
