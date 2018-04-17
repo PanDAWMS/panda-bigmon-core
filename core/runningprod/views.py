@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
 from django.db import connection
 
 from django.utils.cache import patch_cache_control, patch_response_headers
@@ -25,6 +25,8 @@ from core.common.models import FrozenProdTasksModel
 
 @login_customrequired
 def runningMCProdTasks(request):
+    # redirect to united runningProdTasks page
+    return redirect('/runningprodtasks/?preset=MC')
     valid, response = initRequest(request)
 
     # Here we try to get cached data
@@ -213,7 +215,7 @@ def runningProdTasks(request):
         return HttpResponse(data, content_type='text/html')
     # Here we try to get cached data
     data = getCacheEntry(request, "runningProdTasks")
-    data = None
+    # data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -465,6 +467,7 @@ def runningProdTasks(request):
 
 @login_customrequired
 def runningDPDProdTasks(request):
+    return redirect('/runningprodtasks/?preset=DPD')
     valid, response = initRequest(request)
 
     data = getCacheEntry(request, "runningDPDProdTasks")
