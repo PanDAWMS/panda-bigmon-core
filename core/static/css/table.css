@@ -220,3 +220,73 @@ th.vertical {
     padding-left: 0.25rem;
     padding-right: 1rem;
 }
+
+.minimalistic-table {
+    width: 100%;
+    background-color: #fefefe;
+}
+
+.minimalistic-table thead {
+    border: none;
+}
+
+.minimalistic-table tbody {
+    border: none;
+}
+
+.minimalistic-table thead th {
+    background-color: #fefefe;
+    color: #272727;
+    text-align: center;
+    border: none;
+}
+
+.minimalistic-table tbody td {
+    border: none;
+}
+
+/* New style for dataTables */
+
+.data-table {
+    width: 99%;
+    border: none;
+}
+
+.data-table thead {
+    border: none;
+}
+
+.data-table tbody {
+    border: none;
+}
+
+.data-table thead tr {
+    border: none;
+}
+.data-table thead th {
+    color: #272727;
+    background-color: #fefefe;
+    border: none;
+    text-align: center;
+}
+
+.data-table tbody td {
+    border: none;
+    text-align: center;
+}
+
+.data-table td > a {
+    color: #171717 !important;
+    font-weight: bold;
+}
+
+.paginate_button.current {
+    background-color: #727C81;
+    color:white;
+    font-weight: bold;
+}
+
+.paginate_button > a {
+    background-color: #fefefe;
+    color: #727C81 !important;
+}

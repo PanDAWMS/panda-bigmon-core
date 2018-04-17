@@ -207,6 +207,10 @@ def runningMCProdTasks(request):
 def runningProdTasks(request):
     valid, response = initRequest(request)
 
+    if ('dt' in request.session['requestParams'] and 'tk' in request.session['requestParams']):
+        tk = request.session['requestParams']['tk']
+        data = getCacheEntry(request, tk, isData=True)
+        return HttpResponse(data, content_type='text/html')
     # Here we try to get cached data
     data = getCacheEntry(request, "runningProdTasks")
     # data = None
@@ -342,13 +346,17 @@ def runningProdTasks(request):
     aslotsByType = {}
     neventsTotSum = 0
     neventsUsedTotSum = 0
+    neventsWaitingTotSum = 0
+    neventsRunningTotSum = 0
     rjobs1coreTot = 0
     rjobs8coreTot = 0
     for task in task_list:
         task['rjobs'] = 0 if task['rjobs'] is None else task['rjobs']
         task['percentage'] = round(100 * task['percentage'],1)
         neventsTotSum += task['nevents'] if task['nevents'] is not None else 0
-        neventsUsedTotSum += task['neventsused']
+        neventsUsedTotSum += task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
+        neventsWaitingTotSum += task['neventstobeused'] if 'neventstobeused' in task and task['neventstobeused'] is not None else 0
+        neventsRunningTotSum += task['neventsrunning'] if 'neventsrunning' in task and task['neventsrunning'] is not None else 0
         slots += task['slots'] if task['slots'] else 0
         aslots += task['aslots'] if task['aslots'] else 0
         if not task['processingtype'] in aslotsByType.keys():
@@ -407,6 +415,10 @@ def runningProdTasks(request):
     if sum(ages) == 0: plotageshistogram = 0
     sumd = taskSummaryDict(request, task_list, ['status','workinggroup','cutcampaign', 'processingtype'])
 
+    ### Putting list of tasks to cache separately for dataTables plugin
+    transactionKey = random.randrange(100000000)
+    setCacheEntry(request, transactionKey, json.dumps(task_list, cls=DateEncoder), 60 * 30, isData=True)
+
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
         ##self monitor
@@ -431,6 +443,8 @@ def runningProdTasks(request):
             'sumd': sumd,
             'neventsUsedTotSum': round(neventsUsedTotSum / 1000000., 1),
             'neventsTotSum': round(neventsTotSum / 1000000., 1),
+            'neventsWaitingTotSum': round(neventsWaitingTotSum / 1000000., 1),
+            'neventsRunningTotSum': round(neventsRunningTotSum / 1000000., 1),
             'rjobs1coreTot': rjobs1coreTot,
             'rjobs8coreTot': rjobs8coreTot,
             'neventsAFIItasksSum': neventsAFIItasksSum,
@@ -439,6 +453,7 @@ def runningProdTasks(request):
             'plotageshistogram': plotageshistogram,
             'productiontype' : json.dumps(productiontype),
             'built': datetime.now().strftime("%H:%M:%S"),
+            'transKey': transactionKey,
         }
         ##self monitor
         endSelfMonitor(request)

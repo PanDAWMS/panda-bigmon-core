@@ -88,6 +88,7 @@ class RunningProdTasksModel(models.Model):
     gshare = models.CharField(max_length=72, db_column='GSHARE', blank=True)
     hashtags = models.CharField(max_length=400, db_column='HASHTAGS', blank=True)
     eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
+    neventsrunning = models.BigIntegerField(db_column='NRUNNINGEVENTS')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODTASKS"'
 

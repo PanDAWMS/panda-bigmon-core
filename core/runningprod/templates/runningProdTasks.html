@@ -8,10 +8,7 @@
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
     <style>
         #tasklist_wrapper .row {
-            max-width: 100%;
-        }
-        .tablesection {
-            border-bottom-style: none;
+            max-width: 99%;
         }
     </style>
 {% endblock %}
@@ -152,11 +149,9 @@
             </script>
 
 
-            <table>
-                <tr class='tablesection'>
-                    <th colspan=20>Tasks selection</th>
-                </tr>
-                <tr class='tablesection'>
+            <table class="minimalistic-table">
+              <thead>
+                <tr>
                     <th>Selection Preset</th>
                     <th>Working group</th>
                     <th>Processing type</th>
@@ -166,6 +161,8 @@
                     <th></th>
                     <th></th>
                 </tr>
+              </thead>
+              <tbody>
                 <tr>
                     <td>
                         <select id="presetChoice" onchange="onPresetChoice()">
@@ -278,21 +275,25 @@
                         {% if requestParams.eventservice == '1' %} checked {% endif %}>ES
                     </td>
                     <td>
-                        <a onclick="go()" class="button">Go!</a>
+                        <a onclick="go()" class="button primary">Go!</a>
                     </td>
                 </tr>
+              </tbody>
             </table>
     <p>
     <div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
     <p>
         {% if tasks %}
 
-            <table>
-                <tr class='tablesection'>
-                    <th> Global status</th>
-                    <th> Total slots</th>
+            <table class="minimalistic-table unstriped">
+              <thead>
+                <tr>
+                    <th> Events</th>
+                    <th> Allocated slots</th>
                     <th> Task age</th>
                 </tr>
+              </thead>
+              <tbody>
                 <tr>
                     <td>
                         <div class="row">
@@ -303,20 +304,22 @@
                             {% if neventsByProcessingType|length > 0 %}<div class="d3splot" id="pieChartByPT" style="float:left"></div>{% endif %}
                         {% endif %}
                         </div>
-                        <br>
-                        Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in
-                        <b>{{ ntasks }}</b> tasks <br>
-                        Number of currently running events <b id="running"></b><b>M</b>  <progress id="runningprogressbar" value="0" max="100"></progress><br>
-                        Number of waiting events <b id="waiting"></b><b>M</b> <progress id="waitingprogressbar" value="0" max="100"></progress><br>
-                        Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs
                     </td>
-                    {#<td><div class="d3splot" id="slots" style="float:left"></div></td>#}
-                    <td>{% if aslotsByType|length > 0 %}<div class="d3splot" id="pieChartSlots"></div>{% endif %}
-                        Number of allocated slots: {{ aslots }}</td>
+                    <td>{% if aslotsByType|length > 0 %}<div class="d3splot" id="pieChartSlots"></div>{% endif %}</td>
                     <td colspan=20>{% if plotageshistogram == 1 %}
                         <div class="d3splot" id="sumPlot" style="float:left"></div>{% else %}
                         <p> All tasks age is 0 days</p> {% endif %} </td>
-            </tr>
+                </tr>
+                <tr>
+                <td colspan=20>
+                    Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in
+                    <b>{{ ntasks }}</b> tasks <br>
+                    Number of currently running events <b>{{ neventsRunningTotSum }}M</b> <br>
+                    Number of waiting events <b>{{ neventsWaitingTotSum }}M</b> <br>
+                    Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs
+                </td>
+                </tr>
+              </tbody>
             </table>
             <script>
                 var progressBarR = $('#runningprogressbar');
@@ -333,8 +336,6 @@
                 if (productiontype == 'MC') {
                     runningProdTasksPieChartFunc(neventsFStasksSum, "#pieChartFS", 'FS');
                     runningProdTasksPieChartFunc(neventsAFIItasksSum, "#pieChartAFII", 'AFII');
-{#                    pandamonPieChartFunc(neventsFStasksSum, "#pieChartFS", 'FS');#}
-{#                    pandamonPieChartFunc(neventsAFIItasksSum, "#pieChartAFII", 'AFII');#}
                 }
                 else {
                     runningProdTasksPieChartFunc(neventsByProcessingType, "#pieChartByPT", 'N Events')
@@ -352,18 +353,18 @@
             </script>
 
 
-            <table id = 'tasklist'>
+            <table id = 'tasklist' class="data-table">
                 <thead>
 {#                <tr class='tablesection'>#}
 {#                    <th colspan=25> {{ ntasks }} tasks</th>#}
 {#                </tr>#}
-                <tr class='tablesection'>
+                <tr>
                     <th>Campaign</th>
                     <th>Req ID</th>
                     <th>Run</th>
                     <th>Task ID</th>
                     <th>RJobs</th>
-                    <th>Status (ProdSys)</th>
+                    <th>Status (PS2)</th>
                     <th>Status (JEDI)</th>
                     {% if requestParams.preset != 'DPD' %}
                         <th>Type</th>
@@ -389,110 +390,11 @@
                     {% endif %}
                     <th>CPU Time per Event</th>
                     <th>Global Share</th>
-                    {% if requestParams.site %}
-                        <th>Site</th>
-                    {% endif %}
+                    <th>Site</th>
                     <th>Hastags</th>
                 </tr>
                 </thead>
             <tbody>
-                {% for task in tasks %}
-                    <tr>
-                        <td>{% if task.campaign %}
-                            <a href="{{ xurl }}campaign={{ task.campaign }}">{{ task.cutcampaign }}</a>
-                            {% else %}---{% endif %}
-                        </td>
-                        <td>{% if task.reqid %}
-                            <a href="{{ xurl }}reqid={{ task.reqid }}">{{ task.reqid }}</a>
-                            <a href="https://prodtask-dev.cern.ch/reqtask/{{task.reqid}}/"
-                               target="_blank"> &rArr;</a>
-                            {% else %}---{% endif %}
-                        </td>
-                        <td>{% if task.inputdataset %}
-                            <a href="{{ xurl }}inputdataset={{ task.inputdataset }}">{{ task.inputdataset }}</a>
-                            {% else %}---{% endif %}
-                        </td>
-                        <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>
-                            <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
-                               target="_blank"> &rArr;</a></td>
-                        <td>{% if task.rjobs > 0 %}
-                            <a href="/jobs/?jeditaskid={{ task.jeditaskid }}&jobstatus=running">{{ task.rjobs }}</a> {% else %}
-                            {{ task.rjobs }}{% endif %}</td>
-                        <td class='{{ task.superstatus }}_fill'><a
-                                href="{{ xurl }}status={{ task.superstatus }}" class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</a></td>
-                        <td class='{{ task.status }}_fill'><a
-                                href="{{ xurl }}status={{ task.status }}" class="{{ task.status }}_tooltip">{{ task.status }}</a></td>
-                        {% if requestParams.preset != 'DPD' %}
-                            <td><a href="{{ xurl }}processingtype={{ task.processingtype }}"> {{ task.processingtype }} </a></td>
-                        {% endif %}
-                        <td>{% if task.nevents %}{{ task.nevents|intcomma }}{% else %}---{% endif %}</td>
-                        <td>{% if task.nevents %}{{ task.neventsused|intcomma }}{% else %}---{% endif %}</td>
-                        <td><div id="{{ task.jeditaskid }}"></div></td>
-                        <script>
-                            $.ajax({
-                                url: '{% url 'eventsInfo' %}?jeditaskid={{ task.jeditaskid }}',
-                                dataType: 'json',
-                                jsonpCallback: 'insertReply',
-                                async: true,
-                                type: 'GET',
-                                success: function(response) {
-                                    document.getElementById(response.jeditaskid).innerHTML = ((typeof response.running) != 'undefined' ? response.running.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '---' );
-                                    if (response.running === parseInt(response.running, 10)) {
-                                        numberOfRunning = numberOfRunning + response.running;}
-                                    if ( typeof {{ task.neventstobeused }} != 'undefined' ) {
-                                    numberOfWaiting = numberOfWaiting + {{ task.neventstobeused }};}
-                                    document.getElementById("running").innerHTML = Math.round(numberOfRunning/1000000);
-                                    document.getElementById("waiting").innerHTML = Math.round(numberOfWaiting/1000000);
-                                    c+=1;
-                                    progressBarR.val(Math.ceil(c*100/ntasks));
-                                    progressBarW.val(Math.ceil(c*100/ntasks));
-                                },
-                                error: function(xhr, status, error) {
-                                    console.log(status + '; ' + error);
-                                }
-
-                            });
-
-                        </script>
-                        <td>{% if task.nevents %}{{ task.neventstobeused|intcomma }}{% else %}---{% endif %}</td>
-                        <td>{% if task.nevents %}{{ task.percentage }}{% else %}---{% endif %}</td>
-                        <td>{% if task.nfilesfailed %}{{ task.nfilesfailed }}{% else %}0{% endif %}</td>
-                        <td>{{ task.priority }}</td>
-                        {% if requestParams.preset == 'DPD' %}
-                            <td><a href="{{ xurl }}ptag={{ task.ptag }}">{{ task.ptag }}</a></td>
-                            <td>{{ task.outputtypes }}</td>
-                        {% endif %}
-                        {% if requestParams.preset == 'MC' %}
-                            <td><a href="{{ xurl }}simtype={{ task.simtype }}">{{ task.simtype }}</a></td>
-                        {% endif %}
-                        <td>{{ task.age }}</td>
-                        <td><a href="{{ xurl }}corecount={{ task.corecount }}">{{ task.corecount }}</a></td>
-                        {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
-                            <td><a href="{{ xurl }}username={{ task.username }}">{{ task.username }} </a></td>
-                        {% endif %}
-                        <td>{% if task.cputime %} {{ task.cputime }} {% else %} --- {% endif %}</td>
-                        <td>{% if task.gshare %} <a href="{{ xurl }}gshare={{ task.gshare }}">{{ task.gshare }}</a> {% else %} --- {% endif %}</td>
-                        {% if requestParams.site %}
-                            <td>{% if task.site %} <a href="{{ xurl }}site={{ task.site }}">{{ task.site }}</a> {% else %} --- {% endif %}</td>
-                        {% endif %}
-                        <td>
-                            {% if 'hashtaglist' in task %}
-
-                                {% for hashtag in task.hashtaglist %}
-                                    {% if 'hashtags' in requestParams %}
-                                        <a href="{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},{{ hashtag }}">{{ hashtag }}</a>
-                                    {% else %}
-                                        <a href="{{ xurl }}hashtags={{ hashtag }}">{{ hashtag }}</a>
-                                    {% endif %}
-                                    {% if not forloop.last %}, {% endif %}
-                                {% endfor %}
-
-                            {% else %}
-                                <a href="{{ xurl }}hashtags={{ task.hashtags }}">{{ task.hashtags }}</a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
             </tbody>
             </table>
 
@@ -504,15 +406,549 @@
         {% endif %}
 
 <script>
-    $(document).ajaxStop(function() {
-        $('#tasklist').DataTable({
-            "columnDefs": [
-                {"type": "num-html", "targets": [2,4,8,9,10,11,12,13,14,16,17,19] }
-            ],
-            "lengthMenu" : [[25, 50, 100, -1], [25, 50, 100, "All"]] ,
-            "scrollX": true
-        });
+    $(document).ready(function () {
+        var preset = {{ productiontype|safe }};
+        if (preset === 'MC') {
+            taskListMCTable();
+        }
+        else if (preset === 'DPD') {
+            taskListDPDTable();
+        }
+        else {
+            taskListDataTable();
+        }
     });
+    function taskListMCTable() {
+      $('#tasklist').dataTable({
+        //"bRetrieve": true,
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "scrollX": true,
+
+        "ajax": {
+            "processing": true,
+            "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
+        "dataSrc" : ''},            "columnDefs": [
+            {"type": "num-html", "targets": [2,4,8,9,10,11,12,13,14,16,17,19] }
+        ],
+        "aoColumns": [
+            {
+                "data": "cutcampaign",
+                sDefaultContent: "---",
+                "render": function(data, type, row, meta) {
+                    return '<a href = "{{ xurl }}campaign=' + row['campaign'] + '">'+row['cutcampaign']+'</a>'
+                 }
+            },
+            {
+                "data": "reqid",
+                sDefaultContent: "",
+                "render": function ( data, type, full, meta ) {
+                    return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/reqtask/' + full['reqid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                }
+            },
+            {
+                "data": "inputdataset",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}inputdataset=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+                }
+            },
+            {
+                "data": "jeditaskid",
+                sDefaultContent: "",
+                "render": function ( data, type, full, meta ) {
+                    return '<a href = "{{ xurl }}reqid=' + full['jeditaskid'] + '">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                }
+            },
+            {
+                "data": "rjobs",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    if (data > 0) {
+                        return '<a href = "{% url 'jobList' %}?jobstatus=running&jeditaskid=' + full['jeditaskid'] + '">' + full['rjobs'] + '</a>'
+                    }
+                    else {
+                        return data;
+                    }
+                }
+            },
+            {
+                "data": "superstatus",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}superstatus=' + full['superstatus'] + '">' + full['superstatus'] + '</a>'
+                }
+            },
+            {
+                "data": "status",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}status=' + full['status'] + '">' + full['status'] + '</a>'
+                }
+            },
+            {
+                "data": "processingtype",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}processingtype=' + full['processingtype'] + '">' + full['processingtype'] + '</a>'
+                }
+            },
+            {
+                "data": "nevents",
+                sDefaultContent: "---",
+                render: $.fn.dataTable.render.number( ',', '.')
+
+            },
+            {
+                "data": "neventsused",
+                sDefaultContent: "",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "neventsrunning",
+                sDefaultContent: "0",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "neventstobeused",
+                sDefaultContent: "---",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "percentage",
+                sDefaultContent: "",
+            },
+            {
+                "data": "nfilesfailed",
+                sDefaultContent: "---",
+            },
+            {
+                "data": "priority",
+                sDefaultContent: "",
+            },
+            {
+                "data": "simtype",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}simtype=' + full['simtype'] + '">' + full['simtype'] + '</a>'
+                }
+            },
+            {
+                "data": "age",
+                sDefaultContent: "",
+            },
+            {
+                "data": "corecount",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}corecount=' + full['corecount'] + '">' + full['corecount'] + '</a>'
+                }
+            },
+            {
+                "data": "username",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}username=' + full['username'] + '">' + full['username'] + '</a>'
+                }
+            },
+            {
+                "data": "cputime",
+                sDefaultContent: "---",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "gshare",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}gshare=' + full['gshare'] + '">' + full['gshare'] + '</a>'
+                }
+            },
+            {
+                "data": "site",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    if (data) {
+                        return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+                    }
+                    else {
+                        return '---';
+                    }
+                }
+            },
+            {
+                "data": "hashtags",
+                sDefaultContent: "---",
+                "render": function ( data, type, row ) {
+                    if (data.length > 0) {
+                        var xurl = '{{ xurl|safe }}';
+                        var hashtaglist = data.split(',');
+                        var hashtaglinks = '';
+                        for (var i = 0; i < hashtaglist.length; i++) {
+                            if (xurl.indexOf('hashtags') > -1) {
+                                hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                            }
+                            else
+                            {
+                                hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                            }
+                        }
+                        return hashtaglinks;
+                    }
+                    else {
+                        return '---'
+                    }
+                }
+            }
+
+        ],
+        "createdRow": function ( row, data, index ) {
+            $('td', row).eq(5).addClass(data['superstatus'] + '_fill');
+            $('td', row).eq(6).addClass(data['status'] + '_fill');
+        }
+      });
+    }
+
+    function taskListDPDTable() {
+      $('#tasklist').dataTable({
+        //"bRetrieve": true,
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "scrollX": true,
+
+        "ajax": {
+            "processing": true,
+            "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
+            "dataSrc" : ''},
+        "aoColumns": [
+            {
+                "data": "cutcampaign",
+                sDefaultContent: "---",
+                "render": function(data, type, row, meta) {
+                    return '<a href = "{{ xurl }}campaign=' + row['campaign'] + '">'+row['cutcampaign']+'</a>'
+                 }
+            },
+            {
+                "data": "reqid",
+                sDefaultContent: "",
+                "render": function ( data, type, full, meta ) {
+                    return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/reqtask/' + full['reqid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                }
+            },
+            {
+                "data": "inputdataset",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}inputdataset=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+                }
+            },
+            {
+                "data": "jeditaskid",
+                sDefaultContent: "",
+                "render": function ( data, type, full, meta ) {
+                    return '<a href = "{{ xurl }}reqid=' + full['jeditaskid'] + '">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                }
+            },
+            {
+                "data": "rjobs",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    if (data > 0) {
+                        return '<a href = "{% url 'jobList' %}?jobstatus=running&jeditaskid=' + full['jeditaskid'] + '">' + full['rjobs'] + '</a>'
+                    }
+                    else {
+                        return data;
+                    }
+                }
+            },
+            {
+                "data": "superstatus",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}superstatus=' + full['superstatus'] + '">' + full['superstatus'] + '</a>'
+                }
+            },
+            {
+                "data": "status",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}status=' + full['status'] + '">' + full['status'] + '</a>'
+                }
+            },
+            {
+                "data": "nevents",
+                sDefaultContent: "---",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "neventsused",
+                sDefaultContent: "",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "neventsrunning",
+                sDefaultContent: "0",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "neventstobeused",
+                sDefaultContent: "---",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "percentage",
+                sDefaultContent: "",
+            },
+            {
+                "data": "nfilesfailed",
+                sDefaultContent: "---",
+            },
+            {
+                "data": "priority",
+                sDefaultContent: "",
+            },
+            {
+                "data": "ptag",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}ptag=' + full['ptag'] + '">' + full['ptag'] + '</a>'
+                }
+            },
+            {
+                "data": "outputtypes",
+                sDefaultContent: "",
+            },
+            {
+                "data": "age",
+                sDefaultContent: "",
+            },
+            {
+                "data": "corecount",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}corecount=' + full['corecount'] + '">' + full['corecount'] + '</a>'
+                }
+            },
+            {
+                "data": "cputime",
+                sDefaultContent: "---",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "gshare",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}gshare=' + full['gshare'] + '">' + full['gshare'] + '</a>'
+                }
+            },
+            {
+                "data": "site",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+                }
+            },
+            {
+                "data": "hashtags",
+                sDefaultContent: "---",
+                "render": function ( data, type, row ) {
+                    if (data.length > 0) {
+                        var xurl = '{{ xurl|safe }}';
+                        var hashtaglist = data.split(',');
+                        var hashtaglinks = '';
+                        for (var i = 0; i < hashtaglist.length; i++) {
+                            if (xurl.indexOf('hashtags') > -1) {
+                                hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                            }
+                            else
+                            {
+                                hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                            }
+                        }
+                        return hashtaglinks;
+                    }
+                    else {
+                        return '---'
+                    }
+                }
+            }
+
+        ],
+        "createdRow": function ( row, data, index ) {
+            $('td', row).eq(5).addClass(data['superstatus'] + '_fill');
+            $('td', row).eq(6).addClass(data['status'] + '_fill');
+        }
+      })
+    }
+
+
+    function taskListDataTable() {
+      $('#tasklist').dataTable({
+        //"bRetrieve": true,
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "scrollX": true,
+
+        "ajax": {
+            "processing": true,
+            "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
+            "dataSrc" : ''},
+        "aoColumns": [
+            {
+                "data": "cutcampaign",
+                sDefaultContent: "---",
+                "render": function(data, type, row, meta) {
+                    return '<a href = "{{ xurl }}campaign=' + row['campaign'] + '">'+row['cutcampaign']+'</a>'
+                 }
+            },
+            {
+                "data": "reqid",
+                sDefaultContent: "",
+                "render": function ( data, type, full, meta ) {
+                    return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/reqtask/' + full['reqid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                }
+            },
+            {
+                "data": "inputdataset",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}inputdataset=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+                }
+            },
+            {
+                "data": "jeditaskid",
+                sDefaultContent: "",
+                "render": function ( data, type, full, meta ) {
+                    return '<a href = "{{ xurl }}reqid=' + full['jeditaskid'] + '">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                }
+            },
+            {
+                "data": "rjobs",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    if (data > 0) {
+                        return '<a href = "{% url 'jobList' %}?jobstatus=running&jeditaskid=' + full['jeditaskid'] + '">' + full['rjobs'] + '</a>'
+                    }
+                    else {
+                        return data;
+                    }
+                }
+            },
+            {
+                "data": "superstatus",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}superstatus=' + full['superstatus'] + '">' + full['superstatus'] + '</a>'
+                }
+            },
+            {
+                "data": "status",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}status=' + full['status'] + '">' + full['status'] + '</a>'
+                }
+            },
+            {
+                "data": "processingtype",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}processingtype=' + full['processingtype'] + '">' + full['processingtype'] + '</a>'
+                }
+            },
+            {
+                "data": "nevents",
+                sDefaultContent: "---",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "neventsused",
+                sDefaultContent: "",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "neventsrunning",
+                sDefaultContent: "0",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "neventstobeused",
+                sDefaultContent: "---",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "percentage",
+                sDefaultContent: "",
+            },
+            {
+                "data": "nfilesfailed",
+                sDefaultContent: "---",
+            },
+            {
+                "data": "priority",
+                sDefaultContent: "",
+            },
+            {
+                "data": "age",
+                sDefaultContent: "",
+            },
+            {
+                "data": "corecount",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}corecount=' + full['corecount'] + '">' + full['corecount'] + '</a>'
+                }
+            },
+            {
+                "data": "cputime",
+                sDefaultContent: "---",
+                render: $.fn.dataTable.render.number( ',', '.')
+            },
+            {
+                "data": "gshare",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}gshare=' + full['gshare'] + '">' + full['gshare'] + '</a>'
+                }
+            },
+            {
+                "data": "site",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+                }
+            },
+            {
+                "data": "hashtags",
+                sDefaultContent: "---",
+                "render": function ( data, type, row ) {
+                    if (data.length > 0) {
+                        var xurl = '{{ xurl|safe }}';
+                        var hashtaglist = data.split(',');
+                        var hashtaglinks = '';
+                        for (var i = 0; i < hashtaglist.length; i++) {
+                            if (xurl.indexOf('hashtags') > -1) {
+                                hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                            }
+                            else
+                            {
+                                hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                            }
+                        }
+                        return hashtaglinks;
+                    }
+                    else {
+                        return '---'
+                    }
+                }
+            }
+
+        ],
+        "createdRow": function ( row, data, index ) {
+            $('td', row).eq(5).addClass(data['superstatus'] + '_fill');
+            $('td', row).eq(6).addClass(data['status'] + '_fill');
+        }
+      })
+    }
+
 </script>
 
 {% endblock %}
