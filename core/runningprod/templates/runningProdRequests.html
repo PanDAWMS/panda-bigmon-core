@@ -177,7 +177,7 @@
                 "data": "ntasks",
                 sDefaultContent: "",
                 "render": function ( data, type, full, meta ) {
-                    return '<a href = "{% url 'taskList' %}?superstatus=waiting|registered|submitting|assigning|running|exhausted|broken&reqid=' + full['reqid'] + '">' + full['reqid'] + '</a>'
+                    return '<a href = "{% url 'taskList' %}?superstatus=waiting|registered|submitting|assigning|running|exhausted|broken&reqid=' + full['reqid'] + '">' + full['ntasks'] + '</a>'
                 }
             },
             {
