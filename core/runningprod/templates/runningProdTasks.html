@@ -457,7 +457,7 @@
                 "data": "jeditaskid",
                 sDefaultContent: "",
                 "render": function ( data, type, full, meta ) {
-                    return '<a href = "{{ xurl }}reqid=' + full['jeditaskid'] + '">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                    return '<a href = "{% url 'taskInfo' %}' + full['jeditaskid'] + '/">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
                 }
             },
             {
@@ -645,7 +645,7 @@
                 "data": "jeditaskid",
                 sDefaultContent: "",
                 "render": function ( data, type, full, meta ) {
-                    return '<a href = "{{ xurl }}reqid=' + full['jeditaskid'] + '">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                    return '<a href = "{% url 'taskInfo' %}' + full['jeditaskid'] + '/">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
                 }
             },
             {
@@ -818,7 +818,7 @@
                 "data": "jeditaskid",
                 sDefaultContent: "",
                 "render": function ( data, type, full, meta ) {
-                    return '<a href = "{{ xurl }}reqid=' + full['jeditaskid'] + '">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                    return '<a href = "{% url 'taskInfo' %}' + full['jeditaskid'] + '/">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
                 }
             },
             {
