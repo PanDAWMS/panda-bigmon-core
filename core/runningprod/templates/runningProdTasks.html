@@ -428,7 +428,7 @@
         "ajax": {
             "processing": true,
             "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
-        "dataSrc" : ''},
+            "dataSrc" : ''},
         "columnDefs": [
             {"type": "num-html", "targets": [2,4,8,9,10,11,12,13,14,16,17,19] }
         ],
@@ -616,6 +616,9 @@
         "paging": true,
         "scrollX": true,
         "aaSorting": [[16,'desc']],
+        "columnDefs": [
+            {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,16,17] }
+        ],
 
         "ajax": {
             "processing": true,
@@ -790,6 +793,9 @@
         "paging": true,
         "scrollX": true,
         "aaSorting": [[15,'desc']],
+        "columnDefs": [
+            {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,16,17] }
+        ],
 
         "ajax": {
             "processing": true,

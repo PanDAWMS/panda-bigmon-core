@@ -245,8 +245,8 @@ th.vertical {
     border: none;
     padding-left: 0.3rem;
     padding-right: 0.3rem;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
 }
 
 /* New style for dataTables */
