@@ -41,3 +41,12 @@ class HarvesterDialogs (models.Model):
     diagmessage = models.CharField(max_length=500, db_column='DIAGMESSAGE')
     class Meta:
         db_table = u'"ATLAS_PANDA"."HARVESTER_DIALOGS"'
+class HarvesterWorkerStats (models.Model):
+    harvesterid = models.CharField(max_length=50, db_column='HARVESTER_ID', null=False, blank=True)
+    computingsite = models.CharField(max_length=128, db_column='COMPUTINGSITE', null=False, blank=True)
+    resourcetype = models.CharField(max_length=128, db_column='RESOURCETYPE', null=False, blank=True)
+    status = models.CharField(max_length=80, db_column='STATUS', null=False, blank=True)
+    nworkers = models.IntegerField(db_column='N_WORKERS', null=False)
+    lastupdate = models.DateTimeField(null=True, db_column='LASTUPDATE', blank=True)
+    class Meta:
+        db_table = u'"ATLAS_PANDA"."HARVESTER_WORKER_STATS"'

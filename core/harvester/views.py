@@ -6,14 +6,14 @@ from datetime import datetime
 
 from django.db.models import Count
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
 from django.db import connection
 
 from django.utils.cache import patch_cache_control, patch_response_headers
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder, \
     extensibleURL, DateTimeEncoder
-from core.harvester.models import HarvesterWorkers,HarvesterRelJobsWorkers,HarvesterDialogs
+from core.harvester.models import HarvesterWorkers,HarvesterRelJobsWorkers,HarvesterDialogs,HarvesterWorkerStats
 
 harvWorkStatuses = [
     'missed', 'submitted', 'ready', 'running', 'idle', 'finished', 'failed', 'cancelled'
@@ -160,8 +160,10 @@ def harvesterWorkerInfo(request):
     return response
 from datetime import datetime,timedelta
 import json
+def harvesterfm (request):
+    return redirect('/harvesters/')
 
-def harvesterfm(request):
+def harvesters(request):
     import json
     valid, response = initRequest(request)
     #query, extra, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
@@ -179,15 +181,35 @@ def harvesterfm(request):
             import json
             data = json.loads(data)
             data['request'] = request
-            response = render_to_response('harvesterfm.html', data, content_type='text/html')
+            response = render_to_response('harvesters.html', data, content_type='text/html')
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             endSelfMonitor(request)
             return response
+        if ('workersstats' in request.session['requestParams'] and 'instance' in request.session['requestParams']):
+            harvsterworkerstats = []
+            tquery = {}
+            tquery['harvesterid'] = instance
+            limit = 100
+            if 'limit' in request.session['requestParams']:
+                limit = request.session['requestParams']['limit']
+            harvsterworkerstat = HarvesterWorkerStats.objects.filter(**tquery).values('computingsite', 'resourcetype', 'status',
+                                                                           'nworkers','lastupdate').filter(**tquery).extra(
+                where=[extra]).order_by('-lastupdate')[:limit]
+            # dialogs.extend(HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime'))
+            old_format = '%Y-%m-%d %H:%M:%S'
+            new_format = '%d-%m-%Y %H:%M:%S'
+            for stat in harvsterworkerstat:
+                stat['lastupdate'] = datetime.strptime(str(stat['lastupdate']), old_format).strftime(new_format)
+                harvsterworkerstats.append(stat)
+            return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='text/html')
         if ('dialogs' in request.session['requestParams'] and 'instance' in request.session['requestParams']):
             dialogs = []
             tquery = {}
             tquery['harvesterid'] = instance
-            dialogsList = HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime')
+            limit = 100
+            if 'limit' in request.session['requestParams']:
+                limit = request.session['requestParams']['limit']
+            dialogsList = HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime')[:limit]
             # dialogs.extend(HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime'))
             old_format = '%Y-%m-%d %H:%M:%S'
             new_format = '%d-%m-%Y %H:%M:%S'
@@ -219,7 +241,7 @@ def harvesterfm(request):
 
                     tmpworkerList = data['workersList'].keys()
                     for worker in tmpworkerList:
-                        if datetime.strptime(data['workersList'][worker]['wrklastupdate'].replace('T',' '), '%Y-%m-%d %H:%M:%S') < datetime.now() - timedelta(days=60):
+                        if datetime.strptime(data['workersList'][worker]['wrklastupdate'], '%d-%m-%Y %H:%M:%S') < datetime.now() - timedelta(days=60):
                             del data['workersList'][worker]
         else:
             lastupdateCache = ''
@@ -267,10 +289,7 @@ def harvesterfm(request):
         gg.nativestatus,
         gg.diagmessage,
         gg.computingelement,
-        gg.njobs,
-        (select count(pandaid) from atlas_panda.harvester_rel_jobs_workers where atlas_panda.harvester_rel_jobs_workers.harvesterid =  ff.harvester_id and atlas_panda.harvester_rel_jobs_workers.workerid = gg.workerid) as harvesterpandaids,
-        (select count(pandaid) from atlas_panda.harvester_rel_jobs_workers where  atlas_panda.harvester_rel_jobs_workers.workerid = gg.workerid) as totalpandaids
-
+        gg.njobs
         FROM
         atlas_panda.harvester_workers gg,
         atlas_panda.harvester_instances ff
@@ -320,7 +339,7 @@ def harvesterfm(request):
         else:
             display_limit_workers = 30000
 
-        generalWorkersFields = ['workerid','status','batchid','nodeid','queuename','computingsite','submittime','wrklastupdate','wrkstarttime','wrkendtime','ncore','errorcode','stdout','stderr','batchlog','resourcetype','nativeexitcode','nativestatus','diagmessage','totalpandaids', 'harvesterpandaids','njobs','computingelement']
+        generalWorkersFields = ['workerid','status','batchid','nodeid','queuename','computingsite','submittime','wrklastupdate','wrkstarttime','wrkendtime','ncore','errorcode','stdout','stderr','batchlog','resourcetype','nativeexitcode','nativestatus','diagmessage','njobs','computingelement']
         generalWorkersList = []
 
         wrkPandaIDs ={}
@@ -328,10 +347,14 @@ def harvesterfm(request):
             object = {}
             computingsites.setdefault(worker['computingsite'],[]).append(worker['workerid'])
             statuses.setdefault(worker['status'],[]).append(worker['workerid'])
-            wrkPandaIDs[worker['workerid']] = worker['harvesterpandaids']
-            workerIDs.add(worker['workerid'])
+            if worker['njobs'] is not None:
+                wrkPandaIDs[worker['workerid']] = worker['njobs']
+            else: wrkPandaIDs[worker['workerid']] = 0
+            #workerIDs.add(worker['workerid'])
             for field in generalWorkersFields:
-                object[field] = worker[field]
+                if worker[field] is not None:
+                    object[field] = worker[field]
+                else: object[field] = 0
             generalWorkersList.append(object)
             if i == len(workersList) - 1:
                 for computingsite in computingsites.keys():
@@ -356,7 +379,7 @@ def harvesterfm(request):
         setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, 'harvester',  json.dumps(data, cls=DateEncoder),60 * 60)
         endSelfMonitor(request)
-        return render_to_response('harvesterfm.html', data, content_type='text/html')
+        return render_to_response('harvesters.html', data, content_type='text/html')
 
     # elif 'instance' in request.session['requestParams'] and 'workerid' in 'instance' in request.session['requestParams']:
     #     pass
@@ -417,7 +440,7 @@ def harvesterfm(request):
             'viewParams': request.session['viewParams']
         }
         #data =json.dumps(data,cls=DateEncoder)
-        response = render_to_response('harvesterfm.html', data, content_type='text/html')
+        response = render_to_response('harvesters.html', data, content_type='text/html')
     return response
 
 def getHarvesterJobs(request,instance = '', workerid = ''):

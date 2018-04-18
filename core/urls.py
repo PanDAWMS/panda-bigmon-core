@@ -168,6 +168,7 @@ urlpatterns = [
     url(r'^harvesterworkerslist/$', harvester.harvesterWorkList, name='harvesterworkerslist'),
     url(r'^harvesterworkerinfo/$', harvester.harvesterWorkerInfo, name='harvesterWorkerInfo'),
     url(r'^harvestertest/$', harvester.harvesterfm, name='harvesterfm'),
+    url(r'^harvesters/$', harvester.harvesters, name='harvesters'),
     #url(r'^json/harvesterinstances/$', harvester.harvesterinstancesjson, name='harvesterinstancesJSON'),
 
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
