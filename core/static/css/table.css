@@ -243,6 +243,10 @@ th.vertical {
 
 .minimalistic-table tbody td {
     border: none;
+    padding-left: 0.3rem;
+    padding-right: 0.3rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
 }
 
 /* New style for dataTables */
@@ -268,11 +272,18 @@ th.vertical {
     background-color: #fefefe;
     border: none;
     text-align: center;
+    font-size: 0.875rem;
 }
 
 .data-table tbody td {
     border: none;
     text-align: center;
+    white-space: nowrap;
+    padding-left: 0.3rem;
+    padding-right: 0.3rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.875rem;
 }
 
 .data-table td > a {

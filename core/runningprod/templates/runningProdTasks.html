@@ -21,7 +21,7 @@
 {% endblock %}
 {#<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js"%}"></script>#}
 {% block body %}
-
+<div style="font-size: 0.875rem">
     {% if requestParams.campaign %}<br><b>Campaign:</b> {{ requestParams.campaign }} {% endif %}
     {% if requestParams.status %}<br><b>Status:</b> {{ requestParams.status }} {% endif %}
     {% if requestParams.corecount %}<br><b>Core count:</b> {{ requestParams.corecount }} {% endif %}
@@ -33,6 +33,7 @@
     {% if requestParams.processingtype %}<br><b>Processingtype:</b> {{ requestParams.processingtype }} {% endif %}
     {% if requestParams.site %}<br><b>Site:</b> {{ requestParams.site }} {% endif %}
     {% if requestParams.gshare %}<br><b>Global Share:</b> {{ requestParams.gshare }} {% endif %}
+</div>
     <p>
         <script>
             var numberOfRunning = 0;
@@ -355,9 +356,6 @@
 
             <table id = 'tasklist' class="data-table">
                 <thead>
-{#                <tr class='tablesection'>#}
-{#                    <th colspan=25> {{ ntasks }} tasks</th>#}
-{#                </tr>#}
                 <tr>
                     <th>Campaign</th>
                     <th>Req ID</th>
@@ -390,8 +388,8 @@
                     {% endif %}
                     <th>CPU Time per Event</th>
                     <th>Global Share</th>
-                    <th>Site</th>
                     <th>Hastags</th>
+                    <th>Site</th>
                 </tr>
                 </thead>
             <tbody>
@@ -424,11 +422,13 @@
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         "paging": true,
         "scrollX": true,
+        "aaSorting": [[16,'desc']],
 
         "ajax": {
             "processing": true,
             "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
-        "dataSrc" : ''},            "columnDefs": [
+        "dataSrc" : ''},
+        "columnDefs": [
             {"type": "num-html", "targets": [2,4,8,9,10,11,12,13,14,16,17,19] }
         ],
         "aoColumns": [
@@ -564,18 +564,6 @@
                 }
             },
             {
-                "data": "site",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    if (data) {
-                        return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
-                    }
-                    else {
-                        return '---';
-                    }
-                }
-            },
-            {
                 "data": "hashtags",
                 sDefaultContent: "---",
                 "render": function ( data, type, row ) {
@@ -598,6 +586,18 @@
                         return '---'
                     }
                 }
+            },
+            {
+                "data": "site",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    if (data) {
+                        return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+                    }
+                    else {
+                        return '---';
+                    }
+                }
             }
 
         ],
@@ -614,6 +614,7 @@
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         "paging": true,
         "scrollX": true,
+        "aaSorting": [[16,'desc']],
 
         "ajax": {
             "processing": true,
@@ -741,13 +742,6 @@
                 }
             },
             {
-                "data": "site",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
-                }
-            },
-            {
                 "data": "hashtags",
                 sDefaultContent: "---",
                 "render": function ( data, type, row ) {
@@ -770,6 +764,13 @@
                         return '---'
                     }
                 }
+            },
+            {
+                "data": "site",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+                }
             }
 
         ],
@@ -787,6 +788,7 @@
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         "paging": true,
         "scrollX": true,
+        "aaSorting": [[15,'desc']],
 
         "ajax": {
             "processing": true,
@@ -910,13 +912,6 @@
                 }
             },
             {
-                "data": "site",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
-                }
-            },
-            {
                 "data": "hashtags",
                 sDefaultContent: "---",
                 "render": function ( data, type, row ) {
@@ -938,6 +933,13 @@
                     else {
                         return '---'
                     }
+                }
+            },
+            {
+                "data": "site",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
                 }
             }
 
