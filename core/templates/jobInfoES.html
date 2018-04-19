@@ -401,6 +401,7 @@ But if you want, you can check.
 <th> Attempt </th>
 <th> DataSet ID </th>
 <th> ObjectStore ID </th>
+<th> Jobset ID </th>
 
 </tr>
 {% for ev in evtable %}
@@ -413,6 +414,7 @@ But if you want, you can check.
 <td> {{ ev.attemptnr }} </td>
 <td> {{ ev.datasetid }} </td>
 <td> {{ ev.objstore_id }} </td>
+<td> <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jeditaskid={{ job.jeditaskid }}&jobsetid={{ ev.eventoffset }}&mode=nodrop">{{ ev.eventoffset }} </a> </td>
 
 </tr>
 {% endfor %}

@@ -470,6 +470,8 @@ class JediEvents(models.Model):
     datasetid = models.BigIntegerField(db_column='DATASETID', blank=True)
     status = models.IntegerField(db_column='STATUS', blank=True)
     attemptnr = models.IntegerField(db_column='ATTEMPTNR', blank=True)
+    eventoffset = models.IntegerField(db_column='EVENT_OFFSET', blank=True)
+    isjumbo = models.IntegerField(db_column='IS_JUMBO', blank=True)
     objstore_id = models.IntegerField(db_column='OBJSTORE_ID', blank=True)
     file_not_deleted = models.CharField(max_length=48, db_column='FILE_NOT_DELETED')
     error_code = models.IntegerField(db_column='ERROR_CODE', blank=True)

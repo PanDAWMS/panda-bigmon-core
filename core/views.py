@@ -911,6 +911,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         if request.session['requestParams'][param] == 'esmerge' or request.session['requestParams'][
                             param] == '2':
                             query['eventservice'] = 2
+                        if request.session['requestParams'][param] == 'jumbo' or request.session['requestParams'][
+                            param] == '4':
+                            query['eventservice'] = 4
                         elif request.session['requestParams'][param] == 'eventservice' or \
                                         request.session['requestParams'][param] == '1':
                             query['eventservice'] = 1
@@ -1295,6 +1298,8 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
                 job['eventservice'] = 'eventservice'
             elif isEventService(job) and job['eventservice'] == 2:
                 job['eventservice'] = 'esmerge'
+            elif isEventService(job) and job['eventservice'] == 4:
+                job['eventservice'] = 'jumbo'
             else:
                 job['eventservice'] = 'ordinary'
         if 'destinationdblock' in job:
@@ -1329,6 +1334,8 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
                 job['jobinfo'] = job['taskbuffererrordiag']
             elif 'specialhandling' in job and job['specialhandling'] == 'esmerge':
                 job['jobinfo'] = 'Event service merge job'
+            elif 'eventservice' in job and job['eventservice'] == 'jumbo':
+                job['jobinfo'] = 'Jumbo job'
             else:
                 job['jobinfo'] = 'Event service job'
         job['duration'] = ""
@@ -1364,9 +1371,9 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             phi = plo + 99
             job['priorityrange'] = "%d:%d" % (plo, phi)
         if 'jobsetid' in job and job['jobsetid']:
-            plo = int(job['jobsetid']) - int(job['jobsetid']) % 100
-            phi = plo + 99
-            job['jobsetrange'] = "%d:%d" % (plo, phi)
+                plo = int(job['jobsetid']) - int(job['jobsetid']) % 100
+                phi = plo + 99
+                job['jobsetrange'] = "%d:%d" % (plo, phi)
         if 'corecount' in job and job['corecount'] is None:
             job['corecount'] = 1
     ## drop duplicate jobs
@@ -2820,7 +2827,7 @@ def jobList(request, mode=None, param=None):
         eventservice = True
     if 'eventservice' in request.session['requestParams'] and (
             request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
-        'eventservice'] == '1'):
+        'eventservice'] == '1' or request.session['requestParams']['eventservice'] == '4' or request.session['requestParams']['eventservice'] == 'jumbo'):
         eventservice = True
     noarchjobs = False
     if ('noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs'] == '1'):
@@ -4196,6 +4203,47 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 if j['processingtype'] == 'usermerge':
                     mergejobs.append(id)
 
+
+    esjobstr = ''
+    if isEventService(job):
+        ## for ES jobs, prepare the event table
+        esjobdict = {}
+        for s in eventservicestatelist:
+            esjobdict[s] = 0
+        evalues = 'fileid', 'datasetid', 'def_min_eventid', 'def_max_eventid', 'processed_upto_eventid', 'status', 'job_processid', 'attemptnr', 'eventoffset'
+        evtable = JediEvents.objects.filter(pandaid=job['pandaid']).order_by('-def_min_eventid').values(*evalues)
+        fileids = {}
+        datasetids = {}
+        # for evrange in evtable:
+        #    fileids[int(evrange['fileid'])] = {}
+        #    datasetids[int(evrange['datasetid'])] = {}
+        flist = []
+        for f in fileids:
+            flist.append(f)
+        dslist = []
+        for ds in datasetids:
+            dslist.append(ds)
+        # datasets = JediDatasets.objects.filter(datasetid__in=dslist).values()
+        dsfiles = JediDatasetContents.objects.filter(fileid__in=flist).values()
+        # for ds in datasets:
+        #    datasetids[int(ds['datasetid'])]['dict'] = ds
+        # for f in dsfiles:
+        #    fileids[int(f['fileid'])]['dict'] = f
+
+        for evrange in evtable:
+            # evrange['fileid'] = fileids[int(evrange['fileid'])]['dict']['lfn']
+            # evrange['datasetid'] = datasetids[evrange['datasetid']]['dict']['datasetname']
+            evrange['status'] = eventservicestatelist[evrange['status']]
+            esjobdict[evrange['status']] += 1
+            evrange['attemptnr'] = 10 - evrange['attemptnr']
+
+        esjobstr = ''
+        for s in esjobdict:
+            if esjobdict[s] > 0:
+                esjobstr += " %s(%s) " % (s, esjobdict[s])
+    else:
+        evtable = []
+
     runesjobs = []
     mergeesjobs = []
     if isEventService(job) and 'jobsetid' in job and job['jobsetid'] > 0:
@@ -4216,51 +4264,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     runesjobs.append(j['pandaid'])
                 if j['eventservice'] == 2:
                     mergeesjobs.append(j['pandaid'])
-
-    esjobstr = ''
-    if isEventService(job):
-        ## for ES jobs, prepare the event table
-        esjobdict = {}
-        for s in eventservicestatelist:
-            esjobdict[s] = 0
-        evtable = JediEvents.objects.filter(pandaid=job['pandaid']).order_by('-def_min_eventid').values('fileid',
-                                                                                                        'datasetid',
-                                                                                                        'def_min_eventid',
-                                                                                                        'def_max_eventid',
-                                                                                                        'processed_upto_eventid',
-                                                                                                        'status',
-                                                                                                        'job_processid',
-                                                                                                        'attemptnr')
-        fileids = {}
-        datasetids = {}
-        # for evrange in evtable:
-        #    fileids[int(evrange['fileid'])] = {}
-        #    datasetids[int(evrange['datasetid'])] = {}
-        flist = []
-        for f in fileids:
-            flist.append(f)
-        dslist = []
-        for ds in datasetids:
-            dslist.append(ds)
-        # datasets = JediDatasets.objects.filter(datasetid__in=dslist).values()
-        dsfiles = JediDatasetContents.objects.filter(fileid__in=flist).values()
-        # for ds in datasets:
-        #    datasetids[int(ds['datasetid'])]['dict'] = ds
-        # for f in dsfiles:
-        #    fileids[int(f['fileid'])]['dict'] = f
-        for evrange in evtable:
-            # evrange['fileid'] = fileids[int(evrange['fileid'])]['dict']['lfn']
-            # evrange['datasetid'] = datasetids[evrange['datasetid']]['dict']['datasetname']
-            evrange['status'] = eventservicestatelist[evrange['status']]
-            esjobdict[evrange['status']] += 1
-            evrange['attemptnr'] = 10 - evrange['attemptnr']
-
-        esjobstr = ''
-        for s in esjobdict:
-            if esjobdict[s] > 0:
-                esjobstr += " %s(%s) " % (s, esjobdict[s])
-    else:
-        evtable = []
 
     ## For CORE, pick up parameters from jobparams
     if VOMODE == 'core' or ('vo' in job and job['vo'] == 'core'):
