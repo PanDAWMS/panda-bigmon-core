@@ -149,7 +149,7 @@
             {% endfor %}
         </table>
         <a href="javascript:ReverseDisplay('harvesterdialogsdiv','harvesterdialogslink','harvesterdialogs')"
-           id="harvesterdialogslink">Show dialog messages/worker stats</a> <br/><br/>
+           id="harvesterdialogslink">Show dialog messages / worker stats</a> <br/><br/>
 
         <div id="harvesterdialogsdiv" style="display: none">
             <div id="tabs">
@@ -176,6 +176,14 @@
                         <tbody>
 
                         </tbody>
+                        <tfoot>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                        </tfoot>
                     </table>
 
                 </div>
@@ -275,6 +283,7 @@
             function workersTable() {
                 $('#harvesterworkers').dataTable({
                     //"bRetrieve": true,
+                    "order": [[ 7, "desc" ]],
                     "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
                     "paging": true,
                     "scrollX": true,
@@ -458,6 +467,26 @@
                         },
 
                     ],
+                    initComplete: function () {
+                        this.api().columns([1, 2]).every(function () {
+                            var column = this;
+                            var select = $('<select><option value="">Show all</option></select>')
+                                .appendTo($(column.footer()).empty())
+                                .on('change', function () {
+                                    var val = $.fn.dataTable.util.escapeRegex(
+                                        $(this).val()
+                                    );
+
+                                    column
+                                        .search(val ? '^' + val + '$' : '', true, false)
+                                        .draw();
+                                });
+
+                            column.data().unique().sort().each(function (d, j) {
+                                select.append('<option value="' + d + '">' + d + '</option>')
+                            });
+                        });
+                    }
                 });
             }
 
