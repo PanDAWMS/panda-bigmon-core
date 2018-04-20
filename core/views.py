@@ -2875,8 +2875,12 @@ def jobList(request, mode=None, param=None):
         isReturnDroppedPMerge=False
         if 'processingtype' in request.session['requestParams'] and \
             request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge=True
-        if dropmode and (len(taskids) == 1):
-            tk,droppedList,wildCardExtension = dropalgorithm.dropRetrielsJobs(taskids.keys()[0],wildCardExtension,isEventTask)
+        isJumbo = False
+        if dropmode and (len(taskids) == 1) and 'eventservice' in request.session['requestParams']:
+            if request.session['requestParams']['eventservice'] != '4' and request.session['requestParams']['eventservice'] != 'jumbo':
+                tk,droppedList,wildCardExtension = dropalgorithm.dropRetrielsJobs(taskids.keys()[0],wildCardExtension,isEventTask)
+            else:
+                isJumbo = True
 
     if 'transferringnotupdated' in request.session['requestParams']:
         jobs = stateNotUpdated(request, state='transferring', values=values, wildCardExtension=wildCardExtension)
@@ -2976,7 +2980,8 @@ def jobList(request, mode=None, param=None):
             else:
                 isEventTask = False
             start = time.time()
-            newjobs,newdroppedPmerge,newdroplist = dropalgorithm.clearDropRetrielsJobs(tk=tk,droplist=droppedList,jobs=newjobs,isEventTask=isEventTask,isReturnDroppedPMerge=isReturnDroppedPMerge)
+            if isJumbo == False:
+                newjobs,newdroppedPmerge,newdroplist = dropalgorithm.clearDropRetrielsJobs(tk=tk,droplist=droppedList,jobs=newjobs,isEventTask=isEventTask,isReturnDroppedPMerge=isReturnDroppedPMerge)
             end = time.time()
             print(end - start)
 

@@ -425,7 +425,7 @@
                 $('#harvesterdialogs').dataTable({
                     "order": [[0, "desc"]],
                     "retrieve": true,
-                    "searching": false,
+                    "searching": true,
                     "bLengthChange": false,
                     "ajax": {
                         "processing": true,
@@ -566,6 +566,7 @@
                     if (table == 'harvesterdialogs') {
                         var number = $('#numberD').val();
                         dialogsTable(number);
+                        $("#harvesterdialogs_filter").hide();
                     }
                 }
                 else {
