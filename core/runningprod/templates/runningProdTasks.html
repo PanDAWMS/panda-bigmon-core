@@ -304,9 +304,10 @@
                         {% else %}
                             {% if neventsByProcessingType|length > 0 %}<div class="d3splot" id="pieChartByPT" style="float:left"></div>{% endif %}
                         {% endif %}
+                        {% if neventsByStatus|length > 0 %}<div class="d3splot" id="pieChartByS" style="float:left"></div>{% endif %}
                         </div>
                     </td>
-                    <td>{% if aslotsByType|length > 0 %}<div class="d3splot" id="pieChartSlots"></div>{% endif %}</td>
+                    <td>{% if aslotsByType|length > 0 %}<div class="d3splot" id="pieChartSlotsByPT"></div>{% endif %}</td>
                     <td colspan=20>{% if plotageshistogram == 1 %}
                         <div class="d3splot" id="sumPlot" style="float:left"></div>{% else %}
                         <p> All tasks age is 0 days</p> {% endif %} </td>
@@ -334,6 +335,7 @@
                 var neventsFStasksSum ={{ neventsFStasksSum|safe }};
                 var neventsAFIItasksSum ={{ neventsAFIItasksSum|safe }};
                 var neventsByProcessingType ={{ neventsByProcessingType|safe }};
+                var neventsByStatus ={{ neventsByStatus|safe }};
                 if (productiontype == 'MC') {
                     runningProdTasksPieChartFunc(neventsFStasksSum, "#pieChartFS", 'FS');
                     runningProdTasksPieChartFunc(neventsAFIItasksSum, "#pieChartAFII", 'AFII');
@@ -341,9 +343,9 @@
                 else {
                     runningProdTasksPieChartFunc(neventsByProcessingType, "#pieChartByPT", 'N Events')
                 }
-
+                runningProdTasksPieChartFunc(neventsByStatus, "#pieChartByS", 'N Events')
                 var slots = {{ aslotsByType|safe }};
-                runningProdTasksPieChartFunc(slots, '#pieChartSlots', 'Slots');
+                runningProdTasksPieChartFunc(slots, '#pieChartSlotsByPT', 'Slots');
 
                 {#var gauges = [];#}
                 {#$(document).ready(function() {#}

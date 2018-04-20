@@ -1339,12 +1339,22 @@ var data = $.map(values, function(value, key) { if (value>0) {return value} });
 var labels = $.map(values, function(value, key) { if (value>0) {return key} });
 var tot = 0;
 for (var i = 0; i < data.length; i++) { tot += data[i];}
-var margin = {top: 0, right: 40, bottom: 0, left: 0},
-    w = 280 - margin.left - margin.right,
-    h = 200 - margin.top - margin.bottom,
-    r = Math.min(w, h) / 2,
-    color = d3.scale.category20()
-		.domain(labels);
+var margin = {top: 0, right: 5, bottom: 70, left: 5},
+    w = 200 - margin.left - margin.right,
+    h = 270 - margin.top - margin.bottom,
+    r = Math.min(w, h) / 2;
+    // color = d3.scale.category20()
+		// .domain(labels);
+if (divToShow.indexOf('ByPT') > -1 || title.indexOf('FS') > -1 || title.indexOf('AFII') > -1) {
+    var color = d3.scale.ordinal()
+        .range(["#ff7f0e", "#d62728", "#1f77b4", "#2ca02c", "#9467bd", "#bcbd22", "#17becf", "#e377c2"])
+        .domain(['evgen', 'pile', 'simul', 'recon', 'reprocessing', 'deriv', 'merge', 'eventIndex']);
+}
+else if (divToShow.indexOf('ByS') > -1) {
+    var color = d3.scale.ordinal()
+        .range(["#248F24", "#DBF1C6", "#ffbb78", "#7f7f7f", "#FFD65D", "#C7E9A9", "#A0D670", "#c7c7c7", "#98df8a", "#FF8174"])
+        .domain(['running', 'assigning', 'exhausted', 'paused', 'throttled', 'pending', 'ready', 'registered', 'scouting', 'broken']);
+}
 
 var svg = d3.select(divToShow);
 var vis = svg
@@ -1401,20 +1411,22 @@ vis.append("g")
 
     var squareside = 10;
     var legend = vis.selectAll(".legend")
-            .data(color.domain().slice())
+            .data(labels)
           .enter().append("g")
             .attr("class", "legendoutpie")
             .attr("transform", function(d, i) {
-                maxLegendWidth = 150;
-                maxLegendHeight = Math.floor(i) * 15;
-                return "translate(" + (r + margin.left + 10) + ", " + (- 3*r/4 - margin.top  + maxLegendHeight) + ")";
+                maxLegendWidth = (i % 2) * (w+(margin.left+margin.right)/2)/2;
+                maxLegendHeight = Math.floor(i/2) * 15;
+                return "translate(" + (margin.left - r + maxLegendWidth) + ", " + (r + margin.top + 5 + maxLegendHeight) + ")";
             });
 
     legend.append("rect")
             .attr("x", 0)
             .attr("width", squareside)
             .attr("height", squareside)
-            .style("fill", color)
+            .style("fill", function(d) {
+                return color(d);
+            })
             .style({"stroke":d3.rgb(color).darker(),'stroke-width':0.4});
 
     legend.append("text")

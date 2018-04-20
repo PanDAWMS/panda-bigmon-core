@@ -345,6 +345,7 @@ def runningProdTasks(request):
     neventsAFIItasksSum = {}
     neventsFStasksSum = {}
     neventsByProcessingType = {}
+    neventsByStatus = {}
     aslotsByType = {}
     neventsTotSum = 0
     neventsUsedTotSum = 0
@@ -364,6 +365,10 @@ def runningProdTasks(request):
         if not task['processingtype'] in aslotsByType.keys():
             aslotsByType[str(task['processingtype'])] = 0
         aslotsByType[str(task['processingtype'])] += task['aslots'] if task['aslots'] else 0
+
+        if not task['status'] in neventsByStatus.keys():
+            neventsByStatus[str(task['status'])] = 0
+        neventsByStatus[str(task['status'])] += task['nevents'] if task['nevents'] is not None else 0
 
         if task['corecount'] == 1:
             rjobs1coreTot += task['rjobs']
@@ -452,6 +457,7 @@ def runningProdTasks(request):
             'neventsAFIItasksSum': neventsAFIItasksSum,
             'neventsFStasksSum': neventsFStasksSum,
             'neventsByProcessingType' : neventsByProcessingType,
+            'neventsByStatus' : neventsByStatus,
             'plotageshistogram': plotageshistogram,
             'productiontype' : json.dumps(productiontype),
             'built': datetime.now().strftime("%H:%M:%S"),
