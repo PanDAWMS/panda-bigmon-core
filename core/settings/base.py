@@ -214,6 +214,7 @@ INSTALLED_APPS_BIGPANDAMON_core = (
     'core.monitor',
     'core.harvester',
     'core.runningprod',
+    'core.globalshares',
 )
 INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_core
 

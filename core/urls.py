@@ -14,6 +14,7 @@ from core.art import views as art_views
 
 from core.monitor import views as monitor_views
 from core.harvester import views as harvester
+from core.globalshares import views as globalshares
 from core.runningprod import views as runningprod_views
 #import core.views as coremon_views
 import core.pandajob.views_support as core_coremon_support_views
@@ -91,7 +92,6 @@ urlpatterns = [
     url(r'^taskprofileplot/$', coremon_views.taskprofileplot, name='taskprofileplot'),
     url(r'^taskesprofileplot/$', coremon_views.taskESprofileplot, name='taskesprofileplot'),
     url(r'^eventsinfo/$', coremon_views.eventsInfo, name='eventsInfo'),
-    url(r'^globalshares/$', coremon_views.globalshares, name='globalshares'),
     url(r'^statpixel/$', coremon_views.statpixel, name='statpixel'),
     url(r'^killtasks/$', coremon_views.killtasks, name='killtasks'),
     url(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
@@ -131,9 +131,6 @@ urlpatterns = [
     #### JSON for Datatables
     url (r'^datatable/data/jeditaskid',coremon_views.esatlasPandaLoggerJson, name='dataTableJediTaskId'),
     url(r'^datatable/data/errorSummaryList', coremon_views.summaryErrorsListJSON, name='summaryErrorsListJSON'),
-    url(r'^datatable/data/detailedInformationJSON', coremon_views.detailedInformationJSON, name='detailedInformationJSON'),
-    url(r'^datatable/data/sharesDistributionJSON', coremon_views.sharesDistributionJSON, name='sharesDistributionJSON'),
-    url(r'^datatable/data/siteWorkQueuesJSON', coremon_views.siteWorkQueuesJSON, name='siteWorkQueuesJSON'),
     ###self monitor
     url(r'^admin/', include('core.admin.urls', namespace='admin')),
 
@@ -152,6 +149,7 @@ urlpatterns = [
     url(r'^oauth/', include('social_django.urls', namespace='social')),  # <--
     url(r'^testauth/$', coremon_views.testauth, name='testauth'),
     url(r'^login/$', coremon_views.loginauth2, name='loginauth2'),
+    url(r'^login/$', coremon_views.loginauth2, name='login'),
     url(r'^logout/$', coremon_views.logout, name='logout'),
     url(r'^loginerror/$', coremon_views.loginerror, name='loginerror'),
 
@@ -170,7 +168,11 @@ urlpatterns = [
     url(r'^harvestertest/$', harvester.harvesterfm, name='harvesterfm'),
     url(r'^harvesters/$', harvester.harvesters, name='harvesters'),
     #url(r'^json/harvesterinstances/$', harvester.harvesterinstancesjson, name='harvesterinstancesJSON'),
-
+    ####GLOBALSHARES#####
+    url(r'^globalshares/$', globalshares.globalshares, name='globalshares'),
+    url(r'^datatable/data/detailedInformationJSON', globalshares.detailedInformationJSON, name='detailedInformationJSON'),
+    url(r'^datatable/data/sharesDistributionJSON', globalshares.sharesDistributionJSON, name='sharesDistributionJSON'),
+    url(r'^datatable/data/siteWorkQueuesJSON', globalshares.siteWorkQueuesJSON, name='siteWorkQueuesJSON'),
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
