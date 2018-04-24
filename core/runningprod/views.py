@@ -215,7 +215,7 @@ def runningProdTasks(request):
         return HttpResponse(data, content_type='text/html')
     # Here we try to get cached data
     data = getCacheEntry(request, "runningProdTasks")
-    # data = None
+    data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
