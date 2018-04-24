@@ -19,8 +19,7 @@ from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, p
 from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder, \
     extensibleURL, DateTimeEncoder, removeParam, taskSummaryDict, preprocessWildCardString
 
-from core.runningprod.models import RunningDPDProductionTasks, RunningProdTasksModel , RunningMCProductionTasks,  RunningProdRequestsModel
-from core.common.models import FrozenProdTasksModel
+from core.runningprod.models import RunningDPDProductionTasks, RunningProdTasksModel , RunningMCProductionTasks,  RunningProdRequestsModel, FrozenProdTasksModel
 
 
 @login_customrequired

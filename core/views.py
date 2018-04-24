@@ -61,7 +61,6 @@ from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
 from core.common.models import RequestStat, BPUser, Visits, BPUserSettings, AllRequests
 from core.settings.config import ENV
-from core.common.models import FrozenProdTasksModel
 
 from time import gmtime, strftime
 from settings.local import dbaccess
