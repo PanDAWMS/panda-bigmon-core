@@ -229,6 +229,12 @@ def runningProdTasks(request):
             data['neventsByProcessingType'] = preparePlotData(data['neventsByProcessingType'])
         if 'aslotsByType' in data:
             data['aslotsByType'] = preparePlotData(data['aslotsByType'])
+        if 'neventsByTaskStatus' in data:
+            data['neventsByTaskStatus'] = preparePlotData(data['neventsByTaskStatus'])
+        if 'neventsByTaskPriority' in data:
+            data['neventsByTaskPriority'] = preparePlotData(data['neventsByTaskPriority'])
+        if 'neventsByStatus' in data:
+            data['neventsByStatus'] = preparePlotData(data['neventsByStatus'])
         response = render_to_response('runningProdTasks.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
