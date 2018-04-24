@@ -34,17 +34,22 @@
     {% if requestParams.site %}<br><b>Site:</b> {{ requestParams.site }} {% endif %}
     {% if requestParams.gshare %}<br><b>Global Share:</b> {{ requestParams.gshare }} {% endif %}
 </div>
-    <p>
-        <script>
-            var numberOfRunning = 0;
-            var numberOfWaiting = 0;
-            var c = 0;
-            var ntasks = {{ ntasks }};
-            function insertReply(content) {
-                alert(content);
-            }
+<p>
+<script>
+    function toggleByID(id, idplus) {
+        if ($("#" + id).is(':visible')){
+            $("#" + id).hide();
+            $("#" + idplus).removeClass('fi-minus');
+            $("#" + idplus).addClass('fi-plus');
+        }
+        else {
+            $("#" + id).show();
+            $("#" + idplus).removeClass('fi-plus');
+            $("#" + idplus).addClass('fi-minus');
+        }
 
-        </script>
+    }
+</script>
 
 
             <script>
@@ -286,10 +291,10 @@
     <p>
         {% if tasks %}
 
-            <table class="minimalistic-table unstriped">
+            <table class="minimalistic-table unstriped stack">
               <thead>
                 <tr>
-                    <th> Events</th>
+                    <th> Events <a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a></th>
                     <th> Allocated slots</th>
                     <th> Task age</th>
                 </tr>
@@ -298,29 +303,35 @@
                 <tr>
                     <td>
                         <div class="row">
+                        {% if neventsByStatus|length > 0 %}<div class="d3splot" id="pieChartByStatus" style="float:left"></div>{% endif %}
                         {% if requestParams.preset == 'MC' %}
                             {% if neventsFStasksSum|length > 0 %}<div class="d3splot" id="pieChartFS" style="float:left"></div>{% endif %}
                             {% if neventsAFIItasksSum|length > 0 %}<div class="d3splot" id="pieChartAFII" style="float:left"></div>{% endif %}
                         {% else %}
-                            {% if neventsByProcessingType|length > 0 %}<div class="d3splot" id="pieChartByPT" style="float:left"></div>{% endif %}
+                            {% if neventsByProcessingType|length > 0 %}<div class="d3splot" id="pieChartByProcessingType" style="float:left"></div>{% endif %}
                         {% endif %}
-                        {% if neventsByStatus|length > 0 %}<div class="d3splot" id="pieChartByS" style="float:left"></div>{% endif %}
+                        </div>
+                        <div id="extraplots" class="row" style="display: none">
+                            {% if neventsByTaskStatus|length > 0 %}<div class="d3splot" id="pieChartByTaskStatus" style="float:left"></div>{% endif %}
+                            {% if neventsByTaskPriority|length > 0 %}<div class="d3splot" id="pieChartByTaskPriority" style="float:left"></div>{% endif %}
                         </div>
                     </td>
-                    <td>{% if aslotsByType|length > 0 %}<div class="d3splot" id="pieChartSlotsByPT"></div>{% endif %}</td>
+                    <td>
+                        {% if aslotsByType|length > 0 %}<div class="d3splot" id="pieChartSlotsByProcessingType"></div>{% endif %}
+                    </td>
                     <td colspan=20>{% if plotageshistogram == 1 %}
                         <div class="d3splot" id="sumPlot" style="float:left"></div>{% else %}
                         <p> All tasks age is 0 days</p> {% endif %} </td>
                 </tr>
-                <tr>
-                <td colspan=20>
-                    Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in
-                    <b>{{ ntasks }}</b> tasks <br>
-                    Number of currently running events <b>{{ neventsRunningTotSum }}M</b> <br>
-                    Number of waiting events <b>{{ neventsWaitingTotSum }}M</b> <br>
-                    Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs
-                </td>
-                </tr>
+{#                <tr>#}
+{#                <td colspan=20>#}
+{#                    Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in#}
+{#                    <b>{{ ntasks }}</b> tasks <br>#}
+{#                    Number of currently running events <b>{{ neventsRunningTotSum }}M</b> <br>#}
+{#                    Number of waiting events <b>{{ neventsWaitingTotSum }}M</b> <br>#}
+{#                    Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs#}
+{#                </td>#}
+{#                </tr>#}
               </tbody>
             </table>
             <script>
@@ -332,20 +343,24 @@
                 if (plotageshistogram == 1) {
                     pandamonProdRunTaskSumPlotFunc(ages, "#sumPlot", 'Task age histogram', 24, productiontype);
                 }
+                var neventsByStatus ={{ neventsByStatus|safe }};
+                runningProdTasksPieChartFunc(neventsByStatus, "#pieChartByStatus", 'N Events');
                 var neventsFStasksSum ={{ neventsFStasksSum|safe }};
                 var neventsAFIItasksSum ={{ neventsAFIItasksSum|safe }};
                 var neventsByProcessingType ={{ neventsByProcessingType|safe }};
-                var neventsByStatus ={{ neventsByStatus|safe }};
+                var neventsByTaskStatus ={{ neventsByTaskStatus|safe }};
+                var neventsByTaskPriority ={{ neventsByTaskPriority|safe }};
                 if (productiontype == 'MC') {
                     runningProdTasksPieChartFunc(neventsFStasksSum, "#pieChartFS", 'FS');
                     runningProdTasksPieChartFunc(neventsAFIItasksSum, "#pieChartAFII", 'AFII');
                 }
                 else {
-                    runningProdTasksPieChartFunc(neventsByProcessingType, "#pieChartByPT", 'N Events')
+                    runningProdTasksPieChartFunc(neventsByProcessingType, "#pieChartByProcessingType", 'N Events')
                 }
-                runningProdTasksPieChartFunc(neventsByStatus, "#pieChartByS", 'N Events')
+                runningProdTasksPieChartFunc(neventsByTaskStatus, "#pieChartByTaskStatus", 'N Events');
+                runningProdTasksPieChartFunc(neventsByTaskPriority, "#pieChartByTaskPriority", 'N Events');
                 var slots = {{ aslotsByType|safe }};
-                runningProdTasksPieChartFunc(slots, '#pieChartSlotsByPT', 'Slots');
+                runningProdTasksPieChartFunc(slots, '#pieChartSlotsByProcessingType', 'Slots');
 
                 {#var gauges = [];#}
                 {#$(document).ready(function() {#}

@@ -1339,21 +1339,30 @@ var data = $.map(values, function(value, key) { if (value>0) {return value} });
 var labels = $.map(values, function(value, key) { if (value>0) {return key} });
 var tot = 0;
 for (var i = 0; i < data.length; i++) { tot += data[i];}
-var margin = {top: 0, right: 5, bottom: 70, left: 5},
+var margin = {top: 0, right: 5, bottom: 90, left: 5},
     w = 200 - margin.left - margin.right,
-    h = 270 - margin.top - margin.bottom,
+    h = 290 - margin.top - margin.bottom,
     r = Math.min(w, h) / 2;
-    // color = d3.scale.category20()
-		// .domain(labels);
-if (divToShow.indexOf('ByPT') > -1 || title.indexOf('FS') > -1 || title.indexOf('AFII') > -1) {
+
+if (divToShow.indexOf('ProcessingType') > -1 || title.indexOf('FS') > -1 || title.indexOf('AFII') > -1) {
     var color = d3.scale.ordinal()
         .range(["#ff7f0e", "#d62728", "#1f77b4", "#2ca02c", "#9467bd", "#bcbd22", "#17becf", "#e377c2"])
         .domain(['evgen', 'pile', 'simul', 'recon', 'reprocessing', 'deriv', 'merge', 'eventIndex']);
 }
-else if (divToShow.indexOf('ByS') > -1) {
+else if (divToShow.indexOf('ByStatus') > -1) {
     var color = d3.scale.ordinal()
-        .range(["#248F24", "#DBF1C6", "#ffbb78", "#7f7f7f", "#FFD65D", "#C7E9A9", "#A0D670", "#c7c7c7", "#98df8a", "#FF8174"])
-        .domain(['running', 'assigning', 'exhausted', 'paused', 'throttled', 'pending', 'ready', 'registered', 'scouting', 'broken']);
+        .range([ "#248F24", "#47D147",  "#c7c7c7"])
+        .domain(['done', 'running', 'waiting']);
+}
+else if (divToShow.indexOf('TaskStatus') > -1) {
+    var color = d3.scale.ordinal()
+        .range(["#47D147", "#099999", "#ffbb78", "#7f7f7f", "#FFD65D", "#A0D670", "#DCDCDC", "#c7c7c7", "#98df8a", "#FF8174", "#404040", "#DFDFDF"])
+        .domain(['running', 'assigning', 'exhausted', 'paused', 'throttled', 'pending', 'ready', 'registered', 'scouting', 'broken', "passed", 'defined']);
+}
+else if (divToShow.indexOf('Priority') > -1) {
+    color = d3.scale.ordinal()
+        .range(["#116aff", "#fe8504", "#1ff7fe", "#f701ff", "#2e4a02", "#ffaad5", "#f1ff8d", "#1eff06", "#700111", "#1586c3", "#ff067d", "#0e02fb", "#1bffa1", "#921e8f", "#c49565", "#fd0128", "#4ea105", "#158279", "#c8fe0a", "#fdcc0b", "#834969", "#ff7673", "#05018b", "#c591fe", "#a6d8ab", "#948c01", "#484ba1", "#fe22c0", "#06a05d", "#694002", "#8e39e9", "#bdc6ff","#030139",  "#b33802", "#85fa60", "#a2025b", "#3e021b", "#ffcd6d", "#4a92ff", "#e564b6", "#43cfff", "#7e9051", "#e768fc", "#09406b", "#b17005", "#8fd977", "#c1063e", "#a7594f", "#14e3b8", "#bccb1e", "#53064f", "#fff1b7", "#997dba", "#fe965c", "#ffb0a7", "#046c04", "#8451ce", "#d46585", "#fef70c", "#1003c3", "#024a2e", "#0fc551", "#1f025d", "#fd5302", "#5bbfc4", "#481903", "#bfc066", "#ad04bb", "#efa425", "#06c709", "#9701ff", "#84468e", "#018da8", "#88cf01", "#6d6412", "#658a1d", "#0d3cb4", "#144cfe", "#fe5d43", "#33753e", "#4cb28f", "#e6b4ff", "#a5feef", "#caff68", "#d80f8a", "#79193a", "#97fdba", "#a85726", "#fe8cf9", "#8bfe01", "#4a315d", "#ff0155", "#02ff5e", "#6b0199", "#bc7e9f", "#fde75c"])
+		.domain(labels);
 }
 
 var svg = d3.select(divToShow);
@@ -1404,21 +1413,49 @@ var arcs = vis.selectAll("path")
 			});
 
 vis.append("g")
-        .attr("transform", "translate(" + ( 0 ) + "," + ( -35 ) + ")")
+        .attr("transform", "translate(" + ( 0 ) + "," + ( -40 ) + ")")
         .append("text")
         .attr("class", "titleinpie")
         .text(title);
+if (divToShow.indexOf('TaskStatus') > -1) {
+    vis.append("g")
+        .attr("transform", "translate(" + ( 0 ) + "," + ( -30 ) + ")")
+        .append("text")
+        .attr("class", "titleinpie")
+        .text('by task state');
+}
+else if (divToShow.indexOf('TaskPriority') > -1) {
+    vis.append("g")
+        .attr("transform", "translate(" + ( 0 ) + "," + ( -30 ) + ")")
+        .append("text")
+        .attr("class", "titleinpie")
+        .text('by task priority');
+}
 
     var squareside = 10;
-    var legend = vis.selectAll(".legend")
+    if (divToShow.indexOf('TaskPriority') > -1) {
+        var legend = vis.selectAll(".legend")
             .data(labels)
-          .enter().append("g")
+            .enter().append("g")
             .attr("class", "legendoutpie")
-            .attr("transform", function(d, i) {
-                maxLegendWidth = (i % 2) * (w+(margin.left+margin.right)/2)/2;
-                maxLegendHeight = Math.floor(i/2) * 15;
+            .attr("transform", function (d, i) {
+                maxLegendWidth = (i % 5) * (w+4*(margin.left+margin.right)/5)/5;
+                maxLegendHeight = Math.floor(i  / 5) * 12;
+                return "translate(" + (1 - r + maxLegendWidth) + ", " + (r + margin.top + 5 + maxLegendHeight) + ")";
+                // return "translate(" + (margin.left - r + maxLegendWidth) + ", " + (r + margin.top + 5 + maxLegendHeight) + ")";
+            });
+    }
+    else {
+        var legend = vis.selectAll(".legend")
+            .data(labels)
+            .enter().append("g")
+            .attr("class", "legendoutpie")
+            .attr("transform", function (d, i) {
+                maxLegendWidth = (i % 2) * (w + (margin.left + margin.right) / 2) / 2;
+                maxLegendHeight = Math.floor(i / 2) * 15;
                 return "translate(" + (margin.left - r + maxLegendWidth) + ", " + (r + margin.top + 5 + maxLegendHeight) + ")";
             });
+    }
 
     legend.append("rect")
             .attr("x", 0)
@@ -1430,7 +1467,7 @@ vis.append("g")
             .style({"stroke":d3.rgb(color).darker(),'stroke-width':0.4});
 
     legend.append("text")
-            .attr("x", squareside+5)
+            .attr("x", squareside+3)
             .attr("y", 8)
             .attr("class", 'legendpie')
             .text(function(d) {

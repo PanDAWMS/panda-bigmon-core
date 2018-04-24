@@ -345,11 +345,12 @@ def runningProdTasks(request):
     neventsAFIItasksSum = {}
     neventsFStasksSum = {}
     neventsByProcessingType = {}
-    neventsByStatus = {}
+    neventsByTaskStatus = {}
+    neventsByTaskPriority = {}
     aslotsByType = {}
     neventsTotSum = 0
     neventsUsedTotSum = 0
-    neventsWaitingTotSum = 0
+    neventsToBeUsedTotSum = 0
     neventsRunningTotSum = 0
     rjobs1coreTot = 0
     rjobs8coreTot = 0
@@ -358,7 +359,7 @@ def runningProdTasks(request):
         task['percentage'] = round(100 * task['percentage'],1)
         neventsTotSum += task['nevents'] if task['nevents'] is not None else 0
         neventsUsedTotSum += task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
-        neventsWaitingTotSum += task['neventstobeused'] if 'neventstobeused' in task and task['neventstobeused'] is not None else 0
+        neventsToBeUsedTotSum += task['neventstobeused'] if 'neventstobeused' in task and task['neventstobeused'] is not None else 0
         neventsRunningTotSum += task['neventsrunning'] if 'neventsrunning' in task and task['neventsrunning'] is not None else 0
         slots += task['slots'] if task['slots'] else 0
         aslots += task['aslots'] if task['aslots'] else 0
@@ -366,9 +367,13 @@ def runningProdTasks(request):
             aslotsByType[str(task['processingtype'])] = 0
         aslotsByType[str(task['processingtype'])] += task['aslots'] if task['aslots'] else 0
 
-        if not task['status'] in neventsByStatus.keys():
-            neventsByStatus[str(task['status'])] = 0
-        neventsByStatus[str(task['status'])] += task['nevents'] if task['nevents'] is not None else 0
+        if not task['status'] in neventsByTaskStatus.keys():
+            neventsByTaskStatus[str(task['status'])] = 0
+        neventsByTaskStatus[str(task['status'])] += task['nevents'] if task['nevents'] is not None else 0
+
+        if not task['priority'] in neventsByTaskPriority.keys():
+            neventsByTaskPriority[task['priority']] = 0
+        neventsByTaskPriority[task['priority']] += task['nevents'] if task['nevents'] is not None else 0
 
         if task['corecount'] == 1:
             rjobs1coreTot += task['rjobs']
@@ -418,6 +423,11 @@ def runningProdTasks(request):
             for hashtag in task['hashtags'].split(','):
                 task['hashtaglist'].append(hashtag)
 
+    neventsByStatus = {}
+    neventsByStatus['done'] = neventsUsedTotSum
+    neventsByStatus['running'] = neventsRunningTotSum
+    neventsByStatus['waiting'] = neventsToBeUsedTotSum - neventsRunningTotSum
+
     plotageshistogram = 1
     if sum(ages) == 0: plotageshistogram = 0
     sumd = taskSummaryDict(request, task_list, ['status','workinggroup','cutcampaign', 'processingtype'])
@@ -450,13 +460,15 @@ def runningProdTasks(request):
             'sumd': sumd,
             'neventsUsedTotSum': round(neventsUsedTotSum / 1000000., 1),
             'neventsTotSum': round(neventsTotSum / 1000000., 1),
-            'neventsWaitingTotSum': round(neventsWaitingTotSum / 1000000., 1),
+            'neventsWaitingTotSum': round((neventsToBeUsedTotSum - neventsRunningTotSum)/1000000., 1),
             'neventsRunningTotSum': round(neventsRunningTotSum / 1000000., 1),
             'rjobs1coreTot': rjobs1coreTot,
             'rjobs8coreTot': rjobs8coreTot,
             'neventsAFIItasksSum': neventsAFIItasksSum,
             'neventsFStasksSum': neventsFStasksSum,
-            'neventsByProcessingType' : neventsByProcessingType,
+            'neventsByProcessingType': neventsByProcessingType,
+            'neventsByTaskStatus': neventsByTaskStatus,
+            'neventsByTaskPriority': neventsByTaskPriority,
             'neventsByStatus' : neventsByStatus,
             'plotageshistogram': plotageshistogram,
             'productiontype' : json.dumps(productiontype),
