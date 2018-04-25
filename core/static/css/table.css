@@ -2,6 +2,11 @@ table {
     border-collapse: collapse;
 }
 
+.data-table.bluelinks td > a {
+    color: #0a47ff !important;
+    font-weight: bold;
+}
+
 .tablesection{
     font-weight:bold;
     background-color:lightcyan;

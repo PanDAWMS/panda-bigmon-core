@@ -5,48 +5,43 @@
 {% block page_title %}Harvester monitor page{% endblock %}
 {% block title %}PanDA monitor{% endblock %}
 {% block subtitle %}Harvester <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
-{% block body %}
-    <link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
-    <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
-    <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
-    <script src="/static/js/d3jsplot.js"></script>
-    <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
-    <script type="text/javascript" src="/static/js/datatables/moment.min.js"></script>
-    <script type="text/javascript" src="/static/js/datatables/datetime-moment.js"></script>
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <style type="text/css">
+{% block extra_css %}
+  <link rel="stylesheet" type="text/css" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <style type="text/css">
+       #harvesterworkers_wrapper .row {
+            max-width: 99%;
+        }
+       #harvesterworkerstats_wrapper .row {
+            max-width: 99%;
+        }
+       #harvesterdialogs_wrapper .row {
+            max-width: 99%;
+        }
         #workerList p {
             display: none;
         }
-
         #loadMore {
             color: #0a47ff;
             cursor: pointer;
         }
-
         #loadMore:hover {
             color: black;
         }
-
         #loadAll {
             color: #0a47ff;
             cursor: pointer;
         }
-
         #loadAll:hover {
             color: black;
         }
-
         #reloadDialogs {
             color: #0a47ff;
             cursor: pointer;
         }
-
         #reloadDialogs:hover {
             color: black;
         }
-
         #reloadWorkers {
             color: #0a47ff;
             cursor: pointer;
@@ -56,7 +51,18 @@
             color: black;
         }
     </style>
-
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
+    <script src="/static/js/d3jsplot.js"></script>
+    <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+    <script type="text/javascript" src="/static/js/datatables/moment.min.js"></script>
+    <script type="text/javascript" src="/static/js/datatables/datetime-moment.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+{% endblock %}
+{% block body %}
     {% if  type == 'instances' %}
         <table id="harvesterinstances" style="width: 100%">
             <caption style="height: 30px;vertical-align: middle">Harvester instances</caption>
@@ -149,7 +155,7 @@
             {% endfor %}
         </table>
         <a href="javascript:ReverseDisplay('harvesterdialogsdiv','harvesterdialogslink','harvesterdialogs')"
-           id="harvesterdialogslink">Show dialog messages / worker stats</a> <br/><br/>
+           id="harvesterdialogslink" class="bluebutton">Show dialog messages / worker stats</a> <br/><br/>
 
         <div id="harvesterdialogsdiv" style="display: none">
             <div id="tabs">
@@ -164,7 +170,7 @@
                                                                                     style="width: 150px; display: inline;">
                     <div id="reloadDialogs" style="display: inline">Reload table</div>
                     <br/>
-                    <table id="harvesterdialogs" style="width: 100%">
+                    <table id="harvesterdialogs" style="width: 100%" class="data-data-table bluelinks">
                         <caption style="height: 30px;vertical-align: middle">Dialog messages from harvester instances
                         </caption>
                         <thead>
@@ -193,7 +199,7 @@
                                                                                     style="width: 150px; display: inline;">
                     <div id="reloadWorkers" style="display: inline">Reload table</div>
                     <br/>
-                    <table id="harvesterworkerstats" style="width: 100%">
+                    <table id="harvesterworkerstats" style="width: 100%" class="data-table bluelinks">
                         <caption style="height: 30px;vertical-align: middle">The table for realtime statistics of
                             harvester workers
                         </caption>
@@ -221,7 +227,8 @@
                 </div>
             </div>
         </div>
-        <table id="harvesterworkers" style="width: 100%">
+        <hr/>
+        <table id="harvesterworkers" style="width: 100%" class="data-table bluelinks">
             <caption style="height: 30px;vertical-align: middle">Workers submitted by harvesters</caption>
             <thead>
             <th>WorkerID (jobs)</th>
