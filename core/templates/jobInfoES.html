@@ -357,6 +357,9 @@ But if you want, you can check.
         {% if file.type != 'pseudo_input' %} <br/>
         <a href="https://rucio-ui.cern.ch/did?scope={{file.scope}}&name={{file.lfn}}" target="_blank"> File (Rucio)</a> ||
         <a href="https://rucio-ui.cern.ch/did?scope={{file.scope}}&name={{file.datasetname}}" target="_blank"> Dataset (Rucio)</a>
+            {% if job.jobstatus != 'defined' and job.jobstatus != 'pending' and job.jobstatus != 'waiting' %}
+                || <a href="http://dashb-atlas-ddm.cern.ch/ddm2/#activity=(Analysis+Download,Analysis+Input,Analysis+Logs+OS+Upload,Analysis+Logs+Upload,Analysis+Upload,Data+Brokering,Data+Consolidation,Data+Export+Test,Data+Rebalancing,Debug,Deletion,Event+Service+Download,Event+Service+Upload,Express,Functional+Test,Functional+Test+WebDAV,Functional+Test+XrootD,Group+Subscriptions,Production,Production+Download,Production+Input,Production+Logs+OS+Upload,Production+Logs+Upload,Production+Output,Production+Upload,Recovery,SFO+to+EOS+export,Staging,T0+Export,T0+Tape,Upload/Download+(Job),User+Subscriptions,default,on,on,on,rucio-integration,test,test%3AT0_T1+export,test%3AT1_T2+export,testactivity10,testactivity20,testactivity70)&d.dst.site={{ file.ddmsite }}&{% if file.dsttoken %}d.dst.token={{ file.dsttoken }}&{% endif %}d.name={{file.lfn}}&d.page.limit=200&d.scope={{file.scope}}&grouping.dst=(site,token)&tab=details" target="_blank"> DDM Dash</a>
+            {% endif %}
         {% endif %}
         </font>
         </td>
