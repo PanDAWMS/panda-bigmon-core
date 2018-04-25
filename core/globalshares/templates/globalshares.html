@@ -17,7 +17,57 @@
 
 
     <div class="d3splot" id="pieChartGS"></div>
-    <link rel="stylesheet" href=/static/css/globalsharetooltip.css">
+    <style type="text/css">
+        .hasTooltip {
+            color: #0a47ff;
+        }
+
+        .hasTooltip table {
+            display: none;
+            color: #222222;
+            text-decoration: none;
+            padding: 3px;
+            z-index: 10;
+            border-radius: 6px;
+            width: 660px;
+        }
+
+        .hasTooltip:hover {
+
+            text-decoration: underline;
+            color: red;
+        }
+
+        .hasTooltip:hover table {
+            display: block;
+            position: absolute;
+            background-color: #FFF;
+            border: 1px solid black;
+            margin: 2px 10px;
+            z-index: 10;
+        }
+
+        .hasTooltip:hover table td {
+            text-align: left;
+            border-style: solid;
+            border-width: 1px;
+            border-color: lightgrey;
+            font-weight: normal;
+            background-color: #222222;
+            color: #fff;
+
+        }
+
+        .hasTooltip:hover table th {
+            text-align: left;
+            border-style: solid;
+            border-width: 1px;
+            border-color: grey;
+            background-color: #222222;
+            color: #fff;
+
+        }
+    </style>
     <script>
 
         var gsPlotData ={{ gsPlotData|safe }};
@@ -279,6 +329,7 @@
             });
 
         }
+
         function DisplaySiteworkqueues() {
             $('#siteworkqueues').dataTable({
                 //"bRetrieve": true,
@@ -407,7 +458,7 @@
 
     <div id="detailedinformationdiv" style="display: none">
         <hr/>
-        <table id="detailedinformation" style="width: 100%">
+        <table id="detailedinformation" style="width: 200px">
             <caption style="height: 30px;vertical-align: middle">Detailed information (4 days)</caption>
             <thead>
             <th>Global share</th>
