@@ -264,6 +264,10 @@ th.vertical {
     border: none;
 }
 
+.data-table tfoot {
+    border: none;
+}
+
 .data-table thead tr {
     border: none;
 }
@@ -285,6 +289,21 @@ th.vertical {
     padding-bottom: 0.25rem;
     font-size: 0.875rem;
 }
+
+.data-table tfoot tr {
+    border: none;
+}
+
+.data-table tfoot th {
+    border: none;
+    background-color: #fefefe;
+    padding-left: 0.3rem;
+    padding-right: 0.3rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+
+}
+
 
 .data-table td > a {
     color: #171717 !important;

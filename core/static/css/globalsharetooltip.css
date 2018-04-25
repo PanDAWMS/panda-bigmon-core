@@ -8,6 +8,7 @@
     padding: 3px;
     z-index: 10;
     border-radius: 6px;
+    width: auto;
 }
 .hasTooltip:hover {
 
@@ -23,7 +24,10 @@
     z-index: 10;
 }
 .hasTooltip:hover table td {
-    text-align:left; border-style:solid; border-width:1px; border-color:lightgrey;
+    text-align:left;
+    border-style:solid;
+    border-width:1px;
+    border-color:lightgrey;
     font-weight:normal;
     background-color: #222222;
     color: #fff;

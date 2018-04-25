@@ -5,77 +5,40 @@
 
 {% block page_title %} {{ viewParams.MON_VO }} Global Shares{% endblock %}
 {% block subtitle %}Global Shares{% endblock %}
-{% block extra_js %}
-    <script src="{% static 'js/humanize.min.js' %}"></script>
-{% endblock %}
-{% block body %}
-
-    <link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
-    <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
-    <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
-    <script src="/static/js/d3jsplot.js"></script>
-
-
-    <div class="d3splot" id="pieChartGS"></div>
-    <style type="text/css">
-        .hasTooltip {
-            color: #0a47ff;
+{% block extra_css %}
+    <link rel="stylesheet" type="text/css" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static "css/globalsharetooltip.css" %}">
+    <style>
+        #detailedinformation_wrapper .row {
+            max-width: 99%;
         }
-
-        .hasTooltip table {
-            display: none;
-            color: #222222;
-            text-decoration: none;
-            padding: 3px;
-            z-index: 10;
-            border-radius: 6px;
-            width: 660px;
-        }
-
-        .hasTooltip:hover {
-
-            text-decoration: underline;
-            color: red;
-        }
-
-        .hasTooltip:hover table {
-            display: block;
-            position: absolute;
-            background-color: #FFF;
-            border: 1px solid black;
-            margin: 2px 10px;
-            z-index: 10;
-        }
-
-        .hasTooltip:hover table td {
-            text-align: left;
-            border-style: solid;
-            border-width: 1px;
-            border-color: lightgrey;
-            font-weight: normal;
-            background-color: #222222;
-            color: #fff;
-
-        }
-
-        .hasTooltip:hover table th {
-            text-align: left;
-            border-style: solid;
-            border-width: 1px;
-            border-color: grey;
-            background-color: #222222;
-            color: #fff;
-
+        #sharesdistribution_wrapper .row {
+                max-width: 99%;
+            }
+        #siteworkqueues_wrapper .row {
+                max-width: 99%;
         }
     </style>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.rowsGroup.js' %}"></script>
+    <script src="/static/js/d3jsplot.js"></script>
+
+{% endblock %}
+{% block body %}
+    <div class="d3splot" id="pieChartGS"></div>
     <script>
 
-        var gsPlotData ={{ gsPlotData|safe }};
-        globalSharesPieChartFunc(gsPlotData, "#pieChartGS", 'Actual HS06');
-        $(document).ready(function () {
+    var gsPlotData ={{ gsPlotData|safe }};
+    globalSharesPieChartFunc(gsPlotData, "#pieChartGS", 'Actual HS06');
+    $(document).ready(function () {
 
-            $(".has-dropdown").addClass("has-dropdown not-click");
-        });
+        $(".has-dropdown").addClass("has-dropdown not-click");
+    });
     </script>
 
     <table>
@@ -120,9 +83,6 @@
             DisplayDetailedInformation();
             DisplaySharesDistribution();
             DisplaySiteworkqueues();
-            $("#detailedinformation_wrapper").css("width", "1030px");
-            $("#sharesdistribution_wrapper").css("width", "1030px");
-            $("#siteworkqueues_wrapper").css("width", "1030px");
 
         });
 
@@ -395,13 +355,13 @@
             });
         }
     </script>
-    <a href="javascript:ReverseDisplay('sharesdistributiondiv','sharesdistributionlink')" id="sharesdistributionlink">Show
+    <a href="javascript:ReverseDisplay('sharesdistributiondiv','sharesdistributionlink')" id="sharesdistributionlink" class="bluebutton">Show
         shares distribution</a> <br/><br/>
     <div id="sharesdistributiondiv" style="display: none">
         <hr/>
         <a href="{% url 'sharesDistributionJSON' %}">JSON</a><br/><br/>
 
-        <table id="sharesdistribution" style="width: 100%">
+        <table id="sharesdistribution" style="width: 100%" class="data-table">
             <caption style="height: 30px;vertical-align: middle">Shares distribution (4 days)</caption>
             <thead>
             <th>Global share</th>
@@ -427,11 +387,11 @@
         </table>
         <hr/>
     </div>
-    <a href="javascript:ReverseDisplay('siteworkqueuesdiv','siteworkqueueslink')" id="siteworkqueueslink">Show site
+    <a href="javascript:ReverseDisplay('siteworkqueuesdiv','siteworkqueueslink')" id="siteworkqueueslink" class="bluebutton">Show site
         workqueues occupations</a>  <br/><br/>
     <div id="siteworkqueuesdiv" style="display: none">
         <hr/>
-        <table id="siteworkqueues" style="width: 100%">
+        <table id="siteworkqueues" style="width: 100%" class="data-table">
             <caption style="height: 30px;vertical-align: middle">Site workqueues occupations (4 days)</caption>
             <thead>
             <th>Computing site</th>
@@ -454,11 +414,11 @@
         <hr/>
     </div>
     <a href="javascript:ReverseDisplay('detailedinformationdiv','detailedinformationlink')"
-       id="detailedinformationlink">Show detailed information</a> <br/><br/>
+       id="detailedinformationlink" class="bluebutton">Show detailed information</a> <br/><br/>
 
     <div id="detailedinformationdiv" style="display: none">
         <hr/>
-        <table id="detailedinformation" style="width: 200px">
+        <table id="detailedinformation" style="width: 100%" class="data-table">
             <caption style="height: 30px;vertical-align: middle">Detailed information (4 days)</caption>
             <thead>
             <th>Global share</th>
