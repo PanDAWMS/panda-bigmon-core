@@ -256,6 +256,14 @@ th.vertical {
     border: none;
 }
 
+.data-table caption {
+    border: none;
+    padding: 0;
+    vertical-align: middle;
+    font-size: 0.875rem;
+    color: #272727;
+}
+
 .data-table thead {
     border: none;
 }
