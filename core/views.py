@@ -738,7 +738,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         elif param == 'status':
             val = escapeInput(request.session['requestParams'][param])
             values = val.split(',')
-            query['status__in'] = values
+            query['jobstatus__in'] = values
 
 
 
