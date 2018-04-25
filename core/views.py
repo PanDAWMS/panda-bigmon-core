@@ -11488,6 +11488,8 @@ def errorsScattering(request):
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'
     query['superstatus__in'] = ['submitting', 'running']
+    # exclude paused tasks
+    wildCardExtension += ' AND STATUS != \'paused\''
     tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid", "reqid")
 
     # print ('tasks found %i') % len(tasks)
@@ -11677,6 +11679,8 @@ def errorsScatteringDetailed(request, cloud, reqid):
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'
     query['superstatus__in'] = ['submitting', 'running']
+    # exclude paused tasks
+    wildCardExtension += ' AND STATUS != \'paused\''
     if reqid != 'ALL':
         query['reqid'] = reqid
         request.session['requestParams']['reqid'] = reqid
