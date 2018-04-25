@@ -99,7 +99,7 @@
 <table>
 <tr class='tablesection'><th colspan=20><a name="tasks"></a> Task attribute summary, {{ ntasks }} tasks </th></tr>
 {% for fdict in tasksumd %}
-<tr><th> {% if fdict.field == 'superstatus' %} status {% else %} {{ fdict.field }} {% endif %} ({{ fdict.list|length }}) </th><td>
+<tr><th> {% if fdict.field == 'superstatus' %} status (ProdSys2) {% else %} {{ fdict.field }} {% endif %} ({{ fdict.list|length }}) </th><td>
 <div class="comment more">
 {% for item in fdict.list %}
 <span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}} item' {% else %} class="item" {% endif %}> {{ item.kname }} </span>

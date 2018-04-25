@@ -735,12 +735,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             values = val.split(',')
             query['harvesterid__in'] = values
 
-        elif param == 'status':
-            val = escapeInput(request.session['requestParams'][param])
-            values = val.split(',')
-            query['status__in'] = values
-
-
 
         elif param in ('tag',) and querytype == 'task':
             val = request.session['requestParams'][param]
@@ -798,6 +792,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         val = escapeInput(request.session['requestParams'][param])
                         values = val.split('|')
                         query['jeditaskid__in'] = values
+                    elif param == 'status':
+                        val = escapeInput(request.session['requestParams'][param])
+                        values = val.split(',')
+                        query['status__in'] = values
                     elif param == 'superstatus':
                         val = escapeInput(request.session['requestParams'][param])
                         values = val.split('|')
@@ -4389,6 +4387,7 @@ def userInfo(request, user=''):
     request.session['requestParams'] = requestParams
 
     ## Tasks owned by the user
+    query = setupView(request, hours=72, limit=999999, querytype='task')
     startdate = timezone.now() - timedelta(hours=days * 24)
     startdate = startdate.strftime(defaultDatetimeFormat)
     enddate = timezone.now().strftime(defaultDatetimeFormat)
@@ -4411,7 +4410,7 @@ def userInfo(request, user=''):
     if enddate == None:
         enddate = timezone.now()  # .strftime(defaultDatetimeFormat)
 
-    query = {'modificationtime__range': [startdate, enddate]}
+    query['modificationtime__range'] = [startdate, enddate]
 
     if userQueryTask is None:
         query['username__icontains'] = user.strip()
@@ -4442,12 +4441,12 @@ def userInfo(request, user=''):
 
     ## Jobs
     limit = 5000
-    query = setupView(request, hours=72, limit=limit)
+    query = setupView(request, hours=72, limit=limit, querytype='job')
     jobs = []
     values = 'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock',
 
     if userQueryJobs is None:
-        query['produsername__startswith'] = user.strip()
+        query['produsername__icontains'] = user.strip()
         jobs.extend(Jobsdefined4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
         jobs.extend(Jobsactive4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
         jobs.extend(Jobswaiting4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
