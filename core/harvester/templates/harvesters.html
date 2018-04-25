@@ -18,6 +18,9 @@
        #harvesterdialogs_wrapper .row {
             max-width: 99%;
         }
+       #harvesterinstances_wrapper .row {
+            max-width: 99%;
+        }
         #workerList p {
             display: none;
         }
@@ -64,7 +67,7 @@
 {% endblock %}
 {% block body %}
     {% if  type == 'instances' %}
-        <table id="harvesterinstances" style="width: 100%">
+        <table id="harvesterinstances" style="width: 100%" class="data-table bluelinks">
             <caption style="height: 30px;vertical-align: middle">Harvester instances</caption>
             <thead>
             <th>Instance</th>
@@ -112,6 +115,7 @@
             $(document).ready(function () {
                 $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');
                 $('#harvesterinstances').dataTable({"iDisplayLength": 100, responsive: true,});
+{#                $('#harvesterinstances').addClass("data-table bluelinks")#}
             });
         </script>
     {% elif  type == 'workers' %}
