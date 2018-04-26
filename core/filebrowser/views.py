@@ -22,7 +22,7 @@ from core.views import DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
-
+filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
 
 def index(request):
     """
@@ -122,6 +122,7 @@ def index(request):
 
     ### set request response data
     data = {
+        'request': request,
         'errors': errors,
         'pfns': pfns,
         'files': files,

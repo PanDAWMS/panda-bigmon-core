@@ -11,7 +11,7 @@ import time
 from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
-
+filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
 
 def get_filebrowser_vo():
     """
@@ -704,7 +704,7 @@ def list_file_directory(logdir):
             f_content = {}
             if f in fileStats:
                 if fileStats[f] is not None and f in isFile and isFile[f]:
-                    f_content['modification'] = time.asctime(time.gmtime(fileStats[f][8]))
+                    f_content['modification'] = time.strftime(filebrowserDateTimeFormat, time.gmtime(fileStats[f][8]))
                     f_content['size'] = fileStats[f][6]
                     f_content['name'] = os.path.basename(f)
                     f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f))
