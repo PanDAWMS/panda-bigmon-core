@@ -907,7 +907,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         if request.session['requestParams'][param] == 'esmerge' or request.session['requestParams'][
                             param] == '2':
                             query['eventservice'] = 2
-                        if request.session['requestParams'][param] == 'jumbo' or request.session['requestParams'][
+                        elif request.session['requestParams'][param] == 'jumbo' or request.session['requestParams'][
                             param] == '4':
                             query['eventservice'] = 4
                         elif request.session['requestParams'][param] == 'eventservice' or \
