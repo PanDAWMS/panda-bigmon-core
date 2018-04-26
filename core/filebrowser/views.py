@@ -108,23 +108,34 @@ def index(request):
             errors['download'] = ''
         errors['download'] += errtxt
 
+    totalLogSize = 0
+    if type(files) is list and len(files) > 0:
+        for file in files:
+            totalLogSize += file['size'] if 'size' in file and file['size'] > 0 else 0
+
+    # from B to MB
+    if totalLogSize > 0:
+        totalLogSize = totalLogSize*1.0/1024/1024
+
     ### return the file page
 
 
     ### set request response data
-    data = { \
-        'errors': errors, \
-        'pfns': pfns, \
-        'files': files, \
-        'dirprefix': dirprefix, \
-        'tardir': tardir, \
-        'scope': scope, \
-        'lfn': lfn, \
-        'site': site, \
-        'guid': guid, \
-        'MEDIA_URL': settings.MEDIA_URL, \
-        'viewParams' : {'MON_VO': str(get_filebrowser_vo()).upper()}, \
-        'HOSTNAME': get_filebrowser_hostname() \
+    data = {
+        'errors': errors,
+        'pfns': pfns,
+        'files': files,
+        'dirprefix': dirprefix,
+        'tardir': tardir,
+        'scope': scope,
+        'lfn': lfn,
+        'site': site,
+        'guid': guid,
+        'MEDIA_URL': settings.MEDIA_URL,
+        'viewParams' : {'MON_VO': str(get_filebrowser_vo()).upper()},
+        'HOSTNAME': get_filebrowser_hostname(),
+        'totalLogSize': totalLogSize,
+        'nfiles': len(files),
 #        , 'new_contents': new_contents
     }
 

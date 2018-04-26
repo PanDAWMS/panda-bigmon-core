@@ -713,8 +713,8 @@ def list_file_directory(logdir):
         msg = "Error in filesystem call:" + str(errMsg)
         _logger.error(msg)
 
-    ### sort the files
-    files = sorted(files, key=lambda x: (str(x['dirname']).lower(), str(x['name']).lower()))
+    ### sort the files - no need since DataTable plugin applied
+    # files = sorted(files, key=lambda x: (str(x['dirname']).lower(), str(x['name']).lower()))
 
     if status != 0:
         return files, output, tardir

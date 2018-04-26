@@ -1,9 +1,22 @@
-{% extends "_base_bigpandamon.html" %}
+{% extends "_base_core.html" %}
+{% load static %}
 {% block title %}ATLAS PanDA{% endblock %}
 {% block page_title %}ATLAS PanDA Monitoring{% endblock %}
 {% block bl_page_title %}ATLAS PanDA Monitoring{% endblock %}
-{% block extra_css %}{% endblock %}
-{% block extra_js %}{% endblock %}
+{% block extra_css %}
+ <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <style>
+        #filelist_wrapper .row {
+            max-width: 100%;
+        }
+    </style>
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
 {% block gacode %}UA-44940804-1{% endblock %}
 {% block gaweb %}pandawms.org{% endblock %}
 {% block subtitle %}FileBrowser
@@ -32,7 +45,8 @@
 {% if files %}
 <div><span style="color: navy; font-weight: bold;">File listing</span></div>
 <br/>
-<table>
+<table id="filelist" class="data-table">
+<caption>{{ nfiles }} files listed, total size is {{ totalLogSize }}MB</caption>
 <thead>
 <th>Modification time</th>
 <th>Size [B]</th>
@@ -55,5 +69,18 @@
 {% if errors.lookup %}<div><span style="color: red; font-weight: bold;">Lookup error.</span> {{errors.lookup}}</div>{% endif %}
 {% if errors.download %}<div><span style="color: red; font-weight: bold;">Download error.</span> {{errors.download}}</div>{% endif %}
 {% endif %}
+
+<script>
+    $(document).ready(function () {
+        $('#filelist').DataTable({
+            "columnDefs": [
+                {"type": "num-html", "targets": [1] }
+            ],
+            "lengthMenu" : [[25, 50, 100, -1], [25, 50, 100, "All"]] ,
+            "scrollX": true
+        });
+    });
+</script>
+
 
 {% endblock %}
