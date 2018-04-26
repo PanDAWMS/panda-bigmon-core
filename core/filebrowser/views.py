@@ -97,7 +97,21 @@ def index(request):
     files = []
     dirprefix = ''
     tardir = ''
-    files, errtxt, dirprefix, tardir = get_rucio_file(scope,lfn, guid)
+    if not (guid is None or lfn is None or scope is None):
+        files, errtxt, dirprefix, tardir = get_rucio_file(scope,lfn, guid)
+    else:
+        errormessage = ''
+        if guid is None:
+            errormessage = 'No guid provided.'
+        elif lfn is None:
+            errormessage = 'No lfn provided.'
+        elif scope is None:
+            errormessage = 'No scope provided.'
+        _logger.warning(errormessage)
+        data = {
+            'errormessage': errormessage
+        }
+        return render_to_response('errorPage.html', data, content_type='text/html')
     if not len(files):
         msg = 'File download failed. [guid=%s, site=%s, scope=%s, lfn=%s]' % \
             (guid, site, scope, lfn)
