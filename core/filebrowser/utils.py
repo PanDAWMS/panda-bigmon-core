@@ -704,7 +704,7 @@ def list_file_directory(logdir):
             f_content = {}
             if f in fileStats:
                 if fileStats[f] is not None and f in isFile and isFile[f]:
-                    f_content['modification'] = time.strftime(filebrowserDateTimeFormat, time.gmtime(fileStats[f][8]))
+                    f_content['modification'] = str(time.strftime(filebrowserDateTimeFormat, time.gmtime(fileStats[f][8])))
                     f_content['size'] = fileStats[f][6]
                     f_content['name'] = os.path.basename(f)
                     f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f))
