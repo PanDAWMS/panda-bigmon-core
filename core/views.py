@@ -360,7 +360,13 @@ def initRequest(request, callselfmon = True):
     u = urlparse(url)
     query = parse_qs(u.query)
     query.pop('timestamp', None)
-    u = u._replace(query=urlencode(query, True))
+    try:
+        u = u._replace(query=urlencode(query, True))
+    except UnicodeEncodeError:
+        data = {
+            'errormessage': 'Error appeared while encoding URL!'
+        }
+        return False, render_to_response('errorPage.html', data, content_type='text/html')
     request.session['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
 
     request.session['secureurl'] = 'https://bigpanda.cern.ch' + url
