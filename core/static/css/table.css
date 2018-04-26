@@ -260,6 +260,7 @@ th.vertical {
     font-size: 0.875rem;
     color: #272727;
     text-align: left;
+    margin-left: 1.4rem;
 }
 
 .data-table thead {
@@ -294,6 +295,10 @@ th.vertical {
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
     font-size: 0.875rem;
+}
+
+.data-table.left-aligned tbody td {
+    text-align: left;
 }
 
 .data-table tfoot tr {

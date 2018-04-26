@@ -115,7 +115,7 @@ def index(request):
 
     # from B to MB
     if totalLogSize > 0:
-        totalLogSize = totalLogSize*1.0/1024/1024
+        totalLogSize = round(totalLogSize*1.0/1024/1024, 2)
 
     ### return the file page
 
