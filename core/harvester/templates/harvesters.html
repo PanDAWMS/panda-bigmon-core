@@ -174,7 +174,7 @@
                                                                                     style="width: 150px; display: inline;">
                     <div id="reloadDialogs" style="display: inline">Reload table</div>
                     <br/>
-                    <table id="harvesterdialogs" style="width: 100%" class="data-data-table bluelinks">
+                    <table id="harvesterdialogs" style="width: 100%" class="data-table bluelinks">
                         <caption style="height: 30px;vertical-align: middle">Dialog messages from harvester instances
                         </caption>
                         <thead>
@@ -427,6 +427,7 @@
                     ],
                     "createdRow": function (row, data, index) {
                         $('td', row).eq(2).addClass(data['status'] + '_fill');
+                        $('td', row).eq(18).addClass("textleft")
                     }
                 });
             }
@@ -454,22 +455,7 @@
                         },
                         {
                             "data": "messagelevel",
-                            sDefaultContent: "",
-                            "render": function (data, type, full, meta) {
-                                if (type === "sort" || type === 'type') {
-                                    return data;
-                                }
-                                else {
-                                    var mclass = ''
-                                    if (full['messagelevel'] == 'ERROR') {
-                                        mclass = 'errspan'
-                                    }
-                                    else {
-                                        mclass = full['messagelevel'].toString().toLowerCase()
-                                    }
-                                    return ' <span class="' + mclass + '">' + full['messagelevel'] + '</span>'
-                                }
-                            }
+                            sDefaultContent: ""
                         },
                         {
                             "data": "diagmessage",
@@ -478,6 +464,17 @@
                         },
 
                     ],
+
+                    "createdRow": function (row, data, index) {
+                    if (data["messagelevel"] == 'ERROR') {
+
+                        $('td', row).eq(2).addClass('errspan');
+                    }
+                    else{
+                    $('td', row).eq(2).addClass(data["messagelevel"].toString().toLowerCase());
+                    }
+                    $('td', row).eq(3).addClass("textleft")
+                    },
                     initComplete: function () {
                         this.api().columns([1, 2]).every(function () {
                             var column = this;

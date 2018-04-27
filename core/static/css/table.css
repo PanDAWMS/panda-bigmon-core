@@ -299,7 +299,9 @@ th.vertical {
 .data-table.left-aligned tbody td {
     text-align: left;
 }
-
+.textleft{
+    text-align: left !important;
+}
 .data-table.nowrap tbody td {
     white-space: nowrap;
 }
