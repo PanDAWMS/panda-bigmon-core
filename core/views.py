@@ -10475,10 +10475,24 @@ def taskNameDict(jobs):
         if 'jeditaskid' in job and job['jeditaskid'] and job['jeditaskid'] > 0: jeditaskids[job['jeditaskid']] = 1
     taskidl = taskids.keys()
     jeditaskidl = jeditaskids.keys()
+
+    # Write ids to temp table to avoid too many bind variables oracle error
     tasknamedict = {}
     if len(jeditaskidl) > 0:
-        tq = {'jeditaskid__in': jeditaskidl}
-        jeditasks = JediTasks.objects.filter(**tq).values('taskname', 'jeditaskid')
+        random.seed()
+        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+        else:
+            tmpTableName = "TMP_IDS1"
+        transactionKey = random.randrange(1000000)
+        jeditaskidl = [(tid, transactionKey) for tid in jeditaskidl]
+        new_cur = connection.cursor()
+        query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+        new_cur.executemany(query, jeditaskidl)
+        connection.commit()
+
+        extraqueue = 'JEDITASKID IN (SELECT ID FROM %s WHERE TRANSACTIONKEY = %s)' % (tmpTableName, transactionKey)
+        jeditasks = JediTasks.objects.extra(where=[extraqueue]).values('taskname', 'jeditaskid')
         for t in jeditasks:
             tasknamedict[t['jeditaskid']] = t['taskname']
 
