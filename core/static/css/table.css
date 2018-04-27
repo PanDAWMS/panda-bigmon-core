@@ -289,7 +289,6 @@ th.vertical {
 .data-table tbody td {
     border: none;
     text-align: center;
-    white-space: nowrap;
     padding-left: 0.3rem;
     padding-right: 0.3rem;
     padding-top: 0.25rem;
@@ -299,6 +298,10 @@ th.vertical {
 
 .data-table.left-aligned tbody td {
     text-align: left;
+}
+
+.data-table.nowrap tbody td {
+    white-space: nowrap;
 }
 
 .data-table tfoot tr {
