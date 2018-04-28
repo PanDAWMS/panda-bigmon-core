@@ -2,6 +2,8 @@ from datetime import datetime
 import decimal
 import re
 from decimal import Decimal
+
+import urllib3
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
@@ -460,3 +462,81 @@ order by COMPUTINGSITE,gshare, corecount, jobstatus
         rowDict = {"computingsite": gs[0],"gshare": gs[1], "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4]}
         fullListGS.append(rowDict)
     return HttpResponse(json.dumps(fullListGS), content_type='text/html')
+
+
+def resourcesType(request):
+    EXECUTING = 'executing'
+    QUEUED = 'queued'
+    PLEDGED = 'pledged'
+    IGNORE = 'ignore'
+    url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
+    http = urllib3.PoolManager()
+    data = {}
+    try:
+        resourcesDict = {}
+        resourcesDict1 = {}
+        r = http.request('GET', url)
+        data = json.loads(r.data.decode('utf-8'))
+        for cs in data.keys():
+            resourcesDict.setdefault(data[cs]['resource_type'], []).append(cs)
+            resourcesDict1[data[cs]['siteid']] = data[cs]['resource_type']
+    except Exception as exc:
+        print exc.message
+    resourcesList = []
+    sqlRequest = """SELECT computingsite, jobstatus_grouped, SUM(HS) 
+FROM (SELECT computingsite, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing'
+ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP BY computingsite, jobstatus_grouped"""
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+    # get the hs distribution data into a dictionary structure
+    hs_distribution_raw = cur.fetchall()
+    hs_distribution_dict = {}
+    hs_queued_total = 0
+    hs_executing_total = 0
+    hs_ignore_total = 0
+    total_hs = 0
+    for hs_entry in hs_distribution_raw:
+        computingsite, status_group, hs = hs_entry
+        resourcetype = resourcesDict1[computingsite]
+        hs_distribution_dict.setdefault(resourcetype, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0})
+        hs_distribution_dict[resourcetype][status_group] = hs
+        if 'total_hs' not in hs_distribution_dict[resourcetype]:
+            hs_distribution_dict[resourcetype]['total_hs'] = {}
+            hs_distribution_dict[resourcetype]['total_hs'] = hs
+        else : hs_distribution_dict[resourcetype]['total_hs'] += hs
+        total_hs += hs
+
+        # calculate totals
+        if status_group == QUEUED:
+            hs_queued_total += hs
+        elif status_group == EXECUTING:
+            hs_executing_total += hs
+        else:
+            hs_ignore_total += hs
+    ignore = 0
+    pled = 0
+    executing = 0
+    queued = 0
+    for hs_entry in hs_distribution_dict.keys():
+        pled += hs_distribution_dict[hs_entry]['pledged']
+        ignore += hs_distribution_dict[hs_entry]['ignore']
+        executing += hs_distribution_dict[hs_entry]['executing']
+        queued += hs_distribution_dict[hs_entry]['queued']
+    hs_distribution_list = []
+    for hs_entry in hs_distribution_dict.keys():
+       # hs_distribution_dict[hs_entry]['pledged_percent'] = pled * 100 / hs_distribution_dict[hs_entry]['pledged']
+        hs_distribution_dict[hs_entry]['ignore_percent'] =  (hs_distribution_dict[hs_entry]['ignore']/ignore)* 100
+        hs_distribution_dict[hs_entry]['executing_percent'] =  (hs_distribution_dict[hs_entry]['executing'] /executing) * 100
+        hs_distribution_dict[hs_entry]['queued_percent'] = (hs_distribution_dict[hs_entry]['queued']/queued) * 100
+        hs_distribution_list.append({'resource':hs_entry, 'pledged':hs_distribution_dict[hs_entry]['pledged'],
+                                     'ignore':hs_distribution_dict[hs_entry]['ignore'],
+                                     'ignore_percent':hs_distribution_dict[hs_entry]['ignore_percent'],
+                                     'executing':hs_distribution_dict[hs_entry]['executing'],
+                                     'executing_percent': hs_distribution_dict[hs_entry]['executing_percent'],
+                                     'queued':hs_distribution_dict[hs_entry]['queued'],
+                                     'queued_percent':hs_distribution_dict[hs_entry]['queued_percent'],
+                                     'total_hs':hs_distribution_dict[resourcetype]['total_hs'],
+                                     'total_hs_percent': hs_distribution_dict[resourcetype]['total_hs']/total_hs*100
+                                     })
+    return HttpResponse(json.dumps(hs_distribution_list), content_type='text/html')
+

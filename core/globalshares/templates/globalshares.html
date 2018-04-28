@@ -27,7 +27,6 @@
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
     <script src="{% static 'js/datatables/dataTables.rowsGroup.js' %}"></script>
     <script src="/static/js/d3jsplot.js"></script>
-
 {% endblock %}
 {% block body %}
     <div class="d3splot" id="pieChartGS"></div>
@@ -40,7 +39,6 @@
         $(".has-dropdown").addClass("has-dropdown not-click");
     });
     </script>
-
     <table>
         <tr class='tablesection'>
             <th>L1 Share</th>
@@ -77,13 +75,12 @@
         {% endfor %}
     </table>
     <br>
-
     <script>
         $(document).ready(function () {
             DisplayDetailedInformation();
             DisplaySharesDistribution();
             DisplaySiteworkqueues();
-
+            DisplayResources();
         });
 
         function ReverseDisplay(d, hlink) {
@@ -354,6 +351,63 @@
                 }
             });
         }
+    function DisplayResources() {
+             $('#resources').dataTable({
+                //"bRetrieve": true,
+                "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+                paging: true,
+                order: [[4, 'desc']],
+                "ajax": {
+                    "processing": true,
+                    "url": "{% url 'resourcesType' %}",
+                    "dataSrc": ''
+                },
+                "aoColumns": [
+                    {
+                        "data": "resource",
+                        sDefaultContent: "",
+                    },
+                    {
+                        "data": "ignore",
+                        sDefaultContent: ""
+                    },
+                    {
+                        "data": "executing",
+                        sDefaultContent: "",
+
+                    },
+                    {
+                        "data": "queued",
+                        sDefaultContent: "",
+                    },
+                    {
+                        "data": "total_hs",
+                        sDefaultContent: "",
+                    }
+                ],
+                "createdRow": function (row, data, index) {
+                },
+
+{#                initComplete: function () {#}
+{#                    this.api().columns([0, 1, 2, 3]).every(function () {#}
+{#                        var column = this;#}
+{#                        var select = $('<select><option value="">Show all</option></select>')#}
+{#                            .appendTo($(column.footer()).empty())#}
+{#                            .on('change', function () {#}
+{#                                var val = $.fn.dataTable.util.escapeRegex(#}
+{#                                    $(this).val()#}
+{#                                );#}
+{#                                column#}
+{#                                    .search(val ? '^' + val + '$' : '', true, false)#}
+{#                                    .draw();#}
+{#                            });#}
+{#                        column.data().unique().sort().each(function (d, j) {#}
+{#                            select.append('<option value="' + d + '">' + d + '</option>')#}
+{#                        });#}
+{#                    });#}
+{#                }#}
+            });
+    }
     </script>
     <a href="javascript:ReverseDisplay('sharesdistributiondiv','sharesdistributionlink')" id="sharesdistributionlink" class="bluebutton">Show
         shares distribution</a> <br/><br/>
@@ -415,7 +469,6 @@
     </div>
     <a href="javascript:ReverseDisplay('detailedinformationdiv','detailedinformationlink')"
        id="detailedinformationlink" class="bluebutton">Show detailed information</a> <br/><br/>
-
     <div id="detailedinformationdiv" style="display: none">
         <hr/>
         <table id="detailedinformation" style="width: 100%" class="data-table">
@@ -424,7 +477,7 @@
             <th>Global share</th>
             <th>Core count</th>
             <th>Job status <span class="hasTooltip"> (?)
-<table>
+      <table>
       <thead>
           <th>Table job status</th>
           <th>Database job status</th>
@@ -441,7 +494,7 @@
           <td>did run</td>
           <td>failed,cancelled,closed</td>
       </tr>
-  </table></span>
+      </table></span>
             </th>
             <th>COUNT</th>
             <th>HS06</th>
@@ -458,6 +511,31 @@
             </tfoot>
         </table>
         <hr/>
+    </div>
+    <a href="javascript:ReverseDisplay('resourcesDiv','resourcesLink')"
+       id="resourcesLink" class="bluebutton">Show detailed information</a> <br/><br/>
+    <div id="resourcesDiv" style="display: none">
+
+    <table id="resources" style="width: 100%" class="data-table">
+            <caption style="height: 30px;vertical-align: middle">Site workqueues occupations (4 days)</caption>
+            <thead>
+            <th>Resource</th>
+            <th>Actual HS06</th>
+            <th>Queued HS06</th>
+            <th>Ignored HS06</th>
+            <th>Total HS06</th>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+            <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+            </tfoot>
+    </table>
     </div>
 {% endblock %}
 
