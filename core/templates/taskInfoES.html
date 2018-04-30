@@ -338,10 +338,8 @@ $(document).ready(function () {
         <a style="cursor: pointer;" href="{{nomodeurl}}mode=nodrop">Nodrop mode</a>
     {% endif %}
     {% if vomode == 'atlas' %}
-        {%  if task.tasktype == 'prod' %}
-            <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}" target="_blank">Prod Task view (to manage task)</a>
-            <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
-        {% endif %}
+        <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}" target="_blank">Prod Task view (to manage task)</a>
+        <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
     {% endif %}
     <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,logLevel,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{jeditaskid}}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Task brokerage </a>
 
