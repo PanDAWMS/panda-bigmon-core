@@ -580,8 +580,7 @@
             <table>
                 <tr bgcolor="lightcyan">
                     <th colspan=20>
-                        <b>States of es_merge jobs in this task</b> &nbsp; &nbsp; <a
-                            href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&eventservice=2&display_limit=100">Show
+                        <b>States of es_merge jobs in this task</b> &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&eventservice=2&display_limit=100">Show
                         jobs</a>
                     </th>
                 </tr>
@@ -598,8 +597,7 @@
                                     <td {% if state.count > 0 or newstate.count > 0 %}
                                         class='{{ state.name }}_fill' {% endif %}>
                                         {% if state.count > 0 or newstate.count > 0 %}
-                                            <b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus=
-                                                    {{ state.name }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&display_limit=100&eventservice=2"><span
+                                            <b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&display_limit=100&eventservice=2"><span
                                                     class='{{ state.name }}_fill'>{% if state.count > 0 %}
                                                 {{ state.count }} ({{ newstate.count }}) {% else %} 0 (
                                                 {{ newstate.count }}) {% endif %}</span></a> </b> {% endif %} </td>
@@ -608,8 +606,7 @@
                         {% else %}
                             <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
                                 {% if state.count > 0 %}
-                                    <b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus=
-                                            {{ state.name }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&display_limit=100&eventservice=2"><span
+                                    <b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&display_limit=100&eventservice=2"><span
                                             class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
                             </td>
                         {% endif %}

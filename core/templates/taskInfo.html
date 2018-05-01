@@ -168,8 +168,7 @@
                     <b><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
                           class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</a></b>
                     {% if task.superstatus != task.status %}
-                        <td class='{{ task.status }}'><a
-                                href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
+                        <td class='{{ task.status }}'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
                                 class="{{ task.status }}_tooltip">{{ task.status }}</a></td>{% endif %} {% else %}
                     <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
                        class="{{ task.superstatus }}_tooltip">{{ task.status }}</a>{% endif %}</td>
@@ -222,19 +221,15 @@
                         <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
                     {% endif %}
                 {% endif %}
-                <a target="_blank"
-                   href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,logLevel,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Task
+                <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,logLevel,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Task
                     brokerage </a>
 
-                <a target="_blank"
-                   href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Job
+                <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,message),filters:!(),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">Job
                     brokerage </a>
 
-                <a target="_blank"
-                   href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc))">Action
+                <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',type,logLevel,message),index:'atlas_jedilogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc))">Action
                     logger</a>
-                <a target="_blank"
-                   href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',logName,type,logLevel,message),index:'atlas_pandalogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'logName:%22panda.log.RetrialModule%22%20AND%20type:%22retrialmodule%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',desc))">Retrial
+                <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',logName,type,logLevel,message),index:'atlas_pandalogs-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'logName:%22panda.log.RetrialModule%22%20AND%20type:%22retrialmodule%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',desc))">Retrial
                     Module logger</a>
                 <a href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}">Error summary</a>
                 {% if task.parent_tid != task.jeditaskid and task.parent_tid != None %}
@@ -376,8 +371,7 @@
             <table>
                 <tr bgcolor="lightcyan">
                     <th colspan=20>
-                        <b>States of pmerge jobs in this task</b> &nbsp; &nbsp; <a
-                            href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&processingtype=pmerge&display_limit=100">Show
+                        <b>States of pmerge jobs in this task</b> &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&processingtype=pmerge&display_limit=100">Show
                         jobs</a>
                     </th>
                 </tr>
@@ -394,16 +388,14 @@
 
                                     <td {% if state.count > 0 or newstate.count > 0 %}
                                         class='{{ state.name }}_fill' {% endif %}>
-                                        {% if state.count > 0 or newstate.count > 0 %}<b> <a
-                                                href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}&display_limit=100&processingtype=pmerge"><span
+                                        {% if state.count > 0 or newstate.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}&display_limit=100&processingtype=pmerge"><span
                                                 class='{{ state.name }}_fill'>{{ state.count }} ({{ newstate.count }})</span></a>
                                         </b> {% endif %} </td>
                                 {% endif %}
                             {% endfor %}
                         {% else %}
                             <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                                {% if state.count > 0 %}<b> <a
-                                        href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}&display_limit=100&processingtype=pmerge"><span
+                                {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}&display_limit=100&processingtype=pmerge"><span
                                         class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
                             </td>
 
@@ -477,8 +469,7 @@
                 </tr>
                 {% for dsrec in inctrs %}
                     <tr>
-                        <td><font size=-1><a
-                                href="{% url 'datasetList' %}?containername={{ dsrec }}&jeditaskid={{ jeditaskid }}">{{ dsrec }}</a></font>
+                        <td><font size=-1><a href="{% url 'datasetList' %}?containername={{ dsrec }}&jeditaskid={{ jeditaskid }}">{{ dsrec }}</a></font>
                         </td>
                     </tr>
                 {% endfor %}
@@ -492,8 +483,7 @@
                 </tr>
                 {% for dsrec in outctrs %}
                     <tr>
-                        <td><font size=-1><a
-                                href="{% url 'datasetList' %}?containername={{ dsrec }}&jeditaskid={{ jeditaskid }}">{{ dsrec }}</a></font>
+                        <td><font size=-1><a href="{% url 'datasetList' %}?containername={{ dsrec }}&jeditaskid={{ jeditaskid }}">{{ dsrec }}</a></font>
                         </td>
                     </tr>
                 {% endfor %}
@@ -534,8 +524,7 @@
                         <th>Modified</th>
                     </tr>{% for dsrec in datasets %}
                     <tr class="type-{{ dsrec.type }} type-all" style="display:none">
-                        <td><font size=-1><a
-                                href="{% url 'datasetInfo' %}?datasetid={{ dsrec.datasetid }}&jeditaskid={{ jeditaskid }}">{{ dsrec.datasetname }}</a></font>
+                        <td><font size=-1><a href="{% url 'datasetInfo' %}?datasetid={{ dsrec.datasetid }}&jeditaskid={{ jeditaskid }}">{{ dsrec.datasetname }}</a></font>
                             {% if  'tmpl' not in dsrec.type %}
                                 <br/>
                                 <a href="https://rucio-ui.cern.ch/did?scope={{ dsrec.scope }}&name={{ dsrec.datasetname }}"
