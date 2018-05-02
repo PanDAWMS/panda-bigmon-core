@@ -33,6 +33,10 @@ from django.template.defaulttags import register
 def remove_dot(value):
     return value.replace(".", "").replace('/','')
 
+@register.filter(takes_context=True)
+def get_time(value):
+    return value[-4:-1]
+
 artdateformat = '%Y-%m-%d'
 humandateformat = '%d %b %Y'
 cache_timeout = 15
@@ -458,12 +462,27 @@ def artJobs(request):
     #     if x.registerArtTest():
     #         print '%i job registered sucessfully out of %i' % (i, len(jobs))
 
+
+
     ntagslist=list(sorted(set([x['ntag'] for x in jobs])))
+    # ntagslist = [ntg.replace('T', ' ') for ntg in ntagslist]
     jeditaskids = list(sorted(set([x['taskid'] for x in jobs])))
+
+    nightlyTagsLists = {}
 
     artjobsdict={}
     if not 'view' in request.session['requestParams'] or (
             'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
+        # create list of nightly tags for package and branches in order to create template for filling of jobs info
+        for job in jobs:
+            if job['package'] not in nightlyTagsLists.keys():
+                nightlyTagsLists[job['package']] = {}
+            if job['branch'] not in nightlyTagsLists[job['package']].keys():
+                nightlyTagsLists[job['package']][job['branch']] = {}
+            if job['ntag'] not in nightlyTagsLists[job['package']][job['branch']]:
+                nightlyTagsLists[job['package']][job['branch']][job['ntag']] = []
+            if not job['nightly_tag'] in nightlyTagsLists[job['package']][job['branch']][job['ntag']]:
+                nightlyTagsLists[job['package']][job['branch']][job['ntag']].append(job['nightly_tag'])
         for job in jobs:
             if job['package'] not in artjobsdict.keys():
                 artjobsdict[job['package']] = {}
@@ -471,11 +490,13 @@ def artJobs(request):
                 artjobsdict[job['package']][job['branch']] = {}
             if job['testname'] not in artjobsdict[job['package']][job['branch']].keys():
                 artjobsdict[job['package']][job['branch']][job['testname']] = {}
-                for n in ntagslist:
-                    artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)] = {}
-                    artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
-                    artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)]['jobs'] = []
-            if job['ntag'].strftime(artdateformat) in artjobsdict[job['package']][job['branch']][job['testname']]:
+                for ntag, nt  in nightlyTagsLists[job['package']][job['branch']].iteritems():
+                    for n in nt:
+                        artjobsdict[job['package']][job['branch']][job['testname']][n] = {}
+                        # artjobsdict[job['package']][job['branch']][job['testname']][n]['ntag_hf'] = n.strftime(humandateformat)
+                        artjobsdict[job['package']][job['branch']][job['testname']][n]['testname'] = job['testname']
+                        artjobsdict[job['package']][job['branch']][job['testname']][n]['jobs'] = []
+            if job['nightly_tag'] in artjobsdict[job['package']][job['branch']][job['testname']]:
                 jobdict = {}
                 jobdict['jobstatus'] = job['jobstatus']
                 jobdict['origpandaid'] = job['origpandaid']
@@ -503,7 +524,7 @@ def artJobs(request):
                 jobdict['testresult'] = subresults
                 jobdict['testdirectory'] = testdirectory
 
-                artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
+                artjobsdict[job['package']][job['branch']][job['testname']][job['nightly_tag']]['jobs'].append(jobdict)
 
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for job in jobs:
@@ -547,6 +568,17 @@ def artJobs(request):
                 jobdict['testdirectory'] = testdirectory
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
 
+    # transform dict of tests to list of test and sort alphabetically
+
+    artjobslist = {}
+    for i, idict in artjobsdict.iteritems():
+        artjobslist[i] = {}
+        for j, jdict in idict.iteritems():
+            artjobslist[i][j] = []
+            for t, tdict in jdict.iteritems():
+                tdict['testname'] = t
+                artjobslist[i][j].append(tdict)
+
 
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
@@ -563,10 +595,12 @@ def artJobs(request):
     else:
         data = {
             'request': request,
-            'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
-            'artjobs': artjobsdict,
+            'viewParams': request.session['viewParams'],
+            'artjobsdict': artjobsdict,
+            'artjobs': artjobslist,
             'noviewurl': noviewurl,
+            'nightlyTagsLists': nightlyTagsLists,
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
             'taskids' : jeditaskids,
         }
