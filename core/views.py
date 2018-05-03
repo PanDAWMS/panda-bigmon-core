@@ -5551,7 +5551,8 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
 
     for cloud in clouds.keys():
         for site in clouds[cloud]['sites'].keys():
-            cloudsresources[cloud]['sites'][site]['sumres']=list(cloudsresources[cloud]['sites'][site]['sumres'])
+            if 'sumres' in clouds[cloud]['sites'][site]:
+                clouds[cloud]['sites'][site]['sumres']=list(clouds[cloud]['sites'][site]['sumres'])
             for jobstate in clouds[cloud]['sites'][site]['states'].keys():
                 if 'resources' in clouds[cloud]['sites'][site]['states'][jobstate]:
                     for res in cloudsresources[cloud]['sites'][site]['sumres']:
@@ -6239,16 +6240,15 @@ def dashboard(request, view='production'):
     valid, response = initRequest(request)
     if not valid: return response
 
-    data = getCacheEntry(request, "dashboard")
-    if data is not None:
-        data = json.loads(data)
-        data['request'] = request
-        template = data['template']
-        response = render_to_response(template, data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
-        return response
-
+    # data = getCacheEntry(request, "dashboard")
+    # if data is not None:
+    #     data = json.loads(data)
+    #     data['request'] = request
+    #     template = data['template']
+    #     response = render_to_response(template, data, content_type='text/html')
+    #     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    #     endSelfMonitor(request)
+    #     return response
 
     taskdays = 3
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
