@@ -5551,11 +5551,13 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
 
     for cloud in clouds.keys():
         for site in clouds[cloud]['sites'].keys():
+            cloudsresources[cloud]['sites'][site]['sumres']=list(cloudsresources[cloud]['sites'][site]['sumres'])
             for jobstate in clouds[cloud]['sites'][site]['states'].keys():
                 if 'resources' in clouds[cloud]['sites'][site]['states'][jobstate]:
                     for res in cloudsresources[cloud]['sites'][site]['sumres']:
                         if res not in clouds[cloud]['sites'][site]['states'][jobstate]['resources'].keys():
                             clouds[cloud]['sites'][site]['states'][jobstate]['resources'][res] = 0
+
     updateCacheWithListOfMismatchedCloudSites(mismatchedSites)
 
     ## Go through the sites, add any that are missing (because they have no jobs in the interval)
