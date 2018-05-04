@@ -463,6 +463,11 @@ order by COMPUTINGSITE,gshare, corecount, jobstatus
         fullListGS.append(rowDict)
     return HttpResponse(json.dumps(fullListGS), content_type='text/html')
 
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return float(o)
+        return super(DecimalEncoder, self).default(o)
 
 def resourcesType(request):
     EXECUTING = 'executing'
@@ -474,12 +479,12 @@ def resourcesType(request):
     data = {}
     try:
         resourcesDict = {}
-        resourcesDict1 = {}
+        resourcesDictN = {}
         r = http.request('GET', url)
         data = json.loads(r.data.decode('utf-8'))
         for cs in data.keys():
             resourcesDict.setdefault(data[cs]['resource_type'], []).append(cs)
-            resourcesDict1[data[cs]['siteid']] = data[cs]['resource_type']
+            resourcesDictN[data[cs]['siteid']] = data[cs]['resource_type']
     except Exception as exc:
         print exc.message
     resourcesList = []
@@ -495,15 +500,25 @@ ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP
     hs_executing_total = 0
     hs_ignore_total = 0
     total_hs = 0
+    newresourecurcetype = ''
+    resourcecnt = 0
     for hs_entry in hs_distribution_raw:
         computingsite, status_group, hs = hs_entry
-        resourcetype = resourcesDict1[computingsite]
+        try:
+            resourcetype = resourcesDictN[computingsite]
+        except:
+            continue
         hs_distribution_dict.setdefault(resourcetype, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0})
         hs_distribution_dict[resourcetype][status_group] = hs
-        if 'total_hs' not in hs_distribution_dict[resourcetype]:
-            hs_distribution_dict[resourcetype]['total_hs'] = {}
-            hs_distribution_dict[resourcetype]['total_hs'] = hs
-        else : hs_distribution_dict[resourcetype]['total_hs'] += hs
+        # if 'total_hs' not in hs_distribution_dict[resourcetype]:
+        #     resourcecnt = 0
+        #     resourcecnt = hs
+        #     hs_distribution_dict[resourcetype]['total_hs'] = {}
+        #     hs_distribution_dict[resourcetype]['total_hs'] = resourcecnt
+        # else:
+        #     resourcecnt += hs
+        #     hs_distribution_dict[resourcetype]['total_hs'] += resourcecnt
+
         total_hs += hs
 
         # calculate totals
@@ -517,11 +532,20 @@ ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP
     pled = 0
     executing = 0
     queued = 0
+    total_hs =0
     for hs_entry in hs_distribution_dict.keys():
+        sum_hs = 0
         pled += hs_distribution_dict[hs_entry]['pledged']
         ignore += hs_distribution_dict[hs_entry]['ignore']
         executing += hs_distribution_dict[hs_entry]['executing']
         queued += hs_distribution_dict[hs_entry]['queued']
+        sum_hs = float(hs_distribution_dict[hs_entry]['pledged']) + \
+                 float(hs_distribution_dict[hs_entry]['ignore']) + \
+                 float(hs_distribution_dict[hs_entry]['executing']) + \
+                 float(hs_distribution_dict[hs_entry]['queued'])
+        total_hs+=sum_hs
+        hs_distribution_dict[hs_entry]['total_hs'] = sum_hs
+
     hs_distribution_list = []
     for hs_entry in hs_distribution_dict.keys():
        # hs_distribution_dict[hs_entry]['pledged_percent'] = pled * 100 / hs_distribution_dict[hs_entry]['pledged']
@@ -535,8 +559,13 @@ ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP
                                      'executing_percent': hs_distribution_dict[hs_entry]['executing_percent'],
                                      'queued':hs_distribution_dict[hs_entry]['queued'],
                                      'queued_percent':hs_distribution_dict[hs_entry]['queued_percent'],
-                                     'total_hs':hs_distribution_dict[resourcetype]['total_hs'],
-                                     'total_hs_percent': hs_distribution_dict[resourcetype]['total_hs']/total_hs*100
+                                     'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
+                                     'total_hs_percent': (hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100
                                      })
-    return HttpResponse(json.dumps(hs_distribution_list), content_type='text/html')
+    return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
 
+def fairsharePolicy(request):
+
+    return None
+def coresCount(request):
+    return None

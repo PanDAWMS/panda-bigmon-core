@@ -365,24 +365,35 @@
                 "aoColumns": [
                     {
                         "data": "resource",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "data": "ignore",
                         sDefaultContent: ""
                     },
                     {
                         "data": "executing",
                         sDefaultContent: "",
-
+                        "render": function(data, type, full, meta) {
+                        return full['executing'] +' (' + full['executing_percent']+' %)'
+                        }
                     },
                     {
                         "data": "queued",
                         sDefaultContent: "",
+                        "render": function(data, type, full, meta) {
+                        return full['queued'] +' (' + full['queued_percent']+' %)'
+                        }
+                    },
+                    {
+                        "data": "ignore",
+                        sDefaultContent: "",
+                        "render": function(data, type, full, meta) {
+                        return full['ignore'] +' (' + full['ignore_percent']+' %)'
+                        }
                     },
                     {
                         "data": "total_hs",
                         sDefaultContent: "",
+                        "render": function(data, type, full, meta) {
+                        return full['total_hs'] +' (' + full['total_hs_percent']+' %)'
+                        }
                     }
                 ],
                 "createdRow": function (row, data, index) {
@@ -513,7 +524,7 @@
         <hr/>
     </div>
     <a href="javascript:ReverseDisplay('resourcesDiv','resourcesLink')"
-       id="resourcesLink" class="bluebutton">Show detailed information</a> <br/><br/>
+       id="resourcesLink" class="bluebutton">Show resources information</a> <br/><br/>
     <div id="resourcesDiv" style="display: none">
 
     <table id="resources" style="width: 100%" class="data-table">
