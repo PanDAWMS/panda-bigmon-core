@@ -5421,10 +5421,32 @@ def wnInfo(request, site, wnname='all'):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
 
+def checkUcoreSite(site, usites):
+    isUsite = False
+    if site in usites:
+       isUsite = True
+    return isUsite
+
+def getUcoreSites():
+    url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
+    http = urllib3.PoolManager()
+    data = {}
+    try:
+        sites = []
+        r = http.request('GET', url)
+        data = json.loads(r.data.decode('utf-8'))
+        for cs in data.keys():
+            if 'unifiedPandaQueue' in data[cs]['catchall']:
+                sites.append(data[cs]['siteid'])
+    except Exception as exc:
+        sites = []
+        print exc.message
+    return sites
+
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
     pilots = getPilotCounts(view)
     query = setupView(request, hours=hours, limit=limit, opmode=view)
-
+    ucoreComputingSites = getUcoreSites()
     if VOMODE == 'atlas' and len(request.session['requestParams']) == 0:
         cloudinfol = Cloudconfig.objects.filter().exclude(name='CMS').exclude(name='OSG').values('name', 'status')
     else:
@@ -5528,7 +5550,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         clouds[cloud]['sites'][site]['count'] += count
         clouds[cloud]['sites'][site]['states'][jobstatus]['count'] += count
 
-        if 'UCORE' in site:
+        if 'UCORE' in site or checkUcoreSite(site,ucoreComputingSites):
             if 'resources' not in clouds[cloud]['sites'][site]['states'][jobstatus]:
                 clouds[cloud]['sites'][site]['states'][jobstatus]['resources'] = {}
                 clouds[cloud]['sites'][site]['states'][jobstatus]['resources'] = resources
