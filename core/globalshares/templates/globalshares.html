@@ -71,9 +71,30 @@
                 <td style="text-align:right">
                     {% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}</td>
             </tr>
-
-            <tr>
+            {% for resource in row.resources%}
+            <tr style="display: none ">
+                <td>{{ resource.level1 }}</td>
+                <td>{{ resource.level2 }}</td>
+                <td>{{ resource.level3 }}</td>
+                <td style="text-align:right">
+                    {% if resource.executing %}{{ resource.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td style="text-align:right">
+                    ---
+{#                    {% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>#}
+                <td style="text-align:right">
+{#                {% if row.ratio %} {{ row.ratio |floatformat:2|intcomma }} % {% else %}#}
+                    --- </td>
+                <td style="text-align:right">
+                    {% if resource.queued %}{{ resource.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td style="text-align:right">
+{#                    {% if resource.used %} {{ resource.used |floatformat:2|intcomma }} % {% else %}#}
+                    --- </td>
+                <td style="text-align:right">
+{#                    {% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}#}
+                    ---
+                </td>
             </tr>
+            {% endfor %}
         {% endfor %}
     </table>
     <br>

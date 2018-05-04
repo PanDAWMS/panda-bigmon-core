@@ -36,7 +36,7 @@ def globalshares(request):
     gs, tablerows = __get_hs_leave_distribution()
     gsPlotData = {}#{'Upgrade':130049 , 'Reprocessing default':568841, 'Data Derivations': 202962, 'Event Index': 143 }
 
-    resources_hs, total_hs = get_resources_gshare()
+    resources_hs = get_resources_gshare()
 
     for shareName, shareValue in gs.iteritems():
         shareValue['delta'] = shareValue['executing'] - shareValue['pledged']
@@ -70,11 +70,14 @@ def globalshares(request):
     for ordValueLevel1 in sorted(ordtablerows['level1']):
         for shareValue in tablerows:
             if ordValueLevel1 in shareValue['level1']:
+                if len(ordtablerows[ordValueLevel1]['level2']) == 0:
+                    ord1Short = re.sub('\[(.*)\]', '', ordValueLevel1).rstrip().lower()
+                    shareValue['isparent'] = 'level1'
+                    shareValue['gshare'] = ord1Short
                 newTablesRow.append(shareValue)
                 tablerows.remove(shareValue)
-                if len(ordtablerows[ordValueLevel1]['level2']) == 0:
-                    shareValue['isparent'] = 'level1'
-
+                if 'isparent' in shareValue:
+                    add_resources(ord1Short,newTablesRow,resources_hs,shareValue['isparent'])
                 break
         for ordValueLevel2 in sorted(ordtablerows[ordValueLevel1]['level2']):
             for shareValue in tablerows:
@@ -85,8 +88,11 @@ def globalshares(request):
                         link = "?jobtype=%s&display_limit=100&gshare=%s"%(ord1Short,ord2Short)
                         shareValue['link'] = link
                         shareValue['isparent'] = 'level2'
+                        shareValue['gshare'] = ord2Short
                     newTablesRow.append(shareValue)
                     tablerows.remove(shareValue)
+                    if 'isparent' in shareValue:
+                        add_resources(ord2Short, newTablesRow, resources_hs, shareValue['isparent'])
                     break
             for ordValueLevel3 in sorted(ordtablerows[ordValueLevel1][ordValueLevel2]['level3']):
                 for shareValue in tablerows:
@@ -97,8 +103,11 @@ def globalshares(request):
                             link = "?jobtype=%s&display_limit=100&gshare=%s" % (ord1Short, ord3Short)
                             shareValue['link'] = link
                             shareValue['isparent'] = 'level3'
+                            shareValue['gshare'] = ord3Short
                         newTablesRow.append(shareValue)
                         tablerows.remove(shareValue)
+                        if 'isparent' in shareValue:
+                            add_resources(ord3Short, newTablesRow, resources_hs, shareValue['isparent'])
                         break
     tablerows = newTablesRow
 
@@ -153,19 +162,9 @@ def get_resources_gshare():
             resourcetype = resourcesDictSites[computingsite]
         except:
             continue
-        # if gshare in hs_distribution_dict:
-        #     hs_distribution_dict[gshare] = {}
         hs_distribution_dict.setdefault(gshare,{})
         hs_distribution_dict[gshare].setdefault(resourcetype, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0, IGNORE:0})
         #hs_distribution_dict[gshare][resourcetype][status_group] = hs
-        # if 'total_hs' not in hs_distribution_dict[resourcetype]:
-        #     resourcecnt = 0
-        #     resourcecnt = hs
-        #     hs_distribution_dict[resourcetype]['total_hs'] = {}
-        #     hs_distribution_dict[resourcetype]['total_hs'] = resourcecnt
-        # else:
-        #     resourcecnt += hs
-        #     hs_distribution_dict[resourcetype]['total_hs'] += resourcecnt
 
         total_hs += hs
 
@@ -203,10 +202,24 @@ def get_resources_gshare():
     for gshare in hs_distribution_dict.keys():
         for resource in hs_distribution_dict[gshare].keys():
        # hs_distribution_dict[hs_entry]['pledged_percent'] = pled * 100 / hs_distribution_dict[hs_entry]['pledged']
+
             hs_distribution_dict[gshare][resource]['ignore_percent'] =  (hs_distribution_dict[gshare][resource]['ignore']/ignore)* 100
             hs_distribution_dict[gshare][resource]['executing_percent'] =  (hs_distribution_dict[gshare][resource]['executing'] /executing) * 100
             hs_distribution_dict[gshare][resource]['queued_percent'] = (hs_distribution_dict[gshare][resource]['queued']/queued) * 100
-            hs_distribution_list.setdefault(gshare,[]).append({'resource':hs_entry, 'pledged':hs_distribution_dict[gshare][resource]['pledged'],
+            # hs_distribution_list.setdefault(str(gshare).lower(),{})
+            # hs_distribution_list[str(gshare).lower()].setdefault(resource,{
+            #     'pledged': hs_distribution_dict[gshare][resource]['pledged'],
+            #                              'ignore':hs_distribution_dict[gshare][resource]['ignore'],
+            #                              'ignore_percent':hs_distribution_dict[gshare][resource]['ignore_percent'],
+            #                              'executing':hs_distribution_dict[gshare][resource]['executing'],
+            #                              'executing_percent': hs_distribution_dict[gshare][resource]['executing_percent'],
+            #                              'queued':hs_distribution_dict[gshare][resource]['queued'],
+            #                              'queued_percent':hs_distribution_dict[gshare][resource]['queued_percent'],
+            #                              'total_hs':hs_distribution_dict[gshare][resource]['total_hs'],
+            #                              'total_hs_percent': (hs_distribution_dict[gshare][resource]['total_hs']/total_hs)*100
+            # })
+
+            hs_distribution_list.setdefault(str(gshare).lower(),[]).append({'resource':resource, 'pledged':hs_distribution_dict[gshare][resource]['pledged'],
                                      'ignore':hs_distribution_dict[gshare][resource]['ignore'],
                                      'ignore_percent':hs_distribution_dict[gshare][resource]['ignore_percent'],
                                      'executing':hs_distribution_dict[gshare][resource]['executing'],
@@ -217,6 +230,55 @@ def get_resources_gshare():
                                      'total_hs_percent': (hs_distribution_dict[gshare][resource]['total_hs']/total_hs)*100
                                      })
     return hs_distribution_list
+
+def add_resources(gshare,tableRows,resourceslist,level):
+    gshare = str(gshare)
+    if gshare in resourceslist:
+        resourcesForGshare = resourceslist[gshare]
+        resourcesForGshareList = []
+        if level == 'level1':
+            for resource in resourcesForGshare:
+                resource['level1'] = resource['resource']
+                resource['level2'] = ''
+                resource['level3'] = ''
+                # resourcesForGshare[resource]['level1'] = resource
+                # resourcesForGshare[resource]['level2'] = ''
+                # resourcesForGshare[resource]['level3'] = ''
+        if level == 'level2':
+            for resource in resourcesForGshare:
+                resource['level1'] = ''
+                resource['level2'] = resource['resource']
+                resource['level3'] = ''
+                # resourcesForGshare[resource]['level1'] = ''
+                # resourcesForGshare[resource]['level2'] = resource
+                # resourcesForGshare[resource]['level3'] = ''
+
+        if level == 'level3':
+            for resource in resourcesForGshare:
+                resource['level1'] = ''
+                resource['level2'] = ''
+                resource['level3'] = resource['resource']
+                # resourcesForGshare[resource]['level1'] = ''
+                # resourcesForGshare[resource]['level2'] = ''
+                # resourcesForGshare[resource]['level3'] = resource
+
+        for row in tableRows:
+            if 'gshare' in row and gshare == row['gshare']:
+                row['resources'] = resourcesForGshare
+        # if level == 'level1':
+        #     for resource in resourcesForGshare:
+        #         tableRows.append({'delta':0,'executing':resourcesForGshare[resource]['executing'],'isparent':'level1','level1':resource,'level2':'','level3':'',
+        #                    'pledged':0,'queued':resourcesForGshare[resource]['queued'],'ratio':0,'used':0,'value':0})
+        # if level == 'level2':
+        #     for resource in resourcesForGshare:
+        #         tableRows.append({'delta':0,'executing':resourcesForGshare[resource]['executing'],'isparent':'level1','level1':'','level2':resource,'level3':'',
+        #                    'pledged':0,'queued':resourcesForGshare[resource]['queued'],'ratio':0,'used':0,'value':0})
+        # if level == 'level3':
+        #     for resource in resourcesForGshare:
+        #         tableRows.append(
+        #         {'delta': 0, 'executing': resourcesForGshare[resource]['executing'], 'isparent': 'level1', 'level1': '',
+        #         'level2': '', 'level3': resource,
+        #         'pledged': 0, 'queued': resourcesForGshare[resource]['queued'], 'ratio': 0, 'used': 0, 'value': 0})
 
 def get_shares(parents=''):
     comment = ' /* DBProxy.get_shares */'
@@ -614,14 +676,6 @@ ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP
             continue
         hs_distribution_dict.setdefault(resourcetype, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0,IGNORE:0})
         #hs_distribution_dict[resourcetype][status_group] = hs
-        # if 'total_hs' not in hs_distribution_dict[resourcetype]:
-        #     resourcecnt = 0
-        #     resourcecnt = hs
-        #     hs_distribution_dict[resourcetype]['total_hs'] = {}
-        #     hs_distribution_dict[resourcetype]['total_hs'] = resourcecnt
-        # else:
-        #     resourcecnt += hs
-        #     hs_distribution_dict[resourcetype]['total_hs'] += resourcecnt
 
         total_hs += hs
 
