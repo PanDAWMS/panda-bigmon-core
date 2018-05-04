@@ -70,7 +70,9 @@
                     --- {% endif %}</td>
                 <td style="text-align:right">
                     {% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}</td>
+            </tr>
 
+            <tr>
             </tr>
         {% endfor %}
     </table>
@@ -81,6 +83,7 @@
             DisplaySharesDistribution();
             DisplaySiteworkqueues();
             DisplayResources();
+            DisplayCoresCount();
         });
 
         function ReverseDisplay(d, hlink) {
@@ -419,6 +422,57 @@
 {#                }#}
             });
     }
+    function DisplayCoresCount() {
+            $('#cores').dataTable({
+                //"bRetrieve": true,
+                "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+                paging: true,
+                order: [[4, 'desc']],
+                "ajax": {
+                    "processing": true,
+                    "url": "{% url 'coresCount' %}",
+                    "dataSrc": ''
+                },
+                "aoColumns": [
+                    {
+                        "data": "corestype",
+                        sDefaultContent: ""
+                    },
+                    {
+                        "data": "executing",
+                        sDefaultContent: "",
+                        "render": function(data, type, full, meta) {
+                        return full['executing'] +' (' + full['executing_percent']+' %)'
+                        }
+                    },
+                    {
+                        "data": "queued",
+                        sDefaultContent: "",
+                        "render": function(data, type, full, meta) {
+                        return full['queued'] +' (' + full['queued_percent']+' %)'
+                        }
+                    },
+                    {
+                        "data": "ignore",
+                        sDefaultContent: "",
+                        "render": function(data, type, full, meta) {
+                        return full['ignore'] +' (' + full['ignore_percent']+' %)'
+                        }
+                    },
+                    {
+                        "data": "total_hs",
+                        sDefaultContent: "",
+                        "render": function(data, type, full, meta) {
+                        return full['total_hs'] +' (' + full['total_hs_percent']+' %)'
+                        }
+                    }
+                ],
+                "createdRow": function (row, data, index) {
+                },
+
+            });
+
+    }
     </script>
     <a href="javascript:ReverseDisplay('sharesdistributiondiv','sharesdistributionlink')" id="sharesdistributionlink" class="bluebutton">Show
         shares distribution</a> <br/><br/>
@@ -528,9 +582,34 @@
     <div id="resourcesDiv" style="display: none">
 
     <table id="resources" style="width: 100%" class="data-table">
-            <caption style="height: 30px;vertical-align: middle">Site workqueues occupations (4 days)</caption>
+            <caption style="height: 30px;vertical-align: middle"></caption>
             <thead>
             <th>Resource</th>
+            <th>Actual HS06</th>
+            <th>Queued HS06</th>
+            <th>Ignored HS06</th>
+            <th>Total HS06</th>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+            <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+            </tfoot>
+    </table>
+    </div>
+        <a href="javascript:ReverseDisplay('coresDiv','coresLink')"
+       id="coresLink" class="bluebutton">Show corescount information</a> <br/><br/>
+    <div id="coresDiv" style="display: none">
+
+    <table id="cores" style="width: 100%" class="data-table">
+            <caption style="height: 30px;vertical-align: middle"></caption>
+            <thead>
+            <th>Cores</th>
             <th>Actual HS06</th>
             <th>Queued HS06</th>
             <th>Ignored HS06</th>

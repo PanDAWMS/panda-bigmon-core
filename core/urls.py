@@ -174,6 +174,7 @@ urlpatterns = [
     url(r'^datatable/data/sharesDistributionJSON', globalshares.sharesDistributionJSON, name='sharesDistributionJSON'),
     url(r'^datatable/data/siteWorkQueuesJSON', globalshares.siteWorkQueuesJSON, name='siteWorkQueuesJSON'),
     url(r'^datatable/data/resourcesType', globalshares.resourcesType, name='resourcesType'),
+    url(r'^datatable/data/coresCount', globalshares.coresCount, name='coresCount'),
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
