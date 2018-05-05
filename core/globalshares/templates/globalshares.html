@@ -53,11 +53,14 @@
         </tr>
         {% for row in tablerows %}
             <tr>
-                <td>{{ row.level1 }}</td>
+                <td>{{ row.level1 }} {% if row.gshare and row.level1 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
+   {% endif %}</td>
                 <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level2 }}</a>
-                    {% else %}{{ row.level2 }} {% endif %}</td>
+                    {% else %}{{ row.level2 }} {% endif %} {% if row.gshare and row.level2 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
+   {% endif %}</td>
                 <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level3 }}</a>
-                    {% else %}{{ row.level3 }} {% endif %}</td>
+                    {% else %}{{ row.level3 }} {% endif %} {% if row.gshare and row.level3 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
+   {% endif %}</td>
                 <td style="text-align:right">
                     {% if row.executing %}{{ row.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
                 <td style="text-align:right">
@@ -72,7 +75,9 @@
                     {% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}</td>
             </tr>
             {% for resource in row.resources%}
-            <tr style="display: none ">
+{#            <tr style="display: none" id="{{ row.gshare }}{% if resource.level1 %}_{{ resource.level1 }}{% elif resource.level2%}_{{ resource.level2 }}{% elif resource.level3%}_{{ resource.level3 }}{% endif %}">#}
+            <tr style="display: none" id="{% if resource.level1 %}{{ resource.level1 }}{% elif resource.level2%}{{ resource.level2 }}{% elif resource.level3%}{{ resource.level3 }}{% endif %}" class="{{ row.gshare }}">
+
                 <td>{{ resource.level1 }}</td>
                 <td>{{ resource.level2 }}</td>
                 <td>{{ resource.level3 }}</td>
@@ -104,21 +109,45 @@
             DisplaySharesDistribution();
             DisplaySiteworkqueues();
             DisplayResources();
-            DisplayCoresCount();
+            DisplayCoreTypes();
         });
-
+        function NumberRound(num) {
+            return num.toFixed(2).replace(/./g, function(c, i, a) {return i && c !== "." && ((a.length - i) % 3 === 0) ? ',' + c : c;})
+        }
         function ReverseDisplay(d, hlink) {
-            if (document.getElementById(d).style.display == "none") {
-                document.getElementById(d).style.display = "block";
-                var urlname = document.getElementById(hlink).innerText;
-                urlname = urlname.replace("Show", "Hide");
-                document.getElementById(hlink).innerText = urlname;
+            var urlname = document.getElementById(hlink).innerText;
+            var resourcesElement = $( "."+d);
+            if (resourcesElement.length>0){
+                if(urlname.indexOf("+") !== -1) {
+                    resourcesElement.each(function (index) {
+                        $(this).show();
+                    })
+                    urlname = urlname.replace("+", "-");
+                    document.getElementById(hlink).innerText = urlname;
+                }
+                else {
+                    resourcesElement.each(function (index) {
+                        $(this).hide();
+                    })
+                    urlname = urlname.replace("-", "+");
+                    document.getElementById(hlink).innerText = urlname;
+                }
             }
             else {
-                document.getElementById(d).style.display = "none";
-                var urlname = document.getElementById(hlink).innerText;
-                urlname = urlname.replace("Hide", "Show");
-                document.getElementById(hlink).innerText = urlname;
+                if (document.getElementById(d).style.display == "none") {
+                    if (urlname.indexOf("Show") !== -1) {
+                        document.getElementById(d).style.display = "block";
+                        urlname = urlname.replace("Show", "Hide");
+                        document.getElementById(hlink).innerText = urlname;
+                    }
+                }
+                else {
+                    document.getElementById(d).style.display = "none";
+                    if (urlname.indexOf("Hide") !== -1) {
+                        urlname = urlname.replace("Hide", "Show");
+                        document.getElementById(hlink).innerText = urlname;
+                    }
+                }
             }
         }
 
@@ -395,28 +424,28 @@
                         "data": "executing",
                         sDefaultContent: "",
                         "render": function(data, type, full, meta) {
-                        return full['executing'] +' (' + full['executing_percent']+' %)'
+                        return NumberRound(full['executing']) +' (' + full['executing_percent']+'%)'
                         }
                     },
                     {
                         "data": "queued",
                         sDefaultContent: "",
                         "render": function(data, type, full, meta) {
-                        return full['queued'] +' (' + full['queued_percent']+' %)'
+                        return NumberRound(full['queued']) +' (' + full['queued_percent']+'%)'
                         }
                     },
                     {
                         "data": "ignore",
                         sDefaultContent: "",
                         "render": function(data, type, full, meta) {
-                        return full['ignore'] +' (' + full['ignore_percent']+' %)'
+                        return NumberRound(full['ignore']) +' (' + full['ignore_percent']+'%)'
                         }
                     },
                     {
                         "data": "total_hs",
                         sDefaultContent: "",
                         "render": function(data, type, full, meta) {
-                        return full['total_hs'] +' (' + full['total_hs_percent']+' %)'
+                        return full['total_hs'] +' (' + full['total_hs_percent']+'%)'
                         }
                     }
                 ],
@@ -443,7 +472,7 @@
 {#                }#}
             });
     }
-    function DisplayCoresCount() {
+    function DisplayCoreTypes() {
             $('#cores').dataTable({
                 //"bRetrieve": true,
                 "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
@@ -451,40 +480,40 @@
                 order: [[4, 'desc']],
                 "ajax": {
                     "processing": true,
-                    "url": "{% url 'coresCount' %}",
+                    "url": "{% url 'coreTypes' %}",
                     "dataSrc": ''
                 },
                 "aoColumns": [
                     {
-                        "data": "corestype",
+                        "data": "coretypes",
                         sDefaultContent: ""
                     },
                     {
                         "data": "executing",
                         sDefaultContent: "",
                         "render": function(data, type, full, meta) {
-                        return full['executing'] +' (' + full['executing_percent']+' %)'
+                        return NumberRound(full['executing']) +' (' + full['executing_percent']+'%)'
                         }
                     },
                     {
                         "data": "queued",
                         sDefaultContent: "",
                         "render": function(data, type, full, meta) {
-                        return full['queued'] +' (' + full['queued_percent']+' %)'
+                        return NumberRound(full['queued']) +' (' + full['queued_percent']+'%)'
                         }
                     },
                     {
                         "data": "ignore",
                         sDefaultContent: "",
                         "render": function(data, type, full, meta) {
-                        return full['ignore'] +' (' + full['ignore_percent']+' %)'
+                        return NumberRound(full['ignore']) +' (' + full['ignore_percent']+'%)'
                         }
                     },
                     {
                         "data": "total_hs",
                         sDefaultContent: "",
                         "render": function(data, type, full, meta) {
-                        return full['total_hs'] +' (' + full['total_hs_percent']+' %)'
+                        return full['total_hs'] +' (' + full['total_hs_percent']+'%)'
                         }
                     }
                 ],
@@ -608,7 +637,7 @@
             <th>Resource</th>
             <th>Actual HS06</th>
             <th>Queued HS06</th>
-            <th>Ignored HS06</th>
+            <th>Other HS06</th>
             <th>Total HS06</th>
             </thead>
             <tbody></tbody>
@@ -630,10 +659,10 @@
     <table id="cores" style="width: 100%" class="data-table">
             <caption style="height: 30px;vertical-align: middle"></caption>
             <thead>
-            <th>Cores</th>
+            <th>Core</th>
             <th>Actual HS06</th>
             <th>Queued HS06</th>
-            <th>Ignored HS06</th>
+            <th>Other HS06</th>
             <th>Total HS06</th>
             </thead>
             <tbody></tbody>

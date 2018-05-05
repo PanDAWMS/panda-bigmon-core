@@ -73,7 +73,7 @@ def globalshares(request):
                 if len(ordtablerows[ordValueLevel1]['level2']) == 0:
                     ord1Short = re.sub('\[(.*)\]', '', ordValueLevel1).rstrip().lower()
                     shareValue['isparent'] = 'level1'
-                    shareValue['gshare'] = ord1Short
+                    shareValue['gshare'] = ord1Short.replace(' ', '_')
                 newTablesRow.append(shareValue)
                 tablerows.remove(shareValue)
                 if 'isparent' in shareValue:
@@ -88,7 +88,7 @@ def globalshares(request):
                         link = "?jobtype=%s&display_limit=100&gshare=%s"%(ord1Short,ord2Short)
                         shareValue['link'] = link
                         shareValue['isparent'] = 'level2'
-                        shareValue['gshare'] = ord2Short
+                        shareValue['gshare'] = ord2Short.replace(' ', '_')
                     newTablesRow.append(shareValue)
                     tablerows.remove(shareValue)
                     if 'isparent' in shareValue:
@@ -103,7 +103,7 @@ def globalshares(request):
                             link = "?jobtype=%s&display_limit=100&gshare=%s" % (ord1Short, ord3Short)
                             shareValue['link'] = link
                             shareValue['isparent'] = 'level3'
-                            shareValue['gshare'] = ord3Short
+                            shareValue['gshare'] = ord3Short.replace(' ', '_')
                         newTablesRow.append(shareValue)
                         tablerows.remove(shareValue)
                         if 'isparent' in shareValue:
@@ -201,8 +201,6 @@ def get_resources_gshare():
     hs_distribution_list = {}
     for gshare in hs_distribution_dict.keys():
         for resource in hs_distribution_dict[gshare].keys():
-       # hs_distribution_dict[hs_entry]['pledged_percent'] = pled * 100 / hs_distribution_dict[hs_entry]['pledged']
-
             hs_distribution_dict[gshare][resource]['ignore_percent'] =  (hs_distribution_dict[gshare][resource]['ignore']/ignore)* 100
             hs_distribution_dict[gshare][resource]['executing_percent'] =  (hs_distribution_dict[gshare][resource]['executing'] /executing) * 100
             hs_distribution_dict[gshare][resource]['queued_percent'] = (hs_distribution_dict[gshare][resource]['queued']/queued) * 100
@@ -232,7 +230,7 @@ def get_resources_gshare():
     return hs_distribution_list
 
 def add_resources(gshare,tableRows,resourceslist,level):
-    gshare = str(gshare)
+    gshare = str(gshare).replace('_', ' ')
     if gshare in resourceslist:
         resourcesForGshare = resourceslist[gshare]
         resourcesForGshareList = []
@@ -241,44 +239,20 @@ def add_resources(gshare,tableRows,resourceslist,level):
                 resource['level1'] = resource['resource']
                 resource['level2'] = ''
                 resource['level3'] = ''
-                # resourcesForGshare[resource]['level1'] = resource
-                # resourcesForGshare[resource]['level2'] = ''
-                # resourcesForGshare[resource]['level3'] = ''
         if level == 'level2':
             for resource in resourcesForGshare:
                 resource['level1'] = ''
                 resource['level2'] = resource['resource']
                 resource['level3'] = ''
-                # resourcesForGshare[resource]['level1'] = ''
-                # resourcesForGshare[resource]['level2'] = resource
-                # resourcesForGshare[resource]['level3'] = ''
-
         if level == 'level3':
             for resource in resourcesForGshare:
                 resource['level1'] = ''
                 resource['level2'] = ''
                 resource['level3'] = resource['resource']
-                # resourcesForGshare[resource]['level1'] = ''
-                # resourcesForGshare[resource]['level2'] = ''
-                # resourcesForGshare[resource]['level3'] = resource
 
         for row in tableRows:
-            if 'gshare' in row and gshare == row['gshare']:
+            if 'gshare' in row and gshare.replace(' ', '_') == row['gshare']:
                 row['resources'] = resourcesForGshare
-        # if level == 'level1':
-        #     for resource in resourcesForGshare:
-        #         tableRows.append({'delta':0,'executing':resourcesForGshare[resource]['executing'],'isparent':'level1','level1':resource,'level2':'','level3':'',
-        #                    'pledged':0,'queued':resourcesForGshare[resource]['queued'],'ratio':0,'used':0,'value':0})
-        # if level == 'level2':
-        #     for resource in resourcesForGshare:
-        #         tableRows.append({'delta':0,'executing':resourcesForGshare[resource]['executing'],'isparent':'level1','level1':'','level2':resource,'level3':'',
-        #                    'pledged':0,'queued':resourcesForGshare[resource]['queued'],'ratio':0,'used':0,'value':0})
-        # if level == 'level3':
-        #     for resource in resourcesForGshare:
-        #         tableRows.append(
-        #         {'delta': 0, 'executing': resourcesForGshare[resource]['executing'], 'isparent': 'level1', 'level1': '',
-        #         'level2': '', 'level3': resource,
-        #         'pledged': 0, 'queued': resourcesForGshare[resource]['queued'], 'ratio': 0, 'used': 0, 'value': 0})
 
 def get_shares(parents=''):
     comment = ' /* DBProxy.get_shares */'
@@ -655,8 +629,8 @@ def resourcesType(request):
     resourcesList = []
     resourcesDictSites = get_agis_resources()
     sqlRequest = """SELECT computingsite, jobstatus_grouped, SUM(HS) 
-FROM (SELECT computingsite, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing'
-ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP BY computingsite, jobstatus_grouped"""
+    FROM (SELECT computingsite, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing'
+    ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP BY computingsite, jobstatus_grouped"""
     cur = connection.cursor()
     cur.execute(sqlRequest)
     # get the hs distribution data into a dictionary structure
@@ -715,20 +689,20 @@ ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP
         hs_distribution_dict[hs_entry]['queued_percent'] = (hs_distribution_dict[hs_entry]['queued']/queued) * 100
         hs_distribution_list.append({'resource':hs_entry, 'pledged':hs_distribution_dict[hs_entry]['pledged'],
                                      'ignore':hs_distribution_dict[hs_entry]['ignore'],
-                                     'ignore_percent':hs_distribution_dict[hs_entry]['ignore_percent'],
+                                     'ignore_percent':int(round(hs_distribution_dict[hs_entry]['ignore_percent'])),
                                      'executing':hs_distribution_dict[hs_entry]['executing'],
-                                     'executing_percent': hs_distribution_dict[hs_entry]['executing_percent'],
+                                     'executing_percent': int(round(hs_distribution_dict[hs_entry]['executing_percent'])),
                                      'queued':hs_distribution_dict[hs_entry]['queued'],
-                                     'queued_percent':hs_distribution_dict[hs_entry]['queued_percent'],
+                                     'queued_percent':int(round(hs_distribution_dict[hs_entry]['queued_percent'])),
                                      'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
-                                     'total_hs_percent': (hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100
+                                     'total_hs_percent': int(round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100))
                                      })
     return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
 
 def fairsharePolicy(request):
 
     return None
-def coresCount(request):
+def coreTypes(request):
     EXECUTING = 'executing'
     QUEUED = 'queued'
     PLEDGED = 'pledged'
@@ -804,15 +778,15 @@ def coresCount(request):
         hs_distribution_dict[hs_entry]['ignore_percent'] =  (hs_distribution_dict[hs_entry]['ignore']/ignore)* 100
         hs_distribution_dict[hs_entry]['executing_percent'] =  (hs_distribution_dict[hs_entry]['executing'] /executing) * 100
         hs_distribution_dict[hs_entry]['queued_percent'] = (hs_distribution_dict[hs_entry]['queued']/queued) * 100
-        hs_distribution_list.append({'corestype':hs_entry, 'pledged':hs_distribution_dict[hs_entry]['pledged'],
+        hs_distribution_list.append({'coretypes':hs_entry, 'pledged':hs_distribution_dict[hs_entry]['pledged'],
                                      'ignore':hs_distribution_dict[hs_entry]['ignore'],
-                                     'ignore_percent':hs_distribution_dict[hs_entry]['ignore_percent'],
+                                     'ignore_percent': int(round(hs_distribution_dict[hs_entry]['ignore_percent'])),
                                      'executing':hs_distribution_dict[hs_entry]['executing'],
-                                     'executing_percent': hs_distribution_dict[hs_entry]['executing_percent'],
+                                     'executing_percent': int(round(hs_distribution_dict[hs_entry]['executing_percent'])),
                                      'queued':hs_distribution_dict[hs_entry]['queued'],
-                                     'queued_percent':hs_distribution_dict[hs_entry]['queued_percent'],
+                                     'queued_percent':int(round(hs_distribution_dict[hs_entry]['queued_percent'])),
                                      'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
-                                     'total_hs_percent': (hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100
+                                     'total_hs_percent': int(round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100))
                                      })
     return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
 
