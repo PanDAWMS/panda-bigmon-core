@@ -27,10 +27,7 @@ def globalshares(request):
         for shareName, shareValue in oldGsPlotData.iteritems():
             gsPlotData[str(shareName)] = int(shareValue)
         data['gsPlotData'] = gsPlotData
-        #response = render_to_response('globalshares.html', data, RequestContext(request))
-        #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        #endSelfMonitor(request)
-        #return response
+
     if not valid: return response
     setupView(request, hours=180 * 24, limit=9999999)
     gs, tablerows = __get_hs_leave_distribution()
@@ -204,18 +201,6 @@ def get_resources_gshare():
             hs_distribution_dict[gshare][resource]['ignore_percent'] =  (hs_distribution_dict[gshare][resource]['ignore']/ignore)* 100
             hs_distribution_dict[gshare][resource]['executing_percent'] =  (hs_distribution_dict[gshare][resource]['executing'] /executing) * 100
             hs_distribution_dict[gshare][resource]['queued_percent'] = (hs_distribution_dict[gshare][resource]['queued']/queued) * 100
-            # hs_distribution_list.setdefault(str(gshare).lower(),{})
-            # hs_distribution_list[str(gshare).lower()].setdefault(resource,{
-            #     'pledged': hs_distribution_dict[gshare][resource]['pledged'],
-            #                              'ignore':hs_distribution_dict[gshare][resource]['ignore'],
-            #                              'ignore_percent':hs_distribution_dict[gshare][resource]['ignore_percent'],
-            #                              'executing':hs_distribution_dict[gshare][resource]['executing'],
-            #                              'executing_percent': hs_distribution_dict[gshare][resource]['executing_percent'],
-            #                              'queued':hs_distribution_dict[gshare][resource]['queued'],
-            #                              'queued_percent':hs_distribution_dict[gshare][resource]['queued_percent'],
-            #                              'total_hs':hs_distribution_dict[gshare][resource]['total_hs'],
-            #                              'total_hs_percent': (hs_distribution_dict[gshare][resource]['total_hs']/total_hs)*100
-            # })
 
             hs_distribution_list.setdefault(str(gshare).lower(),[]).append({'resource':resource, 'pledged':hs_distribution_dict[gshare][resource]['pledged'],
                                      'ignore':hs_distribution_dict[gshare][resource]['ignore'],
