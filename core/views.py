@@ -6262,15 +6262,15 @@ def dashboard(request, view='production'):
     valid, response = initRequest(request)
     if not valid: return response
 
-    # data = getCacheEntry(request, "dashboard")
-    # if data is not None:
-    #     data = json.loads(data)
-    #     data['request'] = request
-    #     template = data['template']
-    #     response = render_to_response(template, data, content_type='text/html')
-    #     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    #     endSelfMonitor(request)
-    #     return response
+    data = getCacheEntry(request, "dashboard")
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        template = data['template']
+        response = render_to_response(template, data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
 
     taskdays = 3
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
