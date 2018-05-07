@@ -33,8 +33,6 @@ def globalshares(request):
     gs, tablerows = __get_hs_leave_distribution()
     gsPlotData = {}#{'Upgrade':130049 , 'Reprocessing default':568841, 'Data Derivations': 202962, 'Event Index': 143 }
 
-    resources_hs = get_resources_gshare()
-
     for shareName, shareValue in gs.iteritems():
         shareValue['delta'] = shareValue['executing'] - shareValue['pledged']
         shareValue['used'] = shareValue['ratio'] if 'ratio' in shareValue else None
@@ -44,68 +42,78 @@ def globalshares(request):
     for shareValue in tablerows:
         shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue else None
     ordtablerows ={}
-    ordtablerows['level1']=[]
+    ordtablerows['childlist']=[]
     level1=''
     level2=''
     level3=''
+
     for shareValue in tablerows:
         if len(shareValue['level1'])!=0:
             level1 = shareValue['level1']
             ordtablerows[level1] = {}
-            ordtablerows['level1'].append(level1)
-            ordtablerows[level1]['level2'] = []
+            ordtablerows['childlist'].append(level1)
+            ordtablerows[level1]['childlist'] = []
         if len(shareValue['level2'])!=0:
             level2 = shareValue['level2']
             ordtablerows[level1][level2] = {}
-            ordtablerows[level1]['level2'].append(level2)
-            ordtablerows[level1][level2]['level3'] = []
+            ordtablerows[level1]['childlist'].append(level2)
+            ordtablerows[level1][level2]['childlist'] = []
         if len(shareValue['level3'])!=0:
             level3 = shareValue['level3']
             ordtablerows[level1][level2][level3] = {}
-            ordtablerows[level1][level2]['level3'].append(level3)
+            ordtablerows[level1][level2]['childlist'].append(level3)
+
+    resources_list, resources_dict = get_resources_gshare()
+
     newTablesRow =[]
-    for ordValueLevel1 in sorted(ordtablerows['level1']):
+    for ordValueLevel1 in sorted(ordtablerows['childlist']):
         for shareValue in tablerows:
             if ordValueLevel1 in shareValue['level1']:
-                if len(ordtablerows[ordValueLevel1]['level2']) == 0:
-                    ord1Short = re.sub('\[(.*)\]', '', ordValueLevel1).rstrip().lower()
-                    shareValue['isparent'] = 'level1'
-                    shareValue['gshare'] = ord1Short.replace(' ', '_')
+                ord1Short = re.sub('\[(.*)\]', '', ordValueLevel1).rstrip().lower()
+                shareValue['level'] = 'level1'
+                shareValue['gshare'] = ord1Short.replace(' ', '_')
                 newTablesRow.append(shareValue)
                 tablerows.remove(shareValue)
-                if 'isparent' in shareValue:
-                    add_resources(ord1Short,newTablesRow,resources_hs,shareValue['isparent'])
+                if len(ordtablerows[ordValueLevel1]['childlist']) == 0:
+                    add_resources(ord1Short,newTablesRow,resources_list,shareValue['level'])
+                else:
+                    childsgsharelist = []
+                    get_child_elements(ordtablerows[ordValueLevel1],childsgsharelist)
+                    resources_dict = get_child_sumstats(childsgsharelist,resources_dict,ord1Short)
+                    short_resource_list= resourcesDictToList(resources_dict)
+                    add_resources(ord1Short, newTablesRow, short_resource_list, shareValue['level'])
                 break
-        for ordValueLevel2 in sorted(ordtablerows[ordValueLevel1]['level2']):
+        for ordValueLevel2 in sorted(ordtablerows[ordValueLevel1]['childlist']):
             for shareValue in tablerows:
                 if ordValueLevel2 in shareValue['level2']:
-                    if len(ordtablerows[ordValueLevel1][ordValueLevel2]['level3'])==0:
+                    if len(ordtablerows[ordValueLevel1][ordValueLevel2]['childlist'])==0:
                         ord1Short = re.sub('\[(.*)\]','',ordValueLevel1).rstrip().lower()
                         ord2Short = re.sub('\[(.*)\]', '', ordValueLevel2).rstrip().lower()
                         link = "?jobtype=%s&display_limit=100&gshare=%s"%(ord1Short,ord2Short)
                         shareValue['link'] = link
-                        shareValue['isparent'] = 'level2'
+                        shareValue['level'] = 'level2'
                         shareValue['gshare'] = ord2Short.replace(' ', '_')
                     newTablesRow.append(shareValue)
                     tablerows.remove(shareValue)
-                    if 'isparent' in shareValue:
-                        add_resources(ord2Short, newTablesRow, resources_hs, shareValue['isparent'])
+                    if 'level' in shareValue:
+                        add_resources(ord2Short, newTablesRow, resources_list, shareValue['level'])
                     break
-            for ordValueLevel3 in sorted(ordtablerows[ordValueLevel1][ordValueLevel2]['level3']):
+            for ordValueLevel3 in sorted(ordtablerows[ordValueLevel1][ordValueLevel2]['childlist']):
                 for shareValue in tablerows:
                     if ordValueLevel3 in shareValue['level3']:
-                        if len(ordtablerows[ordValueLevel1][ordValueLevel2]['level3']) > 0:
+                        if len(ordtablerows[ordValueLevel1][ordValueLevel2]['childlist']) > 0:
                             ord1Short = re.sub('\[(.*)\]', '', ordValueLevel1).rstrip().lower()
                             ord3Short = re.sub('\[(.*)\]', '', ordValueLevel3).rstrip().lower()
                             link = "?jobtype=%s&display_limit=100&gshare=%s" % (ord1Short, ord3Short)
                             shareValue['link'] = link
-                            shareValue['isparent'] = 'level3'
+                            shareValue['level'] = 'level3'
                             shareValue['gshare'] = ord3Short.replace(' ', '_')
                         newTablesRow.append(shareValue)
                         tablerows.remove(shareValue)
-                        if 'isparent' in shareValue:
-                            add_resources(ord3Short, newTablesRow, resources_hs, shareValue['isparent'])
+                        if 'level' in shareValue:
+                            add_resources(ord3Short, newTablesRow, resources_list, shareValue['level'])
                         break
+
     tablerows = newTablesRow
 
     del request.session['TFIRST']
@@ -130,6 +138,33 @@ def globalshares(request):
         return response
     else:
         return HttpResponse(json.dumps(gs), content_type='text/html')
+
+
+def get_child_elements(tree,childsgsharelist):
+    for gshare in tree:
+        if gshare!='childlist':
+            shortGshare = re.sub('\[(.*)\]', '', gshare).rstrip()
+            if 'childlist' in tree[gshare] and len(tree[gshare]['childlist'])==0:#len(tree[gshare])==0:
+                childsgsharelist.append(shortGshare)
+            elif 'childlist' not in tree[gshare]:
+                childsgsharelist.append(shortGshare)
+            else:
+                get_child_elements(tree[gshare],childsgsharelist)
+
+def get_child_sumstats(childsgsharelist,resourcesdict,gshare):
+    parentgshare = {}
+    parentgshare[gshare] = {}
+    for child in childsgsharelist:
+        if child in resourcesdict:
+            for resource in resourcesdict[child]:
+                if resource not in parentgshare[gshare]:
+                    parentgshare[gshare][resource] = {}
+                    for k in resourcesdict[child][resource].keys():
+                        parentgshare[gshare][resource][k] = resourcesdict[child][resource][k]
+                else:
+                    for k in resourcesdict[child][resource].keys():
+                            parentgshare[gshare][resource][k] += resourcesdict[child][resource][k]
+    return parentgshare
 
 def get_resources_gshare():
     EXECUTING = 'executing'
@@ -165,7 +200,6 @@ def get_resources_gshare():
 
         total_hs += hs
 
-        # calculate totals
         if status_group == QUEUED:
             hs_queued_total += hs
             hs_distribution_dict[gshare][resourcetype][status_group] += hs
@@ -175,7 +209,12 @@ def get_resources_gshare():
         else:
             hs_ignore_total += hs
             hs_distribution_dict[gshare][resourcetype][status_group] += hs
-    #return hs_distribution_dict, total_hs
+
+    hs_distribution_list=resourcesDictToList(hs_distribution_dict)
+
+    return hs_distribution_list, hs_distribution_dict
+
+def resourcesDictToList(hs_distribution_dict):
     ignore = 0
     pled = 0
     executing = 0
@@ -606,6 +645,22 @@ def get_agis_resources():
         print exc.message
     return resourcesDictSites
 
+def get_agis_fairsharepolicy():
+    url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
+    http = urllib3.PoolManager()
+    data = {}
+    try:
+        fairsharepolicyDict = {}
+        fairsharepolicyDictSites = {}
+        r = http.request('GET', url)
+        data = json.loads(r.data.decode('utf-8'))
+        for cs in data.keys():
+            fairsharepolicyDict.setdefault(data[cs]['fairsharepolicy'], []).append(cs)
+            fairsharepolicyDictSites[data[cs]['siteid']] = data[cs]['fairsharepolicy']
+    except Exception as exc:
+        print exc.message
+    return fairsharepolicyDictSites
+
 def resourcesType(request):
     EXECUTING = 'executing'
     QUEUED = 'queued'
@@ -685,6 +740,20 @@ def resourcesType(request):
     return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
 
 def fairsharePolicy(request):
+    #sqlrequest ="""select SITEID, fairsharepolicy  from atlas_pandameta.schedconfig"""
+    fairsharepolicyDict = get_agis_fairsharepolicy()
+    fairsharepolicies = fairsharepolicyDict.values()
+    for policy in fairsharepolicies:
+        pass
+        # if policy != '':
+        #     policies = policy.split(',')
+        #     for pol in policies:
+        #         key, value = pol.split(':')
+        #         value = int(value.strip('%'))
+
+    return  HttpResponse(json.dumps({}, cls=DecimalEncoder), content_type='text/html')
+
+
 
     return None
 def coreTypes(request):
