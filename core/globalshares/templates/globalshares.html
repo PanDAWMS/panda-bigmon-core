@@ -126,6 +126,7 @@
             DisplaySiteworkqueues();
             DisplayResources();
             DisplayCoreTypes();
+            DisplayFairshareTypes();
         });
         function NumberRound(num) {
             return num.toFixed(2).replace(/./g, function(c, i, a) {return i && c !== "." && ((a.length - i) % 3 === 0) ? ',' + c : c;})
@@ -297,6 +298,10 @@
                     },
                     {
                         "data": "computingsite",
+                        sDefaultContent: "",
+                    },
+                    {
+                        "data": "resources",
                         sDefaultContent: "",
                     },
                     {
@@ -539,7 +544,57 @@
                 },
 
             });
+    }
+    function DisplayFairshareTypes() {
+            $('#fairsharepolicy').dataTable({
+                //"bRetrieve": true,
+                "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+                paging: false,
+                "searching": false,
+                order: [[4, 'desc']],
+                "ajax": {
+                    "processing": true,
+                    "url": "{% url 'fairsharePolicy' %}",
+                    "dataSrc": ''
+                },
+                "aoColumns": [
+                    {
+                        "data": "policy",
+                        sDefaultContent: ""
+                    },
+                    {
+                        "data": "executing",
+                        sDefaultContent: "",
+                        "render": function(data, type, full, meta) {
+                        return NumberRound(full['executing']) +' (' + full['executing_percent']+'%)'
+                        }
+                    },
+                    {
+                        "data": "queued",
+                        sDefaultContent: "",
+                        "render": function(data, type, full, meta) {
+                        return NumberRound(full['queued']) +' (' + full['queued_percent']+'%)'
+                        }
+                    },
+                    {
+                        "data": "ignore",
+                        sDefaultContent: "",
+                        "render": function(data, type, full, meta) {
+                        return NumberRound(full['ignore']) +' (' + full['ignore_percent']+'%)'
+                        }
+                    },
+                    {
+                        "data": "total_hs",
+                        sDefaultContent: "",
+                        "render": function(data, type, full, meta) {
+                        return NumberRound(full['total_hs']) +' (' + full['total_hs_percent']+'%)'
+                        }
+                    }
+                ],
+                "createdRow": function (row, data, index) {
+                },
 
+            });
     }
     </script>
     <a href="javascript:ReverseDisplay('sharesdistributiondiv','sharesdistributionlink')" id="sharesdistributionlink" class="bluebutton">Show
@@ -553,6 +608,7 @@
             <thead>
             <th>Global share</th>
             <th>Computing site</th>
+            <th>Resource</th>
             <th>Core count</th>
             <th>Job status</th>
             <th>COUNT</th>
@@ -562,6 +618,7 @@
             <tbody></tbody>
             <tfoot>
             <tr>
+                <th></th>
                 <th></th>
                 <th></th>
                 <th></th>
@@ -678,6 +735,31 @@
             <caption style="height: 30px;vertical-align: middle"></caption>
             <thead>
             <th>Core</th>
+            <th>Actual HS06</th>
+            <th>Queued HS06</th>
+            <th>Other HS06</th>
+            <th>Total HS06</th>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+            <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+            </tfoot>
+    </table>
+    </div>
+    <a href="javascript:ReverseDisplay('fairshareDiv','fairshareLink')"
+       id="fairshareLink" class="bluebutton">Show policy information</a> <br/><br/>
+    <div id="fairshareDiv" style="display: none">
+
+    <table id="fairsharepolicy" style="width: 100%" class="data-table">
+            <caption style="height: 30px;vertical-align: middle"></caption>
+            <thead>
+            <th>Policy</th>
             <th>Actual HS06</th>
             <th>Queued HS06</th>
             <th>Other HS06</th>

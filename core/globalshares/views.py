@@ -555,6 +555,7 @@ order by gshare,COMPUTINGSITE, corecount, jobstatus
     cur = connection.cursor()
     cur.execute(sqlRequest)
     globalSharesList = cur.fetchall()
+    resources = get_agis_resources()
     hs06count  = 0
     for gs in globalSharesList:
         if gs[2] == 1:
@@ -563,11 +564,14 @@ order by gshare,COMPUTINGSITE, corecount, jobstatus
             corecount = 'Multicore'
         else:
             corecount = 'Multicore (' + str(gs[2]) + ')'
+        if gs[1] in resources.keys():
+            resource = resources[gs[1]]
+        else: resource = None
         if gs[5] != None:
             hs06count= gs[5] / gs[4]
         else:
             hs06count= 0
-        rowDict = {"gshare": gs[0],"computingsite": gs[1], "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4], "hs06":gs[5],"hs06/count": hs06count}
+        rowDict = {"gshare": gs[0],"computingsite": gs[1],"resources":resource, "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4], "hs06":gs[5],"hs06/count": hs06count}
         fullListGS.append(rowDict)
     return HttpResponse(json.dumps(fullListGS), content_type='text/html')
 
@@ -740,18 +744,107 @@ def resourcesType(request):
     return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
 
 def fairsharePolicy(request):
+    EXECUTING = 'executing'
+    QUEUED = 'queued'
+    PLEDGED = 'pledged'
+    IGNORE = 'ignore'
     #sqlrequest ="""select SITEID, fairsharepolicy  from atlas_pandameta.schedconfig"""
     fairsharepolicyDict = get_agis_fairsharepolicy()
+    newfairsharepolicyDict = {}
     fairsharepolicies = fairsharepolicyDict.values()
-    for policy in fairsharepolicies:
-        pass
-        # if policy != '':
-        #     policies = policy.split(',')
-        #     for pol in policies:
-        #         key, value = pol.split(':')
-        #         value = int(value.strip('%'))
+    for site in fairsharepolicyDict.keys():
+        if site not in newfairsharepolicyDict:
+            newfairsharepolicyDict[site] = {}
+        policy = fairsharepolicyDict[site]
+        if policy != '':
+            policies = policy.split(',')
+            for pol in policies:
+                try:
+                    key, value = pol.split(':')
+                    value = int(value.strip('%'))
+                    if 'priority' not in key:
+                        newfairsharepolicyDict[site][str(key)] = value
+                except:
+                    keys = pol.split(':')
+                    for key in keys:
+                        if key == 'group=any':
+                           newfairsharepolicyDict[site]['group=any'] = 100
+                        elif key == 'type=any':
+                           newfairsharepolicyDict[site]['type=any'] = 60
 
-    return  HttpResponse(json.dumps({}, cls=DecimalEncoder), content_type='text/html')
+        else: newfairsharepolicyDict[site]['type=any'] = 100
+    sqlRequest = """SELECT computingsite, jobstatus_grouped, SUM(HS) 
+     FROM (SELECT computingsite, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing'
+     ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP BY computingsite, jobstatus_grouped"""
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+    # get the hs distribution data into a dictionary structure
+    hs_distribution_raw = cur.fetchall()
+    hs_distribution_dict = {}
+    hs_queued_total = 0
+    hs_executing_total = 0
+    hs_ignore_total = 0
+    total_hs = 0
+    newresourecurcetype = ''
+    resourcecnt = 0
+    for hs_entry in hs_distribution_raw:
+        computingsite, status_group, hs = hs_entry
+        try:
+            for fairpolicies in newfairsharepolicyDict[computingsite]:
+                hs_distribution_dict.setdefault(fairpolicies, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0, IGNORE: 0})
+            # hs_distribution_dict[resourcetype][status_group] = hs
+                total_hs += hs
+                if newfairsharepolicyDict[computingsite][fairpolicies]==0:
+                    newhs = hs * int(newfairsharepolicyDict[computingsite][fairpolicies])/100
+                else: newhs = hs
+                #newhs = hs * int(newfairsharepolicyDict[computingsite][fairpolicies]) / 100
+            # calculate totals
+                if status_group == QUEUED:
+                    hs_queued_total += hs
+                    hs_distribution_dict[fairpolicies][status_group] += newhs
+                elif status_group == EXECUTING:
+                    hs_executing_total += hs
+                    hs_distribution_dict[fairpolicies][status_group] += newhs
+                else:
+                    hs_ignore_total += hs
+                    hs_distribution_dict[fairpolicies][status_group] += newhs
+        except:
+            continue
+    ignore = 0
+    pled = 0
+    executing = 0
+    queued = 0
+    total_hs =0
+    for hs_entry in hs_distribution_dict.keys():
+        sum_hs = 0
+        pled += hs_distribution_dict[hs_entry]['pledged']
+        ignore += hs_distribution_dict[hs_entry]['ignore']
+        executing += hs_distribution_dict[hs_entry]['executing']
+        queued += hs_distribution_dict[hs_entry]['queued']
+        sum_hs = float(hs_distribution_dict[hs_entry]['pledged']) + \
+                 float(hs_distribution_dict[hs_entry]['ignore']) + \
+                 float(hs_distribution_dict[hs_entry]['executing']) + \
+                 float(hs_distribution_dict[hs_entry]['queued'])
+        total_hs+=sum_hs
+        hs_distribution_dict[hs_entry]['total_hs'] = sum_hs
+
+    hs_distribution_list = []
+    for hs_entry in hs_distribution_dict.keys():
+       # hs_distribution_dict[hs_entry]['pledged_percent'] = pled * 100 / hs_distribution_dict[hs_entry]['pledged']
+        hs_distribution_dict[hs_entry]['ignore_percent'] =  (hs_distribution_dict[hs_entry]['ignore']/ignore)* 100
+        hs_distribution_dict[hs_entry]['executing_percent'] =  (hs_distribution_dict[hs_entry]['executing'] /executing) * 100
+        hs_distribution_dict[hs_entry]['queued_percent'] = (hs_distribution_dict[hs_entry]['queued']/queued) * 100
+        hs_distribution_list.append({'policy':hs_entry, 'pledged':hs_distribution_dict[hs_entry]['pledged'],
+                                     'ignore':hs_distribution_dict[hs_entry]['ignore'],
+                                     'ignore_percent': int(round(hs_distribution_dict[hs_entry]['ignore_percent'])),
+                                     'executing':hs_distribution_dict[hs_entry]['executing'],
+                                     'executing_percent': int(round(hs_distribution_dict[hs_entry]['executing_percent'])),
+                                     'queued':hs_distribution_dict[hs_entry]['queued'],
+                                     'queued_percent':int(round(hs_distribution_dict[hs_entry]['queued_percent'])),
+                                     'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
+                                     'total_hs_percent': int(round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100))
+                                     })
+    return  HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
 
 
 

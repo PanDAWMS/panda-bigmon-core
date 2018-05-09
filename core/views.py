@@ -7098,6 +7098,15 @@ def taskList(request):
             for ds in dsets:
                 dslist.append(ds)
             tasks[0]['datasets'] = dslist
+        else:
+            for task in tasks:
+                id = task['jeditaskid']
+                dsquery = {'jeditaskid': id, 'type__in': ['input', 'output']}
+                dsets = JediDatasets.objects.filter(**dsquery).values()
+                dslist = []
+                for ds in dsets:
+                    dslist.append(ds)
+                task['datasets'] = dslist
         ##self monitor
         endSelfMonitor(request)
 

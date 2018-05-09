@@ -132,10 +132,11 @@
                         </td>
                     {% elif name ==  'Computingsites' %}
                         <td><b>{{ name }} ({{ value|length }})</b></td>
-                        <td>
+                        <td><div class="comment more">
                             {% for n,v in value.items %}
                                 {{ n }} <a href="{{ xurl }}computingsite={{ n }}">({{ v }})</a>
                             {% endfor %}
+                        </div>
                         </td>
                     {% elif name ==  'wrkpandaids' %}
                         <td><b>WorkerID (jobs)</b></td>
@@ -376,7 +377,7 @@
                                     return ""
                                 }
                                 else {
-                                    return '<a href = "' + full['stdout'] + '">' + 'Link' + '</a>'
+                                    return '<a href = "' + full['stdout'] + '" target="_blank">' + 'Link' + '</a>'
                                 }
                             }
                         },
@@ -388,7 +389,7 @@
                                     return ""
                                 }
                                 else {
-                                    return '<a href = "' + full['stderr'] + '">' + 'Link' + '</a>'
+                                    return '<a href = "' + full['stderr'] + '" target="_blank">' + 'Link' + '</a>'
                                 }
                             }
                         },
@@ -400,7 +401,7 @@
                                     return ""
                                 }
                                 else {
-                                    return '<a href = "' + full['batchlog'] + '">' + 'Link' + '</a>'
+                                    return '<a href = "' + full['batchlog'] + '" target="_blank">' + 'Link' + '</a>'
                                 }
                             }
                         },

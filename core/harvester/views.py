@@ -347,9 +347,9 @@ def harvesters(request):
             object = {}
             computingsites.setdefault(worker['computingsite'],[]).append(worker['workerid'])
             statuses.setdefault(worker['status'],[]).append(worker['workerid'])
-            if worker['njobs'] is not None:
-                wrkPandaIDs[worker['workerid']] = worker['njobs']
-            else: wrkPandaIDs[worker['workerid']] = 0
+            # if worker['njobs'] is not None:
+            #     wrkPandaIDs[worker['workerid']] = worker['njobs']
+            # else: wrkPandaIDs[worker['workerid']] = 0
             #workerIDs.add(worker['workerid'])
             for field in generalWorkersFields:
                 if worker[field] is not None:
@@ -362,8 +362,9 @@ def harvesters(request):
                 for status in statuses.keys():
                     statuses[status] = len(statuses[status])
                 generalInstanseInfo = {'HarvesterID':worker['harvester_id'], 'Description':worker['description'], 'Starttime': worker['insstarttime'],
-                                      'Owner':worker['owner'], 'Hostname':worker['hostname'],'Lastupdate':worker['inslastupdate'], 'Computingsites':computingsites,'Statuses':statuses,'Software version':worker['sw_version'],'Commit stamp':worker['commit_stamp'], 'wrkpandaids': OrderedDict(sorted(wrkPandaIDs.items(), key=lambda x: x[1], reverse=True)[:200])
+                                      'Owner':worker['owner'], 'Hostname':worker['hostname'],'Lastupdate':worker['inslastupdate'], 'Computingsites':computingsites,'Statuses':statuses,'Software version':worker['sw_version'],'Commit stamp':worker['commit_stamp']
                                       }
+        # 'wrkpandaids': OrderedDict(sorted(wrkPandaIDs.items(), key=lambda x: x[1], reverse=True)[:200])
         transactionKey = random.randrange(1000000)
         data = {
                 'generalInstanseInfo':generalInstanseInfo,
