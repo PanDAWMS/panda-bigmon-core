@@ -11,6 +11,14 @@
 
 {{ viewParams.header }}
 
+
+<h4>Due to decommission of pinkpanda services this information is no longer available in BigPanDA. Please use a direct AGIS link instead:
+    <a href="http://atlas-agis.cern.ch/agis/pandablacklisting/table_view/">http://atlas-agis.cern.ch/agis/pandablacklisting/table_view/</a>
+</h4>
+
+
+{% comment %}
+
 <b>{{ ninc }} incidents</b>
 {% if requestParams.site %}<br><b>Site: <a href="{% url 'incidentList' %}?site={{ requestParams.site }}">{{ requestParams.site }}</a></b> {% endif %}
 {% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
@@ -68,8 +76,10 @@
 </table>
 
 {% endif %}
-
+{% endcomment %}
 {% endblock %}
+
+
 
 {% block helptext %}
 {% include "incidentsHelp.html" with helptitle="Incidents page help" %}
