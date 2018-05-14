@@ -3865,7 +3865,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                                     #        if int(jobmetrics['logBucketID']) in [3, 21, 45, 46, 104, 41, 105, 106, 42, 61, 21, 102, 103, 2, 82, 81, 82, 101]: #Bucket Codes for S3 destination
                                     #            f['destination'] = 'S3'
                 if f['type'] == 'pseudo_input': npseudo_input += 1
-                f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
+                f['fsizemb'] = "%0.2f" % (f['fsize'] / 1048576.)
                 dsets = JediDatasets.objects.filter(datasetid=f['datasetid']).values()
                 if len(dsets) > 0:
                     f['datasetname'] = dsets[0]['datasetname']
