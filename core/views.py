@@ -3695,7 +3695,6 @@ def eventsInfo(request, mode=None, param=None):
 
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
 
-
 @login_customrequired
 @csrf_exempt
 def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
@@ -4882,6 +4881,24 @@ def siteList(request):
         endSelfMonitor(request)
         return HttpResponse(json.dumps(resp), content_type='text/html')
 
+def get_panda_resource(siterec):
+    url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
+    http = urllib3.PoolManager()
+    data = {}
+    try:
+        r = http.request('GET', url)
+        data = json.loads(r.data.decode('utf-8'))
+        for cs in data.keys():
+            # if (data[cs]['siteid']!=data[cs]['panda_resource']):
+            #     print data[cs]['siteid']
+            if (siterec.siteid == data[cs]['siteid']):
+            #     # resourcesDict.setdefault(data[cs]['resource_type'], []).append(cs)
+            #     # resourcesDictSites[data[cs]['siteid']] = data[cs]['panda_resource']
+                return data[cs]['panda_resource']
+    except Exception as exc:
+        print exc.message
+    #return resourcesDictSites
+
 @login_customrequired
 def siteInfo(request, site=''):
     valid, response = initRequest(request)
@@ -4917,7 +4934,7 @@ def siteInfo(request, site=''):
             njobhours = 48
     except AttributeError:
         pass
-
+    panda_resource = get_panda_resource(siterec)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
         attrs = []
@@ -4980,6 +4997,7 @@ def siteInfo(request, site=''):
             'request': request,
             'viewParams': request.session['viewParams'],
             'site': siterec,
+            'panda_resource':panda_resource,
             'queues': sites,
             'colnames': colnames,
             'attrs': attrs,
