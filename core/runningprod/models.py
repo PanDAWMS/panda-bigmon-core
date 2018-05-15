@@ -151,3 +151,14 @@ class RunningProdRequestsModel(models.Model):
     physgroup = models.CharField(max_length=20, db_column='PHYS_GROUP', null=False, blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODREQUESTS"'
+
+class ProdNeventsHistory(models.Model):
+    id = models.IntegerField(null=True, db_column='ID', primary_key=True)
+    processingtype = models.CharField(max_length=192, db_column='PROCESSING_TYPE')
+    timestamp = models.DateTimeField(db_column='TIMESTAMP')
+    neventsused = models.BigIntegerField(db_column='NEVENTS_USED')
+    neventswaiting = models.BigIntegerField(db_column='NEVENTS_WAITING')
+    neventstotal = models.BigIntegerField(db_column='NEVENTS_TOTAL')
+    neventsrunning = models.BigIntegerField(db_column='NEVENTS_RUNNING')
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."PROD_NEVENTS_HISTORY"'

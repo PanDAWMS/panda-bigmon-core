@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
-from django.db import connection
+from django.db import connection, transaction, DatabaseError
 
 from django.utils.cache import patch_cache_control, patch_response_headers
 
@@ -19,8 +19,51 @@ from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, p
 from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder, \
     extensibleURL, DateTimeEncoder, removeParam, taskSummaryDict, preprocessWildCardString
 
-from core.runningprod.models import RunningDPDProductionTasks, RunningProdTasksModel , RunningMCProductionTasks,  RunningProdRequestsModel, FrozenProdTasksModel
+from core.runningprod.models import RunningDPDProductionTasks, RunningProdTasksModel , RunningMCProductionTasks,  RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
 
+def prepareNeventsByProcessingType(task_list):
+    """
+    Prepare data to save
+    :param task_list:
+    :return:
+    """
+
+    event_states = ['total', 'used', 'running', 'waiting']
+    neventsByProcessingType = {}
+    for task in task_list:
+        if task['processingtype'] not in neventsByProcessingType:
+            neventsByProcessingType[task['processingtype']] = {}
+            for ev in event_states:
+                neventsByProcessingType[task['processingtype']][ev] = 0
+        neventsByProcessingType[task['processingtype']]['total'] += task['nevents'] if 'nevents' in task and task['nevents'] is not None else 0
+        neventsByProcessingType[task['processingtype']]['used'] += task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
+        neventsByProcessingType[task['processingtype']]['running'] += task['neventsrunning'] if 'neventsrunning' in task and task['neventsrunning'] is not None else 0
+        neventsByProcessingType[task['processingtype']]['waiting'] += (task['neventstobeused'] - task['neventsrunning']) if 'neventstobeused' in task and 'neventsrunning' in task and task['neventstobeused'] is not None and task['neventsrunning'] is not None else 0
+
+    return neventsByProcessingType
+
+def saveNeventsByProcessingType(neventsByProcessingType, qtime):
+    """
+    Save a snapshot of production state expressed in nevents in different states for various processingtype
+    :param neventsByProcessingType:
+    :param qtime:
+    :return: True in case of successful save but False in case of an exception error
+    """
+
+    try:
+        with transaction.atomic():
+            for pt, data in neventsByProcessingType.iteritems():
+                row = ProdNeventsHistory(processingtype=pt,
+                                         neventstotal=data['total'],
+                                         neventsused=data['used'],
+                                         neventswaiting=data['waiting'],
+                                         neventsrunning=data['running'],
+                                         timestamp=qtime)
+                row.save()
+    except DatabaseError:
+        return False
+
+    return True
 
 @login_customrequired
 def runningMCProdTasks(request):
@@ -342,6 +385,7 @@ def runningProdTasks(request):
     else:
         tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)
 
+    qtime = datetime.now()
     task_list = [t for t in tasks]
     ntasks = len(tasks)
     slots = 0
@@ -445,6 +489,14 @@ def runningProdTasks(request):
         'json' in request.session['requestParams']):
         ##self monitor
         endSelfMonitor(request)
+        if 'snap' in request.session['requestParams']:
+            snapdata = prepareNeventsByProcessingType(task_list)
+            if saveNeventsByProcessingType(snapdata, qtime):
+                data = {'message': 'success'}
+            else:
+                data = {'message': 'fail'}
+            dump = json.dumps(data, cls=DateEncoder)
+            return HttpResponse(dump, content_type='text/html')
         dump = json.dumps(task_list, cls=DateEncoder)
         return HttpResponse(dump, content_type='text/html')
     else:
@@ -479,6 +531,7 @@ def runningProdTasks(request):
             'productiontype' : json.dumps(productiontype),
             'built': datetime.now().strftime("%H:%M:%S"),
             'transKey': transactionKey,
+            'qtime': qtime,
         }
         ##self monitor
         endSelfMonitor(request)
