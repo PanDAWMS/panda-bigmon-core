@@ -7802,7 +7802,7 @@ def taskInfo(request, jeditaskid=0):
                                             select computingsite, computingelement,pandaid from ATLAS_PANDAARCH.JOBSARCHIVED where jeditaskid=%s
                                             ) j
                                         on (e.jeditaskid=%s and e.pandaid=j.pandaid)
-                                   group by j.computingsite, j.COMPUTINGELEMENT, objstore_id, status""" % (
+                                   group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""" % (
                 jeditaskid, jeditaskid, jeditaskid)
                 cur = connection.cursor()
                 cur.execute(sqlRequest)
