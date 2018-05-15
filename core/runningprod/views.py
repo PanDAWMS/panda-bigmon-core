@@ -60,7 +60,8 @@ def saveNeventsByProcessingType(neventsByProcessingType, qtime):
                                          neventsrunning=data['running'],
                                          timestamp=qtime)
                 row.save()
-    except DatabaseError:
+    except DatabaseError as e:
+        print e.message
         return False
 
     return True
