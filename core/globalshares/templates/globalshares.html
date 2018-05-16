@@ -47,87 +47,9 @@
 {% block body %}
     <div class="d3splot" id="pieChartGS"></div>
     <script>
+        var gsPlotData ={{ gsPlotData|safe }};
+        globalSharesPieChartFunc(gsPlotData, "#pieChartGS", 'Actual HS06');
 
-    var gsPlotData ={{ gsPlotData|safe }};
-    globalSharesPieChartFunc(gsPlotData, "#pieChartGS", 'Actual HS06');
-    $(document).ready(function () {
-
-        $(".has-dropdown").addClass("has-dropdown not-click");
-    });
-    </script>
-    <table>
-        <tr class='tablesection'>
-            <th>L1 Share</th>
-            <th>L2 Share</th>
-            <th>L3 Share</th>
-            <th>Actual HS06</th>
-            <th>Target HS06</th>
-            <th>HS06 ratio</th>
-            <th>Queued HS06</th>
-            <th>Actual share</th>
-            <th>Target share</th>
-        </tr>
-        {% for row in tablerows %}
-            <tr>
-                <td>{{ row.level1 }} {% if row.gshare and row.level1 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
-   {% endif %}</td>
-                <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level2 }}</a>
-                    {% else %}{{ row.level2 }} {% endif %} {% if row.gshare and row.level2 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
-   {% endif %}</td>
-                <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level3 }}</a>
-                    {% else %}{{ row.level3 }} {% endif %} {% if row.gshare and row.level3 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
-   {% endif %}</td>
-                <td style="text-align:right">
-                    {% if row.executing %}{{ row.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">
-                    {% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">{% if row.ratio %} {{ row.ratio |floatformat:2|intcomma }} % {% else %}
-                    --- {% endif %}</td>
-                <td style="text-align:right">
-                    {% if row.queued %}{{ row.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">{% if row.used %} {{ row.used |floatformat:2|intcomma }} % {% else %}
-                    --- {% endif %}</td>
-                <td style="text-align:right">
-                    {% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}</td>
-            </tr>
-            {% for resource in row.resources%}
-{#            <tr style="display: none" id="{{ row.gshare }}{% if resource.level1 %}_{{ resource.level1 }}{% elif resource.level2%}_{{ resource.level2 }}{% elif resource.level3%}_{{ resource.level3 }}{% endif %}">#}
-            <tr style="display: none" id="{% if resource.level1 %}{{ resource.level1 }}{% elif resource.level2%}{{ resource.level2 }}{% elif resource.level3%}{{ resource.level3 }}{% endif %}" class="{{ row.gshare }}">
-
-                <td>{{ resource.level1 }}</td>
-                <td>{{ resource.level2 }}</td>
-                <td>{{ resource.level3 }}</td>
-                <td style="text-align:right">
-                    {% if resource.executing %}{{ resource.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">
-                    ---
-{#                    {% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>#}
-                <td style="text-align:right">
-{#                {% if row.ratio %} {{ row.ratio |floatformat:2|intcomma }} % {% else %}#}
-                    --- </td>
-                <td style="text-align:right">
-                    {% if resource.queued %}{{ resource.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">
-{#                    {% if resource.used %} {{ resource.used |floatformat:2|intcomma }} % {% else %}#}
-                    --- </td>
-                <td style="text-align:right">
-{#                    {% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}#}
-                    ---
-                </td>
-            </tr>
-            {% endfor %}
-        {% endfor %}
-    </table>
-    <br>
-    <script>
-        $(document).ready(function () {
-            DisplayDetailedInformation();
-            DisplaySharesDistribution();
-            DisplaySiteworkqueues();
-            DisplayResources();
-            DisplayCoreTypes();
-            DisplayFairshareTypes();
-        });
         function NumberRound(num) {
             return num.toFixed(2).replace(/./g, function(c, i, a) {return i && c !== "." && ((a.length - i) % 3 === 0) ? ',' + c : c;})
         }
@@ -236,7 +158,6 @@
                 }
             });
         }
-
         function DisplaySharesDistribution() {
             $('#sharesdistribution').dataTable({
                 //"bRetrieve": true,
@@ -360,7 +281,6 @@
             });
 
         }
-
         function DisplaySiteworkqueues() {
             $('#siteworkqueues').dataTable({
                 //"bRetrieve": true,
@@ -425,18 +345,72 @@
                 }
             });
         }
-    function DisplayResources() {
-             $('#resources').dataTable({
+
+        function getData () {
+            var dtR = [];
+            var dtC = [];
+            var dtF = [];
+            $.ajax({
+            url: '{% url 'resourcesType' %}',
+            async: false,
+            dataType: 'json',
+            success: function (json) {
+            dtR = json;
+            }
+            });
+            $.ajax({
+            url: '{% url 'coreTypes' %}',
+            async: false,
+            dataType: 'json',
+            success: function (json) {
+            dtC = json;
+            }
+            });
+            $.ajax({
+            url: '{% url 'fairsharePolicy' %}',
+            async: false,
+            dataType: 'json',
+            success: function (json) {
+            dtF = json;
+            }
+            });
+            var dtRList = {};
+            var dtCList = {};
+            var dtFList = {};
+            for (i=0;i<dtR.length;i++)
+            {
+                dtRList[String(dtR[i].resource)] = Math.round(dtR[i].executing);
+            }
+            for (i=0;i<dtC.length;i++)
+            {
+                dtCList[String(dtC[i].coretypes)] = Math.round(dtC[i].executing);
+            }
+            for (i=0;i<dtF.length;i++)
+            {
+                dtFList[String(dtF[i].policy)] = Math.round(dtF[i].executing);
+            }
+            return {
+                resource:dtR,
+                cores: dtC,
+                policy:dtF,
+                resourceList:dtRList,
+                coresList:dtCList,
+                policyList:dtFList
+            }
+        }
+        function DisplayResources(dt) {
+            $('#resources').dataTable({
                 //"bRetrieve": true,
                 "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
                  paging: false,
                 "searching": false,
-                order: [[4, 'desc']],
-                "ajax": {
-                    "processing": true,
-                    "url": "{% url 'resourcesType' %}",
-                    "dataSrc": ''
-                },
+                 order: [[4, 'desc']],
+                 data: dt,
+{#                "ajax": {#}
+{#                    "processing": true,#}
+{#                    "url": "{% url 'resourcesType' %}",#}
+{#                    "dataSrc": ''#}
+{#                },#}
                 "aoColumns": [
                     {
                         "data": "resource",
@@ -494,18 +468,19 @@
 {#                }#}
             });
     }
-    function DisplayCoreTypes() {
+        function DisplayCoreTypes(dt) {
             $('#cores').dataTable({
                 //"bRetrieve": true,
                 "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
                 paging: false,
                 "searching": false,
                 order: [[4, 'desc']],
-                "ajax": {
-                    "processing": true,
-                    "url": "{% url 'coreTypes' %}",
-                    "dataSrc": ''
-                },
+                data: dt,
+{#                "ajax": {#}
+{#                    "processing": true,#}
+{#                    "url": "{% url 'coreTypes' %}",#}
+{#                    "dataSrc": ''#}
+{#                },#}
                 "aoColumns": [
                     {
                         "data": "coretypes",
@@ -545,18 +520,19 @@
 
             });
     }
-    function DisplayFairshareTypes() {
+        function DisplayFairshareTypes(dt) {
             $('#fairsharepolicy').dataTable({
                 //"bRetrieve": true,
                 "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
                 paging: false,
                 "searching": false,
                 order: [[4, 'desc']],
-                "ajax": {
-                    "processing": true,
-                    "url": "{% url 'fairsharePolicy' %}",
-                    "dataSrc": ''
-                },
+                data:dt,
+{#                "ajax": {#}
+{#                    "processing": true,#}
+{#                    "url": "{% url 'fairsharePolicy' %}",#}
+{#                    "dataSrc": ''#}
+{#                },#}
                 "aoColumns": [
                     {
                         "data": "policy",
@@ -596,7 +572,88 @@
 
             });
     }
+
+        $(document).ready(function () {
+            $(".has-dropdown").addClass("has-dropdown not-click");
+            var dt = {}
+            DisplayDetailedInformation();
+            DisplaySharesDistribution();
+            DisplaySiteworkqueues();
+            dt = getData();
+            DisplayResources(dt.resource);
+            DisplayCoreTypes(dt.cores);
+            DisplayFairshareTypes(dt.policy);
+            globalSharesPieChartFunc(dt.resourceList, "#pieChartResources", 'Actual HS06');
+            globalSharesPieChartFunc(dt.coresList, "#pieChartCores", 'Actual HS06');
+            globalSharesPieChartFunc(dt.policyList, "#pieChartPolicy", 'Actual HS06');
+
+        });
     </script>
+    <table>
+        <tr class='tablesection'>
+            <th>L1 Share</th>
+            <th>L2 Share</th>
+            <th>L3 Share</th>
+            <th>Actual HS06</th>
+            <th>Target HS06</th>
+            <th>HS06 ratio</th>
+            <th>Queued HS06</th>
+            <th>Actual share</th>
+            <th>Target share</th>
+        </tr>
+        {% for row in tablerows %}
+            <tr>
+                <td>{{ row.level1 }} {% if row.gshare and row.level1 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
+   {% endif %}</td>
+                <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level2 }}</a>
+                    {% else %}{{ row.level2 }} {% endif %} {% if row.gshare and row.level2 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
+   {% endif %}</td>
+                <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level3 }}</a>
+                    {% else %}{{ row.level3 }} {% endif %} {% if row.gshare and row.level3 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
+   {% endif %}</td>
+                <td style="text-align:right">
+                    {% if row.executing %}{{ row.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td style="text-align:right">
+                    {% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td style="text-align:right">{% if row.ratio %} {{ row.ratio |floatformat:2|intcomma }} % {% else %}
+                    --- {% endif %}</td>
+                <td style="text-align:right">
+                    {% if row.queued %}{{ row.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td style="text-align:right">{% if row.used %} {{ row.used |floatformat:2|intcomma }} % {% else %}
+                    --- {% endif %}</td>
+                <td style="text-align:right">
+                    {% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}</td>
+            </tr>
+            {% for resource in row.resources%}
+{#            <tr style="display: none" id="{{ row.gshare }}{% if resource.level1 %}_{{ resource.level1 }}{% elif resource.level2%}_{{ resource.level2 }}{% elif resource.level3%}_{{ resource.level3 }}{% endif %}">#}
+            <tr style="display: none" id="{% if resource.level1 %}{{ resource.level1 }}{% elif resource.level2%}{{ resource.level2 }}{% elif resource.level3%}{{ resource.level3 }}{% endif %}" class="{{ row.gshare }}">
+
+                <td>{{ resource.level1 }}</td>
+                <td>{{ resource.level2 }}</td>
+                <td>{{ resource.level3 }}</td>
+                <td style="text-align:right">
+                    {% if resource.executing %}{{ resource.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td style="text-align:right">
+                    ---
+{#                    {% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>#}
+                <td style="text-align:right">
+{#                {% if row.ratio %} {{ row.ratio |floatformat:2|intcomma }} % {% else %}#}
+                    --- </td>
+                <td style="text-align:right">
+                    {% if resource.queued %}{{ resource.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+                <td style="text-align:right">
+{#                    {% if resource.used %} {{ resource.used |floatformat:2|intcomma }} % {% else %}#}
+                    --- </td>
+                <td style="text-align:right">
+{#                    {% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}#}
+                    ---
+                </td>
+            </tr>
+            {% endfor %}
+        {% endfor %}
+    </table>
+    <br>
+
     <a href="javascript:ReverseDisplay('sharesdistributiondiv','sharesdistributionlink')" id="sharesdistributionlink" class="bluebutton">Show
         shares distribution</a> <br/><br/>
     <div id="sharesdistributiondiv" style="display: none">
@@ -705,7 +762,8 @@
     <a href="javascript:ReverseDisplay('resourcesDiv','resourcesLink')"
        id="resourcesLink" class="bluebutton">Show resources information</a> <br/><br/>
     <div id="resourcesDiv" style="display: none">
-
+    <div class="d3splot" id="pieChartResources"></div>
+    <hr/>
     <table id="resources" style="width: 100%" class="data-table">
             <caption style="height: 30px;vertical-align: middle"></caption>
             <thead>
@@ -727,10 +785,11 @@
             </tfoot>
     </table>
     </div>
-        <a href="javascript:ReverseDisplay('coresDiv','coresLink')"
+    <a href="javascript:ReverseDisplay('coresDiv','coresLink')"
        id="coresLink" class="bluebutton">Show corescount information</a> <br/><br/>
     <div id="coresDiv" style="display: none">
-
+    <div class="d3splot" id="pieChartCores"></div>
+    <hr/>
     <table id="cores" style="width: 100%" class="data-table">
             <caption style="height: 30px;vertical-align: middle"></caption>
             <thead>
@@ -755,7 +814,8 @@
     <a href="javascript:ReverseDisplay('fairshareDiv','fairshareLink')"
        id="fairshareLink" class="bluebutton">Show policy information</a> <br/><br/>
     <div id="fairshareDiv" style="display: none">
-
+    <div class="d3splot" id="pieChartPolicy"></div>
+    <hr/>
     <table id="fairsharepolicy" style="width: 100%" class="data-table">
             <caption style="height: 30px;vertical-align: middle"></caption>
             <thead>

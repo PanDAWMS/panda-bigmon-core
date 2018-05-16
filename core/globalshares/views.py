@@ -733,13 +733,13 @@ def resourcesType(request):
         hs_distribution_dict[hs_entry]['queued_percent'] = (hs_distribution_dict[hs_entry]['queued']/queued) * 100
         hs_distribution_list.append({'resource':hs_entry, 'pledged':hs_distribution_dict[hs_entry]['pledged'],
                                      'ignore':hs_distribution_dict[hs_entry]['ignore'],
-                                     'ignore_percent':int(round(hs_distribution_dict[hs_entry]['ignore_percent'])),
+                                     'ignore_percent':round(hs_distribution_dict[hs_entry]['ignore_percent'],2),
                                      'executing':hs_distribution_dict[hs_entry]['executing'],
-                                     'executing_percent': int(round(hs_distribution_dict[hs_entry]['executing_percent'])),
+                                     'executing_percent': round(hs_distribution_dict[hs_entry]['executing_percent'],2),
                                      'queued':hs_distribution_dict[hs_entry]['queued'],
-                                     'queued_percent':int(round(hs_distribution_dict[hs_entry]['queued_percent'])),
+                                     'queued_percent':round(hs_distribution_dict[hs_entry]['queued_percent'],2),
                                      'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
-                                     'total_hs_percent': int(round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100))
+                                     'total_hs_percent': round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100,2)
                                      })
     return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
 
@@ -836,13 +836,13 @@ def fairsharePolicy(request):
         hs_distribution_dict[hs_entry]['queued_percent'] = (hs_distribution_dict[hs_entry]['queued']/queued) * 100
         hs_distribution_list.append({'policy':hs_entry, 'pledged':hs_distribution_dict[hs_entry]['pledged'],
                                      'ignore':hs_distribution_dict[hs_entry]['ignore'],
-                                     'ignore_percent': int(round(hs_distribution_dict[hs_entry]['ignore_percent'])),
+                                     'ignore_percent': round(hs_distribution_dict[hs_entry]['ignore_percent'],2),
                                      'executing':hs_distribution_dict[hs_entry]['executing'],
-                                     'executing_percent': int(round(hs_distribution_dict[hs_entry]['executing_percent'])),
+                                     'executing_percent': round(hs_distribution_dict[hs_entry]['executing_percent'],2),
                                      'queued':hs_distribution_dict[hs_entry]['queued'],
-                                     'queued_percent':int(round(hs_distribution_dict[hs_entry]['queued_percent'])),
+                                     'queued_percent':round(hs_distribution_dict[hs_entry]['queued_percent'],2),
                                      'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
-                                     'total_hs_percent': int(round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100))
+                                     'total_hs_percent': round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100,2)
                                      })
     return  HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
 
@@ -927,13 +927,13 @@ def coreTypes(request):
         hs_distribution_dict[hs_entry]['queued_percent'] = (hs_distribution_dict[hs_entry]['queued']/queued) * 100
         hs_distribution_list.append({'coretypes':hs_entry, 'pledged':hs_distribution_dict[hs_entry]['pledged'],
                                      'ignore':hs_distribution_dict[hs_entry]['ignore'],
-                                     'ignore_percent': int(round(hs_distribution_dict[hs_entry]['ignore_percent'])),
+                                     'ignore_percent': round(hs_distribution_dict[hs_entry]['ignore_percent'],2),
                                      'executing':hs_distribution_dict[hs_entry]['executing'],
-                                     'executing_percent': int(round(hs_distribution_dict[hs_entry]['executing_percent'])),
+                                     'executing_percent': round(hs_distribution_dict[hs_entry]['executing_percent'],2),
                                      'queued':hs_distribution_dict[hs_entry]['queued'],
-                                     'queued_percent':int(round(hs_distribution_dict[hs_entry]['queued_percent'])),
+                                     'queued_percent':round(hs_distribution_dict[hs_entry]['queued_percent'],2),
                                      'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
-                                     'total_hs_percent': int(round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100))
+                                     'total_hs_percent': round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100,2)
                                      })
     return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
 
