@@ -1,0 +1,49 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+{% block page_title %} Events summary {% endblock %}
+{% block subtitle %} Events
+{% endblock %}
+{% block extra_css %}
+
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="/static/js/d3jsplot.js"></script>
+{% endblock %}
+{% block body %}
+<div style="font-size: 0.875rem">
+{#    {% if requestParams.days %}<br><b>Days:</b> {{ requestParams.days}} {% endif %}#}
+    {% if requestParams.processingtype %}<br><b>Processing type:</b> {{ requestParams.processingtype }} {% endif %}
+</div>
+<p>
+<script>
+    function toggleByID(id, idplus) {
+        if ($("#" + id).is(':visible')){
+            $("#" + id).hide();
+            $("#" + idplus).removeClass('fi-minus');
+            $("#" + idplus).addClass('fi-plus');
+        }
+        else {
+            $("#" + id).show();
+            $("#" + idplus).removeClass('fi-plus');
+            $("#" + idplus).addClass('fi-minus');
+        }
+
+    }
+</script>
+
+<div class="d3splot" id="lineChart" style="float:left"></div>
+
+<script>
+    var data ={{ plotData|safe }};
+    multiLineChartFunc(data,"#lineChart","Nevents");
+
+</script>
+
+
+
+
+
+
+{% endblock %}

@@ -81,6 +81,7 @@ urlpatterns = [
     url(r'^runningmcprodtasks/$', runningprod_views.runningMCProdTasks, name='runningMCProdTasks'),
     url(r'^runningprodtasks/$', runningprod_views.runningProdTasks, name='runningProdTasks'),
     url(r'^runningdpdprodtasks/$', runningprod_views.runningDPDProdTasks, name='runningDPDProdTasks'),
+    url(r'^prodeventstrend/$', runningprod_views.prodNeventsTrend, name='prodNeventsTrend'),
     url(r'^runningprodrequests/$', runningprod_views.runningProdRequests, name='runningProdRequests'),
     url(r'^worldhs06s/$', coremon_views.worldhs06s, name='worldHS06s'),
     url(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),

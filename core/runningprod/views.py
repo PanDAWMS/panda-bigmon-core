@@ -727,6 +727,73 @@ def runningDPDProdTasks(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
+@login_customrequired
+def prodNeventsTrend(request):
+    """
+    The view presents historical trend of nevents in different states for various processing types
+    Default time window - 1 week
+    """
+    valid, response=  initRequest(request)
+    defaultdays = 7
+    equery = {}
+    if 'days' in request.session['requestParams'] and request.session['requestParams']['days']:
+        try:
+            days = int(request.session['requestParams']['days'])
+        except:
+            days = defaultdays
+        if days > defaultdays:
+            days = defaultdays
+        starttime = datetime.now() - timedelta(days=days)
+        endtime = datetime.now()
+        request.session['requestParams']['days'] = days
+    else:
+        starttime = datetime.now() - timedelta(days=defaultdays)
+        endtime = datetime.now()
+        request.session['requestParams']['days'] = defaultdays
+    equery['timestamp__range'] = [starttime, endtime]
+
+    if 'processingtype' in request.session['requestParams'] and request.session['requestParams']['processingtype']:
+        if '|' not in request.session['requestParams']['processingtype']:
+            equery['processingtype'] = request.session['requestParams']['processingtype']
+        else:
+            pts = request.session['requestParams']['processingtype'].split('|')
+            equery['processingtype__in'] = pts
+
+    events = ProdNeventsHistory.objects.filter(**equery).values()
+
+    timeline = set([ev['timestamp'] for ev in events])
+    timelinestr = [datetime.strftime(ts, defaultDatetimeFormat) for ts in timeline]
+    ev_states = ['running', 'used', 'waiting']
+
+    data = {}
+    for es in ev_states:
+        data[es] = {}
+        for ts in timelinestr:
+            data[es][ts] = 0
+    for ev in events:
+        for es in ev_states:
+            data[es][datetime.strftime(ev['timestamp'], defaultDatetimeFormat)] += ev['nevents' + str(es)]
+
+    plot_data = []
+    for key, value in data.iteritems():
+        newDict = {'state': key, 'values':[]}
+        for ts, nevents in value.iteritems():
+            newDict['values'].append({'timestamp': ts, 'nevents':nevents})
+        newDict['values'] = sorted(newDict['values'], key=lambda k: k['timestamp'])
+        plot_data.append(newDict)
+
+
+    data = {
+        'request': request,
+        'requestParams': request.session['requestParams'],
+        'plotData': json.dumps(plot_data)
+    }
+
+    endSelfMonitor(request)
+    response = render_to_response('prodNeventsTrend.html', data, content_type='text/html')
+    setCacheEntry(request, "prodNeventsTrend", json.dumps(data, cls=DateEncoder), 60 * 20)
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
 
 
 @login_customrequired
