@@ -206,7 +206,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 {% endif %}
 
 <td>
-{% if logfile.guid %}
+{% if logfile.guid and job.jobstatus == 'failed' or logfile.guid and  job.jobstatus == 'finished'  or logfile.guid and  job.jobstatus == 'closed' %}
     <a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}">logfiles</a>
 {% else %}
     No logs were saved
