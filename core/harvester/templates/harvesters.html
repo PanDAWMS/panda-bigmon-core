@@ -373,8 +373,8 @@
                             "data": "stdout",
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
-                                if (full['stdout'] == null) {
-                                    return ""
+                                if (full['stdout'] == 0) {
+                                    return "-"
                                 }
                                 else {
                                     return '<a href = "' + full['stdout'] + '" target="_blank">' + 'Link' + '</a>'
@@ -385,8 +385,8 @@
                             "data": "stderr",
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
-                                if (full['stderr'] == null) {
-                                    return ""
+                                if (full['stderr'] == 0) {
+                                    return "-"
                                 }
                                 else {
                                     return '<a href = "' + full['stderr'] + '" target="_blank">' + 'Link' + '</a>'
@@ -397,8 +397,9 @@
                             "data": "batchlog",
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
-                                if (full['batchlog'] == null) {
-                                    return ""
+
+                                if (full['batchlog'] == 0) {
+                                    return "-"
                                 }
                                 else {
                                     return '<a href = "' + full['batchlog'] + '" target="_blank">' + 'Link' + '</a>'
