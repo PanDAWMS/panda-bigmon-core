@@ -256,10 +256,11 @@
                         $('td', row).eq(4).addClass('running_fill');
                         $('td', row).eq(5).addClass('running_fill');
                         $('td', row).eq(6).addClass('running_fill');
+                        $('td', row).eq(7).addClass('running_fill');
                     }
                 },
                 initComplete: function () {
-                    this.api().columns([0, 1, 2, 3]).every(function () {
+                    this.api().columns([0, 1, 2, 3,4]).every(function () {
                         var column = this;
                         var select = $('<select><option value="">Show all</option></select>')
                             .appendTo($(column.footer()).empty())
