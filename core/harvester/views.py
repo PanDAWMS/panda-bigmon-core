@@ -177,15 +177,15 @@ def harvesters(request):
         #     data = getCacheEntry(request, instance,isData=True)
         #     import json
         #     return HttpResponse(data, content_type='text/html')
-        data = getCacheEntry(request, "harvester")
-        if data is not None:
-            import json
-            data = json.loads(data)
-            data['request'] = request
-            response = render_to_response('harvesters.html', data, content_type='text/html')
-            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-            endSelfMonitor(request)
-            return response
+        # data = getCacheEntry(request, "harvester")
+        # if data is not None:
+        #     import json
+        #     data = json.loads(data)
+        #     data['request'] = request
+        #     response = render_to_response('harvesters.html', data, content_type='text/html')
+        #     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        #     endSelfMonitor(request)
+        #     return response
         if ('workersstats' in request.session['requestParams'] and 'instance' in request.session['requestParams']):
             harvsterworkerstats = []
             tquery = {}
