@@ -302,7 +302,7 @@
 
                     "ajax": {
                         "processing": true,
-                        "url": "{% url 'harvesters' %}?instance={{ instance }}&tk={{ tk }}&dt",
+                        "url": "{% url 'workers' %}{{url}}&dt",
                         "dataSrc": ''
                     },
                     "aoColumns": [
@@ -314,7 +314,13 @@
                                     return data;
                                 }
                                 else {
-                                    return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?instance={{ instance }}&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
+                                    if (full['njobs']!=null) {
+                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?instance={{ instance }}&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
+                                    }
+                                    else {
+                                        return '' + full['workerid'] +  ' (' + 0 + ')'
+                                    }
+
                                 }
                             }
                         },

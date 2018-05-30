@@ -168,6 +168,7 @@ urlpatterns = [
     url(r'^harvesterworkerinfo/$', harvester.harvesterWorkerInfo, name='harvesterWorkerInfo'),
     url(r'^harvestertest/$', harvester.harvesterfm, name='harvesterfm'),
     url(r'^harvesters/$', harvester.harvesters, name='harvesters'),
+    url(r'^workers/$', harvester.workersJSON, name='workers'),
     #url(r'^json/harvesterinstances/$', harvester.harvesterinstancesjson, name='harvesterinstancesJSON'),
     ####GLOBALSHARES#####
     url(r'^globalshares/$', globalshares.globalshares, name='globalshares'),
