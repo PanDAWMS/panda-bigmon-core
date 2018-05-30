@@ -198,7 +198,7 @@ PHIGH = -1000000
 standard_fields = ['processingtype', 'computingsite', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid',
                    'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype',
                    'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount', 'eventservice',
-                   'jobsubstatus', 'nucleus','gshare']
+                   'jobsubstatus', 'nucleus','gshare', 'resourcetype']
 standard_sitefields = ['region', 'gocname', 'nickname', 'status', 'tier', 'comment_field', 'cloud', 'allowdirectaccess',
                        'allowfax', 'copytool', 'faxredirector', 'retry', 'timefloor']
 standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'username', 'transuses',
@@ -2847,9 +2847,9 @@ def jobList(request, mode=None, param=None):
         'json' in request.session['requestParams']):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     elif eventservice:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype'
     else:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype'
 
     JOB_LIMITS = request.session['JOB_LIMIT']
     totalJobs = 0
@@ -4892,7 +4892,7 @@ def get_panda_resource(siterec):
             # if (data[cs]['siteid']!=data[cs]['panda_resource']):
             #     print data[cs]['siteid']
             if (siterec.siteid == data[cs]['siteid']):
-            #     # resourcesDict.setdefault(data[cs]['resource_type'], []).append(cs)
+            #     # resourcesDict.setdefault(data[cs]['resourcetype'], []).append(cs)
             #     # resourcesDictSites[data[cs]['siteid']] = data[cs]['panda_resource']
                 return data[cs]['panda_resource']
     except Exception as exc:
@@ -5072,17 +5072,17 @@ def siteSummary(query, notime=True, extra="(1=1)"):
     # summary.extend(Jobsarchived4.objects.filter(**query).values('cloud', 'computingsite', 'jobstatus').extra(where=[extra]).annotate(
     #     Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
     summaryResources.extend(
-        Jobsactive4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus', 'resource_type','corecount').extra(
+        Jobsactive4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus', 'resourcetype','corecount').extra(
             where=[extra]).annotate(
             Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
     summaryResources.extend(
-        Jobsdefined4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus', 'resource_type','corecount').extra(
+        Jobsdefined4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus', 'resourcetype','corecount').extra(
             where=[extra]).annotate(
             Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
-    summaryResources.extend(Jobswaiting4.objects.filter(**querynotime).values('cloud', 'computingsite','jobstatus', 'resource_type','corecount').extra(where=[extra]).annotate(
+    summaryResources.extend(Jobswaiting4.objects.filter(**querynotime).values('cloud', 'computingsite','jobstatus', 'resourcetype','corecount').extra(where=[extra]).annotate(
         Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
     summaryResources.extend(
-        Jobsarchived4.objects.filter(**query).values('cloud', 'computingsite', 'jobstatus', 'resource_type','corecount').extra(
+        Jobsarchived4.objects.filter(**query).values('cloud', 'computingsite', 'jobstatus', 'resourcetype','corecount').extra(
             where=[extra]).annotate(
             Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
 
@@ -5099,47 +5099,47 @@ def siteSummary(query, notime=True, extra="(1=1)"):
                 summaryResourcesDict[sumS['cloud']][sumS['computingsite']] = {}
                 if sumS['jobstatus'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']]:
                     summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']] = {}
-                    if sumS['resource_type'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']]:
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resource_type']] = {}
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resource_type']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']]:
+                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {}
+                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
                 else:
-                    if sumS['resource_type'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
+                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
                         sumS['jobstatus']]:
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resource_type']] = {}
+                            sumS['resourcetype']] = {}
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resource_type']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+                            sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
         else:
             if sumS['computingsite'] not in summaryResourcesDict[sumS['cloud']]:
                 summaryResourcesDict[sumS['cloud']][sumS['computingsite']] = {}
                 if sumS['jobstatus'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']]:
                     summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']] = {}
-                    if sumS['resource_type'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']]:
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resource_type']] = {}
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resource_type']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']]:
+                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {}
+                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
                 else:
-                    if sumS['resource_type'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
+                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
                         sumS['jobstatus']]:
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resource_type']] = {}
+                            sumS['resourcetype']] = {}
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resource_type']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+                            sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
             else:
                 if sumS['jobstatus'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']]:
                     summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']] = {}
-                    if sumS['resource_type'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
+                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
                         sumS['jobstatus']]:
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resource_type']] = {}
+                            sumS['resourcetype']] = {}
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resource_type']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+                            sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
                 else:
-                    if sumS['resource_type'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
+                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
                         sumS['jobstatus']]:
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resource_type']] = {}
+                            sumS['resourcetype']] = {}
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resource_type']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+                            sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
     summaryList = []
     obj = {}
     for cloud in summaryResourcesDict.keys():

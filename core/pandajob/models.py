@@ -256,7 +256,7 @@ class PandaJob(models.Model):
     avgswap = models.BigIntegerField(null=True, db_column='avgswap', blank=True) # Field name made lowercase.
     avgpss = models.BigIntegerField(null=True, db_column='avgpss', blank=True) # Field name made lowercase.
     maxwalltime = models.BigIntegerField(null=True, db_column='maxwalltime', blank=True) # Field name made lowercase.
-    resource_type = models.CharField(null=True, max_length=80, db_column='RESOURCE_TYPE', blank=True)
+    resourcetype = models.CharField(null=True, max_length=80, db_column='RESOURCE_TYPE', blank=True)
 
 
     def __str__(self):
