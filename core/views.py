@@ -511,6 +511,9 @@ def preprocessWildCardString(strToProcess, fieldToLookAt):
                 leadStar = True
                 trailStar = True
 
+            if fieldToLookAt.lower() == 'resourcetype':
+                fieldToLookAt = 'resource_type'
+
             if (leadStar and trailStar):
                     extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'%%' + parameter + '%%\'))'
             elif (not leadStar and not trailStar):

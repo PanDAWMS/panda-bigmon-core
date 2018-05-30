@@ -15,7 +15,7 @@
           <legend>Select package</legend>
           <ul class="no-bullet">
               {% for p in packages %}
-                  {% if 'ncore' not in p %}
+                  {% if 'ncore' not in p and 'FullChain' not in p %}
                     <li class="artmenu-item"><input id="{{ p }}" class="package" type="checkbox"><label for="{{ p }}">{{ p }}</label></li>
                   {% endif %}
               {% endfor %}
