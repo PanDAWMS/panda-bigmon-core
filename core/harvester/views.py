@@ -317,12 +317,12 @@ def harvesters(request):
         workerIDs = set()
         generalInstanseInfo = {}
 
-        if 'display_limit_workers' in request.session['requestParams']:
-            display_limit_workers = int(request.session['requestParams']['display_limit_workers'])
-            URL += '&display_limit_workers=' + str(request.session['requestParams']['display_limit_workers'])
-        else:
-            display_limit_workers = 30000
-            URL += '&display_limit_workers=' + str(display_limit_workers)
+        # if 'display_limit_workers' in request.session['requestParams']:
+        #     display_limit_workers = int(request.session['requestParams']['display_limit_workers'])
+        #     URL += '&display_limit_workers=' + str(request.session['requestParams']['display_limit_workers'])
+        # else:
+        #     display_limit_workers = 30000
+        #     URL += '&display_limit_workers=' + str(display_limit_workers)
 
         generalInstanseInfo = {'HarvesterID':workersList[0]['harvester_id'], 'Description':workersList[0]['description'], 'Starttime': workersList[0]['insstarttime'],
                                       'Owner':workersList[0]['owner'], 'Hostname':workersList[0]['hostname'],'Lastupdate':workersList[0]['inslastupdate'], 'Computingsites':computingsitesDict,'Statuses':statusesDict,'Software version':workersList[0]['sw_version'],'Commit stamp':workersList[0]['commit_stamp']
@@ -476,7 +476,7 @@ def workersJSON(request):
             if 'display_limit_workers' in request.session['requestParams']:
                 display_limit_workers = int(request.session['requestParams']['display_limit_workers'])
             else:
-                display_limit_workers = 30000
+                display_limit_workers = 1000
 
             generalWorkersFields = ['workerid', 'status', 'batchid', 'nodeid', 'queuename', 'computingsite',
                                 'submittime', 'wrklastupdate', 'wrkstarttime', 'wrkendtime', 'ncore', 'errorcode',
@@ -500,10 +500,11 @@ def workersJSON(request):
                     request.session['requestParams']['days'])
             fields = ','.join(generalWorkersFields)
             sqlquery = """
-            SELECT %s FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
-            where harvester_id like '%s' %s %s %s %s %s and ROWNUM<=%s
-            order by workerid DESC
+            SELECT * FROM(SELECT %s FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+            where harvester_id like '%s' %s %s %s %s %s
+            order by WRKLASTUPDATE DESC) WHERE ROWNUM<=%s
             """ % (fields, str(instance), status, computingsite, workerid, lastupdateCache, days, display_limit_workers)
+
             cur = connection.cursor()
             cur.execute(sqlquery)
             columns = [str(i[0]).lower() for i in cur.description]

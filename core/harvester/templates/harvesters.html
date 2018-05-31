@@ -53,6 +53,15 @@
         #reloadWorkers:hover {
             color: black;
         }
+
+       #reloadWorkersList {
+            color: #0a47ff;
+            cursor: pointer;
+        }
+
+        #reloadWorkersList:hover {
+            color: black;
+        }
     </style>
 {% endblock %}
 {% block extra_js %}
@@ -83,7 +92,7 @@
             {% for instance in instances %}
                 <tr>
                     <td>
-                        <a href="{% url "harvesters" %}?instance={{ instance.instance }}&display_limit_workers=30000">{{ instance.instance }}</a>
+                        <a href="{% url "harvesters" %}?instance={{ instance.instance }}">{{ instance.instance }}</a>
                     </td>
                     <td>
                         {{ instance.total }}
@@ -233,6 +242,10 @@
             </div>
         </div>
         <hr/>
+
+        <span style="display: inline;">Number of entries:</span> <input type="text" id="numberWL" value="1000" size="35"  style="width: 150px; display: inline;">
+        <div id="reloadWorkersList" style="display: inline">Reload table</div>
+        <br/><br/>
         <table id="harvesterworkers" style="width: 100%" class="data-table bluelinks">
             <caption style="height: 30px;vertical-align: middle">Workers submitted by harvesters</caption>
             <thead>
@@ -289,6 +302,12 @@
                     $('#harvesterworkerstats').DataTable().ajax.url(url).load();
                     {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
                 });
+                $('#reloadWorkersList').click(function () {
+                    var number = $('#numberWL').val();
+                    var url = "{% url 'workers' %}{{url}}&dt&display_limit_workers=" + number
+                    $('#harvesterworkers').DataTable().ajax.url(url).load();
+                    {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
+                });
                 workersTable();
             });
 
@@ -302,7 +321,7 @@
 
                     "ajax": {
                         "processing": true,
-                        "url": "{% url 'workers' %}{{url}}&dt",
+                        "url": "{% url 'workers' %}{{url}}&dt&display_limit_workers=1000",
                         "dataSrc": ''
                     },
                     "aoColumns": [
