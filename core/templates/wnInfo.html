@@ -1,7 +1,6 @@
 {% extends "_base_core.html" %}
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA WN {{ wnname }}@{{ site }} {% endblock %}
-{% block title %} <a href="{% url 'mainPage' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA WN slot performance {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at {{ site }}{{ viewParams.selection|safe }}
 {% endblock %}
 {% block body %}
@@ -20,6 +19,7 @@
       google.setOnLoadCallback(drawChart);
       function drawChart() {
 {% if wnPlotFailed|length > 0 %}
+
         var data = google.visualization.arrayToDataTable([
           ['Time', 'Count'],
 
@@ -59,6 +59,17 @@
       }
     </script>
 {% if wnPlotFailed|length > 0 %}
+
+  {% if 'message' in warning %}
+    <div class="callout warning" data-closable>
+      <h5>Warning! </h5>
+      <p>{{ warning.message }} See details in summary table below.</p>
+        <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+            <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+  {% endif %}
+
     <div id="chart_div" style="height: 500px;"></div>
 {% endif %}
 {% if wnPlotFinished|length > 0 %}

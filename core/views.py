@@ -5320,6 +5320,14 @@ def wnInfo(request, site, wnname='all'):
             wns[wn]['states'][jobstatus]['count'] = 0
         wns[wn]['states'][jobstatus]['count'] += count
 
+    ## Remove None wn from failed jobs plot if it is in system, add warning banner
+    warning = {}
+    if 'None' in wnPlotFailed:
+        warning['message'] = '%i failed jobs are excluded from "Failed jobs per WN slot" plot because of None value of modificationhost.' % (wnPlotFailed['None'])
+        try:
+            del wnPlotFailed['None']
+        except: pass
+
     ## Convert dict to summary list
     wnkeys = wns.keys()
     wnkeys.sort()
@@ -5424,6 +5432,7 @@ def wnInfo(request, site, wnname='all'):
             'wnPlotFinished': wnPlotFinishedL,
             'hours': hours,
             'errthreshold': errthreshold,
+            'warning': warning,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         ##self monitor
