@@ -147,6 +147,14 @@
                             {% endfor %}
                         </div>
                         </td>
+                    {% elif name ==  'Harvesters' %}
+                        <td><b>{{ name }} ({{ value|length }})</b></td>
+                        <td><div class="comment more">
+                            {% for n,v in value.items %}
+                                {{ n }} <a href="{{ xurl }}instance={{ n }}">({{ v }})</a>
+                            {% endfor %}
+                        </div>
+                        </td>
                     {% elif name ==  'wrkpandaids' %}
                         <td><b>WorkerID (jobs)</b></td>
                         <td>
@@ -218,7 +226,11 @@
                             harvester workers
                         </caption>
                         <thead>
+                        {% if instance == 0 %}
+                        <th>Harvester</th>
+                        {% else %}
                         <th>Computing site</th>
+                        {% endif %}
                         <th>Resource type</th>
                         <th>Status</th>
                         <th>Number of workers</th>
@@ -256,7 +268,11 @@
             <th>BatchID</th>
             <th>NodeID</th>
             <th>Queuename</th>
+            {% if instance == 0 %}
+            <th>Harvester</th>
+            {% else %}
             <th>Computingsite</th>
+            {% endif %}
             <th>Submit time</th>
             <th>Start time</th>
             <th>End time</th>
@@ -292,13 +308,23 @@
                 });
                 $('#reloadDialogs').click(function () {
                     var number = $('#numberD').val();
-                    var url = "{% url 'harvesters' %}?instance={{ instance }}&dialogs&limit=" + number
+                    var instance = "{{ instance|safe }}";
+                    var computingsite = "{{ computingsite|safe }}";
+                    if (instance!="0") {
+                    var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&dialogs&limit=" + number
+                    }
+                    else {var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&dialogs&limit=" + number}
                     $('#harvesterdialogs').DataTable().ajax.url(url).load();
                     {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
                 });
                 $('#reloadWorkers').click(function () {
                     var number = $('#numberW').val();
-                    var url = "{% url 'harvesters' %}?instance={{ instance }}&workersstats&limit=" + number
+                    var instance = "{{ instance|safe }}";
+                    var computingsite = "{{ computingsite|safe }}";
+                    if (instance!="0") {
+                    var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&workersstats&limit=" + number
+                    }
+                    else {var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&workersstats&limit=" + number}
                     $('#harvesterworkerstats').DataTable().ajax.url(url).load();
                     {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
                 });
@@ -312,7 +338,14 @@
             });
 
             function workersTable() {
+                var instance = "{{ instance|safe}}";
+                    if (instance!="0") {
+                        dt = "computingsite"
+                    } else {
+                        dt = "harvester_id"
+                    }
                 $('#harvesterworkers').dataTable({
+
                     //"bRetrieve": true,
                     "order": [[ 7, "desc" ]],
                     "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
@@ -326,7 +359,7 @@
                     },
                     "aoColumns": [
                         {
-                            "data": "workerid",
+                            data: "workerid",
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
                                 if (type === "sort" || type === 'type') {
@@ -334,7 +367,12 @@
                                 }
                                 else {
                                     if (full['njobs']!=null) {
+                                        if("instance" in full){
                                         return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?instance={{ instance }}&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
+                                        }
+                                        else {
+                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite={{ computingsite }}&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
+                                        }
                                     }
                                     else {
                                         return '' + full['workerid'] +  ' (' + 0 + ')'
@@ -343,13 +381,6 @@
                                 }
                             }
                         },
-                        {#            {#}
-                        {#                "data": "totalpandaids",#}
-                        {#                sDefaultContent: "",#}
-                        {#                "render": function(data, type, full, meta) {#}
-                        {#                    return '<a href = "{% url 'jobList' %}?workerid='+full['workerid']+'">'+full['totalpandaids']+'</a>'#}
-                        {#                 }#}
-                        {#            },#}
                         {
                             "data": "wrklastupdate",
                             sDefaultContent: ""
@@ -371,7 +402,7 @@
                             sDefaultContent: "",
                         },
                         {
-                            "data": "computingsite",
+                            "data": dt,
                             sDefaultContent: "",
                         },
                         {
@@ -460,7 +491,13 @@
             }
 
             function dialogsTable(number) {
+                var instance =  "{{ instance|safe}}";
+                if (instance!="0")
+                {
                 var url = "{% url 'harvesters' %}?instance={{ instance }}&dialogs&limit=" + number
+                } else {
+                var url = "{% url 'harvesters' %}?computingsite={{ computingsite }}&instancelist={{ instancelist }}&dialogs&limit=" + number
+                }
                 $('#harvesterdialogs').dataTable({
                     "order": [[0, "desc"]],
                     "retrieve": true,
@@ -526,7 +563,15 @@
             }
 
             function workerstatsTable(number) {
-                var url = "{% url 'harvesters' %}?instance={{ instance }}&workersstats&limit=" + number
+                var instance = "{{ instance|safe}}";
+                if (instance!="0")
+                {
+                var url = "{% url 'harvesters' %}?instance={{ instance }}&workersstats&limit=" + number;
+                dt = "computingsite"
+                } else {
+                var url = "{% url 'harvesters' %}?computingsite={{ computingsite }}&workersstats&limit=" + number
+                dt = "harvesterid"
+                }
                 $('#harvesterworkerstats').dataTable({
                     "order": [[0, "desc"]],
                     "retrieve": true,
@@ -538,9 +583,21 @@
                         "dataSrc": ''
                     },
                     "aoColumns": [
-                        {
-                            "data": "computingsite",
-                            sDefaultContent: ""
+                        {   "data": dt,
+                             sDefaultContent: "",
+                            {#"render": function (data, type, full, meta) {#}
+                            {#    if (type === "sort" || type === 'filter') {#}
+                                    {#return $('#harvesterworkerstats').DataTable().cell(meta.row, meta.col).nodes().to$().find('input').val();#}
+                            {#        return data#}
+                            {#    }#}
+                            {#    else {#}
+                            {#        if("computingsite" in full){#}
+                            {#            return full['computingsite']#}
+                            {#        }#}
+                            {#        else if ("harvesterid" in full) {#}
+                            {#            return full['harvesterid']#}
+                            {#        }#}
+                            {#    }#}
                         },
                         {
                             "data": "resourcetype",
@@ -570,23 +627,25 @@
                     },
 
                     initComplete: function () {
-                        this.api().columns([0, 1, 2]).every(function () {
+                        this.api().columns([0,1,2]).every(function () {
                             var column = this;
-                            var select = $('<select><option value="">Show all</option></select>')
-                                .appendTo($(column.footer()).empty())
-                                .on('change', function () {
-                                    var val = $.fn.dataTable.util.escapeRegex(
-                                        $(this).val()
-                                    );
 
-                                    column
-                                        .search(val ? '^' + val + '$' : '', true, false)
-                                        .draw();
+                                var select = $('<select><option value="">Show all</option></select>')
+                                    .appendTo($(column.footer()).empty())
+                                    .on('change', function () {
+
+                                        var val = $.fn.dataTable.util.escapeRegex(
+                                            $(this).val()
+                                        );
+
+                                        column
+                                            .search(val ? '^' + val + '$' : '', true, false)
+                                            .draw(true);
+                                    });
+
+                                column.data().unique().sort().each(function (d, j) {
+                                    select.append('<option value="' + d + '">' + d + '</option>')
                                 });
-
-                            column.data().unique().sort().each(function (d, j) {
-                                select.append('<option value="' + d + '">' + d + '</option>')
-                            });
                         });
                     }
                 });

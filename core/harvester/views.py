@@ -332,6 +332,118 @@ def harvesters(request):
                 'generalInstanseInfo':generalInstanseInfo,
                 'type':'workers',
                 'instance':instance,
+                'computingsite':0,
+                'xurl':xurl,
+                'request': request,
+                'requestParams': request.session['requestParams'],
+                'viewParams': request.session['viewParams'],
+                'built': datetime.now().strftime("%H:%M:%S"),
+                'url': URL
+                }
+        # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
+        setCacheEntry(request, 'harvester',  json.dumps(data, cls=DateEncoder),60 * 60)
+        endSelfMonitor(request)
+        return render_to_response('harvesters.html', data, content_type='text/html')
+    elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
+        computingsite = request.session['requestParams']['computingsite']
+        if ('workersstats' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']):
+            harvsterworkerstats = []
+            tquery = {}
+            tquery['computingsite'] = computingsite
+            limit = 100
+            if 'limit' in request.session['requestParams']:
+                limit = request.session['requestParams']['limit']
+            harvsterworkerstat = HarvesterWorkerStats.objects.filter(**tquery).values('harvesterid', 'resourcetype', 'status',
+                                                                           'nworkers','lastupdate').filter(**tquery).extra(
+                where=[extra]).order_by('-lastupdate')[:limit]
+            # dialogs.extend(HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime'))
+            old_format = '%Y-%m-%d %H:%M:%S'
+            new_format = '%d-%m-%Y %H:%M:%S'
+            for stat in harvsterworkerstat:
+                stat['lastupdate'] = datetime.strptime(str(stat['lastupdate']), old_format).strftime(new_format)
+                harvsterworkerstats.append(stat)
+            return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='text/html')
+        if ('dialogs' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']):
+            dialogs = []
+            tquery = {}
+            instancelist = request.session['requestParams']['instancelist'].split(',')
+            limit = 100
+            if 'limit' in request.session['requestParams']:
+                    limit = request.session['requestParams']['limit']
+            dialogsList = HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(harvesterid__in=instancelist).extra(where=[extra]).order_by('-creationtime')[:limit]
+                # dialogs.extend(HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime'))
+            old_format = '%Y-%m-%d %H:%M:%S'
+            new_format = '%d-%m-%Y %H:%M:%S'
+            for dialog in dialogsList:
+                dialog['creationtime'] = datetime.strptime(str(dialog['creationtime']), old_format).strftime(new_format)
+                dialogs.append(dialog)
+            return HttpResponse(json.dumps(dialogs, cls=DateTimeEncoder), content_type='text/html')
+
+        URL += '?computingsite=' + request.session['requestParams']['computingsite']
+        status = ''
+
+        workerid = ''
+        days = ''
+        if 'status' in request.session['requestParams']:
+            status = """AND status like '%s'""" % (str(request.session['requestParams']['status']))
+            URL += '&status=' + str(request.session['requestParams']['status'])
+        if 'workerid' in request.session['requestParams']:
+            workerid = """AND workerid in (%s)""" % (request.session['requestParams']['workerid'])
+            URL += '&workerid=' + str(request.session['requestParams']['workerid'])
+        if 'days' in request.session['requestParams']:
+            days = """AND to_date(wrklastupdate, 'dd-mm-yyyy hh24:mi:ss') > sysdate - %s """ % (
+            request.session['requestParams']['days'])
+            URL += '&days=' + str(request.session['requestParams']['days'])
+        sqlquery = """
+          SELECT * FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+          where computingsite like '%s' %s %s %s  and ROWNUM<=1
+          order by workerid DESC
+          """ % (str(computingsite), status,  workerid, days)
+
+        sqlquerycomputingsite = """
+          SELECT harvester_id,count(*) FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+          where computingsite like '%s' %s %s %s group by harvester_id
+          """ % (str(computingsite), status,  workerid, days)
+
+        sqlquerystatus = """
+          SELECT status,count(*) FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+          where computingsite like '%s' %s %s %s group by status
+          """ % (str(computingsite), status,  workerid, days)
+
+        workersList = []
+        cur = connection.cursor()
+        cur.execute(sqlquery)
+
+        harvesterinfo = cur.fetchall()
+        columns = [str(i[0]).lower() for i in cur.description]
+
+        cur.execute(sqlquerycomputingsite)
+        harvesterids = cur.fetchall()
+        cur.execute(sqlquerystatus)
+        statuses = cur.fetchall()
+
+        harvesteridDict = {}
+        for harvester in harvesterids:
+            harvesteridDict[harvester[0]] = harvester[1]
+
+        statusesDict = {}
+        for status in statuses:
+            statusesDict[status[0]] = status[1]
+
+        for worker in harvesterinfo:
+            object = {}
+            object = dict(zip(columns, worker))
+            workersList.append(object)
+        generalInstanseInfo = {'Computingsite':workersList[0]['computingsite'], 'Description':workersList[0]['description'], 'Starttime': workersList[0]['insstarttime'],
+                                      'Owner':workersList[0]['owner'], 'Hostname':workersList[0]['hostname'],'Lastupdate':workersList[0]['inslastupdate'], 'Harvesters':harvesteridDict,'Statuses':statusesDict,'Software version':workersList[0]['sw_version'],'Commit stamp':workersList[0]['commit_stamp']
+        }
+
+        data = {
+                'generalInstanseInfo':generalInstanseInfo,
+                'type':'workers',
+                'instance':0,
+                'instancelist':','.join(harvesteridDict.keys()),
+                'computingsite':computingsite,
                 'xurl':xurl,
                 'request': request,
                 'requestParams': request.session['requestParams'],
@@ -344,7 +456,8 @@ def harvesters(request):
         endSelfMonitor(request)
         return render_to_response('harvesters.html', data, content_type='text/html')
 
-    # elif 'instance' in request.session['requestParams'] and 'workerid' in 'instance' in request.session['requestParams']:
+
+    # # elif 'instance' in request.session['requestParams'] and 'workerid' in 'instance' in request.session['requestParams']:
     #     pass
     else:
         sqlquery = """
@@ -520,6 +633,59 @@ def workersJSON(request):
         #     workersDictinoary = workersListCache
         #
         # else:
+            for worker in cur:
+                object = {}
+                object = dict(zip(columns, worker))
+                workersList.append(object)
+
+            return HttpResponse(json.dumps(workersList), content_type='text/html')
+    if 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
+        computingsite = request.session['requestParams']['computingsite']
+        if ('dt' in request.session['requestParams']):
+            if 'display_limit_workers' in request.session['requestParams']:
+                display_limit_workers = int(request.session['requestParams']['display_limit_workers'])
+            else:
+                display_limit_workers = 1000
+
+            generalWorkersFields = ['workerid', 'status', 'batchid', 'nodeid', 'queuename', 'harvester_id',
+                                    'submittime', 'wrklastupdate', 'wrkstarttime', 'wrkendtime', 'ncore', 'errorcode',
+                                    'stdout', 'stderr', 'batchlog', 'resourcetype', 'nativeexitcode', 'nativestatus',
+                                    'diagmessage', 'njobs', 'computingelement']
+
+            status = ''
+            workerid = ''
+            days = ''
+            lastupdateCache = ''
+            if 'status' in request.session['requestParams']:
+                status = """AND status like '%s'""" % (str(request.session['requestParams']['status']))
+            if 'workerid' in request.session['requestParams']:
+                workerid = """AND workerid in (%s)""" % (request.session['requestParams']['workerid'])
+            if 'days' in request.session['requestParams']:
+                days = """AND to_date(wrklastupdate, 'dd-mm-yyyy hh24:mi:ss') > sysdate - %s """ % (
+                    request.session['requestParams']['days'])
+            fields = ','.join(generalWorkersFields)
+            sqlquery = """
+             SELECT * FROM(SELECT %s FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+             where computingsite like '%s' %s %s %s 
+             order by WRKLASTUPDATE DESC) WHERE ROWNUM<=%s
+             """ % (
+            fields, str(computingsite), status,  workerid, days, display_limit_workers)
+
+            cur = connection.cursor()
+            cur.execute(sqlquery)
+            columns = [str(i[0]).lower() for i in cur.description]
+            workersList = []
+
+            # if workersListisEmty == False:
+            #     for worker in cur:
+            #         object = {}
+            #         object = dict(zip(columns, worker))
+            #         workersListCache[int(object['workerid'])] = object
+            #         timeLastUpdate = object['inslastupdate']
+            #     workersList = workersListCache.values()
+            #     workersDictinoary = workersListCache
+            #
+            # else:
             for worker in cur:
                 object = {}
                 object = dict(zip(columns, worker))
