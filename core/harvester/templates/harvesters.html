@@ -92,7 +92,7 @@
             {% for instance in instances %}
                 <tr>
                     <td>
-                        <a href="{% url "harvesters" %}?instance={{ instance.instance }}">{{ instance.instance }}</a>
+                        <a href="{% url "harvesters" %}?instance={{ instance.instance|safe }}">{{ instance.instance|safe }}</a>
                     </td>
                     <td>
                         {{ instance.total }}
@@ -136,14 +136,14 @@
                         <td>
                             {% for n,v in value.items %}
                                 <span class='{{ n }} item'>{{ n }}</span>
-                                <a href="{{ xurl }}status={{ n }}">({{ v }})</a>
+                                <a href="{{ xurl }}status={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </td>
                     {% elif name ==  'Computingsites' %}
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td><div class="comment more">
                             {% for n,v in value.items %}
-                                {{ n }} <a href="{{ xurl }}computingsite={{ n }}">({{ v }})</a>
+                                {{ n }} <a href="{{ xurl }}computingsite={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </div>
                         </td>
@@ -151,7 +151,7 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td><div class="comment more">
                             {% for n,v in value.items %}
-                                {{ n }} <a href="{{ xurl }}instance={{ n }}">({{ v }})</a>
+                                {{ n }} <a href="{{ xurl }}instance={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </div>
                         </td>
@@ -161,7 +161,7 @@
                             <div id='workerList'>
                                 {% for n,v in value.items %}
                                     <p>{{ n }} <a
-                                            href="{% url 'jobList' %}?instance={{ instance }}&workerid={{ n }}">({{ v }})</a>
+                                            href="{% url 'jobList' %}?instance={{ instance|safe }}&workerid={{ n|safe }}">({{ v }})</a>
                                     </p>
                                 {% endfor %}
                             </div>
@@ -313,7 +313,7 @@
                     if (instance!="0") {
                     var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&dialogs&limit=" + number
                     }
-                    else {var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&dialogs&limit=" + number}
+                    else {var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&instancelist={{ instancelist|safe }}&dialogs&limit=" + number}
                     $('#harvesterdialogs').DataTable().ajax.url(url).load();
                     {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
                 });
@@ -354,7 +354,7 @@
 
                     "ajax": {
                         "processing": true,
-                        "url": "{% url 'workers' %}{{url}}&dt&display_limit_workers=1000",
+                        "url": "{% url 'workers' %}{{url|safe}}&dt&display_limit_workers=1000",
                         "dataSrc": ''
                     },
                     "aoColumns": [
@@ -368,10 +368,10 @@
                                 else {
                                     if (full['njobs']!=null) {
                                         if("instance" in full){
-                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?instance={{ instance }}&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
+                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?instance={{ instance|safe }}&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
                                         }
                                         else {
-                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite={{ computingsite }}&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
+                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite={{ computingsite|safe }}&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
                                         }
                                     }
                                     else {
@@ -494,9 +494,9 @@
                 var instance =  "{{ instance|safe}}";
                 if (instance!="0")
                 {
-                var url = "{% url 'harvesters' %}?instance={{ instance }}&dialogs&limit=" + number
+                var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&dialogs&limit=" + number
                 } else {
-                var url = "{% url 'harvesters' %}?computingsite={{ computingsite }}&instancelist={{ instancelist }}&dialogs&limit=" + number
+                var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&instancelist={{ instancelist|safe }}&dialogs&limit=" + number
                 }
                 $('#harvesterdialogs').dataTable({
                     "order": [[0, "desc"]],
@@ -566,10 +566,10 @@
                 var instance = "{{ instance|safe}}";
                 if (instance!="0")
                 {
-                var url = "{% url 'harvesters' %}?instance={{ instance }}&workersstats&limit=" + number;
+                var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&workersstats&limit=" + number;
                 dt = "computingsite"
                 } else {
-                var url = "{% url 'harvesters' %}?computingsite={{ computingsite }}&workersstats&limit=" + number
+                var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&workersstats&limit=" + number
                 dt = "harvesterid"
                 }
                 $('#harvesterworkerstats').dataTable({
