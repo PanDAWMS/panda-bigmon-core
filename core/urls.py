@@ -115,6 +115,8 @@ urlpatterns = [
     url(r'^art/getjobsubresults/$', art_views.getJobSubResults, name='artJobSubResults'),
     url(r'^art/updatejoblist/$', art_views.updateARTJobList),
     url(r'^art/registerarttest/$', art_views.registerARTTest),
+    url(r'^art/sendartreport/$', art_views.sendArtReport),
+
 
 
 

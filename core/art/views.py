@@ -25,6 +25,7 @@ from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
 
 from core.art.artTest import ArtTest
+from core.art.artMail import send_mail_art
 
 from django.template.defaulttags import register
 
@@ -449,7 +450,7 @@ def artJobs(request):
     # for job in jobs:
     #     i+=1
     #     print 'registering %i out of %i jobs' % (i, len(jobs))
-    #     x = ArtTest(job['origpandaid'], job['testname'], job['branch'].split('/')[0], job['branch'].split('/')[1],job['branch'].split('/')[2], job['package'], job['nightly_tag'])
+    #     x = ArtTest(job['origpandaid'], job['testname'], job['branch'].split('/')[0], job['branch'].split('/')[2],job['branch'].split('/')[1], job['package'], job['nightly_tag'])
     #     if x.registerArtTest():
     #         print '%i job registered sucessfully out of %i' % (i, len(jobs))
 
@@ -1001,6 +1002,59 @@ def registerARTTest(request):
 
 
     return HttpResponse(json.dumps(data), content_type='text/html')
+
+
+def sendArtReport(request):
+    """
+    A view to send ART jobs status report by email
+    :param request:
+    :return: json
+    """
+    valid, response = initRequest(request)
+
+    query = setupView(request, 'job')
+
+    cur = connection.cursor()
+    cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s'))" % (
+        query['ntag_from'], query['ntag_to'], query['strcondition']))
+    jobs = cur.fetchall()
+    cur.close()
+
+    artJobsNames = ['taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid',
+                    'computingsite', 'endtime', 'starttime', 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn',
+                    'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'result']
+    jobs = [dict(zip(artJobsNames, row)) for row in jobs]
+
+    ### prepare data for report
+    artjobsdict = {}
+    for job in jobs:
+        if job['branch'] not in artjobsdict.keys():
+            artjobsdict[job['branch']] = {}
+            artjobsdict[job['branch']]['branch'] = job['branch']
+            artjobsdict[job['branch']]['ntag_full'] = job['nightly_tag']
+            artjobsdict[job['branch']]['ntag'] = job['ntag'].strftime(artdateformat)
+            artjobsdict[job['branch']]['packages'] = {}
+        if job['package'] not in artjobsdict[job['branch']]['packages'].keys():
+            artjobsdict[job['branch']]['packages'][job['package']] = {}
+            artjobsdict[job['branch']]['packages'][job['package']]['name'] = job['package']
+            artjobsdict[job['branch']]['packages'][job['package']]['nfailed'] = 0
+            artjobsdict[job['branch']]['packages'][job['package']]['nfinished'] = 0
+            artjobsdict[job['branch']]['packages'][job['package']]['nactive'] = 0
+        finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
+        artjobsdict[job['branch']]['packages'][job['package']]['n' + finalresult] += 1
+
+    ### dict -> list & ordering
+    for branchname, sumdict in artjobsdict.iteritems():
+        sumdict['packages'] = sorted(artjobsdict[branchname]['packages'].values(), key=lambda k: k['name'])
+
+    summary = sorted(artjobsdict.values(), key=lambda k: k['branch'], reverse=True)
+
+
+
+    send_mail_art(request.session['requestParams']['ntag'], summary)
+
+
+    return HttpResponse(json.dumps({}), content_type='text/html')
 
 
 
