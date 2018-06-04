@@ -594,7 +594,7 @@ def workersJSON(request):
             generalWorkersFields = ['workerid', 'status', 'batchid', 'nodeid', 'queuename', 'computingsite',
                                 'submittime', 'wrklastupdate', 'wrkstarttime', 'wrkendtime', 'ncore', 'errorcode',
                                 'stdout', 'stderr', 'batchlog', 'resourcetype', 'nativeexitcode', 'nativestatus',
-                                'diagmessage', 'njobs', 'computingelement']
+                                'diagmessage', 'njobs', 'computingelement','harvester_id']
 
             status = ''
             computingsite = ''
@@ -623,22 +623,12 @@ def workersJSON(request):
             columns = [str(i[0]).lower() for i in cur.description]
             workersList = []
 
-        # if workersListisEmty == False:
-        #     for worker in cur:
-        #         object = {}
-        #         object = dict(zip(columns, worker))
-        #         workersListCache[int(object['workerid'])] = object
-        #         timeLastUpdate = object['inslastupdate']
-        #     workersList = workersListCache.values()
-        #     workersDictinoary = workersListCache
-        #
-        # else:
             for worker in cur:
                 object = {}
                 object = dict(zip(columns, worker))
                 workersList.append(object)
-
             return HttpResponse(json.dumps(workersList), content_type='text/html')
+
     if 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
         computingsite = request.session['requestParams']['computingsite']
         if ('dt' in request.session['requestParams']):
