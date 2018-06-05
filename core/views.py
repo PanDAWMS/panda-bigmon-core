@@ -483,6 +483,11 @@ def initRequest(request, callselfmon = True):
 def preprocessWildCardString(strToProcess, fieldToLookAt):
     if (len(strToProcess) == 0):
         return '(1=1)'
+    isNot = False
+    if strToProcess.startswith('!'):
+        isNot = True
+        strToProcess = strToProcess[1:]
+
     cardParametersRaw = strToProcess.split('*')
     cardRealParameters = [s for s in cardParametersRaw if len(s) >= 1]
     countRealParameters = len(cardRealParameters)
@@ -514,14 +519,24 @@ def preprocessWildCardString(strToProcess, fieldToLookAt):
             if fieldToLookAt.lower() == 'resourcetype':
                 fieldToLookAt = 'resource_type'
 
-            if (leadStar and trailStar):
-                    extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'%%' + parameter + '%%\'))'
-            elif (not leadStar and not trailStar):
-                    extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'' + parameter + '\'))'
-            elif (leadStar and not trailStar):
-                    extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'%%' + parameter + '\'))'
-            elif (not leadStar and trailStar):
-                    extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'' + parameter + '%%\'))'
+            if not isNot:
+                if (leadStar and trailStar):
+                        extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'%%' + parameter + '%%\'))'
+                elif (not leadStar and not trailStar):
+                        extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'' + parameter + '\'))'
+                elif (leadStar and not trailStar):
+                        extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'%%' + parameter + '\'))'
+                elif (not leadStar and trailStar):
+                        extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'' + parameter + '%%\'))'
+            else:
+                if (leadStar and trailStar):
+                    extraQueryString += '(UPPER(' + fieldToLookAt + ') NOT LIKE UPPER(\'%%' + parameter + '%%\'))'
+                elif (not leadStar and not trailStar):
+                    extraQueryString += '(UPPER(' + fieldToLookAt + ') NOT LIKE UPPER(\'' + parameter + '\'))'
+                elif (leadStar and not trailStar):
+                    extraQueryString += '(UPPER(' + fieldToLookAt + ') NOT LIKE UPPER(\'%%' + parameter + '\'))'
+                elif (not leadStar and trailStar):
+                    extraQueryString += '(UPPER(' + fieldToLookAt + ') NOT LIKE UPPER(\'' + parameter + '%%\'))'
             currentRealParCount += 1
             if currentRealParCount < countRealParameters:
                 extraQueryString += ' AND '
