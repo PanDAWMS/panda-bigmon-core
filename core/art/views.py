@@ -1012,6 +1012,15 @@ def sendArtReport(request):
     """
     valid, response = initRequest(request)
 
+    if 'ntag' not in request.session['requestParams']:
+        valid = False
+        errorMessage = 'No ntag provided!'
+    elif request.session['requestParams']['ntag'] != (datetime.now() - timedelta(days=1)).strftime(artdateformat):
+        valid = False
+        errorMessage = 'Provided ntag is not valid'
+    if not valid:
+        return HttpResponse(json.dumps({'errorMessage': errorMessage}), content_type='text/html')
+
     query = setupView(request, 'job')
 
     cur = connection.cursor()
@@ -1049,12 +1058,17 @@ def sendArtReport(request):
 
     summary = sorted(artjobsdict.values(), key=lambda k: k['branch'], reverse=True)
 
+    isSent = False
+    i = 0
+    maxTries = 10
+    while not isSent:
+        i +=1
+        isSent = send_mail_art(request.session['requestParams']['ntag'], summary)
+        if i > 10:
+            break
 
 
-    send_mail_art(request.session['requestParams']['ntag'], summary)
-
-
-    return HttpResponse(json.dumps({}), content_type='text/html')
+    return HttpResponse(json.dumps({'isSent': isSent, 'nTries': i}), content_type='text/html')
 
 
 
