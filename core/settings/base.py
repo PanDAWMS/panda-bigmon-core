@@ -223,6 +223,7 @@ ROOT_URLCONF = 'core.urls'
 
 # email
 EMAIL_SUBJECT_PREFIX = 'bigpandamon-core: '
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 AUTH_USER_MODEL = 'common.BPUser'
 

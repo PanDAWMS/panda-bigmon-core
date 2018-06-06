@@ -4,31 +4,33 @@ Created on 04.06.2018
 A lib to send ART job status report by email
 """
 
-from templated_email import get_templated_mail, send_templated_mail
 from smtplib import SMTPException
 from datetime import datetime
+from django.core.mail import send_mail
+from django.template import loader
+
 
 
 def send_mail_art(ntag, summary):
     subject = 'ART jobs status report for build made on %s' % (ntag.strftime("%Y-%m-%d"))
     isSuccess = True
     nmails = 0
+    html_message = loader.render_to_string(
+        'templated_email/artReport.html',
+        {
+            'subject': subject,
+            'summary': summary,
+            'built': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+    )
     try:
-        nmails = send_templated_mail(
-            template_name='artReport',
-            from_email='noreply@mail.cern.ch',
-            recipient_list=['tkorchug@mail.cern.ch'],
-            context={
-                'subject': subject,
-                'summary': summary,
-                'built': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            },
-            # Optional:
-            # cc=['cc@example.com'],
-            # bcc=['bcc@example.com'],
-            # headers={'My-Custom-Header':'Custom Value'},
-            # template_prefix="my_emails/",
-            # template_suffix="email",
+        nmails = send_mail(
+            subject=subject,
+            message='',
+            from_email='pandamon@mail.cern.ch',
+            recipient_list=['tatiana.korchuganova@cern.ch', 'tulay.cuhadar.donszelmann@cern.ch'],
+            fail_silently=False,
+            html_message=html_message,
         )
     except SMTPException:
         isSuccess = False
