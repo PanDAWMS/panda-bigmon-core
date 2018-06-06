@@ -16,6 +16,8 @@ from core.monitor import views as monitor_views
 from core.harvester import views as harvester
 from core.globalshares import views as globalshares
 from core.runningprod import views as runningprod_views
+from core.errorsscattering import views as errorsscat_views
+
 #import core.views as coremon_views
 import core.pandajob.views_support as core_coremon_support_views
 #import core.pandajob.views as core_coremon_views
@@ -159,9 +161,9 @@ urlpatterns = [
     url(r'^testip/$', coremon_views.testip, name='testip'),
     url(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
 
-    url(r'^taskserrorsscat/$', coremon_views.tasksErrorsScattering, name='tasksErrorsScattering'),
-    url(r'^errorsscat/$', coremon_views.errorsScattering, name='errorsScattering'),
-    url(r'^errorsscat/(?P<cloud>.*)/(?P<reqid>.*)/$', coremon_views.errorsScatteringDetailed, name='errorsScatteringDetailed'),
+    url(r'^taskserrorsscat/$', errorsscat_views.tasksErrorsScattering, name='tasksErrorsScattering'),
+    url(r'^errorsscat/$', errorsscat_views.errorsScattering, name='errorsScattering'),
+    url(r'^errorsscat/(?P<cloud>.*)/(?P<reqid>.*)/$', errorsscat_views.errorsScatteringDetailed, name='errorsScatteringDetailed'),
     ###Monitor###
     url(r'^bigpandamonitor/$', monitor_views.monitorJson, name='bigpandamonitor'),
     ####HARVESTER####
