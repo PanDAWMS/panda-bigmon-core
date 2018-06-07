@@ -14,7 +14,7 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from core.art.modelsART import ARTTask, ARTTasks, ARTResults, ARTTests
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, Sum
-from core.views import initRequest, extensibleURL, removeParam
+from core.views import login_customrequired, initRequest, extensibleURL, removeParam
 from core.views import DateEncoder, endSelfMonitor
 from core.art.jobSubResults import getJobReport, getARTjobSubResults
 from core.settings import defaultDatetimeFormat
@@ -164,7 +164,7 @@ def setupView(request, querytype='task'):
 
     return query
 
-
+@login_customrequired
 def art(request):
     valid, response = initRequest(request)
 
@@ -187,10 +187,11 @@ def art(request):
 
 
     data = {
-        'viewParams': request.session['viewParams'],
-        'packages':[p['package'] for p in packages],
-        'branches':[b['branch'] for b in branches],
-        'ntags':[t['nightly_tag_date'] for t in ntags]
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'packages':[p['package'] for p in packages],
+            'branches':[b['branch'] for b in branches],
+            'ntags':[t['nightly_tag_date'] for t in ntags]
     }
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
@@ -201,7 +202,7 @@ def art(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-
+@login_customrequired
 def artOverview(request):
     valid, response = initRequest(request)
     query = setupView(request, 'job')
@@ -289,6 +290,7 @@ def artOverview(request):
         return HttpResponse(dump, content_type='text/html')
     else:
         data = {
+            'request': request,
             'requestParams': request.session['requestParams'],
             'viewParams': request.session['viewParams'],
             'artpackages': artpackagesdict,
@@ -301,7 +303,7 @@ def artOverview(request):
         endSelfMonitor(request)
         return response
 
-
+@login_customrequired
 def artTasks(request):
     valid, response = initRequest(request)
     query = setupView(request, 'job')
@@ -390,6 +392,7 @@ def artTasks(request):
         return HttpResponse(dump, content_type='text/html')
     else:
         data = {
+            'request': request,
             'requestParams': request.session['requestParams'],
             'viewParams': request.session['viewParams'],
             'arttasks' : arttasksdict,
@@ -403,7 +406,7 @@ def artTasks(request):
         endSelfMonitor(request)
         return response
 
-
+@login_customrequired
 def artJobs(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -558,8 +561,9 @@ def artJobs(request):
         return HttpResponse(dump, content_type='text/html')
     else:
         data = {
-            'requestParams': request.session['requestParams'],
+            'request': request,
             'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
             'artjobs': artjobsdict,
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
