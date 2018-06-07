@@ -302,7 +302,9 @@ def harvesters(request):
             object = {}
             object = dict(zip(columns, worker))
             workersList.append(object)
-
+        if len(workersList)==0:
+            return HttpResponse(json.dumps({'message': 'Instance is not found'}),
+                            content_type='text/html')
 
         # dbCache = {
         #     "workersList": workersDictinoary,
@@ -434,6 +436,9 @@ def harvesters(request):
             object = {}
             object = dict(zip(columns, worker))
             workersList.append(object)
+        if len(workersList)==0:
+            return HttpResponse(json.dumps({'message': 'Computingsite is not found'}),
+                            content_type='text/html')
         generalInstanseInfo = {'Computingsite':workersList[0]['computingsite'], 'Description':workersList[0]['description'], 'Starttime': workersList[0]['insstarttime'],
                                       'Owner':workersList[0]['owner'], 'Hostname':workersList[0]['hostname'],'Lastupdate':workersList[0]['inslastupdate'], 'Harvesters':harvesteridDict,'Statuses':statusesDict,'Software version':workersList[0]['sw_version'],'Commit stamp':workersList[0]['commit_stamp']
         }
