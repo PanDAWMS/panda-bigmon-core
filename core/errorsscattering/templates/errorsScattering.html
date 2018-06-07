@@ -16,10 +16,11 @@
 {% block body %}
 
 <div class="float-right">
+    <a href="{% url 'errorsScatteringDetailed' cloud='ALL' reqid='ALL' %}?view=queues" class="bluebutton">Switch to queues view</a>
     <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscat', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
 </div>
 
-<br style="clear:both;">    
+<br style="clear:both;">
 <div class="row" style="width: 100%; max-width: 100%;">
   <div class="column small-10">
     <table id="errorsscat" class="unstriped">

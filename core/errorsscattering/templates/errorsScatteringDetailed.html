@@ -18,13 +18,16 @@
 </div>
 
 <div class="float-right">
+    {% if view != 'queues' %}
+        <a href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=reqid %}?view=queues" class="bluebutton">Switch to queues view</a>
+    {% endif %}
     <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscatdetailed', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
 </div>
 
 <br style="clear:both;">
 <div class="row" style="width: 100%; max-width: 100%">
   <div id="errorsscat-table" class="column small-10">
-  {% if grouping|length == 0 %}
+  {% if grouping|length == 0 or 'reqid' in grouping and grouping|length == 1 and view == 'queues' %}
     <div class="table-scroll">
     <table id="errorsscatdetailed" class="matrix unstriped">
       <thead>
@@ -102,7 +105,7 @@
       </tbody>
     </table>
     </div>
-  {% elif 'reqid' in grouping %}
+  {% elif 'reqid' in grouping and grouping|length == 1 %}
       <table id="errorsscat" class="unstriped">
       <thead>
         <tr>
@@ -179,7 +182,7 @@
          {% endfor %}
       </tbody>
     </table>
-  {% elif 'cloud' in grouping %}
+  {% elif 'cloud' in grouping or view == 'queues' and grouping|length == 2%}
     <div class="table-scroll">
     <table id="errorsscatdetailed" class="matrix unstriped">
       <thead>
@@ -222,35 +225,31 @@
                         {% else %}class="sm_ok_light_fill"{% endif %}
                     {% endif %}
                   {% endif %}>
-                  <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=values.reqid %}"><i class="fi-plus"></i></a>
+                  <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=values.reqid %}{% if view == 'queues' %}?view=queues{% endif %}"><i class="fi-plus"></i></a>
                   <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid  }}">{{ values.reqid  }}</a></th>
-              {% for computingSite in computingSites %}
-                {% for columnName, stats in values.columns.items %}
-                    {% if computingSite == columnName %}
-                        <td {% if stats.allc > 10 %}
-                                {% if stats.percent < 50 %}class="sm_alarm_fill"
+                {% for column in values.columns %}
+                        <td {% if column.allc > 10 %}
+                                {% if column.percent < 50 %}class="sm_alarm_fill"
                                 {% else %}
-                                    {% if stats.percent < 80 %}class="sm_warning_fill"
+                                    {% if column.percent < 80 %}class="sm_warning_fill"
                                     {% else %}class="sm_ok_fill"{% endif %}
                                 {% endif %}
-                            {% elif stats.allc > 0 and stats.allc <= 10 %}
-                                {% if stats.percent < 50 %}class="sm_alarm_light_fill"
+                            {% elif column.allc > 0 and column.allc <= 10 %}
+                                {% if column.percent < 50 %}class="sm_alarm_light_fill"
                                 {% else %}
-                                    {% if stats.percent < 80 %}class="sm_warning_light_fill"
+                                    {% if column.percent < 80 %}class="sm_warning_light_fill"
                                     {% else %}class="sm_ok_light_fill"{% endif %}
                                 {% endif %}
                             {% endif %}>
-                        {% if stats.allc != 0 %}
-                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&computingsite={{ computingSite }}&days=30{% if 'tk' in values  %}&reqtoken={{ values.tk }}{% endif %}{% if stats.allc > 20000 %}&limit={{ stats.allc }}{% endif %}&mode=nodrop" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
-                            {{ stats.percent }}%<br>
-                            {{ stats.finishedc }}<br>
-                            {{ stats.failedc }}
+                        {% if column.allc != 0 %}
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&computingsite={{ column.computingsite }}&days=30{% if 'tk' in values  %}&reqtoken={{ values.tk }}{% endif %}{% if column.allc > 20000 %}&limit={{ column.allc }}{% endif %}&mode=nodrop" {% if column.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
+                            {{ column.percent }}%<br>
+                            {{ column.finishedc }}<br>
+                            {{ column.failedc }}
                           </a>
                         {% endif %}
                         </td>
-                    {% endif %}
                 {% endfor %}
-              {% endfor %}
             </tr>
          {% endfor %}
       </tbody>

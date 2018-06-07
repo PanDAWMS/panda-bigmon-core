@@ -322,8 +322,11 @@ def errorsScatteringDetailed(request, cloud, reqid):
             reqid = int(reqid)
         except:
             return HttpResponse("The provided request ID is not valid", content_type='text/html')
+    view = None
+    if 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'queues':
+        view = 'queues'
 
-    if len(grouping) == 2:
+    if len(grouping) == 2 and view != 'queues':
         return redirect('/errorsscat/')
 
     limit = 100000
@@ -410,7 +413,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
     statsParams = ['percent', 'finishedc', 'failedc', 'allc']
 
-    if len(grouping) == 0:
+    if len(grouping) == 0 or (len(grouping) == 1 and 'reqid' in grouping and view == 'queues'):
 
         # we fill here the dict
         for errorEntry in errorsRaw:
@@ -497,9 +500,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
         tasksErrorsList = sorted(tasksErrorsList, key=lambda x: x['totalstats']['percent'])
 
-
-
-    elif 'reqid' in grouping:
+    elif len(grouping) == 1 and 'reqid' in grouping:
 
         # we fill here the dict
         for errorEntry in errorsRaw:
@@ -578,9 +579,9 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
         tasksErrorsList = sorted(tasksErrorsList, key=lambda x: x['totalstats']['percent'])
 
+    elif 'cloud' in grouping or view == 'queues':
 
-    elif 'cloud' in grouping:
-
+        print '%s starting data aggregation' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         # we fill here the dict
         for errorEntry in errorsRaw:
             rid = errorEntry['REQID']
@@ -608,6 +609,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
                 math.ceil(reqerrors[rid]['totalstats']['finishedc'] * 100. / reqerrors[rid]['totalstats']['allc'])) if \
                     reqerrors[rid]['totalstats']['allc'] > 0 else 0
 
+        print '%s starting cleaning of non-errorneous requests' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         reqsToDel = []
 
         #make cleanup of full none erroneous tasks
@@ -620,6 +622,8 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
         for reqToDel in reqsToDel:
             del reqerrors[reqToDel]
+
+        print '%s starting calculation of row average stats' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         for rid, reqentry in reqerrors.iteritems():
             for sn, sv in reqentry['columns'].iteritems():
@@ -636,6 +640,8 @@ def errorsScatteringDetailed(request, cloud, reqid):
                 else:
                     reqentry['columns'][s]['percent'] = int(math.ceil(reqentry['columns'][s]['finishedc']*100./reqentry['columns'][s]['allc'])) if \
                         reqentry['columns'][s]['allc'] > 0 else 0
+
+        print '%s starting calculation of columns average stats' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         ### calculate stats for columns
         columnstats = {}
@@ -656,13 +662,22 @@ def errorsScatteringDetailed(request, cloud, reqid):
                 math.ceil(columnstats[cn]['finishedc'] * 100. / columnstats[cn]['allc'])) if \
                     columnstats[cn]['allc'] > 0 else 0
 
+        print '%s starting set unique cache for each request' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
         ### Introducing unique tk for each reqid
         for rid, reqentry in reqerrors.iteritems():
             if rid in taskListByReq and len(taskListByReq[rid]) > 0:
                 tk = setCacheData(request, lifetime=60*20, jeditaskid=taskListByReq[rid][:-1])
                 reqentry['tk'] = tk
 
+        print '%s starting transform dict to list' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         ### transform requesterrors dict to list for sorting on template
+        for rid, reqEntry in reqerrors.iteritems():
+            columnlist = []
+            for columnname, stats in reqEntry['columns'].iteritems():
+                stats['computingsite'] = columnname
+                columnlist.append(stats)
+            reqEntry['columns'] = sorted(columnlist, key=lambda x: x['computingsite'])
         reqErrorsList = []
         for rid, reqEntry in reqerrors.iteritems():
             reqErrorsList.append(reqEntry)
@@ -675,6 +690,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
         'cloud': cloud,
         'reqid': reqid,
         'grouping': grouping,
+        'view': view,
         'computingSites': computingSites,
         'clouds': clouds,
         'columnstats': columnstats,
@@ -682,7 +698,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
         'reqerrors': reqErrorsList,
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-
+    print '%s starting rendering of the page' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     ##self monitor
     endSelfMonitor(request)
     setCacheEntry(request, "errorsScatteringDetailed", json.dumps(data, cls=DateEncoder), 60 * 20)
