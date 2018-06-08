@@ -490,7 +490,7 @@ def runningProdTasks(request):
         'json' in request.session['requestParams']):
         ##self monitor
         endSelfMonitor(request)
-        if 'snap' in request.session['requestParams']:
+        if 'snap' in request.session['requestParams'] and len(request.session['requestParams']) == 2:
             snapdata = prepareNeventsByProcessingType(task_list)
             if saveNeventsByProcessingType(snapdata, qtime):
                 data = {'message': 'success'}
@@ -782,18 +782,25 @@ def prodNeventsTrend(request):
         newDict['values'] = sorted(newDict['values'], key=lambda k: k['timestamp'])
         plot_data.append(newDict)
 
+    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+        'json' in request.session['requestParams']):
+        ##self monitor
+        endSelfMonitor(request)
 
-    data = {
-        'request': request,
-        'requestParams': request.session['requestParams'],
-        'plotData': json.dumps(plot_data)
-    }
+        dump = json.dumps(plot_data, cls=DateEncoder)
+        return HttpResponse(dump, content_type='text/html')
+    else:
+        data = {
+            'request': request,
+            'requestParams': request.session['requestParams'],
+            'plotData': json.dumps(plot_data)
+        }
 
-    endSelfMonitor(request)
-    response = render_to_response('prodNeventsTrend.html', data, content_type='text/html')
-    setCacheEntry(request, "prodNeventsTrend", json.dumps(data, cls=DateEncoder), 60 * 20)
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    return response
+        endSelfMonitor(request)
+        response = render_to_response('prodNeventsTrend.html', data, content_type='text/html')
+        setCacheEntry(request, "prodNeventsTrend", json.dumps(data, cls=DateEncoder), 60 * 20)
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
 
 
 @login_customrequired

@@ -49,6 +49,58 @@
         }
 
     }
+
+    function toggleHistoricalTrend(divID, linkID) {
+        if ($("#" + divID).is(':visible')){
+            $("#" + divID).hide();
+            document.getElementById(linkID).innerHTML = 'show historical trend';
+        }
+        else {
+            if (document.getElementById(divID).firstChild) {
+                $('#'+divID).show();
+            }
+            else {
+                var params = '';
+                var preset = {{ productiontype|safe }};
+                var processingtype = "{{ requestParams.processingtype  }}";
+                if (processingtype.length > 0) {
+                    params = 'processingtype='+ processingtype;
+                }
+                else {
+                    if (preset === 'MC') {
+                        params = 'processingtype=evgen|pile|simul|recon';
+                    }
+                    else if (preset === 'DPD') {
+                        params = 'processingtype=merge|deriv';
+                    }
+                    else if (preset === 'DATA') {
+                        params = 'processingtype=reprocessing';
+                    }
+                    else {
+                        params = '';
+                    }
+                }
+                var title = 'Nevents trend for last 7 days';
+                if (params.length > 0) {
+                    title += ', taken into account all active tasks with ' + params;
+                    params += '&'
+                }
+                params += 'json';
+                $.ajax({
+                    url: {% url 'prodNeventsTrend' %},
+                    data: params,
+                    dataType:'json',
+                    success: function(response) {
+                    var plotData = response;
+                    multiLineChartFunc(plotData, '#nEventsLineChart', title);
+                    }
+                });
+
+                $('#'+divID).show();
+                document.getElementById(linkID).innerHTML = 'hide historical trend';
+            }
+         }
+    }
 </script>
 
 
@@ -294,7 +346,8 @@
             <table class="minimalistic-table unstriped stack">
               <thead>
                 <tr>
-                    <th> Events <a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a></th>
+                    <th> Events <a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>,
+                        <a id="nEventsTrendLink" onclick="toggleHistoricalTrend('nEventsLineChart', 'nEventsTrendLink')">show historical trend</a></th>
                     <th> Allocated slots</th>
                     <th> Task age</th>
                 </tr>
@@ -319,9 +372,12 @@
                     <td>
                         {% if aslotsByType|length > 0 %}<div class="d3splot" id="pieChartSlotsByProcessingType"></div>{% endif %}
                     </td>
-                    <td colspan=20>{% if plotageshistogram == 1 %}
-                        <div class="d3splot" id="sumPlot" style="float:left"></div>{% else %}
-                        <p> All tasks age is 0 days</p> {% endif %} </td>
+                    <td>{% if plotageshistogram == 1 %}
+                            <div class="d3splot" id="sumPlot"></div>
+                        {% else %}
+                            <p> All tasks age is 0 days</p>
+                        {% endif %}
+                    </td>
                 </tr>
 {#                <tr>#}
 {#                <td colspan=20>#}
@@ -334,6 +390,9 @@
 {#                </tr>#}
               </tbody>
             </table>
+
+            <div id="nEventsLineChart" class="row d3splot" style="display: none; margin: 0"></div>
+
             <script>
                 var progressBarR = $('#runningprogressbar');
                 var progressBarW = $('#waitingprogressbar');
@@ -402,6 +461,7 @@
                     <th>Age</th>
                     <th>Cores</th>
                     {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
+                        <th>Working group</th>
                         <th>User</th>
                     {% endif %}
                     <th>CPU Time per Event</th>
@@ -448,7 +508,7 @@
             "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
             "dataSrc" : ''},
         "columnDefs": [
-            {"type": "num-html", "targets": [2,4,8,9,10,11,12,13,14,16,17,19] }
+            {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,16,17,20] }
         ],
         "aoColumns": [
             {
@@ -561,6 +621,13 @@
                 sDefaultContent: "",
                 "render": function(data, type, full, meta) {
                     return '<a href = "{{ xurl }}corecount=' + full['corecount'] + '">' + full['corecount'] + '</a>'
+                }
+            },
+            {
+                "data": "workinggroup",
+                sDefaultContent: "",
+                "render": function(data, type, full, meta) {
+                    return '<a href = "{{ xurl }}workinggroup=' + full['workinggroup'] + '">' + full['workinggroup'] + '</a>'
                 }
             },
             {

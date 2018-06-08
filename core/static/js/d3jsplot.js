@@ -1809,9 +1809,9 @@ vis.append("g")
 function multiLineChartFunc(values,divToShow,title){
 
     var svg = d3.select(divToShow),
-        margin = {top: 20, right: 140, bottom: 20, left: 60},
+        margin = {top: 20, right: 140, bottom: 40, left: 60},
         width = 1000 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom;
+        height = 400 - margin.top - margin.bottom;
 
     var formatDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse;
 
@@ -1876,6 +1876,12 @@ function multiLineChartFunc(values,divToShow,title){
         .attr("dy", "1em")
         .style("text-anchor", "middle")
         .text("N events");
+
+    vis.append("g")
+        .attr("transform", "translate(" + ( (width)/2 ) + "," + ( -10 ) + ")")
+        .append("text")
+        .attr("class", "title")
+        .text(title);
 
     var evlines = vis.selectAll(".state")
         .data(data)
@@ -2007,38 +2013,6 @@ function multiLineChartFunc(values,divToShow,title){
             .text(function(d) {
                 return d;
             });
-
-
-    // var squareside = 10;
-    // var legend = vis.selectAll(".legend")
-    //         .data(states)
-    //         .enter().append("g")
-    //         .attr("class", "legendoutpie")
-    //         .attr("transform", function (d, i) {
-    //             maxLegendWidth = (i % 3) * (width) / 3;
-    //             maxLegendHeight = Math.floor(i / 3) * 15;
-    //             return "translate(" + (margin.left  + maxLegendWidth) + ", " + (margin.top + height + maxLegendHeight + 15) + ")";
-    //         });
-    //
-    //
-    // legend.append("rect")
-    //         .attr("x", 0)
-    //         .attr("width", squareside)
-    //         .attr("height", squareside)
-    //         .style("fill", function(d) {
-    //             return color(d);
-    //         })
-    //         .style({"stroke":d3.rgb(color).darker(),'stroke-width':0.4});
-    //
-    // legend.append("text")
-    //         .attr("x", squareside+3)
-    //         .attr("y", 8)
-    //         .attr("class", 'legendpie')
-    //         .text(function(d) {
-    //             return d;
-    //         });
-
-
 
 }
 
