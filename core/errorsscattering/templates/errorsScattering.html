@@ -30,15 +30,15 @@
                 {% for c in clouds %}
                      <th {% for columnname, stats in columnstats.items %}{% if columnname == c %}
                          {% if stats.allc > 10 %}
-                            {% if stats.percent < 50 %}class="sm_alarm_fill"
+                            {% if stats.minpercent < 50 %}class="sm_alarm_fill"
                             {% else %}
-                                {% if stats.percent < 80 %}class="sm_warning_fill"
+                                {% if stats.minpercent < 80 %}class="sm_warning_fill"
                                 {% else %}class="sm_ok_fill"{% endif %}
                             {% endif %}
                           {% elif stats.allc > 0 and stats.allc <= 10 %}
-                            {% if stats.percent < 50 %}class="sm_alarm_light_fill"
+                            {% if stats.minpercent < 50 %}class="sm_alarm_light_fill"
                             {% else %}
-                                {% if stats.percent < 80 %}class="sm_warning_light_fill"
+                                {% if stats.minpercent < 80 %}class="sm_warning_light_fill"
                                 {% else %}class="sm_ok_light_fill"{% endif %}
                             {% endif %}
                           {% endif %}
@@ -53,15 +53,15 @@
         {% for values in reqerrors %}
             <tr {% if values.totalstats.allc <= 100 %} class="low-stat" {% endif %} >
               <th {% if values.totalstats.allc > 10 %}
-                    {% if values.totalstats.percent < 50 %}class="sm_alarm_fill"
+                    {% if values.totalstats.minpercent < 50 %}class="sm_alarm_fill"
                     {% else %}
-                        {% if values.totalstats.percent < 80 %}class="sm_warning_fill"
+                        {% if values.totalstats.minpercent < 80 %}class="sm_warning_fill"
                         {% else %}class="sm_ok_fill"{% endif %}
                     {% endif %}
                   {% elif values.totalstats.allc > 0 and stats.allc <= 10 %}
-                    {% if values.totalstats.percent < 50 %}class="sm_alarm_light_fill"
+                    {% if values.totalstats.minpercent < 50 %}class="sm_alarm_light_fill"
                     {% else %}
-                        {% if values.totalstats.percent < 80 %}class="sm_warning_light_fill"
+                        {% if values.totalstats.minpercent < 80 %}class="sm_warning_light_fill"
                         {% else %}class="sm_ok_light_fill"{% endif %}
                     {% endif %}
                   {% endif %}>

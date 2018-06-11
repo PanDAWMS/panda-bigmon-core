@@ -47,9 +47,15 @@ def tasksErrorsScattering(request):
 
         SELECT SUM(FAILEDC) / SUM(ALLC) as FPERC, COMPUTINGSITE, JEDITASKID, SUM(FAILEDC) as FAILEDC from (
 
-            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) group by COMPUTINGSITE, JEDITASKID
+            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID 
+                FROM ATLAS_PANDA.JOBSARCHIVED4 
+                WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) 
+                group by COMPUTINGSITE, JEDITASKID
             UNION
-            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) group by COMPUTINGSITE, JEDITASKID
+            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID 
+                FROM ATLAS_PANDAARCH.JOBSARCHIVED 
+                WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) 
+                group by COMPUTINGSITE, JEDITASKID
         ) group by COMPUTINGSITE, JEDITASKID
     """ % (tmpTableName, transactionKey, tmpTableName, transactionKey)
 
@@ -155,19 +161,27 @@ def errorsScattering(request):
     connection.commit()
 
     query = """
-        SELECT SUM(FINISHEDC) as FINISHEDC, REQID, SUM(FAILEDC) as FAILEDC, sc.cloud as CLOUD from (
-            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, SUM(1) as ALLC, COMPUTINGSITE, REQID FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID != REQID AND JEDITASKID in (
+        SELECT j.FINISHEDC, j.REQID, j.FAILEDC, sc.cloud as CLOUD, j.jeditaskid, j.COMPUTINGSITE from (
+            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
+                   SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, 
+                   SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC, 
+                   COMPUTINGSITE, REQID, JEDITASKID 
+              FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID != REQID AND JEDITASKID in (
                 SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
-                    group by COMPUTINGSITE, REQID
+                    group by COMPUTINGSITE, REQID, JEDITASKID
             UNION
-            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, SUM(1) as ALLC, COMPUTINGSITE, REQID FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID != REQID AND JEDITASKID in (
+            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
+                   SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, 
+                   SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC, 
+                   COMPUTINGSITE, REQID, JEDITASKID 
+              FROM ATLAS_PANDAARCH.JOBSARCHIVED 
+              WHERE JEDITASKID != REQID AND JEDITASKID in (
                   SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
-                    group by COMPUTINGSITE, REQID
+                    group by COMPUTINGSITE, REQID, JEDITASKID
         ) j,
         ( select siteid, cloud from ATLAS_PANDAMETA.SCHEDCONFIG  
         ) sc
-        where j.computingsite = sc.siteid         
-        group by sc.cloud, j.reqid    
+        where j.computingsite = sc.siteid and j.ALLC > 0    
     """ % (tmpTableName, transactionKey, tmpTableName, transactionKey)
 
     new_cur.execute(query)
@@ -184,7 +198,7 @@ def errorsScattering(request):
     clouds = []
     clouds = sorted(list(set(homeCloud.values())))
     reqerrors = {}
-
+    clouderrors = {}
 
     # we fill here the dict
     for errorEntry in errorsRaw:
@@ -195,26 +209,50 @@ def errorsScattering(request):
             reqerrors[rid]['reqid'] = rid
             reqerrors[rid]['totalstats'] = {}
             reqerrors[rid]['totalstats']['percent'] = 0
+            reqerrors[rid]['totalstats']['minpercent'] = 100
             reqerrors[rid]['totalstats']['finishedc'] = 0
             reqerrors[rid]['totalstats']['failedc'] = 0
             reqerrors[rid]['totalstats']['allc'] = 0
+            reqerrors[rid]['tasks'] = {}
             for cloudname in clouds:
                 reqerrors[rid][cloudname] = {}
                 reqerrors[rid][cloudname]['percent'] = 0
                 reqerrors[rid][cloudname]['finishedc'] = 0
                 reqerrors[rid][cloudname]['failedc'] = 0
                 reqerrors[rid][cloudname]['allc'] = 0
-        reqerrors[rid][errorEntry['CLOUD']]['percent'] = int(
-            errorEntry['FINISHEDC'] * 100. / (errorEntry['FINISHEDC'] + errorEntry['FAILEDC'])) if (errorEntry['FINISHEDC'] + errorEntry['FAILEDC']) > 0 else -1
-        reqerrors[rid][errorEntry['CLOUD']]['finishedc'] = errorEntry['FINISHEDC']
-        reqerrors[rid][errorEntry['CLOUD']]['failedc'] = errorEntry['FAILEDC']
-        reqerrors[rid][errorEntry['CLOUD']]['allc'] = errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+        if errorEntry['JEDITASKID'] not in reqerrors[rid]['tasks']:
+            reqerrors[rid]['tasks'][errorEntry['JEDITASKID']] = {}
+            reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['finishedc'] = 0
+            reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['allc'] = 0
+        reqerrors[rid][errorEntry['CLOUD']]['finishedc'] += errorEntry['FINISHEDC']
+        reqerrors[rid][errorEntry['CLOUD']]['failedc'] += errorEntry['FAILEDC']
+        reqerrors[rid][errorEntry['CLOUD']]['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+
+        reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['finishedc'] += errorEntry['FINISHEDC']
+        reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+
         reqerrors[rid]['totalstats']['finishedc'] += reqerrors[rid][errorEntry['CLOUD']]['finishedc']
         reqerrors[rid]['totalstats']['failedc'] += reqerrors[rid][errorEntry['CLOUD']]['failedc']
         reqerrors[rid]['totalstats']['allc'] += reqerrors[rid][errorEntry['CLOUD']]['allc']
 
+        if errorEntry['CLOUD'] not in clouderrors:
+            clouderrors[errorEntry['CLOUD']] = {}
+        if errorEntry['COMPUTINGSITE'] not in clouderrors[errorEntry['CLOUD']]:
+            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']] = {}
+            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['finishedc'] = 0
+            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['failedc'] = 0
+            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['allc'] = 0
+        clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['finishedc'] += errorEntry['FINISHEDC']
+        clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['failedc'] += errorEntry['FAILEDC']
+        clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['allc'] += (errorEntry['FINISHEDC'] + errorEntry['FAILEDC'])
+
     for rid, reqentry in reqerrors.iteritems():
         reqerrors[rid]['totalstats']['percent'] = int(math.ceil(reqerrors[rid]['totalstats']['finishedc']*100./reqerrors[rid]['totalstats']['allc'])) if reqerrors[rid]['totalstats']['allc'] > 0 else 0
+        reqerrors[rid]['totalstats']['minpercent'] = min(int(tstats['finishedc'] * 100. / tstats['allc']) for tstats in reqentry['tasks'].values())
+
+        for cloudname, stats in reqentry.iteritems():
+            if cloudname not in ('reqid', 'totalstats', 'tasks'):
+                reqerrors[rid][cloudname]['percent'] = int(stats['finishedc'] * 100. / stats['allc']) if stats['allc'] > 0 else -1
 
     reqsToDel = []
 
@@ -241,13 +279,14 @@ def errorsScattering(request):
         columnstats[cns]['finishedc'] = 0
         columnstats[cns]['failedc'] = 0
         columnstats[cns]['allc'] = 0
-    for rid,reqEntry in reqerrors.iteritems():
-        for cn in clouds:
-            for cname, cEntry in reqEntry.iteritems():
-                if cn == cname:
-                    columnstats[cn]['finishedc'] += cEntry['finishedc']
-                    columnstats[cn]['failedc'] += cEntry['failedc']
-                    columnstats[cn]['allc'] += cEntry['allc']
+        columnstats[cns]['minpercent'] = 100
+
+    for cloudname, sites in clouderrors.iteritems():
+        for sitename, sstats in sites.iteritems():
+            columnstats[cloudname]['finishedc'] += sstats['finishedc']
+            columnstats[cloudname]['failedc'] += sstats['failedc']
+            columnstats[cloudname]['allc'] += sstats['allc']
+        columnstats[cloudname]['minpercent'] = min(int(cstats['finishedc'] * 100. / cstats['allc']) for cstats in sites.values())
     for cn, stats in columnstats.iteritems():
         columnstats[cn]['percent'] = int(math.ceil(columnstats[cn]['finishedc']*100./columnstats[cn]['allc'])) if columnstats[cn]['allc'] > 0 else 0
 
@@ -378,17 +417,20 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
     query = """
             SELECT SUM(FINISHEDC) as FINISHEDC, 
-                   SUM(FAILEDC) as FAILEDC,  
+                   SUM(FAILEDC) as FAILEDC,
+                   SUM(ALLC) as ALLC,  
                    REQID, JEDITASKID, COMPUTINGSITE, sc.cloud as CLOUD from (
                         SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
-                               SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC,  
+                               SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, 
+                               SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC,  
                                COMPUTINGSITE, REQID, JEDITASKID 
                         FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID in (
                             SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
                                 group by COMPUTINGSITE, JEDITASKID, REQID
                         UNION
                         SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
-                               SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, 
+                               SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC,  
+                               SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC,
                                COMPUTINGSITE, REQID, JEDITASKID 
                         FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID in (
                               SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
@@ -396,7 +438,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
             ) j,
             ( select siteid, cloud from ATLAS_PANDAMETA.SCHEDCONFIG  
             ) sc
-            where j.computingsite = sc.siteid  AND %s
+            where j.computingsite = sc.siteid AND j.ALLC > 0  AND %s
             group by jeditaskid, COMPUTINGSITE, REQID, cloud
     """ % (tmpTableName, transactionKey, tmpTableName, transactionKey, condition)
 
@@ -502,6 +544,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
     elif len(grouping) == 1 and 'reqid' in grouping:
 
+        clouderrors = {}
         # we fill here the dict
         for errorEntry in errorsRaw:
             jeditaskid = errorEntry['JEDITASKID']
@@ -523,6 +566,17 @@ def errorsScatteringDetailed(request, cloud, reqid):
             taskserrors[jeditaskid]['totalstats']['finishedc'] += errorEntry['FINISHEDC']
             taskserrors[jeditaskid]['totalstats']['failedc'] += errorEntry['FAILEDC']
             taskserrors[jeditaskid]['totalstats']['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+
+            if errorEntry['CLOUD'] not in clouderrors:
+                clouderrors[errorEntry['CLOUD']] = {}
+            if errorEntry['COMPUTINGSITE'] not in clouderrors[errorEntry['CLOUD']]:
+                clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']] = {}
+                clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['finishedc'] = 0
+                clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['failedc'] = 0
+                clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['allc'] = 0
+            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['finishedc'] += errorEntry['FINISHEDC']
+            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['failedc'] += errorEntry['FAILEDC']
+            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['allc'] += (errorEntry['FINISHEDC'] + errorEntry['FAILEDC'])
 
         ### calculate totalstats
         for jeditaskid, taskEntry in taskserrors.iteritems():
@@ -561,13 +615,17 @@ def errorsScatteringDetailed(request, cloud, reqid):
             columnstats[cns] = {}
             for param in statsParams:
                 columnstats[cns][param] = 0
-        for jeditaskid, taskEntry in taskserrors.iteritems():
-            for cn in clouds:
-                for cname, cEntry in taskEntry['columns'].iteritems():
-                    if cn == cname:
-                        columnstats[cn]['finishedc'] += cEntry['finishedc']
-                        columnstats[cn]['failedc'] += cEntry['failedc']
-                        columnstats[cn]['allc'] += cEntry['allc']
+
+            columnstats[cns]['minpercent'] = 100
+
+        for cloudname, sites in clouderrors.iteritems():
+            for sitename, sstats in sites.iteritems():
+                columnstats[cloudname]['finishedc'] += sstats['finishedc']
+                columnstats[cloudname]['failedc'] += sstats['failedc']
+                columnstats[cloudname]['allc'] += sstats['allc']
+            columnstats[cloudname]['minpercent'] = min(
+                int(cstats['finishedc'] * 100. / cstats['allc']) for cstats in sites.values())
+
         for cn, stats in columnstats.iteritems():
             columnstats[cn]['percent'] = int(
                 math.ceil(columnstats[cn]['finishedc'] * 100. / columnstats[cn]['allc'])) if \
