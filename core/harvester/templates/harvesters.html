@@ -441,7 +441,7 @@
                             "data": "stdout",
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
-                                if (full['stdout'] == 0) {
+                                if (full['stdout'] == 0 || full['stdout']==null) {
                                     return "-"
                                 }
                                 else {
@@ -453,7 +453,7 @@
                             "data": "stderr",
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
-                                if (full['stderr'] == 0) {
+                                if (full['stderr'] == 0  || full['stderr']==null) {
                                     return "-"
                                 }
                                 else {
@@ -466,7 +466,7 @@
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
 
-                                if (full['batchlog'] == 0) {
+                                if (full['batchlog'] == 0  || full['batchlog']==null) {
                                     return "-"
                                 }
                                 else {
