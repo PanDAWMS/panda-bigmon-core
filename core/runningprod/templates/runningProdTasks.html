@@ -346,8 +346,11 @@
             <table class="minimalistic-table unstriped stack">
               <thead>
                 <tr>
-                    <th> Events <a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>,
-                        <a id="nEventsTrendLink" onclick="toggleHistoricalTrend('nEventsLineChart', 'nEventsTrendLink')">show historical trend</a></th>
+                    <th> Events <a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>
+                        {% if 'preset' in requestParams or 'processingtype' in requestParams or requestParams|length == 0 %}
+                            , <a id="nEventsTrendLink" onclick="toggleHistoricalTrend('nEventsLineChart', 'nEventsTrendLink')"> show historical trend</a>
+                        {% endif %}
+                    </th>
                     <th> Allocated slots</th>
                     <th> Task age</th>
                 </tr>
