@@ -11,6 +11,7 @@
 {% endblock %}
 {% block extra_js %}
     <script src="{% static 'js/hideCells.js' %}"></script>
+    <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
 {% endblock %}
 
 {% block body %}
@@ -23,7 +24,7 @@
 <br style="clear:both;">
 <div class="row" style="width: 100%; max-width: 100%;">
   <div class="column small-10">
-    <table id="errorsscat" class="unstriped">
+    <table id="errorsscat" class="unstriped errorsscat floatThead">
       <thead>
         <tr>
             <th>Request ID</th>
@@ -148,5 +149,10 @@
       </div>
   </div>
 </div>
+
+<script>
+var $table = $('table.floatThead');
+$table.floatThead();
+</script>
 
 {% endblock %}

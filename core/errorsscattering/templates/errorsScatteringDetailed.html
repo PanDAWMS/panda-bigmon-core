@@ -9,6 +9,7 @@
 {% endblock %}
 {% block extra_js %}
     <script src="{% static 'js/hideCells.js' %}"></script>
+    <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
 {% endblock %}
 {% block body %}
 
@@ -18,7 +19,13 @@
 </div>
 
 <div class="float-right">
-    {% if view != 'queues' %}
+    {% if view == 'queues' %}
+        {% if cloud == 'ALL' and reqid == 'ALL' %}
+             <a href="{% url 'errorsScattering' %}" class="bluebutton">Switch to region view</a>
+        {% else %}
+             <a href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=reqid %}" class="bluebutton">Switch to region view</a>
+        {% endif %}
+    {% else %}
         <a href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=reqid %}?view=queues" class="bluebutton">Switch to queues view</a>
     {% endif %}
     <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscatdetailed', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
@@ -28,8 +35,8 @@
 <div class="row" style="width: 100%; max-width: 100%">
   <div id="errorsscat-table" class="column small-10">
   {% if grouping|length == 0 or 'reqid' in grouping and grouping|length == 1 and view == 'queues' %}
-    <div class="table-scroll">
-    <table id="errorsscatdetailed" class="matrix unstriped">
+    <div class="table-wrap table-scroll">
+    <table id="errorsscatdetailed" class="matrix unstriped floatThead">
       <thead>
         <tr>
             <th>Task ID <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' reqid %}"><i class="fi-minus"></i></a><br>
@@ -73,32 +80,28 @@
                   {% endif %}>
                   <a class="blacklink bold" href="{% url 'taskInfo' values.jeditaskid %}">{{ values.jeditaskid }}</a>
               </th>
-              {% for computingSite in computingSites %}
-                {% for columnName, stats in values.columns.items %}
-                    {% if computingSite == columnName %}
-                        <td {% if stats.allc > 10 %}
-                                {% if stats.percent < 50 %}class="sm_alarm_fill"
-                                {% else %}
-                                    {% if stats.percent < 80 %}class="sm_warning_fill"
-                                    {% else %}class="sm_ok_fill"{% endif %}
-                                {% endif %}
-                            {% elif stats.allc > 0 and stats.allc <= 10 %}
-                                {% if stats.percent < 50 %}class="sm_alarm_light_fill"
-                                {% else %}
-                                    {% if stats.percent < 80 %}class="sm_warning_light_fill"
-                                    {% else %}class="sm_ok_light_fill"{% endif %}
-                                {% endif %}
-                            {% endif %}>
-                        {% if stats.allc != 0 %}
-                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ values.jeditaskid }}&computingsite={{ computingSite }}&days=30" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
-                            {{ stats.percent }}%<br>
-                            {{ stats.finishedc }}<br>
-                            {{ stats.failedc }}
-                          </a>
-                        {% endif %}
-                        </td>
+              {% for stats in values.columns %}
+                    <td {% if stats.allc > 10 %}
+                            {% if stats.percent < 50 %}class="sm_alarm_fill"
+                            {% else %}
+                                {% if stats.percent < 80 %}class="sm_warning_fill"
+                                {% else %}class="sm_ok_fill"{% endif %}
+                            {% endif %}
+                        {% elif stats.allc > 0 and stats.allc <= 10 %}
+                            {% if stats.percent < 50 %}class="sm_alarm_light_fill"
+                            {% else %}
+                                {% if stats.percent < 80 %}class="sm_warning_light_fill"
+                                {% else %}class="sm_ok_light_fill"{% endif %}
+                            {% endif %}
+                        {% endif %}>
+                    {% if stats.allc != 0 %}
+                      <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ values.jeditaskid }}&computingsite={{ stats.computingsite }}&days=30" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
+                        {{ stats.percent }}%<br>
+                        {{ stats.finishedc }}<br>
+                        {{ stats.failedc }}
+                      </a>
                     {% endif %}
-                {% endfor %}
+                    </td>
               {% endfor %}
             </tr>
          {% endfor %}
@@ -106,7 +109,7 @@
     </table>
     </div>
   {% elif 'reqid' in grouping and grouping|length == 1 %}
-      <table id="errorsscat" class="unstriped">
+      <table id="errorsscat" class="unstriped errorsscat floatThead">
       <thead>
         <tr>
             <th>Task ID<br>
@@ -183,8 +186,8 @@
       </tbody>
     </table>
   {% elif 'cloud' in grouping or view == 'queues' and grouping|length == 2%}
-    <div class="table-scroll">
-    <table id="errorsscatdetailed" class="matrix unstriped">
+    <div class="table-wrap table-scroll">
+    <table id="errorsscatdetailed" class="matrix unstriped floatThead">
       <thead>
         <tr>
             <th>Request ID <a class="graylink" href="{% url 'errorsScattering' %}"><i class="fi-minus"></i></a>
@@ -311,17 +314,28 @@ function expandTable(table_column_id, legend_column_id) {
     var table = $('#'+table_column_id);
         table.toggleClass('small-10');
         table.toggleClass('small-12');
-{#        table.toggleClass('medium-2');#}
-{#        table.toggleClass('medium-1');#}
 
-
-        var legend = $('#'+legend_column_id);
+    var legend = $('#'+legend_column_id);
         legend.toggleClass('small-2');
-{#        legend.toggleClass('medium-10');#}
-{#        legend.toggleClass('medium-11');#}
+    var nrows = {{ nrows|safe }};
+    if (nrows > 15) {
+        $('table.floatThead').floatThead('reflow');
+    }
 }
-</script>    
-    
-    
+
+$(document).ready(function () {
+    var nrows = {{ nrows|safe }};
+    if (nrows > 15) {
+        var $stable = $('table.floatThead');
+        $stable.floatThead({
+                scrollContainer: function ($stable) {
+                    // Now lets find the closest .container and return that
+                    return $stable.closest('.table-wrap');
+                }
+            }
+        );
+    }
+});
+</script>
     
 {% endblock %}

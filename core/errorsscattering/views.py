@@ -338,10 +338,22 @@ def errorsScatteringDetailed(request, cloud, reqid):
     grouping = []
 
     homeCloud = {}
+    cloudsDict ={}
     sflist = ('siteid', 'site', 'status', 'cloud', 'tier', 'comment_field', 'objectstore', 'catchall', 'corepower')
     sites = Schedconfig.objects.filter().exclude(cloud='CMS').values(*sflist)
     for site in sites:
         homeCloud[site['siteid']] = site['cloud']
+
+        if site['cloud'] not in cloudsDict:
+            cloudsDict[site['cloud']] = []
+        cloudsDict[site['cloud']].append(site['siteid'])
+
+    sitesDictForOrdering = {}
+    i = 0
+    for cloudname in sorted(cloudsDict.keys()):
+        for sitename in sorted(cloudsDict[cloudname]):
+            sitesDictForOrdering[sitename] = i
+            i += 1
 
     clouds = sorted(list(set(homeCloud.values())))
     condition = '(1=1)'
@@ -506,7 +518,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
             for sitename, siteval in taskentry['columns'].iteritems():
                 computingSites.append(sitename)
 
-        computingSites = sorted(set(computingSites))
+        computingSites = sorted(set(computingSites), key=lambda x: sitesDictForOrdering.get(x))
 
         ### fill
         for jeditaskid, taskentry in taskserrors.iteritems():
@@ -537,6 +549,13 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
 
         ### transform requesterrors dict to list for sorting on template
+        for jeditaskid, taskEntry in taskserrors.iteritems():
+            columnlist = []
+            for columnname, stats in taskEntry['columns'].iteritems():
+                stats['computingsite'] = columnname
+                columnlist.append(stats)
+            taskEntry['columns'] = sorted(columnlist, key=lambda x: sitesDictForOrdering.get(x['computingsite']))
+
         for jeditaskid, taskEntry in taskserrors.iteritems():
             tasksErrorsList.append(taskEntry)
 
@@ -687,7 +706,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
             for sn, sv in reqentry['columns'].iteritems():
                 computingSites.append(str(sn))
 
-        computingSites = sorted(set(computingSites))
+        computingSites = sorted(set(computingSites), key=lambda x: sitesDictForOrdering.get(x))
 
         for rid, reqentry  in reqerrors.iteritems():
             for s in computingSites:
@@ -735,7 +754,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
             for columnname, stats in reqEntry['columns'].iteritems():
                 stats['computingsite'] = columnname
                 columnlist.append(stats)
-            reqEntry['columns'] = sorted(columnlist, key=lambda x: x['computingsite'])
+            reqEntry['columns'] = sorted(columnlist, key=lambda x: sitesDictForOrdering.get(x['computingsite']))
         reqErrorsList = []
         for rid, reqEntry in reqerrors.iteritems():
             reqErrorsList.append(reqEntry)
@@ -754,6 +773,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
         'columnstats': columnstats,
         'taskserrors': tasksErrorsList,
         'reqerrors': reqErrorsList,
+        'nrows': max(len(tasksErrorsList), len(reqErrorsList)),
         'built': datetime.now().strftime("%H:%M:%S"),
     }
     print '%s starting rendering of the page' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))

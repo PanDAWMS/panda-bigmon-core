@@ -98,24 +98,32 @@ vertical-align: top;
     border-right: 7px solid transparent;
     border-bottom: 7px dashed black;}
 
-#errorsscat {
+
+.table-wrap {
+  overflow: scroll; /* needed to hide stuff outside the height/width */
+  height: 90vh;
+  max-width: 100%;
+  display: inline-block;
+}
+
+.errorsscat {
     width: 68rem;
     text-align: center;
 }
 
-#errorsscat tbody th,
- #errorsscat thead th,
-  #errorsscat tbody td {
+.errorsscat tbody th,
+ .errorsscat thead th,
+  .errorsscat tbody td {
     padding: 0.2rem;
     text-align: center;
 }
 
-#errorsscat thead th,
-  #errorsscat tbody th {
+.errorsscat thead th,
+  .errorsscat tbody th {
     border: 1px solid #fefefe;
 }
 
-#errorsscat tbody td {
+.errorsscat tbody td {
     border: 1px solid lightgray;
     line-height: 1.1rem;
     width: 5rem;
