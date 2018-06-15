@@ -107,7 +107,7 @@
         <td>{{ frec.nevents }}</td>
 		<td><a href="{% url 'taskInfo' %}?jeditaskid={{ frec.jeditaskid }}">{{ frec.jeditaskid }}</a></td>
 		<td>{% if frec.pandaid %}<a href="{% url 'jobInfo' %}?pandaid={{ frec.pandaid }}">{{ frec.pandaid }}</a> {% endif %}</td>
-		<td>{{ frec.attemptnr }} {% if frec.maxattempt %} ({{ frec.maxattempt }}){% endif %}</td>
+		<td>{{ frec.attemptnr }} {% if frec.maxattempt is not None %} ({{ frec.maxattempt }}){% endif %}</td>
 		<td class='{{frec.status}}'>{{ frec.status }}</td>
 		<td><font size=-1>{{ frec.creationdate }}</font></td>
 		<td><font size=-1>{{ frec.guid }}</font></td>
