@@ -727,6 +727,12 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if param in ('hours', 'days'): continue
         if param == 'cloud' and request.session['requestParams'][param] == 'All':
             continue
+        elif param == 'instance':
+             if request.session['requestParams'][param] == 'all':
+                 query['schedulerid__startswith'] = 'harvester'
+             else:
+                 val = request.session['requestParams'][param]
+                 query['schedulerid'] = 'harvester-'+val
         elif param == 'priorityrange':
             mat = re.match('([0-9]+)\:([0-9]+)', request.session['requestParams'][param])
             if mat:
@@ -1601,6 +1607,12 @@ def jobSummaryDict(request, jobs, fieldlist=None):
     for job in jobs:
         for f in flist:
             if f == 'actualcorecount' and job[f] is None: job[f] = 1
+            if f == 'schedulerid':
+                if 'schedulerid' in job:
+                    if 'harvester' in job[f]:
+                        job[f] = job[f].replace('harvester-','')
+                    #del job[f]
+                    else: del job[f]
             if f in job and job[f]:
                 if f == 'taskid' and int(job[f]) < 1000000 and 'produsername' not in request.session[
                     'requestParams']: continue
@@ -1620,7 +1632,9 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 if not extra in sumd: sumd[extra] = {}
                 if not job[extra] in sumd[extra]: sumd[extra][job[extra]] = 0
                 sumd[extra][job[extra]] += 1
-
+    if 'schedulerid' in sumd:
+        sumd['instance'] = sumd['schedulerid']
+        del sumd['schedulerid']
     ## event service
     esjobdict = {}
     esjobs = []
@@ -2839,7 +2853,9 @@ def jobList(request, mode=None, param=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-
+    # if 'instance' in request.session['requestParams']:
+    #     request.session['requestParams']['schedulerid'] =  'harvester-'+request.session['requestParams']['instance']
+    #     del request.session['requestParams']['instance']
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
         return jobParamList(request)
     eventservice = False
@@ -2865,9 +2881,9 @@ def jobList(request, mode=None, param=None):
         'json' in request.session['requestParams']):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     elif eventservice:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype', 'schedulerid'
     else:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype','schedulerid'
 
     JOB_LIMITS = request.session['JOB_LIMIT']
     totalJobs = 0
@@ -2907,14 +2923,18 @@ def jobList(request, mode=None, param=None):
     elif 'statenotupdated' in request.session['requestParams']:
         jobs = stateNotUpdated(request, values=values, wildCardExtension=wildCardExtension)
 
-    elif 'instance' in request.session['requestParams'] or 'workerid' in request.session['requestParams']:
+    elif 'instance' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
         from core.harvester.views import getHarvesterJobs
-        if 'instance' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
-            jobs = getHarvesterJobs(request,request.session['requestParams']['instance'], request.session['requestParams']['workerid'])
-        elif 'instance' in request.session['requestParams'] and 'workerid' not in request.session['requestParams']:
-            jobs = getHarvesterJobs(request, request.session['requestParams']['instance'])
-        elif 'instance' not in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
-            jobs = getHarvesterJobs(request, workerid = request.session['requestParams']['workerid'])
+        jobs = getHarvesterJobs(request, request.session['requestParams']['instance'],
+                                request.session['requestParams']['workerid'])
+    elif 'instance' not in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
+        from core.harvester.views import getHarvesterJobs
+        jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'])
+    # elif 'instance' in request.session['requestParams'] and request.session['requestParams']['instance'] =='all':
+    #     from core.harvester.views import getHarvesterJobs
+    #     if 'jobstatus' in request.session['requestParams']:
+    #         jobs = getHarvesterJobs(request,instance=request.session['requestParams']['instance'],jobstatus=request.session['requestParams']['jobstatus'])
+    #     else: jobs = getHarvesterJobs(request,instance=request.session['requestParams']['instance'],jobstatus='')
     else:
 
         excludedTimeQuery = copy.deepcopy(query)
@@ -3124,7 +3144,7 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     # Sort in order to see the most important tasks
-    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount','noutputdatafiles','actualcorecount'])
+    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount','noutputdatafiles','actualcorecount','schedulerid'])
     if sumd:
         for item in sumd:
             if item['field'] == 'jeditaskid':
