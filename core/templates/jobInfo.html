@@ -369,7 +369,7 @@ But if you want, you can check.
 <td> {% if file.attemptnr %} {{ file.attemptnr }} {% if file.maxattempt %} ({{ file.maxattempt }}){% endif %}{% endif %} </td>
 <td><font size=-1>
     <a href="{% url 'datasetInfo' %}?datasetname={{file.datasetname}}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ file.datasetname }}</a>
-    <br> <a href="https://rucio-ui.cern.ch/did?scope={{file.scope}}&name={{file.datasetname}}" target="_blank"> Rucio </a>
+    <br> <a href="https://rucio-ui.cern.ch/did?scope={{file.scope}}&name={{file.ruciodatasetname}}" target="_blank"> Rucio </a>
 {% if file.dispatchdblock %}
 <br />(dispatch block: {{ file.dispatchdblock }} <a href="https://rucio-ui.cern.ch/did?scope=panda&name={{ file.dispatchdblock }}">Rucio</a>)
 {% endif %}
