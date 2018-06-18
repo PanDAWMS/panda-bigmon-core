@@ -351,6 +351,8 @@ def initRequest(request, callselfmon = True):
     #     user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
     #     request.session['IS_TESTER'] = user.is_tester
 
+    # print("IP Address for debug-toolbar: " + request.META['REMOTE_ADDR'])
+
 
     viewParams = {}
     # if not 'viewParams' in request.session:
