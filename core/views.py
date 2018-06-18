@@ -3906,7 +3906,10 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 f['fsizemb'] = "%0.2f" % (f['fsize'] / 1048576.)
                 dsets = JediDatasets.objects.filter(datasetid=f['datasetid']).values()
                 if len(dsets) > 0:
-                    f['datasetname'] = dsets[0]['datasetname']
+                    if  f['scope']+":" in f['dataset']:
+                        f['datasetname'] = dsets[0]['datasetname'].split(":")[1]
+                    else:
+                        f['datasetname'] = dsets[0]['datasetname']
                     if job['computingsite'] in pandaSites.keys():
                         f['ddmsite'] = pandaSites[job['computingsite']]['site']
 
@@ -3932,7 +3935,10 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             for f in files:
                 if 'creationdate' not in f: f['creationdate'] = f['modificationtime']
                 if 'fileid' not in f: f['fileid'] = f['row_id']
-                if 'datasetname' not in f: f['datasetname'] = f['dataset']
+                if 'datasetname' not in f:
+                    if  f['scope']+":" in f['dataset']:
+                        f['datasetname'] = f['dataset'].split(":")[1]
+                    else:  f['datasetname'] = f['dataset']
                 if 'modificationtime' in f: f['oldfiletable'] = 1
                 if 'destinationdblock' in f and f['destinationdblock'] is not None:
                     f['destinationdblock_vis'] = f['destinationdblock'].split('_')[-1]
