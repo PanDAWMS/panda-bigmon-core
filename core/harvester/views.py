@@ -530,7 +530,7 @@ def getHarvesterJobs(request,instance = '', workerid = '',jobstatus=''):
     qworkerid = ''
     qjobstatus =''
     if instance != '':
-        if instance == 'all':
+        if instance.islower() == 'all':
            qinstance = 'is not null'
            if jobstatus !='':
               qjobstatus += " and jobstatus like '" +jobstatus+"'"

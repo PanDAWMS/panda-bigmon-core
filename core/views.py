@@ -727,7 +727,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if param in ('hours', 'days'): continue
         if param == 'cloud' and request.session['requestParams'][param] == 'All':
             continue
-        elif param == 'instance':
+        elif param == 'harvesterinstance':
              if request.session['requestParams'][param] == 'all':
                  query['schedulerid__startswith'] = 'harvester'
              else:
@@ -1633,7 +1633,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 if not job[extra] in sumd[extra]: sumd[extra][job[extra]] = 0
                 sumd[extra][job[extra]] += 1
     if 'schedulerid' in sumd:
-        sumd['instance'] = sumd['schedulerid']
+        sumd['harvesterinstance'] = sumd['schedulerid']
         del sumd['schedulerid']
     ## event service
     esjobdict = {}
@@ -2923,11 +2923,11 @@ def jobList(request, mode=None, param=None):
     elif 'statenotupdated' in request.session['requestParams']:
         jobs = stateNotUpdated(request, values=values, wildCardExtension=wildCardExtension)
 
-    elif 'instance' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
+    elif 'harvesterinstance' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
         from core.harvester.views import getHarvesterJobs
-        jobs = getHarvesterJobs(request, request.session['requestParams']['instance'],
+        jobs = getHarvesterJobs(request, request.session['requestParams']['harvesterinstance'],
                                 request.session['requestParams']['workerid'])
-    elif 'instance' not in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
+    elif 'harvesterinstance' not in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
         from core.harvester.views import getHarvesterJobs
         jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'])
     # elif 'instance' in request.session['requestParams'] and request.session['requestParams']['instance'] =='all':
@@ -3239,6 +3239,7 @@ def jobList(request, mode=None, param=None):
         print xurl
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
+        #nosorturl = removeParam(nosorturl, 'harvesterinstance', mode='extensible')
         xurl = removeParam(nosorturl, 'mode', mode='extensible')
 
         TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)

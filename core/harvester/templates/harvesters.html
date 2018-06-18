@@ -380,7 +380,7 @@
                                 else {
                                     if (full['njobs']!=null) {
                                         if("harvester_id" in full){
-                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?instance='+full['harvester_id']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
+                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvester_id']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
                                         }
                                         else {
                                         return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
