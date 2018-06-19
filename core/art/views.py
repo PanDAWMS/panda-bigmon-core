@@ -1019,10 +1019,13 @@ def sendArtReport(request):
     """
     valid, response = initRequest(request)
 
-    if 'ntag' not in request.session['requestParams']:
+    if 'ntag_from' not in request.session['requestParams']:
         valid = False
         errorMessage = 'No ntag provided!'
-    elif request.session['requestParams']['ntag'] != (datetime.now() - timedelta(days=1)).strftime(artdateformat):
+    elif 'ntag_to' not in request.session['requestParams']:
+        valid = False
+        errorMessage = 'No ntag provided!'
+    elif request.session['requestParams']['ntag_from'] != (datetime.now() - timedelta(days=1)).strftime(artdateformat) or request.session['requestParams']['ntag_to'] != datetime.now().strftime(artdateformat):
         valid = False
         errorMessage = 'Provided ntag is not valid'
     if not valid:
@@ -1044,20 +1047,23 @@ def sendArtReport(request):
     ### prepare data for report
     artjobsdict = {}
     for job in jobs:
-        if job['branch'] not in artjobsdict.keys():
-            artjobsdict[job['branch']] = {}
-            artjobsdict[job['branch']]['branch'] = job['branch']
-            artjobsdict[job['branch']]['ntag_full'] = job['nightly_tag']
-            artjobsdict[job['branch']]['ntag'] = job['ntag'].strftime(artdateformat)
-            artjobsdict[job['branch']]['packages'] = {}
-        if job['package'] not in artjobsdict[job['branch']]['packages'].keys():
-            artjobsdict[job['branch']]['packages'][job['package']] = {}
-            artjobsdict[job['branch']]['packages'][job['package']]['name'] = job['package']
-            artjobsdict[job['branch']]['packages'][job['package']]['nfailed'] = 0
-            artjobsdict[job['branch']]['packages'][job['package']]['nfinished'] = 0
-            artjobsdict[job['branch']]['packages'][job['package']]['nactive'] = 0
-        finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
-        artjobsdict[job['branch']]['packages'][job['package']]['n' + finalresult] += 1
+
+        nightly_tag_time = datetime.strptime(job['nightly_tag'].replace('T', ' '), '%Y-%m-%d %H%M')
+        if nightly_tag_time > request.session['requestParams']['ntag_from'] + timedelta(hours=20):
+            if job['branch'] not in artjobsdict.keys():
+                artjobsdict[job['branch']] = {}
+                artjobsdict[job['branch']]['branch'] = job['branch']
+                artjobsdict[job['branch']]['ntag_full'] = job['nightly_tag']
+                artjobsdict[job['branch']]['ntag'] = job['ntag'].strftime(artdateformat)
+                artjobsdict[job['branch']]['packages'] = {}
+            if job['package'] not in artjobsdict[job['branch']]['packages'].keys():
+                artjobsdict[job['branch']]['packages'][job['package']] = {}
+                artjobsdict[job['branch']]['packages'][job['package']]['name'] = job['package']
+                artjobsdict[job['branch']]['packages'][job['package']]['nfailed'] = 0
+                artjobsdict[job['branch']]['packages'][job['package']]['nfinished'] = 0
+                artjobsdict[job['branch']]['packages'][job['package']]['nactive'] = 0
+            finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
+            artjobsdict[job['branch']]['packages'][job['package']]['n' + finalresult] += 1
 
     ### dict -> list & ordering
     for branchname, sumdict in artjobsdict.iteritems():

@@ -27,8 +27,8 @@ def send_mail_art(ntag, summary):
         nmails = send_mail(
             subject=subject,
             message='',
-            from_email='pandamon@mail.cern.ch',
-            recipient_list=['tatiana.korchuganova@cern.ch', 'tulay.cuhadar.donszelmann@cern.ch'],
+            from_email='atlas.pandamon@cern.ch',
+            recipient_list=['atlas-eos-access-data-art-grid-input@cern.ch'],
             fail_silently=False,
             html_message=html_message,
         )
