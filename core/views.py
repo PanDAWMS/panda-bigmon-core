@@ -5597,6 +5597,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         if jobstatus not in sitestatelist: continue
         totjobs += count
         totstates[jobstatus] += count
+
         if cloud not in clouds:
             print "Cloud:" + cloud
             clouds[cloud] = {}
@@ -5647,6 +5648,45 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
             if 'resources' not in clouds[cloud]['sites'][site]['states'][jobstatus]:
                 clouds[cloud]['sites'][site]['states'][jobstatus]['resources'] = {}
                 clouds[cloud]['sites'][site]['states'][jobstatus]['resources'] = resources
+                for reshash in resources.keys():
+                    ressite = site + ' [' + reshash+']'
+                    if ressite not in clouds[cloud]['sites']:
+                        clouds[cloud]['sites'][ressite] = {}
+                        clouds[cloud]['sites'][ressite]['states'] = {}
+                        clouds[cloud]['sites'][ressite]['resource'] = reshash
+                        for parentjobstatus in clouds[cloud]['sites'][site]['states']:
+                            if parentjobstatus not in clouds[cloud]['sites'][ressite]['states']:
+                                clouds[cloud]['sites'][ressite]['states'][parentjobstatus] = {}
+                                clouds[cloud]['sites'][ressite]['states'][parentjobstatus]['count'] = 0
+                                clouds[cloud]['sites'][ressite]['states'][parentjobstatus]['corecount'] = 0
+                                clouds[cloud]['sites'][ressite]['states'][parentjobstatus]['name'] = parentjobstatus
+                        clouds[cloud]['sites'][ressite]['count'] = resources[reshash][
+                            'jobstatus__count']
+
+                        clouds[cloud]['sites'][ressite]['name'] = ressite
+                        clouds[cloud]['sites'][ressite]['nojobabs'] = -1
+                        clouds[cloud]['sites'][ressite]['parent'] = site
+                        clouds[cloud]['sites'][ressite]['status'] = siteinfo[site]
+                        clouds[cloud]['sites'][ressite]['pilots'] = -1
+                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['corecount'] = resources[reshash][
+                            'corecount']
+
+                        # if jobstatus not in clouds[cloud]['sites'][ressite]['states']:
+                        #     clouds[cloud]['sites'][ressite]['states'][jobstatus] = {}
+                        #
+                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['count'] = resources[reshash][
+                            'jobstatus__count']
+                    else:
+                        clouds[cloud]['sites'][ressite]['states'][jobstatus] = {}
+                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['count'] = resources[reshash][
+                             'jobstatus__count']
+                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['name'] = jobstatus
+                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['corecount'] = resources[reshash][
+                                'corecount']
+                        # clouds[cloud]['sites'][ressite]['states'][jobstatus]['count'] += resources[reshash][
+                        #     'jobstatus__count']
+                        clouds[cloud]['sites'][ressite]['count'] += resources[reshash][
+                            'jobstatus__count']
             else:
                 hashreskeys = clouds[cloud]['sites'][site]['states'][jobstatus]['resources'].keys()
                 for reshash in resources.keys():
@@ -5785,7 +5825,6 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
             cloudsummary = sorted(cloudsummary, key=lambda x: x['pctfail'], reverse=True)
             for cloud in clouds:
                 clouds[cloud]['summary'] = sorted(clouds[cloud]['summary'], key=lambda x: x['pctfail'], reverse=True)
-
     return fullsummary
 
 
