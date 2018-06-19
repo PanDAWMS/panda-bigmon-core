@@ -74,13 +74,14 @@ function toggleByID(id, idplus) {
                 <li class='accordion-art-nested-item is-active' data-accordion-item>
                   <a href="#" class="accordion-art-nested-title">{{ brname }}</a>
                   <div class="accordion-art-nested-content" data-tab-content >
+                    <div class="table-scroll">
                       <table class="no-border">
                           <tr>
                               <th class="cell" ></th>
-                                {% for test,tags in tests.items %}
+                                {% for test in tests %}
                                   {% if forloop.first %}
                                       {% for ntag in ntaglist %}
-                                          {% for ntname,status in tags.items %}
+                                          {% for ntname,status in test.items %}
                                               {% if ntname == ntag %}
                                                 <th class="header right-aligned-ntag">{{ status.ntag_hf }}</th>
                                                 {% if ntaglist|length == 1 %}
@@ -95,14 +96,13 @@ function toggleByID(id, idplus) {
                                   {% endif %}
                                 {% endfor %}
                           </tr>
-                          {% for test,tags in tests.items %}
+                          {% for test in tests %}
                               <tr>
                               <td class="cell-left">
-{#                                  <a onclick="toggleByID('{{ pname|remove_dot }}-{{ brname|remove_dot }}-{{ test|remove_dot }}','plus-sign-{{ pname|remove_dot }}-{{ brname|remove_dot }}-{{ test|remove_dot }}')" class="bluelink"><i id="plus-sign-{{ pname|remove_dot }}-{{ brname|remove_dot }}-{{ test|remove_dot }}" class="fi-plus"></i></a>#}
-                                  {{ test }}
+                                {{ test.testname }}
                               </td>
                               {% for ntag in ntaglist %}
-                                  {% for ntname,jobs in tags.items  %}
+                                  {% for ntname,jobs in test.items  %}
                                     {% if ntname == ntag %}
                                       <td class="cell">
                                         {% if jobs.jobs|length > 0 %}
@@ -169,26 +169,29 @@ function toggleByID(id, idplus) {
                                   {%  endfor %}
                               {% endfor %}
                               </tr>
-{#                              {% if ntaglist|length == 1 %}#}
-{#                                  <tr class="test-extra-info" id="{{ pname|remove_dot }}-{{ brname|remove_dot }}-{{ test|remove_dot }}">#}
-{#                                    {% for ntname,jobs in tags.items  %}#}
-{#                                        {% if jobs.jobs|length > 0 %}#}
-{#                                          <td colspan="10">#}
-{#                                            {% for job in jobs.jobs %}#}
-{#                                                Test directory: {{ job.testdirectory }}<br>#}
-{#                                                Output container: {{ job.outputds }}#}
-{#                                            {% endfor %}#}
-{#                                          </td>#}
-{#                                        {% endif %}#}
-{#                                    {% endfor %}#}
-{#                                  </tr>#}
-{#                              {% endif %}#}
                           {% endfor %}
+                          {% if ntaglist|length == 1 %}
+                              <tr>
+                                  <td colspan="10">
+                                      {% for ptd, brdict in testdirectories.items %}
+                                          {% if ptd == pname %}
+                                              {% for brtd, tdirs in brdict.items %}
+                                                  {% if brtd == brname %}
+                                                      {% for tdir in tdirs %}
+                                                            {{ tdir }} {% if not forloop.last %},<br>{% endif %}
+                                                      {% endfor %}
+                                                  {% endif %}
+                                              {% endfor %}
+                                          {% endif %}
+                                      {% endfor %}
+                                  </td>
+                              </tr>
+                          {% endif %}
                       </table>
+                    </div>
                   </div>
                 </li>
             {% endfor %}
-
           </ul>
         </div>
       </li>

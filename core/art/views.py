@@ -72,29 +72,30 @@ def setupView(request, querytype='task'):
             except:
                 pass
 
+    ndaysmax = 6
     if 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
-        enddate = startdate + timedelta(days=7)
+        enddate = startdate + timedelta(days=ndaysmax)
     elif not 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams']:
-        startdate = enddate - timedelta(days=7)
+        startdate = enddate - timedelta(days=ndaysmax)
     elif not 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
         if 'ntag' in request.session['requestParams']:
             enddate = startdate
         else:
             enddate = datetime.now()
-            startdate = enddate - timedelta(days=7)
+            startdate = enddate - timedelta(days=ndaysmax)
     elif 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams'] and (enddate-startdate).days > 7:
-        enddate = startdate + timedelta(days=7)
+        enddate = startdate + timedelta(days=ndaysmax)
 
     if 'days' in request.session['requestParams']:
         try:
             ndays = int(request.session['requestParams']['days'])
         except:
-            ndays = 7
+            ndays = ndaysmax
         enddate = datetime.now()
-        if ndays <= 7:
+        if ndays <= ndaysmax:
             startdate = enddate - timedelta(days=ndays)
         else:
-            startdate = enddate - timedelta(days=7)
+            startdate = enddate - timedelta(days=ndaysmax)
 
 
 
@@ -461,6 +462,8 @@ def artJobs(request):
     ntagslist=list(sorted(set([x['ntag'] for x in jobs])))
     jeditaskids = list(sorted(set([x['taskid'] for x in jobs])))
 
+    testdirectories = {}
+
     artjobsdict={}
     if not 'view' in request.session['requestParams'] or (
             'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
@@ -469,6 +472,12 @@ def artJobs(request):
                 artjobsdict[job['package']] = {}
             if job['branch'] not in artjobsdict[job['package']].keys():
                 artjobsdict[job['package']][job['branch']] = {}
+
+            if job['package'] not in testdirectories.keys():
+                testdirectories[job['package']] = {}
+            if job['branch'] not in testdirectories[job['package']].keys():
+                testdirectories[job['package']][job['branch']] = []
+
             if job['testname'] not in artjobsdict[job['package']][job['branch']].keys():
                 artjobsdict[job['package']][job['branch']][job['testname']] = {}
                 for n in ntagslist:
@@ -504,6 +513,9 @@ def artJobs(request):
                 jobdict['testresult'] = subresults
                 jobdict['testdirectory'] = testdirectory
 
+                if not testdirectory in testdirectories[job['package']][job['branch']] and testdirectory is not None and isinstance(testdirectory, basestring):
+                    testdirectories[job['package']][job['branch']].append(testdirectory)
+
                 artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
 
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
@@ -512,6 +524,12 @@ def artJobs(request):
                 artjobsdict[job['branch']] = {}
             if job['package'] not in artjobsdict[job['branch']].keys():
                 artjobsdict[job['branch']][job['package']] = {}
+
+            if job['branch'] not in testdirectories.keys():
+                testdirectories[job['branch']] = {}
+            if job['package'] not in testdirectories[job['branch']].keys():
+                testdirectories[job['branch']][job['package']] = []
+
             if job['testname'] not in artjobsdict[job['branch']][job['package']].keys():
                 artjobsdict[job['branch']][job['package']][job['testname']] = {}
                 for n in ntagslist:
@@ -523,6 +541,7 @@ def artJobs(request):
                 jobdict['jobstatus'] = job['jobstatus']
                 jobdict['origpandaid'] = job['origpandaid']
                 jobdict['linktext'] = job['branch'] + '/' + job['nightly_tag'] + '/' + job['package'] + '/' + job['testname'][:-3]
+                jobdict['ntagtime'] = job['nightly_tag'][-5:]
                 jobdict['computingsite'] = job['computingsite']
                 jobdict['guid'] = job['guid']
                 jobdict['scope'] = job['scope']
@@ -546,7 +565,25 @@ def artJobs(request):
                 jobdict['testexitcode'] = testexitcode
                 jobdict['testresult'] = subresults
                 jobdict['testdirectory'] = testdirectory
+
+                if not testdirectory in testdirectories[job['branch']][job['package']] and testdirectory is not None and isinstance(testdirectory, basestring):
+                    testdirectories[job['branch']][job['package']].append(testdirectory)
+
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
+
+    # transform dict of tests to list of test and sort alphabetically
+
+    artjobslist = {}
+    for i, idict in artjobsdict.iteritems():
+        artjobslist[i] = {}
+        for j, jdict in idict.iteritems():
+            artjobslist[i][j] = []
+            for t, tdict in jdict.iteritems():
+                for ntg, jobs in tdict.iteritems():
+                    tdict[ntg]['jobs'] = sorted(jobs['jobs'], key=lambda x: x['ntagtime'])
+                tdict['testname'] = t
+                artjobslist[i][j].append(tdict)
+            artjobslist[i][j] = sorted(artjobslist[i][j], key=lambda x: x['testname'].lower())
 
 
     xurl = extensibleURL(request)
@@ -566,7 +603,8 @@ def artJobs(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
-            'artjobs': artjobsdict,
+            'artjobs': artjobslist,
+            'testdirectories': testdirectories,
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
             'taskids' : jeditaskids,
