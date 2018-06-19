@@ -96,7 +96,14 @@
     {% else %}
         <th>File ID<br><a href="{{nosorturl}}sortby=fileid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=fileid-asc" class="headerSortUp"></a></th>
     {% endif %}
-        <th>Rucio link</th>
+    {% if sortby == 'lumiblocknr-desc' %}
+        <th>Lumi block<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=lumiblocknr-asc" class="headerSortUp"></a></th>
+    {% elif sortby == 'lumiblocknr-asc' %}
+        <th>Lumi block<br><a href="{{nosorturl}}sortby=lumiblocknr-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
+    {% else %}
+        <th>Lumi block<br><a href="{{nosorturl}}sortby=lumiblocknr-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=lumiblocknr-asc" class="headerSortUp"></a></th>
+    {% endif %}
+    <th>Rucio link</th>
 </tr>
 {% for frec in files %}
 	<tr><font size=-1>
@@ -112,6 +119,7 @@
 		<td><font size=-1>{{ frec.creationdate }}</font></td>
 		<td><font size=-1>{{ frec.guid }}</font></td>
 		<td><font size=-1>{{ frec.fileid }}</font></td>
+        <td>{% if frec.lumiblocknr is not  None %}{{ frec.lumiblocknr }}{% else %}---{% endif %}</td>
         <td>
             {% if frec.rucio %}
             <a href="{{ frec.rucio }}">Rucio link</a>

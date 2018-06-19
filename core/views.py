@@ -10403,6 +10403,11 @@ def fileList(request):
         elif sortby == 'creationdate-desc':
             sortOrder = 'creationdate'
             reverse = True
+        elif sortby == 'lumiblocknr-asc':
+            sortOrder = 'lumiblocknr'
+        elif sortby == 'lumiblocknr-desc':
+            sortOrder = 'lumiblocknr'
+            reverse = True
 
         elif sortby == 'pandaid-asc':
             sortOrder = 'pandaid'
