@@ -1076,7 +1076,7 @@ def sendArtReport(request):
     maxTries = 10
     while not isSent:
         i +=1
-        isSent = send_mail_art(request.session['requestParams']['ntag'], summary)
+        isSent = send_mail_art(request.session['requestParams']['ntag_from'], summary)
         if i > 10:
             break
 
