@@ -942,6 +942,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         elif request.session['requestParams'][param] == 'jumbo' or request.session['requestParams'][
                             param] == '4':
                             query['eventservice'] = 4
+                        elif request.session['requestParams'][param] == 'cojumbo' or request.session['requestParams'][
+                            param] == '5':
+                            query['eventservice'] = 5
                         elif request.session['requestParams'][param] == 'eventservice' or \
                                         request.session['requestParams'][param] == '1':
                             query['eventservice'] = 1
@@ -1328,6 +1331,8 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
                 job['eventservice'] = 'esmerge'
             elif isEventService(job) and job['eventservice'] == 4:
                 job['eventservice'] = 'jumbo'
+            elif isEventService(job) and job['eventservice'] == 5:
+                job['eventservice'] = 'cojumbo'
             else:
                 job['eventservice'] = 'ordinary'
         if 'destinationdblock' in job:
