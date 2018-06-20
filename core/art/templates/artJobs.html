@@ -61,6 +61,8 @@ function toggleByID(id, idplus) {
 {% if requestParams.ntag %}<b>Listed tests are for builds done on {{ requestParams.ntag|date:"d b Y" }}</b> <br>{% endif %}
 {% if requestParams.ntag_from %}<b>Listed tests are for builds done from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
 {% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
+{% if requestParams.ntag_full %}<b>Nightly tag is {{ requestParams.ntag_full }}</b> <br>{% endif %}
+
 
 <div class="row">
   <div class="columns accordion-art-container">
@@ -117,8 +119,7 @@ function toggleByID(id, idplus) {
                                                         </div>
                                                       {% endif %}
                                                         <div class="clickable {% if ntaglist|length != 1 %}nosubresults {% endif %}">
-{#                                                            <div {% if job.jobstatus == 'failed' or job.jobstatus == 'finished' %} class="{{ job.jobstatus }}_job">{{ job.jobstatus }} {% else %} class="active_job"> active {% endif %}  </div>#}
-                                                            <div {% if job.finalresult == 'failed' or job.finalresult == 'finished' %} class="{{ job.finalresult }}_job">{{ job.finalresult }} {% else %} class="active_job"> active {% endif %}  </div>
+{#                                                          <div {% if job.finalresult == 'failed' or job.finalresult == 'finished' %} class="{{ job.finalresult }}_job">{{ job.finalresult }} {% else %} class="active_job"> active {% endif %}  </div>
                                                             <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
                                                         </div>
                                                         <b>&nbsp;{{ job.ntagtime }}</b>
@@ -175,6 +176,7 @@ function toggleByID(id, idplus) {
                           {% if ntaglist|length == 1 %}
                               <tr>
                                   <td colspan="10">
+                                    Output container:
                                       {% for ptd, brdict in testdirectories.items %}
                                           {% if ptd == pname %}
                                               {% for brtd, tdirs in brdict.items %}
