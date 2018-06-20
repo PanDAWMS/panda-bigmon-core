@@ -46,6 +46,7 @@ def setupView(request, querytype='task'):
     if not 'view' in request.session['requestParams']:
         request.session['requestParams']['view'] = 'packages'
     query = {}
+
     if 'ntag_from' in request.session['requestParams']:
         startdatestr = request.session['requestParams']['ntag_from']
         try:
@@ -75,6 +76,12 @@ def setupView(request, querytype='task'):
                 datelist.append(datei)
             except:
                 pass
+    if 'ntag_full' in request.session['requestParams']:
+        startdatestr = request.session['requestParams']['ntag_full'][:10]
+        try:
+            startdate = datetime.strptime(startdatestr, artdateformat)
+        except:
+            del request.session['requestParams']['ntag_full']
 
     ndaysmax = 6
     if 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
@@ -83,6 +90,8 @@ def setupView(request, querytype='task'):
         startdate = enddate - timedelta(days=ndaysmax)
     elif not 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
         if 'ntag' in request.session['requestParams']:
+            enddate = startdate
+        elif 'ntag_full' in request.session['requestParams']:
             enddate = startdate
         else:
             enddate = datetime.now()
@@ -144,6 +153,8 @@ def setupView(request, querytype='task'):
             if querystr.endswith(', '):
                 querystr = querystr[:len(querystr) - 2]
             querystr += ')) AND '
+        if 'ntag_full' in request.session['requestParams']:
+            querystr += '(UPPER(NIGHTLY_TAG) = \'\'' + request.session['requestParams']['ntag_full'] + '\'\') AND'
         if querystr.endswith('AND '):
             querystr = querystr[:len(querystr)-4]
         else:
