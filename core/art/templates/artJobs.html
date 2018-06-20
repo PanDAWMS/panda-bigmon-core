@@ -74,8 +74,8 @@ function toggleByID(id, idplus) {
                 <li class='accordion-art-nested-item is-active' data-accordion-item>
                   <a href="#" class="accordion-art-nested-title">{{ brname }}</a>
                   <div class="accordion-art-nested-content" data-tab-content >
-                    <div class="table-scroll">
-                      <table class="no-border">
+                    <div class="table-scroll" style="width: 100% !important;">
+                      <table class="no-border" style="width: 100% !important;">
                           <tr>
                               <th class="cell" ></th>
                                 {% for test in tests %}
@@ -83,7 +83,9 @@ function toggleByID(id, idplus) {
                                       {% for ntag in ntaglist %}
                                           {% for ntname,status in test.items %}
                                               {% if ntname == ntag %}
-                                                <th class="header right-aligned-ntag">{{ status.ntag_hf }}</th>
+                                                <th class="header right-aligned-ntag">
+                                                    <a class="blacklink" href="{% url 'artJobs' %}?ntag={{ ntag }}{% if requestParams.view and requestParams.view == 'branches' %}&package={{ brname }}&branch={{ pname }}{% else %}&package={{ pname }}&branch={{ brname }}{% endif %}">{{ status.ntag_hf }}</a>
+                                                </th>
                                                 {% if ntaglist|length == 1 %}
                                                     <th class="header center-aligned">Computing site</th>
                                                     <th class="header center-aligned">Duration</th>
