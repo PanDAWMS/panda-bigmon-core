@@ -29,6 +29,13 @@ li.artmenu-item > label {
     display: inline-flex;
 }
 
+.with-ntagfull {
+    margin: auto;
+    background-color: transparent;
+    max-width: 100px; /*150 px for status box with tar index and link to logs, +250px for sub results  */
+    display: inline-flex;
+}
+
 /* stats divs*/
 .clickable {
     background-color: transparent;
