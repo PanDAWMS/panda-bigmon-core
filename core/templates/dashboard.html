@@ -4,6 +4,13 @@
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA {{view}} {{ requestParams.mode }} dashboard{{ viewParams.selection|safe }}
 {% endblock %}
+{% block extra_css %}
+    <style>
+        .parent{
+         background-color: #e6f7ff !important;
+        }
+    </style>
+{% endblock %}
 {% block body %}
 
 {{ viewParams.header }}
@@ -477,8 +484,13 @@ of all jobs
 <th  bgcolor=whitesmoke align='right'> <a href="{% url 'errorSummary' %}?jobtype={{view}}{{ estailtojobslinks }}&sortby=count{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&cloud={{cloud.name}}&hours={{hours}}"> {% if cloud.pctfail > errthreshold %} <font color=red>{{ cloud.pctfail  }}</font> {% else %} {{ cloud.pctfail  }} {% endif %} </a> </th>
 </tr>
 {% for site in cloud.summary %}
+{% if site.parent %}
+<tr class="parent">
+
+{% else %}
 <tr  {% if site.status == 'offline' or site.status == 'brokeroff'%} class="hideofflinerow" {% endif %}>
-<td> {% if site.name %} {% if site.parent %} {{ site.name  }}{% else %}<a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={{ site.name }}&SIZE=medium", "{{ site.name }}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a> {% endif %} {% else %} Failed before site assignment{% endif %}
+{% endif %}
+<td> {% if site.name %} {% if site.parent %} {{ site.parent }} [{{ site.resource }}]{% else %}<a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={{ site.name }}&SIZE=medium", "{{ site.name }}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a> {% endif %} {% else %} Failed before site assignment{% endif %}
 {% if site.sumres and 1 == 0 %}
     <br/><hr style="height:1px; background-color: #0a0a0a; margin: auto" size=1>
 {% for res in site.sumres%}
