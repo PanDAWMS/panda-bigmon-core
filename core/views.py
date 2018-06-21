@@ -10291,6 +10291,8 @@ def fileInfo(request):
         query['jeditaskid'] = request.session['requestParams']['jeditaskid']
     if 'scope' in request.session['requestParams']:
         query['scope'] = request.session['requestParams']['scope']
+    if 'datasetid' in request.session['requestParams']:
+        query['datasetid'] = request.session['requestParams']['datasetid']
 
     if file or ('pandaid' in query and query['pandaid'] is not None) or ('jeditaskid' in query and query['jeditaskid'] is not None):
         files = JediDatasetContents.objects.filter(**query).values()
@@ -10539,6 +10541,7 @@ def fileList(request):
                     ruciolink = 'https://rucio-ui.cern.ch/did?scope=' + filesFromFileTableDict[f['fileid']][
                         'scope'] + '&name=' + filesFromFileTableDict[f['fileid']]['destinationdblock']
         f['rucio'] = ruciolink
+        f['creationdatecut'] = f['creationdate'].strftime('%Y-%m-%d')
         f['creationdate']=f['creationdate'].strftime(defaultDatetimeFormat)
 
     nfiles = len(filed)

@@ -107,7 +107,7 @@
 </tr>
 {% for frec in files %}
 	<tr><font size=-1>
-		<td><a href="{% url 'fileInfo' %}?lfn={{ frec.lfn }}">{{ frec.lfn }}</a></td>
+		<td><a href="{% url 'fileInfo' %}?lfn={{ frec.lfn }}&datasetid={{ frec.datasetid }}&date_from={{ frec.creationdatecut }}">{{ frec.lfn }}</a></td>
 		<td><font size=-1>{{ frec.scope }}</font></td>
 		<td>{{ frec.type }}</td>
 		<td>{{ frec.fsizemb }}</td>
