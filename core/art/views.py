@@ -467,7 +467,7 @@ def artJobs(request):
     jobs = cur.fetchall()
     cur.close()
 
-    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'computingsite', 'endtime', 'starttime' , 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn', 'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'result']
+    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'computingsite', 'endtime', 'starttime' , 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn', 'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'result', 'gitlabid', 'outputcontainer']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
     # i=0
@@ -482,6 +482,9 @@ def artJobs(request):
     jeditaskids = list(sorted(set([x['taskid'] for x in jobs])))
 
     testdirectories = {}
+    outputcontainers = {}
+    gitlabids = []
+    gitlabids = list(sorted(set([x['gitlabid'] for x in jobs])))
 
     artjobsdict={}
     if not 'view' in request.session['requestParams'] or (
@@ -496,6 +499,11 @@ def artJobs(request):
                 testdirectories[job['package']] = {}
             if job['branch'] not in testdirectories[job['package']].keys():
                 testdirectories[job['package']][job['branch']] = []
+
+            if job['package'] not in outputcontainers.keys():
+                outputcontainers[job['package']] = {}
+            if job['branch'] not in outputcontainers[job['package']].keys():
+                outputcontainers[job['package']][job['branch']] = []
 
             if job['testname'] not in artjobsdict[job['package']][job['branch']].keys():
                 artjobsdict[job['package']][job['branch']][job['testname']] = {}
@@ -536,6 +544,12 @@ def artJobs(request):
                     testdirectories[job['package']][job['branch']].append(testdirectory)
 
                 artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
+
+                if job['outputcontainer'] is not None and len(job['outputcontainer']) > 0:
+                    for oc in job['outputcontainer'].split(','):
+                        if not oc in outputcontainers[job['package']][job['branch']] and oc is not None and isinstance(oc, basestring):
+                            outputcontainers[job['package']][job['branch']].append(oc)
+
 
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for job in jobs:
@@ -591,7 +605,6 @@ def artJobs(request):
                 artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
 
     # transform dict of tests to list of test and sort alphabetically
-
     artjobslist = {}
     for i, idict in artjobsdict.iteritems():
         artjobslist[i] = {}
@@ -603,7 +616,6 @@ def artJobs(request):
                 tdict['testname'] = t
                 artjobslist[i][j].append(tdict)
             artjobslist[i][j] = sorted(artjobslist[i][j], key=lambda x: x['testname'].lower())
-
 
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
@@ -627,6 +639,8 @@ def artJobs(request):
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
             'taskids' : jeditaskids,
+            'gitlabids': gitlabids,
+            'outputcontainers': outputcontainers,
         }
         setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artJobs.html', data, content_type='text/html')

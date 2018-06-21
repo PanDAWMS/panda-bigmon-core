@@ -37,6 +37,17 @@ function toggleByID(id, idplus) {
 
 }
 
+function toggleShowHide(divID, linkID) {
+        if ($("#" + divID).is(':visible')){
+            $("#" + divID).hide();
+            document.getElementById(linkID).innerHTML = 'Show output container';
+        }
+        else {
+            $('#'+divID).show();
+            document.getElementById(linkID).innerHTML = 'Hide output container';
+        }
+}
+
 </script>
 {% endblock %}
 
@@ -62,6 +73,8 @@ function toggleByID(id, idplus) {
 {% if requestParams.ntag_from %}<b>Listed tests are for builds done from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
 {% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 {% if requestParams.ntag_full %}<b>Nightly tag is {{ requestParams.ntag_full }}</b> <br>{% endif %}
+{% if requestParams.ntag_full or gitlabids|length == 1 %}<b>Gitlab ID: {{ gitlabids.0 }}</b>{% endif %}
+
 
 
 <div class="row">
@@ -79,8 +92,12 @@ function toggleByID(id, idplus) {
                     <div class="table-scroll" style="width: 100% !important;">
                       <table class="no-border" style="width: 100% !important;">
                           <tr>
-                              <th class="cell" ></th>
-                                {% for test in tests %}
+                              <th class="cell" >
+                                  {% if ntaglist|length == 1 %}
+                                    <a id="link-{{ pname|remove_dot }}-{{ brname|remove_dot }}" class="bluelink" onclick="toggleShowHide('row-{{ pname|remove_dot }}-{{ brname|remove_dot }}', 'link-{{ pname|remove_dot }}-{{ brname|remove_dot }}')">Show output container</a>
+                                  {% endif %}
+                              </th>
+                              {% for test in tests %}
                                   {% if forloop.first %}
                                       {% for ntag in ntaglist %}
                                           {% for ntname,status in test.items %}
@@ -100,6 +117,36 @@ function toggleByID(id, idplus) {
                                   {% endif %}
                                 {% endfor %}
                           </tr>
+                          {% if ntaglist|length == 1 %}
+                              <tr class="test-extra-info" id="row-{{ pname|remove_dot }}-{{ brname|remove_dot }}" >
+                                  <td colspan="10">
+                                    Output container(s):
+                                      {% for poc, brdict in outputcontainers.items %}
+                                          {% if poc == pname %}
+                                              {% for broc, ocs in brdict.items %}
+                                                  {% if broc == brname %}
+                                                      {% for oc in ocs %}
+                                                            {{ oc }} {% if not forloop.last %},<br>{% endif %}
+                                                      {% endfor %}
+                                                  {% endif %}
+                                              {% endfor %}
+                                          {% endif %}
+                                      {% endfor %}<br>
+                                    Test directory:
+                                      {% for ptd, brdict in testdirectories.items %}
+                                          {% if ptd == pname %}
+                                              {% for brtd, tdirs in brdict.items %}
+                                                  {% if brtd == brname %}
+                                                      {% for tdir in tdirs %}
+                                                            {{ tdir }} {% if not forloop.last %},<br>{% endif %}
+                                                      {% endfor %}
+                                                  {% endif %}
+                                              {% endfor %}
+                                          {% endif %}
+                                      {% endfor %}
+                                  </td>
+                              </tr>
+                          {% endif %}
                           {% for test in tests %}
                               <tr>
                               <td class="cell-left">
@@ -173,24 +220,6 @@ function toggleByID(id, idplus) {
                               {% endfor %}
                               </tr>
                           {% endfor %}
-                          {% if ntaglist|length == 1 %}
-                              <tr>
-                                  <td colspan="10">
-                                    Output container:
-                                      {% for ptd, brdict in testdirectories.items %}
-                                          {% if ptd == pname %}
-                                              {% for brtd, tdirs in brdict.items %}
-                                                  {% if brtd == brname %}
-                                                      {% for tdir in tdirs %}
-                                                            {{ tdir }} {% if not forloop.last %},<br>{% endif %}
-                                                      {% endfor %}
-                                                  {% endif %}
-                                              {% endfor %}
-                                          {% endif %}
-                                      {% endfor %}
-                                  </td>
-                              </tr>
-                          {% endif %}
                       </table>
                     </div>
                   </div>
