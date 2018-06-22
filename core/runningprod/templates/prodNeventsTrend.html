@@ -37,7 +37,12 @@
 
 <script>
     var data ={{ plotData|safe }};
-    multiLineChartFunc(data,"#lineChart","Nevents");
+    var title = "Nevents";
+    var view = '{{ requestParams.view|safe }}';
+    if (view == "separated") {
+        title += '[separated]';
+    }
+    multiLineChartFunc(data,"#lineChart", title);
 
 </script>
 

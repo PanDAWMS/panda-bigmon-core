@@ -1809,7 +1809,7 @@ vis.append("g")
 function multiLineChartFunc(values,divToShow,title){
 
     var svg = d3.select(divToShow),
-        margin = {top: 20, right: 140, bottom: 40, left: 60},
+        margin = {top: 20, right: 220, bottom: 40, left: 60},
         width = 1000 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
@@ -1818,10 +1818,16 @@ function multiLineChartFunc(values,divToShow,title){
     var x = d3.time.scale().range([0, width]),
         y = d3.scale.linear().range([height, 0]);
 
-    var color = d3.scale.ordinal()
-        .range([ "#248F24", "#47D147",  "#c7c7c7"])
-        .domain(['used', 'running', 'waiting']);
-
+    if (title.indexOf('separated')>=0) {
+        var color = d3.scale.ordinal()
+            .range(["#ff7f0e", "#d62728", "#1f77b4", "#2ca02c", "#9467bd", "#bcbd22", "#17becf", "#e377c2", "#ffbb78", "#ff9896", "#aec7e8", "#98df8a", "#c5b0d5", "#dbdb8d", "#9edae5", "#f7b6d2"])
+            .domain(['evgen_running', 'pile_running', 'simul_running', 'recon_running', 'reprocessing_running', 'deriv_running', 'merge_running', 'eventIndex_running','evgen_waiting', 'pile_waiting', 'simul_waiting', 'recon_waiting', 'reprocessing_waiting', 'deriv_waiting', 'merge_waiting', 'eventIndex_waiting']);
+    }
+    else {
+        var color = d3.scale.ordinal()
+            .range([ "#248F24", "#47D147",  "#c7c7c7"])
+            .domain(['used', 'running', 'waiting']);
+    }
     var line = d3.svg.line()
         .x(function(d) { return x(d.timestamp); })
         .y(function(d) { return y(d.nevents); });
@@ -1991,11 +1997,11 @@ function multiLineChartFunc(values,divToShow,title){
 
     var squareside = 15;
     var legend = vis.selectAll(".legend")
-            .data(states)
+            .data(states.sort())
           .enter().append("g")
             .attr("class", "legendoutpie")
             .attr("transform", function(d, i) {
-                maxLegendWidth = 50;
+                maxLegendWidth = 65;
                 maxLegendHeight = Math.floor(i) * 20;
                 return "translate(" + (width + maxLegendWidth) + ", " + (maxLegendHeight) + ")";
             });

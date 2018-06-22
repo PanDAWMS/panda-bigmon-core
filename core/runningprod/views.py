@@ -763,18 +763,44 @@ def prodNeventsTrend(request):
 
     timeline = set([ev['timestamp'] for ev in events])
     timelinestr = [datetime.strftime(ts, defaultDatetimeFormat) for ts in timeline]
-    ev_states = ['running', 'used', 'waiting']
 
-    data = {}
-    for es in ev_states:
-        data[es] = {}
-        for ts in timelinestr:
-            data[es][ts] = 0
-    for ev in events:
-        for es in ev_states:
-            data[es][datetime.strftime(ev['timestamp'], defaultDatetimeFormat)] += ev['nevents' + str(es)]
+    if 'view' in request.session['requestParams'] and request.session['requestParams']['view'] and request.session['requestParams']['view'] == 'separated':
+        view = request.session['requestParams']['view']
+    else:
+        view = 'joint'
 
     plot_data = []
+
+    if view == 'joint':
+        ev_states = ['running', 'used', 'waiting']
+
+        data = {}
+        for es in ev_states:
+            data[es] = {}
+            for ts in timelinestr:
+                data[es][ts] = 0
+        for ev in events:
+            for es in ev_states:
+                data[es][datetime.strftime(ev['timestamp'], defaultDatetimeFormat)] += ev['nevents' + str(es)]
+
+    else:
+        processingtypes = set([ev['processingtype'] for ev in events])
+        ev_states = ['running', 'waiting']
+        lines = []
+        for prtype in processingtypes:
+            for evst in ev_states:
+                lines.append(str(prtype + '_' + evst))
+
+        data = {}
+        for l in lines:
+            data[l] = {}
+            for ts in timelinestr:
+                data[l][ts] = 0
+        for ev in events:
+            for l in lines:
+                if ev['processingtype'] in l:
+                    data[l][datetime.strftime(ev['timestamp'], defaultDatetimeFormat)] += ev['nevents' + str(l.split('_')[1])]
+
     for key, value in data.iteritems():
         newDict = {'state': key, 'values':[]}
         for ts, nevents in value.iteritems():
