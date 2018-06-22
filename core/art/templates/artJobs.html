@@ -73,7 +73,7 @@ function toggleShowHide(divID, linkID) {
 {% if requestParams.ntag_from %}<b>Listed tests are for builds done from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
 {% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 {% if requestParams.ntag_full %}<b>Nightly tag is {{ requestParams.ntag_full }}</b> <br>{% endif %}
-{% if requestParams.ntag_full or gitlabids|length == 1 %}<b>Gitlab ID: {{ gitlabids.0 }}</b>{% endif %}
+{% if requestParams.ntag_full or gitlabids|length == 1 %}<b>Gitlab ID: <a class="bluelink" href="https://gitlab.cern.ch/art/art-submit/pipelines/{{ gitlabids.0 }}/">{{ gitlabids.0 }}</a></b>{% endif %}
 
 
 
