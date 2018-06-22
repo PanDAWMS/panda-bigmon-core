@@ -790,8 +790,9 @@ def prodNeventsTrend(request):
         for prtype in processingtypes:
             for evst in ev_states:
                 lines.append(str(prtype + '_' + evst))
-        lines.append('total_running')
-        lines.append('total_waiting')
+        if len(processingtypes) > 1:
+            lines.append('total_running')
+            lines.append('total_waiting')
 
         data = {}
         for l in lines:
@@ -824,7 +825,9 @@ def prodNeventsTrend(request):
     else:
         data = {
             'request': request,
+            'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
             'plotData': json.dumps(plot_data)
         }
 
