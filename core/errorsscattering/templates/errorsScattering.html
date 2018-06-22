@@ -17,6 +17,14 @@
 {% block body %}
 
 <div class="float-right">
+    <div class="dropdownplots">
+        <button class="dropdownbutton">Time window</button>
+        <div id="dropdown-plotchoice" class="dropdown-plot">
+                <a href="{% url 'errorsScattering' %}">8 hours</a>
+                <a href="{% url 'errorsScattering' %}?hours=24">24 hours</a>
+                <a href="{% url 'errorsScattering' %}?hours=168">7 days</a>
+        </div>
+    </div>
     <a href="{% url 'errorsScatteringDetailed' cloud='ALL' reqid='ALL' %}?view=queues" class="bluebutton">Switch to queues view</a>
     <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscat', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
 </div>

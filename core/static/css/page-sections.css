@@ -119,6 +119,7 @@ hr {
     font-size: 14px;
     border: none;
     cursor: pointer;
+    line-height: 1.5;
 }
 .dropdown-plot {
     display: none;
@@ -127,7 +128,7 @@ hr {
     min-width: 200px;
     border-left: 1px solid #222222;
     box-shadow: 8px 8px 16px 0px rgba(0,0,0,0.5);
-    z-index: 1;
+    z-index: 1002;
 }
 .dropdown-plot a {
     color: #222222;
@@ -147,7 +148,8 @@ hr {
 
 .bluebutton {
   display: inline-block;
-  min-width: 100px;
+  min-width: 200px;
+  font-family: sans-serif;
   text-align: center;
   font-size: 14px;
   /*font-weight: bold;*/
