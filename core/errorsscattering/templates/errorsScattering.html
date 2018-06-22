@@ -57,8 +57,8 @@
                  <td>
                      {% for columnname, stats in columnstats.items %}
                          {% if columnname == c %}
-                              <span class="sm_alarm">{{ stats.redc }}</span>
-                              <span class="sm_warning">{{ stats.yellowc }}</span>
+                              <span class="sm_alarm" style="margin-right: 0.5rem">{{ stats.redc }}</span>
+                              <span class="sm_warning" style="margin-right: 0.5rem">{{ stats.yellowc }}</span>
                               <span class="sm_ok">{{ stats.greenc }}</span>
                          {% endif %}
                      {% endfor %}
@@ -85,8 +85,8 @@
                   <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' values.reqid %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-plus"></i></a> <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid }}&superstatus=submitting|running&sortby=pctfailed&hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}">{{ values.reqid }}</a>
               </th>
               <td>
-                  <span class="sm_alarm">{{ values.totalstats.redc }}</span>
-                  <span class="sm_warning">{{ values.totalstats.yellowc }}</span>
+                  <span class="sm_alarm" style="margin-right: 0.5rem">{{ values.totalstats.redc }}</span>
+                  <span class="sm_warning" style="margin-right: 0.5rem">{{ values.totalstats.yellowc }}</span>
                   <span class="sm_ok">{{ values.totalstats.greenc }}</span>
               </td>
                 {% for c in clouds %}
