@@ -1811,7 +1811,7 @@ function multiLineChartFunc(values,divToShow,title){
     var svg = d3.select(divToShow),
         margin = {top: 20, right: 220, bottom: 40, left: 60},
         width = 1000 - margin.left - margin.right,
-        height = 400 - margin.top - margin.bottom;
+        height = 500 - margin.top - margin.bottom;
 
     var formatDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse;
 
@@ -1820,8 +1820,8 @@ function multiLineChartFunc(values,divToShow,title){
 
     if (title.indexOf('separated')>=0) {
         var color = d3.scale.ordinal()
-            .range(["#ff7f0e", "#d62728", "#1f77b4", "#2ca02c", "#9467bd", "#bcbd22", "#17becf", "#e377c2", "#ffbb78", "#ff9896", "#aec7e8", "#98df8a", "#c5b0d5", "#dbdb8d", "#9edae5", "#f7b6d2"])
-            .domain(['evgen_running', 'pile_running', 'simul_running', 'recon_running', 'reprocessing_running', 'deriv_running', 'merge_running', 'eventIndex_running','evgen_waiting', 'pile_waiting', 'simul_waiting', 'recon_waiting', 'reprocessing_waiting', 'deriv_waiting', 'merge_waiting', 'eventIndex_waiting']);
+            .range(["#ff7f0e", "#d62728", "#1f77b4", "#2ca02c", "#9467bd", "#bcbd22", "#17becf", "#e377c2", "#ffbb78", "#ff9896", "#aec7e8", "#98df8a", "#c5b0d5", "#dbdb8d", "#9edae5", "#f7b6d2", '#000000', '#7f7f7f'])
+            .domain(['evgen_running', 'pile_running', 'simul_running', 'recon_running', 'reprocessing_running', 'deriv_running', 'merge_running', 'eventIndex_running','evgen_waiting', 'pile_waiting', 'simul_waiting', 'recon_waiting', 'reprocessing_waiting', 'deriv_waiting', 'merge_waiting', 'eventIndex_waiting', 'total_running', 'total_waiting']);
     }
     else {
         var color = d3.scale.ordinal()

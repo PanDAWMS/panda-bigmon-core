@@ -790,6 +790,8 @@ def prodNeventsTrend(request):
         for prtype in processingtypes:
             for evst in ev_states:
                 lines.append(str(prtype + '_' + evst))
+        lines.append('total_running')
+        lines.append('total_waiting')
 
         data = {}
         for l in lines:
@@ -800,6 +802,10 @@ def prodNeventsTrend(request):
             for l in lines:
                 if ev['processingtype'] in l:
                     data[l][datetime.strftime(ev['timestamp'], defaultDatetimeFormat)] += ev['nevents' + str(l.split('_')[1])]
+                if l.startswith('total'):
+                    data[l][datetime.strftime(ev['timestamp'], defaultDatetimeFormat)] += ev['nevents' + str(l.split('_')[1])]
+
+
 
     for key, value in data.iteritems():
         newDict = {'state': key, 'values':[]}
