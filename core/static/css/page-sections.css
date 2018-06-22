@@ -251,3 +251,7 @@ float: none !important; }
 .sm_alarm_light_fill {  color:black;  background-color:#ffcccc }
 .sm_warning_light_fill { color:black;  background-color:#fff0b3 }
 .sm_ok_light_fill {color:black;  background-color:#d6f5d6}
+
+.sm_alarm {  color:#ff6666; font-weight: bold }
+.sm_warning { color:#FFCB2F; font-weight: bold  }
+.sm_ok {color:#70db70; font-weight: bold  }

@@ -39,8 +39,8 @@
     <table id="errorsscatdetailed" class="matrix unstriped floatThead">
       <thead>
         <tr>
-            <th>Task ID <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' reqid %}"><i class="fi-minus"></i></a><br>
-                <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud 'ALL' %}"><i class="fi-minus"></i></a>
+            <th>Task ID <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' reqid %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-minus"></i></a><br>
+                <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud 'ALL' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-minus"></i></a>
             </th>
             {% for computingSite in computingSites %}
                 <th {% for columnname, stats in columnstats.items %}{% if columnname == computingSite %}
@@ -95,7 +95,7 @@
                             {% endif %}
                         {% endif %}>
                     {% if stats.allc != 0 %}
-                      <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ values.jeditaskid }}&computingsite={{ stats.computingsite }}&days=30" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
+                      <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ values.jeditaskid }}&computingsite={{ stats.computingsite }}&hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}&mode=nodrop" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
                         {{ stats.percent }}%<br>
                         {{ stats.finishedc }}<br>
                         {{ stats.failedc }}
@@ -113,7 +113,7 @@
       <thead>
         <tr>
             <th>Task ID<br>
-                <a class="graylink" href="{% url 'errorsScattering' %}"><i class="fi-minus"></i></a>
+                <a class="graylink" href="{% url 'errorsScattering' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-minus"></i></a>
             </th>
                 {% for c in clouds %}
                      <th {% for columnname, stats in columnstats.items %}{% if columnname == c %}
@@ -132,7 +132,7 @@
                           {% endif %}
                          {% endif %}{% endfor %}>
                          {{ c }} <br>
-                         <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=c|safe reqid=reqid %}"><i class="fi-plus"></i></a>
+                         <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=c|safe reqid=reqid %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-plus"></i></a>
                      </th>
                 {% endfor %}
         </tr>
@@ -171,7 +171,7 @@
                                 {% endif %}
                             {% endif %}>
                         {% if stats.allc != 0 %}
-                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ values.jeditaskid }}&region={{ c }}&days=30" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&jeditaskid={{ values.jeditaskid }}&region={{ c }}&hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}&mode=nodrop" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
                             {{ stats.percent }}%<br>
                             {{ stats.finishedc }}<br>
                             {{ stats.failedc }}
@@ -190,7 +190,7 @@
     <table id="errorsscatdetailed" class="matrix unstriped floatThead">
       <thead>
         <tr>
-            <th>Request ID <a class="graylink" href="{% url 'errorsScattering' %}"><i class="fi-minus"></i></a>
+            <th>Request ID <a class="graylink" href="{% url 'errorsScattering' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-minus"></i></a>
             </th>
             {% for computingSite in computingSites %}
                 <th {% for columnname, stats in columnstats.items %}{% if columnname == computingSite %}
@@ -228,8 +228,8 @@
                         {% else %}class="sm_ok_light_fill"{% endif %}
                     {% endif %}
                   {% endif %}>
-                  <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=values.reqid %}{% if view == 'queues' %}?view=queues{% endif %}"><i class="fi-plus"></i></a>
-                  <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid  }}">{{ values.reqid  }}</a></th>
+                  <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=values.reqid %}?hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}{% if view == 'queues' %}&view=queues{% endif %}"><i class="fi-plus"></i></a>
+                  <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid  }}&hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}">{{ values.reqid  }}</a></th>
                 {% for column in values.columns %}
                         <td {% if column.allc > 10 %}
                                 {% if column.percent < 50 %}class="sm_alarm_fill"
@@ -245,7 +245,7 @@
                                 {% endif %}
                             {% endif %}>
                         {% if column.allc != 0 %}
-                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&computingsite={{ column.computingsite }}&days=30{% if 'tk' in values  %}&reqtoken={{ values.tk }}{% endif %}{% if column.allc > 20000 %}&limit={{ column.allc }}{% endif %}&mode=nodrop" {% if column.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&computingsite={{ column.computingsite }}&hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}{% if 'tk' in values  %}&reqtoken={{ values.tk }}{% endif %}{% if column.allc > 20000 %}&limit={{ column.allc }}{% endif %}&mode=nodrop" {% if column.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
                             {{ column.percent }}%<br>
                             {{ column.finishedc }}<br>
                             {{ column.failedc }}

@@ -129,7 +129,13 @@ def errorsScattering(request):
         return response
 
     limit = 100000
-    hours = 8
+    if 'hours' in request.session['requestParams']:
+        try:
+            hours = int(request.session['requestParams']['hours'])
+        except:
+            hours = 8
+    else:
+        hours = 8
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'
     query['superstatus__in'] = ['submitting', 'running']
@@ -156,18 +162,18 @@ def errorsScattering(request):
         taskListByReq[id['reqid']] += str(id['jeditaskid']) + ','
 
     new_cur = connection.cursor()
-    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
-    new_cur.executemany(query, executionData)
+    ins_query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    new_cur.executemany(ins_query, executionData)
     connection.commit()
 
-    query = """
+    querystr = """
         SELECT j.FINISHEDC, j.REQID, j.FAILEDC, sc.cloud as CLOUD, j.jeditaskid, j.COMPUTINGSITE from (
             SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
                    SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, 
                    SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC, 
                    COMPUTINGSITE, REQID, JEDITASKID 
               FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID != REQID AND JEDITASKID in (
-                SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
+                SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS')
                     group by COMPUTINGSITE, REQID, JEDITASKID
             UNION
             SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
@@ -176,15 +182,15 @@ def errorsScattering(request):
                    COMPUTINGSITE, REQID, JEDITASKID 
               FROM ATLAS_PANDAARCH.JOBSARCHIVED 
               WHERE JEDITASKID != REQID AND JEDITASKID in (
-                  SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
+                  SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS')
                     group by COMPUTINGSITE, REQID, JEDITASKID
         ) j,
         ( select siteid, cloud from ATLAS_PANDAMETA.SCHEDCONFIG  
         ) sc
         where j.computingsite = sc.siteid and j.ALLC > 0    
-    """ % (tmpTableName, transactionKey, tmpTableName, transactionKey)
+    """ % (tmpTableName, transactionKey, query['modificationtime__range'][0], tmpTableName, transactionKey, query['modificationtime__range'][0])
 
-    new_cur.execute(query)
+    new_cur.execute(querystr)
 
     errorsRaw = dictfetchall(new_cur)
     # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
@@ -199,6 +205,7 @@ def errorsScattering(request):
     clouds = sorted(list(set(homeCloud.values())))
     reqerrors = {}
     clouderrors = {}
+    successrateIntervals = {'green': [80, 100], 'yellow':[50,79], 'red':[0, 49]}
 
     # we fill here the dict
     for errorEntry in errorsRaw:
@@ -213,6 +220,9 @@ def errorsScattering(request):
             reqerrors[rid]['totalstats']['finishedc'] = 0
             reqerrors[rid]['totalstats']['failedc'] = 0
             reqerrors[rid]['totalstats']['allc'] = 0
+            reqerrors[rid]['totalstats']['greenc'] = 0
+            reqerrors[rid]['totalstats']['yellowc'] = 0
+            reqerrors[rid]['totalstats']['redc'] = 0
             reqerrors[rid]['tasks'] = {}
             for cloudname in clouds:
                 reqerrors[rid][cloudname] = {}
@@ -249,7 +259,10 @@ def errorsScattering(request):
     for rid, reqentry in reqerrors.iteritems():
         reqerrors[rid]['totalstats']['percent'] = int(math.ceil(reqerrors[rid]['totalstats']['finishedc']*100./reqerrors[rid]['totalstats']['allc'])) if reqerrors[rid]['totalstats']['allc'] > 0 else 0
         reqerrors[rid]['totalstats']['minpercent'] = min(int(tstats['finishedc'] * 100. / tstats['allc']) for tstats in reqentry['tasks'].values())
-
+        for tstats in reqentry['tasks'].values():
+            srpct = int(tstats['finishedc'] * 100. / tstats['allc'])
+            for color, srint in successrateIntervals.items():
+                reqerrors[rid]['totalstats'][color + 'c'] += 1 if (srpct >= srint[0] and srpct <= srint[1]) else 0
         for cloudname, stats in reqentry.iteritems():
             if cloudname not in ('reqid', 'totalstats', 'tasks'):
                 reqerrors[rid][cloudname]['percent'] = int(stats['finishedc'] * 100. / stats['allc']) if stats['allc'] > 0 else -1
@@ -259,7 +272,7 @@ def errorsScattering(request):
     #make cleanup of full none erroneous requests
     for rid, reqentry in reqerrors.iteritems():
         notNone = False
-        if reqentry['totalstats']['allc'] != 0 or reqentry['totalstats']['allc'] != reqentry['totalstats']['finishedc']:
+        if reqentry['totalstats']['allc'] != 0 and reqentry['totalstats']['allc'] != reqentry['totalstats']['finishedc']:
             notNone = True
         # for cname, cval in reqentry.iteritems():
         #     if cval['allc'] != 0:
@@ -280,12 +293,17 @@ def errorsScattering(request):
         columnstats[cns]['failedc'] = 0
         columnstats[cns]['allc'] = 0
         columnstats[cns]['minpercent'] = 100
+        for color, srint in successrateIntervals.items():
+            columnstats[cns][color + 'c'] = 0
 
     for cloudname, sites in clouderrors.iteritems():
         for sitename, sstats in sites.iteritems():
             columnstats[cloudname]['finishedc'] += sstats['finishedc']
             columnstats[cloudname]['failedc'] += sstats['failedc']
             columnstats[cloudname]['allc'] += sstats['allc']
+            srpct = int(sstats['finishedc'] * 100. / sstats['allc'])
+            for color, srint in successrateIntervals.items():
+                columnstats[cloudname][color + 'c'] += 1 if (srpct >= srint[0] and srpct <= srint[1]) else 0
         columnstats[cloudname]['minpercent'] = min(int(cstats['finishedc'] * 100. / cstats['allc']) for cstats in sites.values())
     for cn, stats in columnstats.iteritems():
         columnstats[cn]['percent'] = int(math.ceil(columnstats[cn]['finishedc']*100./columnstats[cn]['allc'])) if columnstats[cn]['allc'] > 0 else 0
@@ -381,7 +399,13 @@ def errorsScatteringDetailed(request, cloud, reqid):
         return redirect('/errorsscat/')
 
     limit = 100000
-    hours = 8
+    if 'hours' in request.session['requestParams']:
+        try:
+            hours = int(request.session['requestParams']['hours'])
+        except:
+            hours = 8
+    else:
+        hours = 8
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'
     query['superstatus__in'] = ['submitting', 'running']
@@ -423,11 +447,11 @@ def errorsScatteringDetailed(request, cloud, reqid):
         taskListByReq[id['reqid']] += str(id['jeditaskid']) + ','
 
     new_cur = connection.cursor()
-    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
-    new_cur.executemany(query, executionData)
+    insquery = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    new_cur.executemany(insquery, executionData)
     connection.commit()
 
-    query = """
+    querystr = """
             SELECT SUM(FINISHEDC) as FINISHEDC, 
                    SUM(FAILEDC) as FAILEDC,
                    SUM(ALLC) as ALLC,  
@@ -437,7 +461,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
                                SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC,  
                                COMPUTINGSITE, REQID, JEDITASKID 
                         FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID in (
-                            SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
+                            SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS')
                                 group by COMPUTINGSITE, JEDITASKID, REQID
                         UNION
                         SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
@@ -445,16 +469,16 @@ def errorsScatteringDetailed(request, cloud, reqid):
                                SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC,
                                COMPUTINGSITE, REQID, JEDITASKID 
                         FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID in (
-                              SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)
+                              SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS')
                                 group by COMPUTINGSITE, JEDITASKID, REQID
             ) j,
             ( select siteid, cloud from ATLAS_PANDAMETA.SCHEDCONFIG  
             ) sc
             where j.computingsite = sc.siteid AND j.ALLC > 0  AND %s
             group by jeditaskid, COMPUTINGSITE, REQID, cloud
-    """ % (tmpTableName, transactionKey, tmpTableName, transactionKey, condition)
+    """ % (tmpTableName, transactionKey, query['modificationtime__range'][0], tmpTableName, transactionKey, query['modificationtime__range'][0], condition)
 
-    new_cur.execute(query)
+    new_cur.execute(querystr)
 
     errorsRaw = dictfetchall(new_cur)
     # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))

@@ -107,12 +107,13 @@ vertical-align: top;
 }
 
 .errorsscat {
-    width: 68rem;
+    width: 72rem;
     text-align: center;
 }
 
 .errorsscat tbody th,
  .errorsscat thead th,
+ .errorsscat thead td,
   .errorsscat tbody td {
     padding: 0.2rem;
     text-align: center;

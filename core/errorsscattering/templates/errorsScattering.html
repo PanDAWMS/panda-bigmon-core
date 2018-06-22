@@ -28,6 +28,7 @@
       <thead>
         <tr>
             <th>Request ID</th>
+            <th></th>
                 {% for c in clouds %}
                      <th {% for columnname, stats in columnstats.items %}{% if columnname == c %}
                          {% if stats.allc > 10 %}
@@ -45,9 +46,24 @@
                           {% endif %}
                          {% endif %}{% endfor %}>
                          {{ c }} <br>
-                         <a class="graylink" href="{% url 'errorsScatteringDetailed' c 'ALL' %}"><i class="fi-plus"></i></a>
+                         <a class="graylink" href="{% url 'errorsScatteringDetailed' c 'ALL' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-plus"></i></a>
                      </th>
                 {% endfor %}
+        </tr>
+        <tr>
+            <th></th>
+            <th></th>
+            {% for c in clouds %}
+                 <td>
+                     {% for columnname, stats in columnstats.items %}
+                         {% if columnname == c %}
+                              <span class="sm_alarm">{{ stats.redc }}</span>
+                              <span class="sm_warning">{{ stats.yellowc }}</span>
+                              <span class="sm_ok">{{ stats.greenc }}</span>
+                         {% endif %}
+                     {% endfor %}
+                </td>
+            {% endfor %}
         </tr>
       </thead>
       <tbody>
@@ -66,7 +82,13 @@
                         {% else %}class="sm_ok_light_fill"{% endif %}
                     {% endif %}
                   {% endif %}>
-                  <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' values.reqid %}"><i class="fi-plus"></i></a> <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid }}&superstatus=submitting|running&sortby=pctfailed&hours=8">{{ values.reqid }}</a></th>
+                  <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' values.reqid %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-plus"></i></a> <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid }}&superstatus=submitting|running&sortby=pctfailed&hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}">{{ values.reqid }}</a>
+              </th>
+              <td>
+                  <span class="sm_alarm">{{ values.totalstats.redc }}</span>
+                  <span class="sm_warning">{{ values.totalstats.yellowc }}</span>
+                  <span class="sm_ok">{{ values.totalstats.greenc }}</span>
+              </td>
                 {% for c in clouds %}
                   {% for cn, stats in values.items %}
                     {% if c == cn %}
@@ -84,7 +106,7 @@
                                 {% endif %}
                             {% endif %}>
                         {% if stats.allc != 0 %}
-                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&region={{ c }}&days=30{% if 'tk' in values  %}&reqtoken={{ values.tk }}{% endif %}{% if stats.allc > 20000 %}&limit={{ stats.allc }}{% endif %}&mode=nodrop" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
+                          <a href="{% url 'jobList' %}?jobtype=production&jobstatus=finished|failed&reqid={{ values.reqid }}&region={{ c }}&hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}{% if 'tk' in values  %}&reqtoken={{ values.tk }}{% endif %}{% if stats.allc > 10000 %}&limit={{ stats.allc }}{% endif %}&mode=nodrop" {% if stats.allc < 100 %} class="blacklink lowstats" {% else %} class="blacklink" {% endif %}>
                             {{ stats.percent }}%<br>
                             {{ stats.finishedc }}<br>
                             {{ stats.failedc }}
