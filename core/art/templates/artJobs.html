@@ -173,11 +173,7 @@ function toggleShowHide(divID, linkID) {
                                                         <span class="tarindex tarindex_tooltip"> {{ job.tarindex }}</span>
                                                         <a  class="to-logs" target="_blank" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link"></i></a>
                                                         {% if job.finalresult != 'active' %}
-                                                            {% if 'InDetPerformanceRTT' in job.linktext %}
-                                                                <a  class="to-logs" target="_blank" href="https://atlas-art-idtracking.web.cern.ch/atlas-art-idtracking/{{job.linktext}}/"><i class="fi-clipboard"></i></a>
-                                                            {% elif 'Trig' in job.linktext and not 'TrigInDet' in job.linktext and not '-TrigMC' in job.linktext and not '21.3' in job.linktext %}
-                                                                <a  class="to-logs" target="_blank" href="http://test-atrvshft.web.cern.ch/test-atrvshft/ART/{{job.linktext}}/"><i class="fi-clipboard"></i></a>
-                                                            {% endif %}
+                                                            <a  class="to-logs" target="_blank" href="https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{{job.linktext}}/"><i class="fi-clipboard"></i></a>
                                                         {% endif %}
                                                     </div>
                                                     {% if jobs.jobs|length > 1 %} <br> {% endif %}
