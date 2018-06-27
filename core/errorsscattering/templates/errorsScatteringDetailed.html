@@ -131,7 +131,7 @@
                             {% endif %}
                           {% endif %}
                          {% endif %}{% endfor %}>
-                         {{ c }} <br>
+                         <a class="blacklink" href="{% url 'siteList' %}?cloud={{ c }}">{{ c }}</a> <br>
                          <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=c|safe reqid=reqid %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-plus"></i></a>
                      </th>
                 {% endfor %}

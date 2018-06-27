@@ -53,8 +53,8 @@
                             {% endif %}
                           {% endif %}
                          {% endif %}{% endfor %}>
-                         {{ c }} <br>
-                         <a class="graylink" href="{% url 'errorsScatteringDetailed' c 'ALL' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-plus"></i></a>
+                         <a class="blacklink" href="{% url 'siteList' %}?cloud={{ c }}">{{ c }}</a> <br>
+                         <a class="blacklink" href="{% url 'errorsScatteringDetailed' c 'ALL' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-plus"></i></a>
                      </th>
                 {% endfor %}
         </tr>
