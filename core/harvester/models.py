@@ -50,3 +50,11 @@ class HarvesterWorkerStats (models.Model):
     lastupdate = models.DateTimeField(null=True, db_column='LASTUPDATE', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDA"."HARVESTER_WORKER_STATS"'
+
+class HarvesterRelJobsWorkers (models.Model):
+    harvesterid = models.CharField(max_length=50, db_column='HARVESTERID', null=False, blank=True)
+    workerid = models.DecimalField(decimal_places=0, max_digits=11, db_column='WORKERID', null=False)
+    pandaid = models.DecimalField(decimal_places=0, max_digits=11, db_column='PANDAID', null=False)
+    lastupdate = models.DateTimeField(null=True, db_column='LASTUPDATE', blank=True)
+    class Meta:
+        db_table = u'"ATLAS_PANDA"."HARVESTER_REL_JOBS_WORKERS"'

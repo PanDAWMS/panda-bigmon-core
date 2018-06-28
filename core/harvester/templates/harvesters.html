@@ -62,6 +62,15 @@
         #reloadWorkersList:hover {
             color: black;
         }
+
+       #reloadJobs {
+            color: #0a47ff;
+            cursor: pointer;
+        }
+
+        #reloadJobs:hover {
+            color: black;
+        }
     </style>
 {% endblock %}
 {% block extra_js %}
@@ -159,6 +168,22 @@
                             {% endfor %}
                         </div>
                         </td>
+                    {% elif name ==  'Resourcetypes' %}
+                        <td><b>{{ name }} ({{ value|length }})</b></td>
+                        <td><div class="comment more">
+                            {% for n,v in value.items %}
+                                {{ n }} <a href="{{ xurl }}resourcetype={{ n|safe }}">({{ v }})</a>
+                            {% endfor %}
+                        </div>
+                        </td>
+                    {% elif name ==  'Computingelements' %}
+                        <td><b>{{ name }} ({{ value|length }})</b></td>
+                        <td><div class="comment more">
+                            {% for n,v in value.items %}
+                                {{ n }} <a href="{{ xurl }}computingelement={{ n|safe }}">({{ v }})</a>
+                            {% endfor %}
+                        </div>
+                        </td>
                     {% elif name ==  'Harvesters' %}
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td><div class="comment more">
@@ -194,14 +219,14 @@
             {% endfor %}
         </table>
         <a href="javascript:ReverseDisplay('harvesterdialogsdiv','harvesterdialogslink','harvesterdialogs')"
-           id="harvesterdialogslink" class="bluebutton">Show dialog messages / worker stats</a> <br/><br/>
+           id="harvesterdialogslink" class="bluebutton">Show dialog messages / worker stats / jobs</a> <br/><br/>
 
         <div id="harvesterdialogsdiv" style="display: none">
             <div id="tabs">
                 <ul>
                     <li><a href="#tabs-1" class="ui-tabs-anchor">Dialog messages</a></li>
                     <li><a href="#tabs-2" class="ui-tabs-anchor">Worker stats</a></li>
-
+                    <li><a href="#tabs-3" class="ui-tabs-anchor">Jobs</a></li>
                 </ul>
                 <div id="tabs-1">
                     <span style="display: inline;">Number of entries:</span> <input type="text" id="numberD" value="100"
@@ -268,7 +293,34 @@
                     </table>
 
                 </div>
-            </div>
+                <div id="tabs-3">
+                    <span style="display: inline;">Number of entries:</span> <input type="text" id="numberJ" value="100"
+                                                                                    size="35"
+                                                                                    style="width: 150px; display: inline;">
+                    <div id="reloadJobs" style="display: inline">Reload table</div>
+                    <br/>
+                    <table id="harvesterjobs" style="width: 100%" class="data-table bluelinks">
+                        <thead>
+                        <th>Last update</th>
+                        <th>Harvester</th>
+                        <th>Workerid</th>
+                        <th>Pandaid</th>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                        </tfoot>
+                    </table>
+
+                </div>
+                </div>
         </div>
         <hr/>
 
@@ -343,6 +395,16 @@
                     }
                     else {var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&workersstats&limit=" + number}
                     $('#harvesterworkerstats').DataTable().ajax.url(url).load();
+                    {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
+                });
+                $('#reloadJobs').click(function () {
+                    var number = $('#numberJ').val();
+                    var instance = "{{ instance|safe }}";
+                    var computingsite = "{{ computingsite|safe }}";
+                    var urlN = "{% url 'harvesters' %}{{ url|safe }}&pandaids&limit=" + number;
+                    var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&pandaids&limit=" + number
+
+                    $('#harvesterjobs').DataTable().ajax.url(urlN).load();
                     {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
                 });
                 $('#reloadWorkersList').click(function () {
@@ -593,7 +655,67 @@
                     }
                 });
             }
+            function jobsTable(number) {
+                var instance = "{{ instance|safe}}";
+                if (instance!="0")
+                {
+                var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&pandaids&limit=" + number;
+                dt = "computingsite"
+                } else {
+                var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&pandaids&limit=" + number
+                dt = "harvesterid"
+                }
+                var urlN = "{% url 'harvesters' %}{{ url|safe }}&pandaids&limit=" + number;
+                $('#harvesterjobs').dataTable({
+                    "order": [[0, "desc"]],
+                    "retrieve": true,
+                    "searching": true,
+                    "bLengthChange": false,
+                    "ajax": {
+                        "processing": true,
+                        "url": urlN,
+                        "dataSrc": ''
+                    },
+                    "aoColumns": [
+                        {
+                            "data": "lastupdate",
+                            sDefaultContent: "",
+                        },
+                        {
+                            "data": "harvesterid",
+                            sDefaultContent: "",
+                        },
+                        {
+                            "data": "workerid",
+                            sDefaultContent: ""
+                        },
+                        {
+                            "data": "pandaid",
+                            sDefaultContent: "",
+                            "render": function (data, type, full, meta) {
+                                if (type === "sort" || type === 'type') {
+                                    return data;
+                                }
+                                else {
+                                    return '<a href = "{% url 'jobInfo' %}/'+full['pandaid']+'">' + full['pandaid'] + '</a>'
+                                }
+                            }
+                        },
 
+                    ],
+                    "createdRow": function (row, data, index) {
+                        if (data["status"] == 'running') {
+                            $('td', row).eq(0).addClass('running_fill');
+                            $('td', row).eq(1).addClass('running_fill');
+                            $('td', row).eq(2).addClass('running_fill');
+                            $('td', row).eq(3).addClass('running_fill');
+
+                        }
+                    },
+
+                });
+
+            }
             function workerstatsTable(number) {
                 var instance = "{{ instance|safe}}";
                 if (instance!="0")
@@ -712,6 +834,11 @@
                         var number = $('#numberW').val();
                         workerstatsTable(number);
                         $("#harvesterworkerstats_filter").hide();
+                        break;
+                    case 'tabs-3':
+                        var number = $('#numberJ').val();
+                        jobsTable(number);
+                        $("#harvesterjobs_filter").hide();
                         break;
                 }
             });
