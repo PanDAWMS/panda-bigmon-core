@@ -173,13 +173,18 @@
                             <div id='workerList'>
                                 {% for n,v in value.items %}
                                     <p>{{ n }} <a
-                                            href="{% url 'jobList' %}?instance={{ instance|safe }}&workerid={{ n|safe }}">({{ v }})</a>
+                                            href="{% url 'jobList' %}?harvesterinstance={{ instance|safe }}&workerid={{ n|safe }}">({{ v }})</a>
                                     </p>
                                 {% endfor %}
                             </div>
                             <div id="loadMore" style="display: inline">Load more</div>
                             ||
                             <div id="loadAll" style="display: inline">Load all</div>
+                        </td>
+                    {% elif name ==  'Jobscount' %}
+                         <td><b>Jobs count</b></td>
+                         <td>
+                            <a href="{% url 'jobList' %}?harvesterinstance={{ instance|safe }}">{{ value }}</a>
                         </td>
                     {% else %}
                         <td><b>{{ name }}</b></td>

@@ -455,7 +455,17 @@ But if you want, you can check.
 	{% if job.pilotid %}<tr><th>Pilot ID</th><td>{{ job.pilotid }}</td></tr>{% endif %}
 	{% if job.batchid %}<tr><th>Batch ID</th><td>{{ job.batchid }}</td></tr>{% endif %}
 </table>
-
+{% if harvesterInfo %}
+<table>
+<tr><th colspan=20 bgcolor='lightcyan'> Harvester job parameters </th></tr>
+{% for key,value in harvesterInfo.items %}
+    {% if key == 'batchlog' and  value  != None %}
+    <tr><th>{{ key }}</th><td><a href="{{ value }}">Link</a></td></tr>
+    {% else %}<tr><th>{{ key }}</th><td>{{ value }}</td></tr>
+    {% endif %}
+{% endfor %}
+</table>
+{% endif %}
 {% if logextract %}
 <table width=1000><tr><td bgcolor="#FFF4A3"> <b>Warning: job log extract indicates possible problems </td></tr>
 <tr><td>

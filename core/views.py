@@ -3836,6 +3836,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     job = {}
     colnames = []
     columns = []
+    harvesterInfo = {}
     try:
         job = jobs[0]
         tquery = {}
@@ -3844,6 +3845,11 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         storagetoken = JediDatasets.objects.filter(**tquery).values('storagetoken')
         if storagetoken:
             job['destinationse'] = storagetoken[0]['storagetoken']
+        ###Harvester section####
+        from core.harvester.views import isharvesterjob
+        harvesterInfo = isharvesterjob(job['pandaid'])
+        if harvesterInfo==False:
+           harvesterInfo = {}
 
         pandaid = job['pandaid']
         colnames = job.keys()
@@ -4226,6 +4232,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'fileSummary': fileSummary,
             'built': datetime.now().strftime("%H:%M:%S"),
             'produsername':produsername,
+            'harvesterInfo':harvesterInfo
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)

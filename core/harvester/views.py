@@ -278,6 +278,11 @@ def harvesters(request):
         where harvester_id like '%s' %s %s %s %s %s group by status
         """ % (str(instance),status, computingsite, workerid, lastupdateCache,days)
 
+        sqlqueryjobcount = """
+        SELECT count(*) as jobscount from atlas_panda.harvester_rel_jobs_workers where  harvesterid like '%s' and workerid in (SELECT workerid FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+        where harvester_id like '%s' %s %s %s %s %s) group by harvesterid
+        """  % (str(instance),str(instance),status, computingsite, workerid, lastupdateCache,days)
+
         workersList = []
         cur = connection.cursor()
         cur.execute(sqlquery)
@@ -290,6 +295,9 @@ def harvesters(request):
         cur.execute(sqlquerystatus)
         statuses = cur.fetchall()
 
+        cur.execute(sqlqueryjobcount)
+        jobscount = cur.fetchall()
+        print jobscount
         computingsitesDict = {}
         for computingsite in computingsites:
             computingsitesDict[computingsite[0]] = computingsite[1]
@@ -297,7 +305,9 @@ def harvesters(request):
         statusesDict = {}
         for status in statuses:
             statusesDict[status[0]] = status[1]
-
+        jobcnt = 0
+        for cnt in jobscount:
+            jobcnt = cnt[0]
         for worker in harvesterinfo:
             object = {}
             object = dict(zip(columns, worker))
@@ -327,7 +337,7 @@ def harvesters(request):
         #     URL += '&display_limit_workers=' + str(display_limit_workers)
 
         generalInstanseInfo = {'HarvesterID':workersList[0]['harvester_id'], 'Description':workersList[0]['description'], 'Starttime': workersList[0]['insstarttime'],
-                                      'Owner':workersList[0]['owner'], 'Hostname':workersList[0]['hostname'],'Lastupdate':workersList[0]['inslastupdate'], 'Computingsites':computingsitesDict,'Statuses':statusesDict,'Software version':workersList[0]['sw_version'],'Commit stamp':workersList[0]['commit_stamp']
+                                      'Owner':workersList[0]['owner'], 'Hostname':workersList[0]['hostname'],'Lastupdate':workersList[0]['inslastupdate'], 'Computingsites':computingsitesDict,'Statuses':statusesDict,'Software version':workersList[0]['sw_version'], 'Jobscount':jobcnt ,'Commit stamp':workersList[0]['commit_stamp']
         }
 
         data = {
@@ -592,6 +602,31 @@ def getHarvesterJobs(request,instance = '', workerid = '',jobstatus=''):
     for pid in pandaids:
         pandaidsList.append(dict(zip(columns, pid)))
     return pandaidsList
+def isharvesterjob(pandaid):
+    jobHarvesterInfo = {}
+    sqlRequest = '''
+    SELECT workerid,HARVESTERID, BATCHLOG, COMPUTINGELEMENT,BATCHID FROM (SELECT 
+  a.PANDAID,
+  a.workerid,
+  a.HARVESTERID,
+  b.BATCHLOG,
+  b.COMPUTINGELEMENT,
+  b.BATCHID
+  FROM ATLAS_PANDA.HARVESTER_REL_JOBS_WORKERS a,
+  ATLAS_PANDA.HARVESTER_WORKERS b
+  WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) where pandaid = {0}
+  '''
+    sqlRequestFull = sqlRequest.format(str(pandaid))
+    cur = connection.cursor()
+    cur.execute(sqlRequestFull)
+    job = cur.fetchall()
+    if len(job)==0:
+        return False
+    columns = [str(column[0]).lower() for column in cur.description]
+    for pid in job:
+        jobHarvesterInfo = dict(zip(columns, pid))
+    return jobHarvesterInfo
+
 
 def workersJSON(request):
     valid, response = initRequest(request)
