@@ -409,6 +409,21 @@
                         {
                             "data": "batchid",
                             sDefaultContent: "",
+                            "render": function (data, type, full, meta) {
+                                if (type === "sort" || type === 'type') {
+                                    return data;
+                                }
+                                else {
+
+                                        if("harvester_id" in full){
+                                        return '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvester_id']+'&workerid=' + full['workerid']  +'&batchid=' +full['batchid'] +'">' + full['batchid'] + '</a>'
+                                        }
+                                        else {
+                                        return  '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] +'&batchid=' +full['batchid'] +'">' + full['batchid'] + '</a>'
+                                        }
+
+                                }
+                            }
                         },
                         {
                             "data": "nodeid",
