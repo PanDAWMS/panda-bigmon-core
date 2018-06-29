@@ -1615,11 +1615,12 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         for f in flist:
             if f == 'actualcorecount' and job[f] is None: job[f] = 1
             if f == 'schedulerid':
-                if 'schedulerid' in job:
+                if 'schedulerid' in job and job[f] is not None:
                     if 'harvester' in job[f]:
                         job[f] = job[f].replace('harvester-','')
                     #del job[f]
                     else: del job[f]
+
             if f in job and job[f]:
                 if f == 'taskid' and int(job[f]) < 1000000 and 'produsername' not in request.session[
                     'requestParams']: continue
