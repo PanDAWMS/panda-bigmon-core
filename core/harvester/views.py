@@ -701,10 +701,10 @@ def harvesters(request):
         SELECT
         a.harvester_id as harvid, 
         b.workerid as workid,
-        to_char(b.lastupdate, 'dd-mm-yyyy hh24:mi:ss') as alldate,
+        to_char(b.submittime, 'dd-mm-yyyy hh24:mi:ss') as alldate,
         (SELECT
-        to_char(max(O.lastupdate), 'dd-mm-yyyy hh24:mi:ss')
-        FROM atlas_panda.harvester_workers O WHERE O.harvesterid = a.harvester_id   Group by O.harvesterid) as recently, 
+        to_char(max(O.submittime), 'dd-mm-yyyy hh24:mi:ss')
+        FROM atlas_panda.harvester_workers O WHERE O.harvesterid = a.harvester_id Group by O.harvesterid) as recently, 
         a.DESCRIPTION as description
         FROM
         atlas_panda.harvester_workers b,
@@ -719,10 +719,10 @@ def harvesters(request):
         FROM (SELECT
         a.harvester_id as harvid, 
         b.workerid as workid,
-        to_char(b.lastupdate, 'dd-mm-yyyy hh24:mi:ss') as alldate,
+        to_char(b.submittime, 'dd-mm-yyyy hh24:mi:ss') as alldate,
         (SELECT
-        to_char(max(O.lastupdate), 'dd-mm-yyyy hh24:mi:ss')
-        FROM atlas_panda.harvester_rel_jobs_workers O where  O.harvesterid = a.harvester_id   Group by O.harvesterid) as recently,
+        to_char(max(O.submittime), 'dd-mm-yyyy hh24:mi:ss')
+        FROM atlas_panda.harvester_workers O where  O.harvesterid = a.harvester_id   Group by O.harvesterid) as recently,
         a.sw_version,
         a.commit_stamp,
         to_char(a.lastupdate, 'dd-mm-yyyy hh24:mi:ss') as lastupdate, 
