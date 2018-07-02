@@ -893,7 +893,7 @@ def workersJSON(request):
             sqlquery = """
             SELECT * FROM(SELECT %s FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
             where harvester_id like '%s' %s %s %s %s %s %s %s %s
-            order by WRKLASTUPDATE DESC) WHERE ROWNUM<=%s
+            order by to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') DESC) WHERE ROWNUM<=%s
             """ % (fields, str(instance), status, computingsite, workerid, lastupdateCache, days, hours, resourcetype,computingelement, display_limit_workers)
 
             cur = connection.cursor()
@@ -924,7 +924,7 @@ def workersJSON(request):
             sqlquery = """
              SELECT * FROM(SELECT %s FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
              where computingsite like '%s' %s %s %s %s %s %s
-             order by WRKLASTUPDATE DESC) WHERE ROWNUM<=%s
+             order by  to_date(submittime, 'dd-mm-yyyy hh24:mi:ss')  DESC) WHERE ROWNUM<=%s
              """ % (
             fields, str(computingsite), status,  workerid, days, hours, resourcetype,computingelement, display_limit_workers)
 
