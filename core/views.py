@@ -5542,7 +5542,7 @@ def getUcoreSites():
         r = http.request('GET', url)
         data = json.loads(r.data.decode('utf-8'))
         for cs in data.keys():
-            if 'unifiedPandaQueue' in data[cs]['catchall']:
+            if 'unifiedPandaQueue' in data[cs]['catchall'] or 'ucore' in data[cs]['capability']:
                 sites.append(data[cs]['siteid'])
     except Exception as exc:
         sites = []
@@ -5657,7 +5657,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         clouds[cloud]['sites'][site]['count'] += count
         clouds[cloud]['sites'][site]['states'][jobstatus]['count'] += count
 
-        if 'UCORE' in site or checkUcoreSite(site,ucoreComputingSites):
+        if checkUcoreSite(site,ucoreComputingSites):
             if 'resources' not in clouds[cloud]['sites'][site]['states'][jobstatus]:
                 clouds[cloud]['sites'][site]['states'][jobstatus]['resources'] = {}
                 clouds[cloud]['sites'][site]['states'][jobstatus]['resources'] = resources
