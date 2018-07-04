@@ -21,12 +21,17 @@
 <div class="float-right">
     {% if view == 'queues' %}
         {% if cloud == 'ALL' and reqid == 'ALL' %}
-             <a href="{% url 'errorsScattering' %}" class="bluebutton">Switch to region view</a>
+             <a href="{% url 'errorsScattering' %}{% if scouts == 'exclude' %}?scouts=exclude{% endif %}" class="bluebutton">Switch to region view</a>
         {% else %}
-             <a href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=reqid %}" class="bluebutton">Switch to region view</a>
+             <a href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=reqid %}{% if scouts == 'exclude' %}?scouts=exclude{% endif %}" class="bluebutton">Switch to region view</a>
         {% endif %}
     {% else %}
-        <a href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=reqid %}?view=queues" class="bluebutton">Switch to queues view</a>
+        <a href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=reqid %}?view=queues{% if scouts == 'exclude' %}&scouts=exclude{% endif %}" class="bluebutton">Switch to queues view</a>
+    {% endif %}
+    {% if scouts and scouts == 'exclude' %}
+        <a href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=reqid%}" class="bluebutton">Include scouts</a>
+    {% else %}
+        <a href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=reqid%}?scouts=exclude" class="bluebutton">Exclude scouts</a>
     {% endif %}
     <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscatdetailed', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
 </div>
@@ -39,8 +44,8 @@
     <table id="errorsscatdetailed" class="matrix unstriped floatThead">
       <thead>
         <tr>
-            <th>Task ID <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' reqid %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-minus"></i></a><br>
-                <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud 'ALL' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-minus"></i></a>
+            <th>Task ID <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' reqid %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}{% if scouts == 'exclude' %}{% if requestParams.hours %}&{% else %}?{% endif %}scouts=exclude{% endif %}"><i class="fi-minus"></i></a><br>
+                <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud 'ALL' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}{% if scouts == 'exclude' %}{% if requestParams.hours %}&{% else %}?{% endif %}scouts=exclude{% endif %}"><i class="fi-minus"></i></a>
             </th>
             {% for computingSite in computingSites %}
                 <th {% for columnname, stats in columnstats.items %}{% if columnname == computingSite %}
@@ -113,7 +118,7 @@
       <thead>
         <tr>
             <th>Task ID<br>
-                <a class="graylink" href="{% url 'errorsScattering' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-minus"></i></a>
+                <a class="graylink" href="{% url 'errorsScattering' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}{% if scouts == 'exclude' %}{% if requestParams.hours %}&{% else %}?{% endif %}scouts=exclude{% endif %}"><i class="fi-minus"></i></a>
             </th>
                 {% for c in clouds %}
                      <th {% for columnname, stats in columnstats.items %}{% if columnname == c %}
@@ -132,7 +137,7 @@
                           {% endif %}
                          {% endif %}{% endfor %}>
                          <a class="blacklink" href="{% url 'siteList' %}?cloud={{ c }}">{{ c }}</a> <br>
-                         <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=c|safe reqid=reqid %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-plus"></i></a>
+                         <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=c|safe reqid=reqid %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}{% if scouts == 'exclude' %}{% if requestParams.hours %}&{% else %}?{% endif %}scouts=exclude{% endif %}"><i class="fi-plus"></i></a>
                      </th>
                 {% endfor %}
         </tr>
@@ -190,7 +195,7 @@
     <table id="errorsscatdetailed" class="matrix unstriped floatThead">
       <thead>
         <tr>
-            <th>Request ID <a class="graylink" href="{% url 'errorsScattering' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-minus"></i></a>
+            <th>Request ID <a class="graylink" href="{% url 'errorsScattering' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}{% if scouts == 'exclude' %}{% if requestParams.hours %}&{% else %}?{% endif %}scouts=exclude{% endif %}"><i class="fi-minus"></i></a>
             </th>
             {% for computingSite in computingSites %}
                 <th {% for columnname, stats in columnstats.items %}{% if columnname == computingSite %}
@@ -228,7 +233,7 @@
                         {% else %}class="sm_ok_light_fill"{% endif %}
                     {% endif %}
                   {% endif %}>
-                  <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=values.reqid %}?hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}{% if view == 'queues' %}&view=queues{% endif %}"><i class="fi-plus"></i></a>
+                  <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=values.reqid %}?hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}{% if view == 'queues' %}&view=queues{% endif %}{% if scouts == 'exclude' %}&scouts=exclude{% endif %}"><i class="fi-plus"></i></a>
                   <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid  }}&hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}">{{ values.reqid  }}</a></th>
                 {% for column in values.columns %}
                         <td {% if column.allc > 10 %}

@@ -20,12 +20,17 @@
     <div class="dropdownplots">
         <button class="dropdownbutton">Time window</button>
         <div id="dropdown-plotchoice" class="dropdown-plot">
-                <a href="{% url 'errorsScattering' %}">8 hours</a>
-                <a href="{% url 'errorsScattering' %}?hours=24">24 hours</a>
-                <a href="{% url 'errorsScattering' %}?hours=168">7 days</a>
+                <a href="{% url 'errorsScattering' %}{% if scouts == 'exclude' %}?scouts=exclude{% endif %}">8 hours</a>
+                <a href="{% url 'errorsScattering' %}?hours=24{% if scouts == 'exclude' %}&scouts=exclude{% endif %}">24 hours</a>
+                <a href="{% url 'errorsScattering' %}?hours=168{% if scouts == 'exclude' %}&scouts=exclude{% endif %}">7 days</a>
         </div>
     </div>
-    <a href="{% url 'errorsScatteringDetailed' cloud='ALL' reqid='ALL' %}?view=queues" class="bluebutton">Switch to queues view</a>
+    <a href="{% url 'errorsScatteringDetailed' cloud='ALL' reqid='ALL' %}?view=queues{% if scouts == 'exclude' %}&scouts=exclude{% endif %}" class="bluebutton">Switch to queues view</a>
+    {% if scouts and scouts == 'exclude' %}
+        <a href="{% url 'errorsScattering'%}" class="bluebutton">Include scouts</a>
+    {% else %}
+        <a href="{% url 'errorsScattering'%}?scouts=exclude" class="bluebutton">Exclude scouts</a>
+    {% endif %}
     <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscat', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
 </div>
 
@@ -54,7 +59,7 @@
                           {% endif %}
                          {% endif %}{% endfor %}>
                          <a class="blacklink" href="{% url 'siteList' %}?cloud={{ c }}">{{ c }}</a> <br>
-                         <a class="blacklink" href="{% url 'errorsScatteringDetailed' c 'ALL' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-plus"></i></a>
+                         <a class="blacklink" href="{% url 'errorsScatteringDetailed' c 'ALL' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}{% if scouts == 'exclude' %}{% if requestParams.hours %}&{% else %}?{% endif %}scouts=exclude{% endif %}"><i class="fi-plus"></i></a>
                      </th>
                 {% endfor %}
         </tr>
@@ -90,7 +95,7 @@
                         {% else %}class="sm_ok_light_fill"{% endif %}
                     {% endif %}
                   {% endif %}>
-                  <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' values.reqid %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}"><i class="fi-plus"></i></a> <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid }}&superstatus=submitting|running&sortby=pctfailed&hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}">{{ values.reqid }}</a>
+                  <a class="graylink" href="{% url 'errorsScatteringDetailed' 'ALL' values.reqid %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}{% if scouts == 'exclude' %}{% if requestParams.hours %}&{% else %}?{% endif %}scouts=exclude{% endif %}"><i class="fi-plus"></i></a> <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid }}&superstatus=submitting|running&sortby=pctfailed&hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}">{{ values.reqid }}</a>
               </th>
               <td>
                   <span class="sm_alarm" style="margin-right: 0.5rem">{{ values.totalstats.redc }}</span>

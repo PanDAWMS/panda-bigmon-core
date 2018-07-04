@@ -136,6 +136,16 @@ def errorsScattering(request):
             hours = 8
     else:
         hours = 8
+
+    isExcludeScouts = False
+    if 'scouts' in request.session['requestParams']:
+        if request.session['requestParams']['scouts'] == 'exclude':
+            isExcludeScouts = True
+        try:
+            del request.session['requestParams']['scouts']
+        except:
+            pass
+
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'
     query['superstatus__in'] = ['submitting', 'running']
@@ -166,6 +176,10 @@ def errorsScattering(request):
     new_cur.executemany(ins_query, executionData)
     connection.commit()
 
+    jcondition = '(1=1)'
+    if isExcludeScouts:
+        jcondition = """specialhandling NOT LIKE '%%sj'"""
+
     querystr = """
         SELECT j.FINISHEDC, j.REQID, j.FAILEDC, sc.cloud as CLOUD, j.jeditaskid, j.COMPUTINGSITE from (
             SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
@@ -173,7 +187,7 @@ def errorsScattering(request):
                    SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC, 
                    COMPUTINGSITE, REQID, JEDITASKID 
               FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID != REQID AND JEDITASKID in (
-                SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS')
+                SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS') AND %s
                     group by COMPUTINGSITE, REQID, JEDITASKID
             UNION
             SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
@@ -182,13 +196,13 @@ def errorsScattering(request):
                    COMPUTINGSITE, REQID, JEDITASKID 
               FROM ATLAS_PANDAARCH.JOBSARCHIVED 
               WHERE JEDITASKID != REQID AND JEDITASKID in (
-                  SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS')
+                  SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS') AND %s
                     group by COMPUTINGSITE, REQID, JEDITASKID
         ) j,
         ( select siteid, cloud from ATLAS_PANDAMETA.SCHEDCONFIG  
         ) sc
         where j.computingsite = sc.siteid and j.ALLC > 0    
-    """ % (tmpTableName, transactionKey, query['modificationtime__range'][0], tmpTableName, transactionKey, query['modificationtime__range'][0])
+    """ % (tmpTableName, transactionKey, query['modificationtime__range'][0], jcondition, tmpTableName, transactionKey, query['modificationtime__range'][0], jcondition)
 
     new_cur.execute(querystr)
 
@@ -328,6 +342,7 @@ def errorsScattering(request):
         'clouds' : clouds,
         'columnstats': columnstats,
         'reqerrors': reqErrorsList,
+        'scouts': 'exclude' if isExcludeScouts else 'include',
         'built': datetime.now().strftime("%H:%M:%S"),
     }
     ##self monitor
@@ -406,6 +421,17 @@ def errorsScatteringDetailed(request, cloud, reqid):
             hours = 8
     else:
         hours = 8
+
+    isExcludeScouts = False
+    if 'scouts' in request.session['requestParams']:
+        if request.session['requestParams']['scouts'] == 'exclude':
+            isExcludeScouts = True
+        try:
+            del request.session['requestParams']['scouts']
+        except:
+            pass
+
+
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'
     query['superstatus__in'] = ['submitting', 'running']
@@ -451,6 +477,10 @@ def errorsScatteringDetailed(request, cloud, reqid):
     new_cur.executemany(insquery, executionData)
     connection.commit()
 
+    jcondition = '(1=1)'
+    if isExcludeScouts:
+        jcondition = """specialhandling NOT LIKE '%%sj'"""
+
     querystr = """
             SELECT SUM(FINISHEDC) as FINISHEDC, 
                    SUM(FAILEDC) as FAILEDC,
@@ -461,7 +491,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
                                SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC,  
                                COMPUTINGSITE, REQID, JEDITASKID 
                         FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID in (
-                            SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS')
+                            SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS') AND %s
                                 group by COMPUTINGSITE, JEDITASKID, REQID
                         UNION
                         SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
@@ -469,14 +499,14 @@ def errorsScatteringDetailed(request, cloud, reqid):
                                SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC,
                                COMPUTINGSITE, REQID, JEDITASKID 
                         FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID in (
-                              SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS')
+                              SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS') AND %s
                                 group by COMPUTINGSITE, JEDITASKID, REQID
             ) j,
             ( select siteid, cloud from ATLAS_PANDAMETA.SCHEDCONFIG  
             ) sc
             where j.computingsite = sc.siteid AND j.ALLC > 0  AND %s
             group by jeditaskid, COMPUTINGSITE, REQID, cloud
-    """ % (tmpTableName, transactionKey, query['modificationtime__range'][0], tmpTableName, transactionKey, query['modificationtime__range'][0], condition)
+    """ % (tmpTableName, transactionKey, query['modificationtime__range'][0], jcondition, tmpTableName, transactionKey, query['modificationtime__range'][0], jcondition, condition)
 
     new_cur.execute(querystr)
 
@@ -797,6 +827,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
         'columnstats': columnstats,
         'taskserrors': tasksErrorsList,
         'reqerrors': reqErrorsList,
+        'scouts': 'exclude' if isExcludeScouts else 'include',
         'nrows': max(len(tasksErrorsList), len(reqErrorsList)),
         'built': datetime.now().strftime("%H:%M:%S"),
     }
