@@ -196,10 +196,8 @@
         </li>
 
         <li>
-        <a href="{% url 'index' %}?mode=quicksearch">Search</a>
-        </li>
-        <li>
-        <a href="{% url 'userInfo' %}">My BigPanDA</a>
+{#        <a href="{% url 'index' %}?mode=quicksearch">Search</a>#}
+
         {% comment %}<a href="{% url 'admin:adMain' %}">Admin</a>{% endcomment %}
         </li>
 
@@ -211,7 +209,28 @@
     <div class="top-bar-right">
         <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
             {% if viewParams.MON_VO == 'ATLAS' %}
+              {% if request.user and request.user.is_authenticated %}
+                <li>
+                <div class="row collapse searchbox show-for-large" style="width: 200px">
+                  <div class="large-7 medium-7 columns">
+                    <select name="objectstosearch" class="searchselect">
+                        <option class="searchoption" value="job">Job by ID</option>
+                        <option class="searchoption" value="job">Jobs for batch ID</option>
+                        <option class="searchoption" value="job">Task by ID</option>
+                        <option class="searchoption" value="job">Tasks for request ID</option>
+                      </select>
+                  </div>
+                  <div class="large-4 medium-4 columns">
 
+                  <input class="searchinput" type="text" placeholder="Enter...">
+                  </div>
+
+                  <div class="large-1 medium-1 columns">
+                    <a href="#" class="button prefix expand searchbutton"><i class="fi-magnifying-glass"></i></a>
+                  </div>
+                </div>
+                </li>
+              {% endif %}
                 {% comment %}
                 <li class="name">
                     <a href="https://bigpanda.cern.ch{% url 'userInfo' %}">My BigPanDA</a>
@@ -275,6 +294,23 @@
                 <li><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a>
             </ul>
             </li>
+
+            {% if request.user and request.user.is_authenticated %}
+              <li class="has-submenu">
+                <a style="padding-bottom: 0.4rem; padding-top: 0.4rem" href="#"><i style="font-size: 2rem; vertical-align: middle" class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
+                <ul class="submenu menu vertical">
+                    <li><span class="li-text loggeduser">{{ request.user.first_name }} {{ request.user.last_name }},</span>
+                    <li><span class="li-text loggeduser">{{ request.user.email }}</span>
+                    <li><a href="{% url 'userInfo' %}">My BigPanDA</a>
+                    <li><a href="{% url 'logout' %}"><span class="reassign">Logout</span></a>
+                </ul>
+              </li>
+            {% else %}
+                <li>
+                 <a href="{% url 'loginauth2' %}">Login</a>
+                </li>
+            {% endif %}
+
             {% if request.user and request.user.is_authenticated and request.user.is_tester and '/errors/' in request.path %}
             <li class="settings-button">
              <button type="button" data-open="offCanvasRight"><i class="fi-widget"></i></button>
@@ -313,7 +349,7 @@
           <span class="hide-for-small"><font size=-1>
               {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
               {% if built != None %} {{ built }}, {% endif %}
-               <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a> |
+               <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a>
 {#              {% if request.session.ADFS_EMAIL %}&nbsp;You are logged as {{ request.session.ADFS_FULLNAME }}(#}
 {#                  {% if request.session.ADFS_LOGIN %}{{request.session.ADFS_LOGIN}}{% endif %}#}
 {#                  ,#}
@@ -321,11 +357,11 @@
 {#                <a href="https://login.cern.ch/adfs/ls/?wa=wsignout1.0">Logout</a> &nbsp;#}
 {#              {% else %}#}
 {#                <a href="https://bigpanda.cern.ch{{ request.path }}">Login</a>{% endif %}#}
-          {% if request.user and request.user.is_authenticated %}
-              {{ request.user.first_name }} {{ request.user.last_name }}, {{ request.user.email }} <a href="{% url 'logout' %}">Logout</a>
-          {% else %}
-                <a href="{% url 'loginauth2' %}">Login</a>
-          {% endif %}
+{#          {% if request.user and request.user.is_authenticated %}#}
+{#              | {{ request.user.first_name }} {{ request.user.last_name }}, {{ request.user.email }} <a href="{% url 'logout' %}">Logout</a>#}
+{#          {% else %}#}
+{#                <a href="{% url 'loginauth2' %}">Login</a>#}
+{#          {% endif %}#}
 
 
           </font></span>
