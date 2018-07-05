@@ -257,3 +257,13 @@ float: none !important; }
 .sm_alarm {  color:#ff6666; font-weight: bold }
 .sm_warning { color:#FFCB2F; font-weight: bold  }
 .sm_ok {color:#70db70; font-weight: bold  }
+
+.search-form {
+    font-size: 85%;
+}
+.search-form div, select, option {
+    font-size: 100%;
+}
+.search-form input {
+    font-size: 100%;
+}

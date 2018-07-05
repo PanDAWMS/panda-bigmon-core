@@ -936,30 +936,47 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         values = val.split('|')
                         query['jobstatus__in'] = values
                     elif param == 'eventservice':
-                        if request.session['requestParams'][param] == 'esmerge' or request.session['requestParams'][
-                            param] == '2':
-                            query['eventservice'] = 2
-                        elif request.session['requestParams'][param] == 'jumbo' or request.session['requestParams'][
-                            param] == '4':
-                            query['eventservice'] = 4
-                        elif request.session['requestParams'][param] == 'cojumbo' or request.session['requestParams'][
-                            param] == '5':
-                            query['eventservice'] = 5
-                        elif request.session['requestParams'][param] == 'eventservice' or \
-                                        request.session['requestParams'][param] == '1':
-                            query['eventservice'] = 1
+                        if '|' in request.session['requestParams'][param]:
+                            paramsstr = request.session['requestParams'][param]
+                            paramsstr = paramsstr.replace('eventservice', '1')
+                            paramsstr = paramsstr.replace('esmerge', '2')
+                            paramsstr = paramsstr.replace('clone', '3')
+                            paramsstr = paramsstr.replace('cojumbo', '5')
+                            paramsstr = paramsstr.replace('jumbo', '4')
+                            paramvalues = paramsstr.split('|')
                             try:
-                                extraQueryString += " not specialhandling like \'%%sc:%%\' "
-                            except NameError:
-                                extraQueryString = " not specialhandling like \'%%sc:%%\' "
-
-                        elif request.session['requestParams'][param] == 'not2':
-                            try:
-                                extraQueryString += ' AND (eventservice != 2) '
-                            except NameError:
-                                extraQueryString = '(eventservice != 2)'
+                                paramvalues = [int(p) for p in paramvalues]
+                            except:
+                                paramvalues = []
+                            query['eventservice__in'] = paramvalues
                         else:
-                            query['eventservice__isnull'] = True
+                            if request.session['requestParams'][param] == 'esmerge' or request.session['requestParams'][
+                                param] == '2':
+                                query['eventservice'] = 2
+                            elif request.session['requestParams'][param] == 'clone' or request.session['requestParams'][
+                                param] == '3':
+                                query['eventservice'] = 3
+                            elif request.session['requestParams'][param] == 'jumbo' or request.session['requestParams'][
+                                param] == '4':
+                                query['eventservice'] = 4
+                            elif request.session['requestParams'][param] == 'cojumbo' or request.session['requestParams'][
+                                param] == '5':
+                                query['eventservice'] = 5
+                            elif request.session['requestParams'][param] == 'eventservice' or \
+                                            request.session['requestParams'][param] == '1':
+                                query['eventservice'] = 1
+                                try:
+                                    extraQueryString += " not specialhandling like \'%%sc:%%\' "
+                                except NameError:
+                                    extraQueryString = " not specialhandling like \'%%sc:%%\' "
+
+                            elif request.session['requestParams'][param] == 'not2':
+                                try:
+                                    extraQueryString += ' AND (eventservice != 2) '
+                                except NameError:
+                                    extraQueryString = '(eventservice != 2)'
+                            else:
+                                query['eventservice__isnull'] = True
                     else:
                         if (param not in wildSearchFields):
                             query[param] = request.session['requestParams'][param]
@@ -1329,9 +1346,11 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
                 job['eventservice'] = 'eventservice'
             elif isEventService(job) and job['eventservice'] == 2:
                 job['eventservice'] = 'esmerge'
+            elif job['eventservice'] == 3:
+                job['eventservice'] = 'clone'
             elif isEventService(job) and job['eventservice'] == 4:
                 job['eventservice'] = 'jumbo'
-            elif isEventService(job) and job['eventservice'] == 5:
+            elif job['eventservice'] == 5:
                 job['eventservice'] = 'cojumbo'
             else:
                 job['eventservice'] = 'ordinary'
