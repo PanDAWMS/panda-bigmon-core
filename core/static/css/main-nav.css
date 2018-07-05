@@ -238,8 +238,8 @@
 
 .searchbox {
   width: 16rem;
-  font-size: 85%;
-  margin: 0 2rem;
+  font-size: 100%;
+  margin: 0 1rem 0 1rem !important;
 }
 
 .searchselect {
@@ -270,7 +270,7 @@
 .searchoption {
   background-color: #333333;
   color: #fefefe;
-
+  text-align: right;
 }
 .searchoption:hover {
   background-color: #272727;
@@ -278,9 +278,11 @@
 
 
 .searchinput {
-  background-color: #333333;
+  background-color: #444444;
   color: #fefefe;
-  border: 1px solid #8a8a8a;
+  /*border: 1px solid #8a8a8a;*/
+  border:1px solid #444444;
+  border-radius: 0.2rem;
   height: 1.6rem;
   margin-top: 0.7rem;
   font-size: 100%;
