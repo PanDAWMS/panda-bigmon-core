@@ -211,22 +211,31 @@
             {% if viewParams.MON_VO == 'ATLAS' %}
               {% if request.user and request.user.is_authenticated %}
                 <li>
-                <div class="row collapse searchbox show-for-large" style="width: 200px">
+                <div class="row collapse searchbox show-for-large">
                   <div class="large-7 medium-7 columns">
-                    <select name="objectstosearch" class="searchselect">
-                        <option class="searchoption" value="job">Job by ID</option>
-                        <option class="searchoption" value="job">Jobs for batch ID</option>
-                        <option class="searchoption" value="job">Task by ID</option>
-                        <option class="searchoption" value="job">Tasks for request ID</option>
+                    <select id="searchselectid" name="objectstosearch" class="searchselect">
+                        <option class="searchoption" value="pandaid">Job by ID</option>
+                        <option class="searchoption" value="batchid">Jobs for batch ID</option>
+                        <option class="searchoption" value="jeditaskid">Task by ID</option>
+                        <option class="searchoption" value="taskname">Task by name</option>
+                        <option class="searchoption" value="reqid">Tasks for request ID</option>
+                        <option class="searchoption" value="campaign">Tasks for campaign</option>
+                        <option class="searchoption" value="project">Tasks for project</option>
+                        <option class="searchoption" value="tag">Tasks for tag</option>
+                        <option class="searchoption" value="hashtag">Tasks for #</option>
+                        <option class="searchoption" value="site">Site by name</option>
+                        <option class="searchoption" value="user">User</option>
+                        <option class="searchoption" value="dataset">Dataset by name</option>
+                        <option class="searchoption" value="filename">File by name</option>
                       </select>
                   </div>
                   <div class="large-4 medium-4 columns">
 
-                  <input class="searchinput" type="text" placeholder="Enter...">
+                  <input id="searchinputid" class="searchinput" type="text" placeholder="Enter...">
                   </div>
 
                   <div class="large-1 medium-1 columns">
-                    <a href="#" class="button prefix expand searchbutton"><i class="fi-magnifying-glass"></i></a>
+                    <a onclick="bpsearch('searchselectid', 'searchinputid')" class="button prefix expand searchbutton"><i class="fi-magnifying-glass"></i></a>
                   </div>
                 </div>
                 </li>
@@ -403,7 +412,76 @@
 
 
 
+<script>
+    function bpsearch(selectid, inputid) {
 
+        var urlBase= "https://bigpanda.cern.ch";
+        var url = "";
+        var searchparam = document.getElementById(selectid);
+        var searchvalue = document.getElementById(inputid);
+
+        if (searchparam.value.length > 0) {
+            switch (searchparam.value) {
+                case 'pandaid':
+                    urlBase = "{% url 'jobInfo' %}" ;
+                    url = "/";
+                    break;
+                case 'batchid':
+                    urlBase = "{% url 'jobList' %}" ;
+                    url = "?batchid=";
+                    break;
+                case 'jeditaskid':
+                    urlBase = "{% url 'taskInfo' %}" ;
+                    url = "/";
+                    break;
+                case 'taskname':
+                    urlBase = "{% url 'taskList' %}" ;
+                    url = "?taskname=";
+                    break;
+                case 'reqid':
+                    urlBase = "{% url 'taskList' %}" ;
+                    url = "?reqid=";
+                    break;
+                case 'campaign':
+                    urlBase = "{% url 'taskList' %}" ;
+                    url = "?campaign=";
+                    break;
+                case 'project':
+                    urlBase = "{% url 'taskList' %}" ;
+                    url = "?project=";
+                    break;
+                case 'tag':
+                    urlBase = "{% url 'taskList' %}" ;
+                    url = "/?tag=";
+                    break;
+                case 'hashtag':
+                    urlBase = "{% url 'taskList' %}" ;
+                    url = "?hashtag=";
+                    break;
+                case 'site':
+                    urlBase = "{% url 'siteInfo' %}" ;
+                    url = "?site=";
+                    break;
+                case 'user':
+                    urlBase = "{% url 'userInfo' %}" ;
+                    url = "?user=";
+                    break;
+                case 'dataset':
+                    urlBase = "{% url 'datasetInfo' %}" ;
+                    url = "?dataset=";
+                    break;
+                case 'filename':
+                    urlBase = "{% url 'fileInfo' %}" ;
+                    url = "?filename=";
+                    break;
+
+            }
+            url += searchvalue.value;
+        }
+
+        window.location = urlBase + url;
+    }
+</script>
 
 
 {#  <script src="{% static 'js/app.js' %}"></script>#}
