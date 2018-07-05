@@ -50,3 +50,13 @@ class HarvesterRelJobsWorkers (models.Model):
     lastupdate = models.DateTimeField(null=True, db_column='LASTUPDATE', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDA"."HARVESTER_REL_JOBS_WORKERS"'
+
+class HarvesterSlots (models.Model):
+    pandaqueuename = models.CharField(max_length=50, db_column='PANDAQUEUENAME', null=False, blank=True)
+    gshare = models.CharField(max_length=50, db_column='GSHARE', null=False, blank=True)
+    resourcetype = models.CharField(max_length=50, db_column='RESOURCETYPE', blank=True)
+    numslots = models.DecimalField(decimal_places=0, max_digits=11, db_column='NUMSLOTS', null=False)
+    modificationtime = models.DateTimeField(null=True, db_column='MODIFICATIONTIME', blank=True)
+    expirationtime = models.DateTimeField(null=True, db_column='EXPIRATIONTIME', blank=True)
+    class Meta:
+        db_table = u'"ATLAS_PANDA"."HARVESTER_SLOTS"'

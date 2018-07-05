@@ -13,7 +13,7 @@ from django.utils.cache import patch_cache_control, patch_response_headers
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder, \
     extensibleURL, DateTimeEncoder
-from core.harvester.models import HarvesterWorkers,HarvesterRelJobsWorkers,HarvesterDialogs,HarvesterWorkerStats
+from core.harvester.models import HarvesterWorkers,HarvesterRelJobsWorkers,HarvesterDialogs,HarvesterWorkerStats, HarvesterSlots
 
 harvWorkStatuses = [
     'missed', 'submitted', 'ready', 'running', 'idle', 'finished', 'failed', 'cancelled'
@@ -194,7 +194,7 @@ def harvesters(request):
             if 'limit' in request.session['requestParams']:
                 limit = request.session['requestParams']['limit']
             harvsterworkerstat = HarvesterWorkerStats.objects.filter(**tquery).values('computingsite', 'resourcetype', 'status',
-                                                                           'nworkers','lastupdate').filter(**tquery).extra(
+                                                                           'nworkers','lastupdate').extra(
                 where=[extra]).order_by('-lastupdate')[:limit]
             # dialogs.extend(HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime'))
             old_format = '%Y-%m-%d %H:%M:%S'
@@ -939,3 +939,28 @@ def workersJSON(request):
                 workersList.append(object)
 
             return HttpResponse(json.dumps(workersList), content_type='text/html')
+
+def harvesterslots(request):
+    valid, response = initRequest(request)
+    harvesterslotsList = []
+    harvesterslots=HarvesterSlots.objects.values('pandaqueuename','gshare','resourcetype','numslots','modificationtime','expirationtime')
+    old_format = '%Y-%m-%d %H:%M:%S'
+    new_format = '%d-%m-%Y %H:%M:%S'
+    for slot in harvesterslots:
+        slot['modificationtime'] = datetime.strptime(str(slot['modificationtime']), old_format).strftime(new_format)
+        if slot['expirationtime'] is not None:
+            slot['expirationtime'] = datetime.strptime(str(slot['expirationtime']), old_format).strftime(new_format)
+        harvesterslotsList.append(slot)
+    xurl = extensibleURL(request)
+    data = {
+        'harvesterslots': harvesterslotsList,
+        'type': 'workers',
+        'xurl': xurl,
+        'request': request,
+        'requestParams': request.session['requestParams'],
+        'viewParams': request.session['viewParams'],
+        'built': datetime.now().strftime("%H:%M:%S"),
+
+    }
+    endSelfMonitor(request)
+    return render_to_response('harvesterslots.html', data, content_type='text/html')
