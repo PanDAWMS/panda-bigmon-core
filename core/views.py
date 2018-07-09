@@ -11328,7 +11328,9 @@ def g4exceptions(request):
 
 def initSelfMonitor(request):
     import psutil
-    server = request.session['hostname'],
+    if 'hostname' in request.session:
+        server = request.session['hostname']
+    else: server = '-'
 
     if 'HTTP_X_FORWARDED_FOR' in request.META:
         remote = request.META['HTTP_X_FORWARDED_FOR']
@@ -11383,7 +11385,7 @@ def endSelfMonitor(request):
         duration = 0
     if 'hostname' in request.session and 'remote' in request.session and request.session['remote'] is not None:
         reqs = RequestStat(
-            server=request.session['hostname'],
+            server=request.session['hostname'] if 'hostname' in request.session else '-',
             qtime=request.session['qtime'] if 'qtime' in request.session else None,
             load=request.session['load'] if 'load' in request.session else None,
             mem=request.session['mem'] if 'mem' in request.session else None,
