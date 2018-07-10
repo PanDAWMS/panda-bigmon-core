@@ -11,7 +11,7 @@ from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.db import connection, transaction
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
-from core.art.modelsART import ARTTask, ARTTasks, ARTResults, ARTTests
+from core.art.modelsART import ARTTask, ARTTasks, ARTResults, ARTTests, ReportEmails
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, Sum
 from core.views import login_customrequired, initRequest, extensibleURL, removeParam
@@ -25,7 +25,7 @@ from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
 
 from core.art.artTest import ArtTest
-from core.art.artMail import send_mail_art
+from core.art.artMail import send_mail_art, send_mails
 
 from django.template.defaulttags import register
 
@@ -1090,7 +1090,7 @@ def sendArtReport(request):
     :return: json
     """
     valid, response = initRequest(request)
-
+    template = 'templated_email/artReportPackage.html'
     if 'ntag_from' not in request.session['requestParams']:
         valid = False
         errorMessage = 'No ntag provided!'
@@ -1117,38 +1117,74 @@ def sendArtReport(request):
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
     ### prepare data for report
-    artjobsdict = {}
+    artjobsdictbranch = {}
     for job in jobs:
-
         nightly_tag_time = datetime.strptime(job['nightly_tag'].replace('T', ' '), '%Y-%m-%d %H%M')
         if nightly_tag_time > request.session['requestParams']['ntag_from'] + timedelta(hours=20):
-            if job['branch'] not in artjobsdict.keys():
-                artjobsdict[job['branch']] = {}
-                artjobsdict[job['branch']]['branch'] = job['branch']
-                artjobsdict[job['branch']]['ntag_full'] = job['nightly_tag']
-                artjobsdict[job['branch']]['ntag'] = job['ntag'].strftime(artdateformat)
-                artjobsdict[job['branch']]['packages'] = {}
-            if job['package'] not in artjobsdict[job['branch']]['packages'].keys():
-                artjobsdict[job['branch']]['packages'][job['package']] = {}
-                artjobsdict[job['branch']]['packages'][job['package']]['name'] = job['package']
-                artjobsdict[job['branch']]['packages'][job['package']]['nfailed'] = 0
-                artjobsdict[job['branch']]['packages'][job['package']]['nfinished'] = 0
-                artjobsdict[job['branch']]['packages'][job['package']]['nactive'] = 0
+            if job['branch'] not in artjobsdictbranch.keys():
+                artjobsdictbranch[job['branch']] = {}
+                artjobsdictbranch[job['branch']]['branch'] = job['branch']
+                artjobsdictbranch[job['branch']]['ntag_full'] = job['nightly_tag']
+                artjobsdictbranch[job['branch']]['ntag'] = job['ntag'].strftime(artdateformat)
+                artjobsdictbranch[job['branch']]['packages'] = {}
+            if job['package'] not in artjobsdictbranch[job['branch']]['packages'].keys():
+                artjobsdictbranch[job['branch']]['packages'][job['package']] = {}
+                artjobsdictbranch[job['branch']]['packages'][job['package']]['name'] = job['package']
+                artjobsdictbranch[job['branch']]['packages'][job['package']]['nfailed'] = 0
+                artjobsdictbranch[job['branch']]['packages'][job['package']]['nfinished'] = 0
+                artjobsdictbranch[job['branch']]['packages'][job['package']]['nactive'] = 0
             finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
-            artjobsdict[job['branch']]['packages'][job['package']]['n' + finalresult] += 1
+            artjobsdictbranch[job['branch']]['packages'][job['package']]['n' + finalresult] += 1
+
+    artjobsdictpackage = {}
+    for job in jobs:
+        nightly_tag_time = datetime.strptime(job['nightly_tag'].replace('T', ' '), '%Y-%m-%d %H%M')
+        if nightly_tag_time > request.session['requestParams']['ntag_from'] + timedelta(hours=20):
+            if job['package'] not in artjobsdictpackage.keys():
+                artjobsdictpackage[job['package']] = {}
+                artjobsdictpackage[job['package']]['branch'] = job['branch']
+                artjobsdictpackage[job['package']]['ntag_full'] = job['nightly_tag']
+                artjobsdictpackage[job['package']]['ntag'] = job['ntag'].strftime(artdateformat)
+                artjobsdictpackage[job['package']]['branches'] = {}
+            if job['branch'] not in artjobsdictpackage[job['package']]['branches'].keys():
+                artjobsdictpackage[job['package']]['branches'][job['branch']] = {}
+                artjobsdictpackage[job['package']]['branches'][job['branch']]['name'] = job['branch']
+                artjobsdictpackage[job['package']]['branches'][job['branch']]['nfailed'] = 0
+                artjobsdictpackage[job['package']]['branches'][job['branch']]['nfinished'] = 0
+                artjobsdictpackage[job['package']]['branches'][job['branch']]['nactive'] = 0
+            finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
+            artjobsdictpackage[job['package']]['branches'][job['branch']]['n' + finalresult] += 1
+
 
     ### dict -> list & ordering
-    for branchname, sumdict in artjobsdict.iteritems():
-        sumdict['packages'] = sorted(artjobsdict[branchname]['packages'].values(), key=lambda k: k['name'])
+    for branchname, sumdict in artjobsdictbranch.iteritems():
+        sumdict['packages'] = sorted(artjobsdictbranch[branchname]['packages'].values(), key=lambda k: k['name'])
+    for packagename, sumdict in artjobsdictpackage.iteritems():
+        sumdict['packages'] = sorted(artjobsdictpackage[packagename]['branches'].values(), key=lambda k: k['name'])
 
-    summary = sorted(artjobsdict.values(), key=lambda k: k['branch'], reverse=True)
+    summaryPerBranch = sorted(artjobsdictbranch.values(), key=lambda k: k['branch'], reverse=True)
 
+    rquery = {}
+    rquery['report'] = 'art'
+    recipientslist = ReportEmails.objects.filter(**rquery).values()
+    recipients = {}
+    for recipient in recipientslist:
+        if recipient['email'] is not None and len(recipient['email']) > 0:
+            recipients[recipient['type']] = recipient['email']
+
+    summaryPerRecipient = {}
+    for package, email in recipients.items():
+        if email not in summaryPerRecipient:
+            summaryPerRecipient[email] = {}
+        if package in artjobsdictpackage.keys():
+            summaryPerRecipient[email][package] = artjobsdictpackage[package]
+    subject = 'ART jobs status report'
     isSent = False
     i = 0
     maxTries = 10
     while not isSent:
         i +=1
-        isSent = send_mail_art(request.session['requestParams']['ntag_from'], summary)
+        isSent = send_mails(template, subject, summaryPerRecipient)
         if i > 10:
             break
 

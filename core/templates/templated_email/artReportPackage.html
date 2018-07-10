@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+<h2>ART jobs status report generated at {{ built }}</h2>
+</head>
+<body>
+{% for package, psum in summary.items %}
+<h4>Summary for <b>{{ package }}</b></h4>
+<br><a href="https://bigpanda.cern.ch/art/jobs/?package={{ package }}&days=1"></a>
+<table style="margin-left: 40px">
+<tr><th style="text-align: center; margin-left: 5px; margin-right: 5px">Fail</th> <th style="text-align: center; margin-left: 5px; margin-right: 5px">Success</th> <th style="text-align: center; margin-left: 5px; margin-right: 5px">Active</th>  <th style="text-align: left; margin-left: 5px; margin-right: 5px">Package</th></tr>
+{% for bsum in psum.packages %}
+<tr><td style="text-align: center;">{{ bsum.nfailed }}</td>      <td style="text-align: center;">{{ bsum.nfinished}}</td>      <td style="text-align: center;">{{ bsum.nactive }}</td>      <td>{{ bsum.name }}</td></tr>
+{% endfor %}
+</table>
+{% endfor %}
+</body>
+</html>
