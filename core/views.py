@@ -735,6 +735,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
              else:
                  val = request.session['requestParams'][param]
                  query['schedulerid'] = 'harvester-'+val
+        elif param == 'schedulerid':
+             val = request.session['requestParams'][param]
+             query['schedulerid'] = val
         elif param == 'priorityrange':
             mat = re.match('([0-9]+)\:([0-9]+)', request.session['requestParams'][param])
             if mat:
@@ -6179,6 +6182,9 @@ def calculateRWwithPrio_JEDI(query):
     retNREMJMap = {}
     values = ['jeditaskid', 'datasetid', 'modificationtime', 'cloud', 'nrem', 'walltime', 'fsize', 'startevent',
               'endevent', 'nevents']
+    ###TODO Rework it
+    if 'schedulerid' in query.keys():
+        del query['schedulerid']
     progressEntries = []
     progressEntries.extend(GetRWWithPrioJedi3DAYS.objects.filter(**query).values(*values))
     allCloudsRW = 0;
