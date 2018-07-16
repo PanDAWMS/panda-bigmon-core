@@ -523,6 +523,16 @@
 
         <p>
 
+        {% if warning.dropmode %}
+            <div class="callout warning" data-closable>
+              <h5>Warning! </h5>
+              <p>{{ warning.dropmode }}</p>
+                <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+                    <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+        {% endif %}
+
             {% if jobsummary %}
 
                 {% if requestParams.warning %}

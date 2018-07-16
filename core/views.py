@@ -7907,6 +7907,7 @@ def taskInfo(request, jeditaskid=0):
     objectStoreDict=[]
     eventsChains = []
     currentlyRunningDataSets = []
+    warning = {}
 
     newjobsummary =[]
     newjobsummaryESMerge = []
@@ -8225,6 +8226,8 @@ def taskInfo(request, jeditaskid=0):
 
     if taskrec:
         if taskrec['creationdate']:
+            if taskrec['creationdate'] < datetime.now() - timedelta(days=180):
+                warning['dropmode'] = 'The drop mode is unavailable since the data of job retries was cleaned up. The data shown on the page is in nodrop mode.'
             taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
         if taskrec['modificationtime']:
             taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
@@ -8314,6 +8317,7 @@ def taskInfo(request, jeditaskid=0):
             'newjobsummaryPMERGE_test':newjobsummaryPMERGE,
             'newjobsummaryESMerge_test': newjobsummaryESMerge,
             'neweventssummary_test':neweventsdict,
+            'warning': warning,
         }
         data.update(getContextVariables(request))
         cacheexpiration = 60*20 #second/minute * minutes
