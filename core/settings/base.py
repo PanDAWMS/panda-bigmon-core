@@ -216,6 +216,7 @@ INSTALLED_APPS_BIGPANDAMON_core = (
     'core.runningprod',
     'core.globalshares',
     'core.errorsscattering',
+    'core.compare',
 )
 INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_core
 

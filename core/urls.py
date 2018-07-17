@@ -17,6 +17,7 @@ from core.harvester import views as harvester
 from core.globalshares import views as globalshares
 from core.runningprod import views as runningprod_views
 from core.errorsscattering import views as errorsscat_views
+from core.compare import views as compare_views
 
 #import core.views as coremon_views
 import core.pandajob.views_support as core_coremon_support_views
@@ -183,6 +184,10 @@ urlpatterns = [
     url(r'^datatable/data/resourcesType', globalshares.resourcesType, name='resourcesType'),
     url(r'^datatable/data/coreTypes', globalshares.coreTypes, name='coreTypes'),
     url(r'^datatable/data/fairsharePolicy', globalshares.fairsharePolicy, name='fairsharePolicy'),
+
+    ###Compare###
+    url(r'^compare/jobs/$', compare_views.compareJobs, name='compareJobs'),
+
 
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
