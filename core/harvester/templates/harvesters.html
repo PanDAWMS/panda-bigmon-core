@@ -4,7 +4,7 @@
 
 {% block page_title %}Harvester monitor page{% endblock %}
 {% block title %}PanDA monitor{% endblock %}
-{% block subtitle %}Harvester <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+{% block subtitle %} <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
 {% block extra_css %}
   <link rel="stylesheet" type="text/css" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
   <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
@@ -89,13 +89,10 @@
             <caption style="height: 30px;vertical-align: middle">Harvester instances</caption>
             <thead>
             <th>Instance</th>
-            <th>Total</th>
-            <th>Recently</th>
-            <th>When</th>
             <th>SW version</th>
             <th>Commit stamp</th>
-            <th>Last update</th>
             <th>Description</th>
+            <th>Last update</th>
             </thead>
             <tbody>
             {% for instance in instances %}
@@ -104,37 +101,29 @@
                         <a href="{% url "harvesters" %}?instance={{ instance.instance|safe }}">{{ instance.instance|safe }}</a>
                     </td>
                     <td>
-                        {{ instance.total }}
-                    </td>
-                    <td>
-                        {{ instance.recently }}
-                    </td>
-                    <td>
-                        {{ instance.when }}
-                    </td>
-                    <td>
                         {{ instance.sw_version }}
                     </td>
                     <td>
                         {{ instance.commit_stamp }}
                     </td>
                     <td>
-                        {{ instance.lastupdate }}
+                        {{ instance.descr }}
                     </td>
                     <td>
-                        {{ instance.descr }}
+                        {{ instance.lastupdate }}
                     </td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
+{#        <br/><br/>#}
+{#        <iframe src="https://es-atlas6.cern.ch/kibana/app/kibana::/dashboard/e776b290-8594-11e8-be57-2be8d64792c0?embed=true&_g=(refreshInterval%3A(display%3A'5%20seconds'%2Cpause%3A!f%2Csection%3A1%2Cvalue%3A5000)%2Ctime%3A(from%3Anow-24h%2Cmode%3Aquick%2Cto%3Anow))" height="900" width="100%"></iframe>#}
         <br/><br/>
-        <div class="callout warning" style="visibility: hidden">
+        <div class="callout warning">
         Dear BigPanDA monitor users,<br><br>
 
-        We propose to participate in testing the <a href="http://aaleksee-dev.cern.ch:5601/app/kibana#/discover?_g=()&_a=(columns:!(_source),index:'78af0b20-695e-11e8-b969-53421f193d9e',interval:auto,query:(language:lucene,query:''),sort:!('@timestamp',desc))" target="_blank"> first prototype </a> (only CERN inside) of Elasticsearch+Kibana engine for harvester monitoring. <br>
-        Data in Elasticsearch is synchronized with PanDA DB every minute. Timestamp field = submittime field. <br><br>
-        Demo dashboards are available by links: <a href="http://aaleksee-dev.cern.ch:5601/app/kibana#/dashboard/b79801b0-688d-11e8-b969-53421f193d9e" target="_blank">link1</a>, <a href="http://aaleksee-dev.cern.ch:5601/app/kibana#/dashboard/27e3e330-68ac-11e8-b969-53421f193d9e" target="_blank">link2</a>.<br><br>
+        We propose to participate in testing the <a href="https://es-atlas6.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:''),sort:!('@timestamp',desc))" target="_blank"> first prototype </a> (only CERN inside) of Elasticsearch+Kibana engine for harvester monitoring. <br>
+        Data in Elasticsearch is synchronized with PanDA DB every minute. Timestamp field = submittime field. <br>
         If you find an error or you have comments or suggestions, please inform us to the following address:<br>
         atlas-adc-pandamon-support@cern.ch<br><br>
         </div>
@@ -156,7 +145,7 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td>
                             {% for n,v in value.items %}
-                                <span class='{{ n }} item'>{{ n }}</span>
+                                <a href="https://es-atlas6.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:'status: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> <span class='{{ n }} item'>{{ n }}</span></a>
                                 <a href="{{ xurl }}status={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </td>
@@ -164,7 +153,7 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td><div class="comment more">
                             {% for n,v in value.items %}
-                                {{ n }} <a href="{{ xurl }}computingsite={{ n|safe }}">({{ v }})</a>
+                                <a href="https://es-atlas6.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:'computingsite: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}computingsite={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </div>
                         </td>
@@ -172,7 +161,7 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td><div class="comment more">
                             {% for n,v in value.items %}
-                                {{ n }} <a href="{{ xurl }}resourcetype={{ n|safe }}">({{ v }})</a>
+                                <a href="https://es-atlas6.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:'resourcetype: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}resourcetype={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </div>
                         </td>
@@ -180,7 +169,7 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td><div class="comment more">
                             {% for n,v in value.items %}
-                                {{ n }} <a href="{{ xurl }}computingelement={{ n|safe }}">({{ v }})</a>
+                                <a href="https://es-atlas6.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:'computingelement: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}computingelement={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </div>
                         </td>
@@ -188,7 +177,7 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td><div class="comment more">
                             {% for n,v in value.items %}
-                                {{ n }} <a href="{{ xurl }}instance={{ n|safe }}">({{ v }})</a>
+                                <a href="https://es-atlas6.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:'harvesterid: &quot;{{ n }}&quot;%20AND%20computingsite:&quot;{{ computingsite|safe }}&quot;'),sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}instance={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </div>
                         </td>
@@ -322,6 +311,40 @@
                 </div>
                 </div>
         </div>
+        <a href="javascript:ReverseDisplay('harvesterplotsdiv','harvesterplotslink','harvesterplots')"
+           id="harvesterplotslink" class="bluebutton">Show plots [DEV]</a> <br/><br/>
+
+        <div id="harvesterplotsdiv" style="display: none">
+            <div id="plotstabs">
+                <ul>
+                    <li><a href="#tabs-1" class="ui-tabs-anchor">General info [DEV]</a></li>
+                </ul>
+                <div id="tabs-1">
+                   <a style="color: #0a47ff" href="https://es-atlas6.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
+filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',key:harvesterid.keyword,negate:!f,params:(query:{{ instance|safe }},type:phrase),
+type:phrase,value:{{ instance|safe }}),query:(match:(harvesterid.keyword:(query:{{ instance|safe }},type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),
+panels:!((gridData:(h:3,i:'1',w:6,x:6,y:6),id:'44015690-843d-11e8-be57-2be8d64792c0',panelIndex:'1',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'2',w:6,x:0,y:3),
+id:'23221db0-843d-11e8-be57-2be8d64792c0',panelIndex:'2',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'3',w:6,x:6,y:3),id:cf4f6030-843c-11e8-be57-2be8d64792c0,panelIndex:'3',
+type:visualization,version:'6.2.4'),(gridData:(h:3,i:'4',w:7,x:5,y:0),id:a3b25e00-843c-11e8-be57-2be8d64792c0,panelIndex:'4',type:visualization,version:'6.2.4'),
+(gridData:(h:3,i:'5',w:6,x:0,y:9),id:fbbecd90-843c-11e8-be57-2be8d64792c0,panelIndex:'5',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'6',w:6,x:0,y:6),
+id:a9207bf0-843d-11e8-a7e3-ffbb2f24f6b4,panelIndex:'6',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'7',w:5,x:0,y:0),id:'23173650-843f-11e8-a7e3-ffbb2f24f6b4',panelIndex:'7',type:visualization,version:'6.2.4'),
+(gridData:(h:3,i:'8',w:6,x:6,y:9),id:ed82b2a0-859f-11e8-be57-2be8d64792c0,panelIndex:'8',type:visualization,version:'6.2.4')),
+query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashboard',viewMode:view)" target="_blank">Link (es-atlas6.cern.ch)</a> <br/><br/>
+                   <iframe src="https://es-atlas6.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?embed=true&_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
+filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',key:harvesterid.keyword,negate:!f,params:(query:{{ instance|safe }},type:phrase),
+type:phrase,value:{{ instance|safe }}),query:(match:(harvesterid.keyword:(query:{{ instance|safe }},type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),
+panels:!((gridData:(h:3,i:'1',w:6,x:6,y:6),id:'44015690-843d-11e8-be57-2be8d64792c0',panelIndex:'1',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'2',w:6,x:0,y:3),
+id:'23221db0-843d-11e8-be57-2be8d64792c0',panelIndex:'2',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'3',w:6,x:6,y:3),id:cf4f6030-843c-11e8-be57-2be8d64792c0,panelIndex:'3',
+type:visualization,version:'6.2.4'),(gridData:(h:3,i:'4',w:7,x:5,y:0),id:a3b25e00-843c-11e8-be57-2be8d64792c0,panelIndex:'4',type:visualization,version:'6.2.4'),
+(gridData:(h:3,i:'5',w:6,x:0,y:9),id:fbbecd90-843c-11e8-be57-2be8d64792c0,panelIndex:'5',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'6',w:6,x:0,y:6),
+id:a9207bf0-843d-11e8-a7e3-ffbb2f24f6b4,panelIndex:'6',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'7',w:5,x:0,y:0),id:'23173650-843f-11e8-a7e3-ffbb2f24f6b4',panelIndex:'7',type:visualization,version:'6.2.4'),
+(gridData:(h:3,i:'8',w:6,x:6,y:9),id:ed82b2a0-859f-11e8-be57-2be8d64792c0,panelIndex:'8',type:visualization,version:'6.2.4')),
+query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashboard',viewMode:view)"
+height="1000" width="100%"></iframe>
+                </div>
+            </div>
+        </div>
+
         <hr/>
 
         <span style="display: inline;">Number of entries:</span> <input type="text" id="numberWL" value="1000" size="35"  style="width: 150px; display: inline;">
@@ -363,6 +386,7 @@
             $(document).ready(function () {
                 $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');
                 $("#tabs").tabs();
+                $("#plotstabs").tabs();
                 var items = 100
                 $('#workerList p').slice(0, items).show().css("display", "inline");
                 var shown = 50;
@@ -846,4 +870,6 @@
     {% endif %}
 {% endblock %}
 
-
+{#{% block helptext %}#}
+{#{% include "harvesterInfoHelp.html" with helptitle="Harvester list help" show="all" %}#}
+{#{% endblock %}#}

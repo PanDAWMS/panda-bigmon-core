@@ -209,7 +209,7 @@ def harvesters(request):
             computingsite = ''
             workerid = ''
             days = ''
-            hours = ''
+            defaulthours = 24
             resourcetype = ''
             computingelement = ''
 
@@ -227,14 +227,18 @@ def harvesters(request):
                     str(request.session['requestParams']['computingelement']))
             if 'workerid' in request.session['requestParams']:
                 workerid = """AND workerid in (%s)""" % (request.session['requestParams']['workerid'])
-            if 'days' in request.session['requestParams']:
-                days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day """ % (
-                request.session['requestParams']['days'])
-
             if 'hours' in request.session['requestParams']:
-                hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour """ % (
-                    request.session['requestParams']['hours'])
-
+                defaulthours = request.session['requestParams']['hours']
+                hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                    defaulthours)
+            else:
+                hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                    defaulthours)
+            if 'days' in request.session['requestParams']:
+                days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
+                    request.session['requestParams']['days'])
+                hours = ''
+                defaulthours = int(request.session['requestParams']['days']) * 24
             harvsterpandaids = []
 
             limit = 100
@@ -308,7 +312,7 @@ def harvesters(request):
         computingsite = ''
         workerid=''
         days =''
-        hours =''
+        defaulthours = 24
         resourcetype =''
         computingelement =''
 
@@ -329,13 +333,19 @@ def harvesters(request):
         if 'workerid' in request.session['requestParams']:
             workerid = """AND workerid in (%s)""" %(request.session['requestParams']['workerid'])
             URL += '&workerid=' + str(request.session['requestParams']['workerid'])
-        if 'days' in request.session['requestParams']:
-            days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day """ %(request.session['requestParams']['days'])
-            URL += '&days=' + str(request.session['requestParams']['days'])
         if 'hours' in request.session['requestParams']:
-            hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour """ % (
-            request.session['requestParams']['hours'])
+            defaulthours = request.session['requestParams']['hours']
+            hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            defaulthours)
             URL += '&hours=' + str(request.session['requestParams']['hours'])
+        else:
+            hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                defaulthours)
+        if 'days' in request.session['requestParams']:
+            days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ %(request.session['requestParams']['days'])
+            URL += '&days=' + str(request.session['requestParams']['days'])
+            hours = ''
+            defaulthours = int(request.session['requestParams']['days']) * 24
         sqlquery = """
         SELECT * FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
         where harvester_id like '%s' %s %s %s %s %s %s %s %s and ROWNUM<=1
@@ -414,7 +424,8 @@ def harvesters(request):
             object = dict(zip(columns, worker))
             workersList.append(object)
         if len(workersList)==0:
-            return HttpResponse(json.dumps({'message': 'Instance is not found OR no workers for this instance or time period'}),
+            message = """Instance is not found OR no workers for this instance or time period. Try to using this <a href =/harvesters/?instance=%s&days=365>link (last 365 days)</a>""" %(instance)
+            return HttpResponse(json.dumps({'message': message}),
                             content_type='text/html')
 
         # dbCache = {
@@ -440,7 +451,7 @@ def harvesters(request):
         generalInstanseInfo = {'HarvesterID':workersList[0]['harvester_id'], 'Description':workersList[0]['description'], 'Starttime': workersList[0]['insstarttime'],
                                       'Owner':workersList[0]['owner'], 'Hostname':workersList[0]['hostname'],'Lastupdate':workersList[0]['inslastupdate'], 'Computingsites':computingsitesDict,'Statuses':statusesDict,'Resourcetypes':resourcetypesDict,'Computingelements':computingelementsDict,'Software version':workersList[0]['sw_version'], 'Jobscount':jobcnt ,'Commit stamp':workersList[0]['commit_stamp']
         }
-
+        request.session['viewParams']['selection'] = 'Harvester workers, last %s hours' %(defaulthours)
         data = {
                 'generalInstanseInfo':generalInstanseInfo,
                 'type':'workers',
@@ -497,7 +508,7 @@ def harvesters(request):
             computingsite = ''
             workerid = ''
             days = ''
-            hours = ''
+            defaulthours = 24
             resourcetype = ''
             computingelement = ''
             instance =''
@@ -514,7 +525,7 @@ def harvesters(request):
                 for ins in instances:
                     instance += "'" + ins[0] + "',"
                 instance = instance[:-1]
-            print instance
+
             if 'status' in request.session['requestParams']:
                 status = """AND status like '%s'""" % (str(request.session['requestParams']['status']))
 
@@ -529,14 +540,19 @@ def harvesters(request):
                     str(request.session['requestParams']['computingelement']))
             if 'workerid' in request.session['requestParams']:
                 workerid = """AND workerid in (%s)""" % (request.session['requestParams']['workerid'])
-            if 'days' in request.session['requestParams']:
-                days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day """ % (
-                    request.session['requestParams']['days'])
 
             if 'hours' in request.session['requestParams']:
-                hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour """ % (
-                    request.session['requestParams']['hours'])
-
+                defaulthours = request.session['requestParams']['hours']
+                hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                    defaulthours)
+            else:
+                hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                    defaulthours)
+            if 'days' in request.session['requestParams']:
+                days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
+                    request.session['requestParams']['days'])
+                hours = ''
+                defaulthours = int(request.session['requestParams']['days'])*24
             harvsterpandaids = []
 
             limit = 100
@@ -575,7 +591,7 @@ def harvesters(request):
 
         workerid = ''
         days = ''
-        hours = ''
+        defaulthours = 24
         resourcetype =''
         computingelement =''
         if 'status' in request.session['requestParams']:
@@ -590,14 +606,20 @@ def harvesters(request):
         if 'computingelement' in request.session['requestParams']:
             computingelement = """AND computingelement like '%s'""" %(str(request.session['requestParams']['computingelement']))
             URL += '&computingelement=' + str(request.session['requestParams']['computingelement'])
+        if 'hours' in request.session['requestParams']:
+            defaulthours = request.session['requestParams']['hours']
+            hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            defaulthours)
+            URL += '&hours=' + str(request.session['requestParams']['hours'])
+        else:
+            hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                defaulthours)
         if 'days' in request.session['requestParams']:
-            days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day """ % (
+            days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
             request.session['requestParams']['days'])
             URL += '&days=' + str(request.session['requestParams']['days'])
-        if 'hours' in request.session['requestParams']:
-            hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour """ % (
-            request.session['requestParams']['hours'])
-            URL += '&hours=' + str(request.session['requestParams']['hours'])
+            hours = ''
+            defaulthours = int(request.session['requestParams']['days']) * 24
         sqlquery = """
           SELECT * FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
           where computingsite like '%s' %s %s %s %s %s %s and ROWNUM<=1
@@ -665,12 +687,13 @@ def harvesters(request):
             workersList.append(object)
 
         if len(workersList)==0:
-            return HttpResponse(json.dumps({'message': 'Computingsite is not found OR no workers for this computingsite or time period'}),
+            message ="""Computingsite is not found OR no workers for this computingsite or time period. Try using this <a href =/harvesters/?computingsite=%s&days=365>link (last 365 days)</a>""" % (computingsite)
+            return HttpResponse(json.dumps({'message':  message}),
                             content_type='text/html')
         generalInstanseInfo = {'Computingsite':workersList[0]['computingsite'], 'Description':workersList[0]['description'], 'Starttime': workersList[0]['insstarttime'],
                                       'Owner':workersList[0]['owner'], 'Hostname':workersList[0]['hostname'],'Lastupdate':workersList[0]['inslastupdate'], 'Harvesters':harvesteridDict,'Statuses':statusesDict, 'Resourcetypes':resourcetypesDict,'Computingelements':computingelementsDict,'Software version':workersList[0]['sw_version'],'Commit stamp':workersList[0]['commit_stamp']
         }
-
+        request.session['viewParams']['selection'] =  'Harvester workers, last %s hours' %(defaulthours)
         data = {
                 'generalInstanseInfo':generalInstanseInfo,
                 'type':'workers',
@@ -694,43 +717,12 @@ def harvesters(request):
     #     pass
     else:
         sqlquery = """
-        select  
-        R.harvid,
-        count(R.workid) as total,
-        (select cnt from   (select harvid, count(*) as cnt from (
-        SELECT
-        a.harvester_id as harvid, 
-        b.workerid as workid,
-        to_char(b.submittime, 'dd-mm-yyyy hh24:mi:ss') as alldate,
-        (SELECT
-        to_char(max(O.submittime), 'dd-mm-yyyy hh24:mi:ss')
-        FROM atlas_panda.harvester_workers O WHERE O.harvesterid = a.harvester_id Group by O.harvesterid) as recently, 
-        a.DESCRIPTION as description
-        FROM
-        atlas_panda.harvester_workers b,
-        atlas_panda.harvester_instances a
-        WHERE a.harvester_id = b.harvesterid
-        ) WHERE alldate = recently Group by harvid) W WHERE W.harvid=R.harvid) as recent,
-        R.recently,
-        R.sw_version,
-        R.commit_stamp,
-        R.lastupdate,
-        R.description
-        FROM (SELECT
-        a.harvester_id as harvid, 
-        b.workerid as workid,
-        to_char(b.submittime, 'dd-mm-yyyy hh24:mi:ss') as alldate,
-        (SELECT
-        to_char(max(O.submittime), 'dd-mm-yyyy hh24:mi:ss')
-        FROM atlas_panda.harvester_workers O where  O.harvesterid = a.harvester_id   Group by O.harvesterid) as recently,
-        a.sw_version,
-        a.commit_stamp,
-        to_char(a.lastupdate, 'dd-mm-yyyy hh24:mi:ss') as lastupdate, 
-        a.DESCRIPTION as description
-        FROM
-        atlas_panda.harvester_workers b,
-        atlas_panda.harvester_instances a
-        WHERE a.harvester_id = b.harvesterid) R group by harvid,recently,sw_version,commit_stamp,lastupdate,description
+      SELECT HARVESTER_ID as HARVID,
+      SW_VERSION,
+      DESCRIPTION,
+      COMMIT_STAMP,
+      to_char(LASTUPDATE, 'dd-mm-yyyy hh24:mi:ss') as LASTUPDATE
+      FROM ATLAS_PANDA.HARVESTER_INSTANCES
         """
         instanceDictionary = []
         cur = connection.cursor()
@@ -738,8 +730,8 @@ def harvesters(request):
 
         for instance in cur:
             instanceDictionary.append(
-                {'instance': instance[0], 'total': instance[1], 'recently': instance[2], 'when': instance[3],'sw_version':instance[4],'commit_stamp':instance[5],'lastupdate':instance[6], 'descr': instance[7]})
-
+                {'instance': instance[0], 'sw_version':instance[1],'commit_stamp':instance[2], 'descr': instance[3],'lastupdate':instance[4]})
+        request.session['viewParams']['selection'] = 'Harvester instances'
         data = {
             'instances':instanceDictionary,
             'type': 'instances',
@@ -852,7 +844,7 @@ def workersJSON(request):
     computingsite = ''
     workerid = ''
     days = ''
-    hours = ''
+    defaulthours = 24
     lastupdateCache = ''
     resourcetype = ''
     computingelement = ''
@@ -863,12 +855,17 @@ def workersJSON(request):
             str(request.session['requestParams']['computingsite']))
     if 'workerid' in request.session['requestParams']:
         workerid = """AND workerid in (%s)""" % (request.session['requestParams']['workerid'])
-    if 'days' in request.session['requestParams']:
-        days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day """ % (
-            request.session['requestParams']['days'])
     if 'hours' in request.session['requestParams']:
-        hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour """ % (
-            request.session['requestParams']['hours'])
+        defaulthours = request.session['requestParams']['hours']
+        hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            defaulthours)
+    else: hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+        defaulthours)
+    if 'days' in request.session['requestParams']:
+        days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
+            request.session['requestParams']['days'])
+        hours = ''
+        defaulthours = int(request.session['requestParams']['days']) * 24
     if 'resourcetype' in request.session['requestParams']:
         resourcetype = """AND resourcetype like '%s'""" % (
             str(request.session['requestParams']['resourcetype']))
