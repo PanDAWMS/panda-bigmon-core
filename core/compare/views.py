@@ -38,8 +38,7 @@ def addToComparison(request):
 
     newList = []
     if request.user.is_authenticated():
-        userids = BPUser.objects.filter(email=request.user.email).values('id')
-        userid = userids[0]['id']
+        userid = request.user.id
         # try:
         newList = add_to_comparison(object, userid, value)
         # except:
@@ -63,8 +62,7 @@ def deleteFromComparison(request):
 
     newList = []
     if request.user.is_authenticated():
-        userids = BPUser.objects.filter(email=request.user.email).values('id')
-        userid = userids[0]['id']
+        userid = request.user.id
         # try:
         newList = delete_from_comparison(object, userid, value)
         # except:
@@ -84,13 +82,10 @@ def clearComparison(request):
 
     if 'object' in request.session['requestParams']:
         object = request.session['requestParams']['object']
-    if 'value' in request.session['requestParams']:
-        value = request.session['requestParams']['value']
 
     newList = []
     if request.user.is_authenticated():
-        userids = BPUser.objects.filter(email=request.user.email).values('id')
-        userid = userids[0]['id']
+        userid = request.user.id
         # try:
         result = clear_comparison_list(object, userid)
         # except:
@@ -118,10 +113,24 @@ def compareJobs(request):
         endSelfMonitor(request)
         return response
 
+    pandaidstr = None
     if 'pandaid' in request.session['requestParams']:
         pandaidstr = request.session['requestParams']['pandaid'].split('|')
     else:
+        query = {}
+        query['userid'] = request.user.id
+        query['object'] = 'job'
+        try:
+            jobsComparison = ObjectsComparison.objects.get(**query)
+            pandaidstr = json.loads(jobsComparison.comparisonlist)
+        except ObjectsComparison.DoesNotExist:
+            pandaidstr = None
+
+
+    if not pandaidstr:
         return render_to_response('errorPage.html', {'errormessage': 'No pandaids for comparison provided'}, content_type='text/html')
+
+
 
     pandaids = []
     for pid in pandaidstr:

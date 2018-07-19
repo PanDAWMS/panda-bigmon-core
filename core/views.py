@@ -60,6 +60,7 @@ from core.common.models import JediDatasets
 from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
 from core.common.models import RequestStat, BPUser, Visits, BPUserSettings, AllRequests
+from core.compare.modelsCompare import ObjectsComparison
 from core.settings.config import ENV
 
 from time import gmtime, strftime
@@ -336,6 +337,7 @@ def initRequest(request, callselfmon = True):
                 try:
                     user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
                     request.session['IS_TESTER'] = user.is_tester
+                    request.session['USER_ID'] = user.id
                 except BPUser.DoesNotExist:
                     user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'], first_name=request.session['ADFS_FIRSTNAME'], last_name=request.session['ADFS_LASTNAME'])
                     user.set_unusable_password()
@@ -4218,6 +4220,37 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     if job['statechangetime']:
         job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
 
+    isincomparisonlist = False
+    clist = []
+    if request.user.is_authenticated() and request.user.is_tester:
+        cquery = {}
+        cquery['object'] = 'job'
+        cquery['userid'] = request.user.id
+        try:
+            jobsComparisonList = ObjectsComparison.objects.get(**cquery)
+        except ObjectsComparison.DoesNotExist:
+            jobsComparisonList = None
+
+        if jobsComparisonList:
+            try:
+                clist = json.loads(jobsComparisonList.comparisonlist)
+                newlist = []
+                for ce in clist:
+                    try:
+                        ceint = int(ce)
+                        newlist.append(ceint)
+                    except:
+                        pass
+                clist = newlist
+            except:
+                clist = []
+            if job['pandaid'] in clist:
+                isincomparisonlist = True
+
+
+
+
+
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
         del request.session['TFIRST']
@@ -4258,7 +4291,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'fileSummary': fileSummary,
             'built': datetime.now().strftime("%H:%M:%S"),
             'produsername':produsername,
-            'harvesterInfo':harvesterInfo
+            'harvesterInfo':harvesterInfo,
+            'isincomparisonlist': isincomparisonlist,
+            'clist': clist,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)

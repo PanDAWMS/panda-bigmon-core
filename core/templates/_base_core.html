@@ -311,6 +311,10 @@
                 <ul class="submenu menu vertical">
                     <li><span class="li-text loggeduser">{{ request.user.first_name }} {{ request.user.last_name }},</span>
                     <li><span class="li-text loggeduser">{{ request.user.email }}</span>
+                    {% if request.user.is_tester %}
+                        <li><a href="{% url 'compareJobs' %}">Go to jobs comparison</a>
+                        <li><a href="/clearcomparison/?object=job">Clear jobs comparison list</a>
+                    {% endif %}
                     <li><a href="{% url 'userInfo' %}">My BigPanDA</a>
                     <li><a href="{% url 'logout' %}"><span class="reassign">Logout</span></a>
                 </ul>
