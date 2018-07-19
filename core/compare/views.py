@@ -156,11 +156,11 @@ def compareJobs(request):
                      'attemptnr': 'Attempt', 'creationtime': 'Created', 'waittime': 'Time to start', 'duration': 'Duration',
                      'modificationtime': 'Modified', 'cloud': 'Cloud', 'computingsite': 'Site', 'currentpriority': 'Priority',
                      'jobname': 'Name', 'processingtype': 'Type', 'transformation': 'Transformation', 'proddblock': 'Input',
-                     'destinationdblock': 'Output', 'jobsetid': 'Jobset ID', 'batchid': 'Batch ID'}
+                     'destinationdblock': 'Output', 'jobsetid': 'Jobset ID', 'batchid': 'Batch ID', 'eventservice': 'Event Service'}
 
     compareParams = ['produsername', 'reqid', 'jeditaskid', 'jobstatus', 'attemptnr','creationtime', 'waittime', 'duration',
                          'modificationtime', 'cloud', 'computingsite','currentpriority',
-                         'jobname', 'processingtype', 'transformation','proddblock','destinationdblock', 'jobsetid', 'batchid']
+                         'jobname', 'processingtype', 'transformation','proddblock','destinationdblock', 'jobsetid', 'batchid','eventservice']
 
     ###Excluded params because of too long values###
     excludedParams = ['metadata', 'metastruct']

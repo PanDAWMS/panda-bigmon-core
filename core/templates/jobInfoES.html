@@ -22,7 +22,32 @@ function loadExtendedErrorData(jeditaskid, pandaid) {
        $('#div-exterrorsinfo').html(response);
     });
 
-};
+}
+
+function toggleComparisonList(buttonid, value) {
+    var buttontext = document.getElementById(buttonid).innerHTML;
+    if (buttontext.indexOf('Add') >= 0) {
+        $.ajax({
+            url: '/addtocomparison/',
+            data: 'object=job&value='+value,
+            async: true
+        }).done(function (response) {
+            $('#' + buttonid).html('Remove job from comparison');
+            document.getElementById(buttonid).className = "removefromcomparisonbutton";
+            });
+    }
+    else {
+        $.ajax({
+            url: '/deletefromcomparison/',
+            data: 'object=job&value='+value,
+            async: true
+        }).done(function (response) {
+            $('#' + buttonid).html('Add job to comparison');
+            document.getElementById(buttonid).className = "addtocomparisonbutton";
+            });
+    }
+
+}
 </script>
 
 
@@ -79,6 +104,17 @@ function loadExtendedErrorData(jeditaskid, pandaid) {
 </tr>
 </table>
 <font size=-1>
+
+{% if request.user.is_tester %}
+<div>
+    {% if isincomparisonlist %}
+        <a id="comparisonbutton" onclick="toggleComparisonList('comparisonbutton', '{{ job.pandaid }}')" class="removefromcomparisonbutton">Remove job from comparison</a>
+    {% else %}
+        <a id="comparisonbutton" onclick="toggleComparisonList('comparisonbutton', '{{ job.pandaid }}')" class="addtocomparisonbutton">Add job to comparison</a>
+    {% endif %}
+</div>
+{% endif %}
+
 <p>
 {% if not job.jeditaskid %}
 {% if job.attemptnr > 1 %}
