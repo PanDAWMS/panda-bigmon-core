@@ -294,3 +294,30 @@ float: none !important; }
   padding: 10px;
 
 }
+
+.removefromcomparisonbuttoncompact {
+  display: inline-block;
+  width: 90px;
+  font-family: sans-serif;
+  text-align: center;
+  font-size: 0.65rem;
+  /*font-weight: bold;*/
+  text-decoration: none;
+  background-color: firebrick;
+  color: white !important;
+  padding: 2px;
+}
+
+.addtocomparisonbuttoncompact {
+  display: inline-block;
+  width: 90px;
+  font-family: sans-serif;
+  text-align: center;
+  font-size: 0.65rem;
+  /*font-weight: bold;*/
+  text-decoration: none;
+  background-color: #4ba173;
+  color: white !important;
+  padding: 2px;
+
+}

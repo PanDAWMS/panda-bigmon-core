@@ -3267,6 +3267,34 @@ def jobList(request, mode=None, param=None):
         if job['statechangetime']:
             job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
 
+    isincomparisonlist = False
+    clist = []
+    if request.user.is_authenticated() and request.user.is_tester:
+        cquery = {}
+        cquery['object'] = 'job'
+        cquery['userid'] = request.user.id
+        try:
+            jobsComparisonList = ObjectsComparison.objects.get(**cquery)
+        except ObjectsComparison.DoesNotExist:
+            jobsComparisonList = None
+
+        if jobsComparisonList:
+            try:
+                clist = json.loads(jobsComparisonList.comparisonlist)
+                newlist = []
+                for ce in clist:
+                    try:
+                        ceint = int(ce)
+                        newlist.append(ceint)
+                    except:
+                        pass
+                clist = newlist
+            except:
+                clist = []
+            if job['pandaid'] in clist:
+                isincomparisonlist = True
+
+
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
 
@@ -3326,6 +3354,7 @@ def jobList(request, mode=None, param=None):
             'droppedPmerge2_test':newdroppedPmerge,
             'pandaIDList_test':newdroplist,
             'difDropList_test':difDropList,
+            'clist': clist,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)

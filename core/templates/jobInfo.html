@@ -29,7 +29,8 @@ function toggleComparisonList(buttonid, value) {
         $.ajax({
             url: '/addtocomparison/',
             data: 'object=job&value='+value,
-            async: true
+            async: true,
+            cache: false
         }).done(function (response) {
             $('#' + buttonid).html('Remove job from comparison');
             document.getElementById(buttonid).className = "removefromcomparisonbutton";
@@ -39,7 +40,8 @@ function toggleComparisonList(buttonid, value) {
         $.ajax({
             url: '/deletefromcomparison/',
             data: 'object=job&value='+value,
-            async: true
+            async: true,
+            cache: false
         }).done(function (response) {
             $('#' + buttonid).html('Add job to comparison');
             document.getElementById(buttonid).className = "addtocomparisonbutton";

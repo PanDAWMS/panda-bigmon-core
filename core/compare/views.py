@@ -102,16 +102,16 @@ def compareJobs(request):
     valid, response = initRequest(request)
     if not valid: return response
 
-    # Here we try to get cached data
-    data = getCacheEntry(request, "compareJobs")
-    data = None
-    if data is not None:
-        data = json.loads(data)
-        data['request'] = request
-        response = render_to_response('compareJobs.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
-        return response
+    # # Here we try to get cached data
+    # data = getCacheEntry(request, "compareJobs")
+    # data = None
+    # if data is not None:
+    #     data = json.loads(data)
+    #     data['request'] = request
+    #     response = render_to_response('compareJobs.html', data, content_type='text/html')
+    #     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    #     endSelfMonitor(request)
+    #     return response
 
     pandaidstr = None
     if 'pandaid' in request.session['requestParams']:
@@ -141,7 +141,7 @@ def compareJobs(request):
             pass
     maxNJobs = 5
     if len(pandaids) > maxNJobs:
-        pandaids = pandaids[:maxNJobs-1]
+        pandaids = pandaids[:maxNJobs]
 
 
     jobInfoJSON = []
@@ -205,7 +205,7 @@ def compareJobs(request):
         'xurl': xurl,
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-    setCacheEntry(request, "compareJobs", json.dumps(data, cls=DateEncoder), 60 * 20)
+    # setCacheEntry(request, "compareJobs", json.dumps(data, cls=DateEncoder), 60 * 20)
 
     ##self monitor
     endSelfMonitor(request)

@@ -41,7 +41,7 @@
 <link rel="stylesheet" href="{% static "css/table.css" %}?version=2">
 <link rel="stylesheet" href="{% static "css/d3js-plots.css" %}">
 <link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}">
-<link rel="stylesheet" href="{% static "css/page-sections.css" %}?version=1">
+<link rel="stylesheet" href="{% static "css/page-sections.css" %}?version=2">
 
 
 
@@ -313,7 +313,7 @@
                     <li><span class="li-text loggeduser">{{ request.user.email }}</span>
                     {% if request.user.is_tester %}
                         <li><a href="{% url 'compareJobs' %}">Go to jobs comparison</a>
-                        <li><a href="/clearcomparison/?object=job">Clear jobs comparison list</a>
+                        <li><a onclick="clearComparisonList('job')">Clear jobs comparison list</a>
                     {% endif %}
                     <li><a href="{% url 'userInfo' %}">My BigPanDA</a>
                     <li><a href="{% url 'logout' %}"><span class="reassign">Logout</span></a>
@@ -363,7 +363,7 @@
           <span class="hide-for-small"><font size=-1>
               {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
               {% if built != None %} {{ built }}, {% endif %}
-               <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a>
+               <a id="reloadlink" href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a>
 {#              {% if request.session.ADFS_EMAIL %}&nbsp;You are logged as {{ request.session.ADFS_FULLNAME }}(#}
 {#                  {% if request.session.ADFS_LOGIN %}{{request.session.ADFS_LOGIN}}{% endif %}#}
 {#                  ,#}
@@ -485,6 +485,19 @@
         }
 
         window.location = urlBase + url;
+    }
+
+    function clearComparisonList(object) {
+        var newURL = document.getElementById('reloadlink').href;
+        $.ajax({
+            url: '/clearcomparison/',
+            data: 'object='+object,
+            async: true,
+            cache: false
+        }).done(function (response) {
+            window.location = newURL
+            });
+
     }
 </script>
 

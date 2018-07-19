@@ -65,9 +65,15 @@ def clear_comparison_list(objecttype, userid):
     query['object'] = objecttype
 
     try:
-        ObjectsComparison.objects.filter(**query).delete()
+        oldComparisonList = ObjectsComparison.objects.get(**query)
+    except ObjectsComparison.DoesNotExist:
+        oldComparisonList = None
         isDeleted = True
-    except:
-        isDeleted = False
+
+    if oldComparisonList:
+        oldComparisonList.comparisonlist = json.dumps([])
+        oldComparisonList.save()
+        isDeleted = True
+
 
     return isDeleted
