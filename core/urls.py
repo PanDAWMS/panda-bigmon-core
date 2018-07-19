@@ -187,6 +187,10 @@ urlpatterns = [
 
     ###Compare###
     url(r'^compare/jobs/$', compare_views.compareJobs, name='compareJobs'),
+    url(r'^deletefromcomparison/$', compare_views.deleteFromComparison),
+    url(r'^addtocomparison/$', compare_views.addToComparison),
+    url(r'^clearcomparison/$', compare_views.clearComparison),
+
 
 
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

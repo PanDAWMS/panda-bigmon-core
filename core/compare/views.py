@@ -1,7 +1,7 @@
 """
     Created on 16.07.2018
     :author Tatiana Korchuganova
-    A set of views showing comparison of job parameters
+    A set of views showing comparison of PanDA object parameters
 """
 
 import json, urllib3
@@ -22,7 +22,85 @@ from core.views import login_customrequired, initRequest, setupView, endSelfMoni
     extensibleURL, DateTimeEncoder, removeParam, taskSummaryDict, preprocessWildCardString
 
 from core.pandajob.models import Jobsactive4, Jobsarchived4, Jobswaiting4, Jobsdefined4, Jobsarchived
+from core.common.models import BPUser
+from core.compare.modelsCompare import ObjectsComparison
+from core.compare.utils import add_to_comparison, clear_comparison_list, delete_from_comparison
 
+@login_customrequired
+def addToComparison(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+
+    if 'object' in request.session['requestParams']:
+        object = request.session['requestParams']['object']
+    if 'value' in request.session['requestParams']:
+        value = request.session['requestParams']['value']
+
+    newList = []
+    if request.user.is_authenticated():
+        userids = BPUser.objects.filter(email=request.user.email).values('id')
+        userid = userids[0]['id']
+        # try:
+        newList = add_to_comparison(object, userid, value)
+        # except:
+        #     pass
+
+    data = {'newList': newList}
+    dump = json.dumps(data, cls=DateEncoder)
+    ##self monitor
+    endSelfMonitor(request)
+    return HttpResponse(dump, content_type='text/html')
+
+@login_customrequired
+def deleteFromComparison(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+
+    if 'object' in request.session['requestParams']:
+        object = request.session['requestParams']['object']
+    if 'value' in request.session['requestParams']:
+        value = request.session['requestParams']['value']
+
+    newList = []
+    if request.user.is_authenticated():
+        userids = BPUser.objects.filter(email=request.user.email).values('id')
+        userid = userids[0]['id']
+        # try:
+        newList = delete_from_comparison(object, userid, value)
+        # except:
+        #     pass
+
+    data = {'newList': newList}
+    dump = json.dumps(data, cls=DateEncoder)
+    ##self monitor
+    endSelfMonitor(request)
+    return HttpResponse(dump, content_type='text/html')
+
+
+@login_customrequired
+def clearComparison(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+
+    if 'object' in request.session['requestParams']:
+        object = request.session['requestParams']['object']
+    if 'value' in request.session['requestParams']:
+        value = request.session['requestParams']['value']
+
+    newList = []
+    if request.user.is_authenticated():
+        userids = BPUser.objects.filter(email=request.user.email).values('id')
+        userid = userids[0]['id']
+        # try:
+        result = clear_comparison_list(object, userid)
+        # except:
+        #     pass
+
+    data = {'result': result}
+    dump = json.dumps(data, cls=DateEncoder)
+    ##self monitor
+    endSelfMonitor(request)
+    return HttpResponse(dump, content_type='text/html')
 
 @login_customrequired
 def compareJobs(request):
@@ -42,6 +120,8 @@ def compareJobs(request):
 
     if 'pandaid' in request.session['requestParams']:
         pandaidstr = request.session['requestParams']['pandaid'].split('|')
+    else:
+        return render_to_response('errorPage.html', {'errormessage': 'No pandaids for comparison provided'}, content_type='text/html')
 
     pandaids = []
     for pid in pandaidstr:
@@ -64,14 +144,17 @@ def compareJobs(request):
         jobInfoJSON.append(json.loads(response.data)['job'])
 
     compareParamNames = {'produsername': 'Owner', 'reqid': 'Request ID', 'jeditaskid': 'Task ID', 'jobstatus': 'Status',
-                     'creationtime': 'Created', 'waittime': 'Time to start', 'duration': 'Duration',
+                     'attemptnr': 'Attempt', 'creationtime': 'Created', 'waittime': 'Time to start', 'duration': 'Duration',
                      'modificationtime': 'Modified', 'cloud': 'Cloud', 'computingsite': 'Site', 'currentpriority': 'Priority',
                      'jobname': 'Name', 'processingtype': 'Type', 'transformation': 'Transformation', 'proddblock': 'Input',
-                     'destinationdblock': 'Output', 'jobsetid': 'Jobset ID'}
+                     'destinationdblock': 'Output', 'jobsetid': 'Jobset ID', 'batchid': 'Batch ID'}
 
-    compareParams = ['produsername', 'reqid', 'jeditaskid', 'jobstatus','creationtime', 'waittime', 'duration',
+    compareParams = ['produsername', 'reqid', 'jeditaskid', 'jobstatus', 'attemptnr','creationtime', 'waittime', 'duration',
                          'modificationtime', 'cloud', 'computingsite','currentpriority',
-                         'jobname', 'processingtype', 'transformation','proddblock','destinationdblock', 'jobsetid']
+                         'jobname', 'processingtype', 'transformation','proddblock','destinationdblock', 'jobsetid', 'batchid']
+
+    ###Excluded params because of too long values###
+    excludedParams = ['metadata', 'metastruct']
 
     jobsComparisonMain = []
     for param in compareParams:
@@ -91,15 +174,14 @@ def compareJobs(request):
 
     jobsComparisonAll = []
     for param in all_params:
-        row = [param]
-        for job in jobInfoJSON:
-            if param in job:
-                row.append(job[param])
-            else:
-                row.append('-')
-        jobsComparisonAll.append(row)
-
-
+        if param not in excludedParams:
+            row = [param]
+            for job in jobInfoJSON:
+                if param in job and job[param] is not None:
+                    row.append(job[param])
+                else:
+                    row.append('-')
+            jobsComparisonAll.append(row)
 
 
     xurl = extensibleURL(request)
