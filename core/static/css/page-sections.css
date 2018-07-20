@@ -321,3 +321,11 @@ float: none !important; }
   padding: 2px;
 
 }
+
+a.close-x-sign {
+    color: firebrick !important;
+}
+
+a.close-x-sign:hover {
+    color: #0a0a0a !important;
+}

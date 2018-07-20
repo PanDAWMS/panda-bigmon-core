@@ -19,29 +19,52 @@
             $("#" + idtotoggle).show();
             document.getElementById(buttonid).innerHTML='Hide all params'}
     }
+
+    function deletefromcomparison(object, value) {
+        var newURL = document.getElementById('reloadlink').href;
+        $.ajax({
+            url: '/deletefromcomparison/',
+            data: 'object='+object+'&value='+value,
+            async: true,
+            cache: false
+        }).done(function (response) {
+            window.location = newURL
+            });
+    }
+
+    function togglerows(classtotoggle, buttonid){
+        if ($('.'+classtotoggle).is(':visible')){
+            $('.'+classtotoggle).hide();
+            document.getElementById(buttonid).innerHTML='Show equal'}
+        else {
+            $('.'+classtotoggle).show();
+            document.getElementById(buttonid).innerHTML='Hide equal'}
+    }
 </script>
 {% endblock %}
 {% block body %}
 <div class="float-right">
+    <a id="hideequal" onclick="togglerows('equal', 'hideequal')" class="bluebutton">Hide equal</a>
     <a id="hidebutton" onclick="toggle('allparams', 'hidebutton')" class="bluebutton">Show all params</a>
 </div>
+<p style="clear: both">
 <table class="compare-table unstriped">
     <thead>
         <tr>
         <th>Main parameters</th>
             {% for pandaid in pandaids %}
-                <th>{{ pandaid }}</th>
+                <th>{{ pandaid }} <a class="close-x-sign" onclick="deletefromcomparison('job','{{ pandaid }}')"><i class="fi-x"></i></a></th>
             {% endfor %}
         </tr>
     </thead>
     <tbody>
         {% for row in jobsComparisonMain %}
-            <tr>
+            <tr {% if row.0.mark %}class="{{ row.0.mark }}"{% endif %}>
                 {% for cell in row %}
                     {% if forloop.first %}
-                        <th>{{ cell }}</th>
+                        <th>{{ cell.paramname }}</th>
                     {% else %}
-                        <td {% if cell != row.1 %}class="different"{% endif %}>{{ cell }}</td>
+                        <td {% if cell.value != row.1.value %}class="different"{% endif %}>{{ cell.value }}</td>
                     {% endif %}
                 {% endfor %}
             </tr>
@@ -49,16 +72,16 @@
     </tbody>
     <tfoot id="allparams">
         <tr>
-            <td style="text-align: center; font-weight: bold">All parameters</td>
-            <td colspan="{{ pandaids|length }}"></td>
+            <th style="text-align: center; font-weight: bold">All parameters</th>
+            <th colspan="{{ pandaids|length }}"></th>
         </tr>
         {% for row in jobsComparisonAll %}
-            <tr>
+            <tr {% if row.0.mark %}class="{{ row.0.mark }}"{% endif %}>
                 {% for cell in row %}
                     {% if forloop.first %}
-                        <th>{{ cell }}</th>
+                        <th>{{ cell.paramname }}</th>
                     {% else %}
-                        <td {% if cell != row.1 %}class="different"{% endif %}>{{ cell }}</td>
+                        <td {% if cell.value != row.1.value %}class="different"{% endif %}>{{ cell.value }}</td>
                     {% endif %}
                 {% endfor %}
             </tr>

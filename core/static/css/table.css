@@ -356,6 +356,7 @@ th.vertical {
     width: 100%;
     background-color: #fefefe;
     table-layout: fixed;
+    margin-top: 1rem;
 }
 
 .compare-table thead {
@@ -373,17 +374,20 @@ th.vertical {
 }
 
 .compare-table thead th {
-    background-color: #fefefe;
+    background-color: #f1f1f1;
     color: #272727;
     text-align: center;
-    border: none;
+    border-left: 1px solid #fefefe;
+    border-right: 1px solid #fefefe;
+    border-bottom: none;
+    border-top: none;
 }
 
 .compare-table tbody td {
     border-left: none;
     border-right: none;
-    border-bottom: 1px solid #cacaca;
-    border-top: 1px solid #cacaca;
+    border-bottom: 1px solid #f1f1f1;
+    border-top: 1px solid #f1f1f1;
     padding-left: 0.3rem;
     padding-right: 0.3rem;
     padding-top: 0.4rem;
@@ -393,21 +397,21 @@ th.vertical {
 }
 
 .compare-table tbody th {
-    background-color: #fefefe;
+    background-color: #f1f1f1;
     color: #272727;
     text-align: right;
     border-left: none;
     border-right: none;
-    border-bottom: 1px solid #cacaca;
-    border-top: 1px solid #cacaca;
+    border-bottom: 1px solid #fefefe;
+    border-top: 1px solid #fefefe;
     font-weight: bold;
 }
 
 .compare-table tfoot td {
     border-left: none;
     border-right: none;
-    border-bottom: 1px solid #cacaca;
-    border-top: 1px solid #cacaca;
+    border-bottom: 1px solid #f1f1f1;
+    border-top: 1px solid #f1f1f1;
     padding-left: 0.3rem;
     padding-right: 0.3rem;
     padding-top: 0.4rem;
@@ -418,13 +422,13 @@ th.vertical {
 }
 
 .compare-table tfoot th {
-    background-color: #fefefe;
+    background-color: #f1f1f1;
     color: #272727;
     text-align: right;
     border-left: none;
     border-right: none;
-    border-bottom: 1px solid #cacaca;
-    border-top: 1px solid #cacaca;
+    border-bottom: 1px solid #fefefe;
+    border-top: 1px solid #fefefe;
     font-weight: bold;
 }
 

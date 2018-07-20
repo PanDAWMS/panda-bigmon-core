@@ -167,12 +167,14 @@ def compareJobs(request):
 
     jobsComparisonMain = []
     for param in compareParams:
-        row = [compareParamNames[param]]
+        row = [{'paramname': compareParamNames[param]}]
         for job in jobInfoJSON:
             if param in job:
-                row.append(job[param])
+                row.append({'value': job[param]})
             else:
-                row.append('-')
+                row.append({'value': '-'})
+        if len(set([d['value'] for d in row if 'value' in d])) == 1:
+            row[0]['mark'] = 'equal'
         jobsComparisonMain.append(row)
 
 
@@ -184,13 +186,17 @@ def compareJobs(request):
     jobsComparisonAll = []
     for param in all_params:
         if param not in excludedParams:
-            row = [param]
+            row = [{'paramname': param}]
             for job in jobInfoJSON:
                 if param in job and job[param] is not None:
-                    row.append(job[param])
+                    row.append({'value':job[param]})
                 else:
-                    row.append('-')
+                    row.append({'value': '-'})
+            if len(set([d['value'] for d in row if 'value' in d])) == 1:
+                row[0]['mark'] = 'equal'
             jobsComparisonAll.append(row)
+
+
 
 
     xurl = extensibleURL(request)
