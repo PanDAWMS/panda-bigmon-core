@@ -60,7 +60,7 @@
 </td>
 
 <td>
-<a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!(%27timeEvent%27,type,message),filters:!(),index:%27atlas_jedilogs-*%27,interval:auto,query:(query_string:(analyze_wildcard:!t,query:%27(type:%22atlasanaljobbroker%22%20OR%20type:%22atlasprodjobbroker%22)%20AND%20site:{{site.siteid}}%20%27)),sort:!(%27timeEvent%27,asc),vis:(aggs:!((params:(field:site,orderBy:%272%27,size:20),schema:segment,type:terms),(id:%272%27,schema:metric,type:count)),type:histogram))&indexPattern=atlas_jedilogs-*&type=histogram">brokerage actions</a>
+<a target="_blank" href="https://es-atlas6.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!(%27timeEvent%27,fields.type,message),filters:!(),index:%2743ecb650-6c45-11e8-a7e3-ffbb2f24f6b4%27,interval:auto,query:(query_string:(analyze_wildcard:!t,query:%27(fields.type:%22atlasanaljobbroker%22%20OR%20type:%22atlasprodjobbroker%22)%20AND%20site.keyword:{{site.siteid}}%20%27)),sort:!(%27timeEvent%27,asc),vis:(aggs:!((params:(field:site,orderBy:%272%27,size:20),schema:segment,type:terms),(id:%272%27,schema:metric,type:count)),type:histogram))&indexPattern=43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4&type=histogram">brokerage actions</a>
 </td>
 {% if site.nickname %}
 <td>

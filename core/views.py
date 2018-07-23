@@ -9553,7 +9553,8 @@ def esatlasPandaLoggerJson(request):
     esPassword = None
 
     if 'esHost' in ES:
-        esHost = ES['esHost']
+        #esHost = ES['esHost']
+        esHost = "es-atlas6.cern.ch"
     if 'esPort' in ES:
         esPort = ES['esPort']
     if 'esUser' in ES:
@@ -9579,10 +9580,10 @@ def esatlasPandaLoggerJson(request):
                 "terms": {"field": "jediTaskID", "size": 100000000},
                 "aggs": {
                     "type": {
-                        "terms": {"field": "type", "size": 100},
+                        "terms": {"field": "fields.type.keyword", "size": 100},
                         "aggs": {
                             "logLevel": {
-                                "terms": {"field": "logLevel"}
+                                "terms": {"field": "logLevel.keyword"}
                             }
                         }
                     }
@@ -9619,7 +9620,8 @@ def esatlasPandaLogger(request):
     esPassword = None
 
     if 'esHost' in ES:
-        esHost = ES['esHost']
+        #esHost = ES['esHost']
+        esHost = "es-atlas6.cern.ch"
     if 'esPort' in ES:
         esPort = ES['esPort']
     if 'esUser' in ES:
@@ -9721,13 +9723,13 @@ def esatlasPandaLogger(request):
         res = es.search(index=index + str(today), stored_fields=['logName', 'type', 'logLevel'], body={
             "aggs": {
                 "logName": {
-                    "terms": {"field": "logName","size": 100},
+                    "terms": {"field": "logName.keyword","size": 100},
                     "aggs": {
                         "type": {
-                            "terms": {"field": "type","size": 100},
+                            "terms": {"field": "fields.type.keyword","size": 100},
                             "aggs": {
                                 "logLevel": {
-                                    "terms": {"field": "logLevel"}
+                                    "terms": {"field": "logLevel.keyword"}
                                 }
                             }
                         }
