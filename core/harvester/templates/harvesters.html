@@ -81,7 +81,9 @@
     <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
     <script type="text/javascript" src="/static/js/datatables/moment.min.js"></script>
     <script type="text/javascript" src="/static/js/datatables/datetime-moment.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script type="text/javascript" src="/static/js/datatables/datetime.js"></script>
+    <script type="text/javascript" src="/static/js/datatables/jquery-ui.js"></script>
+
 {% endblock %}
 {% block body %}
     {% if  type == 'instances' %}
@@ -132,7 +134,7 @@
         <script>
 
             $(document).ready(function () {
-                $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');
+{#                $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');#}
                 $('#harvesterinstances').dataTable({"iDisplayLength": 100, responsive: true,});
 {#                $('#harvesterinstances').addClass("data-table bluelinks")#}
             });
@@ -384,7 +386,7 @@ height="1000" width="100%"></iframe>
         </table>
         <script>
             $(document).ready(function () {
-                $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');
+{#                $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');#}
                 $("#tabs").tabs();
                 $("#plotstabs").tabs();
                 var items = 100
@@ -438,6 +440,7 @@ height="1000" width="100%"></iframe>
                     {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
                 });
                 workersTable();
+
             });
 
             function workersTable() {
@@ -460,6 +463,10 @@ height="1000" width="100%"></iframe>
                         "url": "{% url 'workers' %}{{url|safe}}&dt&display_limit_workers=1000",
                         "dataSrc": ''
                     },
+                        columnDefs: [ {
+                        targets: [1,7,8,9],
+                        render: $.fn.dataTable.render.moment( 'YYYY-MM-DDTHH:mm:ss','YYYY-MM-DD HH:mm:ss')
+                        } ],
                     "aoColumns": [
                         {
                             data: "workerid",
@@ -485,7 +492,7 @@ height="1000" width="100%"></iframe>
                             }
                         },
                         {
-                            "data": "wrklastupdate",
+                            "data": "lastupdate",
                             sDefaultContent: ""
                         },
                         {
@@ -528,11 +535,11 @@ height="1000" width="100%"></iframe>
                             sDefaultContent: "",
                         },
                         {
-                            "data": "wrkstarttime",
+                            "data": "starttime",
                             sDefaultContent: "",
                         },
                         {
-                            "data": "wrkendtime",
+                            "data": "endtime",
                             sDefaultContent: "",
                         },
                         {

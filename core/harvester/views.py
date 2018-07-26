@@ -229,13 +229,13 @@ def harvesters(request):
                 workerid = """AND workerid in (%s)""" % (request.session['requestParams']['workerid'])
             if 'hours' in request.session['requestParams']:
                 defaulthours = request.session['requestParams']['hours']
-                hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
                     defaulthours)
             else:
-                hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
                     defaulthours)
             if 'days' in request.session['requestParams']:
-                days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
+                days = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
                     request.session['requestParams']['days'])
                 hours = ''
                 defaulthours = int(request.session['requestParams']['days']) * 24
@@ -245,8 +245,8 @@ def harvesters(request):
             if 'limit' in request.session['requestParams']:
                 limit = request.session['requestParams']['limit']
             sqlqueryjobs = """
-            SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where  harvesterid like '%s' and workerid in (SELECT workerid FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
-            where harvester_id like '%s' %s %s %s %s %s %s %s)  ORDER by lastupdate DESC) WHERE  rownum <= %s
+            SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where  harvesterid like '%s' and workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
+            where harvesterid like '%s' %s %s %s %s %s %s %s)  ORDER by lastupdate DESC) WHERE  rownum <= %s
             """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
             computingelement, limit)
 
@@ -335,46 +335,46 @@ def harvesters(request):
             URL += '&workerid=' + str(request.session['requestParams']['workerid'])
         if 'hours' in request.session['requestParams']:
             defaulthours = request.session['requestParams']['hours']
-            hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
             defaulthours)
             URL += '&hours=' + str(request.session['requestParams']['hours'])
         else:
-            hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
                 defaulthours)
         if 'days' in request.session['requestParams']:
-            days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ %(request.session['requestParams']['days'])
+            days = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ %(request.session['requestParams']['days'])
             URL += '&days=' + str(request.session['requestParams']['days'])
             hours = ''
             defaulthours = int(request.session['requestParams']['days']) * 24
         sqlquery = """
         SELECT * FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
-        where harvester_id like '%s' %s %s %s %s %s %s %s %s and ROWNUM<=1
+        where harvester_id like '%s' %s %s %s %s %s %s and ROWNUM<=1
         order by workerid DESC
-        """ % (str(instance),status, computingsite, workerid, lastupdateCache,days,hours,resourcetype,computingelement)
+        """ % (str(instance),status, computingsite, workerid, lastupdateCache,resourcetype,computingelement)
 
         sqlquerycomputingsite = """
-        SELECT COMPUTINGSITE,count(*) FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
-        where harvester_id like '%s' %s %s %s %s %s %s %s %s group by COMPUTINGSITE
+        SELECT COMPUTINGSITE,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
+        where harvesterid like '%s' %s %s %s %s %s %s %s %s group by COMPUTINGSITE
         """ % (str(instance),status, computingsite, workerid, lastupdateCache,days,hours,resourcetype,computingelement)
 
         sqlquerystatus = """
-        SELECT status,count(*) FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
-        where harvester_id like '%s' %s %s %s %s %s %s  %s %s group by status
+        SELECT status,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
+        where harvesterid like '%s' %s %s %s %s %s %s  %s %s group by status
         """ % (str(instance),status, computingsite, workerid, lastupdateCache,days,hours,resourcetype,computingelement)
 
         sqlqueryresource = """
-        SELECT RESOURCETYPE,count(*) FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
-        where harvester_id like '%s' %s %s %s %s %s %s %s %s group by RESOURCETYPE
+        SELECT RESOURCETYPE,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
+        where harvesterid like '%s' %s %s %s %s %s %s %s %s group by RESOURCETYPE
         """ % (str(instance),status, computingsite, workerid, lastupdateCache,days,hours,resourcetype,computingelement)
 
         sqlqueryce = """
-        SELECT COMPUTINGELEMENT,count(*) FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
-        where harvester_id like '%s' %s %s %s %s %s %s %s %s group by COMPUTINGELEMENT
+        SELECT COMPUTINGELEMENT,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
+        where harvesterid like '%s' %s %s %s %s %s %s %s %s group by COMPUTINGELEMENT
         """ % (str(instance),status, computingsite, workerid, lastupdateCache,days, hours ,resourcetype,computingelement)
 
         sqlqueryjobcount = """
-        SELECT count(*) as jobscount from atlas_panda.harvester_rel_jobs_workers where  harvesterid like '%s' and workerid in (SELECT workerid FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
-        where harvester_id like '%s' %s %s %s %s %s %s %s %s) group by harvesterid
+        SELECT count(*) as jobscount from atlas_panda.harvester_rel_jobs_workers where  harvesterid like '%s' and workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
+        where harvesterid like '%s' %s %s %s %s %s %s %s %s) group by harvesterid
         """  % (str(instance),str(instance),status, computingsite, workerid, lastupdateCache,days, hours,resourcetype,computingelement)
 
         workersList = []
@@ -543,13 +543,13 @@ def harvesters(request):
 
             if 'hours' in request.session['requestParams']:
                 defaulthours = request.session['requestParams']['hours']
-                hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
                     defaulthours)
             else:
-                hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
                     defaulthours)
             if 'days' in request.session['requestParams']:
-                days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
+                days = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
                     request.session['requestParams']['days'])
                 hours = ''
                 defaulthours = int(request.session['requestParams']['days'])*24
@@ -559,7 +559,7 @@ def harvesters(request):
             if 'limit' in request.session['requestParams']:
                 limit = request.session['requestParams']['limit']
             sqlqueryjobs = """
-                   SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where  harvesterid in (%s) and workerid in (SELECT workerid FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+                   SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where  harvesterid in (%s) and workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
                    where harvester_id in (%s) %s %s %s %s %s %s %s)  ORDER by lastupdate DESC) WHERE  rownum <= %s
                    """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
                           computingelement, limit)
@@ -608,41 +608,41 @@ def harvesters(request):
             URL += '&computingelement=' + str(request.session['requestParams']['computingelement'])
         if 'hours' in request.session['requestParams']:
             defaulthours = request.session['requestParams']['hours']
-            hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
             defaulthours)
             URL += '&hours=' + str(request.session['requestParams']['hours'])
         else:
-            hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
                 defaulthours)
         if 'days' in request.session['requestParams']:
-            days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
+            days = """AND submittime  > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
             request.session['requestParams']['days'])
             URL += '&days=' + str(request.session['requestParams']['days'])
             hours = ''
             defaulthours = int(request.session['requestParams']['days']) * 24
         sqlquery = """
-          SELECT * FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+          SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS
           where computingsite like '%s' %s %s %s %s %s %s and ROWNUM<=1
           order by workerid DESC
-          """ % (str(computingsite), status,  workerid, days, hours,resourcetype,computingelement)
+          """ % (str(computingsite), status,  workerid,days,hours, resourcetype,computingelement)
 
         sqlquerycomputingsite = """
-          SELECT harvester_id,count(*) FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+          SELECT harvesterid,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
           where computingsite like '%s' %s %s %s %s %s %s group by harvester_id
           """ % (str(computingsite), status,  workerid, days, hours,resourcetype,computingelement)
 
         sqlquerystatus = """
-          SELECT status,count(*) FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+          SELECT status,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
           where computingsite like '%s' %s %s %s %s %s %s group by status
           """ % (str(computingsite), status,  workerid, days, hours,resourcetype,computingelement)
 
         sqlqueryresource = """
-        SELECT RESOURCETYPE,count(*) FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+        SELECT RESOURCETYPE,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
         where computingsite like '%s' %s %s %s %s %s %s group by RESOURCETYPE
         """ % (str(computingsite),status, workerid, days,hours,resourcetype,computingelement)
 
         sqlqueryce = """
-        SELECT COMPUTINGELEMENT,count(*) FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+        SELECT COMPUTINGELEMENT,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
         where computingsite like '%s' %s %s %s %s %s %s  group by COMPUTINGELEMENT
         """ % (str(computingsite),status, workerid, days, hours ,resourcetype,computingelement)
 
@@ -857,12 +857,12 @@ def workersJSON(request):
         workerid = """AND workerid in (%s)""" % (request.session['requestParams']['workerid'])
     if 'hours' in request.session['requestParams']:
         defaulthours = request.session['requestParams']['hours']
-        hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+        hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
             defaulthours)
-    else: hours = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+    else: hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
         defaulthours)
     if 'days' in request.session['requestParams']:
-        days = """AND to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
+        days = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
             request.session['requestParams']['days'])
         hours = ''
         defaulthours = int(request.session['requestParams']['days']) * 24
@@ -882,15 +882,15 @@ def workersJSON(request):
                 display_limit_workers = 1000
 
             generalWorkersFields = ['workerid', 'status', 'batchid', 'nodeid', 'queuename', 'computingsite',
-                                'submittime', 'wrklastupdate', 'wrkstarttime', 'wrkendtime', 'ncore', 'errorcode',
+                                'submittime', 'lastupdate', 'starttime', 'endtime', 'ncore', 'errorcode',
                                 'stdout', 'stderr', 'batchlog', 'resourcetype', 'nativeexitcode', 'nativestatus',
-                                'diagmessage', 'njobs', 'computingelement','harvester_id']
+                                'diagmessage', 'njobs', 'computingelement','harvesterid']
 
             fields = ','.join(generalWorkersFields)
             sqlquery = """
-            SELECT * FROM(SELECT %s FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
-            where harvester_id like '%s' %s %s %s %s %s %s %s %s
-            order by to_date(submittime, 'dd-mm-yyyy hh24:mi:ss') DESC) WHERE ROWNUM<=%s
+            SELECT * FROM(SELECT %s FROM ATLAS_PANDA.HARVESTER_WORKERS
+            where harvesterid like '%s' %s %s %s %s %s %s %s %s
+            order by submittime DESC) WHERE ROWNUM<=%s
             """ % (fields, str(instance), status, computingsite, workerid, lastupdateCache, days, hours, resourcetype,computingelement, display_limit_workers)
 
             cur = connection.cursor()
@@ -902,7 +902,7 @@ def workersJSON(request):
                 object = {}
                 object = dict(zip(columns, worker))
                 workersList.append(object)
-            return HttpResponse(json.dumps(workersList), content_type='text/html')
+            return HttpResponse(json.dumps(workersList,cls=DateTimeEncoder), content_type='text/html')
 
     if 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
         computingsite = request.session['requestParams']['computingsite']
@@ -912,16 +912,16 @@ def workersJSON(request):
             else:
                 display_limit_workers = 1000
 
-            generalWorkersFields = ['workerid', 'status', 'batchid', 'nodeid', 'queuename', 'harvester_id',
-                                    'submittime', 'wrklastupdate', 'wrkstarttime', 'wrkendtime', 'ncore', 'errorcode',
+            generalWorkersFields = ['workerid', 'status', 'batchid', 'nodeid', 'queuename', 'harvesterid',
+                                    'submittime', 'lastupdate', 'starttime', 'endtime', 'ncore', 'errorcode',
                                     'stdout', 'stderr', 'batchlog', 'resourcetype', 'nativeexitcode', 'nativestatus',
                                     'diagmessage', 'njobs', 'computingelement']
 
             fields = ','.join(generalWorkersFields)
             sqlquery = """
-             SELECT * FROM(SELECT %s FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+             SELECT * FROM(SELECT %s FROM ATLAS_PANDA.HARVESTER_WORKERS
              where computingsite like '%s' %s %s %s %s %s %s
-             order by  to_date(submittime, 'dd-mm-yyyy hh24:mi:ss')  DESC) WHERE ROWNUM<=%s
+             order by  submittime  DESC) WHERE ROWNUM<=%s
              """ % (
             fields, str(computingsite), status,  workerid, days, hours, resourcetype,computingelement, display_limit_workers)
 
