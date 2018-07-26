@@ -16,6 +16,8 @@
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
     <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+    <script type="text/javascript" src="/static/js/datatables/moment.min.js"></script>
+    <script type="text/javascript" src="/static/js/datatables/datetime-moment.js"></script>
 {% endblock %}
 {% block gacode %}UA-44940804-1{% endblock %}
 {% block gaweb %}pandawms.org{% endblock %}
@@ -72,6 +74,7 @@
 
 <script>
     $(document).ready(function () {
+        $.fn.dataTable.moment('YYYY MMM DD HH:mm:ss');
         $('#filelist').DataTable({
             "columnDefs": [
                 {"type": "num-html", "targets": [1] }
