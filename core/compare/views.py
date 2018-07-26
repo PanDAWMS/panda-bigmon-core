@@ -146,11 +146,22 @@ def compareJobs(request):
 
     jobInfoJSON = []
 
+    ### Looking for a job in cache
+    pandaidsToBeLoad = []
+    for pandaid in pandaids:
+        data = getCacheEntry(request, "compareJob_" + str(pandaid), isData=True)
+        if data is not None:
+            jobInfoJSON.append(json.loads(data))
+        else:
+            pandaidsToBeLoad.append(pandaid)
+
+
     jobURL = "http://bigpanda.cern.ch/job"  # This is deployment specific because memory monitoring is intended to work in ATLAS
     http = urllib3.PoolManager()
-    for pandaid in pandaids:
+    for pandaid in pandaidsToBeLoad:
         response = http.request('GET', jobURL, fields={'pandaid': pandaid, 'json': 1})
         jobInfoJSON.append(json.loads(response.data)['job'])
+        setCacheEntry(request, "compareJob_" + str(pandaid), json.dumps(json.loads(response.data)['job'], cls=DateEncoder), 60 * 30, isData=True)
 
     compareParamNames = {'produsername': 'Owner', 'reqid': 'Request ID', 'jeditaskid': 'Task ID', 'jobstatus': 'Status',
                      'attemptnr': 'Attempt', 'creationtime': 'Created', 'waittime': 'Time to start', 'duration': 'Duration',
