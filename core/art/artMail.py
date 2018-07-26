@@ -46,11 +46,12 @@ def send_mail_art(template, subject, summary, recipient):
     return isSuccess
 
 def send_mails(template, subject, summary):
+    isSuccess = True
+    nmails = 0
     connection = mail.get_connection()
 
     # Manually open the connection
     connection.open()
-
     emails = []
 
     # Construct  messages
@@ -72,8 +73,11 @@ def send_mails(template, subject, summary):
         emails.append(email)
 
     # Send the two emails in a single call -
-    isSent = connection.send_messages(emails)
+    nmails = connection.send_messages(emails)
     # The connection was already open so send_messages() doesn't close it.
     # We need to manually close the connection.
     connection.close()
-    return isSent
+
+    if nmails == 0:
+        isSuccess = False
+    return isSuccess

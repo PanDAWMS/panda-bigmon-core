@@ -1181,7 +1181,7 @@ def sendArtReport(request):
     subject = 'ART jobs status report'
     isSent = False
     i = 0
-    maxTries = 10
+    maxTries = 5
     while not isSent:
         i +=1
         isSent = send_mails(template, subject, summaryPerRecipient)
