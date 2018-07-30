@@ -31,7 +31,11 @@
     {% else %}
         <a href="{% url 'errorsScattering'%}?scouts=exclude" class="bluebutton">Exclude scouts</a>
     {% endif %}
-    <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscat', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
+    {% if 'lowstatcells' in requestParams and requestParams.lowstatcells == 'hide' %}
+        <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscat', 'hidebutton')" class="bluebutton">Show low statistics cells</a>
+    {% else %}
+        <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscat', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
+    {% endif %}
 </div>
 
 <br style="clear:both;">
@@ -188,7 +192,16 @@
 <script>
 var $table = $('table.floatThead');
 $table.floatThead();
+
+$(document).ready(function () {
+ var lowstats = '{{ requestParams.lowstatcells }}';
+ if (lowstats == 'hide') {
+     toggleLowStatsCells('lowstats', 'errorsscat', 'hidebutton');
+ }
+});
+
 </script>
+
 
 {% endblock %}
 
