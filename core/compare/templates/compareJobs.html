@@ -21,15 +21,31 @@
     }
 
     function deletefromcomparison(object, value) {
-        var newURL = document.getElementById('reloadlink').href;
-        $.ajax({
-            url: '/deletefromcomparison/',
-            data: 'object='+object+'&value='+value,
-            async: true,
-            cache: false
-        }).done(function (response) {
-            window.location = newURL
+        var currentURL = window.location.href;
+        if (currentURL.indexOf('pandaid=') > -1) {
+            var url = new URL(currentURL);
+            var pandaids = url.searchParams.get("pandaid").split("|");
+            var index = pandaids.indexOf(value);
+            if (index > -1) {
+              pandaids.splice(index, 1);
+            }
+            newURL = url.origin + url.pathname;
+            if (pandaids.length > 0) {
+                newURL += '?pandaid=' + pandaids.join('|')
+            }
+            window.location = newURL;
+        }
+        else {
+            var newURL = document.getElementById('reloadlink').href;
+            $.ajax({
+                url: '/deletefromcomparison/',
+                data: 'object=' + object + '&value=' + value,
+                async: true,
+                cache: false
+            }).done(function (response) {
+                window.location = newURL;
             });
+        }
     }
 
     function togglerows(classtotoggle, buttonid){
