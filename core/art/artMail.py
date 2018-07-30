@@ -3,13 +3,16 @@ Created on 04.06.2018
 :author Tatiana Korchuganova
 A lib to send ART job status report by email
 """
-import re
+import re, logging
 from django.utils.html import strip_tags
 from smtplib import SMTPException
 from datetime import datetime
 from django.core.mail import send_mail
 from django.template import loader
 from django.core import mail
+
+_logger = logging.getLogger('bigpandamon-error')
+
 
 def textify(html):
     # Remove html tags and continuous whitespaces
@@ -32,13 +35,15 @@ def send_mail_art(template, subject, summary, recipient):
     try:
         nmails = send_mail(
             subject=subject,
-            message='',
+            message=textify(html_message),
             from_email='atlas.pandamon@cern.ch',
             recipient_list=[recipient],
             fail_silently=False,
-            html_message=html_message,
         )
-    except SMTPException:
+    except SMTPException as e:
+        msg = 'Exception was caught while sending ART jobs report to ' + recipient
+        msg += '\n' + str(e)
+        _logger.exception(msg)
         isSuccess = False
 
     if nmails == 0:
@@ -67,7 +72,7 @@ def send_mails(template, subject, summary):
         email = mail.EmailMessage(
             subject=subject,
             from_email='atlas.pandamon@cern.ch',
-            to=[recipient],
+            to=['tatiana.korchuganova@cern.ch'],
             body=textify(html_message),
         )
         emails.append(email)

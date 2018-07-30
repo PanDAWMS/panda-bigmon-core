@@ -3,7 +3,7 @@
 
 """
 import json
-import re
+import re, time
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.http import HttpResponse
@@ -1179,14 +1179,18 @@ def sendArtReport(request):
         if package in artjobsdictpackage.keys():
             summaryPerRecipient[email][package] = artjobsdictpackage[package]
     subject = 'ART jobs status report'
-    isSent = False
-    i = 0
+
     maxTries = 5
-    while not isSent:
-        i +=1
-        isSent = send_mails(template, subject, summaryPerRecipient)
-        if i > 10:
-            break
+    for recipient, summary in summaryPerRecipient.items():
+        isSent = False
+        i = 0
+        while not isSent:
+            i +=1
+            if i > 1:
+                time.sleep(10)
+            isSent = send_mail_art(template, subject, summary, recipient)
+            if i >= maxTries:
+                break
 
 
     endSelfMonitor(request)
