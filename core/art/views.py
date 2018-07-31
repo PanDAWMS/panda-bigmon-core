@@ -1118,6 +1118,7 @@ def sendArtReport(request):
 
     ### prepare data for report
     artjobsdictbranch = {}
+    artjobsdictpackage = {}
     for job in jobs:
         nightly_tag_time = datetime.strptime(job['nightly_tag'].replace('T', ' '), '%Y-%m-%d %H%M')
         if nightly_tag_time > request.session['requestParams']['ntag_from'] + timedelta(hours=20):
@@ -1133,13 +1134,7 @@ def sendArtReport(request):
                 artjobsdictbranch[job['branch']]['packages'][job['package']]['nfailed'] = 0
                 artjobsdictbranch[job['branch']]['packages'][job['package']]['nfinished'] = 0
                 artjobsdictbranch[job['branch']]['packages'][job['package']]['nactive'] = 0
-            finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
-            artjobsdictbranch[job['branch']]['packages'][job['package']]['n' + finalresult] += 1
 
-    artjobsdictpackage = {}
-    for job in jobs:
-        nightly_tag_time = datetime.strptime(job['nightly_tag'].replace('T', ' '), '%Y-%m-%d %H%M')
-        if nightly_tag_time > request.session['requestParams']['ntag_from'] + timedelta(hours=20):
             if job['package'] not in artjobsdictpackage.keys():
                 artjobsdictpackage[job['package']] = {}
                 artjobsdictpackage[job['package']]['branch'] = job['branch']
@@ -1153,6 +1148,7 @@ def sendArtReport(request):
                 artjobsdictpackage[job['package']]['branches'][job['branch']]['nfinished'] = 0
                 artjobsdictpackage[job['package']]['branches'][job['branch']]['nactive'] = 0
             finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
+            artjobsdictbranch[job['branch']]['packages'][job['package']]['n' + finalresult] += 1
             artjobsdictpackage[job['package']]['branches'][job['branch']]['n' + finalresult] += 1
 
 
