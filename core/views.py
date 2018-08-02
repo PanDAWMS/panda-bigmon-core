@@ -985,6 +985,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                     extraQueryString = '(eventservice != 2)'
                             else:
                                 query['eventservice__isnull'] = True
+                    elif param == 'corecount' and request.session['requestParams'][param] == '1':
+                        try:
+                            extraQueryString += 'AND (corecount = 1 or corecount is NULL)'
+                        except:
+                            extraQueryString = '(corecount = 1 or corecount is NULL) '
                     else:
                         if (param not in wildSearchFields):
                             query[param] = request.session['requestParams'][param]
