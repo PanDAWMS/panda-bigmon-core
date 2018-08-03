@@ -162,7 +162,7 @@ from datetime import datetime,timedelta
 import json
 def harvesterfm (request):
     return redirect('/harvesters/')
-
+@login_customrequired
 def harvesters(request):
     import json
     valid, response = initRequest(request)
@@ -812,6 +812,7 @@ def getHarvesterJobs(request,instance = '', workerid = '',jobstatus=''):
     for pid in pandaids:
         pandaidsList.append(dict(zip(columns, pid)))
     return pandaidsList
+
 def isharvesterjob(pandaid):
     jobHarvesterInfo = {}
     sqlRequest = '''
@@ -835,7 +836,6 @@ def isharvesterjob(pandaid):
     for pid in job:
         jobHarvesterInfo = dict(zip(columns, pid))
     return jobHarvesterInfo
-
 
 def workersJSON(request):
     valid, response = initRequest(request)
@@ -937,6 +937,7 @@ def workersJSON(request):
 
             return HttpResponse(json.dumps(workersList), content_type='text/html')
 
+@login_customrequired
 def harvesterslots(request):
     valid, response = initRequest(request)
     harvesterslotsList = []
