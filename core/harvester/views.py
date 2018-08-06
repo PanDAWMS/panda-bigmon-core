@@ -621,30 +621,30 @@ def harvesters(request):
             hours = ''
             defaulthours = int(request.session['requestParams']['days']) * 24
         sqlquery = """
-          SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS
-          where computingsite like '%s' %s %s %s %s %s %s and ROWNUM<=1
+          SELECT * FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+          where computingsite like '%s' %s %s %s %s and ROWNUM<=1
           order by workerid DESC
-          """ % (str(computingsite), status,  workerid,days,hours, resourcetype,computingelement)
+          """ % (str(computingsite),status, workerid, resourcetype,computingelement)
 
         sqlquerycomputingsite = """
           SELECT harvesterid,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
-          where computingsite like '%s' %s %s %s %s %s %s group by harvester_id
-          """ % (str(computingsite), status,  workerid, days, hours,resourcetype,computingelement)
+          where computingsite like '%s' %s %s %s %s %s %s group by harvesterid
+          """ % (str(computingsite), status,  workerid, days, hours, resourcetype, computingelement)
 
         sqlquerystatus = """
           SELECT status,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
           where computingsite like '%s' %s %s %s %s %s %s group by status
-          """ % (str(computingsite), status,  workerid, days, hours,resourcetype,computingelement)
+          """ % (str(computingsite), status,  workerid, days, hours, resourcetype, computingelement)
 
         sqlqueryresource = """
         SELECT RESOURCETYPE,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
         where computingsite like '%s' %s %s %s %s %s %s group by RESOURCETYPE
-        """ % (str(computingsite),status, workerid, days,hours,resourcetype,computingelement)
+        """ % (str(computingsite),status, workerid, days, hours, resourcetype, computingelement)
 
         sqlqueryce = """
         SELECT COMPUTINGELEMENT,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
         where computingsite like '%s' %s %s %s %s %s %s  group by COMPUTINGELEMENT
-        """ % (str(computingsite),status, workerid, days, hours ,resourcetype,computingelement)
+        """ % (str(computingsite),status, workerid, days, hours, resourcetype, computingelement)
 
         workersList = []
         cur = connection.cursor()
@@ -935,7 +935,7 @@ def workersJSON(request):
                 object = dict(zip(columns, worker))
                 workersList.append(object)
 
-            return HttpResponse(json.dumps(workersList), content_type='text/html')
+            return HttpResponse(json.dumps(workersList,cls=DateTimeEncoder), content_type='text/html')
 
 @login_customrequired
 def harvesterslots(request):
