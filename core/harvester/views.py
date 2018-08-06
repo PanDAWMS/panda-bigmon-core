@@ -686,7 +686,7 @@ def harvesters(request):
             object = dict(zip(columns, worker))
             workersList.append(object)
 
-        if len(workersList)==0:
+        if len(workersList)==0 or len(harvesteridDict) == 0:
             message ="""Computingsite is not found OR no workers for this computingsite or time period. Try using this <a href =/harvesters/?computingsite=%s&days=365>link (last 365 days)</a>""" % (computingsite)
             return HttpResponse(json.dumps({'message':  message}),
                             content_type='text/html')
