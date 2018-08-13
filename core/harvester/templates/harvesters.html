@@ -877,6 +877,6 @@ height="1000" width="100%"></iframe>
     {% endif %}
 {% endblock %}
 
-{#{% block helptext %}#}
-{#{% include "harvesterInfoHelp.html" with helptitle="Harvester list help" show="all" %}#}
-{#{% endblock %}#}
+{% block helptext %}
+{% include "harvesterInfoHelp.html" with helptitle="Harvester list help" show="all" %}
+{% endblock %}

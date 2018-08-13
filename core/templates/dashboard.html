@@ -426,7 +426,7 @@ of all jobs
 {% for cloud in summary %}
 <tr height=10 colspan=12></tr>
 <tr>
-<th  bgcolor=whitesmoke> {% if cloud.name != 'All' %}{% if cloud.name != '' %}<a href="#cloud_{{ cloud.name }}"><span class="{{cloud.status}}">{{ cloud.name }}</span></a> <a onclick='PopUp("SITE={{ cloud.name }}&SIZE=medium", "{{ cloud.name }}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assigned {% endif %} {% else %}  All clouds {% endif %}</th>
+<th  bgcolor=whitesmoke> {% if cloud.name != 'All' %}{% if cloud.name != '' %}<a href="#cloud_{{ cloud.name }}"><span class="{{cloud.status}}">{{ cloud.name }}</span></a> <a onclick='PopUp("SITE={% if view == 'analysis' %}{{ cloud.name }}_analy{% else %}{{cloud.name }}{% endif %}&SIZE=medium", "{% if view == 'analysis' %}{{ cloud.name }}_analy{% else %}{{ cloud_name }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assigned {% endif %} {% else %}  All clouds {% endif %}</th>
 <th  bgcolor=whitesmoke> <span class="{{cloud.status}}">{{ cloud.status }}</span> </th>
 <th  bgcolor=whitesmoke align='right'>{{ cloud.count }}</th>
 {% if cloudview == 'region' %}
@@ -490,7 +490,7 @@ of all jobs
 {% else %}
 <tr  {% if site.status == 'offline' or site.status == 'brokeroff'%} class="hideofflinerow" {% endif %}>
 {% endif %}
-<td> {% if site.name %} {% if site.parent %} {{ site.parent }} [{{ site.resource }}]{% else %}<a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={{ site.name }}&SIZE=medium", "{{ site.name }}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a> {% endif %} {% else %} Failed before site assignment{% endif %}
+<td> {% if site.name %} {% if site.parent %} {{ site.parent }} [{{ site.resource }}] <div style="visibility: hidden">  <a onclick='PopUp("SITE={% if view == 'analysis' %}{{ site.parent }}{% else %}{{ site.parent }}{% endif %}&SIZE=medium&RESOURCE={{ site.resource }}", "{% if view == 'analysis' %}{{ site.parent }}{% else %}{{ site.parent }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a> {% else %}<a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={% if view == 'analysis' %}{{ site.name }}{% else %}{{ site.name }}{% endif %}&SIZE=medium", "{% if view == 'analysis' %}{{ site.name }}{% else %}{{ site.name }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a> {% endif %} {% else %} Failed before site assignment{% endif %}</div>
 {% if site.sumres and 1 == 0 %}
     <br/><hr style="height:1px; background-color: #0a0a0a; margin: auto" size=1>
 {% for res in site.sumres%}
