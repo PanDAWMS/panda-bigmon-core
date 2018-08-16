@@ -70,6 +70,24 @@ class ARTResults(models.Model):
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ART_RESULTS"'
 
+
+class ARTSubResult(models.Model):
+    pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
+    subresult = models.CharField(max_length=4000, db_column='SUBRESULT_JSON', null=True)
+
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."ART_SUBRESULT"'
+
+
+class ARTResultsQueue(models.Model):
+    row_id = models.BigIntegerField(db_column='ROW_ID', primary_key=True)
+    pandaid = models.BigIntegerField(db_column='PANDAID')
+    is_locked = models.IntegerField(db_column='is_locked')
+    lock_time = models.DateTimeField(null=True, db_column='lock_time', blank=True)
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."ART_RESULTS_QUEUE"'
+
+
 class ARTTests(models.Model):
     pandaid = models.DecimalField(decimal_places=0, max_digits=12, db_column='PANDAID', primary_key=True)
     jeditaskid = models.DecimalField(decimal_places=0, max_digits=12, db_column='JEDITASKID')

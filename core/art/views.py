@@ -4,19 +4,21 @@
 """
 import json
 import re, time
+import multiprocessing
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
-from django.db import connection, transaction
+from django.db import connection, transaction, DatabaseError
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
-from core.art.modelsART import ARTTask, ARTTasks, ARTResults, ARTTests, ReportEmails
+from core.art.modelsART import ARTTask, ARTTasks, ARTResults, ARTTests, ReportEmails, ARTResultsQueue, ARTSubResult
+from core.common.models import Filestable4, FilestableArch
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, Sum
 from core.views import login_customrequired, initRequest, extensibleURL, removeParam
 from core.views import DateEncoder, endSelfMonitor
-from core.art.jobSubResults import getJobReport, getARTjobSubResults
+from core.art.jobSubResults import getJobReport, getARTjobSubResults, subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs
 from core.settings import defaultDatetimeFormat
 from django.db.models import Q
 
@@ -914,6 +916,89 @@ def updateARTJobList(request):
     }
     endSelfMonitor(request)
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+
+def updateARTJobListNew(request):
+    valid, response = initRequest(request)
+    query = setupView(request, 'job')
+    starttime = datetime.now()
+
+    ### Adding to ART_RESULTS_QUEUE jobs with not loaded result json yet
+    cur = connection.cursor()
+    cur.autocommit = True
+    cur.execute("""INSERT INTO atlas_pandabigmon.art_results_queue
+                    (pandaid, IS_LOCKED, LOCK_TIME)
+                    SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('%s','%s','%s'))
+                    WHERE pandaid is not NULL
+                          and result is NULL
+                          and status in ('finished', 'failed')
+                          and pandaid not in (select pandaid from atlas_pandabigmon.art_results_queue)"""
+                % (query['ntag_from'], query['ntag_to'], query['strcondition']))
+    nrows = 10
+
+    is_queue_empty = False
+    while not is_queue_empty:
+
+        ### Locking first N rows
+        lock_time = lock_nqueuedjobs(cur, nrows)
+
+
+        ### Getting locked jobs from ART_RESULTS_QUEUE
+        equery = {}
+        equery['lock_time'] = lock_time
+        equery['is_locked'] = 1
+        ids = ARTResultsQueue.objects.filter(**equery).values()
+
+
+        ### Loading subresults from logs
+        if len(ids) > 0:
+            query = {}
+            query['type'] = 'log'
+            query['pandaid__in'] = [id['pandaid'] for id in ids]
+            file_properties = []
+            try:
+                file_properties = Filestable4.objects.filter(**query).values('pandaid', 'guid', 'scope', 'lfn', 'destinationse', 'status')
+            except:
+                pass
+            if len(file_properties) == 0:
+                try:
+                    file_properties.extend(FilestableArch.objects.filter(**query).values('pandaid', 'guid', 'scope', 'lfn', 'destinationse', 'status'))
+                except:
+                    pass
+
+            url_params = []
+            if len(file_properties):
+                url_params = [('&guid=' + filei['guid'] + '&lfn=' + filei['lfn'] + '&scope=' + filei['scope'] + '&pandaid=' + str(filei['pandaid'])) for filei in file_properties]
+
+            pool = multiprocessing.Pool(processes=nrows)
+            sub_results = pool.map(subresults_getter, url_params)
+            pool.close()
+            pool.join()
+
+
+            subResultsDict = {}
+            for sr in sub_results:
+                pandaid = int(sr.keys()[0])
+                subResultsDict[pandaid] = json.dumps(sr[pandaid])
+
+
+            save_subresults(subResultsDict)
+
+            delete_queuedjobs(cur, lock_time)
+        else:
+            is_queue_empty = True
+
+    cur.close()
+
+    result = True
+    data = {
+        'result': result,
+        'strt': starttime,
+        'endt': datetime.now()
+    }
+    endSelfMonitor(request)
+    return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+
+
 
 def getJobSubResults(request):
     valid, response = initRequest(request)
