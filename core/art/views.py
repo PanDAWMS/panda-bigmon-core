@@ -1261,7 +1261,7 @@ def sendArtReport(request):
             summaryPerRecipient[email][package] = artjobsdictpackage[package]
     subject = 'ART jobs status report'
 
-    maxTries = 5
+    maxTries = 1
     for recipient, summary in summaryPerRecipient.items():
         isSent = False
         i = 0
