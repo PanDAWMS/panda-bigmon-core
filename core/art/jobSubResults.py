@@ -163,6 +163,22 @@ def delete_queuedjobs(cur, lock_time):
         print e.message
         raise
 
+    return True
 
+
+def clear_queue(cur):
+    """
+    A function to delete processed jobs from ART_RESULTS_QUEUE
+    :param lock_time:
+    :return:
+    """
+
+    cquery = """DELETE FROM atlas_pandabigmon.art_results_queue
+                  WHERE IS_LOCKED = 1"""
+    try:
+        cur.execute(cquery)
+    except DatabaseError as e:
+        print e.message
+        raise
 
     return True

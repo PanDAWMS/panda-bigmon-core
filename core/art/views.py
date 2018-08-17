@@ -2,34 +2,31 @@
     art.views
 
 """
+import logging
 import json
-import re, time
+import re
+import time
 import multiprocessing
 from datetime import datetime, timedelta
-from django.utils import timezone
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
-from django.db import connection, transaction, DatabaseError
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
-from core.art.modelsART import ARTTask, ARTTasks, ARTResults, ARTTests, ReportEmails, ARTResultsQueue, ARTSubResult
+from django.db import connection
+from django.views.decorators.csrf import csrf_exempt
+from core.art.modelsART import ARTResults, ARTTests, ReportEmails, ARTResultsQueue
 from core.common.models import Filestable4, FilestableArch
 from django.db.models.functions import Concat, Substr
-from django.db.models import Value as V, Sum
+from django.db.models import Value as V
 from core.views import login_customrequired, initRequest, extensibleURL, removeParam
 from core.views import DateEncoder, endSelfMonitor
-from core.art.jobSubResults import getJobReport, getARTjobSubResults, subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs
-from core.settings import defaultDatetimeFormat
+from core.art.jobSubResults import getJobReport, getARTjobSubResults, subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue
 from django.db.models import Q
-
 from core.libs.cache import setCacheEntry, getCacheEntry
-
 from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
-
-from core.art.artTest import ArtTest
-from core.art.artMail import send_mail_art, send_mails
-
+from core.art.artMail import send_mail_art
 from django.template.defaulttags import register
+
+_logger = logging.getLogger('bigpandamon-error')
 
 @register.filter(takes_context=True)
 def remove_dot(value):
@@ -818,96 +815,6 @@ def updateARTJobList(request):
 
 
 
-    # ### Getting list of existed jobs
-    # extra = 'jeditaskid in ( '
-    # fulljoblistdict = {}
-    # for job in fulljoblist:
-    #     if job['jeditaskid'] not in fulljoblistdict.keys():
-    #         fulljoblistdict[job['jeditaskid']] = {}
-    #         extra +=  str(job['jeditaskid']) + ','
-    #     fulljoblistdict[job['jeditaskid']][job['pandaid']] = []
-    # if extra.endswith(','):
-    #     extra = extra[:-1]
-    # if extra.endswith('( '):
-    #     extra = ' ( 1=1'
-    # extra += ' ) '
-
-    # existedjoblist = ARTResults.objects.extra(where=[extra]).values()
-    # existedjobdict = {}
-    # if len(existedjoblist) > 0:
-    #     for job in existedjoblist:
-    #         if job['jeditaskid'] not in existedjobdict.keys():
-    #             existedjobdict[job['jeditaskid']] = {}
-    #         if job['testname'] not in existedjobdict[job['jeditaskid']].keys():
-    #             existedjobdict[job['jeditaskid']][job['testname']] = {}
-    #         existedjobdict[job['jeditaskid']][job['testname']][job['pandaid']] = job
-    #
-    # tableName = 'ATLAS_PANDABIGMON.ART_RESULTS'
-    # ###
-    # insertData = []
-    # updateData = []
-    # # updateResultsData = []
-    # if len(existedjoblist) > 0:
-    #     print ('to be filtered')
-    #
-    #     for j in fulljoblist:
-    #         print ('%s rows to insert' % (len(insertData)))
-    #         print ('%s rows to update' % (len(updateData)))
-    #         if j['jeditaskid'] in existedjobdict:
-    #             ### check whether a job was retried
-    #             if j['pandaid'] not in existedjobdict[j['jeditaskid']][j['testname']]:
-    #                 ### add to update list
-    #                 results = getARTjobSubResults(getJobReport(j['guid'], j['lfn'], j['scope']))
-    #                 updateData.append((j['pandaid'], gettflag(j), getjflag(j), datetime.now().strftime(defaultDatetimeFormat), json.dumps(results), j['jeditaskid'], j['testname']))
-    #             elif existedjobdict[j['jeditaskid']][j['testname']][j['pandaid']]['result'] is None or len(existedjobdict[j['jeditaskid']][j['testname']][j['pandaid']]['result']) == 0:
-    #                 ### no result in table, check whether a job finished already
-    #                 if existedjobdict[j['jeditaskid']][j['testname']][j['pandaid']]['is_job_finished'] < gettflag(j):
-    #                     ### job state was updated results needs to be updated too
-    #                     results = getARTjobSubResults(getJobReport(j['guid'],j['lfn'],j['scope']))
-    #                     updateData.append((j['pandaid'], gettflag(j), getjflag(j), datetime.now().strftime(defaultDatetimeFormat), json.dumps(results), j['jeditaskid'], j['testname']))
-    #             else:
-    #                 ### result is not empty, check whether a job was updated
-    #                 if j['jobmodificationtime'] > existedjobdict[j['jeditaskid']][j['testname']][j['pandaid']]['job_flag_updated']:
-    #                     ### job state was updated results needs to be updated too
-    #                     results = getARTjobSubResults(getJobReport(j['guid'],j['lfn'],j['scope']))
-    #                     updateData.append((j['pandaid'], gettflag(j), getjflag(j), datetime.now().strftime(defaultDatetimeFormat), json.dumps(results), j['jeditaskid'], j['testname']))
-    #         else:
-    #             ### a new task that needs to be added to insert list
-    #             if getjflag(j) == 1:
-    #                 results = getARTjobSubResults(getJobReport(j['guid'],j['lfn'],j['scope']))
-    #             else:
-    #                 results = {}
-    #             insertData.append((j['taskid'], j['pandaid'], gettflag(j), getjflag(j), j['testname'],
-    #                                    datetime.now().strftime(defaultDatetimeFormat),
-    #                                    datetime.now().strftime(defaultDatetimeFormat), json.dumps(results)))
-    #
-    #
-    # else:
-    #     print ('preparing data to insert into artresults table')
-    #     for j in fulljoblist:
-    #         print ('%s rows to insert' % (len(insertData)))
-    #         if j['pandaid'] is not None and j['jeditaskid'] is not None:
-    #             if getjflag(j) == 1:
-    #                 results = getARTjobSubResults(getJobReport(j['guid'],j['lfn'],j['scope']))
-    #             else:
-    #                 results = {}
-    #             insertData.append((j['jeditaskid'], j['pandaid'], gettflag(j), getjflag(j), j['testname'], datetime.now().strftime(defaultDatetimeFormat), datetime.now().strftime(defaultDatetimeFormat),json.dumps(results)))
-    #
-    #
-    # if len(insertData) > 0:
-    #     new_cur = connection.cursor()
-    #     insert_query = """INSERT INTO """ + tableName + """(JEDITASKID,PANDAID,IS_TASK_FINISHED,IS_JOB_FINISHED,TESTNAME,TASK_FLAG_UPDATED,JOB_FLAG_UPDATED,RESULT_JSON ) VALUES (%s, %s, %s, %s, %s, TO_TIMESTAMP( %s , 'YYYY-MM-DD HH24:MI:SS' ), TO_TIMESTAMP( %s , 'YYYY-MM-DD HH24:MI:SS' ), %s)"""
-    #     new_cur.executemany(insert_query, insertData)
-    # print ('data inserted (%s)' % (len(insertData)))
-    #
-    # if len(updateData) > 0:
-    #     new_cur = connection.cursor()
-    #     update_query = """UPDATE """ + tableName + """ SET PANDAID = %s, IS_TASK_FINISHED = %s ,IS_JOB_FINISHED = %s , JOB_FLAG_UPDATED = TO_TIMESTAMP( %s , 'YYYY-MM-DD HH24:MI:SS' ), RESULT_JSON = %s WHERE JEDITASKID = %s AND TESTNAME = %s """
-    #     new_cur.executemany(update_query, updateData)
-    # print ('data updated (%s rows updated)' % (len(updateData)))
-
-
-
     result = True
     data = {
         'result': result,
@@ -919,6 +826,8 @@ def updateARTJobList(request):
 
 def updateARTJobListNew(request):
     valid, response = initRequest(request)
+    if not valid: return response
+
     query = setupView(request, 'job')
     starttime = datetime.now()
 
@@ -933,23 +842,22 @@ def updateARTJobListNew(request):
                           and status in ('finished', 'failed')
                           and pandaid not in (select pandaid from atlas_pandabigmon.art_results_queue)"""
                 % (query['ntag_from'], query['ntag_to'], query['strcondition']))
+
     nrows = 10
 
     is_queue_empty = False
     while not is_queue_empty:
 
-        ### Locking first N rows
+        # Locking first N rows
         lock_time = lock_nqueuedjobs(cur, nrows)
 
-
-        ### Getting locked jobs from ART_RESULTS_QUEUE
+        # Getting locked jobs from ART_RESULTS_QUEUE
         equery = {}
         equery['lock_time'] = lock_time
         equery['is_locked'] = 1
         ids = ARTResultsQueue.objects.filter(**equery).values()
 
-
-        ### Loading subresults from logs
+        # Loading subresults from logs
         if len(ids) > 0:
             query = {}
             query['type'] = 'log'
@@ -965,33 +873,41 @@ def updateARTJobListNew(request):
                 except:
                     pass
 
+            # Forming url params to single str for request to filebrowser
             url_params = []
             if len(file_properties):
                 url_params = [('&guid=' + filei['guid'] + '&lfn=' + filei['lfn'] + '&scope=' + filei['scope'] + '&pandaid=' + str(filei['pandaid'])) for filei in file_properties]
 
+            # Loading subresults in parallel and collecting to list of dictionaries
             pool = multiprocessing.Pool(processes=nrows)
             sub_results = pool.map(subresults_getter, url_params)
             pool.close()
             pool.join()
 
-
+            # list -> dict
             subResultsDict = {}
             for sr in sub_results:
-                pandaid = int(sr.keys()[0])
-                subResultsDict[pandaid] = json.dumps(sr[pandaid])
+                try:
+                    pandaid = int(sr.keys()[0])
+                except:
+                    _logger.exception('Exception was caught while transforming pandaid from str to int. Provided pandaid is ' + str(pandaid))
+                    pandaid = -1
+                if pandaid > 0:
+                    subResultsDict[pandaid] = json.dumps(sr[pandaid])
 
-
+            # insert subresults to special table
             save_subresults(subResultsDict)
 
+            # deleting processed jobs from queue
             delete_queuedjobs(cur, lock_time)
         else:
             is_queue_empty = True
 
+    # clear queue in case there are locked jobs of previously crashed requests
+    clear_queue(cur)
     cur.close()
 
-    result = True
     data = {
-        'result': result,
         'strt': starttime,
         'endt': datetime.now()
     }
