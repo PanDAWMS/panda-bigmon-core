@@ -8045,7 +8045,7 @@ def taskInfo(request, jeditaskid=0):
                                             UNION
                                             select computingsite, computingelement,pandaid from ATLAS_PANDAARCH.JOBSARCHIVED where jeditaskid=%s
                                             ) j
-                                        on (e.jeditaskid=%s and e.pandaid=j.pandaid)
+                                        on (e.pandaid=j.pandaid)
                                    group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""" % (
                 jeditaskid, jeditaskid, jeditaskid)
                 cur = connection.cursor()
