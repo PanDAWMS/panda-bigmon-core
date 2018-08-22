@@ -8047,7 +8047,7 @@ def taskInfo(request, jeditaskid=0):
                                             ) j
                                         on (e.pandaid=j.pandaid)
                                    group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""" % (
-                jeditaskid, jeditaskid, jeditaskid)
+                jeditaskid, jeditaskid)
                 cur = connection.cursor()
                 cur.execute(sqlRequest)
                 ossummary = cur.fetchall()
