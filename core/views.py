@@ -10851,7 +10851,7 @@ def getErrorDescription(job, mode='html', provideProcessedCodes = False):
                     return txt
             else:
                 if provideProcessedCodes:
-                    return '-', '-'
+                    return '-', codesDescribed
                 else:
                     return '-'
         else:
