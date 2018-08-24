@@ -560,7 +560,7 @@ def harvesters(request):
                 limit = request.session['requestParams']['limit']
             sqlqueryjobs = """
                    SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where  harvesterid in (%s) and workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
-                   where harvester_id in (%s) %s %s %s %s %s %s %s)  ORDER by lastupdate DESC) WHERE  rownum <= %s
+                   where harvesterid in (%s) %s %s %s %s %s %s %s)  ORDER by lastupdate DESC) WHERE  rownum <= %s
                    """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
                           computingelement, limit)
 
