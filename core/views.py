@@ -10838,13 +10838,19 @@ def getErrorDescription(job, mode='html', provideProcessedCodes = False):
 
     if 'metastruct' in job:
         if type(job['metastruct']) is unicode:
-            meta = json.loads(job['metastruct'])
-            if meta['exitCode'] != 0:
+            try:
+                meta = json.loads(job['metastruct'])
+            except:
+                print str(type(job['metastruct']))
+                meta = job['metastruct']
+            if 'exitCode' in meta and meta['exitCode'] != 0:
                 txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])
                 if provideProcessedCodes:
                     return txt, codesDescribed
                 else:
                     return txt
+            else:
+                return '-'
         else:
             meta = job['metastruct']
             if 'exitCode' in meta and meta['exitCode'] != 0:
