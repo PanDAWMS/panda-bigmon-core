@@ -106,6 +106,7 @@ from decimal import *
 from collections import OrderedDict
 
 from django.contrib.auth import logout as auth_logout
+from auth.utils import grant_rights, deny_rights
 
 from libs import dropalgorithm
 #from libs import exlib
@@ -231,6 +232,30 @@ def login_customrequired(function):
   wrap.__doc__=function.__doc__
   wrap.__name__=function.__name__
   return wrap
+
+@login_customrequired
+def grantRights(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+
+    if 'type' in request.session['requestParams']:
+        rtype = request.session['requestParams']['type']
+        grant_rights(request, rtype)
+
+    return HttpResponse(status=204)
+
+
+@login_customrequired
+def denyRights(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+
+    if 'type' in request.session['requestParams']:
+        rtype = request.session['requestParams']['type']
+        deny_rights(request, rtype)
+
+    return HttpResponse(status=204)
+
 
 def datetime_handler(x):
     import datetime

@@ -159,6 +159,9 @@ urlpatterns = [
     url(r'^login/$', coremon_views.loginauth2, name='login'),
     url(r'^logout/$', coremon_views.logout, name='logout'),
     url(r'^loginerror/$', coremon_views.loginerror, name='loginerror'),
+    url(r'^grantrights/$', coremon_views.grantRights, name='grantrights'),
+    url(r'^denyrights/$', coremon_views.denyRights, name='denyrights'),
+
 
     url(r'^testip/$', coremon_views.testip, name='testip'),
     url(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),

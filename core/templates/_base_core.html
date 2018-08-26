@@ -316,6 +316,11 @@
                         <li><a onclick="clearComparisonList('job')">Clear jobs comparison list</a>
                     {% endif %}
                     <li><a href="{% url 'userInfo' %}">My BigPanDA</a>
+                    {% if request.user.is_tester %}
+                        <li><a onclick="denyRights('tester')">Abandon tester rights</a>
+                    {% else %}
+                        <li><a onclick="grantRights('tester')">Become a tester</a>
+                    {% endif %}
                     <li><a href="{% url 'logout' %}"><span class="reassign">Logout</span></a>
                 </ul>
               </li>
@@ -497,8 +502,32 @@
         }).done(function (response) {
             window.location = newURL
             });
-
     }
+
+    function grantRights(type) {
+        var newURL = document.getElementById('reloadlink').href;
+        $.ajax({
+            url: '/grantrights/',
+            data: 'type='+type,
+            async: true,
+            cache: false
+        }).done(function (response) {
+            window.location = newURL
+            });
+    }
+
+    function denyRights(type) {
+        var newURL = document.getElementById('reloadlink').href;
+        $.ajax({
+            url: '/denyrights/',
+            data: 'type='+type,
+            async: true,
+            cache: false
+        }).done(function (response) {
+            window.location = newURL
+            });
+    }
+
 </script>
 
 
