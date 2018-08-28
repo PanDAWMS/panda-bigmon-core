@@ -10,6 +10,7 @@ from django.utils.cache import patch_response_headers
 from django.db import connection
 
 from core.libs.cache import getCacheEntry, setCacheEntry
+from core.libs.CustomJSONSerializer import DecimalEncoder
 from core.views import initRequest, setupView, login_customrequired, endSelfMonitor, extensibleURL, DateEncoder
 import json
 
@@ -137,7 +138,7 @@ def globalshares(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(gs), content_type='text/html')
+        return HttpResponse(DecimalEncoder().encode(gs), content_type='text/html')
 
 
 def get_child_elements(tree,childsgsharelist):
