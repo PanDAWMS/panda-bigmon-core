@@ -754,7 +754,7 @@ def updateARTJobList(request):
                 try:
                     pandaid = int(sr.keys()[0])
                 except:
-                    _logger.exception('Exception was caught while transforming pandaid from str to int. Provided pandaid is ' + str(sr.keys()[0]))
+                    _logger.exception('Exception was caught while transforming pandaid from str to int.' + str(sr))
                     pandaid = -1
                 if pandaid > 0:
                     subResultsDict[pandaid] = json.dumps(sr[pandaid])
