@@ -4,7 +4,9 @@
     A set of views showing comparison of PanDA object parameters
 """
 
-import json, urllib3
+import json
+import urllib3
+import multiprocessing
 
 from datetime import datetime, timedelta
 
@@ -24,7 +26,7 @@ from core.views import login_customrequired, initRequest, setupView, endSelfMoni
 from core.pandajob.models import Jobsactive4, Jobsarchived4, Jobswaiting4, Jobsdefined4, Jobsarchived
 from core.common.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
-from core.compare.utils import add_to_comparison, clear_comparison_list, delete_from_comparison
+from core.compare.utils import add_to_comparison, clear_comparison_list, delete_from_comparison, job_info_getter
 
 @login_customrequired
 def addToComparison(request):
@@ -102,17 +104,6 @@ def compareJobs(request):
     valid, response = initRequest(request)
     if not valid: return response
 
-    # # Here we try to get cached data
-    # data = getCacheEntry(request, "compareJobs")
-    # data = None
-    # if data is not None:
-    #     data = json.loads(data)
-    #     data['request'] = request
-    #     response = render_to_response('compareJobs.html', data, content_type='text/html')
-    #     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    #     endSelfMonitor(request)
-    #     return response
-
     pandaidstr = None
     if 'pandaid' in request.session['requestParams']:
         pandaidstr = request.session['requestParams']['pandaid'].split('|')
@@ -130,8 +121,6 @@ def compareJobs(request):
     if not pandaidstr:
         return render_to_response('errorPage.html', {'errormessage': 'No pandaids for comparison provided'}, content_type='text/html')
 
-
-
     pandaids = []
     for pid in pandaidstr:
         try:
@@ -146,22 +135,29 @@ def compareJobs(request):
 
     jobInfoJSON = []
 
-    ### Looking for a job in cache
+    # Looking for a job in cache
     pandaidsToBeLoad = []
     for pandaid in pandaids:
         data = getCacheEntry(request, "compareJob_" + str(pandaid), isData=True)
+        # data = None
         if data is not None:
             jobInfoJSON.append(json.loads(data))
         else:
             pandaidsToBeLoad.append(pandaid)
 
+    #Loading jobs info in parallel
+    nprocesses = maxNJobs
+    if len(pandaidsToBeLoad) > 0:
+        url_params = [('?json=1&pandaid=' + str(pid)) for pid in pandaidsToBeLoad]
+        pool = multiprocessing.Pool(processes=nprocesses)
+        jobInfoJSON.extend(pool.map(job_info_getter, url_params))
+        pool.close()
+        pool.join()
 
-    jobURL = "http://bigpanda.cern.ch/job"  # This is deployment specific because memory monitoring is intended to work in ATLAS
-    http = urllib3.PoolManager()
-    for pandaid in pandaidsToBeLoad:
-        response = http.request('GET', jobURL, fields={'pandaid': pandaid, 'json': 1})
-        jobInfoJSON.append(json.loads(response.data)['job'])
-        setCacheEntry(request, "compareJob_" + str(pandaid), json.dumps(json.loads(response.data)['job'], cls=DateEncoder), 60 * 30, isData=True)
+    #Put loaded jobs info to cache
+    for job in jobInfoJSON:
+        setCacheEntry(request, "compareJob_" + str(job.keys()[0]),
+                      json.dumps(job.values()[0], cls=DateEncoder), 60 * 30, isData=True)
 
     compareParamNames = {'produsername': 'Owner', 'reqid': 'Request ID', 'jeditaskid': 'Task ID', 'jobstatus': 'Status',
                      'attemptnr': 'Attempt', 'creationtime': 'Created', 'waittime': 'Time to start', 'duration': 'Duration',
@@ -179,7 +175,8 @@ def compareJobs(request):
     jobsComparisonMain = []
     for param in compareParams:
         row = [{'paramname': compareParamNames[param]}]
-        for job in jobInfoJSON:
+        for jobd in jobInfoJSON:
+            job = jobd['job']
             if param in job:
                 row.append({'value': job[param]})
             else:
@@ -190,24 +187,23 @@ def compareJobs(request):
 
 
     all_params = []
-    for job in jobInfoJSON:
-        all_params.extend(list(job.keys()))
+    for jobd in jobInfoJSON:
+        all_params.extend(list(jobd['job'].keys()))
     all_params = sorted(set(all_params))
 
     jobsComparisonAll = []
     for param in all_params:
         if param not in excludedParams:
             row = [{'paramname': param}]
-            for job in jobInfoJSON:
+            for jobd in jobInfoJSON:
+                job = jobd['job']
                 if param in job and job[param] is not None:
-                    row.append({'value':job[param]})
+                    row.append({'value': job[param]})
                 else:
                     row.append({'value': '-'})
             if len(set([d['value'] for d in row if 'value' in d])) == 1:
                 row[0]['mark'] = 'equal'
             jobsComparisonAll.append(row)
-
-
 
 
     xurl = extensibleURL(request)
@@ -222,7 +218,6 @@ def compareJobs(request):
         'xurl': xurl,
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-    # setCacheEntry(request, "compareJobs", json.dumps(data, cls=DateEncoder), 60 * 20)
 
     ##self monitor
     endSelfMonitor(request)

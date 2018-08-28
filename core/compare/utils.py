@@ -4,6 +4,7 @@
     Functions for comparison of PanDA object parameters
 """
 import json
+import urllib3
 from core.compare.modelsCompare import ObjectsComparison
 
 def add_to_comparison(objecttype, userid, value):
@@ -77,3 +78,18 @@ def clear_comparison_list(objecttype, userid):
 
 
     return isDeleted
+
+
+def job_info_getter(url_params_str):
+    """
+    A function for getting jobs info in multithreading mode
+    :return: dictionary with job info
+    """
+    base_url = "http://bigpanda.cern.ch/job"
+    jobInfoDict = {}
+
+    http = urllib3.PoolManager()
+    resp = http.request('GET', base_url + url_params_str)
+    jobInfoDict = json.loads(resp.data)
+
+    return jobInfoDict
