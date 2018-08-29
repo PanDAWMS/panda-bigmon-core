@@ -523,6 +523,8 @@ def artJobs(request):
                 jobdict['jeditaskid'] = job['taskid']
                 jobdict['maxvmem'] = round(job['maxvmem']*1.0/1000,1) if job['maxvmem'] is not None else '---'
                 jobdict['maxrss'] = round(job['maxrss']*1.0/1000,1) if job['maxrss'] is not None else '---'
+                jobdict['attemptnr'] = job['attemptnr']
+                jobdict['maxattempt'] = job['maxattempt']
                 jobdict['cpuconsumptiontime'] = job['cpuconsumptiontime'] if job['jobstatus'] in ('finished', 'failed') else '---'
                 if job['jobstatus'] in ('finished', 'failed'):
                     jobdict['duration'] = job['endtime'] - job['starttime']
@@ -582,8 +584,9 @@ def artJobs(request):
                 jobdict['jeditaskid'] = job['taskid']
                 jobdict['maxvmem'] = round(job['maxvmem'] * 1.0 / 1000, 1) if job['maxvmem'] is not None else '---'
                 jobdict['maxrss'] = round(job['maxrss']*1.0/1000,1) if job['maxrss'] is not None else '---'
-                jobdict['cpuconsumptiontime'] = job['cpuconsumptiontime'] if job['jobstatus'] in (
-                'finished', 'failed') else '---'
+                jobdict['attemptnr'] = job['attemptnr']
+                jobdict['maxattempt'] = job['maxattempt']
+                jobdict['cpuconsumptiontime'] = job['cpuconsumptiontime'] if job['jobstatus'] in ('finished', 'failed') else '---'
                 if job['jobstatus'] in ('finished', 'failed'):
                     jobdict['duration'] = job['endtime'] - job['starttime']
                 else:

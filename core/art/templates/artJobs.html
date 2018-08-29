@@ -172,6 +172,7 @@ function toggleShowHide(divID, linkID) {
                                                         </div>
                                                         <b>&nbsp;{{ job.ntagtime }}</b>
                                                         <span class="tarindex tarindex_tooltip"> {{ job.tarindex }}</span>
+                                                        <span class="attempt attempt_tooltip"> {{ job.attemptnr }}/{{ job.maxattempt }}</span>
                                                         <a  class="to-logs" target="_blank" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link"></i></a>
                                                         {% if job.finalresult != 'active' %}
                                                             <a  class="to-logs" target="_blank" href="https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{{job.linktext}}/"><i class="fi-clipboard"></i></a>
