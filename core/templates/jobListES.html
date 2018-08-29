@@ -227,7 +227,7 @@ Sort by
 </font>
 </th></tr>
 <tr class='tablesection'>
-	<th>PanDA ID<br>Attempt#</th>
+	<th>PanDA ID<br>Attempt# of maxAttempts#</th>
 	<th>Owner {% if viewParams.MON_VO != 'ATLAS' %} / VO{% endif %}<br>Group  </th>
 	<th>Task ID</th>
 	<th>Transformation</th>
@@ -246,7 +246,7 @@ Sort by
 </tr>
     {% for job in jobList %}
 	<tr>
-		<td rowspan=3><a href="{% url 'jobInfo' %}?pandaid={{ job.pandaid }}">{{ job.pandaid }}</a><br>Attempt {{ job.attemptnr }}<br>
+		<td rowspan=3><a href="{% url 'jobInfo' %}?pandaid={{ job.pandaid }}">{{ job.pandaid }}</a><br>Attempt {{ job.attemptnr }} of {{ job.maxattempt }}<br>
 		    {% if job.consumer %}
 		     Consumer: <a href="{% url 'jobInfo' %}?pandaid={{ job.consumer }}">{{ job.consumer }}</a>
 		    {% endif %}

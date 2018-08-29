@@ -271,7 +271,7 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 </font>
 </th></tr>
 <tr class='tablesection'>
-	<th>PanDA ID<br>Attempt#</th>
+	<th>PanDA ID<br>Attempt# of maxAttempts#</th>
 	<th>Owner {% if viewParams.MON_VO != 'ATLAS' %} / VO{% endif %}<br>Group  </th>
 	<th>Request<br>Task ID</th>
 	<th>Transformation</th>
@@ -290,7 +290,7 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 </tr>
     {% for job in jobList %}
 	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
-		<td rowspan=3><a href="{% url 'jobInfo' %}?pandaid={{ job.pandaid }}">{{ job.pandaid }}</a><br>Attempt {{ job.attemptnr }}
+		<td rowspan=3><a href="{% url 'jobInfo' %}?pandaid={{ job.pandaid }}">{{ job.pandaid }}</a><br>Attempt {{ job.attemptnr }} of {{ job.maxattempt }}
 			 <br>
 		    {% if job.consumer %}
 		     Consumer: <a href="{% url 'jobInfo' %}?pandaid={{ job.consumer }}">{{ job.consumer }}</a>
