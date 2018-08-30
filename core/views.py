@@ -3321,7 +3321,7 @@ def jobList(request, mode=None, param=None):
                 clist = newlist
             except:
                 clist = []
-            if job['pandaid'] in clist:
+            if job and job['pandaid'] in clist:
                 isincomparisonlist = True
 
 
