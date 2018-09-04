@@ -2329,7 +2329,8 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
             except:
                 pass # it is better to add here wrong data handler
         plsql = plsql[:-1] +'), '
-
+    # if ('computingsite' in requestFields):
+    #     plsql += "COMPUTINGSITE=>("
 
 
 
@@ -2349,6 +2350,8 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
                 firstc = wildCardExtension.find("'", pos) + 1
                 sec = wildCardExtension.find("'", firstc)
                 value = wildCardExtension[firstc: sec]
+                if '%%' in value:
+                    value = value.replace('%%','*')
                 plsql += " "+item.upper()+"=>'"+value+"', "
     plsql = plsql[:-2]
     plsql += "); END;;"
