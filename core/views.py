@@ -3325,10 +3325,7 @@ def jobList(request, mode=None, param=None):
                 clist = newlist
             except:
                 clist = []
-            try:
-                if job and job['pandaid'] in clist:
-                    isincomparisonlist = True
-            except: isincomparisonlist = False
+
 
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
