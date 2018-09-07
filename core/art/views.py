@@ -727,8 +727,9 @@ def updateARTJobList(request):
     cur.autocommit = True
     cur.execute("""INSERT INTO atlas_pandabigmon.art_results_queue
                     (pandaid, IS_LOCKED, LOCK_TIME)
-                    SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s'))
+                    SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('%s','%s','%s'))
                     WHERE pandaid is not NULL
+                          and attemptmark = 0  
                           and result is NULL
                           and status in ('finished', 'failed')
                           and pandaid not in (select pandaid from atlas_pandabigmon.art_results_queue)"""
