@@ -329,3 +329,43 @@ a.close-x-sign {
 a.close-x-sign:hover {
     color: #0a0a0a !important;
 }
+
+.tooltip-upper {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-upper .tooltip-text {
+    visibility: hidden;
+    min-width: 150px;
+    max-width: 400px;
+    background-color: #0a0a0a;
+    color: #fff;
+    text-align: center;
+    font-style: normal;
+    border-radius: 6px;
+    padding: 5px 2px;
+    position: absolute;
+    z-index: 1000;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -75px;
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+
+.tooltip-upper .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #0a0a0a transparent transparent transparent;
+}
+
+.tooltip-upper:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}

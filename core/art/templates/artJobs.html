@@ -170,13 +170,18 @@ function toggleShowHide(divID, linkID) {
                                                             <div {% if job.finalresult == 'failed' or job.finalresult == 'finished' %} class="{{ job.finalresult }}_job">{{ job.finalresult }} {% else %} class="active_job"> active {% endif %}  </div>
                                                             <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
                                                         </div>
-                                                        <b>&nbsp;{{ job.ntagtime }}</b>
-                                                        <span class="tarindex tarindex_tooltip"> {{ job.tarindex }}</span>
-                                                        <span class="attempt attempt_tooltip"> {{ job.attemptnr }}/{{ job.maxattempt }}</span>
-                                                        <a  class="to-logs" target="_blank" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link"></i></a>
-                                                        {% if job.finalresult != 'active' %}
-                                                            <a  class="to-logs" target="_blank" href="https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{{job.linktext}}/"><i class="fi-clipboard"></i></a>
-                                                        {% endif %}
+                                                        <div class="extra-links">
+                                                            <b>&nbsp;{{ job.ntagtime }}</b>
+                                                            <span class="tarindex tooltip-upper"> {{ job.tarindex }}<span class="tooltip-text">Index of tar file</span></span>
+                                                            <span class="attempt tooltip-upper"> {{ job.attemptnr }}/{{ job.maxattempt }}<span class="tooltip-text">Attempt number / max attempts</span></span>
+                                                            <a  class="to-logs blacklink" target="_blank" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link tooltip-upper"><span class="tooltip-text">Link to logs of last attempt</span></i></a>
+                                                            {% if job.linktopreviousattemptlogs %}
+                                                                <a  class="to-logs greylink" target="_blank" href="{% url "filebrowser" %}{{ job.linktopreviousattemptlogs }}"><i class="fi-link tooltip-upper"><span class="tooltip-text">Link to logs of previous attempt</span></i></a>
+                                                            {% endif %}
+                                                            {% if job.finalresult != 'active' %}
+                                                                <a  class="to-logs blacklink" target="_blank" href="https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{{job.linktext}}/"><i class="fi-clipboard tooltip-upper"><span class="tooltip-text">Link to ART EOS copy area</span></i></a>
+                                                            {% endif %}
+                                                        </div>
                                                     </div>
                                                     {% if jobs.jobs|length > 1 %} <br> {% endif %}
                                                 {% else %}
