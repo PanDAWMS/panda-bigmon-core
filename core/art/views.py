@@ -250,7 +250,7 @@ def artOverview(request):
     if datetime.strptime(query['ntag_from'], '%Y-%m-%d') < datetime.strptime('2018-03-20', '%Y-%m-%d'):
         query_raw = """SELECT package, branch, ntag, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
     else:
-        query_raw = """SELECT package, branch, ntag, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('%s','%s','%s')) WHERE attemptmark = 0""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
+        query_raw = """SELECT package, branch, ntag, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s')) WHERE attemptmark = 0""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
 
     cur = connection.cursor()
     cur.execute(query_raw)
@@ -352,7 +352,7 @@ def artTasks(request):
     if datetime.strptime(query['ntag_from'], '%Y-%m-%d') <  datetime.strptime('2018-03-20', '%Y-%m-%d'):
         query_raw = """SELECT package, branch, ntag, nightly_tag, taskid, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
     else:
-        query_raw = """SELECT package, branch, ntag, nightly_tag, taskid, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('%s','%s','%s')) WHERE attemptmark = 0""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
+        query_raw = """SELECT package, branch, ntag, nightly_tag, taskid, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s')) WHERE attemptmark = 0""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
 
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
@@ -462,7 +462,7 @@ def artJobs(request):
     if datetime.strptime(query['ntag_from'], '%Y-%m-%d') < datetime.strptime('2018-03-20', '%Y-%m-%d'):
         cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
     else:
-        cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
+        cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
     jobs = cur.fetchall()
     cur.close()
 
@@ -620,16 +620,15 @@ def artJobs(request):
                 jobindex = next((index for (index, d) in enumerate(
                     artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs']) if d['inputfileid'] == job['inputfileid']), None)
-                if jobindex:
+                if jobindex is not None:
                     artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][jobindex]['linktopreviousattemptlogs'] = '?scope={}&guid={}&lfn={}&computingsite={}'.format(job['scope'], job['guid'], job['lfn'], job['computingsite'])
-
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for job in jobs:
             if 'attemptmark' in job and job['attemptmark'] == 1:
                 jobindex = next((index for (index, d) in enumerate(
                     artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs']) if d['inputfileid'] == job['inputfileid']), None)
-                if jobindex:
+                if jobindex is not None:
                     artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][jobindex]['linktopreviousattemptlogs'] = '?scope={}&guid={}&lfn={}&computingsite={}'.format(job['scope'], job['guid'], job['lfn'], job['computingsite'])
 
     # transform dict of tests to list of test and sort alphabetically
@@ -727,7 +726,7 @@ def updateARTJobList(request):
     cur.autocommit = True
     cur.execute("""INSERT INTO atlas_pandabigmon.art_results_queue
                     (pandaid, IS_LOCKED, LOCK_TIME)
-                    SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('%s','%s','%s'))
+                    SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s'))
                     WHERE pandaid is not NULL
                           and attemptmark = 0  
                           and result is NULL
