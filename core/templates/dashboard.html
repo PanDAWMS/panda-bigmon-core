@@ -592,24 +592,17 @@ of all jobs
 </p>
 {% endif %}
 
-<script language="javascript">
-
-function generateGangliaURL(id, timeWindow, state) {
-    var oldURL = document.getElementById(id).src;
+<script language="javascript"> var newWin;function PopUp(ref, site, type) {
+var prt = 'http://'
+if ("https:" == document.location.protocol) {
+    prt = 'https://'
+} else {
+    prt = 'http://'
 }
-
-var newWin;
-function PopUp(ref, site, type) {
-    var prt = 'http://';
-    if ("https:" == document.location.protocol) {
-        prt = 'https://'
-    } else {
-        prt = 'http://'
-    }
-    var strFeatures="toolbar=no,status=no,menubar=no,location=no";
-    strFeatures=strFeatures+",scrollbars=no,resizable=no,height=500,width=500";
-    if (!newWin || newWin.closed) {newWin = window.open(ref,'TellObj',strFeatures);
-    if (!newWin.opener) {newWin.opener = window; }
+var strFeatures="toolbar=no,status=no,menubar=no,location=no"
+strFeatures=strFeatures+",scrollbars=no,resizable=no,height=500,width=500"
+if (!newWin || newWin.closed) {newWin = window.open(ref,'TellObj',strFeatures);
+if (!newWin.opener) {newWin.opener = window; }
 
 newWin.document.write('<img src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=day&'+ref+'" id="show_image"><p>');
 newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}http://panglia.lcg.triumf.ca/site/graph.php?TIME=hour&'+ref+'"; value=Hour>');;
@@ -622,23 +615,6 @@ newWin.document.close();
 }else { 
     if (window.focus) {newWin.focus()}; 
 } }</script>
-    newWin.document.write('<img src="{% url 'img' %}?url=http://panglia.lcg.triumf.ca/site/graph.php?TIME=day&'+ref+'" id="show_image"><p>');
-    newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://panglia.lcg.triumf.ca/site/graph.php?TIME=hour&'+ref+'"; value=Hour>');;
-    newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://panglia.lcg.triumf.ca/site/graph.php?TIME=day&'+ref+'"; value=Day>');
-    newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://panglia.lcg.triumf.ca/site/graph.php?TIME=week&'+ref+'"; value=Week>');
-    newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://panglia.lcg.triumf.ca/site/graph.php?TIME=month&'+ref+'"; value=Month>');
-    newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="'+prt+'{{ request.get_host }}{% url 'img' %}?url=http://panglia.lcg.triumf.ca/site/graph.php?TIME=year&'+ref+'"; value=Year>');
-
-{#    newWin.document.write('<p><input type=button onclick="generateGangliaURL('show_image', '0', '0')" value=assigned>');#}
-    newWin.document.write('<p><input type=button value="Close" onclick="window.close();return false;">');
-    newWin.document.close();
-    }else {
-        if (window.focus) {newWin.focus()};
-    }
-}
-
-
-</script>
 
 {% endblock %}
 
