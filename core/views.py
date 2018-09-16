@@ -11573,10 +11573,9 @@ def image(request):
         try:
             fd = urllib.urlopen(url)
             image_file = io.BytesIO(fd.read())
-            fd.close()
-            #im = Image.open(image_file)
-            response = HttpResponse(image_file, content_type='image/jpg')
-            #im.save(response, "JPEG")
+            im = Image.open(image_file)
+            response = HttpResponse(content_type='image/jpg')
+            im.save(response, "JPEG")
             return response
         except:return redirect('/static/images/404-not-found-site.gif')
     else:
