@@ -678,7 +678,7 @@ def list_file_directory(logdir):
                 tardir = entry
                 continue
     if not len(tardir):
-        err = "Problem with tarball, could not find expected directory (got %s)." % os.listdir(logdir)
+        err = "Problem with tarball, could not find expected directory (got %s)." % logdir
         return files, err, tardir
 
     # Now list the contents of the tarball directory:
