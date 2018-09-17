@@ -98,10 +98,7 @@ def index(request):
     dirprefix = ''
     tardir = ''
     if not (guid is None or lfn is None or scope is None):
-        try:
-            files, errtxt, dirprefix, tardir = get_rucio_file(scope,lfn, guid)
-        except:
-            return HttpResponse(json.dumps({'message':'error'}), content_type='text/html')
+        files, errtxt, dirprefix, tardir = get_rucio_file(scope,lfn, guid)
     else:
         errormessage = ''
         if guid is None:

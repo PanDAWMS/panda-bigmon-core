@@ -665,10 +665,18 @@ def list_file_directory(logdir):
     # Process the tarball contents
     # First find the basename for the tarball files
     tardir = ''
-    for entry in os.listdir(logdir):
-        if entry.startswith('tarball'):
-            tardir = entry
-            continue
+    filelist = []
+    try:
+        filelist = os.listdir(logdir)
+    except OSError, (errno, errMsg):
+        msg = "Error in filesystem call:" + str(errMsg)
+        _logger.error(msg)
+
+    if len(filelist) > 0:
+        for entry in filelist:
+            if entry.startswith('tarball'):
+                tardir = entry
+                continue
     if not len(tardir):
         err = "Problem with tarball, could not find expected directory (got %s)." % os.listdir(logdir)
         return files, err, tardir
