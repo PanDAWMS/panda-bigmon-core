@@ -104,6 +104,18 @@ def subresults_getter(url_params_str):
                 resultlist.append({'name': r['name'] if 'name' in r else '', 'result': r['result'] if 'result' in r else r})
             subresults_dict['result'] = resultlist
 
+
+    # clean up ART test logs from media/filebrowser/ where guid is folder name
+    try:
+        guid = url_params_str.split('=')[1].split('&')[0]
+    except:
+        print "GUID is not provided"
+        pass
+
+    urlClean = "http://" + HOSTNAME + '/filebrowser/delete/?json=1&guid=' + guid
+
+    http.request('GET', urlClean)
+
     return {pandaid: subresults_dict}
 
 
