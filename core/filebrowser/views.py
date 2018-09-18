@@ -15,7 +15,7 @@ from django.utils.cache import patch_response_headers
 #from django.core.urlresolvers import reverse
 #from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_filebrowser_vo, \
-get_filebrowser_hostname
+get_filebrowser_hostname, remove_folder
 
 from core.common.models import Filestable4
 from core.views import DateEncoder, DateTimeEncoder
@@ -294,4 +294,27 @@ def api_single_pandaid(request):
         context = RequestContext(request, {'data':data})
         return HttpResponse(t.render(context), status=400)
 
+
+def delete_files(request):
+    """
+    Clear subfolder containing log files
+    :param request:
+    :return:
+    """
+
+    ### check that path to logs is provided
+    guid = None
+    try:
+        guid = request.GET['guid']
+    except:
+        msg = 'Missing guid GET parameter'
+        _logger.error(msg)
+
+    ### clean folder if guid provided
+    if guid is not None:
+        logdir = remove_folder(guid)
+        data = {'message':'The folder was cleaned ' + logdir}
+        return HttpResponse(json.dumps(data), content_type='text/html')
+    else:
+        return HttpResponse(status=404)
 

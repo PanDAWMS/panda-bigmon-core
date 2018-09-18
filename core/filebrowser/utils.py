@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import time
+import shutil
 from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
@@ -832,3 +833,17 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True):
     ### return list of files
     return files, errtxt, urlbase, tardir
 
+
+def remove_folder(guid):
+
+    ### logdir
+    logdir = get_fullpath_filebrowser_directory() + '/' + guid.lower()
+
+    ### check if folder exists and remove
+    if os.path.isdir(logdir):
+        shutil.rmtree(logdir)
+    else:
+        msg = 'Provided folder is not provided [{}]'.format(logdir)
+        _logger.error(msg)
+
+    return logdir
