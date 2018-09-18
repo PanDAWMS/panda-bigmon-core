@@ -11,7 +11,7 @@ from django.contrib import admin
 import views as filebrowser_views
 
 urlpatterns = [
-    url(r'^', filebrowser_views.index, name='filebrowser'),
+    url(r'^$', filebrowser_views.index, name='filebrowser'),
     url(r'^api/$', filebrowser_views.api_single_pandaid, name='filebrowser-api-single-pandaid'),
-    url(r'^delete/$', filebrowser_views.delete_files, name='filebrowser-remove'),
+    url(r'^delete/$', filebrowser_views.delete_files, name='filebrowser-delete'),
 ]
