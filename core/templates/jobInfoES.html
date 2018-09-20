@@ -225,6 +225,17 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 </td></tr></table>
 {% endif %}
 
+{% if harvesterInfo %}
+<table width=900>
+<tr><td>
+<div class="section">Show workers associated with job:
+<font size=-1>
+<a href="{% url "harvesters" %}?pandaid={{pandaid}}&days={{ timedelta }}">{{pandaid}}</a>
+</font>
+</div>
+</td></tr></table>
+{% endif %}
+
 
 <table>
 <tr><th bgcolor='lightcyan'>Job information</th>

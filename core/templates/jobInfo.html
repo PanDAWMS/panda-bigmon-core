@@ -220,12 +220,23 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 <p>
 {% endif %}
 
-{% if pandaid%}
+{% if pandaid %}
 <table width=900>
 <tr><td>
 <div class="section">Show script to re-create job for offline debugging:
 <font size=-1>
 <a href="http://pandaserver.cern.ch:25080//server/panda/getScriptOfflineRunning?pandaID={{pandaid}}">{{pandaid}}</a>
+</font>
+</div>
+</td></tr></table>
+{% endif %}
+
+{% if harvesterInfo %}
+<table width=900>
+<tr><td>
+<div class="section">Show workers associated with job:
+<font size=-1>
+<a href="{% url "harvesters" %}?pandaid={{pandaid}}&days={{ timedelta }}">{{pandaid}}</a>
 </font>
 </div>
 </td></tr></table>

@@ -4276,6 +4276,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             job['errorinfo'] = errorinfo
 
     if job['creationtime']:
+        creationtime = job['creationtime']
+        now = datetime.now()
+        delta =  now - creationtime
         job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
     if job['modificationtime']:
         job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
@@ -4356,6 +4359,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'harvesterInfo':harvesterInfo,
             'isincomparisonlist': isincomparisonlist,
             'clist': clist,
+            'timedelta': int(delta.days) + 1
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)

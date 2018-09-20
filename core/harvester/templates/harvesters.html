@@ -209,9 +209,10 @@
                 </tr>
             {% endfor %}
         </table>
+         {% if instance or computingsite %}
         <a href="javascript:ReverseDisplay('harvesterdialogsdiv','harvesterdialogslink','harvesterdialogs')"
            id="harvesterdialogslink" class="bluebutton">Show dialog messages / worker stats / jobs</a> <br/><br/>
-
+        {% endif %}
         <div id="harvesterdialogsdiv" style="display: none">
             <div id="tabs">
                 <ul>
@@ -313,9 +314,10 @@
                 </div>
                 </div>
         </div>
+        {% if instance or computingsite %}
         <a href="javascript:ReverseDisplay('harvesterplotsdiv','harvesterplotslink','harvesterplots')"
            id="harvesterplotslink" class="bluebutton">Show plots [DEV]</a> <br/><br/>
-
+        {% endif %}
         <div id="harvesterplotsdiv" style="display: none">
             <div id="plotstabs">
                 <ul>
@@ -380,17 +382,13 @@ height="1000" width="100%"></iframe>
             <caption style="height: 30px;vertical-align: middle">Workers submitted by harvesters</caption>
             <thead>
             <th>WorkerID (jobs)</th>
-            {#                <th>Total number of jobs</th>#}
             <th>Last update</th>
             <th>Status</th>
             <th>BatchID</th>
             <th>NodeID</th>
             <th>Queuename</th>
-            {% if instance == 0 %}
-            <th>Harvester</th>
-            {% else %}
             <th>Computingsite</th>
-            {% endif %}
+            <th>Instance</th>
             <th>Submit time</th>
             <th>Start time</th>
             <th>End time</th>
@@ -468,16 +466,15 @@ height="1000" width="100%"></iframe>
             });
 
             function workersTable() {
-                var instance = "{{ instance|safe}}";
-                    if (instance!="0") {
-                        dt = "computingsite"
-                    } else {
-                        dt = "harvester_id"
-                    }
-                $('#harvesterworkers').dataTable({
+                {#var instance = "{{ instance|safe}}";#}
+                {#    if (instance!="0") {#}
+                {#        dt = "computingsite"#}
+                {#    } else  {#}
+                {#        dt = "harvesterid"#}
+                {#    }#}
 
-                    //"bRetrieve": true,
-                    "order": [[ 7, "desc" ]],
+                $('#harvesterworkers').dataTable({
+                    "order": [[ 8, "desc" ]],
                     "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
                     "paging": true,
                     "scrollX": true,
@@ -488,7 +485,7 @@ height="1000" width="100%"></iframe>
                         "dataSrc": ''
                     },
                         columnDefs: [ {
-                        targets: [1,7,8,9],
+                        targets: [1,8,9,10],
                         render: $.fn.dataTable.render.moment( 'YYYY-MM-DDTHH:mm:ss','YYYY-MM-DD HH:mm:ss')
                         } ],
                     "aoColumns": [
@@ -501,8 +498,8 @@ height="1000" width="100%"></iframe>
                                 }
                                 else {
                                     if (full['njobs']!=null) {
-                                        if("harvester_id" in full){
-                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvester_id']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
+                                        if("harvesterid" in full){
+                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
                                         }
                                         else {
                                         return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
@@ -531,9 +528,8 @@ height="1000" width="100%"></iframe>
                                     return data;
                                 }
                                 else {
-
-                                        if("harvester_id" in full){
-                                        return '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvester_id']+'&workerid=' + full['workerid']  +'&batchid=' +full['batchid'] +'">' + full['batchid'] + '</a>'
+                                        if("harvesterid" in full){
+                                        return '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid']  +'&batchid=' +full['batchid'] +'">' + full['batchid'] + '</a>'
                                         }
                                         else {
                                         return  '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] +'&batchid=' +full['batchid'] +'">' + full['batchid'] + '</a>'
@@ -551,7 +547,11 @@ height="1000" width="100%"></iframe>
                             sDefaultContent: "",
                         },
                         {
-                            "data": dt,
+                            "data": "computingsite",
+                            sDefaultContent: "",
+                        },
+                                                {
+                            "data": "harvesterid",
                             sDefaultContent: "",
                         },
                         {
