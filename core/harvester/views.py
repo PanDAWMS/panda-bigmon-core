@@ -132,7 +132,8 @@ def harvesterWorkerInfo(request):
                                                                             'lastupdate','status','batchid','nodeid',
                                                                             'queuename', 'computingsite','submittime',
                                                                             'starttime','endtime','ncore','errorcode',
-                                                                            'stdout','stderr','batchlog'))
+                                                                            'stdout','stderr','batchlog','resourcetype','nativeexitcode',
+                                                                            'nativestatus','diagmessage','computingelement','njobs',))
 
         if len(workerslist) > 0:
             corrJobs = []
@@ -950,7 +951,7 @@ def getHarvesterJobs(request,instance = '', workerid = '',jobstatus=''):
     return pandaidsList
 
 def isharvesterjob(pandaid):
-    jobHarvesterInfo = {}
+    jobHarvesterInfo = []
     sqlRequest = '''
     SELECT workerid,HARVESTERID, BATCHLOG, COMPUTINGELEMENT FROM (SELECT 
   a.PANDAID,
@@ -970,7 +971,7 @@ def isharvesterjob(pandaid):
         return False
     columns = [str(column[0]).lower() for column in cur.description]
     for pid in job:
-        jobHarvesterInfo = dict(zip(columns, pid))
+        jobHarvesterInfo.append(dict(zip(columns, pid)))
     return jobHarvesterInfo
 
 def workersJSON(request):

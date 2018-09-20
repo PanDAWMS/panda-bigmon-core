@@ -3938,7 +3938,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         ###Harvester section####
         from core.harvester.views import isharvesterjob
         harvesterInfo = isharvesterjob(job['pandaid'])
-        if harvesterInfo==False:
+        if harvesterInfo == False:
            harvesterInfo = {}
 
         pandaid = job['pandaid']
@@ -4274,11 +4274,12 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         errorinfo = getErrorDescription(job)
         if len(errorinfo) > 0:
             job['errorinfo'] = errorinfo
-
+    delta = -1
     if job['creationtime']:
         creationtime = job['creationtime']
         now = datetime.now()
-        delta =  now - creationtime
+        tdelta =  now - creationtime
+        delta = int(tdelta.days) + 1
         job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
     if job['modificationtime']:
         job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
@@ -4359,7 +4360,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'harvesterInfo':harvesterInfo,
             'isincomparisonlist': isincomparisonlist,
             'clist': clist,
-            'timedelta': int(delta.days) + 1
+            'timedelta': delta
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)

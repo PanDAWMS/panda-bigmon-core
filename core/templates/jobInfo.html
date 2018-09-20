@@ -494,11 +494,19 @@ But if you want, you can check.
 {% if harvesterInfo %}
 <table>
 <tr><th colspan=20 bgcolor='lightcyan'> Harvester job parameters </th></tr>
-{% for key,value in harvesterInfo.items %}
-    {% if key == 'batchlog' and  value  != None %}
-    <tr><th>{{ key }}</th><td><a href="{{ value }}">Link</a></td></tr>
-    {% else %}<tr><th>{{ key }}</th><td>{{ value }}</td></tr>
-    {% endif %}
+<tr>
+<th> Harvesterid </th>
+<th> WorkerID </th>
+<th> Batchlog </th>
+<th> Computingelement </th>
+</tr>
+{% for instnace in harvesterInfo %}
+<tr>
+    <td><a href="{% url 'harvesters' %}?instance={{ instnace.harvesterid }}">{{ instnace.harvesterid }}</a></td>
+    <td><a href="{% url 'harvesterWorkerInfo' %}?harvesterid={{ instnace.harvesterid }}&workerid={{ instnace.workerid }}">{{ instnace.workerid }}</a></td>
+    <td>{% if instnace.batchlog != None %}<a href="{{instnace.batchlog}}">Link</a>{% else %} {{instnace.batchlog}} {% endif %}</td>
+    <td>{{ instnace.computingelement }}</td>
+</tr>
 {% endfor %}
 </table>
 {% endif %}

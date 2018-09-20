@@ -20,6 +20,12 @@ class HarvesterWorkers(models.Model):
     stdout = models.CharField(max_length=250, db_column='STDOUT', null=True, blank=True)
     stderr = models.CharField(max_length=250, db_column='STDERR', null=True, blank=True)
     batchlog = models.CharField(max_length=250, db_column='BATCHLOG', null=True, blank=True)
+    resourcetype = models.CharField(max_length=56, db_column='RESOURCETYPE', null=False, blank=True)
+    nativeexitcode = models.IntegerField(db_column='NATIVEEXITCODE', null=False)
+    nativestatus = models.CharField(max_length=80, db_column='NATIVESTATUS', null=False, blank=True)
+    diagmessage = models.CharField(max_length=500, db_column='DIAGMESSAGE', null=False, blank=True)
+    computingelement = models.CharField(max_length=128, db_column='COMPUTINGELEMENT', null=False, blank=True)
+    njobs = models.IntegerField( db_column='NJOBS', null=False)
     class Meta:
         db_table = u'"ATLAS_PANDA"."HARVESTER_WORKERS"'
 

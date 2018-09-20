@@ -499,14 +499,14 @@ height="1000" width="100%"></iframe>
                                 else {
                                     if (full['njobs']!=null) {
                                         if("harvesterid" in full){
-                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
+                                        return '' +'<a href="{% url 'harvesterWorkerInfo' %}?harvesterid='+ full['harvesterid'] +'&workerid='+full['workerid']+'">'+full['workerid']+'</a>'+' <a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
                                         }
                                         else {
                                         return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
                                         }
                                     }
                                     else {
-                                        return '' + full['workerid'] +  ' (' + 0 + ')'
+                                        return '' + '<a href="{% url 'harvesterWorkerInfo' %}?harvesterid='+ full['harvesterid'] +'&workerid='+full['workerid']+'">'+full['workerid']+'</a>' +  ' (' + 0 + ')'
                                     }
 
                                 }
