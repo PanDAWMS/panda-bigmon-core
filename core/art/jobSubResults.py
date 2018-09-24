@@ -5,7 +5,9 @@ from datetime import datetime
 from core.art.modelsART import ARTSubResult
 from django.db import connection, transaction, DatabaseError
 from core.settings import defaultDatetimeFormat
-import requests, multiprocessing
+import logging
+
+_logger = logging.getLogger('bigpandamon-error')
 
 def getJobReport(guid, lfn, scope):
     filebrowserURL = "http://bigpanda.cern.ch/filebrowser/"  # This is deployment specific because memory monitoring is intended to work in ATLAS
@@ -65,8 +67,8 @@ def subresults_getter(url_params_str):
     try:
         pandaid = int(pandaidstr)
     except:
-        print "PandaID can not be transformed to int type"
-        pass
+        _logger.exception('Exception was caught while transforming pandaid from str to int.')
+        raise
 
     http = urllib3.PoolManager()
     resp = http.request('GET', base_url + url_params_str)
@@ -80,9 +82,11 @@ def subresults_getter(url_params_str):
             files = data['files']
             files = [f for f in files if 'jobReport.json' in f['name']]
         except:
-            return -2
+            _logger.exception('Exception was caught while seeking jobReport.json in logs for PanDA job: {}'.format(str(pandaid)))
+            return {}
     else:
-        return -2
+        _logger.exception('Exception was caught while downloading logs using Rucio for PanDA job: {}'.format(str(pandaid)))
+        return {}
 
     urlBase = "http://" + HOSTNAME + "/" + MEDIA_URL + dirprefix + "/" + tardir
 
@@ -106,15 +110,15 @@ def subresults_getter(url_params_str):
 
 
     # clean up ART test logs from media/filebrowser/ where guid is folder name
+    guid = None
     try:
         guid = url_params_str.split('=')[1].split('&')[0]
     except:
-        print "GUID is not provided"
+        _logger.exception('Exception was caught while getting GUID by parsing URL params str: {}'.format(url_params_str))
         pass
-
-    urlClean = "http://" + HOSTNAME + '/filebrowser/delete/?json=1&guid=' + guid
-
-    http.request('GET', urlClean)
+    if guid is not None:
+        urlClean = "http://" + HOSTNAME + '/filebrowser/delete/?json=1&guid=' + guid
+        http.request('GET', urlClean)
 
     return {pandaid: subresults_dict}
 
