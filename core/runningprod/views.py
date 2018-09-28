@@ -338,6 +338,8 @@ def runningProdTasks(request):
         except:
             pass
         exquery['site__isnull'] = True
+    if 'simtype' in request.session['requestParams'] and request.session['requestParams']['simtype']:
+            tquery['simtype'] = request.session['requestParams']['simtype']
     if 'hashtags' in request.session['requestParams']:
         wildCardExtension += ' AND ('
         wildCards = request.session['requestParams']['hashtags'].split(',')
