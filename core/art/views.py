@@ -621,7 +621,7 @@ def artJobs(request):
                     artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs']) if d['inputfileid'] == job['inputfileid']), None)
                 if jobindex is not None:
-                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][jobindex]['linktopreviousattemptlogs'] = '?scope={}&guid={}&lfn={}&computingsite={}'.format(job['scope'], job['guid'], job['lfn'], job['computingsite'])
+                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][jobindex]['linktopreviousattemptlogs'] = '?scope={}&guid={}&lfn={}&site={}'.format(job['scope'], job['guid'], job['lfn'], job['computingsite'])
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for job in jobs:
             if 'attemptmark' in job and job['attemptmark'] == 1:
@@ -629,7 +629,7 @@ def artJobs(request):
                     artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)][
                         'jobs']) if d['inputfileid'] == job['inputfileid']), None)
                 if jobindex is not None:
-                    artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][jobindex]['linktopreviousattemptlogs'] = '?scope={}&guid={}&lfn={}&computingsite={}'.format(job['scope'], job['guid'], job['lfn'], job['computingsite'])
+                    artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][jobindex]['linktopreviousattemptlogs'] = '?scope={}&guid={}&lfn={}&site={}'.format(job['scope'], job['guid'], job['lfn'], job['computingsite'])
 
     # transform dict of tests to list of test and sort alphabetically
     artjobslist = {}
