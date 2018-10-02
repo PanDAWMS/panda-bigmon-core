@@ -6597,10 +6597,10 @@ def dashboard(request, view='production'):
     if view == 'production':
         extra = "(1=1)"
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
-            extra = "(not eventservice is null and eventservice=1 and not specialhandling like '%%sc:%%')"
+            extra = "(not eventservice is null and eventservice in (1, 5) and not specialhandling like '%%sc:%%')"
             estailtojobslinks = '&eventservice=eventservice'
         elif 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
-            extra = "(not (not eventservice is null and eventservice=1 and not specialhandling like '%%sc:%%'))"
+            extra = "(not (not eventservice is null and eventservice in (1, 5) and not specialhandling like '%%sc:%%'))"
         elif 'esmerge' in request.session['requestParams'] and request.session['requestParams'][
             'esmerge'].upper() == 'TRUE':
             extra = "(not eventservice is null and eventservice=2 and not specialhandling like '%%sc:%%')"
@@ -6696,8 +6696,8 @@ def dashboard(request, view='production'):
             query['tasktype'] = 'anal'
 
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
-            query['es'] = 1
-            estailtojobslinks = '&eventservice=eventservice'
+            query['es__in'] = [1, 5]
+            estailtojobslinks = '&eventservice=eventservice|cojumbo'
             extra = jobSuppression(request)
 
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
