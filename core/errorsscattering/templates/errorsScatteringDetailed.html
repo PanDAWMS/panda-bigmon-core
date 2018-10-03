@@ -141,6 +141,20 @@
                      </th>
                 {% endfor %}
         </tr>
+        <tr>
+            <th></th>
+            {% for c in clouds %}
+                 <td>
+                     {% for columnname, stats in columnstats.items %}
+                         {% if columnname == c %}
+                              <span class="sm_alarm" style="margin-right: 0.5rem">{{ stats.redc }}</span>
+                              <span class="sm_warning" style="margin-right: 0.5rem">{{ stats.yellowc }}</span>
+                              <span class="sm_ok">{{ stats.greenc }}</span>
+                         {% endif %}
+                     {% endfor %}
+                </td>
+            {% endfor %}
+        </tr>
       </thead>
       <tbody>
         {% for values in taskserrors%}
@@ -197,6 +211,7 @@
         <tr>
             <th>Request ID <a class="graylink" href="{% url 'errorsScattering' %}{% if requestParams.hours %}?hours={{ requestParams.hours }}{% endif %}{% if scouts == 'exclude' %}{% if requestParams.hours %}&{% else %}?{% endif %}scouts=exclude{% endif %}"><i class="fi-minus"></i></a>
             </th>
+            <th></th>
             {% for computingSite in computingSites %}
                 <th {% for columnname, stats in columnstats.items %}{% if columnname == computingSite %}
                          {% if stats.allc > 10 %}
@@ -235,6 +250,11 @@
                   {% endif %}>
                   <a class="graylink" href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=values.reqid %}?hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}{% if view == 'queues' %}&view=queues{% endif %}{% if scouts == 'exclude' %}&scouts=exclude{% endif %}"><i class="fi-plus"></i></a>
                   <a class="blacklink bold" href="{% url 'taskList' %}?reqid={{ values.reqid  }}&hours={% if requestParams.hours %}{{ requestParams.hours }}{% else %}8{% endif %}">{{ values.reqid  }}</a></th>
+              <td>
+                  <span class="sm_alarm" style="margin-right: 0.5rem">{{ values.totalstats.redc }}</span>
+                  <span class="sm_warning" style="margin-right: 0.5rem">{{ values.totalstats.yellowc }}</span>
+                  <span class="sm_ok">{{ values.totalstats.greenc }}</span>
+              </td>
                 {% for column in values.columns %}
                         <td {% if column.allc > 10 %}
                                 {% if column.percent < 50 %}class="sm_alarm_fill"

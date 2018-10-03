@@ -519,6 +519,8 @@ def errorsScatteringDetailed(request, cloud, reqid):
     reqErrorsList = []
     reqerrors = {}
 
+    successrateIntervals = {'green': [80, 100], 'yellow':[50,79], 'red':[0, 49]}
+
     statsParams = ['percent', 'finishedc', 'failedc', 'allc']
 
     if len(grouping) == 0 or (len(grouping) == 1 and 'reqid' in grouping and view == 'queues'):
@@ -690,12 +692,17 @@ def errorsScatteringDetailed(request, cloud, reqid):
                 columnstats[cns][param] = 0
 
             columnstats[cns]['minpercent'] = 100
+            for color, srint in successrateIntervals.items():
+                columnstats[cns][color + 'c'] = 0
 
         for cloudname, sites in clouderrors.iteritems():
             for sitename, sstats in sites.iteritems():
                 columnstats[cloudname]['finishedc'] += sstats['finishedc']
                 columnstats[cloudname]['failedc'] += sstats['failedc']
                 columnstats[cloudname]['allc'] += sstats['allc']
+                srpct = int(sstats['finishedc'] * 100. / sstats['allc'])
+                for color, srint in successrateIntervals.items():
+                    columnstats[cloudname][color + 'c'] += 1 if (srpct >= srint[0] and srpct <= srint[1]) else 0
             columnstats[cloudname]['minpercent'] = min(
                 int(cstats['finishedc'] * 100. / cstats['allc']) for cstats in sites.values())
 
@@ -722,15 +729,27 @@ def errorsScatteringDetailed(request, cloud, reqid):
                 reqerrors[rid]['columns'] = {}
                 reqerrors[rid]['reqid'] = rid
                 reqerrors[rid]['totalstats'] = {}
+                reqerrors[rid]['totalstats']['greenc'] = 0
+                reqerrors[rid]['totalstats']['yellowc'] = 0
+                reqerrors[rid]['totalstats']['redc'] = 0
+                reqerrors[rid]['tasks'] = {}
                 for param in statsParams:
                     reqerrors[rid]['totalstats'][param] = 0
             if errorEntry['COMPUTINGSITE'] not in reqerrors[rid]['columns']:
                 reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']] = {}
                 for param in statsParams:
                     reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']][param] = 0
+            if errorEntry['JEDITASKID'] not in reqerrors[rid]['tasks']:
+                reqerrors[rid]['tasks'][errorEntry['JEDITASKID']] = {}
+                reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['finishedc'] = 0
+                reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['allc'] = 0
             reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']]['finishedc'] += errorEntry['FINISHEDC']
             reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']]['failedc'] += errorEntry['FAILEDC']
             reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']]['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+
+            reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['finishedc'] += errorEntry['FINISHEDC']
+            reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+
             reqerrors[rid]['totalstats']['finishedc'] += reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']]['finishedc']
             reqerrors[rid]['totalstats']['failedc'] += reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']]['failedc']
             reqerrors[rid]['totalstats']['allc'] += reqerrors[rid]['columns'][errorEntry['COMPUTINGSITE']]['allc']
@@ -739,6 +758,13 @@ def errorsScatteringDetailed(request, cloud, reqid):
             reqerrors[rid]['totalstats']['percent'] = int(
                 math.ceil(reqerrors[rid]['totalstats']['finishedc'] * 100. / reqerrors[rid]['totalstats']['allc'])) if \
                     reqerrors[rid]['totalstats']['allc'] > 0 else 0
+            reqerrors[rid]['totalstats']['minpercent'] = min(
+                int(tstats['finishedc'] * 100. / tstats['allc']) for tstats in reqentry['tasks'].values())
+            for tstats in reqentry['tasks'].values():
+                srpct = int(tstats['finishedc'] * 100. / tstats['allc'])
+                for color, srint in successrateIntervals.items():
+                    reqerrors[rid]['totalstats'][color + 'c'] += 1 if (srpct >= srint[0] and srpct <= srint[1]) else 0
+
 
         print '%s starting cleaning of non-errorneous requests' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         reqsToDel = []

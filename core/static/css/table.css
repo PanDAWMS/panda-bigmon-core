@@ -165,9 +165,9 @@ table.matrix tbody th,
 }
 
 table.matrix thead th {
-    width: 3rem;
-    min-width: 3rem;
-    max-width: 3rem;
+    width: 4rem;
+    min-width: 4rem;
+    max-width: 4rem;
 }
 
 table.matrix tbody th {
@@ -181,14 +181,14 @@ table.matrix tbody td {
     border: 1px solid lightgray;
     text-align: center;
     line-height: 1.1rem;
-    width: 3rem;
-    min-width: 3rem;
-    max-width: 3rem;
+    width: 4rem;
+    min-width: 4rem;
+    max-width: 4rem;
 }
 
 
 div.vertical {
-  margin-left: -8rem;
+  margin-left: -7.5rem;
   position: relative;
   width: 295px;
   transform: rotate(-90deg);
