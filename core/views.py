@@ -2305,9 +2305,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     if (('jeditaskid' in requestFields) and range == 180.0): #This is a temporary patch to avoid absence of pandaids
         plsql += " RANGE_DAYS=>null, "
     else:
-        if int(range) > 10:
-            plsql += " RANGE_DAYS=>" + str(int(round(range))) + ", "
-        else: plsql += " RANGE_DAYS=>" + str(range) + ", "
+        plsql += " RANGE_DAYS=>" + str(range) + ", "
 
     if ('priorityrange' in requestFields): #This is a temporary patch to avoid absence of pandaids
         plsql += " PRIORITYRANGE=>'"+escapeInput(requestFields['priorityrange'])+"', "
@@ -2500,7 +2498,7 @@ def getJobList(request,requesttoken=None):
                 item[row[2]] = row[3]
                 summaryhash[row[1]] = item
 
-    shkeys = summaryhash.keys()
+    shkeys = sorted(summaryhash.keys())
     sumd = []
     jobsToList = set()
     njobs = 0
