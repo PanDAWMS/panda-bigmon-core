@@ -350,6 +350,10 @@ th.vertical {
     color: #727C81 !important;
 }
 
+.dt-body-right {
+    text-align: right !important;
+}
+
 /*Style for compare table*/
 
 .compare-table {
