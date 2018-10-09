@@ -161,7 +161,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 <div class="dropdownplots">
     <button class="dropdownbutton">Logs</button>
     <div id="dropdown-plotchoice" class="dropdown-plot">
-        {% if logdile.lfn %}
+        {% if logfile.lfn %}
           {% if viewParams.MON_VO == 'ATLAS' %}
               {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'closed' %}
                 {% if logfile.guid %}
@@ -186,6 +186,8 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
             <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt">payload stdout</a>
             <a href='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'>job cache tarball</a>
           {% endif %}
+        {% else %}
+            <a>No logs available</a>
         {% endif %}
         {% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
             {% if stdout %}

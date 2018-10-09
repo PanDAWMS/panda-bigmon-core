@@ -173,7 +173,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 <div class="dropdownplots">
     <button class="dropdownbutton">Logs</button>
     <div id="dropdown-plotchoice" class="dropdown-plot">
-        {% if logdile.lfn %}
+        {% if logfile.lfn %}
           {% if viewParams.MON_VO == 'ATLAS' %}
               {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'closed' %}
                 {% if logfile.guid %}
