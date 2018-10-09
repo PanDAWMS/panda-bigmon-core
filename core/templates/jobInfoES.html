@@ -50,6 +50,16 @@ function toggleComparisonList(buttonid, value) {
     }
 
 }
+
+function toggleByID(id) {
+    if ($("#" + id).is(':visible')){
+        $("#" + id).hide();
+    }
+    else {
+        $("#" + id).show();
+    }
+
+}
 </script>
 
 
@@ -107,15 +117,6 @@ function toggleComparisonList(buttonid, value) {
 </table>
 <font size=-1>
 
-{% if request.user.is_tester %}
-<div>
-    {% if isincomparisonlist %}
-        <a id="comparisonbutton" onclick="toggleComparisonList('comparisonbutton', '{{ job.pandaid }}')" class="removefromcomparisonbutton">Remove job from comparison</a>
-    {% else %}
-        <a id="comparisonbutton" onclick="toggleComparisonList('comparisonbutton', '{{ job.pandaid }}')" class="addtocomparisonbutton">Add job to comparison</a>
-    {% endif %}
-</div>
-{% endif %}
 
 <p>
 {% if not job.jeditaskid %}
@@ -168,181 +169,189 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 {% endif %}
 
 
+<p>
+<div class="dropdownplots">
+    <button class="dropdownbutton">Logs</button>
+    <div id="dropdown-plotchoice" class="dropdown-plot">
+        {% if logdile.lfn %}
+          {% if viewParams.MON_VO == 'ATLAS' %}
+              {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'closed' %}
+                {% if logfile.guid %}
+                    {% if job.jobstatus == 'failed' or job.jobstatus == 'finished'  or job.jobstatus == 'closed' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled'  %}
+                        <a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}">logfiles</a>
+                    {% else %}
+                        No logs available yet
+                    {% endif %}
+                {% else %}
+                    No logs were saved
+                {% endif %}
+
+                {% if oslogpath %}
+                    <a href="{{ oslogpath }}">log tarball</a>
+                {% endif %}
+              {% endif %}
+          {% else %}
+            {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
+                <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/application_log.txt">job stdout</a
+                <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/output/">job outputs</a>
+            {% endif %}
+            <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt">payload stdout</a>
+            <a href='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'>job cache tarball</a>
+          {% endif %}
+        {% else %}
+            <a>No logs available</a>
+        {% endif %}
+        {% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
+            {% if stdout %}
+                <a href='{{stdout}}'>stdout of pilot job</a>
+                <a href='{{stderr}}'>stderr of pilot job</a>
+                <a href='{{stdlog}}'>batch log of pilot job</a>
+            {% endif %}
+            {% if job.jobstatus == 'closed' %}
+                <td><a href='{{stdout}}'>Pilot ID</a></td>
+            {% endif %}
+
+            <a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">pilot records</a>
+
+            <a target="_blank" href="https://es-atlas6.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',desc))">Action logger</a>
+
+        {% endif %}
+    </div>
+</div>
+
+
+<div class="dropdownplots">
+    <button class="dropdownbutton">Go to</button>
+    <div id="dropdown-plotchoice" class="dropdown-plot">
+        <a href="{% url 'jobList' %}?parentid={{ job.pandaid }}">Child jobs</a>
+        {% if harvesterInfo %}
+            <a href="{% url "harvesters" %}?pandaid={{pandaid}}&days={{ timedelta }}">Associated Harvester workers</a>
+        {% endif %}
+        {% if job.jobsetid and job.jobsetid > 0 %}
+            <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}">Jobs for {{ job.jobsetid }} jobset</a>
+
+            {% if libjob and libjob != job.pandaid  %}
+                <a href="{% url 'jobInfo' %}?pandaid={{ libjob }}">build job {{ libjob }}</a>
+            {% endif %}
+
+            {% if runjobs|length > 0 %}
+                <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&processingtype=pathena">{{ runjobs|length }} run jobs</a>
+            {% endif %}
+
+            {% if mergejobs|length > 0 %}
+                <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&processingtype=usermerge">{{ mergejobs|length }} merge jobs</a>
+            {% endif %}
+
+            {% if runesjobs|length > 0 %}
+                <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&eventservice=eventservice">JobSet ES jobs ({{ runesjobs|length }})</a>
+            {% endif %}
+
+            {% if mergeesjobs|length > 0 %}
+                <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&eventservice=esmerge">JobSet ES Merge jobs ({{ mergeesjobs|length }})</a>
+            {% endif %}
+
+        {% endif %}
+
+        {% if pandaid %}
+            <a href="http://pandaserver.cern.ch:25080//server/panda/getScriptOfflineRunning?pandaID={{pandaid}}">Script to re-create job for offline debugging</a>
+        {% endif %}
+
+        {% if coreData %}
+            &nbsp; <a href="http://srs.slac.stanford.edu/Pipeline-II/exp/SRS/pi.jsp?pi={{coreData.processinstance}}">{{coreData.processinstance}} process for {{ coreData.pipelinetask }} pipeline task</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="dropdownplots">
+    <button class="dropdownbutton">Show</button>
+    <div id="dropdown-plotchoice" class="dropdown-plot">
+        {% if pretries or retries %}
+          {% if pretries %}
+            <a onclick="toggleByID('pretries')">Upstream jobs (past retries)</a>
+          {% endif %}
+          {% if retries %}
+            <a onclick="toggleByID('retries')">Downstream jobs (further attempts)</a>
+          {% endif %}
+          <a onclick="javascript:loadExtendedErrorData('{{ job.jeditaskid }}','{{ job.pandaid }}');">Descendents jobs errors</a>
+        {% else %}
+            <a>No upstream and downstream jobs available</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="dropdownplots">
+    <button class="dropdownbutton">Jump to</button>
+    <div id="dropdown-plotchoice" class="dropdown-plot">
+        {% if harvesterInfo %}
+            <a href="#harvesterworkers">Associated Harvester workers</a>
+        {% endif %}
+        <a href="#jobparamskey">Key job parameters</a>
+        <a href="#jobparamsall">All job parameters</a>
+        <a href="#help">Help</a>
+    </div>
+</div>
+
+<div class="dropdownplots">
+    <button class="dropdownbutton">Open plot</button>
+    <div id="dropdown-plotchoice" class="dropdown-plot">
+        {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus ==  'cancelled' or job.jobstatus ==  'aborted' or job.jobstatus == 'merging' %}
+            <a href="{% url 'memoryplot' %}?pandaid={{ job.pandaid }}" target="_blank">Memory and IO plots</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if request.user.is_tester %}
+<div style="float: right">
+    {% if isincomparisonlist %}
+        <a id="comparisonbutton" onclick="toggleComparisonList('comparisonbutton', '{{ job.pandaid }}')" class="removefromcomparisonbutton">Remove job from comparison</a>
+    {% else %}
+        <a id="comparisonbutton" onclick="toggleComparisonList('comparisonbutton', '{{ job.pandaid }}')" class="addtocomparisonbutton">Add job to comparison</a>
+    {% endif %}
+</div>
+{% endif %}
+
+
+
 {% if countOfInvocations > 300 %}
     <div class="section">Looking into retries exceeds a limit of operations</div>
 {% endif %}
 
+<p>
+
 {% if pretries %}
-<table width=900><tr><td>
-<div class="section">This job is a descendent of upstream job(s), with relationship shown</div>
-<font size=-1>
-{% for pretry in pretries %}
-<a href="{% url 'jobInfo' pretry.jobid %}">{{ pretry.jobid }}</a>:{% if pretry.relationtype %}{{ pretry.relationtype }}{% else %}retry{% endif %} &nbsp;
-{% endfor %}
-</font>
-</td></tr></table>
+<table id="pretries" style="display: none">
+    <tr>
+        <td>
+            <div class="section">This job is a descendent of upstream job(s), with relationship shown</div>
+            {% for pretry in pretries %}
+                <a href="{% url 'jobInfo' pretry.oldpandaid %}">{{ pretry.oldpandaid }}</a>:{% if pretry.relationtype %}{{ pretry.relationtype }}{% else %}retry{% endif %} &nbsp;
+            {% endfor %}
+        </td>
+    </tr>
+</table>
 <p>
 {% endif %}
 
 {% if retries %}
-<table width=900><tr><td>
-<div class="section">This job has descendents downstream, with relationship shown</div>
-<font size=-1>
-{% for retry in retries %}
-<a href="{% url 'jobInfo' retry.jobid %}">{{ retry.jobid }}</a>:{% if retry.relationtype %}{{ retry.relationtype }}{% else %}retry{% endif %} &nbsp;
-{% endfor %}
-</font>
-</td></tr></table>
+<table id="retries" style="display: none">
+    <tr>
+        <td>
+            <div class="section">This job has descendents downstream, with relationship shown</div>
+            {% for retry in retries %}
+                <a href="{% url 'jobInfo' retry.newpandaid %}">{{ retry.newpandaid }}</a>:{% if retry.relationtype %}{{ retry.relationtype }}{% else %}retry{% endif %} &nbsp;
+            {% endfor %}
+        </td>
+    </tr>
+</table>
 <p>
 {% endif %}
 
 {% if pretries or retries %}
 <p>
-<div id="div-exterrorsinfo">
-   <a onclick="javascript:loadExtendedErrorData('{{ job.jeditaskid }}','{{ job.pandaid }}');">Show descendents jobs errors</a>
-</div>
+<div id="div-exterrorsinfo"></div>
 <p>
 {% endif %}
 
-
-
-{% if coreData %}
-<p>
-<b>core job info:</b>
-&nbsp; Pipeline task: <b>{{ coreData.pipelinetask }}</b>
-&nbsp; process: <a href="http://srs.slac.stanford.edu/Pipeline-II/exp/SRS/pi.jsp?pi={{coreData.processinstance}}">{{coreData.processinstance}}</a>
-<p>
-{% endif %}
-
-{% if pandaid%}
-<table width=900>
-<tr><td>
-<div class="section">Show script to re-create job for offline debugging:
-<font size=-1>
-<a href="http://pandaserver.cern.ch:25080//server/panda/getScriptOfflineRunning?pandaID={{pandaid}}">{{pandaid}}</a>
-</font>
-</div>
-</td></tr></table>
-{% endif %}
-
-{% if harvesterInfo %}
-<table width=900>
-<tr><td>
-<div class="section">Show workers associated with job:
-<font size=-1>
-<a href="{% url "harvesters" %}?pandaid={{pandaid}}&days={{ timedelta }}">{{pandaid}}</a>
-</font>
-</div>
-</td></tr></table>
-{% endif %}
-
-
-<table>
-<tr><th bgcolor='lightcyan'>Job information</th>
-
-{% if logfile.lfn %}
-{% if viewParams.MON_VO == 'ATLAS' %}
-
-{% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'closed' or job.jobstatus == 'merging' %}
-{% if oslogpath %}
-<td><a href="{{ oslogpath }}">log tarball</a>
-</td>
-{% endif %}
-
-<td>
-{% if logfile.guid %}
-    {% if job.jobstatus == 'failed' or job.jobstatus == 'finished'  or job.jobstatus == 'closed' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled'  %}
-        <a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}">logfiles</a>
-    {% else %}
-        No logs available yet
-    {% endif %}
-{% else %}
-    No logs were saved
-{% endif %}
-</td>
-
-
-{% endif %}
-
-{% else %}
-
-{% if job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
-<td>
-job <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/application_log.txt">stdout</a ,
-<a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/output/">outputs</a>
-</td>
-{% endif %}
-
-<td>
-<a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt">payload stdout</a>
-</td>
-
-<td>
-<a href='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'>job cache tarball</a>
-</td>
-
-{% endif %}
-{% endif %}
-
-{% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
-{% if stdout %}<td>pilot job <a href='{{stdout}}'>stdout</a>, <a href='{{stderr}}'>stderr</a>,
-<a href='{{stdlog}}'>batch log</a> </td>{% endif %}
-{% endif %}
-
-{% if job.jobstatus == 'closed' %}
-    <td><a href='{{stdout}}'>Pilot ID</a></td>
-{% endif %}
-
-<td>
-<a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">pilot records</a>
-</td>
-
-<td>
-<a target="_blank" href="https://es-atlas6.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',asc))">Action logger</a>
-</td>
-
-
-<td>
-<a href="{% url 'jobList' %}?parentid={{ job.pandaid }}">child jobs</a>
-</td>
-
-    {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus ==  'cancelled' or job.jobstatus ==  'aborted' or job.jobstatus == 'merging'  %}
-<td>
-<a href="{% url 'memoryplot' %}?pandaid={{ job.pandaid }}" target="_blank">Memory and IO plots</a>
-</td>
-{% endif %}
-
-</tr>
-
-{% if job.jobsetid and job.jobsetid > 0 %}
-<tr height=10></tr>
-<tr><th  class='tablesection'>Jobset <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}">{{ job.jobsetid }}</a></th>
-
-{% if libjob and libjob != job.pandaid  %}
-<td>
-<a href="{% url 'jobInfo' %}?pandaid={{ libjob }}">build job {{ libjob }}</a>
-</td>
-{% endif %}
-
-{% if runjobs|length > 0 %}
-<td><a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&processingtype=pathena">{{ runjobs|length }} run jobs</a></td>
-{% endif %}
-
-{% if mergejobs|length > 0 %}
-<td><a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&processingtype=usermerge">{{ mergejobs|length }} merge jobs</a></td>
-{% endif %}
-
-{% if runesjobs|length > 0 %}
-<td> JobSet ES jobs <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&eventservice=eventservice">({{ runesjobs|length }})</a></td>
-{% endif %}
-
-{% if mergeesjobs|length > 0 %}
-<td>JobSet ES Merge jobs <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&eventservice=esmerge">({{ mergeesjobs|length }})</a></td>
-{% endif %}
-
-{% endif %}
-
-</table>
 
 {% if debugmode %}
 {% if debugstdout %}
@@ -484,6 +493,7 @@ But if you want, you can check.
 {% endif %}
 
 <table>
+<a name="jobparamskey"></a>
 <tr><th colspan=20 bgcolor='lightcyan'> Other key job parameters </th></tr>
 	{% if job.statechangetime %}<tr><th>Last state change</th><td>to <span class={{job.jobstatus}}>{{job.jobstatus}}</span> at {{ job.statechangetime }}</td></tr></tr>{% endif %}
 	{% if job.atlasrelease %}<tr><th>Release</th><td>{{ job.atlasrelease }}</td></tr></tr>{% endif %}
@@ -506,6 +516,7 @@ But if you want, you can check.
 </table>
 {% if harvesterInfo %}
 <table>
+<a name="harvesterworkers"></a>
 <tr><th colspan=20 bgcolor='lightcyan'> Harvester job parameters </th></tr>
 <tr>
 <th> Harvesterid </th>
@@ -544,6 +555,7 @@ But if you want, you can check.
 {% endif %}
 
 <table>
+<a name="jobparamsall"></a>
 <tr><th colspan=20 bgcolor='lightcyan'> All job parameters </th></tr>
 {% for col in columns %}
 <tr><th>{{ col.name }}</th><td> {% if col.name == 'jobsetid' %} <a href="{% url 'jobList' %}?produsername={{ produsername }}&jobsetid={{ col.value }}">{{ col.value }}</a>  {% else %}{{ col.value }} {% endif %}</td></tr>
