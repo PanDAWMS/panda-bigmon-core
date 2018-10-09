@@ -157,6 +157,10 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 	{% endif %}
 </table>
 
+<div>
+    <span class="warning" style="font-weight: bold; padding-top: 10px">!!! All links are in drop-down lists  &darr; &nbsp; </span>
+</div>
+
 <p>
 <div class="dropdownplots">
     <button class="dropdownbutton">Logs</button>
@@ -166,7 +170,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
               {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'closed' %}
                 {% if logfile.guid %}
                     {% if job.jobstatus == 'failed' or job.jobstatus == 'finished'  or job.jobstatus == 'closed' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled'  %}
-                        <a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}">logfiles</a>
+                        <a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}">Log files</a>
                     {% else %}
                         No logs available yet
                     {% endif %}
@@ -180,28 +184,28 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
               {% endif %}
           {% else %}
             {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
-                <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/application_log.txt">job stdout</a
-                <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/output/">job outputs</a>
+                <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/application_log.txt">Job stdout</a
+                <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/output/">Job outputs</a>
             {% endif %}
-            <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt">payload stdout</a>
-            <a href='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'>job cache tarball</a>
+            <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt">Payload stdout</a>
+            <a href='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'>Job cache tarball</a>
           {% endif %}
         {% else %}
             <a>No logs available</a>
         {% endif %}
         {% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
             {% if stdout %}
-                <a href='{{stdout}}'>stdout of pilot job</a>
-                <a href='{{stderr}}'>stderr of pilot job</a>
-                <a href='{{stdlog}}'>batch log of pilot job</a>
+                <a href='{{stdout}}'>Pilot job stdout</a>
+                <a href='{{stderr}}'>Pilot job stderr</a>
+                <a href='{{stdlog}}'>Batch log of pilot job</a>
             {% endif %}
             {% if job.jobstatus == 'closed' %}
                 <td><a href='{{stdout}}'>Pilot ID</a></td>
             {% endif %}
 
-            <a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">pilot records</a>
+            <a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">Pilot records</a>
 
-            <a target="_blank" href="https://es-atlas6.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',desc))">Action logger</a>
+            <a target="_blank" href="https://es-atlas6.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',desc))">Action logger (Kibana)</a>
 
         {% endif %}
     </div>
@@ -212,8 +216,9 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
     <button class="dropdownbutton">Go to</button>
     <div id="dropdown-plotchoice" class="dropdown-plot">
         <a href="{% url 'jobList' %}?parentid={{ job.pandaid }}">Child jobs</a>
-        <a href="{% url "harvesters" %}?pandaid={{pandaid}}&days={{ timedelta }}">Associated Harvester workers</a>
-
+        {% if harvesterInfo %}
+            <a href="{% url "harvesters" %}?pandaid={{pandaid}}&days={{ timedelta }}">Associated Harvester workers</a>
+        {% endif %}
         {% if job.jobsetid and job.jobsetid > 0 %}
             <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}">Jobs for {{ job.jobsetid }} jobset</a>
 
