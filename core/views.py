@@ -44,6 +44,7 @@ from core.common.models import Sitedata
 from core.common.models import FilestableArch
 from core.common.models import Users
 from core.common.models import Jobparamstable
+from core.common.models import JobsStatuslog
 from core.common.models import Metatable
 from core.common.models import Logstable
 from core.common.models import Jobsdebug
@@ -11734,6 +11735,44 @@ def getEventsChunks(request):
             eventsChunk['attemptnrDS'] = 0
 
     return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='text/html')
+
+
+def getJobStatusLog(request, pandaid = None):
+    """
+    A view to asynchronously load job states changes history
+    :param request:
+    :param pandaid:
+    :return: json contained job states changes history
+    """
+    valid, response = initRequest(request)
+    if not valid: return response
+
+    try:
+        pandaid = int(pandaid)
+    except:
+        HttpResponse(status=404, content_type='text/html')
+
+    squery = {}
+    squery['pandaid'] = pandaid
+    statusLog = []
+    statusLog.extend(JobsStatuslog.objects.filter(**squery).order_by('modiftime_extended').values())
+
+    for c, item in enumerate(statusLog):
+        if c < len(statusLog)-1:
+            duration = statusLog[c+1]['modiftime_extended'] - statusLog[c]['modiftime_extended']
+            ndays = duration.days
+            strduration = str(timedelta(seconds=duration.seconds))
+            statusLog[c]['duration'] = "%s:%s" % (ndays, strduration)
+        else:
+            statusLog[c]['duration'] = "---"
+
+    for sl in statusLog:
+        sl['modiftime_str'] = sl['modiftime_extended'].strftime(defaultDatetimeFormat)
+
+    endSelfMonitor(request)
+    response = render_to_response('jobStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
 
 
 def serverStatusHealth(request):

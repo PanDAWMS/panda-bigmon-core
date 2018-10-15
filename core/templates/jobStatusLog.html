@@ -1,0 +1,20 @@
+<table>
+<tr>
+    <th class="tablesection">Modification time</th>
+    {% for item in statusLog %}
+        <td>{{ item.modiftime_str }}</td>
+    {% endfor %}
+</tr>
+<tr>
+    <th class="tablesection">States</th>
+    {% for item in statusLog %}
+        <td class="{{ item.jobstatus }}_fill">{{ item.jobstatus }}</td>
+    {% endfor %}
+</tr>
+<tr>
+    <th class="tablesection">Duration, d:h:m:s</th>
+    {% for item in statusLog %}
+        <td>{{ item.duration }}</td>
+    {% endfor %}
+</tr>
+</table>

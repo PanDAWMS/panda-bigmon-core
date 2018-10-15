@@ -678,15 +678,16 @@ class JobparamstableArch(models.Model):
         db_table = u'jobparamstable_arch'
 
 class JobsStatuslog(models.Model):
-    pandaid = models.BigIntegerField(db_column='PANDAID')
+    pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
     modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
     jobstatus = models.CharField(max_length=45, db_column='JOBSTATUS')
     prodsourcelabel = models.CharField(max_length=60, db_column='PRODSOURCELABEL', blank=True)
     cloud = models.CharField(max_length=150, db_column='CLOUD', blank=True)
     computingsite = models.CharField(max_length=384, db_column='COMPUTINGSITE', blank=True)
     modificationhost = models.CharField(max_length=384, db_column='MODIFICATIONHOST', blank=True)
+    modiftime_extended = models.DateTimeField(db_column='MODIFTIME_EXTENDED')
     class Meta:
-        db_table = u'jobs_statuslog'
+        db_table = u'"ATLAS_PANDA"."JOBS_STATUSLOG"'
 
 
 class Jobsarchived4WnlistStats(models.Model):
