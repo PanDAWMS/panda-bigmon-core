@@ -1032,6 +1032,8 @@ def sendArtReport(request):
                 artjobsdictpackage[job['package']]['branch'] = job['branch']
                 artjobsdictpackage[job['package']]['ntag_full'] = job['nightly_tag']
                 artjobsdictpackage[job['package']]['ntag'] = job['ntag'].strftime(artdateformat)
+                artjobsdictpackage[job['package']]['link'] = 'https://bigpanda.cern.ch/art/tasks/?package={}&ntag={}'.format(
+                    job['package'], job['ntag'].strftime(artdateformat))
                 artjobsdictpackage[job['package']]['branches'] = {}
             if job['branch'] not in artjobsdictpackage[job['package']]['branches'].keys():
                 artjobsdictpackage[job['package']]['branches'][job['branch']] = {}
@@ -1039,6 +1041,9 @@ def sendArtReport(request):
                 artjobsdictpackage[job['package']]['branches'][job['branch']]['nfailed'] = 0
                 artjobsdictpackage[job['package']]['branches'][job['branch']]['nfinished'] = 0
                 artjobsdictpackage[job['package']]['branches'][job['branch']]['nactive'] = 0
+                artjobsdictpackage[job['package']]['branches'][job['branch']][
+                    'linktoeos'] = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{}/{}/{}/'.format(
+                    job['branch'], job['nightly_tag'], job['package'])
             finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
             artjobsdictbranch[job['branch']]['packages'][job['package']]['n' + finalresult] += 1
             artjobsdictpackage[job['package']]['branches'][job['branch']]['n' + finalresult] += 1
