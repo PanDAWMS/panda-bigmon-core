@@ -7,7 +7,7 @@
 {% block subtitle %}Harvester slots <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
 {% block extra_css %}
   <link rel="stylesheet" type="text/css" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
   <style type="text/css">
        #harvesterslots_wrapper .row {
             max-width: 99%;
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
     <script type="text/javascript" src="/static/js/datatables/moment.min.js"></script>
     <script type="text/javascript" src="/static/js/datatables/datetime-moment.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>
 {% endblock %}
 
 {% block body %}

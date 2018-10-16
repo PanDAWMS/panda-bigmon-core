@@ -5072,7 +5072,7 @@ def siteList(request):
         resp = sites
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(resp), content_type='text/html')
+        return HttpResponse(json.dumps(resp, cls=DateEncoder), content_type='text/html')
 
 def get_panda_resource(siterec):
     url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
@@ -11782,7 +11782,19 @@ def getJobStatusLog(request, pandaid = None):
     response = render_to_response('jobStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
-
+### API ###
+def getSites(request):
+    if request.is_ajax():
+        q = request.GET.get('term', '')
+        sites = Schedconfig.objects.filter(siteid__icontains=q).exclude(cloud='CMS').values("siteid")
+        results = []
+        for site in sites:
+            results.append(site['siteid'])
+        data = json.dumps(results)
+    else:
+        data = 'fail'
+    mimetype = 'application/json'
+    return HttpResponse(data, mimetype)
 
 def serverStatusHealth(request):
     """

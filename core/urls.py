@@ -196,7 +196,8 @@ urlpatterns = [
     url(r'^addtocomparison/$', compare_views.addToComparison),
     url(r'^clearcomparison/$', compare_views.clearComparison),
 
-
+    ###API###
+    url(r'^api/get_sites/', coremon_views.getSites, name='getsites'),
 
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

@@ -7,7 +7,7 @@
 {% block subtitle %} <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
 {% block extra_css %}
   <link rel="stylesheet" type="text/css" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
-  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
   <style type="text/css">
        #harvesterworkers_wrapper .row {
             max-width: 99%;

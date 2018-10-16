@@ -112,7 +112,22 @@ Select what you'd like to have a look at in the top menu bar: dashboard overview
 
 {% endif %}
 <p>
+<script>
+  $(function() {
+    $("#site").autocomplete({
+      source: "{% url 'getsites' %}",
+      select: function (event, ui) { //item selected
+        AutoCompleteSelectHandler(event, ui)
+      },
+      minLength: 1,
+    });
+  });
 
+  function AutoCompleteSelectHandler(event, ui)
+  {
+    var selectedObj = ui.item;
+  }
+</script>
 <div class="row" style="max-width: 100%; padding: 3px">
 <fieldset class="fieldset">
 <legend>Search</legend>
