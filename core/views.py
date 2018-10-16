@@ -11785,12 +11785,15 @@ def getJobStatusLog(request, pandaid = None):
 ### API ###
 def getSites(request):
     if request.is_ajax():
-        q = request.GET.get('term', '')
-        sites = Schedconfig.objects.filter(siteid__icontains=q).exclude(cloud='CMS').values("siteid")
-        results = []
-        for site in sites:
-            results.append(site['siteid'])
-        data = json.dumps(results)
+        try:
+            q = request.GET.get('term', '')
+            sites = Schedconfig.objects.filter(siteid__icontains=q).exclude(cloud='CMS').values("siteid")
+            results = []
+            for site in sites:
+                results.append(site['siteid'])
+            data = json.dumps(results)
+        except:
+            data = 'fail'
     else:
         data = 'fail'
     mimetype = 'application/json'
