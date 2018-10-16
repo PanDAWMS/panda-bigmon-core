@@ -11757,17 +11757,26 @@ def getJobStatusLog(request, pandaid = None):
     statusLog = []
     statusLog.extend(JobsStatuslog.objects.filter(**squery).order_by('modiftime_extended').values())
 
-    for c, item in enumerate(statusLog):
-        if c < len(statusLog)-1:
-            duration = statusLog[c+1]['modiftime_extended'] - statusLog[c]['modiftime_extended']
-            ndays = duration.days
-            strduration = str(timedelta(seconds=duration.seconds))
-            statusLog[c]['duration'] = "%s:%s" % (ndays, strduration)
-        else:
-            statusLog[c]['duration'] = "---"
+    mtimeparam = 'modiftime_extended'
+    if len(statusLog) > 0 and None in set([sl['modiftime_extended'] for sl in statusLog]):
+        mtimeparam = 'modificationtime'
+        statusLog = sorted(statusLog, key=lambda x: x[mtimeparam])
+
+    if len(statusLog) > 0:
+        for c, item in enumerate(statusLog):
+            if c < len(statusLog)-1:
+                if statusLog[c+1][mtimeparam] is not None and statusLog[c][mtimeparam] is not None:
+                    duration = statusLog[c+1][mtimeparam] - statusLog[c][mtimeparam]
+                    ndays = duration.days
+                    strduration = str(timedelta(seconds=duration.seconds))
+                    statusLog[c]['duration'] = "%s:%s" % (ndays, strduration)
+                else:
+                    statusLog[c]['duration'] = "---"
+            else:
+                statusLog[c]['duration'] = "---"
 
     for sl in statusLog:
-        sl['modiftime_str'] = sl['modiftime_extended'].strftime(defaultDatetimeFormat)
+        sl['modiftime_str'] = sl[mtimeparam].strftime(defaultDatetimeFormat) if sl[mtimeparam] is not None else "---"
 
     endSelfMonitor(request)
     response = render_to_response('jobStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
