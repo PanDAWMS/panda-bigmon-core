@@ -8452,6 +8452,519 @@ def taskInfo(request, jeditaskid=0):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
+
+def taskInfoNew(request, jeditaskid=0):
+    try:
+        jeditaskid = int(jeditaskid)
+    except:
+        jeditaskid = re.findall("\d+", jeditaskid)
+        jdtstr =""
+        for jdt in jeditaskid:
+            jdtstr = jdtstr+str(jdt)
+        return redirect('/task/'+jdtstr)
+    valid, response = initRequest(request)
+    furl = request.get_full_path()
+    nomodeurl = removeParam(furl, 'mode')
+    nomodeurl = extensibleURL(request, nomodeurl)
+    if not valid: return response
+    # Here we try to get cached data. We get any cached data is available
+    # data = None
+    data = getCacheEntry(request, "taskInfoNew", skipCentralRefresh=True)
+
+    # Temporary protection
+    if data is not None:
+        data = json.loads(data)
+
+        if 'built' in data:
+            builtDate = datetime.strptime('2018-'+data['built'], defaultDatetimeFormat)
+            if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
+                data = None
+                setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 1)
+
+    if data is not None:
+        try:
+            data = deleteCacheTestData(request, data)
+        except: pass
+        doRefresh = False
+
+        plotDict = {}
+        if 'plotsDict' in data:
+            oldPlotDict = json.loads(data['plotsDict'])
+            for plotName, plotData in oldPlotDict.iteritems():
+                if 'sites' in plotData and 'ranges' in plotData:
+                    plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
+                    for dictSiteName, listValues in plotData['sites'].iteritems():
+                        try:
+                            plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
+                            plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
+                        except:
+                            pass
+            data['plotsDict'] = plotDict
+
+        #We still want to refresh tasks if request came from central crawler and task not in the frozen state
+        if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
+                data['task'] and data['task']['status'] not in ['broken', 'aborted']):
+            doRefresh = True
+
+        # we check here whether task status didn't changed for both (user or crawler request)
+        if data['task'] and data['task']['status'] and data['task']['status'] in ['done', 'finished', 'failed']:
+            if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
+                request.session['requestParams']['jeditaskid'])
+            if jeditaskid != 0:
+                query = {'jeditaskid': jeditaskid}
+                values = ['status','superstatus','modificationtime']
+                tasks = JediTasks.objects.filter(**query).values(*values)[:1]
+                if len(tasks) > 0:
+                    task = tasks[0]
+                    if (task['status'] == data['task']['status'] and task['superstatus'] == data['task']['superstatus'] and
+                                task['modificationtime'].strftime(defaultDatetimeFormat) == data['task']['modificationtime']):
+                        doRefresh = False
+                    else:
+                        doRefresh = True
+                else:
+                    doRefresh = True
+#        doRefresh = True
+
+        ### This is a temporary fix in order of avoiding 500 error for cached tasks not compartible to a new template
+        if not isinstance(data['jobscoutids']['ramcountscoutjob'], list):
+            if 'ramcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['ramcountscoutjob']
+            if 'iointensityscoutjob' in data['jobscoutids']: del data['jobscoutids']['iointensityscoutjob']
+            if 'outdiskcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['outdiskcountscoutjob']
+
+        if not doRefresh:
+            data['request'] = request
+            if data['eventservice'] == True:
+                response = render_to_response('taskInfoES.html', data, content_type='text/html')
+            else:
+                response = render_to_response('taskInfo.html', data, content_type='text/html')
+            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+            endSelfMonitor(request)
+            return response
+
+    if 'taskname' in request.session['requestParams'] and request.session['requestParams']['taskname'].find('*') >= 0:
+        return taskList(request)
+    setupView(request, hours=365 * 24, limit=999999999, querytype='task')
+    eventservice = False
+    query = {}
+    tasks = []
+    taskrec = None
+    colnames = []
+    columns = []
+    jobsummary = []
+    maxpss = []
+    walltime = []
+    jobsummaryESMerge = []
+    jobsummaryPMERGE = []
+    eventsdict=[]
+    objectStoreDict=[]
+    eventsChains = []
+    currentlyRunningDataSets = []
+    warning = {}
+
+    newjobsummary =[]
+    newjobsummaryESMerge = []
+    newjobsummaryPMERGE = []
+    neweventsdict =[]
+
+    if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
+        request.session['requestParams']['jeditaskid'])
+    if jeditaskid == 0:
+        return redirect('/tasks')
+    if jeditaskid != 0:
+
+        query = {'jeditaskid': jeditaskid}
+        tasks = JediTasks.objects.filter(**query).values()
+        if len(tasks) > 0:
+            if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
+        if eventservice:
+            mode = 'drop'
+            if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+                'mode'] == 'drop': mode = 'drop'
+            if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+                'mode'] == 'nodrop': mode = 'nodrop'
+
+
+            plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary3(
+                request, query, exclude={},  mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
+            plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary3(
+                request, query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isOld')
+
+
+            for state in eventservicestatelist:
+                eventstatus = {}
+                eventstatus['statusname'] = state
+                eventstatus['count'] = eventssummary[state]
+                eventsdict.append(eventstatus)
+
+            if mode=='nodrop':
+                sqlRequest = """select j.computingsite, j.COMPUTINGELEMENT,e.objstore_id,e.status,count(*) as nevents
+                                      from atlas_panda.jedi_events e
+                                        join
+                                            (select computingsite, computingelement,pandaid from ATLAS_PANDA.JOBSARCHIVED4 where jeditaskid=%s
+                                            UNION
+                                            select computingsite, computingelement,pandaid from ATLAS_PANDAARCH.JOBSARCHIVED where jeditaskid=%s
+                                            ) j
+                                        on (e.pandaid=j.pandaid)
+                                   group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""" % (
+                jeditaskid, jeditaskid)
+                cur = connection.cursor()
+                cur.execute(sqlRequest)
+                ossummary = cur.fetchall()
+                cur.close()
+
+                ossummarynames = ['computingsite', 'computingelement', 'objectstoreid', 'statusindex', 'nevents']
+                objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
+                for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
+
+        else:
+            extra = '(1=1)'
+            ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
+            exclude = {'processingtype': 'pmerge'}
+            mode = 'drop'
+            if 'mode' in request.session['requestParams']:
+                mode = request.session['requestParams']['mode']
+            plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary3(
+                request, query, exclude=exclude, extra=extra, mode=mode)
+            plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary3(
+                request, query, exclude={}, extra=extra,  mode=mode, processingtype='pmerge')
+
+
+    elif 'taskname' in request.session['requestParams']:
+        querybyname = {'taskname': request.session['requestParams']['taskname']}
+        tasks = JediTasks.objects.filter(**querybyname).values()
+        if len(tasks) > 0:
+            jeditaskid = tasks[0]['jeditaskid']
+        query = {'jeditaskid': jeditaskid}
+
+    nonzeroPMERGE = 0
+    for status in jobsummaryPMERGE:
+        if status['count'] > 0:
+            nonzeroPMERGE += 1
+            break
+
+    if nonzeroPMERGE == 0:
+        jobsummaryPMERGE = None
+
+    maxpssave = 0
+    maxpsscount = 0
+    for maxpssjob in maxpss:
+        if maxpssjob > 0:
+            maxpssave += maxpssjob
+            maxpsscount += 1
+    if maxpsscount > 0:
+        maxpssave = maxpssave / maxpsscount
+    else:
+        maxpssave = ''
+
+    tasks = cleanTaskList(request, tasks)
+    try:
+        taskrec = tasks[0]
+        colnames = taskrec.keys()
+        colnames.sort()
+        for k in colnames:
+            val = taskrec[k]
+            if taskrec[k] == None:
+                val = ''
+                continue
+            pair = {'name': k, 'value': val}
+            columns.append(pair)
+    except IndexError:
+        taskrec = None
+
+    taskpars = JediTaskparams.objects.filter(**query).values()[:1000]
+    jobparams = None
+    taskparams = None
+    taskparaml = None
+    jobparamstxt = []
+    if len(taskpars) > 0:
+        taskparams = taskpars[0]['taskparams']
+        try:
+            taskparams = json.loads(taskparams)
+            tpkeys = taskparams.keys()
+            tpkeys.sort()
+            taskparaml = []
+            for k in tpkeys:
+                rec = {'name': k, 'value': taskparams[k]}
+                taskparaml.append(rec)
+            jobparams = taskparams['jobParameters']
+            if 'log' in taskparams:
+                jobparams.append(taskparams['log'])
+            for p in jobparams:
+                if p['type'] == 'constant':
+                    ptxt = p['value']
+                elif p['type'] == 'template':
+                    ptxt = "<i>%s template:</i> value='%s' " % (p['param_type'], p['value'])
+                    for v in p:
+                        if v in ['type', 'param_type', 'value']: continue
+                        ptxt += "  %s='%s'" % (v, p[v])
+                else:
+                    ptxt = '<i>unknown parameter type %s:</i> ' % p['type']
+                    for v in p:
+                        if v in ['type', ]: continue
+                        ptxt += "  %s='%s'" % (v, p[v])
+                jobparamstxt.append(ptxt)
+            jobparamstxt = sorted(jobparamstxt, key=lambda x: x.lower())
+
+        except ValueError:
+            pass
+
+    if taskrec and 'ticketsystemtype' in taskrec and taskrec['ticketsystemtype'] == '' and taskparams != None:
+        if 'ticketID' in taskparams: taskrec['ticketid'] = taskparams['ticketID']
+        if 'ticketSystemType' in taskparams: taskrec['ticketsystemtype'] = taskparams['ticketSystemType']
+
+    if taskrec:
+        taskname = taskrec['taskname']
+    elif 'taskname' in request.session['requestParams']:
+        taskname = request.session['requestParams']['taskname']
+    else:
+        taskname = ''
+
+    logtxt = None
+    if taskrec and taskrec['errordialog']:
+        mat = re.match('^.*"([^"]+)"', taskrec['errordialog'])
+        if mat:
+            errurl = mat.group(1)
+            cmd = "curl -s -f --compressed '%s'" % errurl
+            logpfx = u"logtxt: %s\n" % cmd
+            logout = commands.getoutput(cmd)
+            if len(logout) > 0: logtxt = logout
+
+    dsquery = {}
+    dsquery['jeditaskid'] = jeditaskid
+
+    dsets = JediDatasets.objects.filter(**dsquery).values()
+    dsinfo = None
+    nfiles = 0
+    nfinished = 0
+    nfailed = 0
+    neventsTot = 0
+    neventsUsedTot = 0
+    scope = ''
+    newdslist = []
+    if len(dsets) > 0:
+        for ds in dsets:
+            if len (ds['datasetname']) > 0:
+               scope = str(ds['datasetname']).split('.')[0]
+               if ':' in scope:
+                   scope = str(scope).split(':')[0]
+               ds['scope']=scope
+            newdslist.append(ds)
+            if ds['type'] not in ['input', 'pseudo_input']: continue
+            if ds['masterid']: continue
+            if not ds['nevents'] is None and int(ds['nevents']) > 0:
+                neventsTot += int(ds['nevents'])
+                neventsUsedTot += int(ds['neventsused'])
+
+            if int(ds['nfiles']) > 0:
+                nfiles += int(ds['nfiles'])
+                nfinished += int(ds['nfilesfinished'])
+                nfailed += int(ds['nfilesfailed'])
+        dsets = newdslist
+        dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
+        if nfiles > 0:
+            dsinfo = {}
+            dsinfo['nfiles'] = nfiles
+            dsinfo['nfilesfinished'] = nfinished
+            dsinfo['nfilesfailed'] = nfailed
+            dsinfo['pctfinished'] = int(100. * nfinished / nfiles)
+            dsinfo['pctfailed'] = int(100. * nfailed / nfiles)
+    else: ds = []
+    if taskrec: taskrec['dsinfo'] = dsinfo
+
+    ## get dataset types
+    dstypesd = {}
+    for ds in dsets:
+        dstype = ds['type']
+        if dstype not in dstypesd: dstypesd[dstype] = 0
+        dstypesd[dstype] += 1
+    dstkeys = dstypesd.keys()
+    dstkeys.sort()
+    dstypes = []
+    for dst in dstkeys:
+        dstd = {'type': dst, 'count': dstypesd[dst]}
+        dstypes.append(dstd)
+
+    ## get input containers
+    inctrs = []
+    if taskparams and 'dsForIN' in taskparams:
+        inctrs = [taskparams['dsForIN'], ]
+
+    ## get output containers
+    cquery = {}
+    cquery['jeditaskid'] = jeditaskid
+    cquery['type__in'] = ('output', 'log')
+    outctrs = []
+    outctrs.extend(JediDatasets.objects.filter(**cquery).values_list('containername', flat=True).distinct())
+    if len(outctrs) == 0 or outctrs[0] == '':
+        outctrs = None
+    if isinstance(outctrs, basestring):
+       outctrs = [outctrs]
+
+    # getBrokerageLog(request)
+
+    # neventsTot = 0
+    # neventsUsedTot = 0
+
+    if taskrec:
+        taskrec['totev'] = neventsTot
+        taskrec['totevproc'] = neventsUsedTot
+        taskrec['pctfinished'] = (100 * taskrec['totevproc'] / taskrec['totev']) if (taskrec['totev'] > 0) else ''
+        taskrec['totevhs06'] = (neventsTot) * taskrec['cputime'] if (
+        taskrec['cputime'] is not None and neventsTot > 0) else None
+        # if taskrec['pctfinished']<=20 or hs06sSum['total']==0:
+        #     taskrec['totevhs06'] = (neventsTot)*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsTot > 0) else None
+        # else:
+        #     taskrec['totevhs06'] = int(hs06sSum['total']*neventsTot)
+        taskrec['totevprochs06'] = int(hs06sSum['finished'])
+        taskrec['failedevprochs06'] = int(hs06sSum['failed'])
+        taskrec['currenttotevhs06'] = int(hs06sSum['total'])
+
+        taskrec['maxpssave'] = maxpssave
+        if 'creationdate' in taskrec:
+            taskrec['kibanatimefrom'] = taskrec['creationdate'].strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            taskrec['kibanatimefrom'] = None
+        if taskrec['status'] in ['cancelled', 'failed', 'broken', 'aborted', 'finished', 'done']:
+            taskrec['kibanatimeto'] = taskrec['modificationtime'].strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            taskrec['kibanatimeto'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    tquery = {}
+    tquery['jeditaskid'] = jeditaskid
+    tquery['storagetoken__isnull'] = False
+    storagetoken = JediDatasets.objects.filter(**tquery).values('storagetoken')
+
+    taskbrokerage = 'prod_brokerage' if (taskrec != None and taskrec['tasktype'] == 'prod') else 'analy_brokerage'
+
+    if storagetoken:
+        if taskrec:
+            taskrec['destination'] = storagetoken[0]['storagetoken']
+
+    if (taskrec != None and taskrec['cloud'] == 'WORLD'):
+        taskrec['destination'] = taskrec['nucleus']
+
+    showtaskprof = False
+    countfailed = [val['count'] for val in jobsummary if val['name'] == 'finished']
+    if len(countfailed) > 0 and countfailed[0] > 0:
+        showtaskprof = True
+
+    if taskrec:
+        if taskrec['creationdate']:
+            if taskrec['creationdate'] < datetime.now() - timedelta(days=180):
+                warning['dropmode'] = 'The drop mode is unavailable since the data of job retries was cleaned up. The data shown on the page is in nodrop mode.'
+            taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
+        if taskrec['modificationtime']:
+            taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
+        if taskrec['starttime']:
+            taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
+        if taskrec['statechangetime']:
+            taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
+        if taskrec['ttcrequested']:
+            taskrec['ttcrequested'] = taskrec['ttcrequested'].strftime(defaultDatetimeFormat)
+
+    for dset in dsets:
+        dset['creationtime'] = dset['creationtime'].strftime(defaultDatetimeFormat)
+        dset['modificationtime'] = dset['modificationtime'].strftime(defaultDatetimeFormat)
+        if dset['statechecktime'] is not None:
+            dset['statechecktime'] = dset['statechecktime'].strftime(defaultDatetimeFormat)
+
+    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+        'json' in request.session['requestParams']):
+
+        del tasks
+        del columns
+        del ds
+        if taskrec:
+            taskrec['creationdate'] = taskrec['creationdate']
+            taskrec['modificationtime'] = taskrec['modificationtime']
+            taskrec['starttime'] = taskrec['starttime']
+            taskrec['statechangetime'] = taskrec['statechangetime']
+
+        data = {
+            'task': taskrec,
+            'taskparams': taskparams,
+            'datasets': dsets,
+        }
+        ##self monitor
+        endSelfMonitor(request)
+
+        del request.session['TFIRST']
+        del request.session['TLAST']
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+    else:
+        attrs = []
+        do_redirect = False
+        try:
+            if int(jeditaskid) > 0 and int(jeditaskid) < 4000000:
+                do_redirect = True
+        except:
+            pass
+        if taskrec:
+            attrs.append({'name': 'Status', 'value': taskrec['status']})
+        del request.session['TFIRST']
+        del request.session['TLAST']
+
+        data = {
+            'furl': furl,
+            'nomodeurl': nomodeurl,
+            'mode': mode,
+            'showtaskprof': showtaskprof,
+            'jobsummaryESMerge': jobsummaryESMerge,
+            'jobsummaryPMERGE': jobsummaryPMERGE,
+            'plotsDict': json.dumps(plotsDict),
+            'taskbrokerage': taskbrokerage,
+            'jobscoutids' : jobScoutIDs,
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'task': taskrec,
+            'taskname': taskname,
+            'taskparams': taskparams,
+            'taskparaml': taskparaml,
+            'jobparams': jobparamstxt,
+            'columns': columns,
+            'attrs': attrs,
+            'jobsummary': jobsummary,
+            'eventssummary': eventsdict,
+            'ossummary': objectStoreDict,
+            'jeditaskid': jeditaskid,
+            'logtxt': logtxt,
+            'datasets': dsets,
+            'dstypes': dstypes,
+            'inctrs': inctrs,
+            'outctrs': outctrs,
+            'vomode': VOMODE,
+            'eventservice': eventservice,
+            'tk': transactionKey,
+            'built': datetime.now().strftime("%m-%d %H:%M:%S"),
+            'newjobsummary_test': newjobsummary,
+            'newjobsummaryPMERGE_test':newjobsummaryPMERGE,
+            'newjobsummaryESMerge_test': newjobsummaryESMerge,
+            'neweventssummary_test':neweventsdict,
+            'warning': warning,
+        }
+        data.update(getContextVariables(request))
+        cacheexpiration = 60*20 #second/minute * minutes
+        if taskrec and 'status' in taskrec:
+            totaljobs = 0
+            for state in jobsummary:
+                totaljobs += state['count']
+            if taskrec['status'] in ['broken','aborted','done','finished','failed'] and totaljobs > 5000:
+                cacheexpiration = 3600*24*31 # we store such data a month
+        setCacheEntry(request, "taskInfoNew", json.dumps(data, cls=DateEncoder), cacheexpiration)
+        ##self monitor
+        endSelfMonitor(request)
+
+        if eventservice:
+            response = render_to_response('taskInfoES.html', data, content_type='text/html')
+        else:
+            response = render_to_response('taskInfo.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+
+
+
 def taskchain(request):
     valid, response = initRequest(request)
 
@@ -8762,6 +9275,355 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
                 essummary[eventservicestatelist[state['status']]]=state['count']
 
     return plotsDict, jobstates, essummary, transactionKey, jobScoutIDs, hs06sSum
+
+
+def jobSummary3(request, query, exclude={}, extra="(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None, algorithm = 'isOld'):
+    """An attempt to rewrite it moving dropping to db request level"""
+
+    jobScoutIDs = {}
+    jobScoutIDs['cputimescoutjob'] = []
+    jobScoutIDs['walltimescoutjob'] = []
+    jobScoutIDs['ramcountscoutjob'] = []
+    jobScoutIDs['iointensityscoutjob'] = []
+    jobScoutIDs['outdiskcountscoutjob'] = []
+
+    plotsDict = {}
+    jobstates = []
+    essummary = {}
+    hs06sSum = {}
+
+    newquery = copy.deepcopy(query)
+    if mode == 'drop':
+        # insert retried pandaids to tmp table
+        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+        else:
+            tmpTableName = "TMP_IDS1DEBUG"
+
+        transactionKey = random.randrange(1000000)
+        new_cur = connection.cursor()
+
+        jeditaskid = newquery['jeditaskid']
+
+        ins_query = """
+        INSERT INTO {0} 
+        (ID,TRANSACTIONKEY,INS_TIME) 
+        select pandaid, {1}, TO_DATE('{2}', 'YYYY-MM-DD') from (
+            select UNIQUE PANDAID
+            from
+            ATLAS_PANDA.JOBSARCHIVED4 j,
+            ATLAS_PANDA.jedi_job_retry_history h
+            WHERE j.jeditaskid = {3} 
+                AND 
+                ((h.jeditaskid = j.jeditaskid AND h.oldpandaid = j.pandaid 
+                    AND
+                    (
+                      (NOT (j.eventservice in (1,2,4,5) and not j.specialhandling like '%sc:%')  
+                            AND (h.relationtype='' OR h.relationtype='retry' 
+                                or  (j.processingtype='pmerge' 
+                                    and j.jobstatus in ('failed','cancelled') 
+                                    and h.relationtype='merge')
+                                )
+                      )
+                    OR
+                      (
+                        (j.eventservice in (1,2,4,5) and not j.specialhandling like '%sc:%')  
+                        AND 
+                        (
+                            (NOT j.jobstatus IN ('finished', 'merging') AND h.relationtype='retry') 
+                                OR (j.jobstatus='closed' 
+                                    and (j.jobsubstatus in ('es_unused', 'es_inaction'))
+                                    )
+                        )
+                      )
+                    )
+                  ) 
+                  OR (h.oldpandaid=j.jobsetid and h.relationtype = 'jobset_retry' and h.jeditaskid = j.jeditaskid)
+                )
+            union 
+            select UNIQUE PANDAID
+            from
+            ATLAS_PANDAARCH.JOBSARCHIVED j,
+            ATLAS_PANDA.jedi_job_retry_history h
+            WHERE j.jeditaskid = {4} 
+                AND 
+                ((h.jeditaskid = j.jeditaskid AND h.oldpandaid = j.pandaid 
+                    AND
+                    (
+                      (NOT (j.eventservice in (1,2,4,5) and not j.specialhandling like '%sc:%')  
+                            AND (h.relationtype='' OR h.relationtype='retry' 
+                                or  (j.processingtype='pmerge' 
+                                    and j.jobstatus in ('failed','cancelled') 
+                                    and h.relationtype='merge')
+                                )
+                      )
+                    OR
+                      (
+                        (j.eventservice in (1,2,4,5) and not j.specialhandling like '%sc:%')  
+                        AND 
+                        (
+                            (NOT j.jobstatus IN ('finished', 'merging') AND h.relationtype='retry') 
+                                OR (j.jobstatus='closed' 
+                                    and (j.jobsubstatus in ('es_unused', 'es_inaction'))
+                                    )
+                        )
+                      )
+                    )
+                  ) 
+                  OR (h.oldpandaid=j.jobsetid and h.relationtype = 'jobset_retry' and h.jeditaskid = j.jeditaskid)
+                )
+        )                   
+        """.format(tmpTableName, transactionKey, timezone.now().strftime("%Y-%m-%d"), jeditaskid, jeditaskid)
+
+        new_cur.execute(ins_query)
+        # form an extra query condition to exclude retried pandaids from selection
+        extra += " AND pandaid not in ( select id from {0} where TRANSACTIONKEY = {1})".format(tmpTableName, transactionKey)
+
+
+
+
+    isESMerge = False
+    if substatusfilter != '':
+        if (substatusfilter == 'es_merge'):
+            newquery['eventservice'] = 2
+            isESMerge = True
+        else:
+            exclude['eventservice'] = 2
+    isReturnDroppedPMerge = False
+    if processingtype != '':
+        newquery['processingtype'] = 'pmerge'
+        isReturnDroppedPMerge = True
+
+    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid', 'attemptnr'
+
+
+    # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
+    jobs = []
+    start = time.time()
+    jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
+
+    jobs.extend(Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
+    jobs.extend(Jobswaiting4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
+    jobs.extend(Jobsactive4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
+    jobs.extend(Jobsarchived4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
+    end = time.time()
+    print("Jobs selection: {} sec".format(end - start))
+
+    jobsSet = {}
+    newjobs = []
+
+    hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
+    cpuTimeCurrent = []
+    for job in jobs:
+
+        if not job['pandaid'] in jobsSet:
+            jobsSet[job['pandaid']] = job['jobstatus']
+            newjobs.append(job)
+        elif jobsSet[job['pandaid']] == 'closed' and job['jobstatus'] == 'finished':
+            jobsSet[job['pandaid']] = job['jobstatus']
+            newjobs.append(job)
+        if 'scout=cpuTime' in job['jobmetrics'] or (
+                'scout=' in job['jobmetrics'] and 'cpuTime' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
+            jobScoutIDs['cputimescoutjob'].append(job['pandaid'])
+        if 'scout=ioIntensity' in job['jobmetrics'] or (
+                'scout=' in job['jobmetrics'] and 'ioIntensity' in job['jobmetrics'][
+                                                                   job['jobmetrics'].index('scout='):]):
+            jobScoutIDs['iointensityscoutjob'].append(job['pandaid'])
+        if 'scout=outDiskCount' in job['jobmetrics'] or (
+                'scout=' in job['jobmetrics'] and 'outDiskCount' in job['jobmetrics'][
+                                                                    job['jobmetrics'].index('scout='):]):
+            jobScoutIDs['outdiskcountscoutjob'].append(job['pandaid'])
+        if 'scout=ramCount' in job['jobmetrics'] or (
+                'scout=' in job['jobmetrics'] and 'ramCount' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
+            jobScoutIDs['ramcountscoutjob'].append(job['pandaid'])
+        if 'scout=walltime' in job['jobmetrics'] or (
+                'scout=' in job['jobmetrics'] and 'walltime' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
+            jobScoutIDs['walltimescoutjob'].append(job['pandaid'])
+        if 'actualcorecount' in job and job['actualcorecount'] is None:
+            job['actualcorecount'] = 1
+        if job['jobstatus'] in ['finished', 'failed'] and 'endtime' in job and 'starttime' in job and job[
+            'starttime'] and job['endtime']:
+            duration = max(job['endtime'] - job['starttime'], timedelta(seconds=0))
+            job['duration'] = duration.days * 24 * 3600 + duration.seconds
+            if job['hs06sec'] is None:
+                if job['computingsite'] in pandaSites:
+                    job['hs06sec'] = (job['duration']) * float(pandaSites[job['computingsite']]['corepower']) * job[
+                        'actualcorecount']
+                else:
+                    job['hs06sec'] = 0
+            if job['nevents'] and job['nevents'] > 0:
+                cpuTimeCurrent.append(job['hs06sec'] / job['nevents'])
+                job['walltimeperevent'] = round(job['duration'] * job['actualcorecount'] / (job['nevents'] * 1.0), 2)
+            hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
+            hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
+            hs06sSum['total'] += job['hs06sec']
+
+    jobs = newjobs
+
+    plotsNames = ['maxpss', 'maxpsspercore', 'nevents', 'walltime', 'walltimeperevent', 'hs06s', 'cputime',
+                  'cputimeperevent', 'maxpssf', 'maxpsspercoref', 'walltimef', 'hs06sf', 'cputimef', 'cputimepereventf']
+    plotsDict = {}
+
+    for pname in plotsNames:
+        plotsDict[pname] = {'sites': {}, 'ranges': {}}
+
+    for job in jobs:
+        if job['actualcorecount'] is None:
+            job['actualcorecount'] = 1
+        if job['maxpss'] is not None and job['maxpss'] != -1:
+            if job['jobstatus'] == 'finished':
+                if job['computingsite'] not in plotsDict['maxpsspercore']['sites']:
+                    plotsDict['maxpsspercore']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['nevents']['sites']:
+                    plotsDict['nevents']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['maxpss']['sites']:
+                    plotsDict['maxpss']['sites'][job['computingsite']] = []
+
+                if job['actualcorecount'] and job['actualcorecount'] > 0:
+                    plotsDict['maxpsspercore']['sites'][job['computingsite']].append(
+                        job['maxpss'] / 1024 / job['actualcorecount'])
+                plotsDict['maxpss']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
+                plotsDict['nevents']['sites'][job['computingsite']].append(job['nevents'])
+            elif job['jobstatus'] == 'failed':
+                if job['computingsite'] not in plotsDict['maxpsspercoref']['sites']:
+                    plotsDict['maxpsspercoref']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['maxpssf']['sites']:
+                    plotsDict['maxpssf']['sites'][job['computingsite']] = []
+                if job['actualcorecount'] and job['actualcorecount'] > 0:
+                    plotsDict['maxpsspercoref']['sites'][job['computingsite']].append(
+                        job['maxpss'] / 1024 / job['actualcorecount'])
+                plotsDict['maxpssf']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
+        if 'duration' in job and job['duration']:
+            if job['jobstatus'] == 'finished':
+                if job['computingsite'] not in plotsDict['walltime']['sites']:
+                    plotsDict['walltime']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['hs06s']['sites']:
+                    plotsDict['hs06s']['sites'][job['computingsite']] = []
+                plotsDict['walltime']['sites'][job['computingsite']].append(job['duration'])
+                plotsDict['hs06s']['sites'][job['computingsite']].append(job['hs06sec'])
+                if 'walltimeperevent' in job:
+                    if job['computingsite'] not in plotsDict['walltimeperevent']['sites']:
+                        plotsDict['walltimeperevent']['sites'][job['computingsite']] = []
+                    plotsDict['walltimeperevent']['sites'][job['computingsite']].append(job['walltimeperevent'])
+            if job['jobstatus'] == 'failed':
+                if job['computingsite'] not in plotsDict['walltimef']['sites']:
+                    plotsDict['walltimef']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['hs06sf']['sites']:
+                    plotsDict['hs06sf']['sites'][job['computingsite']] = []
+                plotsDict['walltimef']['sites'][job['computingsite']].append(job['duration'])
+                plotsDict['hs06sf']['sites'][job['computingsite']].append(job['hs06sec'])
+        if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
+            if job['jobstatus'] == 'finished':
+                if job['computingsite'] not in plotsDict['cputime']['sites']:
+                    plotsDict['cputime']['sites'][job['computingsite']] = []
+                plotsDict['cputime']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
+                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
+                    if job['computingsite'] not in plotsDict['cputimeperevent']['sites']:
+                        plotsDict['cputimeperevent']['sites'][job['computingsite']] = []
+                    plotsDict['cputimeperevent']['sites'][job['computingsite']].append(
+                        round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
+            if job['jobstatus'] == 'failed':
+                if job['computingsite'] not in plotsDict['cputimef']['sites']:
+                    plotsDict['cputimef']['sites'][job['computingsite']] = []
+                plotsDict['cputimef']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
+                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
+                    if job['computingsite'] not in plotsDict['cputimepereventf']['sites']:
+                        plotsDict['cputimepereventf']['sites'][job['computingsite']] = []
+                    plotsDict['cputimepereventf']['sites'][job['computingsite']].append(
+                        round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
+
+    nbinsmax = 100
+    for pname in plotsNames:
+        rawdata = []
+        for k, d in plotsDict[pname]['sites'].iteritems():
+            rawdata.extend(d)
+        if len(rawdata) > 0:
+            plotsDict[pname]['stats'] = []
+            plotsDict[pname]['stats'].append(np.average(rawdata))
+            plotsDict[pname]['stats'].append(np.std(rawdata))
+            bins, ranges = np.histogram(rawdata, bins='auto')
+            if len(ranges) > nbinsmax + 1:
+                bins, ranges = np.histogram(rawdata, bins=nbinsmax)
+            plotsDict[pname]['ranges'] = list(np.ceil(ranges))
+            for site in plotsDict[pname]['sites'].keys():
+                sitedata = [x for x in plotsDict[pname]['sites'][site]]
+                plotsDict[pname]['sites'][site] = list(np.histogram(sitedata, ranges)[0])
+        else:
+            try:
+                del (plotsDict[pname])
+            except:
+                pass
+
+    start = time.time()
+
+    jobstates = []
+    global statelist
+    for state in statelist:
+        statecount = {}
+        statecount['name'] = state
+        statecount['count'] = 0
+        for job in jobs:
+            if job['jobstatus'] == state:
+                statecount['count'] += 1
+                continue
+        jobstates.append(statecount)
+
+    end = time.time()
+    print("Jobs states aggregation: {} sec".format(end - start))
+
+    start = time.time()
+
+    essummary = dict((key, 0) for key in eventservicestatelist)
+    transactionKey = -1
+    if isEventServiceFlag and not isESMerge:
+        print 'getting events states summary'
+        if mode == 'drop' and len(jobs) < 400000:
+            esjobs = []
+            for job in jobs:
+                esjobs.append(job['pandaid'])
+
+            random.seed()
+
+            if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+                tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+            else:
+                tmpTableName = "TMP_IDS1DEBUG"
+
+            transactionKey = random.randrange(1000000)
+            #            connection.enter_transaction_management()
+            new_cur = connection.cursor()
+            executionData = []
+            for id in esjobs:
+                executionData.append((id, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
+            query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
+            new_cur.executemany(query, executionData)
+            #            connection.commit()
+
+            new_cur.execute(
+                """
+                SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS EVCOUNT, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID GROUP BY STATUS
+                """ % (tmpTableName, transactionKey)
+            )
+
+            evtable = dictfetchall(new_cur)
+            # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+            #            connection.commit()
+            #            connection.leave_transaction_management()
+            for ev in evtable:
+                essummary[eventservicestatelist[ev['STATUS']]] += ev['EVCOUNT']
+        eventsdict = []
+        if mode == 'nodrop':
+            equery = {'jeditaskid': newquery['jeditaskid']}
+            eventsdict.extend(
+                JediEvents.objects.filter(**equery).values('status').annotate(count=Count('status')).order_by('status'))
+            for state in eventsdict:
+                essummary[eventservicestatelist[state['status']]] = state['count']
+
+    end = time.time()
+    print("Events states summary: {} sec".format(end - start))
+
+    return plotsDict, jobstates, essummary, transactionKey, jobScoutIDs, hs06sSum
+
 
 
 def jobStateSummary(jobs):
