@@ -62,6 +62,7 @@ urlpatterns = [
     #url(r'^eslogger/$', coremon_views.esPandaLogger, name='esPandaLogger'),
     url(r'^esatlaslogger/$', coremon_views.esatlasPandaLogger, name='esatlasPandaLogger'),
     url(r'^task/(?P<jeditaskid>.*)/$', coremon_views.taskInfo, name='taskInfo'),
+    url(r'^taskfc/(?P<jeditaskid>.*)/$', coremon_views.taskInfoFC, name='taskInfoFC'),
     url(r'^tasknew/(?P<jeditaskid>.*)/$', coremon_views.taskInfoNew, name='taskInfoNew'),
     url(r'^dash/$', coremon_views.dashboard, name='dashboard'),
     url(r'^dash/analysis/$', coremon_views.dashAnalysis, name='dashAnalysis'),
