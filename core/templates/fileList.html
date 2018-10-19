@@ -1,133 +1,80 @@
 {% extends "_base_core.html" %}
-
+{% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA files {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA files<font size=-1>{{ viewParams.selection|safe }}</font>{% endblock %}
 
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <style>
+        #filelist_wrapper .row {
+            max-width: 99%;
+        }
+    </style>
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+
 {% block body %}
 
-{% if files %}
+{% if nfilestotal > 0 %}
 
 {% if requestParams.datasetname %}<br>Files in dataset <b>{{ requestParams.datasetname }}</b> {% endif %}
 {% if requestParams.datasetid %}<br>Files in dataset ID = <b>{{ requestParams.datasetid }}</b> {% endif %}
-<p>
-<b>{{ files|length }} listed files {% if limitexceeded %} but some files are excluded due to DB retrieval limit. To see more files please add &limit=<i>some number</i> to request{% endif %} </b>
-{% if nfiles != files|length %} <br> <b>{{ nfiles }} unique files</b> {% endif %}
 
-<p>
+{#<b>{{ files|length }} listed files {% if limitexceeded %} but some files are excluded due to DB retrieval limit. To see more files please add &limit=<i>some number</i> to request{% endif %} </b>#}
+{#{% if nfiles != files|length %} <br> <b>{{ nfiles }} unique files</b> {% endif %}#}
 
-<table>
-<tr class='tablesection'>
-    {% if sortby == 'lfn-desc' %}
-        <th>File name<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=lfn-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'lfn-asc' %}
-        <th>File name<br><a href="{{nosorturl}}sortby=lfn-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}
-        <th>File name<br><a href="{{nosorturl}}sortby=lfn-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=lfn-asc" class="headerSortUp"></a></th>
-    {% endif %}
-    {% if sortby == 'scope-desc' %}
-        <th>Scope<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=scope-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'scope-asc' %}
-        <th>Scope<br><a href="{{nosorturl}}sortby=scope-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}
-        <th>Scope<br><a href="{{nosorturl}}sortby=scope-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=scope-asc" class="headerSortUp"></a></th>
-    {% endif %}
-    {% if sortby == 'type-desc' %}
-        <th>Type<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=type-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'type-asc' %}
-        <th>Type<br><a href="{{nosorturl}}sortby=type-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}
-        <th>Type<br><a href="{{nosorturl}}sortby=type-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=type-asc" class="headerSortUp"></a></th>
-    {% endif %}
-    {% if sortby == 'fsizemb-desc' %}
-        <th>Size (MB)<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=fsizemb-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'fsizemb-asc' %}
-        <th>Size (MB)<br><a href="{{nosorturl}}sortby=fsizemb-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}
-        <th>Size (MB)<br><a href="{{nosorturl}}sortby=fsizemb-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=fsizemb-asc" class="headerSortUp"></a></th>
-    {% endif %}
-    {% if sortby == 'nevents-desc' %}
-        <th>N events<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=nevents-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'nevents-asc' %}
-        <th>N events<br><a href="{{nosorturl}}sortby=nevents-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}
-        <th>N events<br><a href="{{nosorturl}}sortby=nevents-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=nevents-asc" class="headerSortUp"></a></th>
-    {% endif %}
-    {% if sortby == 'jeditaskid-desc' %}
-        <th>Task<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=jeditaskid-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'jeditaskid-asc' %}
-        <th>Task<br><a href="{{nosorturl}}sortby=jeditaskid-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}
-        <th>Task<br><a href="{{nosorturl}}sortby=jeditaskid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=jeditaskid-asc" class="headerSortUp"></a></th>
-    {% endif %}
-    {% if sortby == 'pandaid-desc' %}
-        <th>PanDA Job<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=pandaid-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'pandaid-asc' %}
-        <th>PanDA Job<br><a href="{{nosorturl}}sortby=pandaid-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}
-        <th>PanDA Job<br><a href="{{nosorturl}}sortby=pandaid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=pandaid-asc" class="headerSortUp"></a></th>
-    {% endif %}
-    {% if sortby == 'attemptnr-desc' %}
-        <th>Attempt (max)<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=attemptnr-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'attemptnr-asc' %}
-        <th>Attempt (max)<br><a href="{{nosorturl}}sortby=attemptnr-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}
-        <th>Attempt (max)<br><a href="{{nosorturl}}sortby=attemptnr-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=attemptnr-asc" class="headerSortUp"></a></th>
-    {% endif %}
-    {% if sortby == 'status-desc' %}
-        <th>Status<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=status-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'status-asc' %}
-        <th>Status<br><a href="{{nosorturl}}sortby=status-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}
-        <th>Status<br><a href="{{nosorturl}}sortby=status-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=status-asc" class="headerSortUp"></a></th>
-    {% endif %}
-    {% if sortby == 'creationdate-desc' %}
-        <th>Created<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=creationdate-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'creationdate-asc' %}
-        <th>Created<br><a href="{{nosorturl}}sortby=creationdate-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}
-        <th>Created<br><a href="{{nosorturl}}sortby=creationdate-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=creationdate-asc" class="headerSortUp"></a></th>
-    {% endif %}
-	<th>GUID</th>
-    {% if sortby == 'fileid-desc' %}
-        <th>File ID<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=fileid-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'fileid-asc' %}
-        <th>File ID<br><a href="{{nosorturl}}sortby=fileid-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}
-        <th>File ID<br><a href="{{nosorturl}}sortby=fileid-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=fileid-asc" class="headerSortUp"></a></th>
-    {% endif %}
-    {% if sortby == 'lumiblocknr-desc' %}
-        <th>Lumi block<br><span class="headerSortedDown"></span> <a href="{{nosorturl}}sortby=lumiblocknr-asc" class="headerSortUp"></a></th>
-    {% elif sortby == 'lumiblocknr-asc' %}
-        <th>Lumi block<br><a href="{{nosorturl}}sortby=lumiblocknr-desc" class="headerSortDown"></a> <span class="headerSortedUp"></span></th>
-    {% else %}
-        <th>Lumi block<br><a href="{{nosorturl}}sortby=lumiblocknr-desc" class="headerSortDown"></a> <a href="{{nosorturl}}sortby=lumiblocknr-asc" class="headerSortUp"></a></th>
-    {% endif %}
-    <th>Rucio link</th>
-</tr>
-{% for frec in files %}
-	<tr><font size=-1>
-		<td><a href="{% url 'fileInfo' %}?lfn={{ frec.lfn }}&datasetid={{ frec.datasetid }}&date_from={{ frec.creationdatecut }}">{{ frec.lfn }}</a></td>
-		<td><font size=-1>{{ frec.scope }}</font></td>
-		<td>{{ frec.type }}</td>
-		<td>{{ frec.fsizemb }}</td>
-        <td>{{ frec.nevents }}</td>
-		<td><a href="{% url 'taskInfo' %}?jeditaskid={{ frec.jeditaskid }}">{{ frec.jeditaskid }}</a></td>
-		<td>{% if frec.pandaid %}<a href="{% url 'jobInfo' %}?pandaid={{ frec.pandaid }}">{{ frec.pandaid }}</a> {% endif %}</td>
-		<td>{{ frec.attemptnr }} {% if frec.maxattempt is not None %} ({{ frec.maxattempt }}){% endif %}</td>
-		<td class='{{frec.status}}'>{{ frec.status }}</td>
-		<td><font size=-1>{{ frec.creationdate }}</font></td>
-		<td><font size=-1>{{ frec.guid }}</font></td>
-		<td><font size=-1>{{ frec.fileid }}</font></td>
-        <td>{% if frec.lumiblocknr is not  None %}{{ frec.lumiblocknr }}{% else %}---{% endif %}</td>
-        <td>
-            {% if frec.rucio %}
-            <a href="{{ frec.rucio }}">Rucio link</a>
-            {% endif %}
-        </td>
-	</font></tr>
-{% endfor %}
+<br>Total number of files in dataset: <b> {{ nfilestotal }} </b>
+{% if nfilestotal != nfilesunique %} whereas number of unique files is <b>{{ nfilesunique }}</b> {% endif %}
+<p>
+{% if nfilestotal > 1000 %}
+    <div id="nlistedfiles" style="display: inline; font-weight: bold"> 1000 </div> files listed below. If you want to see more, please input the desire number and press Reload button.
+    <div class="row" style="max-width: 100%; font-size: 0.85rem; margin-top: 0.5rem">
+      <div class="small-12 medium-3 columns" style="padding-left: 0">
+        <div class="input-group">
+          <span class="input-group-label">Number of files</span>
+          <input class="input-group-field" id="nfilestoload" type="number" placeholder="1000">
+          <div class="input-group-button">
+            <input type="submit" class="button secondary" value="Reload" id="reloadfilelist" style="font-size: 0.85rem">
+        </div>
+      </div>
+    </div>
+</div>
+
+{% else %}
+    <b>{{ nfilestotal }}</b> files listed below
+{% endif %}
+
+
+<table id = 'filelist' class="data-table nowrap">
+    <thead>
+    <tr>
+        <th>File name</th>
+        <th>Scope</th>
+        <th>Type</th>
+        <th>Size (MB)</th>
+        <th>N events</th>
+        <th>Task ID</th>
+        <th>PanDA ID</th>
+        <th>Attempt</th>
+        <th>Max attempt</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th>GUID</th>
+        <th>File ID</th>
+        <th>Lumi block</th>
+        <th>Rucio link</th>
+    </tr>
+    </thead>
+<tbody>
+</tbody>
 </table>
+
 
 {% else %}
 
@@ -135,7 +82,141 @@ No files matching selection were found.
 
 {% endif %}
 
+<script>
+$(document).ready(function () {
+    fileListTable();
+});
+
+$("#reloadfilelist").click(function () {
+    $('#nlistedfiles').html("<img src='{% static "images/load.gif" %}'>  ");
+    var nfilestoload = $('#nfilestoload').val();
+    var nfilestotal = {{ nfilestotal }};
+    if (nfilestoload > nfilestotal) {
+        nfilestoload = nfilestotal;
+    }
+    var url =  "{% url 'loadFileList' datasetid %}?json&limit=" + nfilestoload;
+    $('#filelist').DataTable().ajax.url(url).load(function(){ $('#nlistedfiles').html(nfilestoload);});
+
+});
+
+
+function fileListTable() {
+      filelisttable = $('#filelist').dataTable({
+        //"bRetrieve": true,
+        {#"iDisplayLength": -1,#}
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "scrollX": true,
+        "aaSorting": [[0,'asc']],
+
+        "ajax": {
+            "processing": true,
+            "url": "{% url 'loadFileList' datasetid %}?json",
+            "dataSrc" : ''},
+        "columnDefs": [
+            {"type": "num-html", "targets": [3,4,5,6,7,8,12,13] }
+        ],
+        "aoColumns": [
+            {
+                "data": "lfn",
+                sDefaultContent: "---",
+                "render": function(data, type, full) {
+                    return '<a href = "{% url 'fileInfo' %}?lfn=' + full['lfn'] + '&datasetid=' + full['datasetid'] + '&date_from=' + full['creationdatecut'] + '">'+full['lfn']+'</a>'
+                 }
+            },
+            {
+                "data": "scope",
+                sDefaultContent: "",
+            },
+            {
+                "data": "type",
+                sDefaultContent: "",
+            },
+            {
+                "data": "fsizemb",
+                sDefaultContent: "",
+            },
+            {
+                "data": "nevents",
+                sDefaultContent: "---",
+                className: 'dt-body-right',
+                render: $.fn.dataTable.render.number( ',', '.')
+
+            },
+            {
+                "data": "jeditaskid",
+                sDefaultContent: "",
+                "render": function(data, type, full) {
+                    return '<a href = "{% url 'taskInfo' %}' + full['jeditaskid'] + '/">' + full['jeditaskid'] + '</a>'
+                }
+            },
+            {
+                "data": "pandaid",
+                sDefaultContent: "---",
+                "render": function(data, type, full) {
+                    if (data) {
+                        return '<a href = "{% url 'jobInfo' %}' + full['pandaid'] + '/">' + full['pandaid'] + '</a>'
+                    }
+                    else {
+                        return '---'
+                    }
+                }
+            },
+            {
+                "data": "attemptnr",
+                sDefaultContent: "",
+            },
+            {
+                "data": "maxattempt",
+                sDefaultContent: "",
+            },
+            {
+                "data": "status",
+                sDefaultContent: "",
+            },
+            {
+                "data": "creationdate",
+                sDefaultContent: "---",
+            },
+            {
+                "data": "guid",
+                sDefaultContent: "",
+            },
+            {
+                "data": "fileid",
+                sDefaultContent: "---",
+                "render": function ( data, type, full ) {
+                    return '<a href = "{% url 'fileInfo' %}?fileid=' + full['fileid'] + '">'+full['fileid']+'</a>'
+                 }
+            },
+            {
+                "data": "lumiblocknr",
+                sDefaultContent: "---",
+            },
+            {
+                "data": "ruciolink",
+                sDefaultContent: "---",
+                "render": function ( data, type, full ) {
+                    if (data) {
+                        return '<a href = "' + full['ruciolink'] + '" target="_blank"><i class="fi-link"></i></a>'
+                    }
+                    else {
+                        return '---'
+                    }
+                }
+            }
+
+        ],
+        "createdRow": function ( row, data, index ) {
+            $('td', row).eq(9).addClass(data['status'] + '_fill');
+        }
+      });
+    }
+
+</script>
+
 {% endblock %}
+
 
 {% block helptext %}
 {% include "fileListHelp.html" with helptitle="File list help" %}

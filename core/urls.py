@@ -71,6 +71,7 @@ urlpatterns = [
     url(r'^workingGroups/$', coremon_views.workingGroups, name='workingGroups'),
     url(r'^fileInfo/$', coremon_views.fileInfo, name='fileInfo'),
     url(r'^fileList/$', coremon_views.fileList, name='fileList'),
+    url(r'^loadFileList/(?P<datasetid>.*)/$', coremon_views.loadFileList, name='loadFileList'),
     url(r'^datasetInfo/$', coremon_views.datasetInfo, name='datasetInfo'),
     url(r'^datasetList/$', coremon_views.datasetList, name='datasetList'),
     url(r'^workQueues/$', coremon_views.workQueues, name='workQueues'),

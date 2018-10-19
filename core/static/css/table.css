@@ -315,6 +315,10 @@ th.vertical {
     white-space: nowrap;
 }
 
+.data-table.nowrap thead th {
+    white-space: normal !important;
+}
+
 .data-table tfoot tr {
     border: none;
 }

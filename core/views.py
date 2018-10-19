@@ -11805,6 +11805,7 @@ def fileList(request):
     setupView(request, hours=365 * 24, limit=999999999)
     query = {}
     files = []
+    defaultlimit = 1000
     frec = None
     colnames = []
     columns = []
@@ -11823,100 +11824,52 @@ def fileList(request):
         if len(dsets) > 0:
             datasetname = dsets[0]['datasetname']
 
+    if datasetid > 0:
+        query['datasetid'] = datasetid
+        nfilestotal = JediDatasetContents.objects.filter(**query).count()
+        nfilesunique = JediDatasetContents.objects.filter(**query).values('lfn').distinct().count()
+
+    del request.session['TFIRST']
+    del request.session['TLAST']
+    ##self monitor
+    endSelfMonitor(request)
+    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+        'json' not in request.session['requestParams'])):
+        xurl = extensibleURL(request)
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'limit': defaultlimit,
+            'datasetid': datasetid,
+            'nfilestotal': nfilestotal,
+            'nfilesunique': nfilesunique,
+            'built': datetime.now().strftime("%H:%M:%S"),
+        }
+        data.update(getContextVariables(request))
+        response = render_to_response('fileList.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+    else:
+        return HttpResponse(json.dumps(files), content_type='text/html')
+
+
+def loadFileList(request, datasetid = -1):
+    valid, response = initRequest(request)
+    if not valid: return response
+    setupView(request, hours=365 * 24, limit=999999999)
+    query = {}
     files = []
-    limit = 100
+    limit = 1000
     if 'limit' in request.session['requestParams']:
         limit = int(request.session['requestParams']['limit'])
 
-    sortOrder = None
-    reverse = None
-    sortby = ''
-    if 'sortby' in request.session['requestParams']:
-        sortby = request.session['requestParams']['sortby']
-        if sortby == 'lfn-asc':
-            sortOrder = 'lfn'
-        elif sortby == 'lfn-desc':
-            sortOrder = 'lfn'
-            reverse = True
-        elif sortby == 'scope-asc':
-            sortOrder = 'scope'
-        elif sortby == 'scope-desc':
-            sortOrder = 'scope'
-            reverse = True
-        elif sortby == 'type-asc':
-            sortOrder = 'type'
-        elif sortby == 'type-desc':
-            sortOrder = 'type'
-            reverse = True
-        elif sortby == 'fsizemb-asc':
-            sortOrder = 'fsize'
-        elif sortby == 'fsizemb-desc':
-            sortOrder = 'fsize'
-            reverse = True
-        elif sortby == 'nevents-asc':
-            sortOrder = 'nevents'
-        elif sortby == 'nevents-desc':
-            sortOrder = 'nevents'
-            reverse = True
-        elif sortby == 'jeditaskid-asc':
-            sortOrder = 'jeditaskid'
-        elif sortby == 'jeditaskid-desc':
-            sortOrder = 'jeditaskid'
-            reverse = True
-        elif sortby == 'fileid-asc':
-            sortOrder = 'fileid'
-        elif sortby == 'fileid-desc':
-            sortOrder = 'jeditaskid'
-            reverse = True
-        elif sortby == 'attemptnr-asc':
-            sortOrder = 'attemptnr'
-        elif sortby == 'attemptnr-desc':
-            sortOrder = 'attemptnr'
-            reverse = True
-        elif sortby == 'maxattempt-asc':
-            sortOrder = 'maxattempt'
-        elif sortby == 'maxattempt-desc':
-            sortOrder = 'maxattempt'
-            reverse = True
-        elif sortby == 'status-asc':
-            sortOrder = 'status'
-        elif sortby == 'status-desc':
-            sortOrder = 'status'
-            reverse = True
-        elif sortby == 'creationdate-asc':
-            sortOrder = 'creationdate'
-        elif sortby == 'creationdate-desc':
-            sortOrder = 'creationdate'
-            reverse = True
-        elif sortby == 'lumiblocknr-asc':
-            sortOrder = 'lumiblocknr'
-        elif sortby == 'lumiblocknr-desc':
-            sortOrder = 'lumiblocknr'
-            reverse = True
-
-        elif sortby == 'pandaid-asc':
-            sortOrder = 'pandaid'
-        elif sortby == 'pandaid-desc':
-            sortOrder = 'pandaid'
-            reverse = True
-    else:
-        sortOrder = 'lfn'
+    sortOrder = 'lfn'
 
     if datasetid > 0:
         query['datasetid'] = datasetid
-        if (reverse):
-            files = JediDatasetContents.objects.filter(**query).values().order_by(sortOrder).reverse()[:limit + 1]
-        else:
-            files = JediDatasetContents.objects.filter(**query).values().order_by(sortOrder)[:limit + 1]
+        files.extend(JediDatasetContents.objects.filter(**query).values().order_by(sortOrder)[:limit])
 
-        if len(files) > limit:
-            limitexceeded = True
-        else:
-            limitexceeded = False
-        files = files[:limit]
-
-        for f in files:
-            f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
     pandaids = []
     for f in files:
         pandaids.append(f['pandaid'])
@@ -11939,6 +11892,7 @@ def fileList(request):
     filed = {}
     for f in files:
         filed[f['lfn']] = 1
+        f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
         ruciolink = ""
         if f['fileid'] in filesFromFileTableDict:
             if len(filesFromFileTableDict[f['fileid']]['dispatchdblock']) > 0:
@@ -11948,38 +11902,14 @@ def fileList(request):
                 if len(filesFromFileTableDict[f['fileid']]['destinationdblock']) > 0:
                     ruciolink = 'https://rucio-ui.cern.ch/did?scope=' + filesFromFileTableDict[f['fileid']][
                         'scope'] + '&name=' + filesFromFileTableDict[f['fileid']]['destinationdblock']
-        f['rucio'] = ruciolink
+        f['ruciolink'] = ruciolink
         f['creationdatecut'] = f['creationdate'].strftime('%Y-%m-%d')
-        f['creationdate']=f['creationdate'].strftime(defaultDatetimeFormat)
+        f['creationdate'] = f['creationdate'].strftime(defaultDatetimeFormat)
 
     nfiles = len(filed)
 
-    del request.session['TFIRST']
-    del request.session['TLAST']
-    ##self monitor
-    endSelfMonitor(request)
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
-        xurl = extensibleURL(request)
-        nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-        data = {
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            'files': files,
-            'nfiles': nfiles,
-            'nosorturl': nosorturl,
-            'sortby': sortby,
-            'limitexceeded': limitexceeded,
-            'built': datetime.now().strftime("%H:%M:%S"),
-        }
-        data.update(getContextVariables(request))
-        response = render_to_response('fileList.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-    else:
-        return HttpResponse(json.dumps(files), content_type='text/html')
-
+    dump = json.dumps(files, cls=DateEncoder)
+    return HttpResponse(dump, content_type='text/html')
 
 @login_customrequired
 def workQueues(request):
