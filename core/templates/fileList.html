@@ -155,7 +155,7 @@ function fileListTable() {
                 sDefaultContent: "---",
                 "render": function(data, type, full) {
                     if (data) {
-                        return '<a href = "{% url 'jobInfo' %}' + full['pandaid'] + '/">' + full['pandaid'] + '</a>'
+                        return '<a href = "{% url 'jobInfo' %}/' + full['pandaid'] + '/">' + full['pandaid'] + '</a>'
                     }
                     else {
                         return '---'
