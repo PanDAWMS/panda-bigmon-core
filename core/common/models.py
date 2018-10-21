@@ -1533,12 +1533,13 @@ class Visits(models.Model):
     class Meta:
         db_table= u'"ATLAS_PANDABIGMON"."VISITS"'
 
+
 class RequestStat(models.Model):
     id = models.IntegerField(primary_key=True, db_column='ID')
     server = models.CharField(max_length=40, db_column='server')
     remote = models.CharField(max_length=40, db_column='remote')
-    qtime = models.DateTimeField(db_column='qtime')
-    qduration = models.DateTimeField(db_column='qduration')
+    qtime = models.DateTimeField(db_column='qtime', blank=True, null=True)
+    qduration = models.DateTimeField(db_column='qduration', blank=True, null=True)
     duration = models.IntegerField(db_column='duration')
     load = models.CharField(max_length=40, db_column='load')
     mem = models.CharField(max_length=40, db_column='mem')
@@ -1546,6 +1547,7 @@ class RequestStat(models.Model):
     description = models.CharField(max_length=12000, db_column='description')
     referrer = models.CharField(max_length=4000, db_column='referrer')
     useragent = models.CharField(max_length=250, db_column='useragent')
+
     class Meta:
         db_table = u'request_stats'
 
