@@ -6,12 +6,18 @@
 {% block page_title %} {{ jeditaskid }} ES task {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <style>
+        #inputfilestable_wrapper .row {
+            max-width: 99%;
+        }
+    </style>
 {% endblock %}
 {% block extra_js %}
     <script type="text/javascript" src="/static/js/d3jsplot.js"></script>
-    <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
-    <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 
     <script>
         function toggleDetailDisplay(className) {
@@ -61,39 +67,26 @@
 
 
 
-        function buildEventChunkTable() {
+        function buildInputFilesTable() {
 
+            document.getElementById('inputfilestable').style.display = 'table';
 
-            {#    $(document).ready(function() {#}
-            document.getElementById('div-eventchunktable').style.display = 'block';
-
-            eventchunktable = $('#eventchunktable').dataTable({
-                "aaSorting": [[4, "desc"]],
+            inputfilestable = $('#inputfilestable').dataTable({
+                "aaSorting": [[0, "asc"]],
                 "aoColumns": [
                     {
-                        "mData": "jobsetid",
-                        sDefaultContent: "",
-                        "render": function (chunk, type, full) {
-                            return '<a href="'+{% url 'jobList' %}+
-                            '?jeditaskid={{ jeditaskid }}&jobsetid=' + full['jobsetid'] + '">' + full['jobsetid'] + '</a>';
-                        },
-
+                        "mData": "lfn",
+                        sDefaultContent: ""
                     },
                     {
-                        "mData": "attemptnrDS",
+                        "mData": "fileid",
                         sDefaultContent: "",
                         "render": function (chunk, type, full) {
-                            var reStr = "";
-                            full['prevAttempts'].forEach(function (entry) {
-                                reStr += '<- <a href="'+{% url 'jobList' %}+
-                                '?jeditaskid={{ jeditaskid }}&jobsetid=' + entry + '">' + entry + '</a>';
-                            });
-                            return reStr;
+                            return '<a href="'+{% url 'fileInfo' %} + '?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '&fileid=' + full['fileid'] + '">' + full['fileid'] + '</a>';
                         },
-
                     },
                     {
-                        "mData": "status",
+                        "mData": "procstatus",
                         sDefaultContent: "",
                     },
                     {
@@ -101,12 +94,8 @@
                         sDefaultContent: "",
                     },
                     {
-                        "mData": "attemptnrDS",
+                        "mData": "maxattempt",
                         sDefaultContent: "",
-                    },
-                    {
-                        "mData": "lfn",
-                        sDefaultContent: ""
                     },
                     {
                         "mData": "startevent",
@@ -124,53 +113,30 @@
                         "mData": "maxfailure",
                         sDefaultContent: "",
                     },
-                    {
-                        "mData": "maxattempt",
-                        sDefaultContent: "",
-                    },
                 ],
+                "createdRow": function ( row, data, index ) {
+                    $('td', row).eq(2).addClass(data['procstatus'] + '_fill');
+                },
 
                 "bServerSide": false,
                 "searching": true,
 
                 "ajax": {
                     "processing": true,
-                    "url": "{% url 'eventschunks' %}?jeditaskid={{ jeditaskid }}",
+                    "url": "{% url 'taskInfoFC' jeditaskid %}?tk={{ tk }}&dt",
                     "dataSrc": ''
                 },
 
-                "bStateSave": true, // optional
+                "bStateSave": true // optional
 
-
-                initComplete: function () {
-                    this.api().columns([2]).every(function () {
-                        var column = this;
-                        var select = $('<select><option value="">Show all</option></select>')
-                            .appendTo($(column.header()).empty())
-                            .on('change', function () {
-                                var val = $.fn.dataTable.util.escapeRegex(
-                                    $(this).val()
-                                );
-
-                                column
-                                    .search(val ? '^' + val + '$' : '', true, false)
-                                    .draw();
-                            });
-
-                        column.data().unique().sort().each(function (d, j) {
-                            select.append('<option value="' + d + '">' + d + '</option>')
-                        });
-                    });
-
-                }
             });
 
 
-            $('#eventchunktable').click(function () { // only if you don't hardcode column widths
-                eventchunktable.fnAdjustColumnSizing();
+            $('#inputfilestable').click(function () { // only if you don't hardcode column widths
+                inputfilestable.fnAdjustColumnSizing();
             });
 
-            $('#eventchunktable').goTo();
+            $('#inputfilestable').goTo();
         }
 
     </script>
@@ -268,16 +234,11 @@
             <button class="dropdownbutton">Go to</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
 
-                <a style="cursor: pointer;" onclick="javascript:buildEventChunkTable();">Show event chunk table </a>
+                <a style="cursor: pointer;" onclick="javascript:buildInputFilesTable();">Show input files table </a>
 
                 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('badevents');">Show exhausted
                     events</a>
 
-                {% if requestParams.mode and requestParams.mode == 'nodrop' %}
-                    <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Drop mode</a>
-                {% else %}
-                    <a style="cursor: pointer;" href="{{ nomodeurl }}mode=nodrop">Nodrop mode</a>
-                {% endif %}
                 {% if vomode == 'atlas' %}
                     {% if task.tasktype == 'prod' %}
                         <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
@@ -361,6 +322,58 @@
             </div>
         </div>
 
+
+        {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
+            {% if not task.status in finalstatelist %}
+                <div style="float: right">
+                    <a onclick="javascript:killtasks({{ task.jeditaskid }}, 0);" class='killbutton'>Finish</a>
+                    <a onclick="javascript:killtasks({{ task.jeditaskid }}, 1);" class='killbutton'>Abort</a>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <p>
+
+
+        <table>
+            <tr bgcolor="lightcyan">
+                <th colspan=20>
+                    <b>States of input files in this task</b>
+                </th>
+            </tr>
+            <tr>
+                {% for state in ifsummary %}
+                    <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                {% for state in ifsummary %}
+                    <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
+                        {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}"><span class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
+                    </td>
+                {% endfor %}
+            </tr>
+        </table>
+
+
+        <table class="data-table nowrap" id="inputfilestable" style="display: none">
+            <thead>
+            <tr>
+                <th>The logical filename (lfn)</th>
+                <th>File ID</th>
+                <th>Status</th>
+                <th>Attempt</th>
+                <th>Max attempt number</th>
+                <th>The starting event number used in the file (Start Event)</th>
+                <th>The ending event number used in the file (End Event)</th>
+                <th>How many times the file failed so far (Failed Attempt)</th>
+                <th>How many times the file can be failed at most (Max Failure)</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
         <div class="badevents" ng-app="taskESApps" ng-controller="taskEventsController" style="display:none;">
             <p>
@@ -409,23 +422,7 @@
 
 
 
-
-        {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
-            {% if not task.status in finalstatelist %}
-                <div style="float: right">
-                    <a onclick="javascript:killtasks({{ task.jeditaskid }}, 0);" class='killbutton'>Finish</a>
-                    <a onclick="javascript:killtasks({{ task.jeditaskid }}, 1);" class='killbutton'>Abort</a>
-                </div>
-            {% endif %}
-        {% endwith %}
-
-        <p>
-
-
-
-
-
-        <p>
+        <span style="clear: both"></span>
         {% if task.errordialog %}
             {% if logtxt %}
                 <div class="card scrollable">
@@ -617,34 +614,6 @@
             </table>
         {% endif %}
 
-
-
-
-        <div id="div-eventchunktable" style="display: none">
-            <table class="table table-striped table-bordered" id="eventchunktable" style="clear: both;">
-                <thead>
-                <tr>
-                    <th>Last jobset</th>
-                    <th>Previous<br> JobSets attempts</th>
-                    <th>DS Status</th>
-                    <th>Count attempts<br> from DS</th>
-                    <th>Count attempts from<br> retries reconstruction</th>
-                    <th>The logical filename (lfn)</th>
-                    <th>The starting event number used in the file (Start Event)</th>
-                    <th>The ending event number used in the file (End Event)</th>
-                    <th>How many times the file failed so far (Failedattempt)</th>
-                    ,
-                    <th>How many times the file can be failed at most(Maxfailure)</th>
-                    ,
-                    <th>How many times the file can be failed at most(Maxattempt)</th>
-
-                </tr>
-                </thead>
-            </table>
-        </div>
-
-
-
     {% else %}
 
         <p>
@@ -662,6 +631,7 @@
     {% endif %}
 
 {% endblock %}
+
 
 {#{% block helptext %}#}
 {#    <a name="help"></a>#}
