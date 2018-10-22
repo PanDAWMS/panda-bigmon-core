@@ -417,6 +417,7 @@ class JediDatasetContents(models.Model):
     maxfailure = models.IntegerField(null=True, db_column='MAXFAILURE', blank=True)
     failedattempt = models.IntegerField(null=True, db_column='FAILEDATTEMPT', blank=True)
     lumiblocknr = models.IntegerField(null=True, db_column='LUMIBLOCKNR', blank=True)
+    procstatus = models.CharField(max_length=192, db_column='PROC_STATUS')
 
     class Meta:
         db_table = u'jedi_dataset_contents'
