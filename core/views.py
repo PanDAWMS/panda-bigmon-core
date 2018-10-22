@@ -62,6 +62,7 @@ from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
 from core.common.models import RequestStat, BPUser, Visits, BPUserSettings, AllRequests
 from core.compare.modelsCompare import ObjectsComparison
+from core.art.modelsART import ARTTests
 from core.settings.config import ENV
 
 from time import gmtime, strftime
@@ -4315,7 +4316,10 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 isincomparisonlist = True
 
 
-
+    # if it is ART test, get test name
+    art_test = []
+    artqueue = {'pandaid': pandaid}
+    art_test.extend(ARTTests.objects.filter(**artqueue).values())
 
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
@@ -4330,6 +4334,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'pandaid': pandaid,
             'job': job,
             'columns': columns,
+            'arttest': art_test,
             'files': files,
             'dsfiles': dsfiles,
             'nfiles': nfiles,

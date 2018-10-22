@@ -2,7 +2,8 @@
 {% load staticfiles %}
 
 {% block page_title %}PanDA job {{ pandaid }}{% endblock %}
-{% block subtitle %}Job details for PanDA job <b>{{ jobid }}</b>{% endblock %}
+{% block subtitle %}Job details for PanDA job <b>{{ jobid }}</b> {% if arttest|length > 0 %}. This is ART test: <b>{{ arttest.0.testname }}</b>
+{% endif %}{% endblock %}
 
 {% block body %}
 
