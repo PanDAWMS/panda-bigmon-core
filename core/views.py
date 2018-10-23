@@ -2988,25 +2988,23 @@ def jobList(request, mode=None, param=None):
             else:
                 isJumbo = True
 
+    from core.harvester.views import getHarvesterJobs
+    harvesterjobstatus = ''
+    if 'jobstatus' in request.session['requestParams']:
+        harvesterjobstatus = request.session['requestParams']['jobstatus']
     if 'transferringnotupdated' in request.session['requestParams']:
         jobs = stateNotUpdated(request, state='transferring', values=values, wildCardExtension=wildCardExtension)
     elif 'statenotupdated' in request.session['requestParams']:
         jobs = stateNotUpdated(request, values=values, wildCardExtension=wildCardExtension)
-
     elif 'harvesterinstance' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
-        from core.harvester.views import getHarvesterJobs
-        jobs = getHarvesterJobs(request, request.session['requestParams']['harvesterinstance'],
-                                request.session['requestParams']['workerid'])
+        jobs = getHarvesterJobs(request, instance=request.session['requestParams']['harvesterinstance'],
+                                workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
     elif 'harvesterid' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
-        from core.harvester.views import getHarvesterJobs
-        jobs = getHarvesterJobs(request, request.session['requestParams']['harvesterid'],
-                                request.session['requestParams']['workerid'])
+        jobs = getHarvesterJobs(request, instance=request.session['requestParams']['harvesterid'],
+                                workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
     elif ('harvesterinstance' not in request.session['requestParams'] and 'harvesterid' not in request.session['requestParams']) and 'workerid' in request.session['requestParams']:
-        from core.harvester.views import getHarvesterJobs
-        jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'])
-
+        jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
     else:
-
         excludedTimeQuery = copy.deepcopy(query)
         if ('modificationtime__range' in excludedTimeQuery and not 'date_to' in request.session['requestParams']):
             del excludedTimeQuery['modificationtime__range']

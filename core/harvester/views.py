@@ -908,6 +908,8 @@ def getHarvesterJobs(request, instance = '', workerid = '', jobstatus=''):
            else: qjobstatus += " and jobstatus like 'running'"
         else:
             qinstance = "=" + "'"+instance+"'"
+            if jobstatus != '':
+                qjobstatus += " and jobstatus in ('" + jobstatus + "')"
     else:
         qinstance = 'is not null'
     if workerid != '':
@@ -955,7 +957,7 @@ def getHarvesterJobs(request, instance = '', workerid = '', jobstatus=''):
     from atlas_panda.harvester_rel_jobs_workers where
     atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID {3})  
         '''
-    sqlRequestFull = sqlRequest.format(qinstance,qworkerid,', '.join(values),qjobstatus)
+    sqlRequestFull = sqlRequest.format(qinstance, qworkerid, ', '.join(values), qjobstatus)
     cur = connection.cursor()
     cur.execute(sqlRequestFull)
     pandaids = cur.fetchall()
