@@ -583,7 +583,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     LAST_N_HOURS_MAX = 0
 
-    for paramName, paramVal  in request.session['requestParams'].iteritems():
+    for paramName, paramVal in request.session['requestParams'].iteritems():
         try:
             request.session['requestParams'][paramName] = urllib.unquote(paramVal)
         except: request.session['requestParams'][paramName] = paramVal
@@ -758,7 +758,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if param in ('hours', 'days'): continue
         if param == 'cloud' and request.session['requestParams'][param] == 'All':
             continue
-        elif param == 'harvesterinstance':
+        elif param == 'harvesterinstance' or param == 'harvesterid':
              if request.session['requestParams'][param] == 'all':
                  query['schedulerid__startswith'] = 'harvester'
              else:
@@ -2997,14 +2997,14 @@ def jobList(request, mode=None, param=None):
         from core.harvester.views import getHarvesterJobs
         jobs = getHarvesterJobs(request, request.session['requestParams']['harvesterinstance'],
                                 request.session['requestParams']['workerid'])
-    elif 'harvesterinstance' not in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
+    elif 'harvesterid' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
+        from core.harvester.views import getHarvesterJobs
+        jobs = getHarvesterJobs(request, request.session['requestParams']['harvesterid'],
+                                request.session['requestParams']['workerid'])
+    elif ('harvesterinstance' not in request.session['requestParams'] and 'harvesterid' not in request.session['requestParams']) and 'workerid' in request.session['requestParams']:
         from core.harvester.views import getHarvesterJobs
         jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'])
-    # elif 'instance' in request.session['requestParams'] and request.session['requestParams']['instance'] =='all':
-    #     from core.harvester.views import getHarvesterJobs
-    #     if 'jobstatus' in request.session['requestParams']:
-    #         jobs = getHarvesterJobs(request,instance=request.session['requestParams']['instance'],jobstatus=request.session['requestParams']['jobstatus'])
-    #     else: jobs = getHarvesterJobs(request,instance=request.session['requestParams']['instance'],jobstatus='')
+
     else:
 
         excludedTimeQuery = copy.deepcopy(query)

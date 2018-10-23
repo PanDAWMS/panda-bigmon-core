@@ -409,7 +409,7 @@
                 $scope.eventsrows = [];
 
                 $http({
-                    url: '{% url 'getbadeventsforfask' %}?jeditaskid={{ jeditaskid }}&mode={{ requestParams.mode }}',
+                    url: '{% url 'getbadeventsfortask' %}?jeditaskid={{ jeditaskid }}&mode={{ requestParams.mode }}',
                     method: "GET",
                 }).then(function successCallback(response) {
                     $scope.eventsrows = response.data;

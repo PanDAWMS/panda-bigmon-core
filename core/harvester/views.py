@@ -110,6 +110,7 @@ def harvesterWorkList(request):
     response = render_to_response('harvworkerslist.html', data, content_type='text/html')
     return response
 
+
 @login_customrequired
 def harvesterWorkerInfo(request):
     valid, response = initRequest(request)
@@ -136,12 +137,23 @@ def harvesterWorkerInfo(request):
                                                                             'nativestatus','diagmessage','computingelement','njobs',))
 
         if len(workerslist) > 0:
-            corrJobs = []
-            corrJobs.extend(HarvesterRelJobsWorkers.objects.filter(**tquery).values('pandaid'))
+            # corrJobs = []
+            # corrJobs.extend(HarvesterRelJobsWorkers.objects.filter(**tquery).values('pandaid'))
             workerinfo = workerslist[0]
             workerinfo['corrJobs'] = []
-            for corrJob in corrJobs:
-                workerinfo['corrJobs'].append(corrJob['pandaid'])
+            workerinfo['jobsStatuses'] = {}
+            workerinfo['jobsSubStatuses'] = {}
+            jobs = getHarvesterJobs(request, instance=harvesterid,workerid=workerid)
+            for job in jobs:
+                workerinfo['corrJobs'].append(job['pandaid'])
+                if job['jobstatus'] not in workerinfo['jobsStatuses']:
+                    workerinfo['jobsStatuses'][job['jobstatus']] = 1
+                else:
+                    workerinfo['jobsStatuses'][job['jobstatus']] += 1
+                if job['jobstatus'] not in workerinfo['jobsSubStatuses']:
+                    workerinfo['jobsSubStatuses'][job['jobstatus']] = 1
+                else:
+                    workerinfo['jobsSubStatuses'][job['jobstatus']] += 1
         else:
             workerinfo = None
     else:
@@ -151,6 +163,8 @@ def harvesterWorkerInfo(request):
         'request': request,
         'error': error,
         'workerinfo': workerinfo,
+        'harvesterid': harvesterid,
+        'workerid': workerid,
         'viewParams': request.session['viewParams'],
         'requestParams': request.session['requestParams'],
         'built': datetime.now().strftime("%H:%M:%S"),
@@ -881,7 +895,7 @@ def harvesters(request):
         response = render_to_response('harvesters.html', data, content_type='text/html')
     return response
 
-def getHarvesterJobs(request,instance = '', workerid = '',jobstatus=''):
+def getHarvesterJobs(request, instance = '', workerid = '', jobstatus=''):
     pandaidsList = []
     qinstance = ''
     qworkerid = ''
@@ -889,15 +903,15 @@ def getHarvesterJobs(request,instance = '', workerid = '',jobstatus=''):
     if instance != '':
         if instance.islower() == 'all':
            qinstance = 'is not null'
-           if jobstatus !='':
-              qjobstatus += " and jobstatus like '" +jobstatus+"'"
+           if jobstatus != '':
+              qjobstatus += " and jobstatus like '" + jobstatus +"'"
            else: qjobstatus += " and jobstatus like 'running'"
         else:
             qinstance = "=" + "'"+instance+"'"
     else:
         qinstance = 'is not null'
     if workerid != '':
-        qworkerid = '=' + workerid
+        qworkerid = '=' + str(workerid)
     else:
         qworkerid = 'is not null'
 

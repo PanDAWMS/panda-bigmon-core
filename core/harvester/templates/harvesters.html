@@ -381,7 +381,8 @@ height="1000" width="100%"></iframe>
         <table id="harvesterworkers" style="width: 100%" class="data-table bluelinks">
             <caption style="height: 30px;vertical-align: middle">Workers submitted by harvesters</caption>
             <thead>
-            <th>WorkerID (jobs)</th>
+            <th>WorkerID</th>
+            <th>Jobs</th>
             <th>Last update</th>
             <th>Status</th>
             <th>BatchID</th>
@@ -485,7 +486,7 @@ height="1000" width="100%"></iframe>
                         "dataSrc": ''
                     },
                         columnDefs: [ {
-                        targets: [1,8,9,10],
+                        targets: [2,9,10,11],
                         render: $.fn.dataTable.render.moment( 'YYYY-MM-DDTHH:mm:ss','YYYY-MM-DD HH:mm:ss')
                         } ],
                     "aoColumns": [
@@ -499,14 +500,39 @@ height="1000" width="100%"></iframe>
                                 else {
                                     if (full['njobs']!=null) {
                                         if("harvesterid" in full){
-                                        return '' +'<a href="{% url 'harvesterWorkerInfo' %}?harvesterid='+ full['harvesterid'] +'&workerid='+full['workerid']+'">'+full['workerid']+'</a>'+' <a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
+                                        return '' +'<a href="{% url 'harvesterWorkerInfo' %}?harvesterid='+ full['harvesterid'] +'&workerid='+full['workerid']+'">'+full['workerid']+'</a>'
+                                            {#+' <a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'#}
                                         }
                                         else {
-                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'
+                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">'
+                                            {#+ ' (' + full['njobs'] + ')' + '</a>'#}
                                         }
                                     }
                                     else {
                                         return '' + '<a href="{% url 'harvesterWorkerInfo' %}?harvesterid='+ full['harvesterid'] +'&workerid='+full['workerid']+'">'+full['workerid']+'</a>' +  ' (' + 0 + ')'
+                                    }
+
+                                }
+                            }
+                        },
+                        {
+                            data: "njobs",
+                            sDefaultContent: "",
+                            "render": function (data, type, full, meta) {
+                                if (type === "sort" || type === 'type') {
+                                    return data;
+                                }
+                                else {
+                                    if (full['njobs']!=null) {
+                                        if("harvesterid" in full){
+                                        return  '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid'] + '">' +  full['njobs']  + '</a>'
+                                        }
+                                        else {
+                                        return '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">' +  full['njobs'] +  '</a>'
+                                        }
+                                    }
+                                    else {
+                                        return '-'
                                     }
 
                                 }
