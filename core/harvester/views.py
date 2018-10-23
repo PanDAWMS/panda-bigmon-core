@@ -150,10 +150,10 @@ def harvesterWorkerInfo(request):
                     workerinfo['jobsStatuses'][job['jobstatus']] = 1
                 else:
                     workerinfo['jobsStatuses'][job['jobstatus']] += 1
-                if job['jobstatus'] not in workerinfo['jobsSubStatuses']:
-                    workerinfo['jobsSubStatuses'][job['jobstatus']] = 1
+                if job['jobsubstatus'] not in workerinfo['jobsSubStatuses']:
+                    workerinfo['jobsSubStatuses'][job['jobsubstatus']] = 1
                 else:
-                    workerinfo['jobsSubStatuses'][job['jobstatus']] += 1
+                    workerinfo['jobsSubStatuses'][job['jobsubstatus']] += 1
         else:
             workerinfo = None
     else:
