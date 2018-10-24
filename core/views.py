@@ -8220,7 +8220,9 @@ def taskInfo(request, jeditaskid=0):
             cmd = "curl -s -f --compressed '%s'" % errurl
             logpfx = u"logtxt: %s\n" % cmd
             logout = commands.getoutput(cmd)
-            if len(logout) > 0: logtxt = logout
+            if len(logout) > 0:
+                loglist = (logout.splitlines())[::-1]
+                logtxt = '\n'.join(loglist)
 
     dsquery = {}
     dsquery['jeditaskid'] = jeditaskid
