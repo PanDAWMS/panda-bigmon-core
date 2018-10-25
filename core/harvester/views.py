@@ -457,35 +457,35 @@ def harvesters(request):
             return HttpResponse(json.dumps({'message': message}),
                             content_type='text/html')
 
-        fields = 'pandaid', 'jobstatus', 'jobsubstatus'
-
-        if len(workersList) < 30 and len(workersList) > 0:
-            workersList = str(workersList).strip('[]')
-        else:
-            tk, workersList = getWorkersList(sqlqueryworkerids)
-
-        jobs = getHarvesterJobs(request, instance=instance, workerid=workersList, fields=fields)
-
-        cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY={0}".format(tk))
-
-        jobsStatusesDict = {}
-        jobsSubStatusesDict = {}
-
-        for job in jobs:
-            if job['jobstatus'] not in jobsStatusesDict:
-                jobsStatusesDict[job['jobstatus']] = 1
-            else:
-                jobsStatusesDict[job['jobstatus']] += 1
-            if job['jobsubstatus'] not in jobsSubStatusesDict:
-                jobsSubStatusesDict[job['jobsubstatus']] = 1
-            else:
-                jobsSubStatusesDict[job['jobsubstatus']] += 1
+        # fields = 'pandaid', 'jobstatus', 'jobsubstatus'
+        #
+        # if len(workersList) < 30 and len(workersList) > 0:
+        #     workersList = str(workersList).strip('[]')
+        # else:
+        #     tk, workersList = getWorkersList(sqlqueryworkerids)
+        #
+        # jobs = getHarvesterJobs(request, instance=instance, workerid=workersList, fields=fields)
+        #
+        # cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY={0}".format(tk))
+        #
+        # jobsStatusesDict = {}
+        # jobsSubStatusesDict = {}
+        #
+        # for job in jobs:
+        #     if job['jobstatus'] not in jobsStatusesDict:
+        #         jobsStatusesDict[job['jobstatus']] = 1
+        #     else:
+        #         jobsStatusesDict[job['jobstatus']] += 1
+        #     if job['jobsubstatus'] not in jobsSubStatusesDict:
+        #         jobsSubStatusesDict[job['jobsubstatus']] = 1
+        #     else:
+        #         jobsSubStatusesDict[job['jobsubstatus']] += 1
 
 
         generalInstanseInfo = {'HarvesterID': instanceinfo['harvester_id'], 'Description': instanceinfo['description'], 'Starttime': instanceinfo['starttime'],
                                'Owner': instanceinfo['owner'], 'Hostname': instanceinfo['hostname'], 'Lastupdate': instanceinfo['lastupdate'], 'Computingsites':computingsitesDict,
                                'Statuses':statusesDict,'Resourcetypes': resourcetypesDict, 'Computingelements': computingelementsDict,'Software version': instanceinfo['sw_version'],
-                               'Jobscount': jobcnt, 'Commit stamp': instanceinfo['commit_stamp'], 'JobsStatuses': jobsStatusesDict, 'JobsSubStatuses': jobsSubStatusesDict
+                               'Jobscount': jobcnt, 'Commit stamp': instanceinfo['commit_stamp']
         }
         generalInstanseInfo = collections.OrderedDict(generalInstanseInfo)
         request.session['viewParams']['selection'] = 'Harvester workers, last %s hours' %(defaulthours)
