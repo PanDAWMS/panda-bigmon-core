@@ -9809,7 +9809,7 @@ def jobSummary3(request, query, exclude={}, extra="(1=1)", mode='drop', isEventS
                 where 
                   (oldpandaid is not null and
                     (( 
-                      (NOT (eventservice in (1,2,4,5) and not specialhandling like '%sc:%')  
+                      (NOT (eventservice is not NULL and not specialhandling like '%sc:%')  
                             AND (relationtype='' OR relationtype='retry' 
                                 or  (processingtype='pmerge' 
                                     and jobstatus in ('failed','cancelled') 
