@@ -31,7 +31,6 @@ from django.core.cache import cache
 from django.utils import encoding
 from django.conf import settings as djangosettings
 from django.db import connection, transaction
-from django.db import connections
 
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
@@ -2987,8 +2986,10 @@ def jobList(request, mode=None, param=None):
             else:
                 isJumbo = True
 
-    from core.harvester.views import getHarvesterJobs
     harvesterjobstatus = ''
+
+    from core.harvester.views import getHarvesterJobs
+
     if 'jobstatus' in request.session['requestParams']:
         harvesterjobstatus = request.session['requestParams']['jobstatus']
     if 'transferringnotupdated' in request.session['requestParams']:
@@ -3935,8 +3936,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         if storagetoken:
             job['destinationse'] = storagetoken[0]['storagetoken']
         ###Harvester section####
-        from core.harvester.views import isharvesterjob
-        harvesterInfo = isharvesterjob(job['pandaid'])
+        from core.harvester.views import isHarvesterJob
+
+        harvesterInfo = isHarvesterJob(job['pandaid'])
         if harvesterInfo == False:
            harvesterInfo = {}
 

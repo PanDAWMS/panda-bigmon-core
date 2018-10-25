@@ -92,8 +92,8 @@
             <thead>
             <th>Instance</th>
             <th>SW version</th>
-            <th>Commit stamp</th>
             <th>Description</th>
+            <th>Commit stamp</th>
             <th>Last update</th>
             </thead>
             <tbody>
@@ -130,9 +130,7 @@
         atlas-adc-pandamon-support@cern.ch<br><br>
         </div>
 
-
         <script>
-
             $(document).ready(function () {
 {#                $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');#}
                 $('#harvesterinstances').dataTable({"iDisplayLength": 100, responsive: true,});
@@ -141,7 +139,7 @@
         </script>
     {% elif  type == 'workers' %}
         <table>
-            {% for name,value in generalInstanseInfo.items %}
+            {% for name,value in generalInstanseInfo.items|dictsort:"0.lower" %}
                 <tr>
                     {% if name == 'Statuses' %}
                         <td><b>{{ name }} ({{ value|length }})</b></td>
@@ -201,6 +199,20 @@
                          <td><b>Jobs count</b></td>
                          <td>
                             <a href="{% url 'jobList' %}?harvesterinstance={{ instance|safe }}">{{ value }}</a>
+                        </td>
+                    {% elif name ==  'JobsStatuses' %}
+                        <td><b>Jobs statuses</b></td>
+                         <td>
+                         {% for jobstatus, jobstatuscount in value.items %}
+                             <span class='{{ jobstatus }}  item'>{{ jobstatus }} </span> <a href="{% url 'jobList' %}?{% if harvesterid %}harvesterinstance={{ harvesterid }}{% endif %}{% if workerid %}&workerid={{ workerid }}{% endif %}{% if jobstatus %}&jobstatus={{ jobstatus }}{% endif %}"> ({{ jobstatuscount }})</a>
+                         {% endfor %}
+                        </td>
+                    {% elif name ==  'JobsSubStatuses' %}
+                        <td><b>Jobs substatuses</b></td>
+                         <td>
+                         {% for jobsubstatus, jobsubtatuscount in value.items %}
+                            {{ jobsubstatus }} ({{jobsubtatuscount}})
+                         {% endfor %}
                         </td>
                     {% else %}
                         <td><b>{{ name }}</b></td>
@@ -499,19 +511,16 @@ height="1000" width="100%"></iframe>
                                 }
                                 else {
                                     if (full['njobs']!=null) {
-                                        if("harvesterid" in full){
+                                        if("harvesterid" in full) {
                                         return '' +'<a href="{% url 'harvesterWorkerInfo' %}?harvesterid='+ full['harvesterid'] +'&workerid='+full['workerid']+'">'+full['workerid']+'</a>'
                                             {#+' <a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'#}
-                                        }
-                                        else {
+                                        } else {
                                         return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">'
-                                            {#+ ' (' + full['njobs'] + ')' + '</a>'#}
                                         }
                                     }
                                     else {
-                                        return '' + '<a href="{% url 'harvesterWorkerInfo' %}?harvesterid='+ full['harvesterid'] +'&workerid='+full['workerid']+'">'+full['workerid']+'</a>' +  ' (' + 0 + ')'
+                                        return '' + '<a href="{% url 'harvesterWorkerInfo' %}?harvesterid='+ full['harvesterid'] +'&workerid='+full['workerid']+'">'+full['workerid']+'</a>'
                                     }
-
                                 }
                             }
                         },
@@ -531,10 +540,7 @@ height="1000" width="100%"></iframe>
                                         return '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">' +  full['njobs'] +  '</a>'
                                         }
                                     }
-                                    else {
-                                        return '-'
-                                    }
-
+                                    else { return '-' }
                                 }
                             }
                         },
