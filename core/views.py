@@ -1230,7 +1230,6 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     for job in jobs:
         dropJob = 0
         pandaid = job['pandaid']
-
         if not isEventService(job):
             if hashRetries.has_key(pandaid):
                 retry = hashRetries[pandaid]
@@ -9792,69 +9791,46 @@ def jobSummary3(request, query, exclude={}, extra="(1=1)", mode='drop', isEventS
         INSERT INTO {0} 
         (ID,TRANSACTIONKEY,INS_TIME) 
         select pandaid, {1}, TO_DATE('{2}', 'YYYY-MM-DD') from (
-            select UNIQUE PANDAID
-            from
-            ATLAS_PANDA.JOBSARCHIVED4 j,
-            ATLAS_PANDA.jedi_job_retry_history h
-            WHERE j.jeditaskid = {3} 
-                AND 
-                ((h.jeditaskid = j.jeditaskid AND h.oldpandaid = j.pandaid 
-                    AND
-                    (
-                      (NOT (j.eventservice in (1,2,4,5) and not j.specialhandling like '%sc:%')  
-                            AND (h.relationtype='' OR h.relationtype='retry' 
-                                or  (j.processingtype='pmerge' 
-                                    and j.jobstatus in ('failed','cancelled') 
-                                    and h.relationtype='merge')
+            select unique pandaid from (
+                select j.pandaid, j.jeditaskid, j.eventservice, j.specialhandling, j.jobstatus, j.jobsetid, j.jobsubstatus, j.processingtype,
+                        h.oldpandaid, h.relationtype
+                from (
+                    select ja4.pandaid, ja4.jeditaskid, ja4.eventservice, ja4.specialhandling, ja4.jobstatus, ja4.jobsetid, ja4.jobsubstatus, ja4.processingtype 
+                        from ATLAS_PANDA.JOBSARCHIVED4 ja4 where ja4.jeditaskid = {3}
+                    union
+                    select ja.pandaid, ja.jeditaskid, ja.eventservice, ja.specialhandling, ja.jobstatus, ja.jobsetid, ja.jobsubstatus, ja.processingtype 
+                        from ATLAS_PANDAARCH.JOBSARCHIVED ja where ja.jeditaskid = {4}
+                ) j
+                LEFT JOIN
+                ATLAS_PANDA.jedi_job_retry_history h
+                ON (h.jeditaskid = j.jeditaskid AND h.oldpandaid = j.pandaid) 
+                    OR (h.oldpandaid=j.jobsetid and h.jeditaskid = j.jeditaskid)
+                )
+                where 
+                  (oldpandaid is not null and
+                    (( 
+                      (NOT (eventservice in (1,2,4,5) and not specialhandling like '%sc:%')  
+                            AND (relationtype='' OR relationtype='retry' 
+                                or  (processingtype='pmerge' 
+                                    and jobstatus in ('failed','cancelled') 
+                                    and relationtype='merge')
                                 )
                       )
-                    OR
+                      OR
                       (
-                        (j.eventservice in (1,2,4,5) and not j.specialhandling like '%sc:%')  
+                        (eventservice in (1,2,4,5) and specialhandling not like '%sc:%')  
                         AND 
                         (
-                            (NOT j.jobstatus IN ('finished', 'merging') AND h.relationtype='retry') 
-                                OR (j.jobstatus='closed' 
-                                    and (j.jobsubstatus in ('es_unused', 'es_inaction'))
-                                    )
+                            (jobstatus not IN ('finished', 'merging') AND relationtype='retry') 
+                            OR 
+                            (jobstatus='closed'  and (jobsubstatus in ('es_unused', 'es_inaction')))
                         )
                       )
+                    )   
+                    OR (oldpandaid=jobsetid and relationtype = 'jobset_retry')
                     )
                   ) 
-                  OR (h.oldpandaid=j.jobsetid and h.relationtype = 'jobset_retry' and h.jeditaskid = j.jeditaskid)
-                )
-            union 
-            select UNIQUE PANDAID
-            from
-            ATLAS_PANDAARCH.JOBSARCHIVED j,
-            ATLAS_PANDA.jedi_job_retry_history h
-            WHERE j.jeditaskid = {4} 
-                AND 
-                ((h.jeditaskid = j.jeditaskid AND h.oldpandaid = j.pandaid 
-                    AND
-                    (
-                      (NOT (j.eventservice in (1,2,4,5) and not j.specialhandling like '%sc:%')  
-                            AND (h.relationtype='' OR h.relationtype='retry' 
-                                or  (j.processingtype='pmerge' 
-                                    and j.jobstatus in ('failed','cancelled') 
-                                    and h.relationtype='merge')
-                                )
-                      )
-                    OR
-                      (
-                        (j.eventservice in (1,2,4,5) and not j.specialhandling like '%sc:%')  
-                        AND 
-                        (
-                            (NOT j.jobstatus IN ('finished', 'merging') AND h.relationtype='retry') 
-                                OR (j.jobstatus='closed' 
-                                    and (j.jobsubstatus in ('es_unused', 'es_inaction'))
-                                    )
-                        )
-                      )
-                    )
-                  ) 
-                  OR (h.oldpandaid=j.jobsetid and h.relationtype = 'jobset_retry' and h.jeditaskid = j.jeditaskid)
-                )
+                  OR  (jobstatus='closed' and (jobsubstatus in ('es_unused', 'es_inaction')))
         )                   
         """.format(tmpTableName, transactionKey, timezone.now().strftime("%Y-%m-%d"), jeditaskid, jeditaskid)
 
