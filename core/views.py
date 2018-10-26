@@ -1252,7 +1252,7 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
 
             if (dropJob == 0):
                 if (job['jobsetid'] in hashRetries) and (
-                            hashRetries[job['jobsetid']]['relationtype'] in ('jobset_retry')):
+                            hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
                     dropJob = 1
 
                 if (job['jobstatus'] == 'closed' and (job['jobsubstatus'] in ('es_unused', 'es_inaction'))):
