@@ -29,11 +29,11 @@
 {#<b>{{ files|length }} listed files {% if limitexceeded %} but some files are excluded due to DB retrieval limit. To see more files please add &limit=<i>some number</i> to request{% endif %} </b>#}
 {#{% if nfiles != files|length %} <br> <b>{{ nfiles }} unique files</b> {% endif %}#}
 
-<br>Total number of files in dataset: <b> {{ nfilestotal }} </b>
+<br>Total number of event chunks in dataset: <b> {{ nfilestotal }} </b>
 {% if nfilestotal != nfilesunique %} whereas number of unique files is <b>{{ nfilesunique }}</b> {% endif %}
 <p>
 {% if nfilestotal > 1000 %}
-    <div id="nlistedfiles" style="display: inline; font-weight: bold"> 1000 </div> files listed below. If you want to see more, please input the desire number and press Reload button.
+    <div id="nlistedfiles" style="display: inline; font-weight: bold"> 1000 </div> event chunks listed below. If you want to see more, please input the desire number and press Reload button.
     <div class="row" style="max-width: 100%; font-size: 0.85rem; margin-top: 0.5rem">
       <div class="small-12 medium-3 columns" style="padding-left: 0">
         <div class="input-group">
@@ -55,20 +55,20 @@
     <thead>
     <tr>
         <th>File name</th>
-        <th>Scope</th>
+        <th>File ID</th>
         <th>Type</th>
         <th>Size (MB)</th>
         <th>N events</th>
         <th>Task ID</th>
         <th>PanDA ID</th>
-        <th>Attempt</th>
-        <th>Max attempt</th>
         <th>Status</th>
+        <th>Attempt</th>
+        <th>Max attempts</th>
         <th>Created</th>
-        <th>GUID</th>
-        <th>File ID</th>
         <th>Lumi block</th>
         <th>Rucio link</th>
+        <th>Scope</th>
+        <th>GUID</th>
     </tr>
     </thead>
 <tbody>
@@ -125,8 +125,11 @@ function fileListTable() {
                  }
             },
             {
-                "data": "scope",
-                sDefaultContent: "",
+                "data": "fileid",
+                sDefaultContent: "---",
+                "render": function ( data, type, full ) {
+                    return '<a href = "{% url 'fileInfo' %}?fileid=' + full['fileid'] + '">'+full['fileid']+'</a>'
+                 }
             },
             {
                 "data": "type",
@@ -163,6 +166,10 @@ function fileListTable() {
                 }
             },
             {
+                "data": "status",
+                sDefaultContent: "",
+            },
+            {
                 "data": "attemptnr",
                 sDefaultContent: "",
             },
@@ -171,23 +178,8 @@ function fileListTable() {
                 sDefaultContent: "",
             },
             {
-                "data": "status",
-                sDefaultContent: "",
-            },
-            {
                 "data": "creationdate",
                 sDefaultContent: "---",
-            },
-            {
-                "data": "guid",
-                sDefaultContent: "",
-            },
-            {
-                "data": "fileid",
-                sDefaultContent: "---",
-                "render": function ( data, type, full ) {
-                    return '<a href = "{% url 'fileInfo' %}?fileid=' + full['fileid'] + '">'+full['fileid']+'</a>'
-                 }
             },
             {
                 "data": "lumiblocknr",
@@ -204,11 +196,19 @@ function fileListTable() {
                         return '---'
                     }
                 }
-            }
+            },
+            {
+                "data": "scope",
+                sDefaultContent: "",
+            },
+            {
+                "data": "guid",
+                sDefaultContent: "",
+            },
 
         ],
         "createdRow": function ( row, data, index ) {
-            $('td', row).eq(9).addClass(data['status'] + '_fill');
+            $('td', row).eq(7).addClass(data['status'] + '_fill');
         }
       });
     }
