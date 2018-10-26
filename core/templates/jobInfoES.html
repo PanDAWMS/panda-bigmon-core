@@ -268,6 +268,12 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 
         {% endif %}
 
+        {% if inputfiles|length > 0 %}
+            <a href="{% url 'jobList' %}?jeditaskid={{ inputfiles.0.jeditaskid }}&datasetid={{ inputfiles.0.datasetid }}&fileid={{ inputfiles.0.fileid }}">Jobs for {{ inputfiles.0.fileid }} input file</a>
+            <a href="{% url 'jobList' %}?jeditaskid={{ inputfiles.0.jeditaskid }}&datasetid={{ inputfiles.0.datasetid }}&fileid={{ inputfiles.0.fileid }}&eventservice=1">ES jobs for {{ inputfiles.0.fileid }} file</a>
+            <a href="{% url 'jobList' %}?jeditaskid={{ inputfiles.0.jeditaskid }}&datasetid={{ inputfiles.0.datasetid }}&fileid={{ inputfiles.0.fileid }}&eventservice=2">ES merge jobs for {{ inputfiles.0.fileid }} file</a>
+        {% endif %}
+
         {% if pandaid %}
             <a href="http://pandaserver.cern.ch:25080//server/panda/getScriptOfflineRunning?pandaID={{pandaid}}">Script to re-create job for offline debugging</a>
         {% endif %}

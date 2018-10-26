@@ -1,6 +1,8 @@
-import itertools, random
+import itertools, random, copy
 from django.db import connection
+from django.utils import timezone
 from core.common.models import JediJobRetryHistory
+from core.settings.local import dbaccess
 
 def dropRetrielsJobs(jeditaskid,extra=None,isEventTask=False):
     droppedIDList = []
@@ -181,3 +183,77 @@ def compareDropAlgorithm(oldDropDict,newDropList):
         return difDropList
     difDropList  = list(difDropList)
     return difDropList
+
+
+def insert_dropped_jobs_to_tmp_table(query, extra):
+    """
+
+    :return: extra sql query
+    """
+
+    newquery = copy.deepcopy(query)
+
+    # insert retried pandaids to tmp table
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+    else:
+        tmpTableName = "TMP_IDS1DEBUG"
+
+    transactionKey = random.randrange(1000000)
+    new_cur = connection.cursor()
+
+    jeditaskid = newquery['jeditaskid']
+
+    ins_query = """
+    INSERT INTO {0} 
+    (ID,TRANSACTIONKEY,INS_TIME) 
+    select pandaid, {1}, TO_DATE('{2}', 'YYYY-MM-DD') from (
+        select unique pandaid from (
+            select j.pandaid, j.jeditaskid, j.eventservice, j.specialhandling, j.jobstatus, j.jobsetid, j.jobsubstatus, j.processingtype,
+                    h.oldpandaid, h.relationtype
+            from (
+                select ja4.pandaid, ja4.jeditaskid, ja4.eventservice, ja4.specialhandling, ja4.jobstatus, ja4.jobsetid, ja4.jobsubstatus, ja4.processingtype 
+                    from ATLAS_PANDA.JOBSARCHIVED4 ja4 where ja4.jeditaskid = {3}
+                union
+                select ja.pandaid, ja.jeditaskid, ja.eventservice, ja.specialhandling, ja.jobstatus, ja.jobsetid, ja.jobsubstatus, ja.processingtype 
+                    from ATLAS_PANDAARCH.JOBSARCHIVED ja where ja.jeditaskid = {4}
+            ) j
+            LEFT JOIN
+            ATLAS_PANDA.jedi_job_retry_history h
+            ON (h.jeditaskid = j.jeditaskid AND h.oldpandaid = j.pandaid) 
+                OR (h.oldpandaid=j.jobsetid and h.jeditaskid = j.jeditaskid)
+            )
+            where 
+              (oldpandaid is not null and
+                (( 
+                  (NOT (eventservice is not NULL and not specialhandling like '%sc:%')  
+                        AND (relationtype='' OR relationtype='retry' 
+                            or  (processingtype='pmerge' 
+                                and jobstatus in ('failed','cancelled') 
+                                and relationtype='merge')
+                            )
+                  )
+                  OR
+                  (
+                    (eventservice in (1,2,4,5) and specialhandling not like '%sc:%')  
+                    AND 
+                    (
+                        (jobstatus not IN ('finished', 'merging') AND relationtype='retry') 
+                        OR 
+                        (jobstatus='closed'  and (jobsubstatus in ('es_unused', 'es_inaction')))
+                    )
+                  )
+                )   
+                OR (oldpandaid=jobsetid and relationtype = 'jobset_retry')
+                )
+              ) 
+              OR  (jobstatus='closed' and (jobsubstatus in ('es_unused', 'es_inaction')))
+    )                   
+    """.format(tmpTableName, transactionKey, timezone.now().strftime("%Y-%m-%d"), jeditaskid, jeditaskid)
+
+    new_cur.execute(ins_query)
+    # form an extra query condition to exclude retried pandaids from selection
+    extra += " AND pandaid not in ( select id from {0} where TRANSACTIONKEY = {1})".format(tmpTableName, transactionKey)
+
+
+    return extra, transactionKey

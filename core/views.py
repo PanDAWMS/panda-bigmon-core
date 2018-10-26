@@ -110,8 +110,10 @@ from django.contrib.auth import logout as auth_logout
 from auth.utils import grant_rights, deny_rights
 
 from libs import dropalgorithm
+from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 #from libs import exlib
 from libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, preparePlotData
+from core.libs.exlib import insert_to_temp_table
 
 @register.filter(takes_context=True)
 def get_count(dict, key):
@@ -1280,7 +1282,6 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     print '%d jobs dropped' % (len(jobs) - len(newjobs))
     droplist = sorted(droplist, key=lambda x: -x['pandaid'])
     jobs = newjobs
-    
     return jobs, droplist, droppedPmerge
 
 
@@ -8561,19 +8562,14 @@ def taskInfoNew(request, jeditaskid=0):
     walltime = []
     jobsummaryESMerge = []
     jobsummaryPMERGE = []
-    eventsdict=[]
+    eventsdict = []
     objectStoreDict=[]
     eventsChains = []
     currentlyRunningDataSets = []
     warning = {}
 
-    newjobsummary =[]
-    newjobsummaryESMerge = []
-    newjobsummaryPMERGE = []
-    neweventsdict =[]
-
-    if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
-        request.session['requestParams']['jeditaskid'])
+    if 'jeditaskid' in request.session['requestParams']:
+        jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid == 0:
         return redirect('/tasks')
     if jeditaskid != 0:
@@ -8582,74 +8578,40 @@ def taskInfoNew(request, jeditaskid=0):
         tasks = JediTasks.objects.filter(**query).values()
         if len(tasks) > 0:
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
+
+        mode = 'drop'
+        if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+            'mode'] == 'drop': mode = 'drop'
+        if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+            'mode'] == 'nodrop': mode = 'nodrop'
+        extra = '(1=1)'
+        transactionKey = -1
+        if mode == 'drop':
+            start = time.time()
+            extra, transactionKey = insert_dropped_jobs_to_tmp_table(query, extra)
+            end = time.time()
+            print("Inserting dropped jobs: {} sec".format(end - start))
+            print('tk of dropped jobs: {}'.format(transactionKey))
+
+        plotsDict, jobsummary, jobScoutIDs, hs06sSum = jobSummary3(
+            request, query, extra=extra, isEventServiceFlag=eventservice, isMergeFlag=False)
+        plotsDictMerge, jobsummaryMerge, jobScoutIDsMerge, hs06sSumMerge = jobSummary3(
+            request, query, extra=extra, isEventServiceFlag=eventservice, isMergeFlag=True)
+
         if eventservice:
-            mode = 'drop'
-            if 'mode' in request.session['requestParams'] and request.session['requestParams'][
-                'mode'] == 'drop': mode = 'drop'
-            if 'mode' in request.session['requestParams'] and request.session['requestParams'][
-                'mode'] == 'nodrop': mode = 'nodrop'
-
-
-            plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary3(
-                request, query, exclude={},  mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
-            plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary3(
-                request, query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isOld')
-
-
-            for state in eventservicestatelist:
-                eventstatus = {}
-                eventstatus['statusname'] = state
-                eventstatus['count'] = eventssummary[state]
-                eventsdict.append(eventstatus)
-
-            if mode=='nodrop':
-                sqlRequest = """select j.computingsite, j.COMPUTINGELEMENT,e.objstore_id,e.status,count(*) as nevents
-                                      from atlas_panda.jedi_events e
-                                        join
-                                            (select computingsite, computingelement,pandaid from ATLAS_PANDA.JOBSARCHIVED4 where jeditaskid=%s
-                                            UNION
-                                            select computingsite, computingelement,pandaid from ATLAS_PANDAARCH.JOBSARCHIVED where jeditaskid=%s
-                                            ) j
-                                        on (e.pandaid=j.pandaid)
-                                   group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""" % (
-                jeditaskid, jeditaskid)
-                cur = connection.cursor()
-                cur.execute(sqlRequest)
-                ossummary = cur.fetchall()
-                cur.close()
-
-                ossummarynames = ['computingsite', 'computingelement', 'objectstoreid', 'statusindex', 'nevents']
-                objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
-                for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
-
-        else:
-            extra = '(1=1)'
-            ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
-            exclude = {'processingtype': 'pmerge'}
-            mode = 'drop'
-            if 'mode' in request.session['requestParams']:
-                mode = request.session['requestParams']['mode']
-            plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary3(
-                request, query, exclude=exclude, extra=extra, mode=mode)
-            plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary3(
-                request, query, exclude={}, extra=extra,  mode=mode, processingtype='pmerge')
-
-
-    elif 'taskname' in request.session['requestParams']:
-        querybyname = {'taskname': request.session['requestParams']['taskname']}
-        tasks = JediTasks.objects.filter(**querybyname).values()
-        if len(tasks) > 0:
-            jeditaskid = tasks[0]['jeditaskid']
-        query = {'jeditaskid': jeditaskid}
+            start = time.time()
+            eventsdict = eventSummary3(mode, query, transactionKey)
+            end = time.time()
+            print("Events states summary: {} sec".format(end - start))
 
     nonzeroPMERGE = 0
-    for status in jobsummaryPMERGE:
+    for status in jobsummaryMerge:
         if status['count'] > 0:
             nonzeroPMERGE += 1
             break
 
     if nonzeroPMERGE == 0:
-        jobsummaryPMERGE = None
+        jobsummaryMerge = None
 
     maxpssave = 0
     maxpsscount = 0
@@ -8915,8 +8877,8 @@ def taskInfoNew(request, jeditaskid=0):
             'nomodeurl': nomodeurl,
             'mode': mode,
             'showtaskprof': showtaskprof,
-            'jobsummaryESMerge': jobsummaryESMerge,
-            'jobsummaryPMERGE': jobsummaryPMERGE,
+            'jobsummaryESMerge': jobsummaryMerge,
+            'jobsummaryPMERGE': jobsummaryMerge,
             'plotsDict': json.dumps(plotsDict),
             'taskbrokerage': taskbrokerage,
             'jobscoutids' : jobScoutIDs,
@@ -8941,12 +8903,8 @@ def taskInfoNew(request, jeditaskid=0):
             'outctrs': outctrs,
             'vomode': VOMODE,
             'eventservice': eventservice,
-            'tk': transactionKey,
+            'tkd': transactionKey,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
-            'newjobsummary_test': newjobsummary,
-            'newjobsummaryPMERGE_test':newjobsummaryPMERGE,
-            'newjobsummaryESMerge_test': newjobsummaryESMerge,
-            'neweventssummary_test':neweventsdict,
             'warning': warning,
         }
         data.update(getContextVariables(request))
@@ -8967,6 +8925,52 @@ def taskInfoNew(request, jeditaskid=0):
             response = render_to_response('taskInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
+
+def getEventsDetails(request, mode='drop', jeditaskid=0):
+    """
+    A view for ES task Info page to get events details in different states
+    """
+    valid, response = initRequest(request)
+    if not valid: return response
+
+    tmpTableName = 'ATLAS_PANDABIGMON.TMP_IDS1DEBUG'
+
+    if 'jeditaskid' in  request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
+        jeditaskid = request.session['requestParams']['jeditaskid']
+        try:
+            jeditaskid = int(jeditaskid)
+        except:
+            return HttpResponse(status=404)
+
+    extrastr = ''
+    if mode == 'drop':
+        if 'tkd' in request.session['requestParams'] and request.session['requestParams']['tkd']:
+            transactionKey = request.session['requestParams']['tkd']
+            extrastr += " AND pandaid not in ( select id from {0} where TRANSACTIONKEY = {1})".format(tmpTableName,
+                                                                                               transactionKey)
+        else:
+            return HttpResponse(status=404)
+    sqlRequest = """
+        select j.computingsite, j.COMPUTINGELEMENT,e.objstore_id,e.status,count(e.status) as nevents
+          from atlas_panda.jedi_events e
+            join
+                (select computingsite, computingelement,pandaid from ATLAS_PANDA.JOBSARCHIVED4 where jeditaskid={} {}
+                UNION
+                select computingsite, computingelement,pandaid from ATLAS_PANDAARCH.JOBSARCHIVED where jeditaskid={} {}
+                ) j
+            on (e.pandaid=j.pandaid)
+        group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""".format(jeditaskid, extrastr, jeditaskid, extrastr)
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+    ossummary = cur.fetchall()
+    cur.close()
+
+    ossummarynames = ['computingsite', 'computingelement', 'objectstoreid', 'statusindex', 'nevents']
+    objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
+    for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
+
+    return HttpResponse(json.dumps(objectStoreDict, cls=DateEncoder), content_type='text/html')
 
 
 def taskInfoFC(request, jeditaskid=0):
@@ -9761,101 +9765,37 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
     return plotsDict, jobstates, essummary, transactionKey, jobScoutIDs, hs06sSum
 
 
-def jobSummary3(request, query, exclude={}, extra="(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None, algorithm = 'isOld'):
+def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False, isMergeFlag=False):
     """An attempt to rewrite it moving dropping to db request level"""
 
+    jobScoutTypes = ['cpuTime', 'walltime', 'ramCount', 'ioIntensity', 'outDiskCount']
     jobScoutIDs = {}
-    jobScoutIDs['cputimescoutjob'] = []
-    jobScoutIDs['walltimescoutjob'] = []
-    jobScoutIDs['ramcountscoutjob'] = []
-    jobScoutIDs['iointensityscoutjob'] = []
-    jobScoutIDs['outdiskcountscoutjob'] = []
+    for jst in jobScoutTypes:
+        jobScoutIDs[jst] = []
 
+    hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
+    cpuTimeCurrent = []
+
+    plotsNames = ['maxpss', 'maxpsspercore', 'nevents', 'walltime', 'walltimeperevent', 'hs06s', 'cputime',
+                  'cputimeperevent', 'maxpssf', 'maxpsspercoref', 'walltimef', 'hs06sf', 'cputimef', 'cputimepereventf']
     plotsDict = {}
-    jobstates = []
-    essummary = {}
-    hs06sSum = {}
 
     newquery = copy.deepcopy(query)
-    if mode == 'drop':
-        # insert retried pandaids to tmp table
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-        else:
-            tmpTableName = "TMP_IDS1DEBUG"
 
-        transactionKey = random.randrange(1000000)
-        new_cur = connection.cursor()
-
-        jeditaskid = newquery['jeditaskid']
-
-        ins_query = """
-        INSERT INTO {0} 
-        (ID,TRANSACTIONKEY,INS_TIME) 
-        select pandaid, {1}, TO_DATE('{2}', 'YYYY-MM-DD') from (
-            select unique pandaid from (
-                select j.pandaid, j.jeditaskid, j.eventservice, j.specialhandling, j.jobstatus, j.jobsetid, j.jobsubstatus, j.processingtype,
-                        h.oldpandaid, h.relationtype
-                from (
-                    select ja4.pandaid, ja4.jeditaskid, ja4.eventservice, ja4.specialhandling, ja4.jobstatus, ja4.jobsetid, ja4.jobsubstatus, ja4.processingtype 
-                        from ATLAS_PANDA.JOBSARCHIVED4 ja4 where ja4.jeditaskid = {3}
-                    union
-                    select ja.pandaid, ja.jeditaskid, ja.eventservice, ja.specialhandling, ja.jobstatus, ja.jobsetid, ja.jobsubstatus, ja.processingtype 
-                        from ATLAS_PANDAARCH.JOBSARCHIVED ja where ja.jeditaskid = {4}
-                ) j
-                LEFT JOIN
-                ATLAS_PANDA.jedi_job_retry_history h
-                ON (h.jeditaskid = j.jeditaskid AND h.oldpandaid = j.pandaid) 
-                    OR (h.oldpandaid=j.jobsetid and h.jeditaskid = j.jeditaskid)
-                )
-                where 
-                  (oldpandaid is not null and
-                    (( 
-                      (NOT (eventservice is not NULL and not specialhandling like '%sc:%')  
-                            AND (relationtype='' OR relationtype='retry' 
-                                or  (processingtype='pmerge' 
-                                    and jobstatus in ('failed','cancelled') 
-                                    and relationtype='merge')
-                                )
-                      )
-                      OR
-                      (
-                        (eventservice in (1,2,4,5) and specialhandling not like '%sc:%')  
-                        AND 
-                        (
-                            (jobstatus not IN ('finished', 'merging') AND relationtype='retry') 
-                            OR 
-                            (jobstatus='closed'  and (jobsubstatus in ('es_unused', 'es_inaction')))
-                        )
-                      )
-                    )   
-                    OR (oldpandaid=jobsetid and relationtype = 'jobset_retry')
-                    )
-                  ) 
-                  OR  (jobstatus='closed' and (jobsubstatus in ('es_unused', 'es_inaction')))
-        )                   
-        """.format(tmpTableName, transactionKey, timezone.now().strftime("%Y-%m-%d"), jeditaskid, jeditaskid)
-
-        new_cur.execute(ins_query)
-        # form an extra query condition to exclude retried pandaids from selection
-        extra += " AND pandaid not in ( select id from {0} where TRANSACTIONKEY = {1})".format(tmpTableName, transactionKey)
-
-
-
-
-    isESMerge = False
-    if substatusfilter != '':
-        if (substatusfilter == 'es_merge'):
+    exclude = {}
+    if isMergeFlag:
+        if isEventServiceFlag:
             newquery['eventservice'] = 2
-            isESMerge = True
         else:
+            newquery['processingtype'] = 'pmerge'
+    else:
+        if isEventServiceFlag:
             exclude['eventservice'] = 2
-    isReturnDroppedPMerge = False
-    if processingtype != '':
-        newquery['processingtype'] = 'pmerge'
-        isReturnDroppedPMerge = True
+        else:
+            exclude['processingtype'] = 'pmerge'
 
-    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid', 'attemptnr'
+
+    values = 'actualcorecount', 'eventservice', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime'
 
 
     # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
@@ -9870,150 +9810,141 @@ def jobSummary3(request, query, exclude={}, extra="(1=1)", mode='drop', isEventS
     end = time.time()
     print("Jobs selection: {} sec".format(end - start))
 
-    jobsSet = {}
+    ## drop duplicate jobs
+    job1 = {}
     newjobs = []
-
-    hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
-    cpuTimeCurrent = []
     for job in jobs:
-
-        if not job['pandaid'] in jobsSet:
-            jobsSet[job['pandaid']] = job['jobstatus']
+        pandaid = job['pandaid']
+        dropJob = 0
+        if pandaid in job1:
+            ## This is a duplicate. Drop it.
+            dropJob = 1
+        else:
+            job1[pandaid] = 1
+        if (dropJob == 0):
             newjobs.append(job)
-        elif jobsSet[job['pandaid']] == 'closed' and job['jobstatus'] == 'finished':
-            jobsSet[job['pandaid']] = job['jobstatus']
-            newjobs.append(job)
-        if 'scout=cpuTime' in job['jobmetrics'] or (
-                'scout=' in job['jobmetrics'] and 'cpuTime' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
-            jobScoutIDs['cputimescoutjob'].append(job['pandaid'])
-        if 'scout=ioIntensity' in job['jobmetrics'] or (
-                'scout=' in job['jobmetrics'] and 'ioIntensity' in job['jobmetrics'][
-                                                                   job['jobmetrics'].index('scout='):]):
-            jobScoutIDs['iointensityscoutjob'].append(job['pandaid'])
-        if 'scout=outDiskCount' in job['jobmetrics'] or (
-                'scout=' in job['jobmetrics'] and 'outDiskCount' in job['jobmetrics'][
-                                                                    job['jobmetrics'].index('scout='):]):
-            jobScoutIDs['outdiskcountscoutjob'].append(job['pandaid'])
-        if 'scout=ramCount' in job['jobmetrics'] or (
-                'scout=' in job['jobmetrics'] and 'ramCount' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
-            jobScoutIDs['ramcountscoutjob'].append(job['pandaid'])
-        if 'scout=walltime' in job['jobmetrics'] or (
-                'scout=' in job['jobmetrics'] and 'walltime' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
-            jobScoutIDs['walltimescoutjob'].append(job['pandaid'])
-        if 'actualcorecount' in job and job['actualcorecount'] is None:
-            job['actualcorecount'] = 1
-        if job['jobstatus'] in ['finished', 'failed'] and 'endtime' in job and 'starttime' in job and job[
-            'starttime'] and job['endtime']:
-            duration = max(job['endtime'] - job['starttime'], timedelta(seconds=0))
-            job['duration'] = duration.days * 24 * 3600 + duration.seconds
-            if job['hs06sec'] is None:
-                if job['computingsite'] in pandaSites:
-                    job['hs06sec'] = (job['duration']) * float(pandaSites[job['computingsite']]['corepower']) * job[
-                        'actualcorecount']
-                else:
-                    job['hs06sec'] = 0
-            if job['nevents'] and job['nevents'] > 0:
-                cpuTimeCurrent.append(job['hs06sec'] / job['nevents'])
-                job['walltimeperevent'] = round(job['duration'] * job['actualcorecount'] / (job['nevents'] * 1.0), 2)
-            hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
-            hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
-            hs06sSum['total'] += job['hs06sec']
-
     jobs = newjobs
 
-    plotsNames = ['maxpss', 'maxpsspercore', 'nevents', 'walltime', 'walltimeperevent', 'hs06s', 'cputime',
-                  'cputimeperevent', 'maxpssf', 'maxpsspercoref', 'walltimef', 'hs06sf', 'cputimef', 'cputimepereventf']
-    plotsDict = {}
 
-    for pname in plotsNames:
-        plotsDict[pname] = {'sites': {}, 'ranges': {}}
+    if not isMergeFlag:
+        # no plots, hs06 and scouts searching for merge jobs needed
 
-    for job in jobs:
-        if job['actualcorecount'] is None:
-            job['actualcorecount'] = 1
-        if job['maxpss'] is not None and job['maxpss'] != -1:
-            if job['jobstatus'] == 'finished':
-                if job['computingsite'] not in plotsDict['maxpsspercore']['sites']:
-                    plotsDict['maxpsspercore']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['nevents']['sites']:
-                    plotsDict['nevents']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['maxpss']['sites']:
-                    plotsDict['maxpss']['sites'][job['computingsite']] = []
+        for job in jobs:
+            for jst in jobScoutTypes:
+                if 'scout='+jst in job['jobmetrics'] or ('scout=' in job['jobmetrics'] and jst in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
+                    jobScoutIDs[jst].append(job['pandaid'])
 
-                if job['actualcorecount'] and job['actualcorecount'] > 0:
-                    plotsDict['maxpsspercore']['sites'][job['computingsite']].append(
-                        job['maxpss'] / 1024 / job['actualcorecount'])
-                plotsDict['maxpss']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
-                plotsDict['nevents']['sites'][job['computingsite']].append(job['nevents'])
-            elif job['jobstatus'] == 'failed':
-                if job['computingsite'] not in plotsDict['maxpsspercoref']['sites']:
-                    plotsDict['maxpsspercoref']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['maxpssf']['sites']:
-                    plotsDict['maxpssf']['sites'][job['computingsite']] = []
-                if job['actualcorecount'] and job['actualcorecount'] > 0:
-                    plotsDict['maxpsspercoref']['sites'][job['computingsite']].append(
-                        job['maxpss'] / 1024 / job['actualcorecount'])
-                plotsDict['maxpssf']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
-        if 'duration' in job and job['duration']:
-            if job['jobstatus'] == 'finished':
-                if job['computingsite'] not in plotsDict['walltime']['sites']:
-                    plotsDict['walltime']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['hs06s']['sites']:
-                    plotsDict['hs06s']['sites'][job['computingsite']] = []
-                plotsDict['walltime']['sites'][job['computingsite']].append(job['duration'])
-                plotsDict['hs06s']['sites'][job['computingsite']].append(job['hs06sec'])
-                if 'walltimeperevent' in job:
-                    if job['computingsite'] not in plotsDict['walltimeperevent']['sites']:
-                        plotsDict['walltimeperevent']['sites'][job['computingsite']] = []
-                    plotsDict['walltimeperevent']['sites'][job['computingsite']].append(job['walltimeperevent'])
-            if job['jobstatus'] == 'failed':
-                if job['computingsite'] not in plotsDict['walltimef']['sites']:
-                    plotsDict['walltimef']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['hs06sf']['sites']:
-                    plotsDict['hs06sf']['sites'][job['computingsite']] = []
-                plotsDict['walltimef']['sites'][job['computingsite']].append(job['duration'])
-                plotsDict['hs06sf']['sites'][job['computingsite']].append(job['hs06sec'])
-        if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
-            if job['jobstatus'] == 'finished':
-                if job['computingsite'] not in plotsDict['cputime']['sites']:
-                    plotsDict['cputime']['sites'][job['computingsite']] = []
-                plotsDict['cputime']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
-                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
-                    if job['computingsite'] not in plotsDict['cputimeperevent']['sites']:
-                        plotsDict['cputimeperevent']['sites'][job['computingsite']] = []
-                    plotsDict['cputimeperevent']['sites'][job['computingsite']].append(
-                        round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
-            if job['jobstatus'] == 'failed':
-                if job['computingsite'] not in plotsDict['cputimef']['sites']:
-                    plotsDict['cputimef']['sites'][job['computingsite']] = []
-                plotsDict['cputimef']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
-                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
-                    if job['computingsite'] not in plotsDict['cputimepereventf']['sites']:
-                        plotsDict['cputimepereventf']['sites'][job['computingsite']] = []
-                    plotsDict['cputimepereventf']['sites'][job['computingsite']].append(
-                        round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
+            if 'actualcorecount' in job and job['actualcorecount'] is None:
+                job['actualcorecount'] = 1
+            if job['jobstatus'] in ['finished', 'failed'] and 'endtime' in job and 'starttime' in job and job[
+                'starttime'] and job['endtime']:
+                duration = max(job['endtime'] - job['starttime'], timedelta(seconds=0))
+                job['duration'] = duration.days * 24 * 3600 + duration.seconds
+                if job['hs06sec'] is None:
+                    if job['computingsite'] in pandaSites:
+                        job['hs06sec'] = (job['duration']) * float(pandaSites[job['computingsite']]['corepower']) * job[
+                            'actualcorecount']
+                    else:
+                        job['hs06sec'] = 0
+                if job['nevents'] and job['nevents'] > 0:
+                    cpuTimeCurrent.append(job['hs06sec'] / job['nevents'])
+                    job['walltimeperevent'] = round(job['duration'] * job['actualcorecount'] / (job['nevents'] * 1.0), 2)
+                hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
+                hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
+                hs06sSum['total'] += job['hs06sec']
 
-    nbinsmax = 100
-    for pname in plotsNames:
-        rawdata = []
-        for k, d in plotsDict[pname]['sites'].iteritems():
-            rawdata.extend(d)
-        if len(rawdata) > 0:
-            plotsDict[pname]['stats'] = []
-            plotsDict[pname]['stats'].append(np.average(rawdata))
-            plotsDict[pname]['stats'].append(np.std(rawdata))
-            bins, ranges = np.histogram(rawdata, bins='auto')
-            if len(ranges) > nbinsmax + 1:
-                bins, ranges = np.histogram(rawdata, bins=nbinsmax)
-            plotsDict[pname]['ranges'] = list(np.ceil(ranges))
-            for site in plotsDict[pname]['sites'].keys():
-                sitedata = [x for x in plotsDict[pname]['sites'][site]]
-                plotsDict[pname]['sites'][site] = list(np.histogram(sitedata, ranges)[0])
-        else:
-            try:
-                del (plotsDict[pname])
-            except:
-                pass
+
+
+        for pname in plotsNames:
+            plotsDict[pname] = {'sites': {}, 'ranges': {}}
+
+        for job in jobs:
+            if job['actualcorecount'] is None:
+                job['actualcorecount'] = 1
+            if job['maxpss'] is not None and job['maxpss'] != -1:
+                if job['jobstatus'] == 'finished':
+                    if job['computingsite'] not in plotsDict['maxpsspercore']['sites']:
+                        plotsDict['maxpsspercore']['sites'][job['computingsite']] = []
+                    if job['computingsite'] not in plotsDict['nevents']['sites']:
+                        plotsDict['nevents']['sites'][job['computingsite']] = []
+                    if job['computingsite'] not in plotsDict['maxpss']['sites']:
+                        plotsDict['maxpss']['sites'][job['computingsite']] = []
+
+                    if job['actualcorecount'] and job['actualcorecount'] > 0:
+                        plotsDict['maxpsspercore']['sites'][job['computingsite']].append(
+                            job['maxpss'] / 1024 / job['actualcorecount'])
+                    plotsDict['maxpss']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
+                    plotsDict['nevents']['sites'][job['computingsite']].append(job['nevents'])
+                elif job['jobstatus'] == 'failed':
+                    if job['computingsite'] not in plotsDict['maxpsspercoref']['sites']:
+                        plotsDict['maxpsspercoref']['sites'][job['computingsite']] = []
+                    if job['computingsite'] not in plotsDict['maxpssf']['sites']:
+                        plotsDict['maxpssf']['sites'][job['computingsite']] = []
+                    if job['actualcorecount'] and job['actualcorecount'] > 0:
+                        plotsDict['maxpsspercoref']['sites'][job['computingsite']].append(
+                            job['maxpss'] / 1024 / job['actualcorecount'])
+                    plotsDict['maxpssf']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
+            if 'duration' in job and job['duration']:
+                if job['jobstatus'] == 'finished':
+                    if job['computingsite'] not in plotsDict['walltime']['sites']:
+                        plotsDict['walltime']['sites'][job['computingsite']] = []
+                    if job['computingsite'] not in plotsDict['hs06s']['sites']:
+                        plotsDict['hs06s']['sites'][job['computingsite']] = []
+                    plotsDict['walltime']['sites'][job['computingsite']].append(job['duration'])
+                    plotsDict['hs06s']['sites'][job['computingsite']].append(job['hs06sec'])
+                    if 'walltimeperevent' in job:
+                        if job['computingsite'] not in plotsDict['walltimeperevent']['sites']:
+                            plotsDict['walltimeperevent']['sites'][job['computingsite']] = []
+                        plotsDict['walltimeperevent']['sites'][job['computingsite']].append(job['walltimeperevent'])
+                if job['jobstatus'] == 'failed':
+                    if job['computingsite'] not in plotsDict['walltimef']['sites']:
+                        plotsDict['walltimef']['sites'][job['computingsite']] = []
+                    if job['computingsite'] not in plotsDict['hs06sf']['sites']:
+                        plotsDict['hs06sf']['sites'][job['computingsite']] = []
+                    plotsDict['walltimef']['sites'][job['computingsite']].append(job['duration'])
+                    plotsDict['hs06sf']['sites'][job['computingsite']].append(job['hs06sec'])
+            if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
+                if job['jobstatus'] == 'finished':
+                    if job['computingsite'] not in plotsDict['cputime']['sites']:
+                        plotsDict['cputime']['sites'][job['computingsite']] = []
+                    plotsDict['cputime']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
+                    if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
+                        if job['computingsite'] not in plotsDict['cputimeperevent']['sites']:
+                            plotsDict['cputimeperevent']['sites'][job['computingsite']] = []
+                        plotsDict['cputimeperevent']['sites'][job['computingsite']].append(
+                            round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
+                if job['jobstatus'] == 'failed':
+                    if job['computingsite'] not in plotsDict['cputimef']['sites']:
+                        plotsDict['cputimef']['sites'][job['computingsite']] = []
+                    plotsDict['cputimef']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
+                    if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
+                        if job['computingsite'] not in plotsDict['cputimepereventf']['sites']:
+                            plotsDict['cputimepereventf']['sites'][job['computingsite']] = []
+                        plotsDict['cputimepereventf']['sites'][job['computingsite']].append(
+                            round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
+
+        # creation of bins for histograms
+        nbinsmax = 100
+        for pname in plotsNames:
+            rawdata = []
+            for k, d in plotsDict[pname]['sites'].iteritems():
+                rawdata.extend(d)
+            if len(rawdata) > 0:
+                plotsDict[pname]['stats'] = []
+                plotsDict[pname]['stats'].append(np.average(rawdata))
+                plotsDict[pname]['stats'].append(np.std(rawdata))
+                bins, ranges = np.histogram(rawdata, bins='auto')
+                if len(ranges) > nbinsmax + 1:
+                    bins, ranges = np.histogram(rawdata, bins=nbinsmax)
+                plotsDict[pname]['ranges'] = list(np.ceil(ranges))
+                for site in plotsDict[pname]['sites'].keys():
+                    sitedata = [x for x in plotsDict[pname]['sites'][site]]
+                    plotsDict[pname]['sites'][site] = list(np.histogram(sitedata, ranges)[0])
+            else:
+                try:
+                    del (plotsDict[pname])
+                except:
+                    pass
 
     start = time.time()
 
@@ -10032,59 +9963,74 @@ def jobSummary3(request, query, exclude={}, extra="(1=1)", mode='drop', isEventS
     end = time.time()
     print("Jobs states aggregation: {} sec".format(end - start))
 
-    start = time.time()
+    return plotsDict, jobstates, jobScoutIDs, hs06sSum
 
+
+def eventSummary3(mode, query, transactionKeyDroppedJobs):
+    """
+
+    :param transactionKeyDroppedJobs:
+    :return: number of events in different states
+    """
+    eventslist = []
     essummary = dict((key, 0) for key in eventservicestatelist)
-    transactionKey = -1
-    if isEventServiceFlag and not isESMerge:
-        print 'getting events states summary'
-        if mode == 'drop' and len(jobs) < 400000:
-            esjobs = []
-            for job in jobs:
-                esjobs.append(job['pandaid'])
 
-            random.seed()
+    print 'getting events states summary'
+    if mode == 'drop':
+        jeditaskid = query['jeditaskid']
+        equerystr = """
+        SELECT 
+        /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  
+            SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS EVCOUNT, 
+            ev.STATUS 
+        FROM ATLAS_PANDA.JEDI_EVENTS ev, 
+            (select ja4.pandaid from ATLAS_PANDA.JOBSARCHIVED4 ja4 
+                    where ja4.jeditaskid = {} and ja4.eventservice is not NULL and ja4.eventservice != 2 
+                        and ja4.pandaid not in (select id from ATLAS_PANDABIGMON.TMP_IDS1DEBUG where TRANSACTIONKEY={})
+            union 
+            select ja.pandaid from ATLAS_PANDAARCH.JOBSARCHIVED ja 
+                where ja.jeditaskid = {} and ja.eventservice is not NULL and ja.eventservice != 2 
+                    and ja.pandaid not in (select id from ATLAS_PANDABIGMON.TMP_IDS1DEBUG where TRANSACTIONKEY={})
+            union
+            select jav4.pandaid from ATLAS_PANDA.jobsactive4 jav4 
+                where jav4.jeditaskid = {} and jav4.eventservice is not NULL and jav4.eventservice != 2 
+                    and jav4.pandaid not in (select id from ATLAS_PANDABIGMON.TMP_IDS1DEBUG where TRANSACTIONKEY={})
+            union
+            select jw4.pandaid from ATLAS_PANDA.jobswaiting4 jw4 
+                where jw4.jeditaskid = {} and jw4.eventservice is not NULL and jw4.eventservice != 2 
+                    and jw4.pandaid not in (select id from ATLAS_PANDABIGMON.TMP_IDS1DEBUG where TRANSACTIONKEY={})
+            union
+            select jd4.pandaid from ATLAS_PANDA.jobsdefined4 jd4 
+                where jd4.jeditaskid = {} and jd4.eventservice is not NULL and jd4.eventservice != 2 
+                    and jd4.pandaid not in (select id from ATLAS_PANDABIGMON.TMP_IDS1DEBUG where TRANSACTIONKEY={})
+            )  j
+        WHERE ev.PANDAID = j.pandaid 
+        GROUP BY ev.STATUS
+        """.format(jeditaskid, transactionKeyDroppedJobs, jeditaskid, transactionKeyDroppedJobs,
+                   jeditaskid, transactionKeyDroppedJobs, jeditaskid, transactionKeyDroppedJobs,
+                   jeditaskid, transactionKeyDroppedJobs)
+        new_cur = connection.cursor()
+        new_cur.execute(equerystr)
 
-            if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-                tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-            else:
-                tmpTableName = "TMP_IDS1DEBUG"
+        evtable = dictfetchall(new_cur)
 
-            transactionKey = random.randrange(1000000)
-            #            connection.enter_transaction_management()
-            new_cur = connection.cursor()
-            executionData = []
-            for id in esjobs:
-                executionData.append((id, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
-            query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
-            new_cur.executemany(query, executionData)
-            #            connection.commit()
+        for ev in evtable:
+            essummary[eventservicestatelist[ev['STATUS']]] += ev['EVCOUNT']
+    if mode == 'nodrop':
+        eventslist = []
+        equery = {'jeditaskid': query['jeditaskid']}
+        eventslist.extend(
+            JediEvents.objects.filter(**equery).values('status').annotate(count=Count('status')).order_by('status'))
+        for state in eventslist:
+            essummary[eventservicestatelist[state['status']]] = state['count']
 
-            new_cur.execute(
-                """
-                SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS EVCOUNT, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID GROUP BY STATUS
-                """ % (tmpTableName, transactionKey)
-            )
+    for state in eventservicestatelist:
+        eventstatus = {}
+        eventstatus['statusname'] = state
+        eventstatus['count'] = essummary[state]
+        eventslist.append(eventstatus)
 
-            evtable = dictfetchall(new_cur)
-            # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-            #            connection.commit()
-            #            connection.leave_transaction_management()
-            for ev in evtable:
-                essummary[eventservicestatelist[ev['STATUS']]] += ev['EVCOUNT']
-        eventsdict = []
-        if mode == 'nodrop':
-            equery = {'jeditaskid': newquery['jeditaskid']}
-            eventsdict.extend(
-                JediEvents.objects.filter(**equery).values('status').annotate(count=Count('status')).order_by('status'))
-            for state in eventsdict:
-                essummary[eventservicestatelist[state['status']]] = state['count']
-
-    end = time.time()
-    print("Events states summary: {} sec".format(end - start))
-
-    return plotsDict, jobstates, essummary, transactionKey, jobScoutIDs, hs06sSum
-
+    return eventslist
 
 
 def jobStateSummary(jobs):
