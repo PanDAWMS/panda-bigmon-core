@@ -2,7 +2,6 @@
 
 {# File-centric taskInfo page of ES tasks #}
 
-
 {% load staticfiles %}
 {% block page_title %} {{ jeditaskid }} ES task {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
@@ -234,7 +233,7 @@
             <button class="dropdownbutton">Go to</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
 
-                <a style="cursor: pointer;" onclick="javascript:buildInputFilesTable();">Show input files table </a>
+                <a style="cursor: pointer;" onclick="javascript:buildInputFilesTable();">Show event chunks table </a>
 
                 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('badevents');">Show exhausted
                     events</a>
@@ -338,7 +337,7 @@
         <table>
             <tr bgcolor="lightcyan">
                 <th colspan=20>
-                    <b>States of input files in this task</b>
+                    <b>States of event chunks in this task</b>
                 </th>
             </tr>
             <tr>
