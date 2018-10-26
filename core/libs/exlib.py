@@ -1,6 +1,7 @@
 from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch
-from core.views import isEventService
-import math
+import math, random, datetime
+from django.db import connection
+from core.settings.local import dbaccess
 
 
 def fileList(jobs):
@@ -87,3 +88,27 @@ def fileList(jobs):
 
     newjobs = jobs
     return newjobs
+
+
+def insert_to_temp_table(list_of_items):
+    """Inserting to temp table
+    :param list_of_items
+    :return transactionKey and timestamp of instering
+    """
+
+    # if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+    #     tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+    # else:
+    #     tmpTableName = "TMP_IDS1"
+
+    random.seed()
+    transactionKey = random.randrange(1000000)
+
+    new_cur = connection.cursor()
+    executionData = []
+    for item in list_of_items:
+        executionData.append((item['pandaid'], transactionKey))
+    query = """INSERT INTO ATLAS_PANDABIGMON.TMP_IDS1Debug(ID,TRANSACTIONKEY) VALUES (%s,%s)"""
+    new_cur.executemany(query, executionData)
+
+    return transactionKey
