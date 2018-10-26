@@ -1040,6 +1040,35 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     elif jobtype.find('test') >= 0:
         query['prodsourcelabel__icontains'] = jobtype
 
+    if 'fileid' in request.session['requestParams']:
+        try:
+            fileid = int(request.session['requestParams']['fileid'])
+        except:
+            pass
+
+        try:
+            datasetid = int(request.session['requestParams']['datasetid'])
+        except:
+            pass
+
+        try:
+            jeditaskid = int(request.session['requestParams']['jeditaskid'])
+        except:
+            pass
+
+        try:
+            extraQueryString += ' AND '
+        except NameError:
+            extraQueryString = ''
+
+        if jeditaskid and datasetid and fileid:
+            extraQueryString += """pandaid in ((select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid = {} and fileid = {} )) """.format(jeditaskid, datasetid, fileid)
+
+    # union(select
+    # pandaid
+    # from atlas_pandaarch.filestable_arch where
+    # fileid = {} )
+
     if 'region' in request.session['requestParams']:
         region = request.session['requestParams']['region']
         siteListForRegion = []
@@ -4101,6 +4130,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     filesSorted.extend(sorted([file for file in files if file['type'] == 'log'], key=lambda x: x['lfn']))
     files = filesSorted
 
+    inputfiles = [{'jeditaskid':file['jeditaskid'], 'datasetid':file['datasetid'], 'fileid':file['fileid']} for file in files if file['type'] == 'input']
+
     ## Check for object store based log
     oslogpath = None
     if 'computingsite' in job and job['computingsite'] in objectStores:
@@ -4366,7 +4397,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'harvesterInfo':harvesterInfo,
             'isincomparisonlist': isincomparisonlist,
             'clist': clist,
-            'timedelta': delta
+            'timedelta': delta,
+            'inputfiles': inputfiles
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
