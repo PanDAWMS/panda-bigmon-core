@@ -210,7 +210,7 @@ def insert_dropped_jobs_to_tmp_table(query, extra):
     select pandaid, {1}, TO_DATE('{2}', 'YYYY-MM-DD') from (
         select unique pandaid from (
             select j.pandaid, j.jeditaskid, j.eventservice, j.specialhandling, j.jobstatus, j.jobsetid, j.jobsubstatus, j.processingtype,
-                    h.oldpandaid, h.relationtype
+                    h.oldpandaid, h.relationtype, h.newpandaid
             from (
                 select ja4.pandaid, ja4.jeditaskid, ja4.eventservice, ja4.specialhandling, ja4.jobstatus, ja4.jobsetid, ja4.jobsubstatus, ja4.processingtype 
                     from ATLAS_PANDA.JOBSARCHIVED4 ja4 where ja4.jeditaskid = {3}
@@ -224,9 +224,12 @@ def insert_dropped_jobs_to_tmp_table(query, extra):
                 OR (h.oldpandaid=j.jobsetid and h.jeditaskid = j.jeditaskid)
             )
             where 
-              (oldpandaid is not null and
+              (oldpandaid is not null 
+               AND oldpandaid != newpandaid 
+               AND relationtype in ('', 'retry', 'pmerge', 'merge', 'jobset_retry', 'es_merge', 'originpandaid')
+               AND
                 (( 
-                  (NOT (eventservice is not NULL and not specialhandling like '%sc:%')  
+                  (oldpandaid = pandaid and NOT (eventservice is not NULL and not specialhandling like '%sc:%')  
                         AND (relationtype='' OR relationtype='retry' 
                             or  (processingtype='pmerge' 
                                 and jobstatus in ('failed','cancelled') 
@@ -235,7 +238,7 @@ def insert_dropped_jobs_to_tmp_table(query, extra):
                   )
                   OR
                   (
-                    (eventservice in (1,2,4,5) and specialhandling not like '%sc:%')  
+                    (oldpandaid = pandaid and eventservice in (1,2,4,5) and specialhandling not like '%sc:%')  
                     AND 
                     (
                         (jobstatus not IN ('finished', 'merging') AND relationtype='retry') 
@@ -254,6 +257,5 @@ def insert_dropped_jobs_to_tmp_table(query, extra):
     new_cur.execute(ins_query)
     # form an extra query condition to exclude retried pandaids from selection
     extra += " AND pandaid not in ( select id from {0} where TRANSACTIONKEY = {1})".format(tmpTableName, transactionKey)
-
 
     return extra, transactionKey

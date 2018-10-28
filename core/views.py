@@ -1273,8 +1273,8 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
                     dropJob = 1
         else:
 
-            if (job['pandaid'] in hashRetries and job['jobstatus'] not in ('finished', 'merging')):
-                if (hashRetries[job['pandaid']]['relationtype'] == ('retry')):
+            if job['pandaid'] in hashRetries and job['jobstatus'] not in ('finished', 'merging'):
+                if hashRetries[job['pandaid']]['relationtype'] == 'retry':
                     dropJob = 1
 
             # if (hashRetries[job['pandaid']]['relationtype'] == 'es_merge' and (
@@ -9574,6 +9574,21 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
     jobs.extend(Jobsarchived4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
     end = time.time()
     print(end - start)
+
+    ## drop duplicate jobs
+    job1 = {}
+    newjobs = []
+    for job in jobs:
+        pandaid = job['pandaid']
+        dropJob = 0
+        if pandaid in job1:
+            ## This is a duplicate. Drop it.
+            dropJob = 1
+        else:
+            job1[pandaid] = 1
+        if (dropJob == 0):
+            newjobs.append(job)
+    jobs = newjobs
 
 
     jobsSet = {}
