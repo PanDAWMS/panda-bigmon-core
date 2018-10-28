@@ -8625,10 +8625,8 @@ def taskInfoNew(request, jeditaskid=0):
             print("Inserting dropped jobs: {} sec".format(end - start))
             print('tk of dropped jobs: {}'.format(transactionKey))
 
-        plotsDict, jobsummary, jobScoutIDs, hs06sSum = jobSummary3(
-            request, query, extra=extra, isEventServiceFlag=eventservice, isMergeFlag=False)
-        plotsDictMerge, jobsummaryMerge, jobScoutIDsMerge, hs06sSumMerge = jobSummary3(
-            request, query, extra=extra, isEventServiceFlag=eventservice, isMergeFlag=True)
+        plotsDict, jobsummary, jobsummaryMerge, jobScoutIDs, hs06sSum = jobSummary3(
+            request, query, extra=extra, isEventServiceFlag=eventservice)
 
         if eventservice:
             start = time.time()
@@ -9812,7 +9810,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
     return plotsDict, jobstates, essummary, transactionKey, jobScoutIDs, hs06sSum
 
 
-def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False, isMergeFlag=False):
+def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False):
     """An attempt to rewrite it moving dropping to db request level"""
 
     jobScoutTypes = ['cpuTime', 'walltime', 'ramCount', 'ioIntensity', 'outDiskCount']
@@ -9829,42 +9827,29 @@ def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False, isMerge
 
     newquery = copy.deepcopy(query)
 
-    exclude = {}
-    if isMergeFlag:
-        if isEventServiceFlag:
-            newquery['eventservice'] = 2
-        else:
-            newquery['processingtype'] = 'pmerge'
-    else:
-        if isEventServiceFlag:
-            exclude['eventservice'] = 2
-        else:
-            exclude['processingtype'] = 'pmerge'
-
-
     values = 'actualcorecount', 'eventservice', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime'
 
 
     # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
     jobs = []
     start = time.time()
-    jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
+    jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).values(*values))
 
-    jobs.extend(Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
-    jobs.extend(Jobswaiting4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
-    jobs.extend(Jobsactive4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
-    jobs.extend(Jobsarchived4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
+    jobs.extend(Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).values(*values))
+    jobs.extend(Jobswaiting4.objects.filter(**newquery).extra(where=[extra]).values(*values))
+    jobs.extend(Jobsactive4.objects.filter(**newquery).extra(where=[extra]).values(*values))
+    jobs.extend(Jobsarchived4.objects.filter(**newquery).extra(where=[extra]).values(*values))
     end = time.time()
     print("Jobs selection: {} sec".format(end - start))
 
-    ## drop duplicate jobs
+    # drop duplicate jobs
     job1 = {}
     newjobs = []
     for job in jobs:
         pandaid = job['pandaid']
         dropJob = 0
         if pandaid in job1:
-            ## This is a duplicate. Drop it.
+            # This is a duplicate. Drop it.
             dropJob = 1
         else:
             job1[pandaid] = 1
@@ -9872,145 +9857,175 @@ def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False, isMerge
             newjobs.append(job)
     jobs = newjobs
 
+    # divide jobs into ordinary and merge (pmerge for non ES tasks and es_merge for ES tasks)
+    ojobs = []
+    mjobs = []
 
-    if not isMergeFlag:
-        # no plots, hs06 and scouts searching for merge jobs needed
-
+    if not isEventServiceFlag:
         for job in jobs:
-            for jst in jobScoutTypes:
-                if 'scout='+jst in job['jobmetrics'] or ('scout=' in job['jobmetrics'] and jst in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
-                    jobScoutIDs[jst].append(job['pandaid'])
-
-            if 'actualcorecount' in job and job['actualcorecount'] is None:
-                job['actualcorecount'] = 1
-            if job['jobstatus'] in ['finished', 'failed'] and 'endtime' in job and 'starttime' in job and job[
-                'starttime'] and job['endtime']:
-                duration = max(job['endtime'] - job['starttime'], timedelta(seconds=0))
-                job['duration'] = duration.days * 24 * 3600 + duration.seconds
-                if job['hs06sec'] is None:
-                    if job['computingsite'] in pandaSites:
-                        job['hs06sec'] = (job['duration']) * float(pandaSites[job['computingsite']]['corepower']) * job[
-                            'actualcorecount']
-                    else:
-                        job['hs06sec'] = 0
-                if job['nevents'] and job['nevents'] > 0:
-                    cpuTimeCurrent.append(job['hs06sec'] / job['nevents'])
-                    job['walltimeperevent'] = round(job['duration'] * job['actualcorecount'] / (job['nevents'] * 1.0), 2)
-                hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
-                hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
-                hs06sSum['total'] += job['hs06sec']
-
-
-
-        for pname in plotsNames:
-            plotsDict[pname] = {'sites': {}, 'ranges': {}}
-
-        for job in jobs:
-            if job['actualcorecount'] is None:
-                job['actualcorecount'] = 1
-            if job['maxpss'] is not None and job['maxpss'] != -1:
-                if job['jobstatus'] == 'finished':
-                    if job['computingsite'] not in plotsDict['maxpsspercore']['sites']:
-                        plotsDict['maxpsspercore']['sites'][job['computingsite']] = []
-                    if job['computingsite'] not in plotsDict['nevents']['sites']:
-                        plotsDict['nevents']['sites'][job['computingsite']] = []
-                    if job['computingsite'] not in plotsDict['maxpss']['sites']:
-                        plotsDict['maxpss']['sites'][job['computingsite']] = []
-
-                    if job['actualcorecount'] and job['actualcorecount'] > 0:
-                        plotsDict['maxpsspercore']['sites'][job['computingsite']].append(
-                            job['maxpss'] / 1024 / job['actualcorecount'])
-                    plotsDict['maxpss']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
-                    plotsDict['nevents']['sites'][job['computingsite']].append(job['nevents'])
-                elif job['jobstatus'] == 'failed':
-                    if job['computingsite'] not in plotsDict['maxpsspercoref']['sites']:
-                        plotsDict['maxpsspercoref']['sites'][job['computingsite']] = []
-                    if job['computingsite'] not in plotsDict['maxpssf']['sites']:
-                        plotsDict['maxpssf']['sites'][job['computingsite']] = []
-                    if job['actualcorecount'] and job['actualcorecount'] > 0:
-                        plotsDict['maxpsspercoref']['sites'][job['computingsite']].append(
-                            job['maxpss'] / 1024 / job['actualcorecount'])
-                    plotsDict['maxpssf']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
-            if 'duration' in job and job['duration']:
-                if job['jobstatus'] == 'finished':
-                    if job['computingsite'] not in plotsDict['walltime']['sites']:
-                        plotsDict['walltime']['sites'][job['computingsite']] = []
-                    if job['computingsite'] not in plotsDict['hs06s']['sites']:
-                        plotsDict['hs06s']['sites'][job['computingsite']] = []
-                    plotsDict['walltime']['sites'][job['computingsite']].append(job['duration'])
-                    plotsDict['hs06s']['sites'][job['computingsite']].append(job['hs06sec'])
-                    if 'walltimeperevent' in job:
-                        if job['computingsite'] not in plotsDict['walltimeperevent']['sites']:
-                            plotsDict['walltimeperevent']['sites'][job['computingsite']] = []
-                        plotsDict['walltimeperevent']['sites'][job['computingsite']].append(job['walltimeperevent'])
-                if job['jobstatus'] == 'failed':
-                    if job['computingsite'] not in plotsDict['walltimef']['sites']:
-                        plotsDict['walltimef']['sites'][job['computingsite']] = []
-                    if job['computingsite'] not in plotsDict['hs06sf']['sites']:
-                        plotsDict['hs06sf']['sites'][job['computingsite']] = []
-                    plotsDict['walltimef']['sites'][job['computingsite']].append(job['duration'])
-                    plotsDict['hs06sf']['sites'][job['computingsite']].append(job['hs06sec'])
-            if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
-                if job['jobstatus'] == 'finished':
-                    if job['computingsite'] not in plotsDict['cputime']['sites']:
-                        plotsDict['cputime']['sites'][job['computingsite']] = []
-                    plotsDict['cputime']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
-                    if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
-                        if job['computingsite'] not in plotsDict['cputimeperevent']['sites']:
-                            plotsDict['cputimeperevent']['sites'][job['computingsite']] = []
-                        plotsDict['cputimeperevent']['sites'][job['computingsite']].append(
-                            round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
-                if job['jobstatus'] == 'failed':
-                    if job['computingsite'] not in plotsDict['cputimef']['sites']:
-                        plotsDict['cputimef']['sites'][job['computingsite']] = []
-                    plotsDict['cputimef']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
-                    if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
-                        if job['computingsite'] not in plotsDict['cputimepereventf']['sites']:
-                            plotsDict['cputimepereventf']['sites'][job['computingsite']] = []
-                        plotsDict['cputimepereventf']['sites'][job['computingsite']].append(
-                            round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
-
-        # creation of bins for histograms
-        nbinsmax = 100
-        for pname in plotsNames:
-            rawdata = []
-            for k, d in plotsDict[pname]['sites'].iteritems():
-                rawdata.extend(d)
-            if len(rawdata) > 0:
-                plotsDict[pname]['stats'] = []
-                plotsDict[pname]['stats'].append(np.average(rawdata))
-                plotsDict[pname]['stats'].append(np.std(rawdata))
-                bins, ranges = np.histogram(rawdata, bins='auto')
-                if len(ranges) > nbinsmax + 1:
-                    bins, ranges = np.histogram(rawdata, bins=nbinsmax)
-                plotsDict[pname]['ranges'] = list(np.ceil(ranges))
-                for site in plotsDict[pname]['sites'].keys():
-                    sitedata = [x for x in plotsDict[pname]['sites'][site]]
-                    plotsDict[pname]['sites'][site] = list(np.histogram(sitedata, ranges)[0])
+            if job['processingtype'] == 'pmerge':
+                mjobs.append(job)
             else:
-                try:
-                    del (plotsDict[pname])
-                except:
-                    pass
+                ojobs.append(job)
+    else:
+        for job in jobs:
+            if job['eventservice'] == 2 or job['eventservice'] == 'esmerge':
+                mjobs.append(job)
+            else:
+                ojobs.append(job)
+
+
+
+    # no plots, hs06 and scouts searching for merge jobs needed
+
+    for job in ojobs:
+        for jst in jobScoutTypes:
+            if 'scout='+jst in job['jobmetrics'] or ('scout=' in job['jobmetrics'] and jst in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
+                jobScoutIDs[jst].append(job['pandaid'])
+
+        if 'actualcorecount' in job and job['actualcorecount'] is None:
+            job['actualcorecount'] = 1
+        if job['jobstatus'] in ['finished', 'failed'] and 'endtime' in job and 'starttime' in job and job[
+            'starttime'] and job['endtime']:
+            duration = max(job['endtime'] - job['starttime'], timedelta(seconds=0))
+            job['duration'] = duration.days * 24 * 3600 + duration.seconds
+            if job['hs06sec'] is None:
+                if job['computingsite'] in pandaSites:
+                    job['hs06sec'] = (job['duration']) * float(pandaSites[job['computingsite']]['corepower']) * job[
+                        'actualcorecount']
+                else:
+                    job['hs06sec'] = 0
+            if job['nevents'] and job['nevents'] > 0:
+                cpuTimeCurrent.append(job['hs06sec'] / job['nevents'])
+                job['walltimeperevent'] = round(job['duration'] * job['actualcorecount'] / (job['nevents'] * 1.0), 2)
+            hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
+            hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
+            hs06sSum['total'] += job['hs06sec']
+
+
+
+    for pname in plotsNames:
+        plotsDict[pname] = {'sites': {}, 'ranges': {}}
+
+    for job in ojobs:
+        if job['actualcorecount'] is None:
+            job['actualcorecount'] = 1
+        if job['maxpss'] is not None and job['maxpss'] != -1:
+            if job['jobstatus'] == 'finished':
+                if job['computingsite'] not in plotsDict['maxpsspercore']['sites']:
+                    plotsDict['maxpsspercore']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['nevents']['sites']:
+                    plotsDict['nevents']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['maxpss']['sites']:
+                    plotsDict['maxpss']['sites'][job['computingsite']] = []
+
+                if job['actualcorecount'] and job['actualcorecount'] > 0:
+                    plotsDict['maxpsspercore']['sites'][job['computingsite']].append(
+                        job['maxpss'] / 1024 / job['actualcorecount'])
+                plotsDict['maxpss']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
+                plotsDict['nevents']['sites'][job['computingsite']].append(job['nevents'])
+            elif job['jobstatus'] == 'failed':
+                if job['computingsite'] not in plotsDict['maxpsspercoref']['sites']:
+                    plotsDict['maxpsspercoref']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['maxpssf']['sites']:
+                    plotsDict['maxpssf']['sites'][job['computingsite']] = []
+                if job['actualcorecount'] and job['actualcorecount'] > 0:
+                    plotsDict['maxpsspercoref']['sites'][job['computingsite']].append(
+                        job['maxpss'] / 1024 / job['actualcorecount'])
+                plotsDict['maxpssf']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
+        if 'duration' in job and job['duration']:
+            if job['jobstatus'] == 'finished':
+                if job['computingsite'] not in plotsDict['walltime']['sites']:
+                    plotsDict['walltime']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['hs06s']['sites']:
+                    plotsDict['hs06s']['sites'][job['computingsite']] = []
+                plotsDict['walltime']['sites'][job['computingsite']].append(job['duration'])
+                plotsDict['hs06s']['sites'][job['computingsite']].append(job['hs06sec'])
+                if 'walltimeperevent' in job:
+                    if job['computingsite'] not in plotsDict['walltimeperevent']['sites']:
+                        plotsDict['walltimeperevent']['sites'][job['computingsite']] = []
+                    plotsDict['walltimeperevent']['sites'][job['computingsite']].append(job['walltimeperevent'])
+            if job['jobstatus'] == 'failed':
+                if job['computingsite'] not in plotsDict['walltimef']['sites']:
+                    plotsDict['walltimef']['sites'][job['computingsite']] = []
+                if job['computingsite'] not in plotsDict['hs06sf']['sites']:
+                    plotsDict['hs06sf']['sites'][job['computingsite']] = []
+                plotsDict['walltimef']['sites'][job['computingsite']].append(job['duration'])
+                plotsDict['hs06sf']['sites'][job['computingsite']].append(job['hs06sec'])
+        if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
+            if job['jobstatus'] == 'finished':
+                if job['computingsite'] not in plotsDict['cputime']['sites']:
+                    plotsDict['cputime']['sites'][job['computingsite']] = []
+                plotsDict['cputime']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
+                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
+                    if job['computingsite'] not in plotsDict['cputimeperevent']['sites']:
+                        plotsDict['cputimeperevent']['sites'][job['computingsite']] = []
+                    plotsDict['cputimeperevent']['sites'][job['computingsite']].append(
+                        round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
+            if job['jobstatus'] == 'failed':
+                if job['computingsite'] not in plotsDict['cputimef']['sites']:
+                    plotsDict['cputimef']['sites'][job['computingsite']] = []
+                plotsDict['cputimef']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
+                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
+                    if job['computingsite'] not in plotsDict['cputimepereventf']['sites']:
+                        plotsDict['cputimepereventf']['sites'][job['computingsite']] = []
+                    plotsDict['cputimepereventf']['sites'][job['computingsite']].append(
+                        round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
+
+    # creation of bins for histograms
+    nbinsmax = 100
+    for pname in plotsNames:
+        rawdata = []
+        for k, d in plotsDict[pname]['sites'].iteritems():
+            rawdata.extend(d)
+        if len(rawdata) > 0:
+            plotsDict[pname]['stats'] = []
+            plotsDict[pname]['stats'].append(np.average(rawdata))
+            plotsDict[pname]['stats'].append(np.std(rawdata))
+            bins, ranges = np.histogram(rawdata, bins='auto')
+            if len(ranges) > nbinsmax + 1:
+                bins, ranges = np.histogram(rawdata, bins=nbinsmax)
+            plotsDict[pname]['ranges'] = list(np.ceil(ranges))
+            for site in plotsDict[pname]['sites'].keys():
+                sitedata = [x for x in plotsDict[pname]['sites'][site]]
+                plotsDict[pname]['sites'][site] = list(np.histogram(sitedata, ranges)[0])
+        else:
+            try:
+                del (plotsDict[pname])
+            except:
+                pass
 
     start = time.time()
 
-    jobstates = []
+    ojobstates = []
+    mjobstates = []
+
     global statelist
+
     for state in statelist:
         statecount = {}
         statecount['name'] = state
         statecount['count'] = 0
-        for job in jobs:
-            if job['jobstatus'] == state:
-                statecount['count'] += 1
-                continue
-        jobstates.append(statecount)
+        if len(ojobs) > 0:
+            for job in ojobs:
+                if job['jobstatus'] == state:
+                    statecount['count'] += 1
+                    continue
+        ojobstates.append(statecount)
+        statecount = {}
+        statecount['name'] = state
+        statecount['count'] = 0
+        if len(mjobs) > 0:
+            for job in mjobs:
+                if job['jobstatus'] == state:
+                    statecount['count'] += 1
+                    continue
+        mjobstates.append(statecount)
 
     end = time.time()
     print("Jobs states aggregation: {} sec".format(end - start))
 
-    return plotsDict, jobstates, jobScoutIDs, hs06sSum
+    return plotsDict, ojobstates, mjobstates, jobScoutIDs, hs06sSum
 
 
 def eventSummary3(mode, query, transactionKeyDroppedJobs):
