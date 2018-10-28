@@ -373,6 +373,11 @@ def harvesters(request):
         for info in qinstanceinfo:
             instanceinfo = dict(zip(columns, info))
 
+        if bool(instanceinfo) != True:
+            message = """Instance is not found OR no workers for this instance or time period"""
+            return HttpResponse(json.dumps({'message': message}),
+                                content_type='text/html')
+
         if datetime.strptime(instanceinfo['submittime'], '%d-%m-%Y %H:%M:%S') < datetime.now() - timedelta(hours=24):
             days = """AND submittime > TO_DATE('{0}', 'dd-mm-yyyy hh24:mi:ss') - interval '{1}' day(3) """.format(instanceinfo['submittime'], 1)
             daysdelta = (datetime.now() - datetime.strptime(instanceinfo['submittime'], '%d-%m-%Y %H:%M:%S')).days + 1
@@ -446,16 +451,6 @@ def harvesters(request):
 
         for cnt in jobscount:
             jobcnt += cnt[0]
-
-        if bool(instanceinfo) != True or len(computingsitesDict) == 0:
-            if 'hours' in request.session['requestParams']:
-                URL = URL.replace('&hours=' + request.session['requestParams']['hours'], '')
-            if 'days' in request.session['requestParams']:
-                URL = URL.replace('&days=' + request.session['requestParams']['days'], '')
-
-            message = """Instance is not found OR no workers for this instance or time period. Try to using this <a href =/harvesters/%s&days=365>link (last 365 days)</a>""" %(URL)
-            return HttpResponse(json.dumps({'message': message}),
-                            content_type='text/html')
 
         # fields = 'pandaid', 'jobstatus', 'jobsubstatus'
         #
