@@ -8507,6 +8507,13 @@ def taskInfoNew(request, jeditaskid=0):
     nomodeurl = extensibleURL(request, nomodeurl)
     if not valid: return response
     # Here we try to get cached data. We get any cached data is available
+
+    # return json for dataTables if dt in request params
+    if 'dt' in request.session['requestParams'] and 'tkiec' in request.session['requestParams']:
+        tkiec = request.session['requestParams']['tkiec']
+        data = getCacheEntry(request, tkiec, isData=True)
+        return HttpResponse(data, content_type='text/html')
+
     # data = None
     data = getCacheEntry(request, "taskInfoNew", skipCentralRefresh=True)
 
@@ -8617,20 +8624,20 @@ def taskInfoNew(request, jeditaskid=0):
         if 'mode' in request.session['requestParams'] and request.session['requestParams'][
             'mode'] == 'nodrop': mode = 'nodrop'
         extra = '(1=1)'
-        transactionKey = -1
+        transactionKeyDJ = -1
         if mode == 'drop':
             start = time.time()
-            extra, transactionKey = insert_dropped_jobs_to_tmp_table(query, extra)
+            extra, transactionKeyDJ = insert_dropped_jobs_to_tmp_table(query, extra)
             end = time.time()
             print("Inserting dropped jobs: {} sec".format(end - start))
-            print('tk of dropped jobs: {}'.format(transactionKey))
+            print('tk of dropped jobs: {}'.format(transactionKeyDJ))
 
         plotsDict, jobsummary, jobsummaryMerge, jobScoutIDs, hs06sSum = jobSummary3(
             request, query, extra=extra, isEventServiceFlag=eventservice)
 
         if eventservice:
             start = time.time()
-            eventsdict = eventSummary3(mode, query, transactionKey)
+            eventsdict = eventSummary3(mode, query, transactionKeyDJ)
             end = time.time()
             print("Events states summary: {} sec".format(end - start))
 
@@ -8846,25 +8853,35 @@ def taskInfoNew(request, jeditaskid=0):
     if len(countfailed) > 0 and countfailed[0] > 0:
         showtaskprof = True
 
+
+    transactionKeyIEC = -1
+    ifs_summary = []
+    if eventservice:
+        start = time.time()
+        # getting inputs (event chunks) states summary
+        inputfiles_list, ifs_summary = inputEventChunkSummary(taskrec, dsets)
+
+        # Putting list of inputs (event chunks) to cache separately for dataTables plugin
+        transactionKeyIEC = random.randrange(100000000)
+        setCacheEntry(request, transactionKeyIEC, json.dumps(inputfiles_list, cls=DateEncoder), 60 * 30, isData=True)
+
+        end = time.time()
+        print("Input event chunks states summary: {} sec".format(end - start))
+
+    # datetime type -> str in order to avoid encoding cached on template
+    datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
+    datetime_dataset_param_names = ['statechecktime', 'creationtime', 'modificationtime']
+
     if taskrec:
-        if taskrec['creationdate']:
-            if taskrec['creationdate'] < datetime.now() - timedelta(days=180):
-                warning['dropmode'] = 'The drop mode is unavailable since the data of job retries was cleaned up. The data shown on the page is in nodrop mode.'
-            taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
-        if taskrec['modificationtime']:
-            taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
-        if taskrec['starttime']:
-            taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
-        if taskrec['statechangetime']:
-            taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
-        if taskrec['ttcrequested']:
-            taskrec['ttcrequested'] = taskrec['ttcrequested'].strftime(defaultDatetimeFormat)
+        for dtp in datetime_task_param_names:
+            if taskrec[dtp]:
+                taskrec[dtp] = taskrec[dtp].strftime(defaultDatetimeFormat)
 
     for dset in dsets:
-        dset['creationtime'] = dset['creationtime'].strftime(defaultDatetimeFormat)
-        dset['modificationtime'] = dset['modificationtime'].strftime(defaultDatetimeFormat)
-        if dset['statechecktime'] is not None:
-            dset['statechecktime'] = dset['statechecktime'].strftime(defaultDatetimeFormat)
+        for dtp in datetime_dataset_param_names:
+            if dset[dtp]:
+                dset[dtp] = dset[dtp].strftime(defaultDatetimeFormat)
+
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
@@ -8933,7 +8950,9 @@ def taskInfoNew(request, jeditaskid=0):
             'outctrs': outctrs,
             'vomode': VOMODE,
             'eventservice': eventservice,
-            'tkd': transactionKey,
+            'tkdj': transactionKeyDJ,
+            'tkiec': transactionKeyIEC,
+            'iecsummary': ifs_summary,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
             'warning': warning,
         }
@@ -8950,7 +8969,7 @@ def taskInfoNew(request, jeditaskid=0):
         endSelfMonitor(request)
 
         if eventservice:
-            response = render_to_response('taskInfoES.html', data, content_type='text/html')
+            response = render_to_response('taskInfoESNew.html', data, content_type='text/html')
         else:
             response = render_to_response('taskInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -10093,6 +10112,92 @@ def eventSummary3(mode, query, transactionKeyDroppedJobs):
         eventslist.append(eventstatus)
 
     return eventslist
+
+
+def inputEventChunkSummary(taskrec, dsets):
+
+    jeditaskid = taskrec['jeditaskid']
+    # Getting statuses of inputfiles
+    if taskrec['creationdate'] < datetime.strptime('2018-10-22 15:00:00', defaultDatetimeFormat):
+        ifsquery = """
+            select  
+            ifs.jeditaskid,
+            ifs.datasetid,
+            ifs.fileid,
+            ifs.lfn, 
+            ifs.startevent, 
+            ifs.endevent, 
+            ifs.attemptnr, 
+            ifs.maxattempt, 
+            ifs.failedattempt, 
+            ifs.maxfailure,
+            case when cstatus not in ('running') then cstatus 
+                 when cstatus in ('running') and esmergestatus is null then cstatus
+                 when cstatus in ('running') and esmergestatus = 'esmerge_transferring' then 'transferring' 
+                 when cstatus in ('running') and esmergestatus = 'esmerge_merging' then 'merging' 
+            end as status
+            from (
+                select jdcf.jeditaskid, jdcf.datasetid, jdcf.fileid, jdcf.lfn, jdcf.startevent, jdcf.endevent, 
+                    jdcf.attemptnr, jdcf.maxattempt, jdcf.failedattempt, jdcf.maxfailure, jdcf.cstatus, f.esmergestatus, count(f.esmergestatus) as n
+                  from
+                (select jd.jeditaskid, jd.datasetid, jdc.fileid, 
+                    jdc.lfn, jdc.startevent, jdc.endevent, 
+                    jdc.attemptnr, jdc.maxattempt, jdc.failedattempt, jdc.maxfailure,
+                    case when (jdc.maxattempt <= jdc.attemptnr or jdc.failedattempt >= jdc.maxfailure) and jdc.status = 'ready' then 'failed' else jdc.status end as cstatus
+                 from atlas_panda.jedi_dataset_contents jdc, 
+                     atlas_panda.jedi_datasets jd
+                 where jd.datasetid = jdc.datasetid 
+                    and jd.jeditaskid = {}
+                    and jd.masterid is NULL
+                    and jdc.type in ( 'input', 'pseudo_input')
+                ) jdcf 
+                LEFT JOIN
+                (select f4.jeditaskid, f4.fileid, f4.datasetid, f4.pandaid, 
+                    case when ja4.jobstatus = 'transferring' and ja4.eventservice = 2 then 'esmerge_transferring' when ja4.eventservice = 2 then 'esmerge_merging' else null end as esmergestatus
+                 from atlas_panda.filestable4 f4, ATLAS_PANDA.jobsactive4 ja4 
+                 where f4.pandaid = ja4.pandaid and f4.type in ( 'input', 'pseudo_input') 
+                            and f4.jeditaskid = {}
+                ) f
+                on jdcf.datasetid = f.datasetid and jdcf.fileid = f.fileid
+                group by jdcf.jeditaskid, jdcf.datasetid, jdcf.fileid, jdcf.lfn, jdcf.startevent, jdcf.endevent, 
+                    jdcf.attemptnr, jdcf.maxattempt, jdcf.failedattempt, jdcf.maxfailure, jdcf.cstatus, f.esmergestatus
+            ) ifs """.format(jeditaskid, jeditaskid)
+
+        cur = connection.cursor()
+        cur.execute(ifsquery)
+        inputfiles = cur.fetchall()
+        cur.close()
+
+        inputfiles_names = ['jeditaskid', 'datasetid', 'fileid', 'lfn', 'startevent', 'endevent', 'attemptnr',
+                            'maxattempt', 'failedattempt', 'maxfailure', 'procstatus']
+        inputfiles_list = [dict(zip(inputfiles_names, row)) for row in inputfiles]
+
+    else:
+        ifsquery = {}
+        ifsquery['jeditaskid'] = jeditaskid
+        indsids = [ds['datasetid'] for ds in dsets if ds['type'] == 'input' and ds['masterid'] is None]
+        ifsquery['datasetid'] = indsids[0] if len(indsids) > 0 else -1
+        inputfiles_list = []
+        inputfiles_list.extend(JediDatasetContents.objects.filter(**ifsquery).values())
+
+    # counting of files in different states
+    inputfiles_counts = {}
+    for inputfile in inputfiles_list:
+        if inputfile['procstatus'] not in inputfiles_counts:
+            inputfiles_counts[inputfile['procstatus']] = 0
+        inputfiles_counts[inputfile['procstatus']] += 1
+
+    ifs_states = ['queued', 'ready', 'running', 'merging', 'transferring', 'finished', 'failed']
+    ifs_summary = []
+    for ifstate in ifs_states:
+        ifstatecount = 0
+        if ifstate in inputfiles_counts.keys():
+            ifstatecount = inputfiles_counts[ifstate]
+        ifs_summary.append({'name': ifstate, 'count': ifstatecount})
+
+    return inputfiles_list, ifs_summary
+
+
 
 
 def jobStateSummary(jobs):
