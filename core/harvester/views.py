@@ -189,6 +189,15 @@ def harvesterfm (request):
 def harvesters(request):
     valid, response = initRequest(request)
 
+    data = getCacheEntry(request, "harvester")
+
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('harvesters.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
     extra = '1=1'
     xurl = extensibleURL(request)
     URL = ''
@@ -289,28 +298,6 @@ def harvesters(request):
 
         lastupdateCache = ''
         workersListCache = []
-
-        data = {}
-
-        setCacheEntry(request, instance, json.dumps(data, cls=DateEncoder), 1, isData=True)
-
-        workersListisEmty = True
-        if 'status' not in request.session['requestParams'] and 'computingsite' not in request.session['requestParams'] and 'days' not in request.session['requestParams']:
-            data = getCacheEntry(request, instance,isData=True)
-            if data is not None and data !="null":
-                if 'lastupdate'  in data:
-                    data = json.loads(data)
-                    lastupdateCache = data['lastupdate'].replace('T',' ')
-                    lastupdateCache = """ AND "wrklastupdate" >= to_date('%s','yyyy-mm-dd hh24:mi:ss')"""%(lastupdateCache)
-                    workersListCache = data['workersList']
-                    workersListisEmty = False
-
-                    tmpworkerList = data['workersList'].keys()
-                    for worker in tmpworkerList:
-                        if datetime.strptime(data['workersList'][worker]['wrklastupdate'], '%d-%m-%Y %H:%M:%S') < datetime.now() - timedelta(days=60):
-                            del data['workersList'][worker]
-        else:
-            lastupdateCache = ''
 
         URL += '?instance=' + request.session['requestParams']['instance']
         status = ''
@@ -494,14 +481,13 @@ def harvesters(request):
                 'request': request,
                 'requestParams': request.session['requestParams'],
                 'viewParams': request.session['viewParams'],
-                'built':datetime.now().strftime("%H:%M:%S"),
+                'built': datetime.now().strftime("%H:%M:%S"),
                 'url': URL
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
-        setCacheEntry(request, 'harvester', json.dumps(data, cls=DateEncoder),60 * 60)
+        setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 60)
         endSelfMonitor(request)
         return render_to_response('harvesters.html', data, content_type='text/html')
-
     elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
         computingsite = request.session['requestParams']['computingsite']
         if ('workersstats' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']):
@@ -608,6 +594,7 @@ def harvesters(request):
                 object = {}
                 object = dict(zip(columns, job))
                 harvsterpandaids.append(object)
+
             return HttpResponse(json.dumps(harvsterpandaids, cls=DateTimeEncoder), content_type='text/html')
 
         URL += '?computingsite=' + request.session['requestParams']['computingsite']
@@ -734,7 +721,7 @@ def harvesters(request):
                 'url': URL
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
-        setCacheEntry(request, 'harvester',  json.dumps(data, cls=DateEncoder),60 * 60)
+        setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 60)
         endSelfMonitor(request)
         return render_to_response('harvesters.html', data, content_type='text/html')
     elif 'pandaid' in request.session['requestParams'] and 'computingsite' not in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
@@ -875,7 +862,7 @@ def harvesters(request):
                 'url': URL
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
-        setCacheEntry(request, 'harvester',  json.dumps(data, cls=DateEncoder),60 * 60)
+        setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 60)
         endSelfMonitor(request)
         return render_to_response('harvesters.html', data, content_type='text/html')
     else:
@@ -904,9 +891,11 @@ def harvesters(request):
             'viewParams': request.session['viewParams']
         }
         #data =json.dumps(data,cls=DateEncoder)
-        response = render_to_response('harvesters.html', data, content_type='text/html')
-
-    return response
+        if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+                'json' not in request.session['requestParams'])):
+            return render_to_response('harvesters.html', data, content_type='text/html')
+        else:
+            return HttpResponse(json.dumps(instanceDictionary, cls=DateTimeEncoder), content_type='text/html')
 
 def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields=''):
 
@@ -1013,7 +1002,20 @@ def isHarvesterJob(pandaid):
     return jobHarvesterInfo
 
 def workersJSON(request):
+
     valid, response = initRequest(request)
+
+    xurl = extensibleURL(request)
+
+    if '_' in request.session['requestParams']:
+        xurl = xurl.replace('_={0}&'.format(request.session['requestParams']['_']), '')
+
+    data = getCacheEntry(request, xurl, isData=True)
+
+    if data is not None:
+        data = json.loads(data)
+        endSelfMonitor(request)
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
     status = ''
     computingsite = ''
@@ -1023,6 +1025,7 @@ def workersJSON(request):
     lastupdateCache = ''
     resourcetype = ''
     computingelement = ''
+
 
     if 'status' in request.session['requestParams']:
         status = """AND status like '%s'""" % (str(request.session['requestParams']['status']))
@@ -1082,6 +1085,8 @@ def workersJSON(request):
                 object = {}
                 object = dict(zip(columns, worker))
                 workersList.append(object)
+            if 'key' not in request.session['requestParams']:
+                setCacheEntry(request, xurl, json.dumps(workersList, cls=DateTimeEncoder), 60 * 60, isData = True)
             return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='text/html')
 
     elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
@@ -1113,8 +1118,9 @@ def workersJSON(request):
                 object = {}
                 object = dict(zip(columns, worker))
                 workersList.append(object)
-
-            return HttpResponse(json.dumps(workersList,cls=DateTimeEncoder), content_type='text/html')
+            if 'key' not in request.session['requestParams']:
+                setCacheEntry(request, xurl, json.dumps(workersList, cls=DateTimeEncoder), 60 * 60, isData = True)
+            return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='text/html')
 
     elif 'pandaid' in request.session['requestParams'] and 'computingsite' not in request.session[
         'requestParams'] and 'instance' not in request.session['requestParams']:

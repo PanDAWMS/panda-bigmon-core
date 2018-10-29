@@ -470,15 +470,20 @@ height="1000" width="100%"></iframe>
                 });
                 $('#reloadWorkersList').click(function () {
                     var number = $('#numberWL').val();
-                    var url = "{% url 'workers' %}{{url}}&dt&display_limit_workers=" + number
+                    var key = getRandomInt(100000000,900000000)
+                    var url = "{% url 'workers' %}{{url}}&dt&display_limit_workers=" + number + "&key=" + key
                     $('#harvesterworkers').DataTable().ajax.url(url).load();
                     {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
                 });
                 workersTable();
-
             });
 
+            function getRandomInt(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
             function workersTable() {
+
                 {#var instance = "{{ instance|safe}}";#}
                 {#    if (instance!="0") {#}
                 {#        dt = "computingsite"#}
