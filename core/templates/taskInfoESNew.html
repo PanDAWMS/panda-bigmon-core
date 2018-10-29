@@ -579,7 +579,10 @@
                 <tr>
                     {% for state in iecsummary %}
                         <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                            {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}"><span class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
+                            {% if state.count > 0 %}<b>
+                                <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&ecstate={{ state.name }}&datasetid={% if state.ds|length > 1 %}{% for id in state.ds %}{{ id }}{% if not forloop.last %},{% endif %}{% endfor %}{% else %}{{ state.ds.0 }}{% endif %}&tk={{ state.tk }}">
+                                    <span class='{{ state.name }}_fill'>{{ state.count }}</span></a>
+                            </b> {% endif %}
                         </td>
                     {% endfor %}
                 </tr>

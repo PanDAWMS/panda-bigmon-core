@@ -90,7 +90,7 @@ def fileList(jobs):
     return newjobs
 
 
-def insert_to_temp_table(list_of_items):
+def insert_to_temp_table(list_of_items, transactionKey = -1):
     """Inserting to temp table
     :param list_of_items
     :return transactionKey and timestamp of instering
@@ -101,13 +101,14 @@ def insert_to_temp_table(list_of_items):
     # else:
     #     tmpTableName = "TMP_IDS1"
 
-    random.seed()
-    transactionKey = random.randrange(1000000)
+    if transactionKey == -1:
+        random.seed()
+        transactionKey = random.randrange(1000000)
 
     new_cur = connection.cursor()
     executionData = []
     for item in list_of_items:
-        executionData.append((item['pandaid'], transactionKey))
+        executionData.append((item, transactionKey))
     query = """INSERT INTO ATLAS_PANDABIGMON.TMP_IDS1Debug(ID,TRANSACTIONKEY) VALUES (%s,%s)"""
     new_cur.executemany(query, executionData)
 

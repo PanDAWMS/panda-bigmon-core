@@ -148,6 +148,18 @@ function toggleComparisonList(buttonid, value) {
 
 {% endif %}
 
+{% if warning.jobsforfiles %}
+
+    <div class="callout warning" data-closable>
+      <h5>Warning! </h5>
+      <p>{{ warning.jobsforfiles }}</p>
+        <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+            <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+
+{% endif %}
+
 {% if jobList %}
 
 <table>

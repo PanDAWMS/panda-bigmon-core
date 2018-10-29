@@ -1040,35 +1040,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     elif jobtype.find('test') >= 0:
         query['prodsourcelabel__icontains'] = jobtype
 
-    if 'fileid' in request.session['requestParams']:
-        try:
-            fileid = int(request.session['requestParams']['fileid'])
-        except:
-            pass
-
-        try:
-            datasetid = int(request.session['requestParams']['datasetid'])
-        except:
-            pass
-
-        try:
-            jeditaskid = int(request.session['requestParams']['jeditaskid'])
-        except:
-            pass
-
-        try:
-            extraQueryString += ' AND '
-        except NameError:
-            extraQueryString = ''
-
-        if jeditaskid and datasetid and fileid:
-            extraQueryString += """pandaid in ((select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid = {} and fileid = {} )) """.format(jeditaskid, datasetid, fileid)
-
-    # union(select
-    # pandaid
-    # from atlas_pandaarch.filestable_arch where
-    # fileid = {} )
-
     if 'region' in request.session['requestParams']:
         region = request.session['requestParams']['region']
         siteListForRegion = []
@@ -2963,10 +2934,54 @@ def jobList(request, mode=None, param=None):
             request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
         'eventservice'] == '1' or request.session['requestParams']['eventservice'] == '4' or request.session['requestParams']['eventservice'] == 'jumbo'):
         eventservice = True
+    elif 'eventservice' in request.session['requestParams'] and (
+        '1' in request.session['requestParams']['eventservice'] or '2' in request.session['requestParams']['eventservice'] or
+        '4' in request.session['requestParams']['eventservice'] or '5' in request.session['requestParams']['eventservice']):
+        eventservice = True
+
     noarchjobs = False
     if ('noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs'] == '1'):
         noarchjobs = True
+    warning = {}
+    extraquery_files = ' '
+    if 'fileid' in request.session['requestParams'] or 'ecstate' in request.session['requestParams']:
+        if 'fileid' in request.session['requestParams'] and request.session['requestParams']['fileid']:
+            fileid = request.session['requestParams']['fileid']
+            del request.session['requestParams']['fileid']
+        else:
+            fileid = None
+        if 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
+            datasetid = request.session['requestParams']['datasetid']
+            del request.session['requestParams']['datasetid']
+        else:
+            datasetid = None
+        if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
+            jeditaskid = request.session['requestParams']['jeditaskid']
+        else:
+            jeditaskid = None
+        if 'tk' in request.session['requestParams'] and request.session['requestParams']['tk']:
+            tk = request.session['requestParams']['tk']
+            del request.session['requestParams']['tk']
+        else:
+            tk = None
+
+        if jeditaskid and datasetid and fileid:
+            extraquery_files += """pandaid in ((select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )) """.format(jeditaskid, datasetid, fileid)
+
+        if 'ecstate' in request.session['requestParams'] and tk and datasetid:
+            extraquery_files += """pandaid in ((select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )) """.format(
+                jeditaskid, datasetid, tk)
+        warning['jobsforfiles'] = 'Only jobs for last 4 days are shown. Support of filtering older jobs associated with files will be implemented soon.'
+    # union(select
+    # pandaid
+    # from atlas_pandaarch.filestable_arch where
+    # fileid = {} )
+
+
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
+
+    if len(extraquery_files) > 1:
+        wildCardExtension += ' AND ' + extraquery_files
     ###TODO Rework it?
     if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
         return render_to_response('message.html', {'desc':'Request token is not found or data is outdated. Please reload the original page.'}, content_type='text/html')
@@ -3418,6 +3433,7 @@ def jobList(request, mode=None, param=None):
             'pandaIDList_test':newdroplist,
             'difDropList_test':difDropList,
             'clist': clist,
+            'warning': warning,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -8859,7 +8875,12 @@ def taskInfoNew(request, jeditaskid=0):
     if eventservice:
         start = time.time()
         # getting inputs (event chunks) states summary
-        inputfiles_list, ifs_summary = inputEventChunkSummary(taskrec, dsets)
+        inputfiles_list, ifs_summary, ifs_tk = inputEventChunkSummary(taskrec, dsets)
+
+        # Putting list of inputs (event chunks) IDs to tmp table for connection with jobList
+        for tk, ids_list in ifs_tk.iteritems():
+            tk = insert_to_temp_table(ids_list, tk)
+
 
         # Putting list of inputs (event chunks) to cache separately for dataTables plugin
         transactionKeyIEC = random.randrange(100000000)
@@ -10044,7 +10065,15 @@ def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False):
     end = time.time()
     print("Jobs states aggregation: {} sec".format(end - start))
 
-    return plotsDict, ojobstates, mjobstates, jobScoutIDs, hs06sSum
+    #support of old keys for scouts
+    jobScoutIDsNew = {}
+    jobScoutIDsNew['cputimescoutjob'] = jobScoutIDs['cpuTime']
+    jobScoutIDsNew['walltimescoutjob'] = jobScoutIDs['walltime']
+    jobScoutIDsNew['ramcountscoutjob'] = jobScoutIDs['ramCount']
+    jobScoutIDsNew['iointensityscoutjob'] = jobScoutIDs['ioIntensity']
+    jobScoutIDsNew['outdiskcountscoutjob'] = jobScoutIDs['outDiskCount']
+
+    return plotsDict, ojobstates, mjobstates, jobScoutIDsNew, hs06sSum
 
 
 def eventSummary3(mode, query, transactionKeyDroppedJobs):
@@ -10115,7 +10144,12 @@ def eventSummary3(mode, query, transactionKeyDroppedJobs):
 
 
 def inputEventChunkSummary(taskrec, dsets):
-
+    """
+    The function returns:
+    Input event chunks list for separate table
+    Input event chunks summary by states
+    A dictionary with tk as key and list of input files IDs that is needed for jobList view filter
+    """
     jeditaskid = taskrec['jeditaskid']
     # Getting statuses of inputfiles
     if taskrec['creationdate'] < datetime.strptime('2018-10-22 15:00:00', defaultDatetimeFormat):
@@ -10176,26 +10210,36 @@ def inputEventChunkSummary(taskrec, dsets):
         ifsquery = {}
         ifsquery['jeditaskid'] = jeditaskid
         indsids = [ds['datasetid'] for ds in dsets if ds['type'] == 'input' and ds['masterid'] is None]
-        ifsquery['datasetid'] = indsids[0] if len(indsids) > 0 else -1
+        ifsquery['datasetid__in'] = indsids if len(indsids) > 0 else [-1,]
         inputfiles_list = []
         inputfiles_list.extend(JediDatasetContents.objects.filter(**ifsquery).values())
 
-    # counting of files in different states
+    # counting of files in different states and building list of fileids for jobList
     inputfiles_counts = {}
+    inputfilesids_states = {}
+    dsids = []
     for inputfile in inputfiles_list:
         if inputfile['procstatus'] not in inputfiles_counts:
             inputfiles_counts[inputfile['procstatus']] = 0
+        if inputfile['procstatus'] not in inputfilesids_states:
+            inputfilesids_states[inputfile['procstatus']] = []
+        if inputfile['datasetid'] not in dsids:
+            dsids.append(inputfile['datasetid'])
         inputfiles_counts[inputfile['procstatus']] += 1
+        inputfilesids_states[inputfile['procstatus']].append(inputfile['fileid'])
 
+    inputfiles_tk = {}
     ifs_states = ['queued', 'ready', 'running', 'merging', 'transferring', 'finished', 'failed']
     ifs_summary = []
     for ifstate in ifs_states:
         ifstatecount = 0
+        tk = random.randrange(100000000)
         if ifstate in inputfiles_counts.keys():
             ifstatecount = inputfiles_counts[ifstate]
-        ifs_summary.append({'name': ifstate, 'count': ifstatecount})
+            inputfiles_tk[tk] = inputfilesids_states[ifstate]
+        ifs_summary.append({'name': ifstate, 'count': ifstatecount, 'tk': tk, 'ds': dsids})
 
-    return inputfiles_list, ifs_summary
+    return inputfiles_list, ifs_summary, inputfiles_tk
 
 
 
