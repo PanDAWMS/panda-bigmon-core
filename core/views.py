@@ -8532,7 +8532,7 @@ def taskInfoNew(request, jeditaskid=0):
 
 
     data = getCacheEntry(request, "taskInfoNew", skipCentralRefresh=True)
-    data = None
+    # data = None
     # Temporary protection
     if data is not None:
         data = json.loads(data)
