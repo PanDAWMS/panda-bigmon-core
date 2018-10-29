@@ -277,6 +277,13 @@
                         },
                     },
                     {
+                        "mData": "fileid",
+                        sDefaultContent: "",
+                        "render": function (chunk, type, full) {
+                            return '<a href="'+{% url 'jobList' %} + '?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '&fileid=' + full['fileid'] + '"><i class="fi-link"></i></a>';
+                        },
+                    },
+                    {
                         "mData": "procstatus",
                         sDefaultContent: "",
                     },
@@ -306,7 +313,7 @@
                     },
                 ],
                 "createdRow": function ( row, data, index ) {
-                    $('td', row).eq(2).addClass(data['procstatus'] + '_fill');
+                    $('td', row).eq(3).addClass(data['procstatus'] + '_fill');
                 },
 
                 "bServerSide": false,
@@ -768,6 +775,7 @@
             <tr>
                 <th>The logical filename (lfn)</th>
                 <th>File ID</th>
+                <th>Link to jobs</th>
                 <th>Status</th>
                 <th>Attempt</th>
                 <th>Max attempt number</th>
