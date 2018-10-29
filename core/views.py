@@ -8586,7 +8586,7 @@ def taskInfoNew(request, jeditaskid=0):
                 else:
                     doRefresh = True
         # temp turning on refresh of all tasks to rewrite cache
-        doRefresh = True
+        # doRefresh = True
 
         ### This is a temporary fix in order of avoiding 500 error for cached tasks not compartible to a new template
         if not isinstance(data['jobscoutids']['ramcountscoutjob'], list):
