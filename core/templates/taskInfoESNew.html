@@ -449,14 +449,6 @@
         <div class="dropdownplots">
             <button class="dropdownbutton">Go to</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
-
-                <a style="cursor: pointer;" onclick="javascript:buildInputFilesTable();">Show event chunks table </a>
-
-                <a style="cursor: pointer;" onclick="javascript:buildEventChunkTable();">Show event chunk table </a>
-
-                <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('badevents');">Show exhausted
-                    events</a>
-
                 {% if requestParams.mode and requestParams.mode == 'nodrop' %}
                     <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Drop mode</a>
                 {% else %}
@@ -496,7 +488,7 @@
         </div>
 
         <div class="dropdownplots">
-            <button class="dropdownbutton">Show jobs</button>
+            <button class="dropdownbutton">Go to jobs</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
                 {% if jobsummary %}
                     <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">All (access
@@ -505,6 +497,18 @@
                     <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=finished|failed|cancelled">Ended</a>
                     <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Active</a>
                 {% endif %}
+            </div>
+        </div>
+
+        <div class="dropdownplots">
+            <button class="dropdownbutton">Show</button>
+            <div id="dropdown-plotchoice" class="dropdown-plot">
+                {% if jobsummary or jobsummaryESMerge %}
+                    <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('jobsummarytables');">Show jobs summary</a>
+                {% endif %}
+                <a style="cursor: pointer;" onclick="javascript:buildInputFilesTable();">Show event chunks table </a>
+                <a style="cursor: pointer;" onclick="javascript:buildEventChunkTable();">Show event chunk table </a>
+                <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('badevents');">Show exhausted events</a>
             </div>
         </div>
 
@@ -597,7 +601,84 @@
 
         {% endif %}
 
+        {% if eventssummary|length > 0 %}
+            <table>
+                <tr bgcolor="lightcyan">
+                    <th colspan=20>
+                        <b>States of events in this task</b>
+                        {% if requestParams.mode and requestParams.mode == 'nodrop' %}
+                            <a style="cursor: pointer;" onclick="javascript:showEventsDetails();" href="#"> Show
+                                details</a> {% endif %} &nbsp
+                    </th>
+                </tr>
+                <tr>
+                    {% for state in eventssummary %}
+                        <td><span class="{{ state.statusname }}"><b> {{ state.statusname }} </b></span>
+                            <span class="showeventsdetailsrow"><br>
+                                {% if state.count > 0 %}
+                                    <b>ComputingElement, ObjectStoreID : Nevents</b>
+                                {% endif %}
+                            </span>
+                        </td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    {% for state in eventssummary %}
+                        {% if neweventssummary_test %}
+                            {% for newstate in neweventssummary_test %}
+                                {% if forloop.counter == forloop.parentloop.counter %}
+                                    <td {% if state.count > 0 or newstate.count > 0 %}
+                                        class='{{ state.statusname }}_fill' {% endif %}>
+                                        {% if state.count > 0 or newstate.count > 0 %}
+                                            <b> <span class='{{ state.statusname }}_fill'>
+        {% if state.statusname == 'failed' and state.count > 0 %}
+            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} ({{ newstate.count }}) </a>
+        {% elif  newstate.statusname == 'failed' and newstate.count > 0 %}
+            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} ({{ newstate.count }}) </a>
+        {% else %} {{ state.count }} ({{ newstate.count }})
+        {% endif %}
+    </span></b>
+                                        {% endif %}
+                                    </td>
 
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <td {% if state.count > 0 %} class='{{ state.statusname }}_fill' {% endif %}>
+                                {% if state.count > 0 %}
+                                    <b> <span class='{{ state.statusname }}_fill'>
+        {% if state.statusname == 'failed' and state.count > 0 %}
+            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} </a>
+        {% else %} {{ state.count }}
+        {% endif %}
+    </span></b>
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                    {% endfor %}</tr>
+                {% if ossummary|length > 0 %}
+                    <tr class="showeventsdetailsrow">
+                        {% for state in eventssummary %}
+                            <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
+                                {% for osrow in ossummary %}
+                                    {% if state.statusname == osrow.statusname %} {{ osrow.computingelement }},
+                                        {% if osrow.objectstoreid != None %} {{ osrow.objectstoreid }} {% else %}
+                                            unknown {% endif %} : {{ osrow.nevents }} <br> {% endif %}
+                                {% endfor %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endif %}
+            </table>
+        {% endif %}
+
+
+        <p>
+        <div id="div-error-sum">
+
+        </div>
+
+        <div class="jobsummarytables" style="display: none">
         {% if jobsummary %}
 
             {% if requestParams.warning %}
@@ -688,86 +769,6 @@
                     {% endfor %}
             </table>
         {% endif %}
-
-
-
-
-        {% if eventssummary|length > 0 %}
-            <table>
-                <tr bgcolor="lightcyan">
-                    <th colspan=20>
-                        <b>States of events in this task</b>
-                        {% if requestParams.mode and requestParams.mode == 'nodrop' %}
-                            <a style="cursor: pointer;" onclick="javascript:showEventsDetails();" href="#"> Show
-                                details</a> {% endif %} &nbsp
-                    </th>
-                </tr>
-                <tr>
-                    {% for state in eventssummary %}
-                        <td><span class="{{ state.statusname }}"><b> {{ state.statusname }} </b></span>
-                            <span class="showeventsdetailsrow">
-    <br>
-                                {% if state.count > 0 %}
-                                    <b>ComputingElement, ObjectStoreID : Nevents</b>
-                                {% endif %}
-    </span>
-                        </td>
-                    {% endfor %}
-                </tr>
-                <tr>
-                    {% for state in eventssummary %}
-                        {% if neweventssummary_test %}
-                            {% for newstate in neweventssummary_test %}
-                                {% if forloop.counter == forloop.parentloop.counter %}
-                                    <td {% if state.count > 0 or newstate.count > 0 %}
-                                        class='{{ state.statusname }}_fill' {% endif %}>
-                                        {% if state.count > 0 or newstate.count > 0 %}
-                                            <b> <span class='{{ state.statusname }}_fill'>
-        {% if state.statusname == 'failed' and state.count > 0 %}
-            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} ({{ newstate.count }}) </a>
-        {% elif  newstate.statusname == 'failed' and newstate.count > 0 %}
-            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} ({{ newstate.count }}) </a>
-        {% else %} {{ state.count }} ({{ newstate.count }})
-        {% endif %}
-    </span></b>
-                                        {% endif %}
-                                    </td>
-
-                                {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            <td {% if state.count > 0 %} class='{{ state.statusname }}_fill' {% endif %}>
-                                {% if state.count > 0 %}
-                                    <b> <span class='{{ state.statusname }}_fill'>
-        {% if state.statusname == 'failed' and state.count > 0 %}
-            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} </a>
-        {% else %} {{ state.count }}
-        {% endif %}
-    </span></b>
-                                {% endif %}
-                            </td>
-                        {% endif %}
-                    {% endfor %}</tr>
-                {% if ossummary|length > 0 %}
-                    <tr class="showeventsdetailsrow">
-                        {% for state in eventssummary %}
-                            <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                                {% for osrow in ossummary %}
-                                    {% if state.statusname == osrow.statusname %} {{ osrow.computingelement }},
-                                        {% if osrow.objectstoreid != None %} {{ osrow.objectstoreid }} {% else %}
-                                            unknown {% endif %} : {{ osrow.nevents }} <br> {% endif %}
-                                {% endfor %}
-                            </td>
-                        {% endfor %}
-                    </tr>
-                {% endif %}
-            </table>
-        {% endif %}
-
-
-        <p>
-        <div id="div-error-sum">
-
         </div>
 
         <table class="data-table nowrap" id="inputfilestable" style="display: none">
@@ -836,8 +837,9 @@
         </script>
 
 
-        <p>
+
             {% if task.errordialog %}
+                <p>
                 {% if logtxt %}
                     <div class="card scrollable">
                         <div class="card-divider errorlog">
