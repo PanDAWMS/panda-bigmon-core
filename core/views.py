@@ -7707,8 +7707,11 @@ def getErrorSummaryForEvents(request):
     if 'tk' in request.session['requestParams'] and request.session['requestParams']['tk'] > 0:
         transactionKey = int(request.session['requestParams']['tk'])
     else:
-        data = {"error": "no failed events found"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        transactionKey = None
+    if 'tkdj' in request.session['requestParams'] and request.session['requestParams']['tkdj'] > 0:
+        transactionKeyDJ = int(request.session['requestParams']['tkdj'])
+    else:
+        transactionKeyDJ = None
     equery = {}
     equery['jeditaskid']=jeditaskid
     equery['error_code__isnull'] = False
@@ -7722,28 +7725,51 @@ def getErrorSummaryForEvents(request):
             tmpTableName = "TMP_IDS1DEBUG"
 
         new_cur = connection.cursor()
-        new_cur.execute(
-            """select error_code,
-                  sum(neventsinjob) as nevents,
-                  sum(nerrorsinjob) as nerrors,
-                  count(pandaid) as njobs,
-                  LISTAGG(case when aff <= 10 then pandaid end,',' ) WITHIN group (order by error_code, aff) as pandaidlist
-                from (
-                  select  pandaid, error_code, neventsinjob, nerrorsinjob,
-                    row_number() over (partition by error_code ORDER BY neventsinjob desc) as aff
-                  from (
-                      (select pandaid, error_code,
-                        sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) as neventsinjob,
-                        count(*) as nerrorsinjob
-                      from ATLAS_PANDA.Jedi_events
-                      where jeditaskid=%i and ERROR_CODE is not null
-                      group by error_code, pandaid ) e
-                    join
-                      (select ID from %s where TRANSACTIONKEY=%i ) j
-                    on e.pandaid = j.ID))
-                group by error_code
-            """ % (jeditaskid, tmpTableName, transactionKey)
-        )
+        if transactionKey:
+            eequery = """
+            select error_code,
+              sum(neventsinjob) as nevents,
+              sum(nerrorsinjob) as nerrors,
+              count(pandaid) as njobs,
+              LISTAGG(case when aff <= 10 then pandaid end,',' ) WITHIN group (order by error_code, aff) as pandaidlist
+            from (
+              select  pandaid, error_code, neventsinjob, nerrorsinjob,
+                row_number() over (partition by error_code ORDER BY neventsinjob desc) as aff
+              from (
+                  (select pandaid, error_code,
+                    sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) as neventsinjob,
+                    count(*) as nerrorsinjob
+                  from ATLAS_PANDA.Jedi_events
+                  where jeditaskid={} and ERROR_CODE is not null
+                  group by error_code, pandaid ) e
+                join
+                  (select ID from {} where TRANSACTIONKEY={} ) j
+                on e.pandaid = j.ID))
+            group by error_code""".format(jeditaskid, tmpTableName, transactionKey)
+        elif transactionKeyDJ:
+            eequery = """
+            select error_code,
+              sum(neventsinjob) as nevents,
+              sum(nerrorsinjob) as nerrors,
+              count(pandaid) as njobs,
+              LISTAGG(case when aff <= 10 then pandaid end,',' ) WITHIN group (order by error_code, aff) as pandaidlist
+            from (
+              select  pandaid, error_code, neventsinjob, nerrorsinjob,
+                row_number() over (partition by error_code ORDER BY neventsinjob desc) as aff
+              from (
+                  (select pandaid, error_code,
+                    sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) as neventsinjob,
+                    count(*) as nerrorsinjob
+                  from ATLAS_PANDA.Jedi_events
+                  where jeditaskid={} and ERROR_CODE is not null 
+                    and pandaid not in ( select ID from {} where TRANSACTIONKEY={} )
+                  group by error_code, pandaid ) e
+                ))
+            group by error_code""".format(jeditaskid, tmpTableName, transactionKeyDJ)
+        else:
+            data = {"error": "no failed events found"}
+            return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        new_cur.execute(eequery)
         eventsErrorsUP = dictfetchall(new_cur)
     elif mode == 'nodrop':
         # eventsErrors = JediEvents.objects.filter(**equery).values('error_code').annotate(njobs=Count('pandaid',distinct=True),nevents=Sum('def_max_eventid', field='def_max_eventid-def_min_eventid+1'))
@@ -8597,7 +8623,7 @@ def taskInfoNew(request, jeditaskid=0):
         if not doRefresh:
             data['request'] = request
             if data['eventservice'] == True:
-                response = render_to_response('taskInfoES.html', data, content_type='text/html')
+                response = render_to_response('taskInfoESNew.html', data, content_type='text/html')
             else:
                 response = render_to_response('taskInfo.html', data, content_type='text/html')
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -9648,13 +9674,14 @@ def eventSummary3(mode, query, transactionKeyDroppedJobs):
         for ev in evtable:
             essummary[eventservicestatelist[ev['STATUS']]] += ev['EVCOUNT']
     if mode == 'nodrop':
-        eventslist = []
+        event_counts = []
         equery = {'jeditaskid': query['jeditaskid']}
-        eventslist.extend(
+        event_counts.extend(
             JediEvents.objects.filter(**equery).values('status').annotate(count=Count('status')).order_by('status'))
-        for state in eventslist:
+        for state in event_counts:
             essummary[eventservicestatelist[state['status']]] = state['count']
 
+    # creating ordered list of eventssummary
     for state in eventservicestatelist:
         eventstatus = {}
         eventstatus['statusname'] = state

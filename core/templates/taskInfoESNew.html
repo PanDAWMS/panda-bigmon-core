@@ -63,12 +63,12 @@
             }
         }
 
-        function loadErrorSummaryData(jeditaskid, mode, tk) {
+        function loadErrorSummaryData(jeditaskid, mode, tkdj) {
 
             $('#div-error-sum').html("<img src='{% static "images/load.gif" %}'>  ");
             $.ajax({
                 url: {% url 'eventsErrorSummary' %},
-                data: {'jeditaskid': jeditaskid, 'mode': mode, 'tk': tk},
+                data: {'jeditaskid': jeditaskid, 'mode': mode, 'tkdj': tkdj},
                 async: true
             })
                 .done(function (response) {
@@ -648,7 +648,7 @@
                                 {% if state.count > 0 %}
                                     <b> <span class='{{ state.statusname }}_fill'>
         {% if state.statusname == 'failed' and state.count > 0 %}
-            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} </a>
+            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tkdj }}' );"> {{ state.count }} </a>
         {% else %} {{ state.count }}
         {% endif %}
     </span></b>
@@ -838,25 +838,25 @@
 
 
 
-            {% if task.errordialog %}
-                <p>
-                {% if logtxt %}
-                    <div class="card scrollable">
-                        <div class="card-divider errorlog">
-                            <h5>Logged status: {{ task.errordialog|safe }}</h5>
-                        </div>
-                        <div class="card-section errorlog">
-    <pre>
-    {{ logtxt }}
-    </pre>
-                        </div>
-                    </div>
-                {% else %}
+        {% if task.errordialog %}
+            <p>
+            {% if logtxt %}
+                <div class="card scrollable">
                     <div class="card-divider errorlog">
                         <h5>Logged status: {{ task.errordialog|safe }}</h5>
                     </div>
-                {% endif %}
+                    <div class="card-section errorlog">
+                        <pre>
+                        {{ logtxt }}
+                        </pre>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card-divider errorlog">
+                    <h5>Logged status: {{ task.errordialog|safe }}</h5>
+                </div>
             {% endif %}
+        {% endif %}
 
 
 
