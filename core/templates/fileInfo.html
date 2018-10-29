@@ -47,6 +47,7 @@
 	<th>First<br>event</th>
 	<th>End<br>event</th>
 	<th>Status</th>
+    <th>Processing status</th>
 	<th>Attempt (max)</th>
 </tr>
 {% for f in files %}
@@ -58,6 +59,7 @@
 		<td>{{ f.startevent }}</td>
 		<td>{{ f.endevent }}</td>
 		<td class='{{frec.status}}'>{{ f.status }}</td>
+		<td class='{{frec.procstatus}}'>{{ f.procstatus }}</td>
 		<td>{% if f.attemptnr %} {{ f.attemptnr }} ({{ f.maxattempt }}){% endif %}</td>
 	</tr>
 {% endfor %}
