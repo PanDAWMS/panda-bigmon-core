@@ -57,6 +57,7 @@
 .sent { color:#FF9933 }
 .reassign { color:#FF8174 }
 .ok {color:#0a47ff}
+.queued { color:grey }
 
 .alarm_fill { color:black;  background-color:#FF8174 }
 .error_fill { color:black;  background-color:#FF8174 }
@@ -111,6 +112,7 @@
 .processed_fill { color:black;  background-color:#EBF5E2 }
 
 .paused_fill { color:black;  background-color:#DCDCDC; position: static; }
+.queued_fill { color:black;  background-color:#DCDCDC; position: static; }
 
 .warning_fill { color:black;  background-color:#FFCB2F }
 
