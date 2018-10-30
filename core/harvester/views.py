@@ -486,7 +486,7 @@ def harvesters(request):
                 'url': URL
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
-        setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 10)
+        setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
         endSelfMonitor(request)
         return render_to_response('harvesters.html', data, content_type='text/html')
     elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
@@ -722,7 +722,7 @@ def harvesters(request):
                 'url': URL
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
-        setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 10)
+        setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
         endSelfMonitor(request)
         return render_to_response('harvesters.html', data, content_type='text/html')
     elif 'pandaid' in request.session['requestParams'] and 'computingsite' not in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
@@ -863,7 +863,7 @@ def harvesters(request):
                 'url': URL
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
-        setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 10)
+        setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
         endSelfMonitor(request)
         return render_to_response('harvesters.html', data, content_type='text/html')
     else:
@@ -1087,7 +1087,7 @@ def workersJSON(request):
                 object = dict(zip(columns, worker))
                 workersList.append(object)
             if 'key' not in request.session['requestParams']:
-                setCacheEntry(request, xurl, json.dumps(workersList, cls=DateTimeEncoder), 60 * 10, isData = True)
+                setCacheEntry(request, xurl, json.dumps(workersList, cls=DateTimeEncoder), 60 * 20, isData = True)
             return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='text/html')
 
     elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
@@ -1120,7 +1120,7 @@ def workersJSON(request):
                 object = dict(zip(columns, worker))
                 workersList.append(object)
             if 'key' not in request.session['requestParams']:
-                setCacheEntry(request, xurl, json.dumps(workersList, cls=DateTimeEncoder), 60 * 10, isData = True)
+                setCacheEntry(request, xurl, json.dumps(workersList, cls=DateTimeEncoder), 60 * 20, isData = True)
             return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='text/html')
 
     elif 'pandaid' in request.session['requestParams'] and 'computingsite' not in request.session[
