@@ -9777,7 +9777,7 @@ def inputEventChunkSummary(taskrec, dsets):
         inputfilesids_states[inputfile['procstatus']].append(inputfile['fileid'])
 
     inputfiles_tk = {}
-    ifs_states = ['queued', 'ready', 'running', 'merging', 'transferring', 'finished', 'failed']
+    ifs_states = ['ready', 'queued', 'running', 'merging', 'transferring', 'finished', 'failed']
     ifs_summary = []
     for ifstate in ifs_states:
         ifstatecount = 0
