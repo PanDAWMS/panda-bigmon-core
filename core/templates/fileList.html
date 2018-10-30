@@ -29,7 +29,7 @@
 {#<b>{{ files|length }} listed files {% if limitexceeded %} but some files are excluded due to DB retrieval limit. To see more files please add &limit=<i>some number</i> to request{% endif %} </b>#}
 {#{% if nfiles != files|length %} <br> <b>{{ nfiles }} unique files</b> {% endif %}#}
 
-<br>Total number of event chunks in dataset: <b> {{ nfilestotal }} </b>
+<br>Total number of inputs in dataset: <b> {{ nfilestotal }} </b>
 {% if nfilestotal != nfilesunique %} whereas number of unique files is <b>{{ nfilesunique }}</b> {% endif %}
 <p>
 {% if nfilestotal > 1000 %}
@@ -208,7 +208,7 @@ function fileListTable() {
 
         ],
         "createdRow": function ( row, data, index ) {
-            $('td', row).eq(7).addClass(data['status'] + '_fill');
+            $('td', row).eq(7,8).addClass(data['status'] + '_fill');
         }
       });
     }

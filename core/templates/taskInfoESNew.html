@@ -258,7 +258,8 @@
         }
 
 
-        function buildInputFilesTable() {
+        function buildInputFilesTable(statefilter) {
+          if (document.getElementById('inputfilestable').style.display != 'table') {
 
             document.getElementById('inputfilestable').style.display = 'table';
 
@@ -324,8 +325,11 @@
                     "url": "{% url 'taskInfoNew' jeditaskid %}?tkiec={{ tkiec }}&dt",
                     "dataSrc": ''
                 },
+                "oSearch": {
+                    "sSearch": statefilter
+                },
 
-                "bStateSave": true // optional
+                "bStateSave": false // optional
 
             });
 
@@ -334,7 +338,36 @@
                 inputfilestable.fnAdjustColumnSizing();
             });
 
+            $('#inputsqueued').click(function () {
+                inputfilestable.fnFilter("queued");
+            });
+
+            $('#inputsready').click(function () {
+                inputfilestable.fnFilter("ready");
+            });
+
+            $('#inputsrunning').click(function () {
+                inputfilestable.fnFilter("running");
+            });
+
+            $('#inputsmerging').click(function () {
+                inputfilestable.fnFilter("merging");
+            });
+
+            $('#inputstransferring').click(function () {
+                inputfilestable.fnFilter("transferring");
+            });
+
+            $('#inputsfinished').click(function () {
+                inputfilestable.fnFilter("finished");
+            });
+
+            $('#inputsfailed').click(function () {
+                inputfilestable.fnFilter("failed");
+            });
+
             $('#inputfilestable').goTo();
+          }
         }
 
         $(document).ready(function () {
@@ -591,13 +624,32 @@
                     {% for state in iecsummary %}
                         <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
                             {% if state.count > 0 %}<b>
-                                <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&ecstate={{ state.name }}&datasetid={% if state.ds|length > 1 %}{% for id in state.ds %}{{ id }}{% if not forloop.last %},{% endif %}{% endfor %}{% else %}{{ state.ds.0 }}{% endif %}&tk={{ state.tk }}&eventservice=1|2|3|4">
-                                    <span class='{{ state.name }}_fill'>{{ state.count }}</span></a>
+                                <a id="inputs{{ state.name }}" onclick="buildInputFilesTable('{{ state.name }}')"><span class='{{ state.name }}_fill'>{{ state.count }}</span></a>
+{#                                <a href="{% url 'fileList' %}?jeditaskid={{ task.jeditaskid }}&procstate={{ state.name }}&datasetid={% if state.ds|length > 1 %}{% for id in state.ds %}{{ id }}{% if not forloop.last %},{% endif %}{% endfor %}{% else %}{{ state.ds.0 }}{% endif %}">#}
+{#                                    <span class='{{ state.name }}_fill'>{{ state.count }}</span></a>#}
                             </b> {% endif %}
                         </td>
                     {% endfor %}
                 </tr>
             </table>
+
+        <table class="data-table nowrap" id="inputfilestable" style="display: none">
+            <thead>
+            <tr>
+                <th>The logical filename (lfn)</th>
+                <th>File ID</th>
+                <th>Link to jobs</th>
+                <th>Status</th>
+                <th>Attempt</th>
+                <th>Max attempt number</th>
+                <th>The starting event number used in the file (Start Event)</th>
+                <th>The ending event number used in the file (End Event)</th>
+                <th>How many times the file failed so far (Failed Attempt)</th>
+                <th>How many times the file can be failed at most (Max Failure)</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
 
         {% endif %}
 
@@ -770,24 +822,6 @@
             </table>
         {% endif %}
         </div>
-
-        <table class="data-table nowrap" id="inputfilestable" style="display: none">
-            <thead>
-            <tr>
-                <th>The logical filename (lfn)</th>
-                <th>File ID</th>
-                <th>Link to jobs</th>
-                <th>Status</th>
-                <th>Attempt</th>
-                <th>Max attempt number</th>
-                <th>The starting event number used in the file (Start Event)</th>
-                <th>The ending event number used in the file (End Event)</th>
-                <th>How many times the file failed so far (Failed Attempt)</th>
-                <th>How many times the file can be failed at most (Max Failure)</th>
-            </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
 
 
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
