@@ -494,11 +494,6 @@
         <div class="dropdownplots">
             <button class="dropdownbutton">Go to</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
-                {% if requestParams.mode and requestParams.mode == 'nodrop' %}
-                    <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Drop mode</a>
-                {% else %}
-                    <a style="cursor: pointer;" href="{{ nomodeurl }}mode=nodrop">Nodrop mode</a>
-                {% endif %}
                 {% if vomode == 'atlas' %}
                     {% if task.tasktype == 'prod' %}
                         <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
@@ -547,8 +542,8 @@
             <button class="dropdownbutton">Show</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
 
-                <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show jobs summary in nodrop  mode</a>
-                <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show jobs summary in drop mode</a>
+                <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show jobs summary including retries</a>
+                <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show jobs summary excluding retries</a>
 
                 <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'scouts', 'scoutstable');">Show scout jobs</a>
 
@@ -576,9 +571,7 @@
         <div class="dropdownplots">
             <button class="dropdownbutton">Open plot</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
-{#                <a style="cursor: pointer;" onclick="javascript:buildNeventsPlot('plot0' ,'nevents_plot');">Number of#}
-{#                    events distribution plot</a>#}
-                <a style="cursor: pointer;" href="#plots" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');">Memory
+                <a style="cursor: pointer;" href="#plots" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'plots', 'plots');">Memory
                     and Walltime usage</a>
 
                 <a href="http://atlas-kibana-panda.mwt2.org/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))"
@@ -639,8 +632,6 @@
                         <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
                             {% if state.count > 0 %}<b>
                                 <a id="inputs{{ state.name }}" onclick="buildInputFilesTable('{{ state.name }}')"><span class='{{ state.name }}_fill'>{{ state.count }}</span></a>
-{#                                <a href="{% url 'fileList' %}?jeditaskid={{ task.jeditaskid }}&procstate={{ state.name }}&datasetid={% if state.ds|length > 1 %}{% for id in state.ds %}{{ id }}{% if not forloop.last %},{% endif %}{% endfor %}{% else %}{{ state.ds.0 }}{% endif %}">#}
-{#                                    <span class='{{ state.name }}_fill'>{{ state.count }}</span></a>#}
                             </b> {% endif %}
                         </td>
                     {% endfor %}
