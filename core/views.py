@@ -8558,7 +8558,7 @@ def taskInfoNew(request, jeditaskid=0):
 
 
     data = getCacheEntry(request, "taskInfoNew", skipCentralRefresh=True)
-    # data = None
+    data = None
     # Temporary protection
     if data is not None:
         data = json.loads(data)
@@ -8570,24 +8570,7 @@ def taskInfoNew(request, jeditaskid=0):
                 setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 1)
 
     if data is not None:
-        try:
-            data = deleteCacheTestData(request, data)
-        except: pass
         doRefresh = False
-
-        plotDict = {}
-        if 'plotsDict' in data:
-            oldPlotDict = json.loads(data['plotsDict'])
-            for plotName, plotData in oldPlotDict.iteritems():
-                if 'sites' in plotData and 'ranges' in plotData:
-                    plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
-                    for dictSiteName, listValues in plotData['sites'].iteritems():
-                        try:
-                            plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
-                            plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
-                        except:
-                            pass
-            data['plotsDict'] = plotDict
 
         #We still want to refresh tasks if request came from central crawler and task not in the frozen state
         if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
@@ -8613,12 +8596,6 @@ def taskInfoNew(request, jeditaskid=0):
                     doRefresh = True
         # temp turning on refresh of all tasks to rewrite cache
         # doRefresh = True
-
-        ### This is a temporary fix in order of avoiding 500 error for cached tasks not compartible to a new template
-        if not isinstance(data['jobscoutids']['ramcountscoutjob'], list):
-            if 'ramcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['ramcountscoutjob']
-            if 'iointensityscoutjob' in data['jobscoutids']: del data['jobscoutids']['iointensityscoutjob']
-            if 'outdiskcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['outdiskcountscoutjob']
 
         if not doRefresh:
             data['request'] = request
@@ -8919,6 +8896,29 @@ def taskInfoNew(request, jeditaskid=0):
 
         end = time.time()
         print("Inputs states summary: {} sec".format(end - start))
+
+    # get sum of hs06sec grouped by status
+    hquery = {}
+    hquery['jeditaskid'] = jeditaskid
+    hquery['jobstatus__in'] = ('finished', 'failed')
+    hs06sec_sum = []
+    hs06sec_sum.extend(Jobsarchived.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
+    hs06sec_sum.extend(Jobsarchived4.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
+
+    hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
+    if len(hs06sec_sum) > 0:
+        for hs in hs06sec_sum:
+            if hs['jobstatus'] == 'finished':
+                hs06sSum['finished'] += hs['hs06secsum']
+                hs06sSum['total'] += hs['hs06secsum']
+            elif hs['jobstatus'] == 'failed':
+                hs06sSum['failed'] += hs['hs06secsum']
+                hs06sSum['total'] += hs['hs06secsum']
+
+    if taskrec:
+        taskrec['totevprochs06'] = int(hs06sSum['finished'])
+        taskrec['failedevprochs06'] = int(hs06sSum['failed'])
+        taskrec['currenttotevhs06'] = int(hs06sSum['total'])
 
     # datetime type -> str in order to avoid encoding cached on template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
