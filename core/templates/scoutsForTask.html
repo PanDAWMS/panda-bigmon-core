@@ -1,0 +1,45 @@
+{% if jobscoutids.cputimescoutjob|length > 0 or jobscoutids.walltimescoutjob|length > 0 or jobscoutids.ramcountscoutjob|length > 0 or jobscoutids.outdiskcountscoutjob|length > 0 or jobscoutids.iointensityscoutjob|length > 0 %}
+    <table>
+        <a name="scouts"></a>
+        <tr>
+            <td bgcolor='lightcyan'><b> Scout jobs: </b></td>
+            {% if jobscoutids.walltimescoutjob and jobscoutids.walltimescoutjob|length > 0 %}
+                <td>Walltime:
+                    {% for job in jobscoutids.walltimescoutjob %}
+                        <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
+                    {% else %} , {% endif %}
+                    {% endfor %}
+                </td>{% endif %}
+            {% if jobscoutids.cputimescoutjob and jobscoutids.cputimescoutjob|length %}
+                <td>CPU time:
+                    {% for job in jobscoutids.cputimescoutjob %}
+                        <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
+                    {% else %} , {% endif %}
+                    {% endfor %}
+                </td>{% endif %}
+            {% if jobscoutids.ramcountscoutjob and jobscoutids.ramcountscoutjob|length %}
+                <td>RAM count:
+                    {% for job in jobscoutids.ramcountscoutjob %}
+                        <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
+                    {% else %} , {% endif %}
+                    {% endfor %}
+                </td>{% endif %}
+            {% if jobscoutids.outdiskcountscoutjob and jobscoutids.outdiskcountscoutjob|length %}
+                <td>Out disk count:
+                    {% for job in jobscoutids.outdiskcountscoutjob %}
+                        <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
+                    {% else %} , {% endif %}
+                    {% endfor %}
+                </td>{% endif %}
+            {% if jobscoutids.iointensityscoutjob and jobscoutids.iointensityscoutjob|length %}
+                <td>IO intensity:
+                    {% for job in jobscoutids.iointensityscoutjob %}
+                        <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
+                    {% else %} , {% endif %}
+                    {% endfor %}
+                </td>{% endif %}
+        </tr>
+    </table>
+{% else %}
+    <p> No scout jobs found for the task.
+{% endif %}

@@ -8642,6 +8642,7 @@ def taskInfoNew(request, jeditaskid=0):
     jobsummary = []
     maxpss = []
     walltime = []
+    jobsummaryMerge = []
     jobsummaryESMerge = []
     jobsummaryPMERGE = []
     eventsdict = []
@@ -8661,7 +8662,7 @@ def taskInfoNew(request, jeditaskid=0):
         if len(tasks) > 0:
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
 
-        mode = 'drop'
+        mode = 'nodrop'
         if 'mode' in request.session['requestParams'] and request.session['requestParams'][
             'mode'] == 'drop': mode = 'drop'
         if 'mode' in request.session['requestParams'] and request.session['requestParams'][
@@ -8674,9 +8675,9 @@ def taskInfoNew(request, jeditaskid=0):
             end = time.time()
             print("Inserting dropped jobs: {} sec".format(end - start))
             print('tk of dropped jobs: {}'.format(transactionKeyDJ))
-
-        plotsDict, jobsummary, jobsummaryMerge, jobScoutIDs, hs06sSum = jobSummary3(
-            request, query, extra=extra, isEventServiceFlag=eventservice)
+        #
+        # plotsDict, jobsummary, jobsummaryMerge, jobScoutIDs, hs06sSum = jobSummary3(
+        #     request, query, extra=extra, isEventServiceFlag=eventservice)
 
         if eventservice:
             start = time.time()
@@ -8684,14 +8685,15 @@ def taskInfoNew(request, jeditaskid=0):
             end = time.time()
             print("Events states summary: {} sec".format(end - start))
 
-    nonzeroPMERGE = 0
-    for status in jobsummaryMerge:
-        if status['count'] > 0:
-            nonzeroPMERGE += 1
-            break
-
-    if nonzeroPMERGE == 0:
-        jobsummaryMerge = None
+    start = time.time()
+    # nonzeroPMERGE = 0
+    # for status in jobsummaryMerge:
+    #     if status['count'] > 0:
+    #         nonzeroPMERGE += 1
+    #         break
+    #
+    # if nonzeroPMERGE == 0:
+    #     jobsummaryMerge = None
 
     maxpssave = 0
     maxpsscount = 0
@@ -8863,9 +8865,9 @@ def taskInfoNew(request, jeditaskid=0):
         #     taskrec['totevhs06'] = (neventsTot)*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsTot > 0) else None
         # else:
         #     taskrec['totevhs06'] = int(hs06sSum['total']*neventsTot)
-        taskrec['totevprochs06'] = int(hs06sSum['finished'])
-        taskrec['failedevprochs06'] = int(hs06sSum['failed'])
-        taskrec['currenttotevhs06'] = int(hs06sSum['total'])
+        # taskrec['totevprochs06'] = int(hs06sSum['finished'])
+        # taskrec['failedevprochs06'] = int(hs06sSum['failed'])
+        # taskrec['currenttotevhs06'] = int(hs06sSum['total'])
 
         taskrec['maxpssave'] = maxpssave
         if 'creationdate' in taskrec:
@@ -8896,6 +8898,8 @@ def taskInfoNew(request, jeditaskid=0):
     if len(countfailed) > 0 and countfailed[0] > 0:
         showtaskprof = True
 
+    end = time.time()
+    print("Loading task params and datasets info: {} sec".format(end - start))
 
     transactionKeyIEC = -1
     ifs_summary = []
@@ -8914,7 +8918,7 @@ def taskInfoNew(request, jeditaskid=0):
         setCacheEntry(request, transactionKeyIEC, json.dumps(inputfiles_list, cls=DateEncoder), 60 * 30, isData=True)
 
         end = time.time()
-        print("Input event chunks states summary: {} sec".format(end - start))
+        print("Inputs states summary: {} sec".format(end - start))
 
     # datetime type -> str in order to avoid encoding cached on template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
@@ -8972,11 +8976,11 @@ def taskInfoNew(request, jeditaskid=0):
             'nomodeurl': nomodeurl,
             'mode': mode,
             'showtaskprof': showtaskprof,
-            'jobsummaryESMerge': jobsummaryMerge,
-            'jobsummaryPMERGE': jobsummaryMerge,
-            'plotsDict': json.dumps(plotsDict),
+            # 'jobsummaryESMerge': jobsummaryMerge,
+            # 'jobsummaryPMERGE': jobsummaryMerge,
+            # 'plotsDict': json.dumps(plotsDict),
             'taskbrokerage': taskbrokerage,
-            'jobscoutids' : jobScoutIDs,
+            # 'jobscoutids' : jobScoutIDs,
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
@@ -9397,6 +9401,124 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
     return plotsDict, jobstates, essummary, transactionKey, jobScoutIDs, hs06sSum
 
 
+def getJobSummaryForTask(request, jeditaskid=-1):
+    valid, response = initRequest(request)
+    if not valid: return response
+
+    try:
+        jeditaskid = int(jeditaskid)
+    except:
+        return HttpResponse(status=404)
+
+    if jeditaskid == -1:
+        return HttpResponse(status=404)
+
+    # possible values of infotype are jobssummary, plots, scouts. Provided type will be returned, other put in cache.
+    if 'infotype' in request.session['requestParams'] and request.session['requestParams']['infotype']:
+        infotype = request.session['requestParams']['infotype']
+    else:
+        return response
+
+    if 'es' in request.session['requestParams'] and request.session['requestParams']['es'] == 'True':
+        es = True
+    else:
+        es = False
+
+    if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop':
+        mode = 'drop'
+    else:
+        mode = 'nodrop'
+
+    data = getCacheEntry(request, "jobSummaryForTask"+str(jeditaskid)+mode, isData=True)
+    data = None
+
+    if data is not None:
+        data = json.loads(data)
+
+        plotDict = {}
+        if 'plotsDict' in data:
+            oldPlotDict = json.loads(data['plotsDict'])
+            for plotName, plotData in oldPlotDict.iteritems():
+                if 'sites' in plotData and 'ranges' in plotData:
+                    plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
+                    for dictSiteName, listValues in plotData['sites'].iteritems():
+                        try:
+                            plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
+                            plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
+                        except:
+                            pass
+            data['plotsDict'] = plotDict
+
+        ### This is a temporary fix in order of avoiding 500 error for cached tasks not compartible to a new template
+        if not isinstance(data['jobscoutids']['ramcountscoutjob'], list):
+            if 'ramcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['ramcountscoutjob']
+            if 'iointensityscoutjob' in data['jobscoutids']: del data['jobscoutids']['iointensityscoutjob']
+            if 'outdiskcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['outdiskcountscoutjob']
+
+
+        data['request'] = request
+
+        if infotype == 'jobsummary':
+            response = render_to_response('jobSummaryForTask.html', data, content_type='text/html')
+        elif infotype == 'scouts':
+            response = render_to_response('scoutsForTask.html', data, content_type='text/html')
+        elif infotype == 'plots':
+            response = HttpResponse(json.dumps(data['plotsDict'], cls=DateEncoder), content_type='text/html')
+        else:
+            response = None
+        endSelfMonitor(request)
+        return response
+
+
+    extra = '(1=1)'
+    query = {}
+    query['jeditaskid'] = jeditaskid
+
+    if mode == 'drop':
+        start = time.time()
+        extra, transactionKeyDJ = insert_dropped_jobs_to_tmp_table(query, extra)
+        end = time.time()
+        print("Inserting dropped jobs: {} sec".format(end - start))
+        print('tk of dropped jobs: {}'.format(transactionKeyDJ))
+
+    plotsDict, jobsummary, jobsummaryMerge, jobScoutIDs = jobSummary3(
+        request, query, extra=extra, isEventServiceFlag=es)
+
+    alldata = {
+        'jeditaskid': jeditaskid,
+        'request': request,
+        'jobsummary': jobsummary,
+        'jobsummaryMerge': jobsummaryMerge,
+        'jobScoutIDs': jobScoutIDs,
+        'plotsDict': json.dumps(plotsDict),
+    }
+    setCacheEntry(request, 'jobSummaryForTask'+str(jeditaskid)+mode, json.dumps(alldata, cls=DateEncoder), 60 * 10, isData=True)
+
+    if infotype == 'jobsummary':
+        data = {
+            'jeditaskid': jeditaskid,
+            'request': request,
+            'jobsummary': jobsummary,
+            'jobsummaryMerge': jobsummaryMerge,
+        }
+        response = render_to_response('jobSummaryForTask.html', data, content_type='text/html')
+    elif infotype == 'scouts':
+        data = {
+            'jeditaskid': jeditaskid,
+            'request': request,
+            'jobscoutids': request,
+        }
+        response = render_to_response('scoutsForTask.html', data, content_type='text/html')
+    elif infotype == 'plots':
+        response = HttpResponse(json.dumps(plotsDict, cls=DateEncoder), content_type='text/html')
+    else:
+        response = None
+    endSelfMonitor(request)
+    if response:
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
+
 def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False):
     """An attempt to rewrite it moving dropping to db request level"""
 
@@ -9405,7 +9527,7 @@ def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False):
     for jst in jobScoutTypes:
         jobScoutIDs[jst] = []
 
-    hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
+    # hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
     cpuTimeCurrent = []
 
     plotsNames = ['maxpss', 'maxpsspercore', 'nevents', 'walltime', 'walltimeperevent', 'hs06s', 'cputime',
@@ -9485,9 +9607,9 @@ def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False):
             if job['nevents'] and job['nevents'] > 0:
                 cpuTimeCurrent.append(job['hs06sec'] / job['nevents'])
                 job['walltimeperevent'] = round(job['duration'] * job['actualcorecount'] / (job['nevents'] * 1.0), 2)
-            hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
-            hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
-            hs06sSum['total'] += job['hs06sec']
+            # hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
+            # hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
+            # hs06sSum['total'] += job['hs06sec']
 
 
 
@@ -9620,7 +9742,7 @@ def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False):
     jobScoutIDsNew['iointensityscoutjob'] = jobScoutIDs['ioIntensity']
     jobScoutIDsNew['outdiskcountscoutjob'] = jobScoutIDs['outDiskCount']
 
-    return plotsDict, ojobstates, mjobstates, jobScoutIDsNew, hs06sSum
+    return plotsDict, ojobstates, mjobstates, jobScoutIDsNew
 
 
 def eventSummary3(mode, query, transactionKeyDroppedJobs):

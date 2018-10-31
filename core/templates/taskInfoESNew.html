@@ -63,6 +63,26 @@
             }
         }
 
+        function loadJobSummary(jeditaskid, mode, es, infotype, divid) {
+
+            $('#'+divid).html("<img src='{% static "images/load.gif" %}'>  ");
+            $.ajax({
+                url: '{% url 'getJobSummaryForTask' jeditaskid %}',
+                data: {'mode': mode, 'es': es, 'infotype': infotype, 'json':1, 'dt':1},
+                async: true
+            })
+                .done(function (response) {
+                    if (infotype == 'jobsummary' || infotype == 'scouts') {
+                        $('#' + divid).html(response);
+                    }
+                    else if (infotype == 'plots') {
+                        buildPlots('d3splot', response)
+                    }
+                    $('#'+divid).goTo();
+                });
+        }
+
+
         function loadErrorSummaryData(jeditaskid, mode, tkdj) {
 
             $('#div-error-sum').html("<img src='{% static "images/load.gif" %}'>  ");
@@ -76,20 +96,8 @@
                 });
         }
 
-        function buildNeventsPlot(idname, classname) {
-            if (!document.getElementById(idname).innerHTML) {
-                var data = {{ plotsDict|safe }};
-                if ('nevents' in data) {
-                    pandamonplotHistNew(data['nevents'], "#plot0", "Number of events histogram (finished non-merge jobs)");
-                }
-                toggleDetailDisplay(classname)
-            }
-            else {
-                toggleDetailDisplay(classname)
-            }
-        }
 
-        function buildPlots(classname) {
+        function buildPlots(classname, data) {
 
             el = document.getElementsByClassName(classname);
             var flag = 0;
@@ -97,8 +105,12 @@
                 flag = (el[i].innerHTML) ? flag : flag + 1;
             }
             if (flag > 0) {
-                $("#jobsconsumptionplots").html("<img src='{% static "images/load.gif" %}'>  ");
-                var values = {{ plotsDict|safe }};
+                $("#plots").html("<img src='{% static "images/load.gif" %}'>  ");
+                {#var values = {{ plotsDict|safe }};#}
+                var values = $.parseJSON(data);
+                if ('nevents' in values) {
+                    pandamonplotHistNew(values['nevents'], "#plot0", "Number of events histogram (finished non-merge jobs)");
+                }
                 if ('maxpss' in values) {
                     pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
                 }
@@ -126,9 +138,9 @@
                 if ('walltimeperevent' in values) {
                     pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
                 }
-                $("#jobsconsumptionplots").html("");
+                $("#plots").html("");
                 toggleDetailDisplay(classname);
-                $('#jobsconsumptionplots').goTo();
+                $('#plots').goTo();
             }
             else {
                 toggleDetailDisplay(classname);
@@ -380,9 +392,9 @@
             {% endif %}
 
             var url = window.location.href;
-            if (url.indexOf("#jobsconsumptionplots") > -1) {
-                buildPlots('d3splot');
-                $('#jobsconsumptionplots').goTo();
+            if (url.indexOf("#plots") > -1) {
+                loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');
+                $('#plots').goTo();
             }
 
 
@@ -536,9 +548,12 @@
         <div class="dropdownplots">
             <button class="dropdownbutton">Show</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
-                {% if jobsummary or jobsummaryESMerge %}
-                    <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('jobsummarytables');">Show jobs summary</a>
-                {% endif %}
+
+                <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show jobs summary in nodrop  mode</a>
+                <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show jobs summary in drop mode</a>
+
+                <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'scouts', 'scoutstable');">Show scout jobs</a>
+
                 <a style="cursor: pointer;" onclick="javascript:buildInputFilesTable();">Show task inputs list </a>
                 <a style="cursor: pointer;" onclick="javascript:buildEventChunkTable();">Show jobset relationships</a>
                 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('badevents');">Show exhausted events</a>
@@ -550,7 +565,7 @@
             <div id="dropdown-plotchoice" class="dropdown-plot">
                 <a href="#jobparams">Job parameters</a>
                 {% if jobscoutids.cputimescoutjob|length > 0 or jobscoutids.walltimescoutjob|length > 0 %}
-                    <a href="#scouts">Scout jobs</a>
+                    <a href="#scoutstable">Scout jobs</a>
                 {% endif %}
                 {% if taskparaml %}
                     <a href="#taskparamsprodsys">Prodsys task parameters</a>
@@ -563,10 +578,11 @@
         <div class="dropdownplots">
             <button class="dropdownbutton">Open plot</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
-                <a style="cursor: pointer;" onclick="javascript:buildNeventsPlot('plot0' ,'nevents_plot');">Number of
-                    events distribution plot</a>
-                <a style="cursor: pointer;" href="#jobsconsumptionplots" onclick="javascript:buildPlots('d3splot');">Memory
+{#                <a style="cursor: pointer;" onclick="javascript:buildNeventsPlot('plot0' ,'nevents_plot');">Number of#}
+{#                    events distribution plot</a>#}
+                <a style="cursor: pointer;" href="#plots" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');">Memory
                     and Walltime usage</a>
+
                 <a href="http://atlas-kibana-panda.mwt2.org/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))"
                    target="_blank"><span class="tooltip-upper">Memory and Walltime usage (Kibana)<span class="tooltip-text">This Kibana instance is read-only. If you do not have access please contact Ilija Vukotic [ivukotic@cern.ch].</span></span></a>
                 {% if not task.tasktype == 'anal' %}
@@ -730,97 +746,13 @@
 
         </div>
 
-        <div class="jobsummarytables" style="display: none">
-        {% if jobsummary %}
-
+        <div id="jobsummarytables">
             {% if requestParams.warning %}
-                <div class="callout small alert">
-                <p style="color:brown">{{ requestParams.warning }}</p>
-                {#    Go to correspondent <a href="{% url 'jobListP' %}?jeditaskid={{ jeditaskid }}&mode=drop"> jobsss page</a>#}
-                </div>
+                    <div class="callout small alert">
+                    <p style="color:brown">{{ requestParams.warning }}</p>
+                    {#    Go to correspondent <a href="{% url 'jobListP' %}?jeditaskid={{ jeditaskid }}&mode=drop"> jobsss page</a>#}
+                    </div>
             {% endif %}
-            <table>
-                <tr bgcolor="lightcyan">
-                    <th colspan=20>
-                        <b>States of jobs in this task</b> &nbsp; &nbsp; <a
-                            href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&eventservice=not2&display_limit=100">Show
-                        jobs</a> &nbsp; &nbsp; &nbsp;
-                        {% if requestParams.mode and requestParams.mode == 'nodrop' %}
-                            <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Switch to drop mode</a>
-                        {% else %}
-                            <a style="cursor: pointer;" href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
-                        {% endif %}
-                    </th>
-                </tr>
-                <tr>
-                    {% for state in jobsummary %}
-                        <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
-                    {% endfor %}
-                </tr>
-                <tr>
-                    {% for state in jobsummary %}
-                        {% if newjobsummary_test %}
-                            {% for newstate in newjobsummary_test %}
-                                {% if forloop.counter == forloop.parentloop.counter %}
-                                    <td {% if state.count > 0 or newstate.count > 0 %}
-                                        class='{{ state.name }}_fill' {% endif %}>
-                                        {% if state.count > 0 or newstate.count > 0 %}<b> <a
-                                                href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&eventservice=not2&display_limit=100">
-                                        <span class='{{ state.name }}_fill'>{% if state.count > 0 %}
-                                            {{ state.count }} ({{ newstate.count }}) {% else %} 0 (
-                                            {{ newstate.count }}) {% endif %}</span></a> </b> {% endif %} </td>
-                                {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                                {% if state.count > 0 %}
-                                    <b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&eventservice=not2&display_limit=100">
-                                        <span class='{{ state.name }}_fill'>{% if state.count > 0 %}
-                                        {{ state.count }} {% endif %}</span></a> </b> {% endif %} </td>
-                        {% endif %}
-                    {% endfor %}
-            </table>
-
-        {% endif %}
-
-        {% if jobsummaryESMerge %}
-
-            <table>
-                <tr bgcolor="lightcyan">
-                    <th colspan=20>
-                        <b>States of es_merge jobs in this task</b> &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&eventservice=2&display_limit=100">Show
-                        jobs</a>
-                    </th>
-                </tr>
-                <tr>
-                    {% for state in jobsummaryESMerge %}
-                        <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
-                    {% endfor %}
-                </tr>
-                <tr>
-                    {% for state in jobsummaryESMerge %}
-                        {% if newjobsummaryESMerge_test %}
-                            {% for newstate in newjobsummaryESMerge_test %}
-                                {% if forloop.counter == forloop.parentloop.counter %}
-                                    <td {% if state.count > 0 or newstate.count > 0 %}
-                                        class='{{ state.name }}_fill' {% endif %}>
-                                        {% if state.count > 0 or newstate.count > 0 %}
-                                            <b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&display_limit=100&eventservice=2"><span
-                                                    class='{{ state.name }}_fill'>{% if state.count > 0 %}
-                                                {{ state.count }} ({{ newstate.count }}) {% else %} 0 (
-                                                {{ newstate.count }}) {% endif %}</span></a> </b> {% endif %} </td>
-                                {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                                {% if state.count > 0 %}
-                                    <b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&display_limit=100&eventservice=2"><span
-                                            class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
-                            </td>
-                        {% endif %}
-                    {% endfor %}
-            </table>
-        {% endif %}
         </div>
 
 
@@ -892,35 +824,33 @@
             {% endif %}
         {% endif %}
 
+        <div id="scoutstable">
 
+        </div>
 
         <p>
-        <div id="jobsconsumptionplots"></div>
-        {% if  'nevents' in plotsDict %}
-            <div class="nevents_plot" id="plot0" style="align:left;display:none;font-size: 12px"></div>
-            <br style="clear:both;"> {% endif %}
+        <div id="plots" style="display: none"></div>
+        <div class="d3splot" id="plot0" style="align:left;display:none;font-size: 12px"></div>
 
-        {% if 'maxpss' in plotsDict %}
-            <div class="d3splot" id="plot1" style="float:left;display:none"></div> {% endif %}
-        {% if 'walltime' in plotsDict %}
-            <div class="d3splot" id="plot2" style="float:left;display:none"></div> {% endif %}
-        {% if 'maxpsspercore' in plotsDict %}
-            <div class="d3splot" id="plot5" style="float:left;display:none"></div> {% endif %}
-        {% if 'hs06s' in plotsDict %}
-            <div class="d3splot" id="plot7" style="float:left;display:none"></div> {% endif %}
-        {% if 'walltimeperevent' in plotsDict %}
-            <div class="d3splot" id="plot9" style="float:left;display:none"></div> {% endif %}
-        <br style="clear:both;">
-        {% if 'maxpssf' in plotsDict %}
-            <div class="d3splot" id="plot3" style="clear:both;float:left;display:none"></div> {% endif %}
-        {% if 'walltimef' in plotsDict %}
-            <div class="d3splot" id="plot4" style="float:left;display:none"></div> {% endif %}
-        {% if 'maxpsspercoref' in plotsDict %}
-            <div class="d3splot" id="plot6" style="float:left;display:none"></div> {% endif %}
-        {% if 'hs06sf' in plotsDict %}
-            <div class="d3splot" id="plot8" style="float:left;display:none"></div> {% endif %}
-        <br style="clear: both;">
+        <div class="d3splot" id="plot1" style="float:left;display:none"></div>
 
+        <div class="d3splot" id="plot2" style="float:left;display:none"></div>
+
+        <div class="d3splot" id="plot5" style="float:left;display:none"></div>
+
+        <div class="d3splot" id="plot7" style="float:left;display:none"></div>
+
+        <div class="d3splot" id="plot9" style="float:left;display:none"></div>
+
+        <div class="d3splot" id="plot3" style="clear:both;float:left;display:none"></div>
+
+        <div class="d3splot" id="plot4" style="float:left;display:none"></div>
+
+        <div class="d3splot" id="plot6" style="float:left;display:none"></div>
+
+        <div class="d3splot" id="plot8" style="float:left;display:none"></div>
+
+        <p style="clear: both"></p>
 
         {% if inctrs %}
             <table>
@@ -1041,49 +971,6 @@
             <p>
         {% endif %}
 
-    {% if jobscoutids.cputimescoutjob|length > 0 or jobscoutids.walltimescoutjob|length > 0 or jobscoutids.ramcountscoutjob|length > 0 or jobscoutids.outdiskcountscoutjob|length > 0 or jobscoutids.iointensityscoutjob|length > 0 %}
-        <table>
-            <a name="scouts"></a>
-            <tr>
-                <td bgcolor='lightcyan'><b> Scout jobs: </b></td>
-                {% if jobscoutids.walltimescoutjob and jobscoutids.walltimescoutjob|length > 0 %}
-                    <td>Walltime:
-                        {% for job in jobscoutids.walltimescoutjob %}
-                            <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
-                        {% else %} , {% endif %}
-                        {% endfor %}
-                    </td>{% endif %}
-                {% if jobscoutids.cputimescoutjob and jobscoutids.cputimescoutjob|length %}
-                    <td>CPU time:
-                        {% for job in jobscoutids.cputimescoutjob %}
-                            <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
-                        {% else %} , {% endif %}
-                        {% endfor %}
-                    </td>{% endif %}
-                {% if jobscoutids.ramcountscoutjob and jobscoutids.ramcountscoutjob|length %}
-                    <td>RAM count:
-                        {% for job in jobscoutids.ramcountscoutjob %}
-                            <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
-                        {% else %} , {% endif %}
-                        {% endfor %}
-                    </td>{% endif %}
-                {% if jobscoutids.outdiskcountscoutjob and jobscoutids.outdiskcountscoutjob|length %}
-                    <td>Out disk count:
-                        {% for job in jobscoutids.outdiskcountscoutjob %}
-                            <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
-                        {% else %} , {% endif %}
-                        {% endfor %}
-                    </td>{% endif %}
-                {% if jobscoutids.iointensityscoutjob and jobscoutids.iointensityscoutjob|length %}
-                    <td>IO intensity:
-                        {% for job in jobscoutids.iointensityscoutjob %}
-                            <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
-                        {% else %} , {% endif %}
-                        {% endfor %}
-                    </td>{% endif %}
-            </tr>
-        </table>
-    {% endif %}
 
         <a name="taskparamsprodsys"></a>
         {% if taskparaml %}
