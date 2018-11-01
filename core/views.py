@@ -9812,7 +9812,7 @@ def inputEventChunkSummary(taskrec, dsets):
     """
     jeditaskid = taskrec['jeditaskid']
     # Getting statuses of inputfiles
-    if taskrec['creationtime'] < datetime.strptime('2018-10-22 10:00:00', defaultDatetimeFormat):
+    if taskrec['creationdate'] < datetime.strptime('2018-10-22 10:00:00', defaultDatetimeFormat):
         ifsquery = """
             select  
             ifs.jeditaskid,
