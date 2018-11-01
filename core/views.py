@@ -12912,6 +12912,8 @@ def serverStatusHealth(request):
         q.append("aipanda100")
         q.append("aipanda105")
         q.append("aipanda106")
+        q.append("aipanda115")
+        q.append("aipanda116")
         q.append("aipanda107")
         q.append("aipanda108")
         lastupdate = datetime.now()
