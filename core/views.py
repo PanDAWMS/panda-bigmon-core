@@ -8639,6 +8639,9 @@ def taskInfoNew(request, jeditaskid=0):
         if len(tasks) > 0:
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
 
+        if not eventservice:
+            return redirect('/task/' + str(jeditaskid))
+
         mode = 'nodrop'
         if 'mode' in request.session['requestParams'] and request.session['requestParams'][
             'mode'] == 'drop': mode = 'drop'
