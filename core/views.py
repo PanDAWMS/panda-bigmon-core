@@ -8896,11 +8896,11 @@ def taskInfoNew(request, jeditaskid=0):
     if len(hs06sec_sum) > 0:
         for hs in hs06sec_sum:
             if hs['jobstatus'] == 'finished':
-                hs06sSum['finished'] += hs['hs06secsum']
-                hs06sSum['total'] += hs['hs06secsum']
+                hs06sSum['finished'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+                hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
             elif hs['jobstatus'] == 'failed':
-                hs06sSum['failed'] += hs['hs06secsum']
-                hs06sSum['total'] += hs['hs06secsum']
+                hs06sSum['failed'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+                hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
 
     if taskrec:
         taskrec['totevprochs06'] = int(hs06sSum['finished'])
