@@ -771,7 +771,10 @@ def updateARTJobList(request):
 
             # Loading subresults in parallel and collecting to list of dictionaries
             pool = multiprocessing.Pool(processes=nrows)
-            sub_results = pool.map(subresults_getter, url_params)
+            try:
+                sub_results = pool.map(subresults_getter, url_params)
+            except:
+                print('Exception was caught while mapping pool requests responses for next files {}'.format(str(url_params)))
             pool.close()
             pool.join()
 

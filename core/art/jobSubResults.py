@@ -70,6 +70,8 @@ def subresults_getter(url_params_str):
         _logger.exception('Exception was caught while transforming pandaid from str to int.')
         raise
 
+    print('Loading {}'.format(base_url+url_params_str))
+
     http = urllib3.PoolManager()
     resp = http.request('GET', base_url + url_params_str)
     if resp and len(resp.data) > 0:
@@ -107,6 +109,8 @@ def subresults_getter(url_params_str):
             else:
                 resultlist.append({'name': r['name'] if 'name' in r else '', 'result': r['result'] if 'result' in r else r})
             subresults_dict['result'] = resultlist
+
+    print('ART Results for {} is {}'.format(str(pandaid), str(subresults_dict)))
 
 
     # clean up ART test logs from media/filebrowser/ where guid is folder name
