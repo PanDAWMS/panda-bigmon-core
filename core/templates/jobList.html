@@ -41,6 +41,10 @@
 {% if requestParams.priorityrange %}<br><b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}
 {% if requestParams.processingtype %}<br><b>Processing type: {{ requestParams.processingtype }}</b> {% endif %}
 {% if requestParams.transformation %}<br><b>Transformation: {{ requestParams.transformation }}</b> {% endif %}
+{% if requestParams.fileid and requestParams.jeditaskid and requestParams.datasetid %}
+<br><b>File ID: <a href="{% url 'fileInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}&fileid={{ requestParams.fileid }}">{{ requestParams.fileid }}</a></b>
+<br><b>Dataset ID: <a href="{% url 'datasetInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}">{{ requestParams.datasetid }}</a> </b>
+{% endif %}
 <p>
 
 {% if jobList %}
@@ -282,7 +286,7 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 </font>
 </th></tr>
 <tr class='tablesection'>
-	<th>PanDA ID<br>Attempt# of maxAttempts#</th>
+	<th>PanDA ID<br>Attempt# of maxAttempts#<br><span style="color: gray">FileAttempt# of maxFileAttempt</span></th>
 	<th>Owner {% if viewParams.MON_VO != 'ATLAS' %} / VO{% endif %}<br>Group  </th>
 	<th>Request<br>Task ID</th>
 	<th>Transformation</th>
@@ -302,7 +306,8 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
     {% for job in jobList %}
 	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
 		<td rowspan=3><a href="{% url 'jobInfo' %}?pandaid={{ job.pandaid }}">{{ job.pandaid }}</a><br>Attempt {{ job.attemptnr }} of {{ job.maxattempt }}
-			 <br>
+			<br><span style="color: gray">FileAttempt {% if job.fileattemptnr or job.filemaxattempts %}{{ job.fileattemptnr }} of {{ job.filemaxattempts }}{% endif %}</span>
+            <br>
 		    {% if job.consumer %}
 		     Consumer: <a href="{% url 'jobInfo' %}?pandaid={{ job.consumer }}">{{ job.consumer }}</a>
 		    {% endif %}

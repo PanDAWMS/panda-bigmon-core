@@ -2947,12 +2947,10 @@ def jobList(request, mode=None, param=None):
     if 'fileid' in request.session['requestParams'] or 'ecstate' in request.session['requestParams']:
         if 'fileid' in request.session['requestParams'] and request.session['requestParams']['fileid']:
             fileid = request.session['requestParams']['fileid']
-            del request.session['requestParams']['fileid']
         else:
             fileid = None
         if 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
             datasetid = request.session['requestParams']['datasetid']
-            del request.session['requestParams']['datasetid']
         else:
             datasetid = None
         if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
@@ -2972,6 +2970,8 @@ def jobList(request, mode=None, param=None):
             extraquery_files += """pandaid in ((select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )) """.format(
                 jeditaskid, datasetid, tk)
         warning['jobsforfiles'] = 'Only jobs for last 4 days are shown. Support of filtering older jobs associated with files will be implemented soon.'
+    else:
+        fileid = None
     # union(select
     # pandaid
     # from atlas_pandaarch.filestable_arch where
@@ -3138,6 +3138,32 @@ def jobList(request, mode=None, param=None):
             end = time.time()
             print(end - start)
 
+    #get attemps of file if fileid in request params
+    files_attempts_dict = {}
+    files_attempts = []
+    if fileid:
+        if fileid and jeditaskid and datasetid:
+            fquery = {}
+            fquery['pandaid__in'] = [job['pandaid'] for job in jobs if len(jobs) > 0]
+            fquery['fileid'] = fileid
+            files_attempts.extend(Filestable4.objects.filter(**fquery).values('pandaid', 'attemptnr'))
+            files_attempts.extend(FilestableArch.objects.filter(**fquery).values('pandaid', 'attemptnr'))
+            if len(files_attempts) > 0:
+                files_attempts_dict = dict(zip([f['pandaid'] for f in files_attempts], [ff['attemptnr'] for ff in files_attempts]))
+
+            jfquery = {'jeditaskid': jeditaskid, 'datasetid': datasetid, 'fileid': fileid}
+            jedi_file = JediDatasetContents.objects.filter(**jfquery).values('attemptnr', 'maxattempt', 'failedattempt', 'maxfailure')
+            if jedi_file and len(jedi_file) > 0:
+                jedi_file = jedi_file[0]
+            if len(files_attempts_dict) > 0:
+                for job in jobs:
+                    if job['pandaid'] in files_attempts_dict:
+                        job['fileattemptnr'] = files_attempts_dict[job['pandaid']]
+                    else:
+                        job['fileattemptnr'] = None
+                    if jedi_file and 'maxattempt' in jedi_file:
+                        job['filemaxattempts'] = jedi_file['maxattempt']
+
     jobs = cleanJobList(request, jobs)
     jobs = reconstructJobsConsumers(jobs)
 
@@ -3182,6 +3208,9 @@ def jobList(request, mode=None, param=None):
             jobs = sorted(jobs, key=lambda x: x['durationsec'])
         elif sortby == 'PandaID':
             jobs = sorted(jobs, key=lambda x: x['pandaid'], reverse=True)
+    elif fileid:
+        sortby = "fileattemptnr-descending"
+        jobs = sorted(jobs, key=lambda x: x['fileattemptnr'], reverse=True)
     else:
         sortby = "time-descending"
         if len(jobs) > 0 and 'modificationtime' in jobs[0]:
