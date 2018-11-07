@@ -110,6 +110,7 @@ function loadESData(jeditaskid) {
     {% for task in tasks %}
 	<tr>
 		<td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>
+            <br> <a style="color: grey" href="{% url 'taskInfoNew' task.jeditaskid %}"><span class="tooltip-upper">{{ task.jeditaskid }}<span class="tooltip-text">Go to a new<br>input-based<br>ES task page</span></span></a>
 		</td>
 		{% if requestParams.tasktype == 'anal' %}<td>{{ task.reqid }}</td>{% endif %}
 		<td>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %} &nbsp; {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a> &nbsp; {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %} &nbsp; <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %} 
