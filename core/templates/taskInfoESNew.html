@@ -52,7 +52,7 @@
                 {% endif %}
                 <th>Created</th>
                 <th>Modified</th>
-                <th>Cores</th>
+                <th>Cores <br>Defined <br><span class="finished">Running</span> <br><span class="activated">Normalized</span></th>
                 <th>Priority</th>
                 {% if task.ticketid %}
                     <th>Tracker</th> {% endif %}
@@ -101,7 +101,7 @@
 
                 <td>{{ task.creationdate }}</td>
                 <td>{{ task.modificationtime }}</td>
-                <td>{{ task.corecount }}</td>
+                <td>{{ task.corecount }}<br><span class="finished">{{ task.accsum }}</span><br><span class="activated">{{ task.naccsum }}</span></td>
                 <td>{{ task.taskpriority }}</td>
                 {% if task.ticketid %}
                     <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a>

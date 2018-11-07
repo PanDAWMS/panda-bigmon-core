@@ -15,7 +15,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, render, redirect
 from django.template import RequestContext, loader
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, F, Value, FloatField
 from django import forms
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.vary import vary_on_headers
@@ -8937,10 +8937,20 @@ def taskInfoNew(request, jeditaskid=0):
                 hs06sSum['failed'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
                 hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
 
+    # get corecount and normalized corecount values
+    ccquery = {}
+    ccquery['jeditaskid'] = jeditaskid
+    ccquery['jobstatus'] = 'running'
+    accsum = Jobsactive4.objects.filter(**ccquery).aggregate(accsum=Sum('actualcorecount'))
+    naccsum = Jobsactive4.objects.filter(**ccquery).aggregate(naccsum=Sum(F('actualcorecount')*F('hs06')/F('corecount')/Value(10), output_field=FloatField()))
+
+
     if taskrec:
         taskrec['totevprochs06'] = int(hs06sSum['finished'])
         taskrec['failedevprochs06'] = int(hs06sSum['failed'])
         taskrec['currenttotevhs06'] = int(hs06sSum['total'])
+        taskrec['accsum'] = accsum['accsum'] if 'accsum' in accsum else 0
+        taskrec['naccsum'] = naccsum['naccsum'] if 'naccsum' in naccsum else 0
 
     # datetime type -> str in order to avoid encoding cached on template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
