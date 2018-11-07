@@ -8057,6 +8057,11 @@ def taskInfo(request, jeditaskid=0):
                 data = None
                 setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 1)
 
+        if 'eventservice' in data and data['eventservice']  == True and (
+                'version' not in request.session['requestParams'] or (
+                    'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old' )):
+            return redirect('/tasknew/'+str(jeditaskid))
+
     if data is not None:
         try:
             data = deleteCacheTestData(request, data)
@@ -8153,6 +8158,10 @@ def taskInfo(request, jeditaskid=0):
         if len(tasks) > 0:
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
         if eventservice:
+            if 'version' not in request.session['requestParams'] or (
+                    'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old'):
+                return redirect('/tasknew/' + str(jeditaskid))
+
             mode = 'drop'
             if 'mode' in request.session['requestParams'] and request.session['requestParams'][
                 'mode'] == 'drop': mode = 'drop'

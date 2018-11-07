@@ -13,12 +13,22 @@
 {% endblock %}
 
 
-{% block subtitle %}PanDA Event Service task {{ jeditaskid }} at {{ task.site }} {% endblock %}
+{% block subtitle %}PanDA Event Service task {{ jeditaskid }} {% if task.site %} at {{ task.site }} {% endif %} {% endblock %}
 
 
 {% block body %}
 
     {% if columns %}
+
+        <div class="callout success small" data-closable>
+          <h5>This is a new input-based ES task monitoring page! </h5>
+          <p>The page is nodrop mode by default. The jobs states summary is available as on-demand feature from "Show" drop-down list.
+              The old version of ES task page is accessible from "Go to" drop-down list below or through
+              <a href="{% url 'taskInfo' jeditaskid %}?version=old">link</a>. </p>
+            <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+                <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
 
         <table class="fresh-table unstriped">
           <thead>
@@ -115,6 +125,7 @@
         <div class="dropdownplots">
             <button class="dropdownbutton">Go to</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
+                <a href="{% url 'taskInfo' jeditaskid %}?version=old">Old task ES page</a>
                 {% if vomode == 'atlas' %}
                     {% if task.tasktype == 'prod' %}
                         <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
