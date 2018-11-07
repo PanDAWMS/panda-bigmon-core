@@ -1,15 +1,18 @@
 {% if jobsummary %}
-    <table>
-        <tr bgcolor="lightcyan">
+    <table class="fresh-table unstriped">
+      <thead>
+        <tr>
             <th colspan=20>
                 <b>States of jobs in this task</b> &nbsp; &nbsp; <a
                     href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&eventservice=not2&display_limit=100">Show
                 jobs</a> &nbsp; &nbsp; &nbsp;
             </th>
         </tr>
+      </thead>
+      <tbody>
         <tr>
             {% for state in jobsummary %}
-                <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
+                <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
             {% endfor %}
         </tr>
         <tr>
@@ -22,20 +25,25 @@
                     {% endif %}
                 </td>
             {% endfor %}
+        </tr>
+      </tbody>
     </table>
 {% endif %}
 
 {% if jobsummaryMerge %}
-    <table>
-        <tr bgcolor="lightcyan">
+    <table class="fresh-table unstriped">
+      <thead>
+        <tr>
             <th colspan=20>
                 <b>States of es_merge jobs in this task</b> &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&eventservice=2&display_limit=100">Show
                 jobs</a>
             </th>
         </tr>
+      </thead>
+      <tbody>
         <tr>
             {% for state in jobsummaryMerge %}
-                <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
+                <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
             {% endfor %}
         </tr>
         <tr>
@@ -47,5 +55,7 @@
                     {% endif %}
                 </td>
             {% endfor %}
+        </tr>
+      </tbody>
     </table>
 {% endif %}

@@ -1,4 +1,5 @@
-<table>
+<table class="fresh-table">
+  <thead>
     <tr class="tablesection">
         <th> Error code </th>
         <th> N events </th>
@@ -7,6 +8,8 @@
         <th> Error description</th>
         <th> Most affected jobs</th>
     </tr>
+  </thead>
+  <tbody>
     {% for error in errors %}
     	<tr>
             <td class="alarm"> {{ error.error_code }}</td>
@@ -24,4 +27,5 @@
             </td>
         </tr>
     {% endfor %}
+  </tbody>
 </table>

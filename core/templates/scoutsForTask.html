@@ -1,8 +1,9 @@
 {% if jobscoutids.cputimescoutjob|length > 0 or jobscoutids.walltimescoutjob|length > 0 or jobscoutids.ramcountscoutjob|length > 0 or jobscoutids.outdiskcountscoutjob|length > 0 or jobscoutids.iointensityscoutjob|length > 0 %}
-    <table>
+    <table class="fresh-table unstriped">
+      <tbody>
         <a name="scouts"></a>
         <tr>
-            <td bgcolor='lightcyan'><b> Scout jobs: </b></td>
+            <th><b> Scout jobs: </b></th>
             {% if jobscoutids.walltimescoutjob and jobscoutids.walltimescoutjob|length > 0 %}
                 <td>Walltime:
                     {% for job in jobscoutids.walltimescoutjob %}
@@ -39,6 +40,7 @@
                     {% endfor %}
                 </td>{% endif %}
         </tr>
+      </tbody>
     </table>
 {% else %}
     <p> No scout jobs found for the task.
