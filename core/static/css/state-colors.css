@@ -137,3 +137,21 @@
 
 .monitoring_fill { color:black;  background-color:#C7E9A9;}
 .working_fill { color:black;  background-color:#C7E9A9;}
+
+/* States of task inputs */
+
+.input_ready_fill { color:black;  background-color:#DCDCDC; }
+.input_queued_fill { color:black; background-color: #b5e0e0; }
+.input_running_fill { color:black;  background-color:#C7E9A9; }
+.input_merging_fill { color:black;  background-color:#A0D670; }
+.input_transferring_fill { color:black;  background-color:#A0D670; }
+.input_finished_fill { color:black;  background-color:#62AC21; }
+.input_failed_fill { color:black;  background-color:#FF8174; }
+
+.input_ready { color: grey; }
+.input_queued { color: #099999; }
+.input_running { color: #47D147; }
+.input_merging { color: #62AC21; }
+.input_transferring { color: #62AC21; }
+.input_finished { color: #248F24; }
+.input_failed { color: red; }
