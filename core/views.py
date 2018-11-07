@@ -2964,18 +2964,24 @@ def jobList(request, mode=None, param=None):
             tk = None
 
         if jeditaskid and datasetid and fileid:
-            extraquery_files += """pandaid in ((select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )) """.format(jeditaskid, datasetid, fileid)
+            extraquery_files += """
+                pandaid in (
+                (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
+                union all
+                (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
+                ) """.format(jeditaskid, datasetid, fileid, jeditaskid, datasetid, fileid)
 
         if 'ecstate' in request.session['requestParams'] and tk and datasetid:
-            extraquery_files += """pandaid in ((select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )) """.format(
-                jeditaskid, datasetid, tk)
-        warning['jobsforfiles'] = 'Only jobs for last 4 days are shown. Support of filtering older jobs associated with files will be implemented soon.'
+            extraquery_files += """
+                pandaid in (
+                    (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
+                    union all 
+                    (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
+                    ) """.format(jeditaskid, datasetid, tk, jeditaskid, datasetid, tk)
+        # warning['jobsforfiles'] = 'Only jobs for last 4 days are shown. Support of filtering older jobs associated with files will be implemented soon.'
     else:
         fileid = None
-    # union(select
-    # pandaid
-    # from atlas_pandaarch.filestable_arch where
-    # fileid = {} )
+
 
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
