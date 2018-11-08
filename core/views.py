@@ -9667,20 +9667,20 @@ def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False):
     for job in ojobs:
         if job['actualcorecount'] is None:
             job['actualcorecount'] = 1
+        if job['jobstatus'] == 'finished':
+            if job['computingsite'] not in plotsDict['nevents']['sites']:
+                plotsDict['nevents']['sites'][job['computingsite']] = []
+            plotsDict['nevents']['sites'][job['computingsite']].append(job['nevents'])
         if job['maxpss'] is not None and job['maxpss'] != -1:
             if job['jobstatus'] == 'finished':
                 if job['computingsite'] not in plotsDict['maxpsspercore']['sites']:
                     plotsDict['maxpsspercore']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['nevents']['sites']:
-                    plotsDict['nevents']['sites'][job['computingsite']] = []
                 if job['computingsite'] not in plotsDict['maxpss']['sites']:
                     plotsDict['maxpss']['sites'][job['computingsite']] = []
-
                 if job['actualcorecount'] and job['actualcorecount'] > 0:
                     plotsDict['maxpsspercore']['sites'][job['computingsite']].append(
                         job['maxpss'] / 1024 / job['actualcorecount'])
                 plotsDict['maxpss']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
-                plotsDict['nevents']['sites'][job['computingsite']].append(job['nevents'])
             elif job['jobstatus'] == 'failed':
                 if job['computingsite'] not in plotsDict['maxpsspercoref']['sites']:
                     plotsDict['maxpsspercoref']['sites'][job['computingsite']] = []
@@ -9729,6 +9729,13 @@ def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False):
                     plotsDict['cputimepereventf']['sites'][job['computingsite']].append(
                         round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
 
+    # creating nevents piechart
+    if 'nevents' in plotsDict and 'sites' in plotsDict['nevents'] and len(plotsDict['nevents']['sites']) > 0:
+        plotsDict['neventsbysite'] = {}
+        for site, neventslist in plotsDict['nevents']['sites'].iteritems():
+            plotsDict['neventsbysite'][str(site)] = sum(neventslist)
+
+
     # creation of bins for histograms
     nbinsmax = 100
     for pname in plotsNames:
@@ -9751,6 +9758,7 @@ def jobSummary3(request, query, extra="(1=1)", isEventServiceFlag=False):
                 del (plotsDict[pname])
             except:
                 pass
+
 
     start = time.time()
 

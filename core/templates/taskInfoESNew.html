@@ -203,7 +203,7 @@
         <div class="dropdownplots">
             <button class="dropdownbutton">Open plot</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
-                <a style="cursor: pointer;" href="#plots" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'plots', 'plots');">Memory
+                <a style="cursor: pointer;" href="#plots" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');">Memory
                     and Walltime usage</a>
 
                 <a href="http://atlas-kibana-panda.mwt2.org/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))"
@@ -461,9 +461,12 @@
 
         <p>
         <div id="plots" style="display: none"></div>
-        <div class="d3splot" id="plot0" style="align:left;display:none;font-size: 12px"></div>
 
-        <div class="d3splot" id="plot1" style="float:left;display:none"></div>
+        <div class="d3splot" id="plot0" style="float:left;display:none;font-size: 12px"></div>
+
+        <div class="d3splot" id="plot01" style="float:left;display:none;font-size: 12px"></div>
+
+        <div class="d3splot" id="plot1" style="clear:both;float:left;display:none"></div>
 
         <div class="d3splot" id="plot2" style="float:left;display:none"></div>
 
@@ -715,6 +718,7 @@
 
 
 {% block extra_js_bottombody %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
     <script type="text/javascript" src="/static/js/d3jsplot.js"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
@@ -814,6 +818,9 @@
                 var values = $.parseJSON(data);
                 if ('nevents' in values) {
                     pandamonplotHistNew(values['nevents'], "#plot0", "Number of events histogram (finished non-merge jobs)");
+                }
+                if ('neventsbysite' in values) {
+                    taskInfoPieChartFunc(values['neventsbysite'], "#plot01", 'Number of events produced by finished non-merge jobs');
                 }
                 if ('maxpss' in values) {
                     pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");

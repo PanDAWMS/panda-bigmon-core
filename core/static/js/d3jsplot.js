@@ -1364,6 +1364,11 @@ else if (divToShow.indexOf('Priority') > -1) {
         .range(["#116aff", "#fe8504", "#1ff7fe", "#f701ff", "#2e4a02", "#ffaad5", "#f1ff8d", "#1eff06", "#700111", "#1586c3", "#ff067d", "#0e02fb", "#1bffa1", "#921e8f", "#c49565", "#fd0128", "#4ea105", "#158279", "#c8fe0a", "#fdcc0b", "#834969", "#ff7673", "#05018b", "#c591fe", "#a6d8ab", "#948c01", "#484ba1", "#fe22c0", "#06a05d", "#694002", "#8e39e9", "#bdc6ff","#030139",  "#b33802", "#85fa60", "#a2025b", "#3e021b", "#ffcd6d", "#4a92ff", "#e564b6", "#43cfff", "#7e9051", "#e768fc", "#09406b", "#b17005", "#8fd977", "#c1063e", "#a7594f", "#14e3b8", "#bccb1e", "#53064f", "#fff1b7", "#997dba", "#fe965c", "#ffb0a7", "#046c04", "#8451ce", "#d46585", "#fef70c", "#1003c3", "#024a2e", "#0fc551", "#1f025d", "#fd5302", "#5bbfc4", "#481903", "#bfc066", "#ad04bb", "#efa425", "#06c709", "#9701ff", "#84468e", "#018da8", "#88cf01", "#6d6412", "#658a1d", "#0d3cb4", "#144cfe", "#fe5d43", "#33753e", "#4cb28f", "#e6b4ff", "#a5feef", "#caff68", "#d80f8a", "#79193a", "#97fdba", "#a85726", "#fe8cf9", "#8bfe01", "#4a315d", "#ff0155", "#02ff5e", "#6b0199", "#bc7e9f", "#fde75c"])
 		.domain(labels);
 }
+else if (divToShow.indexOf('plot01') > -1) {
+    color = d3.scale.ordinal()
+        .range(["#116aff", "#fe8504", "#1ff7fe", "#f701ff", "#2e4a02", "#ffaad5", "#f1ff8d", "#1eff06", "#700111", "#1586c3", "#ff067d", "#0e02fb", "#1bffa1", "#921e8f", "#c49565", "#fd0128", "#4ea105", "#158279", "#c8fe0a", "#fdcc0b", "#834969", "#ff7673", "#05018b", "#c591fe", "#a6d8ab", "#948c01", "#484ba1", "#fe22c0", "#06a05d", "#694002", "#8e39e9", "#bdc6ff","#030139",  "#b33802", "#85fa60", "#a2025b", "#3e021b", "#ffcd6d", "#4a92ff", "#e564b6", "#43cfff", "#7e9051", "#e768fc", "#09406b", "#b17005", "#8fd977", "#c1063e", "#a7594f", "#14e3b8", "#bccb1e", "#53064f", "#fff1b7", "#997dba", "#fe965c", "#ffb0a7", "#046c04", "#8451ce", "#d46585", "#fef70c", "#1003c3", "#024a2e", "#0fc551", "#1f025d", "#fd5302", "#5bbfc4", "#481903", "#bfc066", "#ad04bb", "#efa425", "#06c709", "#9701ff", "#84468e", "#018da8", "#88cf01", "#6d6412", "#658a1d", "#0d3cb4", "#144cfe", "#fe5d43", "#33753e", "#4cb28f", "#e6b4ff", "#a5feef", "#caff68", "#d80f8a", "#79193a", "#97fdba", "#a85726", "#fe8cf9", "#8bfe01", "#4a315d", "#ff0155", "#02ff5e", "#6b0199", "#bc7e9f", "#fde75c"])
+		.domain(labels);
+}
 
 var svg = d3.select(divToShow);
 var vis = svg
@@ -2022,3 +2027,106 @@ function multiLineChartFunc(values,divToShow,title){
 
 }
 
+
+function taskInfoPieChartFunc(values,divToShow,title){
+
+var formatDecimal = d3.format(",.2f"),
+	formatPercent = d3.format(",.1%");
+var data = $.map(values, function(value, key) { if (value>0) {return value} });
+var labels = $.map(values, function(value, key) { if (value>0) {return key} });
+var tot = 0;
+for (var i = 0; i < data.length; i++) { tot += data[i];}
+var margin = {top: 20, right: 200, bottom: 90, left: 5},
+    w = 600 - margin.left - margin.right,
+    h = 400 - margin.top - margin.bottom,
+    r = Math.min(w, h) / 2;
+
+if (title.indexOf('events') > -1) {
+    color = d3.scale.ordinal()
+        .range(["#116aff", "#fe8504", "#1ff7fe", "#f701ff", "#2e4a02", "#ffaad5", "#f1ff8d", "#1eff06", "#700111", "#1586c3", "#ff067d", "#0e02fb", "#1bffa1", "#921e8f", "#c49565", "#fd0128", "#4ea105", "#158279", "#c8fe0a", "#fdcc0b", "#834969", "#ff7673", "#05018b", "#c591fe", "#a6d8ab", "#948c01", "#484ba1", "#fe22c0", "#06a05d", "#694002", "#8e39e9", "#bdc6ff","#030139",  "#b33802", "#85fa60", "#a2025b", "#3e021b", "#ffcd6d", "#4a92ff", "#e564b6", "#43cfff", "#7e9051", "#e768fc", "#09406b", "#b17005", "#8fd977", "#c1063e", "#a7594f", "#14e3b8", "#bccb1e", "#53064f", "#fff1b7", "#997dba", "#fe965c", "#ffb0a7", "#046c04", "#8451ce", "#d46585", "#fef70c", "#1003c3", "#024a2e", "#0fc551", "#1f025d", "#fd5302", "#5bbfc4", "#481903", "#bfc066", "#ad04bb", "#efa425", "#06c709", "#9701ff", "#84468e", "#018da8", "#88cf01", "#6d6412", "#658a1d", "#0d3cb4", "#144cfe", "#fe5d43", "#33753e", "#4cb28f", "#e6b4ff", "#a5feef", "#caff68", "#d80f8a", "#79193a", "#97fdba", "#a85726", "#fe8cf9", "#8bfe01", "#4a315d", "#ff0155", "#02ff5e", "#6b0199", "#bc7e9f", "#fde75c"])
+		.domain(labels);
+}
+
+var svg = d3.select(divToShow);
+var vis = svg
+	.data([data])
+  .append("svg")
+    .attr("width", w + margin.left + margin.right )
+    .attr("height", h + margin.top + margin.bottom )
+	.append("g")
+	.attr("transform", "translate(" + (r + margin.left) + "," + (r + margin.top) + ")");
+
+var donut = d3.layout.pie();
+var arc = d3.svg.arc()
+		.innerRadius(r * .6)
+		.outerRadius(r);
+
+var tooltip = svg
+    .append("div")
+	.attr("class","tooltippiecharttaskinfo")
+	.style('opacity', 1);
+var tooltiplabel = tooltip.append('div')
+	.attr('class','tlabel')
+	.text('Total: ' + Humanize.compactInteger(tot,2));
+var tooltipcount = tooltip.append('div')
+	.attr('class','tcount');
+var tooltippercent = tooltip.append('div')
+	.attr('class','tpercent');
+
+var arcs = vis.selectAll("path")
+    .data(donut.value(function(d) { return d}))
+  	.enter()
+	.append("path")
+		.attr("d", arc)
+		.attr("class", "path")
+		.attr("fill", function(d, i) { return color(labels[i]); })
+		.on("mouseover", function(d,i){
+			d3.select(this).attr({"stroke":d3.rgb(color).darker(),'stroke-width':1});
+			// tooltip.text(labels[i]);
+			tooltiplabel.text(labels[i]);
+			tooltipcount.text(Humanize.compactInteger(d.value,2));
+			tooltippercent.text(formatPercent(d.value/tot));
+			})
+		.on("mouseout", function(){
+			d3.select(this).attr({"stroke":d3.rgb(color).darker(),'stroke-width':0});
+			tooltiplabel.text('Total: ' + Humanize.compactInteger(tot,2));
+			tooltipcount.text('');
+			tooltippercent.text('');
+			});
+
+vis.append("g")
+        .attr("transform", "translate(" + ( 0 ) + "," + ( -155 ) + ")")
+        .append("text")
+        .attr("class", "title")
+        .text(title);
+
+
+    var squareside = 10;
+    var legend = vis.selectAll(".legend")
+        .data(labels)
+        .enter().append("g")
+        .attr("class", "legendoutpie")
+        .attr("transform", function (d, i) {
+            maxLegendWidth = margin.right;
+            maxLegendHeight = Math.floor(i) * 12;
+            return "translate(" + (margin.left + r + 5 ) + ", " + (-r + margin.top + maxLegendHeight) + ")";
+        });
+
+
+    legend.append("rect")
+            .attr("x", 0)
+            .attr("width", squareside)
+            .attr("height", squareside)
+            .style("fill", function(d) {
+                return color(d);
+            })
+            .style({"stroke":d3.rgb(color).darker(),'stroke-width':0.4});
+
+    legend.append("text")
+            .attr("x", squareside+3)
+            .attr("y", 8)
+            .attr("class", 'legend')
+            .text(function(d) {
+                return d;
+            });
+}
