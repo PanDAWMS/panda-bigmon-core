@@ -767,8 +767,10 @@
         }
 
         function loadJobSummary(jeditaskid, mode, es, infotype, divid) {
-
-            $('#'+divid).html("<img src='{% static "images/load.gif" %}'>  ");
+            if (!$("#"+divid).is(':visible'))
+                    $("#"+divid).show();
+            $('#'+divid).html("<img src='{% static "images/load.gif" %}'> Data is loading... Be patient... ");
+            $('#'+divid).goTo();
             $.ajax({
                 url: '{% url 'getJobSummaryForTask' jeditaskid %}',
                 data: {'mode': mode, 'es': es, 'infotype': infotype, 'json':1, 'dt':1},
@@ -781,7 +783,6 @@
                     else if (infotype == 'plots') {
                         buildPlots('d3splot', response)
                     }
-                    $('#'+divid).goTo();
                 });
         }
 
@@ -1096,8 +1097,10 @@
 
             var url = window.location.href;
             if (url.indexOf("#plots") > -1) {
-                loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');
+                if (!$("#plots").is(':visible'))
+                    $("#plots").show();
                 $('#plots').goTo();
+                loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');
             }
 
 
