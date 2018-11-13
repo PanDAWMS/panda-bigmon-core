@@ -161,7 +161,7 @@ function toggleShowHide(divID, linkID) {
                                             {% for job in jobs.jobs %}
                                                 {% if job.jobstatus %}
                                                     <div class="with-link-to-logs">
-                                                      {% if ntaglist|length == 1 %}
+                                                      {% if ntaglist|length == 1 or requestParams.extra == 'subresults' %}
                                                         <div class="testsubresultscontainer">
                                                             <ul>{% for r in job.testresult %}<li class="testsubresultbox {% if r.result > 0 %}failed{% else %}finished{% endif %}test tooltiptestresult" {% if r.name|length > 0 or r.result > 0 %}style="text-decoration: underline"{% endif %}>{{ forloop.counter }}<span class="tooltiptext">{% if r.name|length > 1 %} {{ r.name }}:{% endif %}{{ r.result }}</span></li>{% endfor %}</ul>
                                                         </div>

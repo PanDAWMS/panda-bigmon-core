@@ -51,7 +51,13 @@
         <ul class="no-bullet">
             <li class="artmenu-item"><input type="radio" name="view" class="view" value="overview" id="overview" checked><label for="overview">Overview</label></li>
             <li class="artmenu-item"><input type="radio" name="view" class="view" value="tasks" id="tasks"><label for="tasks">Task</label></li>
-            <li class="artmenu-item"><input type="radio" name="view" class="view" value="jobs" id="jobs"><label for="jobs">Job</label></li>
+            <li class="artmenu-item"><input type="radio" name="view" class="view" value="jobs" id="jobs" onclick="toggleExtraOptions('subresults-option', 'jobs')"><label for="jobs">Job</label></li>
+        </ul>
+      </fieldset>
+      <fieldset class="fieldset artmenu" id="subresults-option" style="display: none">
+        <legend>Extra options</legend>
+        <ul class="no-bullet">
+            <li class="artmenu-item"><input id="subresults" class="extraoption" type="checkbox"><label for="subresults">Show subresults</label></li>
         </ul>
       </fieldset>
   </div>
@@ -73,6 +79,7 @@ function searchResults() {
     var days=getDateFromInput("ntag_days");
     var ntag_from = getDateFromInput('ntag_from');
     var ntag_to = getDateFromInput('ntag_to');
+    var extraoptionStr = getParamStr('extraoption');
     var query = '';
     switch(viewStr) {
         case "overview": {
@@ -90,7 +97,7 @@ function searchResults() {
         default:
             query = '{% url 'art-mainPage' %}';
     }
-    if ((packageStr.length>1) || (branchStr.length>1) || (ntagStr.length>1) || (ntag_from.length>1) || (ntag_to.length>1) || (days.length>0)   ) {
+    if ((packageStr.length>1) || (branchStr.length>1) || (ntagStr.length>1) || (ntag_from.length>1) || (ntag_to.length>1) || (days.length>0) || (extraoptionStr.length>1 )   ) {
         query += "?";
         if (packageStr.length > 1) {
             query += "package=" + packageStr + "&"
@@ -114,6 +121,9 @@ function searchResults() {
         }
         else if (days.length>0) {
             query += "days=" + days + "&"
+        }
+        if (extraoptionStr.length > 1) {
+            query += 'extra=' + extraoptionStr + "&";
         }
 
         query = query.substring(0, query.length - 1);
@@ -139,6 +149,11 @@ function getDateFromInput(id) {
     return paramStr
 }
 
+function toggleExtraOptions(eoid, jid) {
+    eo = document.getElementById(eoid);
+    j = document.getElementById(jid);
+    eo.style.display = (j.checked) ? "" : "none";
+}
 
 </script>
 {% endblock %}
