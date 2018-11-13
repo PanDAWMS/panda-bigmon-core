@@ -49,8 +49,8 @@
       <fieldset class="fieldset artmenu">
         <legend>Choose View</legend>
         <ul class="no-bullet">
-            <li class="artmenu-item"><input type="radio" name="view" class="view" value="overview" id="overview" checked><label for="overview">Overview</label></li>
-            <li class="artmenu-item"><input type="radio" name="view" class="view" value="tasks" id="tasks"><label for="tasks">Task</label></li>
+            <li class="artmenu-item"><input type="radio" name="view" class="view" value="overview" id="overview" checked onclick="toggleExtraOptions('subresults-option', 'jobs')"><label for="overview">Overview</label></li>
+            <li class="artmenu-item"><input type="radio" name="view" class="view" value="tasks" id="tasks" onclick="toggleExtraOptions('subresults-option', 'jobs')"><label for="tasks">Task</label></li>
             <li class="artmenu-item"><input type="radio" name="view" class="view" value="jobs" id="jobs" onclick="toggleExtraOptions('subresults-option', 'jobs')"><label for="jobs">Job</label></li>
         </ul>
       </fieldset>
