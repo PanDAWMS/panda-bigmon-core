@@ -160,6 +160,7 @@
                     var statusQ = "";
                     var hpcsitesQ = "";
                     var esQ = "";
+                    var jumboQ = "";
                     var workinggroup = document.getElementById ("workinggroup");
                     var processingtype = document.getElementById ("processingtype");
                     var campaign = document.getElementById ("campaign");
@@ -168,6 +169,7 @@
                     var status = document.getElementById ("status");
                     var hpcsites = document.getElementById('hpc');
                     var es = document.getElementById('es');
+                    var jumbo = document.getElementById('jumbo');
 
                     if (workinggroup.value.length > 0) workinggroupQ = "workinggroup="+workinggroup.value;
                     if (processingtype.value.length > 0) processingtypeQ = "processingtype="+processingtype.value;
@@ -176,8 +178,9 @@
                     if (status.value.length > 0) statusQ = "status="+status.value;
                     if (hpcsites.checked) hpcsitesQ = "site="+hpcsites.value;
                     if (es.checked) esQ = "eventservice="+es.value;
+                    if (jumbo.checked) jumboQ = "jumbo="+jumbo.value;
 
-                    if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1) || (presetQ.length > 1) || (statusQ.length > 1) || (hpcsitesQ.length > 1) || (esQ.length > 1)) {
+                    if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1) || (presetQ.length > 1) || (statusQ.length > 1) || (hpcsitesQ.length > 1) || (esQ.length > 1) || (jumboQ.length > 1)) {
                         query += "?";
                         if (presetQ.length > 1) {
                             query += presetQ+"&";
@@ -200,6 +203,9 @@
                         if (esQ.length > 1) {
                             query += esQ+"&";
                         }
+                        if (jumboQ.length > 1) {
+                            query += jumboQ+"&";
+                        }
                         query = query.substring(0, query.length - 1);
                     }
                     window.location = query;
@@ -215,6 +221,7 @@
                     <th>Processing type</th>
                     <th>Campaign</th>
                     <th>Status</th>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -331,6 +338,10 @@
                     <td>
                         <input type="checkbox" id="es" name="es" value="1" onchange="onSubElementChoice()"
                         {% if requestParams.eventservice == '1' %} checked {% endif %}>ES
+                    </td>
+                    <td>
+                        <input type="checkbox" id="jumbo" name="jumbo" value="1" onchange="onSubElementChoice()"
+                        {% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo
                     </td>
                     <td>
                         <a onclick="go()" class="button primary">Go!</a>
@@ -469,6 +480,8 @@
                     {% endif %}
                     <th>CPU Time per Event</th>
                     <th>Global Share</th>
+                    <th>ES</th>
+                    <th>Jumbo</th>
                     <th>Hastags</th>
                     <th>Site</th>
                 </tr>
@@ -660,6 +673,30 @@
                 }
             },
             {
+                "data": "eventservice",
+                sDefaultContent: "---",
+                "render": function(data, type, full, meta) {
+                    if (data) {
+                        return '<a href = "{{ xurl }}eventservice=' + full['eventservice'] + '">' + full['eventservice'] + '</a>'
+                    }
+                    else {
+                        return '---';
+                    }
+                },
+            },
+            {
+                "data": "jumbo",
+                sDefaultContent: "---",
+                "render": function(data, type, full, meta) {
+                    if (data) {
+                        return '<a href = "{{ xurl }}jumbo=' + full['jumbo'] + '">' + full['jumbo'] + '</a>'
+                    }
+                    else {
+                        return '---';
+                    }
+                },
+            },
+            {
                 "data": "hashtags",
                 sDefaultContent: "---",
                 "render": function ( data, type, row ) {
@@ -848,6 +885,30 @@
                 }
             },
             {
+                "data": "eventservice",
+                sDefaultContent: "---",
+                "render": function(data, type, full, meta) {
+                    if (data) {
+                        return '<a href = "{{ xurl }}eventservice=' + full['eventservice'] + '">' + full['eventservice'] + '</a>'
+                    }
+                    else {
+                        return '---';
+                    }
+                },
+            },
+            {
+                "data": "jumbo",
+                sDefaultContent: "---",
+                "render": function(data, type, full, meta) {
+                    if (data) {
+                        return '<a href = "{{ xurl }}jumbo=' + full['jumbo'] + '">' + full['jumbo'] + '</a>'
+                    }
+                    else {
+                        return '---';
+                    }
+                },
+            },
+            {
                 "data": "hashtags",
                 sDefaultContent: "---",
                 "render": function ( data, type, row ) {
@@ -1027,6 +1088,30 @@
                 "render": function(data, type, full, meta) {
                     return '<a href = "{{ xurl }}gshare=' + full['gshare'] + '">' + full['gshare'] + '</a>'
                 }
+            },
+            {
+                "data": "eventservice",
+                sDefaultContent: "---",
+                "render": function(data, type, full, meta) {
+                    if (data) {
+                        return '<a href = "{{ xurl }}eventservice=' + full['eventservice'] + '">' + full['eventservice'] + '</a>'
+                    }
+                    else {
+                        return '---';
+                    }
+                },
+            },
+            {
+                "data": "jumbo",
+                sDefaultContent: "---",
+                "render": function(data, type, full, meta) {
+                    if (data) {
+                        return '<a href = "{{ xurl }}jumbo=' + full['jumbo'] + '">' + full['jumbo'] + '</a>'
+                    }
+                    else {
+                        return '---';
+                    }
+                },
             },
             {
                 "data": "hashtags",

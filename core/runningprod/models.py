@@ -89,6 +89,7 @@ class RunningProdTasksModel(models.Model):
     hashtags = models.CharField(max_length=400, db_column='HASHTAGS', blank=True)
     eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
     neventsrunning = models.BigIntegerField(db_column='NRUNNINGEVENTS')
+    jumbo = models.IntegerField(null=True, db_column='JUMBO', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODTASKS"'
 
@@ -123,6 +124,7 @@ class FrozenProdTasksModel(models.Model):
     hashtags = models.CharField(max_length=400, db_column='HASHTAGS', blank=True)
     eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
     modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
+    jumbo = models.IntegerField(null=True, db_column='JUMBO', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."FROZENPRODTASKS"'
 

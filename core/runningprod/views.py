@@ -358,6 +358,8 @@ def runningProdTasks(request):
             if (currentCardCount < countCards): wildCardExtension += ' AND '
             currentCardCount += 1
         wildCardExtension += ')'
+    if 'jumbo' in request.session['requestParams'] and request.session['requestParams']['jumbo']:
+        tquery['jumbo'] = request.session['requestParams']['jumbo']
     if 'sortby' in request.session['requestParams'] and '-' in request.session['requestParams']['sortby'] :
         sortby = request.session['requestParams']['sortby']
     else:
