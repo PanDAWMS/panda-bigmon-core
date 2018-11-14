@@ -8194,25 +8194,25 @@ def taskInfo(request, jeditaskid=0):
                 eventstatus['count'] = eventssummary[state]
                 eventsdict.append(eventstatus)
 
-            if mode=='nodrop':
-                sqlRequest = """select /*+ INDEX_RS_ASC(e JEDI_EVENTS_PK) NO_INDEX_FFS(e JEDI_EVENTS_PK) */ 
-                                    j.computingsite, j.COMPUTINGELEMENT,e.objstore_id,e.status,count(*) as nevents
-                                      from atlas_panda.jedi_events e
-                                        join
-                                            (select computingsite, computingelement,pandaid from ATLAS_PANDA.JOBSARCHIVED4 where jeditaskid={}
-                                            UNION
-                                            select computingsite, computingelement,pandaid from ATLAS_PANDAARCH.JOBSARCHIVED where jeditaskid={}
-                                            ) j
-                                        on (e.jeditaskid = {} and e.pandaid=j.pandaid)
-                                   group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""".format(jeditaskid, jeditaskid, jeditaskid)
-                cur = connection.cursor()
-                cur.execute(sqlRequest)
-                ossummary = cur.fetchall()
-                cur.close()
-
-                ossummarynames = ['computingsite', 'computingelement', 'objectstoreid', 'statusindex', 'nevents']
-                objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
-                for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
+            # if mode=='nodrop':
+            #     sqlRequest = """select /*+ INDEX_RS_ASC(e JEDI_EVENTS_PK) NO_INDEX_FFS(e JEDI_EVENTS_PK) */
+            #                         j.computingsite, j.COMPUTINGELEMENT,e.objstore_id,e.status,count(*) as nevents
+            #                           from atlas_panda.jedi_events e
+            #                             join
+            #                                 (select computingsite, computingelement,pandaid from ATLAS_PANDA.JOBSARCHIVED4 where jeditaskid={}
+            #                                 UNION
+            #                                 select computingsite, computingelement,pandaid from ATLAS_PANDAARCH.JOBSARCHIVED where jeditaskid={}
+            #                                 ) j
+            #                             on (e.jeditaskid = {} and e.pandaid=j.pandaid)
+            #                        group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""".format(jeditaskid, jeditaskid, jeditaskid)
+            #     cur = connection.cursor()
+            #     cur.execute(sqlRequest)
+            #     ossummary = cur.fetchall()
+            #     cur.close()
+            #
+            #     ossummarynames = ['computingsite', 'computingelement', 'objectstoreid', 'statusindex', 'nevents']
+            #     objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
+            #     for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
 
 
 
