@@ -204,7 +204,9 @@
             <button class="dropdownbutton">Open plot</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
                 <a style="cursor: pointer;" href="#plots" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');">Memory
-                    and Walltime usage</a>
+                    and Walltime usage (excluding retries)</a>
+                <a style="cursor: pointer;" href="#plots" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'plots', 'plots');">Memory
+                    and Walltime usage (including retries)</a>
 
                 <a href="http://atlas-kibana-panda.mwt2.org/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))"
                    target="_blank"><span class="tooltip-upper">Memory and Walltime usage (Kibana)<span class="tooltip-text">This Kibana instance is read-only. If you do not have access please contact Ilija Vukotic [ivukotic@cern.ch].</span></span></a>
@@ -728,7 +730,18 @@
         function toggleDetailDisplay(className) {
             el = document.getElementsByClassName(className);
             for (i = 0; i < el.length; i++) {
-                el[i].style.display = (el[i].style.display == "none") ? "" : "none";
+                el[i].style.display = "";
+            }
+        }
+
+        function clearDivById(id) {
+            document.getElementById(id).innerHTML = "";
+        }
+
+        function clearDivByClass(className) {
+            el = document.getElementsByClassName(className);
+            for (i = 0; i < el.length; i++) {
+                el[i].innerHTML = "";
             }
         }
 
@@ -742,7 +755,7 @@
         })(jQuery);
 
         function toggleRowsDisplay(className) {
-            el = document.getElementsByClassName(className)
+            el = document.getElementsByClassName(className);
             for (i = 0; i < el.length; i++) {
                 el[i].style.display = (el[i].style.display == "none") ? "" : "none";
             }
@@ -771,6 +784,7 @@
         }
 
         function loadJobSummary(jeditaskid, mode, es, infotype, divid) {
+            if (infotype == 'plots') {clearDivByClass('d3splot');}
             if (!$("#"+divid).is(':visible'))
                     $("#"+divid).show();
             $('#'+divid).html("<img src='{% static "images/load.gif" %}'> Data is loading... Be patient... ");
@@ -807,55 +821,46 @@
 
         function buildPlots(classname, data) {
 
-            el = document.getElementsByClassName(classname);
-            var flag = 0;
-            for (i = 0; i < el.length; i++) {
-                flag = (el[i].innerHTML) ? flag : flag + 1;
+            $("#plots").html("<img src='{% static "images/load.gif" %}'>  ");
+            {#var values = {{ plotsDict|safe }};#}
+            var values = $.parseJSON(data);
+            if ('nevents' in values) {
+                pandamonplotHistNew(values['nevents'], "#plot0", "Number of events histogram (finished non-merge jobs)");
             }
-            if (flag > 0) {
-                $("#plots").html("<img src='{% static "images/load.gif" %}'>  ");
-                {#var values = {{ plotsDict|safe }};#}
-                var values = $.parseJSON(data);
-                if ('nevents' in values) {
-                    pandamonplotHistNew(values['nevents'], "#plot0", "Number of events histogram (finished non-merge jobs)");
-                }
-                if ('neventsbysite' in values) {
-                    taskInfoPieChartFunc(values['neventsbysite'], "#plot01", 'Number of events produced by finished non-merge jobs');
-                }
-                if ('maxpss' in values) {
-                    pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
-                }
-                if ('maxpssf' in values) {
-                    pandamonplotHistNew(values['maxpssf'], "#plot3", "Maximum PSS histogram (failed jobs)");
-                }
-                if ('walltime' in values) {
-                    pandamonplotHistNew(values['walltime'], "#plot2", "Walltime histogram");
-                }
-                if ('walltimef' in values) {
-                    pandamonplotHistNew(values['walltimef'], "#plot4", "Walltime histogram (failed jobs)");
-                }
-                if ('maxpsspercore' in values) {
-                    pandamonplotHistNew(values['maxpsspercore'], "#plot5", "Maximum PSS per core histogram");
-                }
-                if ('maxpsspercoref' in values) {
-                    pandamonplotHistNew(values['maxpsspercoref'], "#plot6", "Maximum PSS per core histogram (failed jobs)");
-                }
-                if ('hs06s' in values) {
-                    pandamonplotHistNew(values['hs06s'], "#plot7", "HS06s histogram");
-                }
-                if ('hs06sf' in values) {
-                    pandamonplotHistNew(values['hs06sf'], "#plot8", "HS06s histogram (failed jobs)");
-                }
-                if ('walltimeperevent' in values) {
-                    pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
-                }
-                $("#plots").html("");
-                toggleDetailDisplay(classname);
-                $('#plots').goTo();
+            if ('neventsbysite' in values) {
+                taskInfoPieChartFunc(values['neventsbysite'], "#plot01", 'Number of events produced by finished non-merge jobs');
             }
-            else {
-                toggleDetailDisplay(classname);
+            if ('maxpss' in values) {
+                pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
             }
+            if ('maxpssf' in values) {
+                pandamonplotHistNew(values['maxpssf'], "#plot3", "Maximum PSS histogram (failed jobs)");
+            }
+            if ('walltime' in values) {
+                pandamonplotHistNew(values['walltime'], "#plot2", "Walltime histogram");
+            }
+            if ('walltimef' in values) {
+                pandamonplotHistNew(values['walltimef'], "#plot4", "Walltime histogram (failed jobs)");
+            }
+            if ('maxpsspercore' in values) {
+                pandamonplotHistNew(values['maxpsspercore'], "#plot5", "Maximum PSS per core histogram");
+            }
+            if ('maxpsspercoref' in values) {
+                pandamonplotHistNew(values['maxpsspercoref'], "#plot6", "Maximum PSS per core histogram (failed jobs)");
+            }
+            if ('hs06s' in values) {
+                pandamonplotHistNew(values['hs06s'], "#plot7", "HS06s histogram");
+            }
+            if ('hs06sf' in values) {
+                pandamonplotHistNew(values['hs06sf'], "#plot8", "HS06s histogram (failed jobs)");
+            }
+            if ('walltimeperevent' in values) {
+                pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
+            }
+            $("#plots").html("");
+            toggleDetailDisplay(classname);
+            $('#plots').goTo();
+
         }
 
         function buildEventChunkTable() {
