@@ -502,7 +502,7 @@ def initRequest(request, callselfmon = True):
                         "errormessage": "Illegal value '%s' for %s" % (pval, p),
                     }
                     return False, render_to_response('errorPage.html', data, content_type='text/html')
-            if p.lower() not in allowedemptyparams and len(p.lower()) == 0:
+            if p.lower() not in allowedemptyparams and len(pval) == 0:
                 data = {
                     'viewParams': request.session['viewParams'],
                     'requestParams': request.session['requestParams'],
