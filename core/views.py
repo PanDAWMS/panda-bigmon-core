@@ -7699,10 +7699,10 @@ def getTaskScoutingInfo(tasks, nmax):
 
     tquery = {}
     tquery['relationtype'] = 'retry'
-    scoutingHasNonCritFailures = JediJobRetryHistory.objects.filter(**tquery).extra(
-        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid')
-    scoutingHasNonCritFailures = [item['jeditaskid'] for item in scoutingHasNonCritFailures]
-
+    # scoutingHasNonCritFailures = JediJobRetryHistory.objects.filter(**tquery).extra(
+    #     where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid')
+    # scoutingHasNonCritFailures = [item['jeditaskid'] for item in scoutingHasNonCritFailures]
+    scoutingHasNonCritFailures = []
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
 
     for task in taskslToBeDisplayed:
