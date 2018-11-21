@@ -775,6 +775,7 @@ def updateARTJobList(request):
                 sub_results = pool.map(subresults_getter, url_params)
             except:
                 print('Exception was caught while mapping pool requests responses for next files {}'.format(str(url_params)))
+                sub_results = []
             pool.close()
             pool.join()
 
