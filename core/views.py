@@ -449,6 +449,7 @@ def initRequest(request, callselfmon = True):
     requestParams = {}
     request.session['requestParams'] = requestParams
 
+    allowedemptyparams = ('json', 'dt',)
     if request.method == 'POST':
         for p in request.POST:
             if p in ('csrfmiddlewaretoken',): continue
@@ -501,7 +502,13 @@ def initRequest(request, callselfmon = True):
                         "errormessage": "Illegal value '%s' for %s" % (pval, p),
                     }
                     return False, render_to_response('errorPage.html', data, content_type='text/html')
-
+            if p.lower() not in allowedemptyparams and len(p.lower()) == 0:
+                data = {
+                    'viewParams': request.session['viewParams'],
+                    'requestParams': request.session['requestParams'],
+                    "errormessage": "Empty value '%s' for %s" % (pval, p),
+                }
+                return False, render_to_response('errorPage.html', data, content_type='text/html')
             request.session['requestParams'][p.lower()] = pval
     setupSiteInfo(request)
 
