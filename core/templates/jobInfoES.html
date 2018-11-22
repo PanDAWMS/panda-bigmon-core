@@ -188,6 +188,10 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
 <p>
 <div class="dropdownplots">
     <button class="dropdownbutton">Logs</button>
+    <script>
+        var logLinksArray = [];
+    </script>
+
     <div id="dropdown-plotchoice" class="dropdown-plot">
         {% if logfile.lfn %}
           {% if viewParams.MON_VO == 'ATLAS' %}
@@ -195,6 +199,10 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
                 {% if logfile.guid %}
                     {% if job.jobstatus == 'failed' or job.jobstatus == 'finished'  or job.jobstatus == 'closed' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled'  %}
                         <a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}">Log files</a>
+                        <script>
+                          logLinksArray[logLinksArray.length] = "/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}"
+                        </script>
+
                     {% else %}
                         No logs available yet
                     {% endif %}
@@ -210,9 +218,20 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
             {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
                 <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/application_log.txt">Job stdout</a
                 <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/output/">Job outputs</a>
+                <script>
+                   logLinksArray[logLinksArray.length] = "http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/application_log.txt"
+                   logLinksArray[logLinksArray.length] = "http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/output/"
+               </script>
+
+
             {% endif %}
             <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt">Payload stdout</a>
             <a href='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'>Job cache tarball</a>
+            <script>
+              logLinksArray[logLinksArray.length] = "http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt"
+              logLinksArray[logLinksArray.length] ='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'
+            </script>
+
           {% endif %}
         {% else %}
             <a>No logs available</a>
@@ -222,14 +241,37 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
                 <a href='{{stdout}}'>Pilot job stdout</a>
                 <a href='{{stderr}}'>Pilot job stderr</a>
                 <a href='{{stdlog}}'>Batch log of pilot job</a>
+               <script>
+                  logLinksArray[logLinksArray.length] ='{{stdout}}'
+                  logLinksArray[logLinksArray.length] ='{{stderr}}'
+                  logLinksArray[logLinksArray.length] ='{{stdlog}}'
+              </script>
+
             {% endif %}
             {% if job.jobstatus == 'closed' %}
                 <td><a href='{{stdout}}'>Pilot ID</a></td>
+                   <script>
+                    logLinksArray[logLinksArray.length] ='{{stdout}}'
+                  </script>
+
             {% endif %}
 
             <a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">Pilot records</a>
 
             <a target="_blank" href="https://es-atlas6.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',desc))">Action logger</a>
+
+            <script>
+                logLinksArray[logLinksArray.length] ="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}"
+                logLinksArray[logLinksArray.length] ="https://es-atlas6.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',desc))"
+
+                function openAllLogs() {
+                    for (var i = 0; i < logLinksArray.length; i++) {
+                        window.open(logLinksArray[i], '_blank');
+                    }
+                }
+            </script>
+            <a href="#" onclick="return openAllLogs();">Open all logs</a>
+
 
         {% endif %}
     </div>
