@@ -55,7 +55,7 @@
                     <th> Detailed JEDI status</th>
                 {% endif %}
                 {% if task.dsinfo %}
-                    <th> Nevents <br> <span class='finished'>used</span></th>
+                    <th> Nevents <br> <span class='finished'>processed</span><br> <span class='finished'>used</span></th>
                     <th style="white-space: nowrap">HS06*sec<br> Expected<br> Total<br><span
                             class='done'>done</span><br> <span class='failed'>failed</span></th>
                     <th> Ninputfiles <br> <span class='finished'>finished</span> <br> <span class='failed'>failed</span></th>
@@ -98,6 +98,7 @@
                 {% endif %}
                 {% if task.dsinfo %}
                     <td> {{ task.totev }} <br>
+                        <span class='finished'>{{ task.totevproc_evst }} ({{ task.pcttotevproc_evst }}%)</span><br>
                         <span class='finished'>{{ task.totevproc }} ({{ task.pctfinished }}%)</span></td>
                     <td style="text-align:right;"> {{ task.totevhs06 }}<br>{{ task.currenttotevhs06 }}<br><span
                             class='finished'>{{ task.totevprochs06 }}</span> <br> <span
@@ -182,6 +183,7 @@
                 <a style="cursor: pointer;" onclick="javascript:buildInputFilesTable();">Show task inputs list </a>
                 <a style="cursor: pointer;" onclick="javascript:buildEventChunkTable();">Show jobset relationships</a>
                 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('badevents');">Show exhausted events</a>
+                <a style="cursor: pointer;" onclick="javascript:toggleHiddenEventsStates();">Show all events states</a>
             </div>
         </div>
 
@@ -311,7 +313,7 @@
               <tbody>
                 <tr>
                     {% for state in eventssummary %}
-                        <th><span class="{{ state.statusname }}"><b> {{ state.statusname }} </b></span>
+                        <th {% if state.statusname in 'running,cancelled,discarded,failed,fatal' %} id='{{ state.statusname }}_hidden_header' style="display: none" {% endif %}><span class="{{ state.statusname }}"><b> {{ state.statusname }} </b></span>
                             <span class="showeventsdetailsrow"><br>
                                 {% if state.count > 0 %}
                                     <b>ComputingElement, ObjectStoreID : Nevents</b>
@@ -325,31 +327,34 @@
                         {% if neweventssummary_test %}
                             {% for newstate in neweventssummary_test %}
                                 {% if forloop.counter == forloop.parentloop.counter %}
-                                    <td {% if state.count > 0 or newstate.count > 0 %}
-                                        class='{{ state.statusname }}_fill' {% endif %}>
-                                        {% if state.count > 0 or newstate.count > 0 %}
-                                            <b> <span class='{{ state.statusname }}_fill'>
-        {% if state.statusname == 'failed' and state.count > 0 %}
-            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} ({{ newstate.count }}) </a>
-        {% elif  newstate.statusname == 'failed' and newstate.count > 0 %}
-            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} ({{ newstate.count }}) </a>
-        {% else %} {{ state.count }} ({{ newstate.count }})
-        {% endif %}
-    </span></b>
-                                        {% endif %}
-                                    </td>
-
+                                        <td {% if state.statusname in 'running,cancelled,discarded,failed,fatal' %} id='{{ state.statusname }}_hidden_data' style="display: none" {% endif %} {% if state.count > 0 or newstate.count > 0 %}
+                                            class='{{ state.statusname }}_fill' {% endif %}>
+                                            {% if state.count > 0 or newstate.count > 0 %}
+                                                <b> <span class='{{ state.statusname }}_fill'>
+                                                {% if state.statusname == 'failed' and state.count > 0 %}
+                                                    <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} ({{ newstate.count }}) </a>
+                                                {% elif newstate.statusname == 'failed' and newstate.count > 0 %}
+                                                    <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tk }}' );"> {{ state.count }} ({{ newstate.count }}) </a>
+                                                {% else %} {{ state.count }} ({{ newstate.count }})
+                                                {% endif %}
+                                                </span></b>
+                                            {% endif %}
+                                        </td>
                                 {% endif %}
                             {% endfor %}
                         {% else %}
-                            <td {% if state.count > 0 %} class='{{ state.statusname }}_fill' {% endif %}>
-                                {% if state.count > 0 %}
+                            <td  {% if state.statusname in 'running,cancelled,discarded,failed,fatal' %} id='{{ state.statusname }}_hidden_data' style="display: none" {% endif %} {% if state.count > 0 %} class='{{ state.statusname }}_fill' {% endif %}>
+                               {% if state.count > 0 %}
                                     <b> <span class='{{ state.statusname }}_fill'>
-        {% if state.statusname == 'failed' and state.count > 0 %}
-            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tkdj }}' );"> {{ state.count }} </a>
-        {% else %} {{ state.count }}
-        {% endif %}
-    </span></b>
+                                        {% if state.statusname == 'failed' and state.count > 0 %}
+                                            <a onclick="javascript:loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tkdj }}' );"> {{ state.count }} (<script type="text/javascript">
+                                                                        document.write(({{ state.count }}*100/{{ task.totev }}).toFixed(0))
+                                                                      </script>%)</a>
+                                        {% else %} {{ state.count }} (<script type="text/javascript">
+                                                                        document.write(({{ state.count }}*100/{{ task.totev }}).toFixed(0))
+                                                                      </script>%)
+                                        {% endif %}
+                                    </span></b>
                                 {% endif %}
                             </td>
                         {% endif %}
@@ -733,6 +738,19 @@
                 el[i].style.display = "";
             }
         }
+
+        function toggleHiddenEventsStates() {
+            var myHiddenStatuses = ["running","cancelled","discarded","failed","fatal"];
+            var myHiddenStatusesLength = myHiddenStatuses.length;
+            for (var i = 0; i < myHiddenStatusesLength; i++) {
+            var element = document.getElementById(myHiddenStatuses[i] + "_hidden_data");
+            element.style.display = "";
+            var element1 = document.getElementById(myHiddenStatuses[i] +"_hidden_header");
+            element1.style.display = "";
+            }
+        }
+
+
 
         function clearDivById(id) {
             document.getElementById(id).innerHTML = "";

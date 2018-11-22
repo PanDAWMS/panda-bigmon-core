@@ -146,7 +146,7 @@ INSTALLED_APPS_BIGPANDAMON_CORE = (
     'core.filebrowser',
     'core.pbm',
     'core.pbm.templatetags',
-#    'core.graphic', #NOT-IMPLEMENTED
+    #    'core.graphic', #NOT-IMPLEMENTED
     'core.gspread',
     'django.contrib.staticfiles',
     'debug_toolbar',
@@ -199,13 +199,13 @@ DEBUG_TOOLBAR_PANELS = (
 INSTALLED_APPS_BIGPANDAMON_core = (
     ### BigPanDAmon core
     'core.common',
-#    'core.table',
-#    'core.graphics', #NOT-IMPLEMENTED
+    #    'core.table',
+    #    'core.graphics', #NOT-IMPLEMENTED
     'core.pandajob',
     'core.schedresource',
     'core.status_summary',
-#    'core.htcondor', #NOT-NEEDED-IN-core
-#    'core.task', #NOT-IMPLEMENTED
+    #    'core.htcondor', #NOT-NEEDED-IN-core
+    #    'core.task', #NOT-IMPLEMENTED
     'core.filebrowser',
     'core.pbm',
     'core.pbm.templatetags',
