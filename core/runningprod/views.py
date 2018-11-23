@@ -342,6 +342,8 @@ def runningProdTasks(request):
             tquery['simtype'] = request.session['requestParams']['simtype']
     if 'runnumber' in request.session['requestParams'] and request.session['requestParams']['runnumber']:
             tquery['runnumber'] = request.session['requestParams']['runnumber']
+    if 'ptag' in request.session['requestParams'] and request.session['requestParams']['ptag']:
+            tquery['ptag'] = request.session['requestParams']['ptag']
     if 'hashtags' in request.session['requestParams']:
         wildCardExtension += ' AND ('
         wildCards = request.session['requestParams']['hashtags'].split(',')
