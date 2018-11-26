@@ -316,8 +316,6 @@ def event_summary_for_task(mode, query, transactionKeyDroppedJobs):
     return eventslist
 
 
-
-
 def input_summary_for_task(taskrec, dsets):
     """
     The function returns:
@@ -417,3 +415,44 @@ def input_summary_for_task(taskrec, dsets):
     return inputfiles_list, ifs_summary, inputfiles_tk
 
 
+def job_summary_for_task_light(taskrec):
+    """
+    Light version of jobSummary for ES tasks specifically. Nodrop mode by default. See ATLASPANDA-466 for details.
+    :param taskrec:
+    :return:
+    """
+    jeditaskidstr = str(taskrec['jeditaskid'])
+    statelistlight = ['defined', 'assigned', 'activated', 'starting', 'running', 'holding', 'transferring', 'finished',
+                      'failed']
+    jobSummaryLight = {str(state): 0 for state in statelistlight}
+
+    jsquery = """
+        select jobstatus, count(pandaid) as njobs from (
+        (
+        select pandaid, jobstatus from atlas_pandabigmon.combined_wait_act_def_arch4 where jeditaskid = :jtid
+        )
+        union all
+        (
+        select pandaid, jobstatus from atlas_pandaarch.jobsarchived where jeditaskid = :jtid
+        minus
+        select pandaid, jobstatus from atlas_pandaarch.jobsarchived where jeditaskid = :jtid and pandaid in (
+            select pandaid from atlas_pandabigmon.combined_wait_act_def_arch4 where jeditaskid = :jtid)
+        
+        )
+        )
+        group by jobstatus
+    """
+    cur = connection.cursor()
+    cur.execute(jsquery, {'jtid': jeditaskidstr})
+    js_count = cur.fetchall()
+    cur.close()
+
+    jsCount = dict((state, count) for state, count in js_count)
+    for state, count in jsCount.iteritems():
+        if state in statelistlight:
+            jobSummaryLight[state] += count
+
+    # dict -> list for template
+    jobsummarylight = [dict(name=state, count=jobSummaryLight[state]) for state in statelistlight]
+
+    return jobsummarylight

@@ -114,7 +114,7 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 #from libs import exlib
 from libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, preparePlotData
 from core.libs.exlib import insert_to_temp_table, dictfetchall
-from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task
+from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, job_summary_for_task_light
 
 @register.filter(takes_context=True)
 def get_count(dict, key):
@@ -8988,6 +8988,9 @@ def taskInfoNew(request, jeditaskid=0):
     accsum = Jobsactive4.objects.filter(**ccquery).aggregate(accsum=Sum('actualcorecount'))
     naccsum = Jobsactive4.objects.filter(**ccquery).aggregate(naccsum=Sum(F('actualcorecount')*F('hs06')/F('corecount')/Value(10), output_field=FloatField()))
 
+    # get lighted job summary
+    jobsummarylight = job_summary_for_task_light(taskrec)
+
 
     if taskrec:
         taskrec['totevprochs06'] = int(hs06sSum['finished'])
@@ -9064,6 +9067,7 @@ def taskInfoNew(request, jeditaskid=0):
             'columns': columns,
             'attrs': attrs,
             'jobsummary': jobsummary,
+            'jobsummarylight': jobsummarylight,
             'eventssummary': eventsdict,
             'ossummary': objectStoreDict,
             'jeditaskid': jeditaskid,

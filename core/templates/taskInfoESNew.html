@@ -175,8 +175,8 @@
             <button class="dropdownbutton">Show</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
 
-                <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show jobs summary including retries</a>
-                <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show jobs summary excluding retries</a>
+                <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show full jobs summary including retries</a>
+                <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show full jobs summary excluding retries</a>
 
                 <a style="cursor: pointer;" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'scouts', 'scoutstable');">Show scout jobs</a>
 
@@ -297,6 +297,35 @@
         </table>
 
         {% endif %}
+
+        {% if jobsummarylight %}
+            <table class="fresh-table unstriped">
+              <thead>
+                <tr>
+                    <th colspan=20>
+                        <b>Lightweight job status summary</b>
+                    </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                    {% for state in jobsummarylight %}
+                        <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    {% for state in jobsummarylight %}
+                        <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
+                            {% if state.count > 0 %}<b>
+                                <a class="blacklink" href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode=nodrop">{{ state.count }}</a></b>
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+              </tbody>
+            </table>
+        {% endif %}
+
 
         {% if eventssummary|length > 0 %}
             <table class="fresh-table unstriped">
