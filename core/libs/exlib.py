@@ -113,3 +113,12 @@ def insert_to_temp_table(list_of_items, transactionKey = -1):
     new_cur.executemany(query, executionData)
 
     return transactionKey
+
+
+def dictfetchall(cursor):
+    "Returns all rows from a cursor as a dict"
+    desc = cursor.description
+    return [
+        dict(zip([col[0] for col in desc], row))
+        for row in cursor.fetchall()
+        ]
