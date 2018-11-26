@@ -159,8 +159,8 @@ objectStoresSites = {}
 pandaSites = {}
 cloudList = ['CA', 'CERN', 'DE', 'ES', 'FR', 'IT', 'ND', 'NL', 'RU', 'TW', 'UK', 'US']
 
-statelist = ['defined', 'waiting', 'pending', 'assigned', 'throttled', \
-             'activated', 'sent', 'starting', 'running', 'holding', \
+statelist = ['defined', 'waiting', 'pending', 'assigned', 'throttled',
+             'activated', 'sent', 'starting', 'running', 'holding',
              'transferring', 'finished', 'failed', 'cancelled', 'merging', 'closed']
 sitestatelist = ['defined', 'waiting', 'assigned', 'throttled', 'activated', 'sent', 'starting', 'running', 'holding',
                  'merging', 'transferring', 'finished', 'failed', 'cancelled']
@@ -9507,7 +9507,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         mode = 'nodrop'
 
     data = getCacheEntry(request, "jobSummaryForTask"+str(jeditaskid)+mode, isData=True)
-    data = None
+    # data = None
 
     if data is not None:
         data = json.loads(data)
@@ -9525,13 +9525,6 @@ def getJobSummaryForTask(request, jeditaskid=-1):
                         except:
                             pass
             data['plotsDict'] = plotDict
-
-        ### This is a temporary fix in order of avoiding 500 error for cached tasks not compartible to a new template
-        if not isinstance(data['jobscoutids']['ramcountscoutjob'], list):
-            if 'ramcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['ramcountscoutjob']
-            if 'iointensityscoutjob' in data['jobscoutids']: del data['jobscoutids']['iointensityscoutjob']
-            if 'outdiskcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['outdiskcountscoutjob']
-
 
         data['request'] = request
 
@@ -9559,7 +9552,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         print('tk of dropped jobs: {}'.format(transactionKeyDJ))
 
     plotsDict, jobsummary, jobsummaryMerge, jobScoutIDs = job_summary_for_task(
-        request, query, pandaSites, extra=extra, isEventServiceFlag=es)
+        request, query, pandaSites, statelist, extra=extra, isEventServiceFlag=es)
 
 
     nonzeroMERGE = 0

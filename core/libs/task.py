@@ -12,7 +12,7 @@ from core.libs.exlib import dictfetchall
 from core.settings.local import defaultDatetimeFormat
 
 
-def job_summary_for_task(request, query, pandaSites, extra="(1=1)", isEventServiceFlag=False):
+def job_summary_for_task(request, query, pandaSites, statelist, extra="(1=1)", isEventServiceFlag=False):
     """An attempt to rewrite it moving dropping to db request level"""
 
     jobScoutTypes = ['cpuTime', 'walltime', 'ramCount', 'ioIntensity', 'outDiskCount']
@@ -209,8 +209,6 @@ def job_summary_for_task(request, query, pandaSites, extra="(1=1)", isEventServi
 
     ojobstates = []
     mjobstates = []
-
-    global statelist
 
     for state in statelist:
         statecount = {}
