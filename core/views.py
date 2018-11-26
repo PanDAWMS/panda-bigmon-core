@@ -9592,7 +9592,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
     elif infotype == 'plots':
         response = HttpResponse(json.dumps(plotsDict, cls=DateEncoder), content_type='text/html')
     else:
-        response = None
+        response = HttpResponse(status=204)
     endSelfMonitor(request)
     if response:
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
