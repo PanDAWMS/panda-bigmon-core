@@ -9524,6 +9524,9 @@ def getJobSummaryForTask(request, jeditaskid=-1):
                             plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
                         except:
                             pass
+                elif plotName == 'neventsbysite':
+                    plotDict[str(plotName)] = plotData
+
             data['plotsDict'] = plotDict
 
         data['request'] = request
