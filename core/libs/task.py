@@ -424,7 +424,9 @@ def job_summary_for_task_light(taskrec):
     jeditaskidstr = str(taskrec['jeditaskid'])
     statelistlight = ['defined', 'assigned', 'activated', 'starting', 'running', 'holding', 'transferring', 'finished',
                       'failed']
-    jobSummaryLight = {str(state): 0 for state in statelistlight}
+    jobSummaryLight = {}
+    for state in statelistlight:
+        jobSummaryLight[str(state)] = 0
 
     jsquery = """
         select jobstatus, count(pandaid) as njobs from (
