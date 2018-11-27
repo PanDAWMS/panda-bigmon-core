@@ -450,7 +450,7 @@ def initRequest(request, callselfmon = True):
     requestParams = {}
     request.session['requestParams'] = requestParams
 
-    allowedemptyparams = ('json', 'dt',)
+    allowedemptyparams = ('json', 'dt', 'dialogs', 'pandaids', 'workersstats')
     if request.method == 'POST':
         for p in request.POST:
             if p in ('csrfmiddlewaretoken',): continue
