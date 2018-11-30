@@ -421,53 +421,53 @@
         </div>
 
 
-        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
-        <div class="badevents" ng-app="taskESApps" ng-controller="taskEventsController" style="display:none;">
-            <p>
-            <table class="fresh-table">
-              <thead>
-                <tr>
-                    <th colspan=4>Exhausted events</th>
-                </tr>
-              </thead>
-                <tr>
-                    <th>Error</th>
-                    <th>Count</th>
-                    <th>PandaIDs</th>
-                    <th>Events</th>
-                </tr>
-
-                <tbody ng-repeat="row in eventsrows">
-                <tr>
-                    <td>{$ row.ERROR_CODE $}</td>
-                    <td>{$ row.COUNT $}</td>
-                    <td>{$ row.PANDAIDS.join(', ') $}</td>
-                    <td>{$ row.EVENTS.join(', ') $}</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <script>
-            var app = angular.module('taskESApps', []).config(function ($interpolateProvider) {
-                $interpolateProvider.startSymbol('{$');
-                $interpolateProvider.endSymbol('$}');
-            });
-
-            app.controller('taskEventsController', function ($scope, $http) {
-                $scope.eventsrows = [];
-
-                $http({
-                    url: '{% url 'getbadeventsfortask' %}?jeditaskid={{ jeditaskid }}&mode={{ requestParams.mode }}',
-                    method: "GET",
-                }).then(function successCallback(response) {
-                    $scope.eventsrows = response.data;
-                }, function errorCallback(response) {
-
-                });
-
-            });
-        </script>
+{#        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>#}
+{#        <div class="badevents" ng-app="taskESApps" ng-controller="taskEventsController" style="display:none;">#}
+{#            <p>#}
+{#            <table class="fresh-table">#}
+{#              <thead>#}
+{#                <tr>#}
+{#                    <th colspan=4>Exhausted events</th>#}
+{#                </tr>#}
+{#              </thead>#}
+{#                <tr>#}
+{#                    <th>Error</th>#}
+{#                    <th>Count</th>#}
+{#                    <th>PandaIDs</th>#}
+{#                    <th>Events</th>#}
+{#                </tr>#}
+{##}
+{#                <tbody ng-repeat="row in eventsrows">#}
+{#                <tr>#}
+{#                    <td>{$ row.ERROR_CODE $}</td>#}
+{#                    <td>{$ row.COUNT $}</td>#}
+{#                    <td>{$ row.PANDAIDS.join(', ') $}</td>#}
+{#                    <td>{$ row.EVENTS.join(', ') $}</td>#}
+{#                </tr>#}
+{#                </tbody>#}
+{#            </table>#}
+{#        </div>#}
+{##}
+{#        <script>#}
+{#            var app = angular.module('taskESApps', []).config(function ($interpolateProvider) {#}
+{#                $interpolateProvider.startSymbol('{$');#}
+{#                $interpolateProvider.endSymbol('$}');#}
+{#            });#}
+{##}
+{#            app.controller('taskEventsController', function ($scope, $http) {#}
+{#                $scope.eventsrows = [];#}
+{##}
+{#                $http({#}
+{#                    url: '{% url 'getbadeventsfortask' %}?jeditaskid={{ jeditaskid }}&mode={{ requestParams.mode }}',#}
+{#                    method: "GET",#}
+{#                }).then(function successCallback(response) {#}
+{#                    $scope.eventsrows = response.data;#}
+{#                }, function errorCallback(response) {#}
+{##}
+{#                });#}
+{##}
+{#            });#}
+{#        </script>#}
 
 
 
