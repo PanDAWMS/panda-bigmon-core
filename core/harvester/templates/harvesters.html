@@ -222,17 +222,55 @@
             {% endfor %}
         </table>
          {% if instance or computingsite %}
-        <a href="javascript:ReverseDisplay('harvesterdialogsdiv','harvesterdialogslink','harvesterdialogs')"
-           id="harvesterdialogslink" class="bluebutton">Show dialog messages / worker stats / jobs</a> <br/><br/>
+{#        <a href="javascript:ReverseDisplay('harvesterdialogsdiv','harvesterdialogslink','harvesterdialogs')"#}
+{#           id="harvesterdialogslink" class="bluebutton">Show dialog messages / worker stats / jobs</a> <br/><br/>#}
         {% endif %}
-        <div id="harvesterdialogsdiv" style="display: none">
+        <hr/>
+        <div id="harvesterinfodiv">
             <div id="tabs">
                 <ul>
-                    <li><a href="#tabs-1" class="ui-tabs-anchor">Dialog messages</a></li>
-                    <li><a href="#tabs-2" class="ui-tabs-anchor">Worker stats</a></li>
-                    <li><a href="#tabs-3" class="ui-tabs-anchor">Jobs</a></li>
+                    <li><a href="#tabs-1" class="ui-tabs-anchor">Workers</a></li>
+                    <li><a href="#tabs-2" class="ui-tabs-anchor">Dialog messages</a></li>
+                    <li><a href="#tabs-3" class="ui-tabs-anchor">Worker stats</a></li>
+                    <li><a href="#tabs-4" class="ui-tabs-anchor">Jobs</a></li>
                 </ul>
                 <div id="tabs-1">
+                    <span style="display: inline;">Number of entries:</span> <input type="text" id="numberWL"
+                                                                                    value="1000" size="35"
+                                                                                    style="width: 150px; display: inline;">
+                    <div id="reloadWorkersList" style="display: inline">Reload table</div>
+                    <br/><br/>
+                    <table id="harvesterworkers" style="width: 100%" class="data-table bluelinks">
+                        <caption style="height: 30px;vertical-align: middle">Workers submitted by harvesters</caption>
+                        <thead>
+                        <th>WorkerID</th>
+                        <th>Jobs</th>
+                        <th>Last update</th>
+                        <th>Status</th>
+                        <th>BatchID</th>
+                        <th>NodeID</th>
+                        <th>Queuename</th>
+                        <th>Computingsite</th>
+                        <th>Instance</th>
+                        <th>Submit time</th>
+                        <th>Start time</th>
+                        <th>End time</th>
+                        <th>Ncore</th>
+                        <th>Error code</th>
+                        <th>Stdout</th>
+                        <th>Stderr</th>
+                        <th>Batchlog</th>
+                        <th>Resource type</th>
+                        <th>Nativeexitcode</th>
+                        <th>Native status</th>
+                        <th>Diag message</th>
+                        <th>Computing element</th>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="tabs-2">
                     <span style="display: inline;">Number of entries:</span> <input type="text" id="numberD" value="100"
                                                                                     size="35"
                                                                                     style="width: 150px; display: inline;">
@@ -248,7 +286,6 @@
                         <th>Diag message</th>
                         </thead>
                         <tbody>
-
                         </tbody>
                         <tfoot>
                         <tr>
@@ -261,7 +298,7 @@
                     </table>
 
                 </div>
-                <div id="tabs-2">
+                <div id="tabs-3">
                     <span style="display: inline;">Number of entries:</span> <input type="text" id="numberW" value="100"
                                                                                     size="35"
                                                                                     style="width: 150px; display: inline;">
@@ -297,7 +334,7 @@
                     </table>
 
                 </div>
-                <div id="tabs-3">
+                <div id="tabs-4">
                     <span style="display: inline;">Number of entries:</span> <input type="text" id="numberJ" value="100"
                                                                                     size="35"
                                                                                     style="width: 150px; display: inline;">
@@ -326,9 +363,9 @@
                 </div>
                 </div>
         </div>
-        {% if instance or computingsite %}
+        {% if instance or computingsite%}
         <a href="javascript:ReverseDisplay('harvesterplotsdiv','harvesterplotslink','harvesterplots')"
-           id="harvesterplotslink" class="bluebutton">Show plots [DEV]</a> <br/><br/>
+           id="harvesterplotslink" class="bluebutton" style="display: none;">Show plots [DEV]</a>
         {% endif %}
         <div id="harvesterplotsdiv" style="display: none">
             <div id="plotstabs">
@@ -384,41 +421,6 @@ height="1000" width="100%"></iframe>
                 </div>
             </div>
         </div>
-
-        <hr/>
-
-        <span style="display: inline;">Number of entries:</span> <input type="text" id="numberWL" value="1000" size="35"  style="width: 150px; display: inline;">
-        <div id="reloadWorkersList" style="display: inline">Reload table</div>
-        <br/><br/>
-        <table id="harvesterworkers" style="width: 100%" class="data-table bluelinks">
-            <caption style="height: 30px;vertical-align: middle">Workers submitted by harvesters</caption>
-            <thead>
-            <th>WorkerID</th>
-            <th>Jobs</th>
-            <th>Last update</th>
-            <th>Status</th>
-            <th>BatchID</th>
-            <th>NodeID</th>
-            <th>Queuename</th>
-            <th>Computingsite</th>
-            <th>Instance</th>
-            <th>Submit time</th>
-            <th>Start time</th>
-            <th>End time</th>
-            <th>Ncore</th>
-            <th>Error code</th>
-            <th>Stdout</th>
-            <th>Stderr</th>
-            <th>Batchlog</th>
-            <th>Resource type</th>
-            <th>Nativeexitcode</th>
-            <th>Native status</th>
-            <th>Diag message</th>
-            <th>Computing element</th>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
         <script>
             $(document).ready(function () {
 {#                $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');#}
@@ -897,37 +899,19 @@ height="1000" width="100%"></iframe>
                 });
 
             }
-            function ReverseDisplay(d, hlink, table) {
-                if (document.getElementById(d).style.display == "none") {
-                    document.getElementById(d).style.display = "block";
-                    var urlname = document.getElementById(hlink).innerText;
-                    urlname = urlname.replace("Show", "Hide");
-                    document.getElementById(hlink).innerText = urlname;
-                    if (table == 'harvesterdialogs') {
-                        var number = $('#numberD').val();
-                        dialogsTable(number);
-                        $("#harvesterdialogs_filter").hide();
-                    }
-                }
-                else {
-                    document.getElementById(d).style.display = "none";
-                    var urlname = document.getElementById(hlink).innerText;
-                    urlname = urlname.replace("Hide", "Show");
-                    document.getElementById(hlink).innerText = urlname;
-                    {#            if(table=='harvesterdialogs'){#}
-                    {#               $('#harvesterdialogs').dataTable().fnDestroy();#}
-                    {#            }#}
-                }
-            }
-
             $("#tabs").on("tabsactivate", function (event, ui) {
                 switch (ui.newPanel.attr('id')) {
                     case 'tabs-2':
+                        var number = $('#numberD').val();
+                        dialogsTable(number);
+                        $("#harvesterdialogs_filter").hide();
+                        break;
+                    case 'tabs-3':
                         var number = $('#numberW').val();
                         workerstatsTable(number);
                         $("#harvesterworkerstats_filter").hide();
                         break;
-                    case 'tabs-3':
+                    case 'tabs-4':
                         var number = $('#numberJ').val();
                         jobsTable(number);
                         $("#harvesterjobs_filter").hide();

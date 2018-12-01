@@ -148,6 +148,10 @@
                 <li><a href="{% url 'errorSummary' %}?jobtype=production&sortby=count">Production</a></li>
                 <li><a href="{% url 'errorSummary' %}?sortby=count&prodsourcelabel=rc_test">rc_test</a></li>
                 <li><a href="{% url 'errorsScattering' %}">Scattering matrix</a></li>
+                {% if viewParams.MON_VO == 'ATLAS' %}
+                <li><a href="{% url 'incidentList' %}">Recent incidents</a></li>
+                {% endif %}
+                <li><a href="{% url 'esatlasPandaLogger' %}">PanDA logger </a> </li>
             {% endif %}
         </ul>
         </li>
@@ -185,17 +189,16 @@
         </ul>
         </li>
 
-        <li class="has-submenu">
-        <a href="#">Incidents</a>
-        <ul class="submenu menu vertical">
-            {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a href="{% url 'incidentList' %}">Recent incidents</a></li>
-            {% endif %}
-            <li><a href="{% url 'esatlasPandaLogger' %}">PanDA logger </a> </li>
-   
 
+        <li class="has-submenu">
+        <a href="#">Harvester</a>
+        <ul class="submenu menu vertical">
+            <li><a href="{% url 'harvesters' %}">Harvester instances</a></li>
+            <li><a href="{% url 'harvesterslots' %}">Harvester slots</a></li>
+            <li><a href="{% url 'jobList' %}?harvesterid=all&display_limit=100">Harvester jobs</a></li>
         </ul>
         </li>
+
         <li>
             <a href="{% url 'userInfo' %}">My BigPanDA</a>
         </li>

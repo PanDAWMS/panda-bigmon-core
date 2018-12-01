@@ -224,7 +224,6 @@ def harvesters(request):
                 stat['lastupdate'] = datetime.strptime(str(stat['lastupdate']), old_format).strftime(new_format)
                 harvsterworkerstats.append(stat)
             return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='text/html')
-        'pandaids' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']
         if ('pandaids' in request.session['requestParams']  and 'instance' in request.session['requestParams']) :
             status = ''
             computingsite = ''
@@ -440,7 +439,6 @@ def harvesters(request):
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
         endSelfMonitor(request)
         return render_to_response('harvesters.html', data, content_type='text/html')
-
     elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
         computingsite = request.session['requestParams']['computingsite']
         if ('workersstats' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']):
@@ -1168,7 +1166,7 @@ def getWorkersByJobID(pandaid, instance=''):
 
     else:
         for instance in instances:
-            jobsworkersquery += 'harvesterid like \'{}\' and workerid in ({})'.format(instance,', '.join(workersList[instance]))
+            jobsworkersquery += 'harvesterid like \'{0}\' and workerid in ({1})'.format(instance,', '.join(workersList[instance]))
             if cntinstances > 1:
                 jobsworkersquery += ' OR '
                 cntinstances = cntinstances - 1
