@@ -1002,7 +1002,7 @@ def sendArtReport(request):
     query = setupView(request, 'job')
 
     cur = connection.cursor()
-    cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s'))" % (
+    cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s')) WHERE attemptmark = 0" % (
         query['ntag_from'], query['ntag_to'], query['strcondition']))
     jobs = cur.fetchall()
     cur.close()
