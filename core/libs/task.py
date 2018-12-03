@@ -284,11 +284,11 @@ def event_summary_for_task(mode, query, transactionKeyDroppedJobs):
                 where jd4.jeditaskid = {} and jd4.eventservice is not NULL and jd4.eventservice != 2 
                     and jd4.pandaid not in (select id from ATLAS_PANDABIGMON.TMP_IDS1DEBUG where TRANSACTIONKEY={})
             )  j
-        WHERE ev.PANDAID = j.pandaid 
+        WHERE ev.PANDAID = j.pandaid AND ev.jeditaskid = {} 
         GROUP BY ev.STATUS
         """.format(jeditaskid, transactionKeyDroppedJobs, jeditaskid, transactionKeyDroppedJobs,
                    jeditaskid, transactionKeyDroppedJobs, jeditaskid, transactionKeyDroppedJobs,
-                   jeditaskid, transactionKeyDroppedJobs)
+                   jeditaskid, transactionKeyDroppedJobs, jeditaskid)
         new_cur = connection.cursor()
         new_cur.execute(equerystr)
 
