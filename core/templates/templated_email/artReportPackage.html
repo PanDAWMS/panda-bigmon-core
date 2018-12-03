@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-<h2>ART jobs status report generated at {{ built }}</h2>
+{% if summary.length > 0  %}
+    <h2>ART jobs status report generated at {{ built }}</h2>
+{% else %}
+    <h2>Nothing to report. No tests were registered till {{ build }}.</h2>
+{% endif %}
 </head>
 <body>
 {% for package, psum in summary.items %}
