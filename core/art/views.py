@@ -641,6 +641,14 @@ def artJobs(request):
                 for ntg, jobs in tdict.iteritems():
                     tdict[ntg]['jobs'] = sorted(jobs['jobs'], key=lambda x: x['ntagtime'])
                 tdict['testname'] = t
+                if len(testdirectories[i][j]) > 0:
+                    if not 'view' in request.session['requestParams'] or (
+                            'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
+                        tdict['gitlablink'] = 'https://gitlab.cern.ch/atlas/athena/blob/' + j.split('/')[0] + \
+                                              testdirectories[i][j][0].split('src')[1] + '/' + t
+                    else:
+                        tdict['gitlablink'] = 'https://gitlab.cern.ch/atlas/athena/blob/' + i.split('/')[0] + \
+                                              testdirectories[i][j][0].split('src')[1] + '/' + t
                 artjobslist[i][j].append(tdict)
             artjobslist[i][j] = sorted(artjobslist[i][j], key=lambda x: x['testname'].lower())
 

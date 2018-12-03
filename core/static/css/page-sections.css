@@ -239,6 +239,10 @@ float: none !important; }
     font-weight: bold;
 }
 
+.blacklink.hover:hover {
+    text-decoration: underline;
+}
+
 .graylink {
     /*text-shadow: -1px 0 grey, 0 1px grey, 1px 0 grey, 0 -1px grey;*/
     color: #0a0a0a !important;

@@ -151,7 +151,11 @@ function toggleShowHide(divID, linkID) {
                           {% for test in tests %}
                               <tr>
                               <td class="cell-left">
-                                {{ test.testname }}
+                                  {% if test.gitlablink %}
+                                    <a href="{{ test.gitlablink }}" class="blacklink hover">{{ test.testname }}</a>
+                                  {% else %}
+                                    {{ test.testname }}
+                                  {% endif %}
                               </td>
                               {% for ntag in ntaglist %}
                                   {% for ntname,jobs in test.items  %}
