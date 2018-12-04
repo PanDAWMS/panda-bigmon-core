@@ -9,6 +9,8 @@ from django.views.decorators.cache import never_cache
 import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
+from core.views import initRequest
+from django.shortcuts import render_to_response
 
 filebrowserURL = "http://bigpanda.cern.ch/filebrowser/" #This is deployment specific because memory monitoring is intended to work in ATLAS
 
@@ -215,10 +217,29 @@ def collectData(pandaID):
 
 @never_cache
 def getPlots(request):
-    if not 'pandaid' in request.GET:
-        return None
+    valid, response = initRequest(request)
+    if not valid:
+        return response
 
-    pandaid = request.GET['pandaid']
+    if not 'pandaid' in request.session['requestParams']:
+        data = {
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            "errormessage": "No pandaid provided!",
+        }
+        return render_to_response('errorPage.html', data, content_type='text/html')
+    else:
+        pandaid = request.session['requestParams']['pandaid']
+        try:
+            pandaid = int(pandaid)
+        except:
+            data = {
+                'viewParams': request.session['viewParams'],
+                'requestParams': request.session['requestParams'],
+                "errormessage": "Illegal value {} for pandaid provided! Check the URL please!".format(pandaid),
+            }
+            return render_to_response('errorPage.html', data, content_type='text/html')
+
     return collectData(pandaid)
 
 
