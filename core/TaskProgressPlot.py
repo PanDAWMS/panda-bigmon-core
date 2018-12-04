@@ -22,6 +22,10 @@ class TaskProgressPlot:
         query['jeditaskid'] = taskid
         starttime = JediTasks.objects.filter(**query).values('starttime')
         if len(starttime) > 0:
+            if starttime[0]['starttime'] is None:
+                crtime = JediTasks.objects.filter(**query).values('creationdate')
+                starttime[0]['starttime'] = crtime[0]['creationdate'] if len(crtime) > 0 else None
+                return starttime[0]
             return starttime[0]
         else:
             return None
