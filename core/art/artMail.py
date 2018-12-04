@@ -22,6 +22,7 @@ def textify(html):
 
 
 def send_mail_art(template, subject, summary, recipient):
+    # recipient = 'mailfordebug@cern.ch'
     isSuccess = True
     nmails = 0
     html_message = loader.render_to_string(
@@ -72,7 +73,7 @@ def send_mails(template, subject, summary):
         email = mail.EmailMessage(
             subject=subject,
             from_email='atlas.pandamon@cern.ch',
-            to=['tatiana.korchuganova@cern.ch'],
+            to=[recipient],
             body=textify(html_message),
         )
         emails.append(email)

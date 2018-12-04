@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-{% if summary.length > 0  %}
-    <h2>ART jobs status report generated at {{ built }}</h2>
+{% if summary|length > 0  %}
+    <h2>ART jobs status report generated at {{ built }} UTC</h2>
 {% else %}
-    <h2>Nothing to report. No tests were registered till {{ build }}.</h2>
+    <h2>Nothing to report. No tests were registered till {{ built }} UTC.</h2>
 {% endif %}
 </head>
 <body>
