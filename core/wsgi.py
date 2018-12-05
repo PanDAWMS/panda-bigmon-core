@@ -15,7 +15,7 @@ import sys
 import site
 import logging
 from os.path import join, pardir, abspath, dirname, split
-_logger = logging.getLogger('bigpandamon')
+# _logger = logging.getLogger('bigpandamon')
 ### dummy settings settings_bigpandamon file with VIRTUALENV_PATH, WSGI_PATH
 baseSettingsPath = '/data/bigpandamon_settings'
 sys.path.append(baseSettingsPath)
@@ -32,8 +32,9 @@ try:
     virtualenvPath = VIRTUALENV_PATH
     path = WSGI_PATH
 except:
-    _logger.exception("Something went wrong with import of WSGI_PATH from settings.")
-    _logger.exception("Staying with default path: {}".format(path))
+    pass
+    # _logger.exception("Something went wrong with import of WSGI_PATH from settings.")
+    # _logger.exception("Staying with default path: {}".format(path))
 
 # Add the site-packages of the chosen virtualenv to work with
 site.addsitedir(virtualenvPath + '/lib/python2.7/site-packages')
