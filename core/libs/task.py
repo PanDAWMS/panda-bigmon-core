@@ -260,7 +260,7 @@ def event_summary_for_task(mode, query, transactionKeyDroppedJobs):
         jeditaskid = query['jeditaskid']
         equerystr = """
         SELECT 
-        /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  
+        /*+ cardinality(tmp 10) INDEX_RS_ASC(ev JEDI_EVENTS_PK) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  
             SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS EVCOUNT, 
             ev.STATUS 
         FROM ATLAS_PANDA.JEDI_EVENTS ev, 

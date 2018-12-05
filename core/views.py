@@ -9457,7 +9457,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
             jeditaskidstr = str(newquery['jeditaskid'])
             new_cur.execute(
                 """
-                SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  
+                SELECT /*+ cardinality(tmp 10) INDEX_RS_ASC(ev JEDI_EVENTS_PK) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  
                     SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS EVCOUNT, STATUS 
                 FROM ATLAS_PANDA.JEDI_EVENTS ev, %s 
                 WHERE TRANSACTIONKEY=%i AND PANDAID = ID AND JEDITASKID=%s 
