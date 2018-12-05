@@ -128,7 +128,7 @@ function fileListTable() {
                 "data": "fileid",
                 sDefaultContent: "---",
                 "render": function ( data, type, full ) {
-                    return '<a href = "{% url 'fileInfo' %}?fileid=' + full['fileid'] + '">'+full['fileid']+'</a>'
+                    return '<a href = "{% url 'fileInfo' %}?fileid=' + full['fileid'] + '&datasetid=' + full['datasetid'] + '&jeditaskid=' + full['jeditaskid'] + '">'+full['fileid']+'</a>'
                  }
             },
             {
