@@ -10463,10 +10463,10 @@ def esatlasPandaLoggerJson(request):
                 "terms": {"field": "jediTaskID", "size": 100000000},
                 "aggs": {
                     "type": {
-                        "terms": {"field": "fields.type.keyword", "size": 100},
+                        "terms": {"field": "fields.type", "size": 100},
                         "aggs": {
                             "logLevel": {
-                                "terms": {"field": "logLevel.keyword"}
+                                "terms": {"field": "logLevel"}
                             }
                         }
                     }
@@ -10606,13 +10606,13 @@ def esatlasPandaLogger(request):
         res = es.search(index=index + str(today), stored_fields=['logName', 'type', 'logLevel'], body={
             "aggs": {
                 "logName": {
-                    "terms": {"field": "logName.keyword","size": 100},
+                    "terms": {"field": "logName","size": 100},
                     "aggs": {
                         "type": {
-                            "terms": {"field": "fields.type.keyword","size": 100},
+                            "terms": {"field": "fields.type","size": 100},
                             "aggs": {
                                 "logLevel": {
-                                    "terms": {"field": "logLevel.keyword"}
+                                    "terms": {"field": "logLevel"}
                                 }
                             }
                         }

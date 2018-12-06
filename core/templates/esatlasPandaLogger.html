@@ -70,7 +70,7 @@ function searchTaskBr() {
 
 <tr bgcolor="#FCFCFC">
 
-<td style="width: 200px"> <a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName.keyword:%22{{ name }}%22%20AND%20fields.type:%22{{type}}%22')),sort:!('timeEvent',asc))" target="_blank"> {% if type == "stdout" %}{{ type }} ({{name}}) {% else %}{{ type }}{% endif %}</a>
+<td style="width: 200px"> <a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20fields.type:%22{{type}}%22')),sort:!('timeEvent',asc))" target="_blank"> {% if type == "stdout" %}{{ type }} ({{name}}) {% else %}{{ type }}{% endif %}</a>
 {% for k,v in jedidesc.items %}
     {% if k ==  name%}
     <span class="hasTooltip"> (?)
@@ -84,7 +84,7 @@ function searchTaskBr() {
 {% endfor %}
 </td><td>
 {% for key,level in levels.items %}
-<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName.keyword:%22{{ name }}%22%20AND%20fields.type:%22{{type}}%22%20AND%20logLevel.keyword:%22{{level.logLevel}}%22')),sort:!('timeEvent',asc))" target="_blank">
+<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName%22{{ name }}%22%20AND%20fields.type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('timeEvent',asc))" target="_blank">
 <span class="{% if  level.logLevel|lower == "error" %}errspan {% else %}{{ level.logLevel|lower }}{% endif %}">{{ level.logLevel }}</span>({{ level.lcount }})
 </a> &nbsp;
 {% endfor %}
@@ -109,7 +109,7 @@ function searchTaskBr() {
 
 <td>
 
-    <a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'5cff0440-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName.keyword:%22{{ name }}%22%20AND%20fields.type:%22{{type}}%22')),sort:!('timeEvent',asc))" target="_blank">{{ type }}</a>
+    <a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'5cff0440-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20fields.type:%22{{type}}%22')),sort:!('timeEvent',asc))" target="_blank">{{ type }}</a>
 {% for k,v in pandadesc.items %}
     {% if k ==  name%}
     <span class="hasTooltip"> (?)
@@ -125,7 +125,7 @@ function searchTaskBr() {
     <td>
 
 {% for key,level in levels.items %}
-<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'5cff0440-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName.keyword:%22{{ name }}%22%20AND%20fields.type:%22{{type}}%22%20AND%20logLevel.keyword:%22{{level.logLevel}}%22')),sort:!('timeEvent',asc))" target="_blank">
+<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'5cff0440-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20fields.type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('timeEvent',asc))" target="_blank">
 <span class="{% if  level.logLevel|lower == "error" %}errspan {% else %}{{ level.logLevel|lower }}{% endif %}">{{ level.logLevel }}</span>({{ level.lcount }})
 </a> &nbsp;
 {% endfor %}
@@ -269,7 +269,7 @@ function DisplayjediDataTableTableData() {
                 "data": "LevelName",
                 sDefaultContent: "",
                 "render": function(data, type, full, meta) {
-                     return '<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'timeEvent\',logName,fields.type,logLevel,message),index:\'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:' +  full['jediTaskID'] + '%20AND%20fields.type:%22'+full['Type']+'%22%20AND%20logLevel.keyword:%22'+full['LevelName']+'%22\')),sort:!(\'timeEvent\',asc))" target="_blank" style="color: #0a47ff">' + full['LevelName'] + '</a>'
+                     return '<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:\'{{time}}T00:00.00Z\',mode:quick,to:now))&_a=(columns:!(\'timeEvent\',logName,fields.type,logLevel,message),index:\'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4\',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:\'jediTaskID:' +  full['jediTaskID'] + '%20AND%20fields.type:%22'+full['Type']+'%22%20AND%20logLevel:%22'+full['LevelName']+'%22\')),sort:!(\'timeEvent\',asc))" target="_blank" style="color: #0a47ff">' + full['LevelName'] + '</a>'
                 }
             },
             {
