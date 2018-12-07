@@ -183,7 +183,7 @@ def region_sitesummary(context, kwargs):
             retStr += """\">{0}</span></a></td>""".format(state.get('count', ''))
 
 
-    retStr += """<td> <a href="{0}"?jobtype={1}{2}&sortby=count&computingsite={3}&hours={{hours}}">""".format(errorSummary,view, estailtojobslinks, site['name'] )
+    retStr += """<td> <a href="{0}?jobtype={1}{2}&sortby=count&computingsite={3}&hours={4}">""".format(errorSummary,view, estailtojobslinks, site['name'], hours )
     if site.get('pctfail', 0) > errthreshold:
         retStr += """ <font color=red>{0}</font>""".format(site.get('pctfail', 0))
     else:
