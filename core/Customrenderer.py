@@ -70,10 +70,6 @@ def region_sitesummary(context, kwargs):
     joblisturl = kwargs['joblisturl']
     errthreshold = kwargs['errthreshold']
 
-    if site.get("name", "") == 'Australia-ATLAS':
-        print 'Australia-ATLAS'
-
-
     retStr = """"""
     retStr += "<td><span class=\""+site.get("status", "")+"\">"+site.get("status", "")+"</span> </td>"
     retStr += "<td align='right'>"
