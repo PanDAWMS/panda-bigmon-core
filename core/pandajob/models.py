@@ -257,6 +257,16 @@ class PandaJob(models.Model):
     avgpss = models.BigIntegerField(null=True, db_column='avgpss', blank=True) # Field name made lowercase.
     maxwalltime = models.BigIntegerField(null=True, db_column='maxwalltime', blank=True) # Field name made lowercase.
     resourcetype = models.CharField(null=True, max_length=80, db_column='RESOURCE_TYPE', blank=True)
+    failedattempt = models.IntegerField(null=True, db_column='FAILEDATTEMPT', blank=True) # Field name made lowercase.
+    totrchar = models.BigIntegerField(null=True, db_column='TOTRCHAR', blank=True) # Field name made lowercase.
+    totwchar = models.BigIntegerField(null=True, db_column='TOTWCHAR', blank=True) # Field name made lowercase.
+    totrbytes = models.BigIntegerField(null=True, db_column='TOTRBYTES', blank=True) # Field name made lowercase.
+    totwbytes = models.BigIntegerField(null=True, db_column='TOTWBYTES', blank=True) # Field name made lowercase.
+    raterchar = models.BigIntegerField(null=True, db_column='RATERCHAR', blank=True) # Field name made lowercase.
+    ratewchar = models.BigIntegerField(null=True, db_column='RATEWCHAR', blank=True) # Field name made lowercase.
+    raterbytes = models.BigIntegerField(null=True, db_column='RATERBYTES', blank=True) # Field name made lowercase.
+    ratewbytes = models.BigIntegerField(null=True, db_column='RATEWBYTES', blank=True) # Field name made lowercase.
+    diskio = models.BigIntegerField(null=True, db_column='DISKIO', blank=True) # Field name made lowercase.
 
 
     def __str__(self):
