@@ -484,66 +484,24 @@ of all jobs
 <th  bgcolor=whitesmoke align='right'> <a href="{% url 'errorSummary' %}?jobtype={{view}}{{ estailtojobslinks }}&sortby=count{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&cloud={{cloud.name}}&hours={{hours}}"> {% if cloud.pctfail > errthreshold %} <font color=red>{{ cloud.pctfail  }}</font> {% else %} {{ cloud.pctfail  }} {% endif %} </a> </th>
 </tr>
 {% for site in cloud.summary %}
-{% if site.parent %}
-<tr class="parent">
+    {% if site.parent %}
+    <tr class="parent">
 
-{% else %}
-<tr  {% if site.status == 'offline' or site.status == 'brokeroff'%} class="hideofflinerow" {% endif %}>
-{% endif %}
-<td> {% if site.name %} {% if site.parent %} {{ site.parent }} [{{ site.resource }}] <div>  <a onclick='PopUp("SITE={% if view == 'analysis' %}{{ site.parent }}{% else %}{{ site.parent }}{% endif %}&SIZE=medium&RESOURCE={{ site.resource }}", "{% if view == 'analysis' %}{{ site.parent }}{% else %}{{ site.parent }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a> {% else %}<a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={% if view == 'analysis' %}{{ site.name }}{% else %}{{ site.name }}{% endif %}&SIZE=medium", "{% if view == 'analysis' %}{{ site.name }}{% else %}{{ site.name }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a> {% endif %} {% else %} Failed before site assignment{% endif %}</div>
-{% if site.sumres and 1 == 0 %}
-    <br/><hr style="height:1px; background-color: #0a0a0a; margin: auto" size=1>
-{% for res in site.sumres%}
-    {{ res }}
-    <br/>
-{% endfor %}
-{% endif %}
-
-</td>
-<td><span class="{{site.status}}">{{ site.status  }}</span> </td>
-<td align='right'>
- {% if site.parent %}
-  <a href="{% url 'jobList' %}?computingsite={{ site.parent }}{{ estailtojobslinks }}{% if cloudview != 'region' and view != 'analysis' %}&cloud={{ cloud.name }}{% endif %}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&resourcetype={{ site.resource }}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ site.count}}
- {% else %}
-    <a href="{% url 'jobList' %}?{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&computingsite={{ site.name }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&hours={{hours}}&jobtype={{ view }}&display_limit=100{{ estailtojobslinks }}">{{ site.count }} </a>
-{% endif %}
-</td>
-{% if cloudview == 'region' %}
-<td>
-{% if site.parent %}
-    -
-{% else %}
-    {{ site.pilots }} ({{ site.nojobabs }})
-{% endif %}
-</td>
-{% endif %}
-{% for state in site.summary %}
- {% if site.parent %}
- <td class='{{state.name}}{% if state.count > 0 %}_fill{% endif %}' align='right'><a href="{% url 'jobList' %}?computingsite={{ site.parent }}{{ estailtojobslinks }}{% if cloudview != 'region' and view != 'analysis' %}&cloud={{ cloud.name }}{% endif %}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}{% if state.corecount != 0 %}&corecount={{ state.corecount }}{% endif %}&resourcetype={{ site.resource }}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }}
- </span></a>
- </td>
- {% else %}
-<td class='{{state.name}}{% if state.count > 0 %}_fill{% endif %}' align='right'><a href="{% url 'jobList' %}?computingsite={{ site.name }}{{ estailtojobslinks }}{% if cloudview != 'region' and view != 'analysis' %}&cloud={{ cloud.name }}{% endif %}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }}
-</span></a>
-    {% if state.resources and 1 == 0 %}
-    <br/><hr style="height:1px; background-color: #0a0a0a; margin: auto" size=1>
-    {% for res,values in state.resources.items  %}
-        {% if values.jobstatus__count != 0 %}
-        <a href="{% url 'jobList' %}?computingsite={{ site.name }}{{ estailtojobslinks }}{% if cloudview != 'region' and view != 'analysis' %}&cloud={{ cloud.name }}{% endif %}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&jobstatus={{ state.name }}&hours={{hours}}{% if cloud.name == '' %}{{'&mismatchedcloudsite=true'}}{% endif %}&corecount={{ values.corecount }}&resourcetype={{ res }}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ values.jobstatus__count }}
-</span></a>
-        <br/>
-        {% else %}
-        {{ values.jobstatus__count }}
-        <br/>
-        {% endif %}
-    {% endfor %}
-
+    {% else %}
+    <tr  {% if site.status == 'offline' or site.status == 'brokeroff'%} class="hideofflinerow" {% endif %}>
     {% endif %}
-</td>
- {% endif %}
-{% endfor %}
-<td> <a href="{% url 'errorSummary' %}?jobtype={{view}}{{ estailtojobslinks }}&sortby=count&computingsite={{site.name}}&hours={{hours}}"> {% if site.pctfail > errthreshold %} <font color=red>{{ site.pctfail  }}</font> {% else %} {{ site.pctfail  }} {% endif %} </a> </td>
-</tr>
+    <td> {% if site.name %} {% if site.parent %} {{ site.parent }} [{{ site.resource }}] <div>  <a onclick='PopUp("SITE={% if view == 'analysis' %}{{ site.parent }}{% else %}{{ site.parent }}{% endif %}&SIZE=medium&RESOURCE={{ site.resource }}", "{% if view == 'analysis' %}{{ site.parent }}{% else %}{{ site.parent }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a> {% else %}<a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={% if view == 'analysis' %}{{ site.name }}{% else %}{{ site.name }}{% endif %}&SIZE=medium", "{% if view == 'analysis' %}{{ site.name }}{% else %}{{ site.name }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a> {% endif %} {% else %} Failed before site assignment{% endif %}</div>
+    {% if site.sumres and 1 == 0 %}
+        <br/><hr style="height:1px; background-color: #0a0a0a; margin: auto" size=1>
+    {% for res in site.sumres%}
+        {{ res }}
+        <br/>
+    {% endfor %}
+    {% endif %}
+
+    </td>
+
+    {% get_renderedrow type="region_sitesummary" errorSummary='/errors//' errthreshold=errthreshold cloudname=cloud.name requestParams=requestParams site=site joblisturl='/jobs/' view=view cloudview=cloudview estailtojobslinks=estailtojobslinks hours=hours %}
 {% endfor %}
 
 {% endif %}

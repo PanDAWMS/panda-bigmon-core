@@ -139,6 +139,11 @@ def get_renderedrow(context, **kwargs):
         kwargs['statelist'] = statelist
         return Customrenderer.world_computingsitesummary(context, kwargs)
 
+    if kwargs['type']=="region_sitesummary":
+        kwargs['statelist'] = statelist
+        return Customrenderer.region_sitesummary(context, kwargs)
+
+
 inilock = Lock()
 
 

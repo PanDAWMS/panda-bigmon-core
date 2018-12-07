@@ -57,3 +57,143 @@ def world_computingsitesummary(context, kwargs):
 
     return Template(retStr).render(context)
 
+count = 0
+
+def region_sitesummary(context, kwargs):
+    global count
+    count += 1
+    print count
+
+
+    errorSummary = kwargs['errorSummary']
+    estailtojobslinks = kwargs['estailtojobslinks']
+    cloudname = kwargs['cloudname']
+    cloudview = kwargs['cloudview']
+    requestParams = kwargs['requestParams']
+    hours = kwargs['hours']
+    view = kwargs['view']
+    site = kwargs['site']
+    joblisturl = kwargs['joblisturl']
+    errthreshold = kwargs['errthreshold']
+
+    if site.get("name", "") == 'Australia-ATLAS':
+        print 'Australia-ATLAS'
+
+
+    retStr = """"""
+    retStr += "<td><span class=\""+site.get("status", "")+"\">"+site.get("status", "")+"</span> </td>"
+    retStr += "<td align='right'>"
+    if site.get("parent", False):
+         retStr +="""<a href="{0}?computingsite={1}{2}""".format(joblisturl, site['parent'], estailtojobslinks)
+         if cloudview != 'region' and view !='analysis':
+             retStr += """&cloud={0}""".format(cloudname)
+         if requestParams.get('workinggroup', False):
+             retStr += """&workinggroup={0}""".format(requestParams['workinggroup'])
+         if requestParams.get('processingtype', False):
+             retStr += """&processingtype={0}""".format(requestParams['processingtype'])
+         if requestParams.get('tasktype', False):
+             retStr += """&tasktype={0}""".format(requestParams['tasktype'])
+         if requestParams.get('project', False):
+             retStr += """&project={0}""".format(requestParams['project'])
+         retStr += """&hours={0}""".format(hours)
+
+         if cloudname == '':
+             retStr += """&&mismatchedcloudsite=true"""
+
+         retStr += """&resourcetype={0}&display_limit=100">{1}""".format(site.get('resource', 'resource'), site['count'])
+    else:
+        retStr +="""<a href="{0}?""".format(joblisturl)
+        if requestParams.get('workinggroup', False):
+            retStr += """&workinggroup={0}""".format(requestParams['workinggroup'])
+        if requestParams.get('processingtype', False):
+            retStr += """&processingtype={0}""".format(requestParams['processingtype'])
+        if requestParams.get('tasktype', False):
+            retStr += """&tasktype={0}""".format(requestParams['tasktype'])
+        retStr += """&jobtype={0}""".format(view)
+        if requestParams.get('project', False):
+            retStr += """&project={0}""".format(requestParams['project'])
+        retStr += """&computingsite={0}""".format(site['name'])
+        if cloudname == '':
+            retStr += """&mismatchedcloudsite=true"""
+        retStr += """&hours={0}&display_limit=100{1}">{2}</a>""".format(hours, estailtojobslinks, site['count'])
+
+    retStr += "</td>"
+
+    if cloudview == 'region':
+        retStr += "<td>"
+        if site.get("parent", False):
+            retStr += "-"
+        else:
+            retStr += "{0}({1})".format(site.get("pilots", ''),site.get("nojobabs", '') )
+        retStr += "</td>"
+
+    for state in site['summary']:
+        if site.get("parent", False):
+            retStr += """<td class='{0}""".format(state['name'])
+            if state.get('count', 0) > 0:
+                retStr += """_fill"""
+            retStr += """' align='right'><a href="{0}?computingsite={1}{2}""".format(joblisturl, site['parent'], estailtojobslinks)
+            if cloudview != 'region' and view != 'analysis':
+                retStr += """&cloud={0}""".format(cloudname)
+            if requestParams.get('workinggroup', False):
+                retStr += """&workinggroup={0}""".format(requestParams['workinggroup'])
+            if requestParams.get('processingtype', False):
+                retStr += """&processingtype={0}""".format(requestParams['processingtype'])
+            if requestParams.get('tasktype', False):
+                retStr += """&tasktype={0}""".format(requestParams['tasktype'])
+            retStr += """&jobtype={0}""".format(view)
+            if requestParams.get('project', False):
+                retStr += """&project={0}""".format(requestParams['project'])
+            retStr += """&jobstatus={0}""".format(state['name'])
+            retStr += """&hours={0}&display_limit=100""".format(hours)
+            if cloudname == '':
+                retStr += """&mismatchedcloudsite=true"""
+            if state.get('corecount', 0) > 0:
+                retStr += """&corecount={0}""".format(state['corecount'])
+            if site.get('resource', False):
+                retStr += """&resourcetype={0}""".format(site['resource'])
+            retStr += """\"> <span class=\"{0}""".format(state['name'])
+            if state.get('count', 0) > 0:
+                retStr += """_fill"""
+            retStr += """\">{0}</span></a></td>""".format(state.get('count', ''))
+
+        else:
+            retStr += """<td class='{0}""".format(state['name'])
+            if state.get('count', 0) > 0:
+                retStr += """_fill"""
+            retStr += """' align='right'><a href="{0}?computingsite={1}{2}""".format(joblisturl, site.get('name', ''), estailtojobslinks)
+            if cloudview != 'region' and view != 'analysis':
+                retStr += """&cloud={0}""".format(cloudname)
+            if requestParams.get('workinggroup', False):
+                retStr += """&workinggroup={0}""".format(requestParams['workinggroup'])
+            if requestParams.get('processingtype', False):
+                retStr += """&processingtype={0}""".format(requestParams['processingtype'])
+            if requestParams.get('tasktype', False):
+                retStr += """&tasktype={0}""".format(requestParams['tasktype'])
+            retStr += """&jobtype={0}""".format(view)
+            if requestParams.get('project', False):
+                retStr += """&project={0}""".format(requestParams['project'])
+            retStr += """&jobstatus={0}""".format(state['name'])
+            retStr += """&hours={0}&display_limit=100""".format(hours)
+            if cloudname == '':
+                retStr += """&mismatchedcloudsite=true"""
+            retStr += """\"> <span class=\"{0}""".format(state['name'])
+            if state.get('count', 0) > 0:
+                retStr += """_fill"""
+            retStr += """\">{0}</span></a></td>""".format(state.get('count', ''))
+
+
+    retStr += """<td> <a href="{0}"?jobtype={1}{2}&sortby=count&computingsite={3}&hours={{hours}}">""".format(errorSummary,view, estailtojobslinks, site['name'] )
+    if site.get('pctfail', 0) > errthreshold:
+        retStr += """ <font color=red>{0}</font>""".format(site.get('pctfail', 0))
+    else:
+        retStr += """{0}""".format(site.get('pctfail', 0))
+    retStr += """ </a> </td></tr>"""
+
+    return Template(retStr).render(context)
+
+
+
+
+
+
