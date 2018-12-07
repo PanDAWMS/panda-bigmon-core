@@ -57,14 +57,8 @@ def world_computingsitesummary(context, kwargs):
 
     return Template(retStr).render(context)
 
-count = 0
 
 def region_sitesummary(context, kwargs):
-    global count
-    count += 1
-    print count
-
-
     errorSummary = kwargs['errorSummary']
     estailtojobslinks = kwargs['estailtojobslinks']
     cloudname = kwargs['cloudname']
