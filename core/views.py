@@ -3537,7 +3537,7 @@ def importToken(request,errsByCount):
                 for key,values in item['pandalist'].iteritems():
             #print item['error'] , key , values
                     executionData.append((key, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
-            setCacheEntry(request,transactionKey,executionData,60*60, isData=True)
+            #setCacheEntry(request,transactionKey,executionData,60*60, isData=True)
         else:
             executionData.append((item, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
             if isListPID == False:
@@ -10441,8 +10441,7 @@ def esatlasPandaLoggerJson(request):
     esPassword = None
 
     if 'esHost' in ES:
-        #esHost = ES['esHost']
-        esHost = "es-atlas6.cern.ch"
+        esHost = ES['esHost']
     if 'esPort' in ES:
         esPort = ES['esPort']
     if 'esUser' in ES:
@@ -10468,10 +10467,10 @@ def esatlasPandaLoggerJson(request):
                 "terms": {"field": "jediTaskID", "size": 100000000},
                 "aggs": {
                     "type": {
-                        "terms": {"field": "fields.type", "size": 100},
+                        "terms": {"field": "fields.type.keyword", "size": 100},
                         "aggs": {
                             "logLevel": {
-                                "terms": {"field": "logLevel"}
+                                "terms": {"field": "logLevel.keyword"}
                             }
                         }
                     }
@@ -10508,8 +10507,7 @@ def esatlasPandaLogger(request):
     esPassword = None
 
     if 'esHost' in ES:
-        #esHost = ES['esHost']
-        esHost = "es-atlas6.cern.ch"
+        esHost = ES['esHost']
     if 'esPort' in ES:
         esPort = ES['esPort']
     if 'esUser' in ES:
@@ -10611,13 +10609,13 @@ def esatlasPandaLogger(request):
         res = es.search(index=index + str(today), stored_fields=['logName', 'type', 'logLevel'], body={
             "aggs": {
                 "logName": {
-                    "terms": {"field": "logName","size": 100},
+                    "terms": {"field": "logName.keyword","size": 100},
                     "aggs": {
                         "type": {
-                            "terms": {"field": "fields.type","size": 100},
+                            "terms": {"field": "fields.type.keyword","size": 100},
                             "aggs": {
                                 "logLevel": {
-                                    "terms": {"field": "logLevel"}
+                                    "terms": {"field": "logLevel.keyword"}
                                 }
                             }
                         }
