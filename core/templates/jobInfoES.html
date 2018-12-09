@@ -323,6 +323,13 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
         {% if coreData %}
             &nbsp; <a href="http://srs.slac.stanford.edu/Pipeline-II/exp/SRS/pi.jsp?pi={{coreData.processinstance}}">{{coreData.processinstance}} process for {{ coreData.pipelinetask }} pipeline task</a>
         {% endif %}
+
+        {% if rucioUserName|length > 0 %}
+            {% for rucioUserNameIt in rucioUserName %}
+              <a href="https://rucio-ui.cern.ch/r2d2?account={{ rucioUserNameIt }}">DDM User activity ({{ rucioUserNameIt }})</a>
+            {% endfor %}
+        {% endif %}
+
     </div>
 </div>
 

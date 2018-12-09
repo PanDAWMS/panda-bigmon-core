@@ -1552,6 +1552,15 @@ class RequestStat(models.Model):
     class Meta:
         db_table = u'request_stats'
 
+class RucioAccounts(models.Model):
+    id = models.IntegerField(primary_key=True, db_column='ID')
+    certificatedn = models.CharField(max_length=40, db_column='CERTIFICATEDN')
+    rucio_account = models.CharField(max_length=40, db_column='RUCIO_ACCOUNT')
+    create_time = models.DateTimeField(db_column='CREATE_TIME')
+    class Meta:
+        db_table = u'"ATLAS_PANDABIGMON"."RUCIO_ACCOUNTS"'
+
+
 class AllRequests(models.Model):
     id = models.IntegerField(primary_key=True, db_column='ID')
     server = models.CharField(max_length=40, db_column='server')

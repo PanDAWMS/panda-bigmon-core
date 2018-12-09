@@ -62,6 +62,8 @@ from core.common.models import JediWorkQueue
 from core.common.models import RequestStat, BPUser, Visits, BPUserSettings, AllRequests
 from core.compare.modelsCompare import ObjectsComparison
 from core.art.modelsART import ARTTests
+from core.filebrowser.ruciowrapper import ruciowrapper
+
 from core.settings.config import ENV
 
 from time import gmtime, strftime
@@ -4021,6 +4023,12 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     colnames = []
     columns = []
     harvesterInfo = {}
+    rucioUserName = []
+
+    if 'produserid' in jobs[0]:
+        rw = ruciowrapper()
+        rucioUserName = rw.getRucioAccountByDN(jobs[0]['produserid'])
+
     try:
         job = jobs[0]
         tquery = {}
@@ -4462,7 +4470,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'isincomparisonlist': isincomparisonlist,
             'clist': clist,
             'timedelta': delta,
-            'inputfiles': inputfiles
+            'inputfiles': inputfiles,
+            'rucioUserName':rucioUserName
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
