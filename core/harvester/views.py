@@ -248,13 +248,13 @@ def harvesters(request):
                 workerid = """AND workerid in (%s)""" % (request.session['requestParams']['workerid'])
             if 'hours' in request.session['requestParams']:
                 defaulthours = request.session['requestParams']['hours']
-                hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour AS DATE)""" % (
                     defaulthours)
             else:
-                hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour AS DATE) """ % (
                     defaulthours)
             if 'days' in request.session['requestParams']:
-                days = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
+                days = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' day AS DATE) """ % (
                     request.session['requestParams']['days'])
                 hours = ''
                 defaulthours = int(request.session['requestParams']['days']) * 24
@@ -336,14 +336,14 @@ def harvesters(request):
             URL += '&workerid=' + str(request.session['requestParams']['workerid'])
         if 'hours' in request.session['requestParams']:
             defaulthours = request.session['requestParams']['hours']
-            hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            hours = """AND CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour AS DATE) """ % (
             defaulthours)
             URL += '&hours=' + str(request.session['requestParams']['hours'])
         else:
-            hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval  '%s' hour AS DATE) """ % (
                 defaulthours)
         if 'days' in request.session['requestParams']:
-            days = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ %(request.session['requestParams']['days'])
+            days = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' day AS DATE) """ %(request.session['requestParams']['days'])
             URL += '&days=' + str(request.session['requestParams']['days'])
             hours = ''
             defaulthours = int(request.session['requestParams']['days']) * 24
@@ -367,7 +367,7 @@ def harvesters(request):
                                 content_type='text/html')
 
         if datetime.strptime(instanceinfo['submittime'], '%d-%m-%Y %H:%M:%S') < datetime.now() - timedelta(hours=24):
-            days = """AND submittime > TO_DATE('{0}', 'dd-mm-yyyy hh24:mi:ss') - interval '{1}' day(3) """.format(instanceinfo['submittime'], 1)
+            days = """AND submittime > CAST(TO_DATE('{0}', 'dd-mm-yyyy hh24:mi:ss') - interval '{1}' day AS DATE)""".format(instanceinfo['submittime'], 1)
             daysdelta = (datetime.now() - datetime.strptime(instanceinfo['submittime'], '%d-%m-%Y %H:%M:%S')).days + 1
             URL += '&days=' + str(daysdelta)
             hours = ''
@@ -513,13 +513,13 @@ def harvesters(request):
 
             if 'hours' in request.session['requestParams']:
                 defaulthours = request.session['requestParams']['hours']
-                hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour AS DATE)""" % (
                     defaulthours)
             else:
-                hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+                hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour AS DATE) """ % (
                     defaulthours)
             if 'days' in request.session['requestParams']:
-                days = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
+                days = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' day AS DATE) """ % (
                     request.session['requestParams']['days'])
                 hours = ''
                 defaulthours = int(request.session['requestParams']['days'])*24
@@ -570,14 +570,14 @@ def harvesters(request):
             URL += '&computingelement=' + str(request.session['requestParams']['computingelement'])
         if 'hours' in request.session['requestParams']:
             defaulthours = request.session['requestParams']['hours']
-            hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour AS DATE) """ % (
             defaulthours)
             URL += '&hours=' + str(request.session['requestParams']['hours'])
         else:
-            hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour AS DATE)) """ % (
                 defaulthours)
         if 'days' in request.session['requestParams']:
-            days = """AND submittime  > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
+            days = """AND submittime  > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' day  AS DATE) """ % (
             request.session['requestParams']['days'])
             URL += '&days=' + str(request.session['requestParams']['days'])
             hours = ''
@@ -658,14 +658,14 @@ def harvesters(request):
         URL += '?pandaid=' + request.session['requestParams']['pandaid']
         if 'hours' in request.session['requestParams']:
             defaulthours = request.session['requestParams']['hours']
-            hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour AS DATE) """ % (
             defaulthours)
             URL += '&hours=' + str(request.session['requestParams']['hours'])
         else:
-            hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+            hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour AS DATE) """ % (
                 defaulthours)
         if 'days' in request.session['requestParams']:
-            days = """AND submittime  > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
+            days = """AND submittime  > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' day AS DATE) """ % (
             request.session['requestParams']['days'])
             URL += '&days=' + str(request.session['requestParams']['days'])
             hours = ''
@@ -952,12 +952,12 @@ def workersJSON(request):
         workerid = """AND workerid in (%s)""" % (request.session['requestParams']['workerid'])
     if 'hours' in request.session['requestParams']:
         defaulthours = request.session['requestParams']['hours']
-        hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+        hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour AS DATE) """ % (
             defaulthours)
-    else: hours = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) """ % (
+    else: hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour AS DATE) """ % (
         defaulthours)
     if 'days' in request.session['requestParams']:
-        days = """AND submittime > sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) """ % (
+        days = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' day AS DATE) """ % (
             request.session['requestParams']['days'])
         hours = ''
         defaulthours = int(request.session['requestParams']['days']) * 24
