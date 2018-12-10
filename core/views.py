@@ -4026,8 +4026,19 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     rucioUserName = []
 
     if 'produserid' in jobs[0]:
-        rw = ruciowrapper()
-        rucioUserName = rw.getRucioAccountByDN(jobs[0]['produserid'])
+        if 'prodsourcelabel' in jobs[0] and jobs[0]['prodsourcelabel'] == 'user':
+            dn = jobs[0]['produserid']
+            try:
+                CNs = dn.split("/CN=")
+                if len(CNs) > 1:
+                    int(CNs[-1])
+                    dn = dn[:-(len(CNs[-1])+4)]
+            except ValueError:
+                pass
+            rw = ruciowrapper()
+            rucioUserName = rw.getRucioAccountByDN(dn)
+        else:
+            rucioUserName = [jobs[0]['produserid']]
 
     try:
         job = jobs[0]
