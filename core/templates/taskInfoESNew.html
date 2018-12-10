@@ -112,7 +112,7 @@
 
                 <td>{{ task.creationdate }}</td>
                 <td>{{ task.modificationtime }}</td>
-                <td>{{ task.corecount }}<br><span class="finished">{{ task.accsum }}</span><br><span class="activated">{{ task.naccsum }}</span></td>
+                <td>{{ task.corecount }}<br><span class="finished">{% if task.accsum %}{{ task.accsum }}{% else %}-{% endif %}</span><br><span class="activated">{% if task.naccsum %}{{ task.naccsum }}{% else %}-{% endif %}</span></td>
                 <td>{{ task.taskpriority }}</td>
                 {% if task.ticketid %}
                     <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a>
