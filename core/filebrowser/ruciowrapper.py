@@ -40,9 +40,9 @@ class ruciowrapper(object):
                         accountRow = RucioAccounts(
                             rucio_account = account,
                             certificatedn = DN,
-                            create_time = str(timezone.now()),
+                            create_time = timezone.now(),
                         )
-                        accountRow.save()
+                        #accountRow.save()
         else:
             accounts = [account['rucio_account'] for account in accounts]
         return accounts
