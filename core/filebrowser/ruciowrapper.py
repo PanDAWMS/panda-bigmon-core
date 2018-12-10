@@ -42,7 +42,7 @@ class ruciowrapper(object):
                             certificatedn = DN,
                             create_time = timezone.now(),
                         )
-                        #accountRow.save()
+                        accountRow.save()
         else:
             accounts = [account['rucio_account'] for account in accounts]
         return accounts
