@@ -365,6 +365,7 @@ def artTasks(request):
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
     statestocount = ['finished', 'failed', 'active']
     arttasksdict = {}
+    jeditaskids = {}
     if not 'view' in request.session['requestParams'] or ('view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
         for job in jobs:
             if job['package'] not in arttasksdict.keys():
@@ -381,6 +382,14 @@ def artTasks(request):
             if job['nightly_tag'] in arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)]:
                 finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
                 arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)][job['nightly_tag']][finalresult] += 1
+
+            if job['package'] not in jeditaskids.keys():
+                jeditaskids[job['package']] = {}
+            if job['branch'] not in jeditaskids[job['package']].keys():
+                jeditaskids[job['package']][job['branch']] = []
+            if job['task_id'] not in jeditaskids[job['package']][job['branch']]:
+                jeditaskids[job['package']][job['branch']].append(job['task_id'])
+
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         for job in jobs:
             if job['branch'] not in arttasksdict.keys():
@@ -398,6 +407,13 @@ def artTasks(request):
                 finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
                 arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)][job['nightly_tag']][finalresult] += 1
 
+            if job['branch'] not in jeditaskids.keys():
+                jeditaskids[job['branch']] = {}
+            if job['package'] not in jeditaskids[job['branch']].keys():
+                jeditaskids[job['branch']][job['package']] = []
+            if job['task_id'] not in jeditaskids[job['branch']][job['package']]:
+                jeditaskids[job['branch']][job['package']].append(job['task_id'])
+
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
 
@@ -405,7 +421,8 @@ def artTasks(request):
         'json' in request.session['requestParams']):
 
         data = {
-            'arttasks' : arttasksdict,
+            'arttasks': arttasksdict,
+            'jeditaskids': jeditaskids,
         }
 
         dump = json.dumps(data, cls=DateEncoder)
