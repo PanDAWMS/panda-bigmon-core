@@ -368,6 +368,7 @@ def runningProdTasks(request):
         sortby = 'creationdate-desc'
     oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
 
+    tasks = []
 #    if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension and tquery['eventservice'] == 1:
     if 'eventservice' in tquery and tquery['eventservice'] == 1 and 'days' in request.session['requestParams']:
 
@@ -386,13 +387,12 @@ def runningProdTasks(request):
 
         if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension:
             wildCardExtension = wildCardExtension.replace("((UPPER(status)  LIKE UPPER('all')))", "(1=1)")
-        tasks = []
         tasks.extend(RunningProdTasksModel.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension]).exclude(
             **exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)[:])
         tasks.extend(FrozenProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(
             **exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)[:])
     else:
-        tasks = RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)
+        tasks.extend(RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery))
 
     qtime = datetime.now()
     task_list = [t for t in tasks]
