@@ -8,9 +8,9 @@ from .utils import get_rucio_account, get_x509_proxy
 
 class ruciowrapper(object):
     if 'RUCIO_ACCOUNT' not in os.environ:
-        os.environ['RUCIO_ACCOUNT'] = get_rucio_account()
+        os.environ['RUCIO_ACCOUNT'] = 'spadolsk'#get_rucio_account()
     if 'X509_USER_PROXY' not in os.environ:
-        os.environ['X509_USER_PROXY'] = get_x509_proxy()
+        os.environ['X509_USER_PROXY'] = '/tmp/x509up_u58513'#get_x509_proxy()
 
     client = None
     def __init__(self):
@@ -40,7 +40,7 @@ class ruciowrapper(object):
                         accountRow = RucioAccounts(
                             rucio_account = account,
                             certificatedn = DN,
-                            create_time = timezone.now(),
+                            create_time = timezone.now().date(),
                         )
                         accountRow.save()
         else:
