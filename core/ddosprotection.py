@@ -38,7 +38,7 @@ class DDOSMiddleware(object):
             qtime = timezone.now(),
             url= request.META.get('QUERY_STRING'),
             urlview = request.path,
-            referrer = x_referer[:3900] if len(x_referer) > 3900 else x_referer,
+            referrer = x_referer[:3900] if x_referer and len(x_referer) > 3900 else x_referer,
             useragent = request.META.get('HTTP_USER_AGENT'),
             is_rejected = 0
         )
