@@ -28,14 +28,17 @@ class DDOSMiddleware(object):
     def process_request(self, request):
 
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-
+        try:
+            x_referer = request.META.get('HTTP_REFERER')
+        except:
+            x_referer = ''
         reqs = AllRequests(
             server = request.META.get('HTTP_HOST'),
             remote = x_forwarded_for,
             qtime = timezone.now(),
             url= request.META.get('QUERY_STRING'),
             urlview = request.path,
-            referrer = request.META.get('HTTP_REFERER'),
+            referrer = x_referer[:3900] if len(x_referer) > 3900 else x_referer,
             useragent = request.META.get('HTTP_USER_AGENT'),
             is_rejected = 0
         )
