@@ -490,3 +490,27 @@ th.vertical {
 .fresh-table tbody td a:hover {
     color: #272727;
 }
+
+.wrap-words {
+    word-wrap: break-word;
+}
+
+.fixed {
+    table-layout: fixed;
+}
+
+.fixed col.w10 {
+    width: 10%;
+}
+.fixed col.w5 {
+    width: 5%;
+}
+.fixed col.w15 {
+    width: 15%;
+}
+.fixed col.w80 {
+    width: 80%;
+}
+.fixed col.w90 {
+    width: 90%;
+}
