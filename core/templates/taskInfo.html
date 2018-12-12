@@ -141,7 +141,6 @@
                             class='done'>done</span><br> <span class='failed'>failed</span></th>
                     <th> Ninputfiles | <span class='finished'>finished</span> | <span class='failed'>failed</span></th>
                 {% endif %}
-                <th>Average maxpss</th>
                 <th>Created</th>
                 <th>Modified</th>
                 <th>Cores</th>
@@ -185,7 +184,6 @@
                             <span class='failed'>{{ task.dsinfo.nfilesfailed }} ({{ task.dsinfo.pctfailed }}%)</span>  {% endif %}
                     </td>
                 {% endif %}
-                <td>{{ task.maxpssave }}</td>
                 <td>{{ task.creationdate }}</td>
                 <td>{{ task.modificationtime }}</td>
                 <td>{{ task.corecount }}</td>
@@ -579,19 +577,17 @@
         {% endif %}
 
         {% if jobparams %}
-            <div class="table-scroll">
-                <table>
-                    <a name="jobparams"></a>
-                    <tr bgcolor='lightcyan'>
-                        <th colspan=20> Job parameters</th>
+            <table class="fixed">
+                <a name="jobparams"></a>
+                <tr bgcolor='lightcyan'>
+                    <th> Job parameters</th>
+                </tr>
+                {% for p in jobparams %}
+                    <tr>
+                        <td class="wrap-words">{{ p|safe }}</td>
                     </tr>
-                    {% for p in jobparams %}
-                        <tr>
-                            <td><font size=-1>{{ p|safe }}</font></td>
-                        </tr>
-                    {% endfor %}
-                </table>
-            </div>
+                {% endfor %}
+            </table>
             <p>
         {% endif %}
 
