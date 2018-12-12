@@ -473,7 +473,7 @@ height="1000" width="100%"></iframe>
                 $('#reloadWorkersList').click(function () {
                     var number = $('#numberWL').val();
                     var key = getRandomInt(100000000,900000000)
-                    var url = "{% url 'workers' %}{{url}}&dt&display_limit_workers=" + number + "&key=" + key
+                    var url = "{% url 'workers' %}{{url|safe}}&dt&display_limit_workers=" + number + "&key=" + key
                     $('#harvesterworkers').DataTable().ajax.url(url).load();
                     {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
                 });
