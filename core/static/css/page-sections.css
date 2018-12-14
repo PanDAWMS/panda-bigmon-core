@@ -109,12 +109,13 @@ hr {
 .dropdownplots {
     position: relative;
     display: inline-block;
+    margin-bottom: 3px;
 }
 .dropdownbutton{
     background-color: rgba(53,86,129, 0.8);
     color: white;
-    width: 200px;
-    padding: 10px;
+    width: 180px;
+    padding: 10px 5px;
     margin-bottom: 0px;
     font-size: 14px;
     border: none;
@@ -125,7 +126,7 @@ hr {
     display: none;
     position: absolute;
     background-color: #f9f9f9;
-    min-width: 200px;
+    min-width: 180px;
     border-left: 1px solid #222222;
     box-shadow: 8px 8px 16px 0px rgba(0,0,0,0.5);
     z-index: 1002;
