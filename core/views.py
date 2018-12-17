@@ -116,7 +116,8 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 #from libs import exlib
 from libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, preparePlotData
 from core.libs.exlib import insert_to_temp_table, dictfetchall
-from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, job_summary_for_task_light
+from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
+    job_summary_for_task_light, get_top_memory_consumers
 
 @register.filter(takes_context=True)
 def get_count(dict, key):
@@ -8512,6 +8513,15 @@ def taskInfo(request, jeditaskid=0):
     countfailed = [val['count'] for val in jobsummary if val['name'] == 'finished']
     if len(countfailed) > 0 and countfailed[0] > 0:
         showtaskprof = True
+
+    # getting top memory consumers for analysis tasks
+    if taskrec['tasktype'] == 'anal':
+        tmcj_list = get_top_memory_consumers(taskrec)
+        if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
+            warning['memoryleaksuspicion'] = {}
+            warning['memoryleaksuspicion']['message'] = 'It seems some jobs in this task have memory leaks.'
+            warning['memoryleaksuspicion']['jobs'] = tmcj_list
+
 
     if taskrec:
         if taskrec['creationdate']:

@@ -456,3 +456,30 @@ def job_summary_for_task_light(taskrec):
     jobsummarylight = [dict(name=state, count=jobSummaryLight[state]) for state in statelistlight]
 
     return jobsummarylight
+
+def get_top_memory_consumers(taskrec):
+    jeditaskidstr = str(taskrec['jeditaskid'])
+    topmemoryconsumedjobs = []
+    tmcquerystr = """
+    select jeditaskid, pandaid, computingsite, jobmaxrss, sitemaxrss, maxrssratio 
+    from (
+    select j.jeditaskid, j.pandaid, j.computingsite, j.jobmaxrss, s.maxrss as sitemaxrss, j.jobmaxrss/s.maxrss as maxrssratio, 
+        row_number() over (partition by jeditaskid order by j.jobmaxrss/s.maxrss desc) as jobrank
+    from atlas_pandameta.schedconfig s,
+    (select pandaid, jeditaskid, computingsite, maxrss/1000 as jobmaxrss from ATLAS_PANDA.jobsarchived4 
+        where jeditaskid = :jdtsid and maxrss is not null
+    union
+    select pandaid, jeditaskid, computingsite, maxrss/1000 as jobmaxrss from ATLAS_PANDAARCH.jobsarchived 
+        where jeditaskid = :jdtsid  and maxrss is not null
+    ) j
+    where j.computingsite = s.nickname
+    ) 
+    where jobrank <= 3
+    """
+    cur = connection.cursor()
+    cur.execute(tmcquerystr, {'jdtsid': jeditaskidstr})
+    tmc_list = cur.fetchall()
+    cur.close()
+    tmc_names = ['jeditaskid', 'pandaid', 'computingsite', 'jobmaxrss', 'sitemaxrss', 'maxrssratio']
+    topmemoryconsumedjobs = [dict(zip(tmc_names, row)) for row in tmc_list]
+    return topmemoryconsumedjobs

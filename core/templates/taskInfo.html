@@ -317,65 +317,65 @@
             </div>
         {% endif %}
 
-            {% if jobsummary %}
+        {% if jobsummary %}
 
-                {% if requestParams.warning %}
-                    <div class="callout small alert">
-                    <p style="color:brown">{{ requestParams.warning }}</p>
-                    {#    Go to correspondent <a href="{% url 'jobListP' %}?jeditaskid={{ jeditaskid }}&mode=drop"> jobsss page</a>#}
-                    </div>
-                {% endif %}
-
-                <table>
-                    <tr bgcolor="lightcyan">
-                        <th colspan=20>
-                            <b>States of jobs in this task (merge jobs excluded)</b> &nbsp; &nbsp; &nbsp; &nbsp; <a
-                                href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">Show
-                            all jobs</a> &nbsp; &nbsp; &nbsp;
-                            {% if requestParams.mode and requestParams.mode == 'nodrop' %}
-                                <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Switch to drop mode</a>
-                            {% else %}
-                                <a style="cursor: pointer;" href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
-                            {% endif %}
-                        </th>
-                    </tr>
-                    <tr>
-                        {% for state in jobsummary %}
-                            <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        {% for state in jobsummary %}
-                            {% if newjobsummary_test %}
-
-                                {% for newstate in newjobsummary_test %}
-                                    {% if forloop.counter == forloop.parentloop.counter %}
-                                        <td {% if state.count > 0 or newstate.count > 0 %}
-                                            class='{{ state.name }}_fill' {% endif %}>
-                                            {% if state.count > 0 or newstate.count > 0 %}
-                                                <b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&jobstatus={{ state.name }}&display_limit=100">
-                                                    <span class='{{ state.name }}_fill'>{{ state.count }} ({{ newstate.count }})</span></a>
-                                                </b> {% endif %} </td>
-                                    {% endif %}
-
-                                {% endfor %}
-
-                            {% else %}
-
-                                <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                                    {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&jobstatus={{ state.name }}&display_limit=100">
-                                    <span class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
-                                </td>
-
-                            {% endif %}
-
-                            {% comment "Removed in order of consistency between task and jobs page" %}
-    {% ifequal state.name 'failed' %}&mode=drop{%  endifequal %}{% ifequal state.name 'finished' %}&mode=drop{%  endifequal %}
-{% endcomment %}
-                        {% endfor %}
-                    </tr>
-                </table>
+            {% if requestParams.warning %}
+                <div class="callout small alert">
+                <p style="color:brown">{{ requestParams.warning }}</p>
+                {#    Go to correspondent <a href="{% url 'jobListP' %}?jeditaskid={{ jeditaskid }}&mode=drop"> jobsss page</a>#}
+                </div>
             {% endif %}
+
+            <table>
+                <tr bgcolor="lightcyan">
+                    <th colspan=20>
+                        <b>States of jobs in this task (merge jobs excluded)</b> &nbsp; &nbsp; &nbsp; &nbsp; <a
+                            href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">Show
+                        all jobs</a> &nbsp; &nbsp; &nbsp;
+                        {% if requestParams.mode and requestParams.mode == 'nodrop' %}
+                            <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Switch to drop mode</a>
+                        {% else %}
+                            <a style="cursor: pointer;" href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
+                        {% endif %}
+                    </th>
+                </tr>
+                <tr>
+                    {% for state in jobsummary %}
+                        <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    {% for state in jobsummary %}
+                        {% if newjobsummary_test %}
+
+                            {% for newstate in newjobsummary_test %}
+                                {% if forloop.counter == forloop.parentloop.counter %}
+                                    <td {% if state.count > 0 or newstate.count > 0 %}
+                                        class='{{ state.name }}_fill' {% endif %}>
+                                        {% if state.count > 0 or newstate.count > 0 %}
+                                            <b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&jobstatus={{ state.name }}&display_limit=100">
+                                                <span class='{{ state.name }}_fill'>{{ state.count }} ({{ newstate.count }})</span></a>
+                                            </b> {% endif %} </td>
+                                {% endif %}
+
+                            {% endfor %}
+
+                        {% else %}
+
+                            <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
+                                {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&jobstatus={{ state.name }}&display_limit=100">
+                                <span class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
+                            </td>
+
+                        {% endif %}
+
+                        {% comment "Removed in order of consistency between task and jobs page" %}
+{% ifequal state.name 'failed' %}&mode=drop{%  endifequal %}{% ifequal state.name 'finished' %}&mode=drop{%  endifequal %}
+{% endcomment %}
+                    {% endfor %}
+                </tr>
+            </table>
+        {% endif %}
 
         {% if jobsummaryPMERGE %}
 
@@ -415,31 +415,44 @@
                 </tr>
             </table>
         {% endif %}
-
-        <p>
-            {% if task.errordialog %}
-                {% if logtxt %}
-                    <div class="card scrollable">
-                        <div class="card-divider errorlog">
-                            <h5>Logged status: {{ task.errordialog|safe }}</h5>
-                        </div>
-                        <div class="card-section errorlog">
+        {% if task.tasktype == 'anal' and warning.memoryleaksuspicion %}
+            <p>
+            <div class="callout alert" data-closable>
+              <h5>Warning! {{ warning.memoryleaksuspicion.message }}</h5>
+              <p>At least one of the jobs in this task consumed more maxRSS than it is available on a computing site. Please check the next top memory consumed jobs and their memory and IO usage plots: </p>
+              <ul>
+              {% for job in warning.memoryleaksuspicion.jobs %}
+                <li style="font-size: smaller"> <a class="blacklink bold hover" href="{% url 'jobInfo' job.pandaid %}">{{ job.pandaid }}</a> consumed {{ job.jobmaxrss }} MB out of {{ job.sitemaxrss }} MB on <a class="blacklink bold hover" href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a>, see <a class="blacklink bold hover" target="_blank" href="{% url 'memoryplot' %}?pandaid={{ job.pandaid }}">plots</a>
+              {% endfor %}
+              </ul>
+              <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+                    <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+        {% endif %}
+        {% if task.errordialog %}
+            <p>
+            {% if logtxt %}
+                <div class="card scrollable">
+                    <div class="card-divider errorlog">
+                        <h5>Logged status: {{ task.errordialog|safe }}</h5>
+                    </div>
+                    <div class="card-section errorlog">
     <pre>
     {{ logtxt }}
     </pre>
                         </div>
                     </div>
-                {% else %}
-                    <div class="card-divider errorlog">
-                        <h5>Logged status: {{ task.errordialog|safe }}</h5>
-                    </div>
-                {% endif %}
+            {% else %}
+                <div class="card-divider errorlog">
+                    <h5>Logged status: {{ task.errordialog|safe }}</h5>
+                </div>
             {% endif %}
-
+        {% endif %}
         <p>
-            {% if task.eventservice == 1 %}
-                This is an event service task<p>
-            {% endif %}
+        {% if task.eventservice == 1 %}
+            This is an event service task<p>
+        {% endif %}
 
         <div id="jobsconsumptionplots"></div>
         {% if 'maxpss' in plotsDict %}
