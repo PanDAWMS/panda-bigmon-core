@@ -118,6 +118,7 @@ from libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, prepareP
 from core.libs.exlib import insert_to_temp_table, dictfetchall
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers
+from core.libs.bpuser import get_relevant_links
 
 @register.filter(takes_context=True)
 def get_count(dict, key):
@@ -4868,114 +4869,13 @@ def userInfo(request, user=''):
         njobsmax = display_limit_jobs
         url_nolimit_jobs = request.get_full_path() + 'display_limit_jobs=' + str(len(jobs))
 
-    #
-    # getting most relevant links based on visit statistics
-    #
 
-    links = {'task': [], 'job': [], 'other': []}
+    # getting most relevant links based on visit statistics
     if request.user.is_authenticated():
         userids = BPUser.objects.filter(email=request.user.email).values('id')
         userid = userids[0]['id']
-        sqlquerystr = """select pagegroup, pagename,visitrank, url
-                          from (
-                            select sum(w) as visitrank, pagegroup, pagename, row_number() over (partition by pagegroup ORDER BY sum(w) desc) as rn, url
-                            from (
-                              select exp(-(SYSdate - cast(time as date))*24/12) as w,
-                              SUBSTR(url,
-                                    INSTR(url,'/',1,3)+1,
-                                    (INSTR(url,'/',1,4)-INSTR(url,'/',1,3)-1)) as pagename,
-                              case when SUBSTR(url,INSTR(url,'/',1,3)+1,(INSTR(url,'/',1,4)-INSTR(url,'/',1,3)-1)) in ('task', 'tasks') then 'task'
-                                 when SUBSTR(url,INSTR(url,'/',1,3)+1,(INSTR(url,'/',1,4)-INSTR(url,'/',1,3)-1)) in ('job', 'jobs') then 'job'
-                                 else 'other' end as pagegroup,
-                              case when url like '%%timestamp=%%' then SUBSTR(url,1,INSTR(url,'timestamp=',1,1)-2)
-                                   when url like '%%job?pandaid=%%' then REPLACE(url,'job?pandaid=','job/')
-                                   when url like '%%task?jeditaskid=%%' then REPLACE(url,'task?jeditaskid=','task/') else url end as url
-                              from ATLAS_PANDABIGMON.visits
-                              where USERID=%i and url not like '%%/user/%%' and INSTR(url,'/',1,4) != 0
-                              order by time DESC)
-                            group by pagegroup,pagename,url)
-                        where rn < 10""" % (userid)
-
-
-        cur = connection.cursor()
-        cur.execute(sqlquerystr)
-        visits = cur.fetchall()
-        cur.close()
-
-        visitsnames = ['pagegroup', 'pagename', 'visitrank', 'url']
-        relevantVisits = [dict(zip(visitsnames, row)) for row in visits]
-
-        for page in relevantVisits:
-            for link in links.keys():
-                if page['pagegroup'].startswith(link):
-                    links[link].append(page)
-
-        for link in links['task']:
-            link['keyparams']=[]
-            link['otherparams'] = []
-            if link['pagename'] == 'task':
-                link['linktext'] = link['url'].split('/')[4]
-                link['keyparams'].append(dict(param='jeditaskid', value=link['url'].split('/')[4],
-                                              importance=True))
-            if link['pagename'] == 'tasks':
-                link['linktext'] = link['pagename']
-                params = unquote(urlparse(link['url']).query).split('&')
-                for param in params:
-                    if '=' in param:
-                        flag = False
-                        if param.split('=')[0] in standard_taskfields:
-                            flag = True
-                            link['keyparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
-                                                          importance=flag))
-                        else:
-                            link['otherparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
-                                                       importance=flag))
-
-        for link in links['job']:
-            link['keyparams'] = []
-            link['otherparams'] = []
-            if link['pagename'] == 'job':
-                link['linktext'] = link['url'].split('/')[4]
-                link['keyparams'].append(dict(param='pandaid', value=link['url'].split('/')[4],
-                                              importance=True))
-            if link['pagename'] == 'jobs':
-                link['linktext'] = link['pagename']
-                params = unquote(urlparse(link['url']).query).split('&')
-                for param in params:
-                    if '=' in param:
-                        flag = False
-                        if param.split('=')[0] in standard_fields:
-                            flag = True
-                            link['keyparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
-                                              importance=flag))
-                        else:
-                            link['otherparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
-                                                           importance=flag))
-
-        for link in links['other']:
-            link['keyparams'] = []
-            link['otherparams'] = []
-            if link['pagename'] == 'site':
-                link['linktext'] = link['pagename']
-                link['keyparams'].append(dict(param='site', value=link['url'].split('/')[4],
-                                              importance=True))
-            elif link['pagename'] == 'dash':
-                link['linktext'] = link['pagename']
-                link['keyparams'].append(dict(param='tasktype', value=link['url'].split('/')[4],
-                                              importance=True))
-            else:
-                link['linktext'] = link['pagename']
-            params = unquote(urlparse(link['url']).query).split('&')
-            for param in params:
-                if '=' in param:
-                    flag = False
-                    if param.split('=')[0] in standard_sitefields or param.split('=')[0] in standard_fields or param.split('=')[0] in standard_taskfields:
-                        flag = True
-                        link['keyparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
-                                          importance=flag))
-                    else:
-                        link['otherparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
-                                                       importance=flag))
+        fields = {'job': standard_fields, 'task': standard_taskfields, 'site': standard_sitefields}
+        links = get_relevant_links(userid, fields)
 
     sumd = userSummaryDict(jobs)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
