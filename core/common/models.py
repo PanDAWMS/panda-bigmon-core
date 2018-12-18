@@ -2151,7 +2151,7 @@ class TRequest(models.Model):
     subcampaign = models.CharField(max_length=32, db_column='SUB_CAMPAIGN', null=False, blank=True)
     phys_group = models.CharField(max_length=20, db_column='PHYS_GROUP', null=False, choices=PHYS_GROUPS, blank=True)
     energy_gev = models.DecimalField(decimal_places=0, max_digits=8, db_column='ENERGY_GEV', null=False, blank=True)
-    project = models.ForeignKey(TProject,db_column='PROJECT', null=True, blank=False)
+    project = models.ForeignKey(TProject,db_column='PROJECT', null=True, blank=False, on_delete=models.DO_NOTHING)
     is_error = models.NullBooleanField(db_column='EXCEPTION', null=True, blank=False)
     jira_reference = models.CharField(max_length=50, db_column='REFERENCE', null=True, blank=True)
 
@@ -2173,7 +2173,7 @@ class RequestStatus(models.Model):
                     ('Approved', 'Approved'),
                     )
     id =  models.DecimalField(decimal_places=0, max_digits=12, db_column='REQ_S_ID', primary_key=True)
-    request = models.ForeignKey(TRequest, db_column='PR_ID')
+    request = models.ForeignKey(TRequest, db_column='PR_ID', on_delete=models.DO_NOTHING)
     comment = models.CharField(max_length=256, db_column='COMMENT', null=True)
     owner = models.CharField(max_length=32, db_column='OWNER', null=False)
     status = models.CharField(max_length=32, db_column='STATUS', choices=STATUS_TYPES, null=False)
@@ -2282,8 +2282,8 @@ class ProductionContainer(models.Model):
 
 class InputRequestList(models.Model):
     id = models.DecimalField(decimal_places=0, max_digits=12, db_column='IND_ID', primary_key=True)
-    dataset = models.ForeignKey(ProductionDataset, db_column='INPUTDATASET',null=True)
-    request = models.ForeignKey(TRequest, db_column='PR_ID')
+    dataset = models.ForeignKey(ProductionDataset, db_column='INPUTDATASET',null=True, on_delete=models.DO_NOTHING)
+    request = models.ForeignKey(TRequest, db_column='PR_ID', on_delete=models.DO_NOTHING)
     slice = models.DecimalField(decimal_places=0, max_digits=12, db_column='SLICE', null=False)
     brief = models.CharField(max_length=150, db_column='BRIEF')
     phys_comment = models.CharField(max_length=256, db_column='PHYSCOMMENT')
@@ -2317,10 +2317,10 @@ class StepExecution(models.Model):
     STEPS_STATUS = ['NotChecked','NotCheckedSkipped','Skipped','Approved']
     STEPS_APPROVED_STATUS = ['Skipped','Approved']
     id =  models.DecimalField(decimal_places=0, max_digits=12, db_column='STEP_ID', primary_key=True)
-    request = models.ForeignKey(TRequest, db_column='PR_ID')
-    step_template = models.ForeignKey(StepTemplate, db_column='STEP_T_ID')
+    request = models.ForeignKey(TRequest, db_column='PR_ID', on_delete=models.DO_NOTHING)
+    step_template = models.ForeignKey(StepTemplate, db_column='STEP_T_ID', on_delete=models.DO_NOTHING)
     status = models.CharField(max_length=12, db_column='STATUS', null=False)
-    slice = models.ForeignKey(InputRequestList, db_column='IND_ID', null=False)
+    slice = models.ForeignKey(InputRequestList, db_column='IND_ID', null=False, on_delete=models.DO_NOTHING)
     priority = models.DecimalField(decimal_places=0, max_digits=5, db_column='PRIORITY', null=False)
     step_def_time = models.DateTimeField(db_column='STEP_DEF_TIME', null=False)
     step_appr_time = models.DateTimeField(db_column='STEP_APPR_TIME', null=True)
@@ -2328,7 +2328,7 @@ class StepExecution(models.Model):
     step_done_time = models.DateTimeField(db_column='STEP_DONE_TIME', null=True)
     input_events = models.DecimalField(decimal_places=0, max_digits=10, db_column='INPUT_EVENTS', null=True)
     task_config = models.CharField(max_length=2000, db_column='TASK_CONFIG')
-    step_parent = models.ForeignKey('self', db_column='STEP_PARENT_ID')
+    step_parent = models.ForeignKey('self', db_column='STEP_PARENT_ID', on_delete=models.DO_NOTHING)
 
     def set_task_config(self, update_dict):
         if not self.task_config:
@@ -2406,8 +2406,8 @@ class TTask(models.Model):
 
 class ProductionTask(models.Model):
     id = models.DecimalField(decimal_places=0, max_digits=12, db_column='TASKID', primary_key=True)
-    step = models.ForeignKey(StepExecution, db_column='STEP_ID')
-    request = models.ForeignKey(TRequest, db_column='PR_ID')
+    step = models.ForeignKey(StepExecution, db_column='STEP_ID', on_delete=models.DO_NOTHING)
+    request = models.ForeignKey(TRequest, db_column='PR_ID', on_delete=models.DO_NOTHING)
     parent_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='PARENT_TID', null=False)
     chain_tid = models.DecimalField(decimal_places=0, max_digits=12, db_column='CHAIN_TID', null=False)
     name = models.CharField(max_length=130, db_column='TASKNAME', null=True)
@@ -2568,7 +2568,7 @@ def get_priority_object(priority_key):
         for step in MCPriority.STEPS:
             priority_py_dict.update({step:int(priority_key)})
         mcp=MCPriority.objects.create(priority_key=-1,priority_dict=json.dumps(priority_py_dict))
-    except Exception,e:
+    except Exception as e:
         raise e
     return mcp
 
