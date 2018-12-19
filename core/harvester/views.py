@@ -213,7 +213,7 @@ def harvesters(request):
             tquery['harvesterid'] = instance
             limit = 100
             if 'limit' in request.session['requestParams']:
-                limit = request.session['requestParams']['limit']
+                limit = int(request.session['requestParams']['limit'])
             harvsterworkerstat = HarvesterWorkerStats.objects.filter(**tquery).values('computingsite', 'resourcetype', 'status',
                                                                            'nworkers','lastupdate').extra(
                 where=[extra]).order_by('-lastupdate')[:limit]
@@ -288,7 +288,7 @@ def harvesters(request):
             tquery['harvesterid'] = instance
             limit = 100
             if 'limit' in request.session['requestParams']:
-                limit = request.session['requestParams']['limit']
+                limit = int(request.session['requestParams']['limit'])
             dialogsList = HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime')[:limit]
             # dialogs.extend(HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime'))
             old_format = '%Y-%m-%d %H:%M:%S'
@@ -447,7 +447,7 @@ def harvesters(request):
             tquery['computingsite'] = computingsite
             limit = 100
             if 'limit' in request.session['requestParams']:
-                limit = request.session['requestParams']['limit']
+                limit = int(request.session['requestParams']['limit'])
             harvsterworkerstat = HarvesterWorkerStats.objects.filter(**tquery).values('harvesterid', 'resourcetype', 'status',
                                                                            'nworkers','lastupdate').filter(**tquery).extra(
                 where=[extra]).order_by('-lastupdate')[:limit]
@@ -464,7 +464,7 @@ def harvesters(request):
             instancelist = request.session['requestParams']['instancelist'].split(',')
             limit = 100
             if 'limit' in request.session['requestParams']:
-                    limit = request.session['requestParams']['limit']
+                    limit = int(request.session['requestParams']['limit'])
             dialogsList = HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(harvesterid__in=instancelist).extra(where=[extra]).order_by('-creationtime')[:limit]
                 # dialogs.extend(HarvesterDialogs.objects.filter(**tquery).values('creationtime','modulename', 'messagelevel','diagmessage').filter(**tquery).extra(where=[extra]).order_by('-creationtime'))
             old_format = '%Y-%m-%d %H:%M:%S'
@@ -1173,7 +1173,7 @@ def getWorkersByJobID(pandaid, instance=''):
     return jobsworkersquery, pandaidList
 
 def query_to_dicts(query_string, *query_args):
-    from itertools import izip
+    from itertools import zip_longest as izip
 
     cursor = connection.cursor()
     cursor.execute(query_string, query_args)

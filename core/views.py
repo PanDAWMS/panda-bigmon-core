@@ -230,14 +230,14 @@ def login_customrequired(function):
       if x_forwarded_for and x_forwarded_for in notcachedRemoteAddress:
           return function(request, *args, **kwargs)
 
-      # if request.user.is_authenticated or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
-      #     return function(request, *args, **kwargs)
-      # else:
-      #     # if '/user/' in request.path:
-      #     #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
-      #     # else:
-      #     #     return function(request, *args, **kwargs)
-      #     return HttpResponseRedirect('/login/?next='+request.get_full_path())
+      if request.user.is_authenticated or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
+          return function(request, *args, **kwargs)
+      else:
+          # if '/user/' in request.path:
+          #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
+          # else:
+          #     return function(request, *args, **kwargs)
+          return HttpResponseRedirect('/login/?next='+request.get_full_path())
   wrap.__doc__=function.__doc__
   wrap.__name__=function.__name__
   return wrap
@@ -1614,7 +1614,7 @@ def cleanTaskList(request, tasks):
                 task['eventservice'] = 'eventservice'
             else:
                 task['eventservice'] = 'ordinary'
-        if 'reqid' in task and task['reqid'] < 100000 and task['reqid'] > 100 and task['reqid'] != 300 and (
+        if 'reqid' in task and task['reqid'] is not None and task['reqid'] < 100000 and task['reqid'] > 100 and task['reqid'] != 300 and (
             ('tasktype' in task) and (not task['tasktype'].startswith('anal'))):
             task['deftreqid'] = task['reqid']
         if 'corecount' in task and task['corecount'] is None:
@@ -1836,7 +1836,7 @@ def siteSummaryDict(sites):
         itemd['field'] = f
         iteml = []
         kys = sumd[f].keys()
-        kys.sort()
+        kys = sorted(kys)
         for ky in kys:
             iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
         itemd['list'] = iteml
@@ -1892,7 +1892,7 @@ def userSummaryDict(jobs):
         sumd[user]['cputime'] = "%d" % float(sumd[user]['cputime'])
     ## convert to list ordered by username
     ukeys = sumd.keys()
-    ukeys.sort()
+    ukeys = sorted(ukeys)
     suml = []
     for u in ukeys:
         uitem = {}
@@ -1966,7 +1966,7 @@ def taskSummaryDict(request, tasks, fieldlist=None):
         itemd['field'] = f
         iteml = []
         kys = sumd[f].keys()
-        kys.sort()
+        kys =sorted(kys)
         if f != 'ramcount':
             for ky in kys:
                 iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
@@ -4055,7 +4055,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
         pandaid = job['pandaid']
         colnames = job.keys()
-        colnames.sort()
+        colnames = sorted(colnames)
         produsername = ''
         for k in colnames:
             val = job[k]
@@ -5241,7 +5241,7 @@ def updateCacheWithListOfMismatchedCloudSites(mismatchedSites):
         cache.set('mismatched-cloud-sites-list', mismatchedSites, 31536000)
     else:
         listOfCloudSitesMismatched.extend(mismatchedSites)
-        listOfCloudSitesMismatched.sort()
+        listOfCloudSitesMismatched = sorted(listOfCloudSitesMismatched)
         cache.set('mismatched-cloud-sites-list', list(listOfCloudSitesMismatched for listOfCloudSitesMismatched, _ in
                                                       itertools.groupby(listOfCloudSitesMismatched)), 31536000)
 
@@ -5538,7 +5538,8 @@ def wnInfo(request, site, wnname='all'):
 
     ## Convert dict to summary list
     wnkeys = wns.keys()
-    wnkeys.sort()
+    wnkeys.sorted\
+        ()
     wntot = len(wnkeys)
     fullsummary = []
 
@@ -5610,13 +5611,13 @@ def wnInfo(request, site, wnname='all'):
             fullsummary = sorted(fullsummary, key=lambda x: x['pctfail'], reverse=True)
 
     kys = wnPlotFailed.keys()
-    kys.sort()
+    kys = sorted(kys)
     wnPlotFailedL = []
     for k in kys:
         wnPlotFailedL.append([k, wnPlotFailed[k]])
 
     kys = wnPlotFinished.keys()
-    kys.sort()
+    kys = sorted(kys)
     wnPlotFinishedL = []
     for k in kys:
         wnPlotFinishedL.append([k, wnPlotFinished[k]])
@@ -5945,7 +5946,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
 
     ## Convert dict to summary list
     cloudkeys = clouds.keys()
-    cloudkeys.sort()
+    cloudkeys = sorted(cloudkeys)
     fullsummary = []
     allstated = {}
     allstated['finished'] = allstated['failed'] = 0
@@ -5977,7 +5978,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
             clouds[cloud]['statelist'].append(clouds[cloud]['states'][state])
         sites = clouds[cloud]['sites']
         sitekeys = sites.keys()
-        sitekeys.sort()
+        sitekeys = sorted(sitekeys)
         cloudsummary = []
         for site in sitekeys:
             sitesummary = []
@@ -6071,7 +6072,7 @@ def dashTaskSummary(request, hours, limit=999999, view='all'):
             if not str(tasks[t]['name'].encode('ascii', 'ignore')).startswith('user.'): del tasks[t]
     ## Convert dict to summary list
     taskkeys = tasks.keys()
-    taskkeys.sort()
+    taskkeys = sorted(taskkeys)
     fullsummary = []
     for taskid in taskkeys:
         for state in sitestatelist:
@@ -6261,7 +6262,7 @@ def dashTaskSummary_preprocess(request):
             if not str(tasks[t]['name'].encode('ascii','ignore')).startswith('user.'): del tasks[t]
     ## Convert dict to summary list
     taskkeys = tasks.keys()
-    taskkeys.sort()
+    taskkeys = sorted(taskkeys)
     fullsummary = []
     for taskid in taskkeys:
         for state in sitestatelist:
@@ -6661,7 +6662,7 @@ def dashboard(request, view='production'):
             vos[vo]['states'][jobstatus]['count'] += count
         ## Convert dict to summary list
         vokeys = vos.keys()
-        vokeys.sort()
+        vokeys = sorted(vokeys)
         vosummary = []
         for vo in vokeys:
             for state in sitestatelist:
@@ -8220,7 +8221,7 @@ def taskInfo(request, jeditaskid=0):
     try:
         taskrec = tasks[0]
         colnames = taskrec.keys()
-        colnames.sort()
+        colnames = sorted(colnames)
         for k in colnames:
             val = taskrec[k]
             if taskrec[k] == None:
@@ -8241,7 +8242,7 @@ def taskInfo(request, jeditaskid=0):
         try:
             taskparams = json.loads(taskparams)
             tpkeys = taskparams.keys()
-            tpkeys.sort()
+            tpkeys = sorted(tpkeys)
             taskparaml = []
             for k in tpkeys:
                 rec = {'name': k, 'value': taskparams[k]}
@@ -8340,7 +8341,7 @@ def taskInfo(request, jeditaskid=0):
         if dstype not in dstypesd: dstypesd[dstype] = 0
         dstypesd[dstype] += 1
     dstkeys = dstypesd.keys()
-    dstkeys.sort()
+    dstkeys = sorted(dstkeys)
     dstypes = []
     for dst in dstkeys:
         dstd = {'type': dst, 'count': dstypesd[dst]}
@@ -8359,7 +8360,7 @@ def taskInfo(request, jeditaskid=0):
     outctrs.extend(JediDatasets.objects.filter(**cquery).values_list('containername', flat=True).distinct())
     if len(outctrs) == 0 or outctrs[0] == '':
         outctrs = None
-    if isinstance(outctrs, np.basestring):
+    if isinstance(outctrs, str):
        outctrs = [outctrs]
 
     # getBrokerageLog(request)
@@ -8689,7 +8690,7 @@ def taskInfoNew(request, jeditaskid=0):
     try:
         taskrec = tasks[0]
         colnames = taskrec.keys()
-        colnames.sort()
+        colnames = sorted(colnames)
         for k in colnames:
             val = taskrec[k]
             if taskrec[k] == None:
@@ -8710,7 +8711,7 @@ def taskInfoNew(request, jeditaskid=0):
         try:
             taskparams = json.loads(taskparams)
             tpkeys = taskparams.keys()
-            tpkeys.sort()
+            tpkeys = sorted(tpkeys)
             taskparaml = []
             for k in tpkeys:
                 rec = {'name': k, 'value': taskparams[k]}
@@ -8808,7 +8809,7 @@ def taskInfoNew(request, jeditaskid=0):
         if dstype not in dstypesd: dstypesd[dstype] = 0
         dstypesd[dstype] += 1
     dstkeys = dstypesd.keys()
-    dstkeys.sort()
+    dstkeys = sorted(dstkeys)
     dstypes = []
     for dst in dstkeys:
         dstd = {'type': dst, 'count': dstypesd[dst]}
@@ -9570,7 +9571,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         #            if site in homeCloud and homeCloud[site] != request.session['requestParams']['cloud']: continue
         user = job['produsername']
         taskname = ''
-        if job['jeditaskid'] > 0:
+        if job['jeditaskid'] is not None and job['jeditaskid'] > 0:
             taskid = job['jeditaskid']
             if taskid in tasknamedict:
                 taskname = tasknamedict[taskid]
@@ -9664,7 +9665,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
                 errsBySite[site]['errors'][errcode]['count'] += 1
                 errsBySite[site]['toterrors'] += 1
 
-                if tasktype == 'jeditaskid' or taskid > 1000000 or 'produsername' in request.session['requestParams']:
+                if tasktype == 'jeditaskid' or (taskid is not None and taskid > 1000000) or 'produsername' in request.session['requestParams']:
                     if taskid not in errsByTask:
                         errsByTask[taskid] = {}
                         errsByTask[taskid]['name'] = taskid
@@ -10315,7 +10316,7 @@ def incidentList(request):
         suml.append(itemd)
     suml = sorted(suml, key=lambda x: x['param'].lower())
     kys = incHist.keys()
-    kys.sort()
+    kys = sorted(kys)
     incHistL = []
     for k in kys:
         incHistL.append([k, incHist[k]])
@@ -10736,7 +10737,7 @@ def pandaLogger(request):
             if not tm in logHist: logHist[tm] = 0
             logHist[tm] += 1
         kys = logHist.keys()
-        kys.sort()
+        kys = sorted(kys)
         logHistL = []
         for k in kys:
             logHistL.append([k, logHist[k]])
@@ -10992,7 +10993,7 @@ def workingGroups(request):
     errthreshold = 15
     ## Convert dict to summary list
     wgkeys = wgs.keys()
-    wgkeys.sort()
+    wgkeys = sorted(wgkeys)
     wgsummary = []
     for wg in wgkeys:
         for state in statelist:
@@ -11084,7 +11085,7 @@ def datasetInfo(request):
         dsrec = dsets[0]
         dataset = dsrec['datasetname']
         colnames = dsrec.keys()
-        colnames.sort()
+        colnames = sorted(colnames)
         for k in colnames:
             val = dsrec[k]
             if dsrec[k] == None:
@@ -11259,7 +11260,7 @@ def fileInfo(request):
         frec = files[0]
         file = frec['lfn']
         colnames = frec.keys()
-        colnames.sort()
+        colnames = sorted(colnames)
         for k in colnames:
             val = frec[k]
             if frec[k] == None:
@@ -12387,7 +12388,7 @@ def getBadEventsForTask(request):
         dataitem['ERROR_CODE'] = (errorCodes['piloterrorcode'][row[1]] + " (" +str(row[1])+ ")") if row[1] in errorCodes['piloterrorcode'] else row[1]
         dataitem['EVENTS'] = list(set(  str(row[2].read()).split(',')   )) if not row[2] is None else None
         dataitem['PANDAIDS'] = list(set(  str(row[3].read()).split(',')   )) if not row[3] is None else None
-        if dataitem['EVENTS']: dataitem['EVENTS'].sort()
+        if dataitem['EVENTS']: dataitem['EVENTS'] = sorted(dataitem['EVENTS'])
         dataitem['COUNT'] = row[4]
         data.append(dataitem)
     cursor.close()

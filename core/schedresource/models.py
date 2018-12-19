@@ -170,7 +170,7 @@ class Schedconfig(models.Model):
         for f in self._meta.fields:
             kys[f.name] = f
         kys1 = kys.keys()
-        kys1.sort()
+        kys1 = sorted(kys1)
         for k in kys1:
             f = kys[k]
             fname = f.name

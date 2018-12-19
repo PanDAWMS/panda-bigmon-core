@@ -27,7 +27,7 @@ def globalshares(request):
         data['request'] = request
         gsPlotData = {}
         oldGsPlotData = data['gsPlotData']
-        for shareName, shareValue in oldGsPlotData.iteritems():
+        for shareName, shareValue in oldGsPlotData.items():
             gsPlotData[str(shareName)] = int(shareValue)
         data['gsPlotData'] = gsPlotData
 
@@ -36,7 +36,7 @@ def globalshares(request):
     gs, tablerows = __get_hs_leave_distribution()
     gsPlotData = {}#{'Upgrade':130049 , 'Reprocessing default':568841, 'Data Derivations': 202962, 'Event Index': 143 }
 
-    for shareName, shareValue in gs.iteritems():
+    for shareName, shareValue in gs.items():
         shareValue['delta'] = shareValue['executing'] - shareValue['pledged']
         shareValue['used'] = shareValue['ratio'] if 'ratio' in shareValue else None
         gsPlotData[str(shareName)] = int(shareValue['executing'])
