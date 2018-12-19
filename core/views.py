@@ -1789,7 +1789,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             elif f in ('attemptnr', 'jeditaskid', 'taskid','noutputdatafiles','actualcorecount'):
                 kys = sorted(kys, key=lambda x: int(x))
             else:
-                kys.sort()
+                kys = sorted(kys)
             for ky in kys:
                 iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
             if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
@@ -3683,7 +3683,7 @@ def decimal_default(obj):
 def isEventService(job):
     if 'specialhandling' in job and job['specialhandling'] and (
                 job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 or (
-            job['eventservice'] != 'ordinary' and job['eventservice'] > 0)) and job['specialhandling'].find('sc:') == -1:
+            job['eventservice'] != 'ordinary' and job['eventservice'] and job['eventservice'] > 0)) and job['specialhandling'].find('sc:') == -1:
         return True
     else:
         return False
@@ -9694,7 +9694,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     v = {}
     esjobs = []
     kys = errsByCount.keys()
-    kys.sort()
+    kys = sorted(kys)
     for err in kys:
         v = {}
         for key, value in sorted(errsByCount[err]['pandalist'].items()):
@@ -9736,11 +9736,11 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         errsByCountL = sorted(errsByCountL, key=lambda x: -x['count'])
 
     kys = errsByUser.keys()
-    kys.sort()
+    kys = sorted(kys)
     for user in kys:
         errsByUser[user]['errorlist'] = []
         errkeys = errsByUser[user]['errors'].keys()
-        errkeys.sort()
+        errkeys = sorted(errkeys)
         for err in errkeys:
             errsByUser[user]['errorlist'].append(errsByUser[user]['errors'][err])
         errsByUserL.append(errsByUser[user])
@@ -9748,11 +9748,11 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         errsByUserL = sorted(errsByUserL, key=lambda x: -x['toterrors'])
 
     kys = errsBySite.keys()
-    kys.sort()
+    kys = sorted(kys)
     for site in kys:
         errsBySite[site]['errorlist'] = []
         errkeys = errsBySite[site]['errors'].keys()
-        errkeys.sort()
+        errkeys = sorted(errkeys)
         for err in errkeys:
             errsBySite[site]['errorlist'].append(errsBySite[site]['errors'][err])
         errsBySiteL.append(errsBySite[site])
@@ -9760,11 +9760,11 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         errsBySiteL = sorted(errsBySiteL, key=lambda x: -x['toterrors'])
 
     kys = errsByTask.keys()
-    kys.sort()
+    kys = sorted(kys)
     for taskid in kys:
         errsByTask[taskid]['errorlist'] = []
         errkeys = errsByTask[taskid]['errors'].keys()
-        errkeys.sort()
+        errkeys = sorted(errkeys)
         for err in errkeys:
             errsByTask[taskid]['errorlist'].append(errsByTask[taskid]['errors'][err])
         errsByTaskL.append(errsByTask[taskid])
@@ -9777,7 +9777,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         itemd['field'] = f
         iteml = []
         kys = sumd[f].keys()
-        kys.sort()
+        errkeys = sorted(errkeys)
         for ky in kys:
             iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
         itemd['list'] = iteml
@@ -9789,7 +9789,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
             item['list'] = sorted(item['list'], key=lambda x: -x['kvalue'])
 
     kys = errHist.keys()
-    kys.sort()
+    kys = sorted(kys)
     errHistL = []
     for k in kys:
         errHistL.append([k, errHist[k]])
@@ -9832,7 +9832,7 @@ def digkey (rq):
     qt = rq.session['qtime']
     if sk is None:
         sk = random.randrange(1000000)
-    hashkey = hashlib.sha256(str(sk) + ' ' + qt)
+    hashkey = hashlib.sha256((str(sk) + ' ' + qt).encode('utf-8'))
     return hashkey.hexdigest()
 
 
