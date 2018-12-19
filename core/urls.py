@@ -196,8 +196,7 @@ urlpatterns = [
     ###API###
     re_path(r'^api/get_sites/', coremon_views.getSites, name='getsites'),
 
-    ] \
-              # + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
 if settings.DEBUG:

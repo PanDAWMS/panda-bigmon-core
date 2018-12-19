@@ -6,7 +6,7 @@ import matplotlib.dates as md
 import os
 from django.db import connection
 from core.common.models import JediTasks
-from io import StringIO
+import io
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -249,7 +249,7 @@ class TaskProgressPlot:
         frame = self.get_raw_task_profile_fresh(taskid)
         if frame is not None:
             fig = self.make_verbose_profile_graph(frame, taskid, self.get_task_status(taskid))
-            imgdata = StringIO.StringIO()
+            imgdata = io.StringIO.StringIO()
             fig.savefig(imgdata, format='png')
             imgdata.seek(0)
             return imgdata.buf
@@ -259,7 +259,7 @@ class TaskProgressPlot:
         frame = self.get_es_raw_task_profile_fresh(taskid)
         if frame is not None:
             fig = self.make_es_verbose_profile_graph(frame, taskid, self.get_task_status(taskid))
-            imgdata = StringIO.StringIO()
+            imgdata = io.StringIO.StringIO()
             fig.savefig(imgdata, format='png')
             imgdata.seek(0)
             return imgdata.buf
