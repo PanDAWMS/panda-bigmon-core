@@ -9,7 +9,7 @@ from reportlab.lib.units import inch
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from django.template import RequestContext, loader
-import StringIO
+from io import StringIO
 import humanize
 from django.utils.cache import patch_cache_control, patch_response_headers
 import json

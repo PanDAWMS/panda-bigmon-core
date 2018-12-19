@@ -1,8 +1,7 @@
 from django.conf.urls import include, url
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import TemplateView
-from django.views.generic import RedirectView
+from django.views.generic import TemplateView, RedirectView
 #import core.settings
 from django.conf import settings
 
@@ -143,7 +142,7 @@ urlpatterns = [
     url (r'^datatable/data/jeditaskid',coremon_views.esatlasPandaLoggerJson, name='dataTableJediTaskId'),
     url(r'^datatable/data/errorSummaryList', coremon_views.summaryErrorsListJSON, name='summaryErrorsListJSON'),
     ###self monitor
-    url(r'^admin/', include('core.admin.urls', namespace='admin')),
+    #url(r'^admin/', include('core.admin.urls', namespace='admin')),
 
     ### api
     url(r'^api/$', core_coremon_support_views.maxpandaid, name='supportRoot'),

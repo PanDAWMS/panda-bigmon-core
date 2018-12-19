@@ -272,9 +272,9 @@ class ErrorCodes:
         
         for code in range ( 1000, 2000 ):
             #try:
-            if self.errorCodes['piloterrorcode'].has_key(code):
+            if code in self.errorCodes['piloterrorcode']:
                 self.errorCodes['exeerrorcode'][code] = self.errorCodes['piloterrorcode'][code]
-            if self.errorStages['piloterrorcode'].has_key(code):
+            if code in self.errorStages['piloterrorcode']:
                 self.errorStages['exeerrorcode'][code] = self.errorStages['piloterrorcode'][code]
             #except Exception as e:
                 # print e.__class__, e.__doc__, e.message, 'bigpanda_logstash'
@@ -704,9 +704,9 @@ class ErrorCodes:
         self.errorStages['transexitcode'][223] = 'athena-during'
     
         for code in ( 1008, 1098, 1112, 1116, 1117, 1118, 1119, 1163, 1177, 1178 ):
-            if self.errorCodes['piloterrorcode'].has_key(code):
+            if code in self.errorCodes['piloterrorcode']:
                 self.errorCodes['transexitcode'][code] = self.errorCodes['piloterrorcode'][code]
-            if self.errorStages['piloterrorcode'].has_key(code):
+            if code in self.errorStages['piloterrorcode']:
                 self.errorStages['transexitcode'][code] = self.errorStages['piloterrorcode'][code]
 
         self.errorCodes['transexitcode'][1198] = 'Can\'t check the child process status from the heartbeat process'
@@ -786,7 +786,7 @@ class ErrorCodes:
         # ---------------------------------------------------------------------- 
 
         self.errorCodes['transexitcode'][1000001] = 'ERROR message'
-        self.errorStages['transexitcode'][0010001] = 'panda-start'
+        self.errorStages['transexitcode'][0o010001] = 'panda-start'
         self.errorCodes['transexitcode'][1000002] = 'FATAL message'
         self.errorStages['transexitcode'][1000002] = 'panda-start'
         self.errorCodes['transexitcode'][1000003] = 'segmentation violation message'

@@ -1,4 +1,4 @@
-
+import os
 from os.path import dirname, join
 
 import core
@@ -7,7 +7,7 @@ import core
 
 from core import admin
 
-from local import dbaccess, MY_SECRET_KEY
+from core.settings.local import dbaccess, MY_SECRET_KEY, LOG_ROOT
 
 ALLOWED_HOSTS = [
     ### cern.ch
@@ -23,9 +23,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1', '.localhost'
 ]
 
-
 ### VIRTUALENV
-VIRTUALENV_PATH = '/data/virtualenv2.7'
+VIRTUALENV_PATH = '/data/virtualenv37'
 
 ### WSGI
 #WSGI_PATH = VIRTUALENV_PATH + '/pythonpath'
@@ -35,14 +34,9 @@ DATABASE_ROUTERS = [\
     'core.dbrouter.ProdMonDBRouter', \
     'core.pbm.dbrouter.PandaBrokerageMonDBRouter', \
 ]
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-STATICFILES_DIRS = (
-    # Put strings here, like "/home/html/static" or "C:/www/django/static".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    join(dirname(core.common.__file__), 'static'),
-#    join(dirname(core.__file__), 'static'),
-)
+
 
 
 TEMPLATES = [
@@ -75,12 +69,18 @@ TEMPLATES = [
         },
     },
 ]
-STATIC_ROOT = join(dirname(core.__file__), 'static')
-#STATIC_ROOT = None
-MEDIA_ROOT = join(dirname(core.__file__), 'media')
+
+MEDIA_ROOT = join(BASE_DIR, 'media')
 STATIC_URL_BASE = '/static/'
 MEDIA_URL_BASE = '/media/'
 
+STATICFILES_DIRS = (
+    # Put strings here, like "/home/html/static" or "C:/www/django/static".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    join(BASE_DIR, 'static'),
+#    join(dirname(core.__file__), 'static'),
+)
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = MY_SECRET_KEY
 
@@ -137,7 +137,7 @@ FILTER_UI_ENV = {
 #DEBUG=True
 #LOG_ROOT = '/data/bigpandamon_virtualhosts/core/logs'
 #LOG_ROOT = '/data/wenaus/logs'
-LOG_ROOT = '/data/wenaus/bigpandamon_virtualhosts/twrpm/logs'
+#LOG_ROOT = '/afs/cern.ch/user/a/aaleksee/panda-bigmon-core/log'
 
 LOG_SIZE = 1000000000
 LOGGING = {
@@ -313,8 +313,8 @@ LOGGING = {
     },
 }
 
-SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = ['state']
-SESSION_COOKIE_SECURE = False
+# SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = ['state']
+# SESSION_COOKIE_SECURE = False
 
 ENV = {
     ### Application name

@@ -1,4 +1,4 @@
-import json,re,logging, urllib2
+import json, re, logging, urllib3
 
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.cache import never_cache

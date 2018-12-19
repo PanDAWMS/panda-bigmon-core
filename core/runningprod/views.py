@@ -61,7 +61,7 @@ def saveNeventsByProcessingType(neventsByProcessingType, qtime):
                                          timestamp=qtime)
                 row.save()
     except DatabaseError as e:
-        print e.message
+        print (e.message)
         return False
 
     return True

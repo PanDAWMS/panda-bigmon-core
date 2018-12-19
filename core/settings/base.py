@@ -34,38 +34,22 @@ STATICFILES_FINDERS = (
 # List of callables that know how to import templates from various sources.
 
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'core.ddosprotection.DDOSMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-    #'django.contrib.sessions.middleware.SessionMiddleware',
-    'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    #'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',  # for AJAX POST protection with csrf
 
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
 
-    ### added
-    #'django.contrib.auth.middleware.RemoteUserMiddleware',  # for APIs: htcondorapi
-### END added
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-#### django-debug-toolbar
-#    'debug_toolbar.middleware.DebugToolbarMiddleware',
-###
-#    'django.middleware.common.CommonMiddleware',
-#    'django.contrib.sessions.middleware.SessionMiddleware',
-#    'django.middleware.csrf.CsrfViewMiddleware',  # for AJAX POST protection with csrf
-#    'django.contrib.auth.middleware.AuthenticationMiddleware',
-#    'django.contrib.messages.middleware.MessageMiddleware',
-#    # Uncomment the next line for simple clickjacking protection:
-#    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
     'core.auth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
-    #'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
-
 )
 
 ROOT_URLCONF = 'common.urls'
@@ -127,7 +111,7 @@ INSTALLED_APPS_DJANGO_FRAMEWORK = (
 )
 
 SESSION_SERIALIZER = "core.libs.CustomJSONSerializer.CustomJSONSerializer"
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 
 INSTALLED_APPS_DJANGO_PLUGINS = (
     ### Django plugins

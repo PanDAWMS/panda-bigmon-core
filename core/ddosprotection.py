@@ -1,9 +1,10 @@
 import time
 
 import django.core.exceptions
-import commands
+import subprocess
 import random
 from core.common.models import RequestStat, AllRequests
+
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Count, Sum
@@ -22,10 +23,10 @@ class DDOSMiddleware(object):
     blacklist = ['130.132.21.90','192.170.227.149']
 
 
-    def __init__(self):
-        pass
+    def __init__(self, get_response):
+        self.get_response = get_response
 
-    def process_request(self, request):
+    def __call__(self, request):
 
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         try:
@@ -63,7 +64,8 @@ class DDOSMiddleware(object):
                     return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), content_type='text/html')
 
         reqs.save()
-        return None
+        response = self.get_response(request)
+        return response
 
 
 

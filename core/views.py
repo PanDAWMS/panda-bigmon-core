@@ -1,4 +1,4 @@
-import logging, re, json, commands, os, copy
+import logging, re, json, subprocess, os, copy
 import sys, traceback
 from datetime import datetime, timedelta
 import time
@@ -8,8 +8,8 @@ import itertools, random
 import numpy as np
 import string as strm
 import math
-from urllib import urlencode, unquote
-from urlparse import urlparse, urlunparse, parse_qs
+
+from urllib.parse import urlencode, unquote, urlparse, urlunparse, parse_qs
 from django.utils.decorators import available_attrs
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -36,7 +36,7 @@ from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
     GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, JobsWorldViewTaskType, CombinedWaitActDefArch4
-from schedresource.models import Schedconfig
+from core.schedresource.models import Schedconfig
 from core.common.models import Filestable4
 from core.common.models import Datasets
 from core.common.models import Sitedata
@@ -62,22 +62,19 @@ from core.common.models import JediWorkQueue
 from core.common.models import RequestStat, BPUser, Visits, BPUserSettings, AllRequests
 from core.compare.modelsCompare import ObjectsComparison
 from core.art.modelsART import ARTTests
-from core.filebrowser.ruciowrapper import ruciowrapper
+#from core.filebrowser.ruciowrapper import ruciowrapper
 
-from core.settings.config import ENV
-
-from time import gmtime, strftime
-from settings.local import dbaccess
-from settings.local import PRODSYS
-from settings.local import ES
+from core.settings.local import dbaccess
+from core.settings.local import PRODSYS
+from core.settings.local import ES
 import string as strm
-from django.views.decorators.cache import cache_page
 
-import TaskProgressPlot
-import ErrorCodes
+
+from core.TaskProgressPlot import TaskProgressPlot
+from core.ErrorCodes import ErrorCodes
 import hashlib
 
-import Customrenderer
+import core.Customrenderer as Customrenderer
 import collections, pickle
 
 from threading import Thread,Lock
@@ -85,12 +82,11 @@ import decimal
 import base64
 import urllib3
 from django.views.decorators.cache import never_cache
-import chainsql
+from core import chainsql
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
-import subprocess
 import datefinder
 
 errorFields = []
@@ -103,18 +99,18 @@ from django.template.defaulttags import register
 #register = template.Library()
 
 
-from reports import RunningMCProdTasks
-from reports import MC16aCPReport, ObsoletedTasksReport, TitanProgressReport
+from core.reports import RunningMCProdTasks
+from core.reports import MC16aCPReport, ObsoletedTasksReport, TitanProgressReport
 from decimal import *
 from collections import OrderedDict
 
 from django.contrib.auth import logout as auth_logout
-from auth.utils import grant_rights, deny_rights
+from core.auth.utils import grant_rights, deny_rights
 
-from libs import dropalgorithm
+from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 #from libs import exlib
-from libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, preparePlotData
+from core.libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, preparePlotData
 from core.libs.exlib import insert_to_temp_table, dictfetchall
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers
@@ -153,7 +149,7 @@ inilock = Lock()
 
 
 try:
-    hostname = commands.getoutput('hostname')
+    hostname = subprocess.getoutput('hostname')
     if hostname.find('.') > 0: hostname = hostname[:hostname.find('.')]
 except:
     hostname = ''
@@ -234,14 +230,14 @@ def login_customrequired(function):
       if x_forwarded_for and x_forwarded_for in notcachedRemoteAddress:
           return function(request, *args, **kwargs)
 
-      if request.user.is_authenticated() or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
-          return function(request, *args, **kwargs)
-      else:
-          # if '/user/' in request.path:
-          #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
-          # else:
-          #     return function(request, *args, **kwargs)
-          return HttpResponseRedirect('/login/?next='+request.get_full_path())
+      # if request.user.is_authenticated or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
+      #     return function(request, *args, **kwargs)
+      # else:
+      #     # if '/user/' in request.path:
+      #     #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
+      #     # else:
+      #     #     return function(request, *args, **kwargs)
+      #     return HttpResponseRedirect('/login/?next='+request.get_full_path())
   wrap.__doc__=function.__doc__
   wrap.__name__=function.__name__
   return wrap
@@ -302,10 +298,10 @@ def getObjectStoresNames():
         r = http.request('GET', url)
         data = json.loads(r.data.decode('utf-8'))
     except Exception as exc:
-        print exc.message
+        print (exc.message)
         return
 
-    for OSname, OSdescr in data.iteritems():
+    for OSname, OSdescr in data.items():
         if "resource" in OSdescr and "bucket_id" in OSdescr["resource"]:
             objectStoresNames[OSdescr["resource"]["bucket_id"]] = OSname
         objectStoresNames[OSdescr["id"]] = OSname
@@ -352,7 +348,7 @@ def setupSiteInfo(request):
 
 def initRequest(request, callselfmon = True):
     global VOMODE, ENV, hostname
-
+    ENV = {}
     VOMODE = ''
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         VOMODE = 'atlas'
@@ -524,7 +520,7 @@ def initRequest(request, callselfmon = True):
 
     with inilock:
         if len(errorFields) == 0:
-            codes = ErrorCodes.ErrorCodes()
+            codes = ErrorCodes()
             errorFields, errorCodes, errorStages = codes.getErrorCodes()
     return True, None
 
@@ -601,7 +597,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     LAST_N_HOURS_MAX = 0
 
-    for paramName, paramVal in request.session['requestParams'].iteritems():
+    for paramName, paramVal in request.session['requestParams'].items():
         try:
             request.session['requestParams'][paramName] = urllib.unquote(paramVal)
         except: request.session['requestParams'][paramName] = paramVal
@@ -1067,7 +1063,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         else:
             setupSiteInfo(request)
 
-        for sn, rn in homeCloud.iteritems():
+        for sn, rn in homeCloud.items():
             if rn == region:
                 siteListForRegion.append(str(sn))
         query['computingsite__in'] = siteListForRegion
@@ -1087,7 +1083,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if not (currenfField.lower() == 'transformation'):
             if not ((currenfField.lower() == 'cloud') & (
             any(card.lower() == 'all' for card in request.session['requestParams'][currenfField].split('|')))):
-                if not any(currenfField in key for key, value in query.iteritems()):
+                if not any(currenfField in key for key, value in query.items()):
                     wildSearchFields1.add(currenfField)
     wildSearchFields = wildSearchFields1
 
@@ -1162,7 +1158,7 @@ def saveUserSettings(request, page):
             preferences['tables'] = errorspage_tables
         query = {}
         query['page']= str(page)
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             userids = BPUser.objects.filter(email=request.user.email).values('id')
             userid = userids[0]['id']
             try:
@@ -1203,7 +1199,7 @@ def saveSettings(request):
                 preferences['tables'] = errorspage_tables
             query = {}
             query['page']= str(page)
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
                 userids = BPUser.objects.filter(email=request.user.email).values('id')
                 userid = userids[0]['id']
                 try:
@@ -1238,8 +1234,8 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     retries = JediJobRetryHistory.objects.filter(**retryquery).extra(
         where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', "
                "'jobset_retry', 'es_merge', 'originpandaid')"]).order_by('newpandaid').values()
-    print 'got retriels %d %d' % (len(retries),len(jobs))
-    print 'doing the drop'
+    print ('got retriels %d %d' % (len(retries),len(jobs)))
+    print ('doing the drop')
     hashRetries = {}
     for retry in retries:
         hashRetries[retry['oldpandaid']] = retry
@@ -1249,7 +1245,7 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
         dropJob = 0
         pandaid = job['pandaid']
         if not isEventService(job):
-            if hashRetries.has_key(pandaid):
+            if pandaid in hashRetries:
                 retry = hashRetries[pandaid]
                 if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or (
                             job['processingtype'] == 'pmerge' and (job['jobstatus'] == 'failed' or job['jobstatus'] == 'cancelled') and retry[
@@ -1296,7 +1292,7 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
             if not pandaid in droppedIDs:
                 droppedIDs.add(pandaid)
                 droplist.append({'pandaid': pandaid, 'newpandaid': dropJob})
-    print '%d jobs dropped' % (len(jobs) - len(newjobs))
+    print ('%d jobs dropped' % (len(jobs) - len(newjobs)))
     droplist = sorted(droplist, key=lambda x: -x['pandaid'])
     jobs = newjobs
     return jobs, droplist, droppedPmerge
@@ -1501,7 +1497,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
     jobs = newjobs
 
     if mode == 'nodrop':
-        print 'job list cleaned'
+        print ('job list cleaned')
         return jobs
 
     global PLOW, PHIGH
@@ -1516,14 +1512,14 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
         if job['currentpriority'] < PLOW: PLOW = job['currentpriority']
     jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
 
-    print 'job list cleaned'
+    print ('job list cleaned')
     return jobs
 
 
 def reconstructJobsConsumersHelper(chainsDict):
     reconstructionDict = {}
     modified = False
-    for pandaid, parentids in chainsDict.iteritems():
+    for pandaid, parentids in chainsDict.items():
         if parentids and parentids[-1] in chainsDict:
             if chainsDict[parentids[-1]]:
                 reconstructionDict[pandaid] = parentids + chainsDict[parentids[-1]]
@@ -1551,7 +1547,7 @@ def reconstructJobsConsumers(jobsList):
 
     chains = reconstructJobsConsumersHelper(jobsInheritance)
     cleanChain = {}
-    for name, value in chains.iteritems():
+    for name, value in chains.items():
         if len(value) > 1:
             cleanChain[name] = value[-2]
             for pandaid in value[:-2]:
@@ -2373,7 +2369,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
                 plsql += " "+item.upper()+"=>'"+value+"', "
     plsql = plsql[:-2]
     plsql += "); END;;"
-    print plsql
+    print (plsql)
     # Here we call stored proc to fill temporary data
     cursor = connection.cursor()
     countCalls = 0
@@ -2382,7 +2378,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
             cursor.execute(plsql)
             countCalls += 1
         except Exception as ex:
-            print ex
+            print (ex)
             if ex[0].code == 8103:
                 pass
             else:
@@ -2405,7 +2401,7 @@ def jobListP(request, mode=None, param=None):
     #is_json = False
     # Here We start Retreiving Summary and return almost empty template
     if ('requesttoken' in request.session):
-        print 'Existing'
+        print ('Existing')
     # Get request token. This sheme of getting tokens should be more sophisticated (at least not use sequential numbers)
     requestToken = 0
 
@@ -2422,7 +2418,7 @@ def jobListP(request, mode=None, param=None):
         requestToken = requestToken[0][0]
 
     if (requestToken == 0):
-        print "Error in getting reuest token"
+        print ("Error in getting reuest token")
         return
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
@@ -2602,7 +2598,7 @@ def getJobList(request,requesttoken=None):
     jobs = []
 
     if not doRefresh:
-        print len(jobsToList)
+        print (len(jobsToList))
         pandaIDVal = [int(val) for val in jobsToList]
 
         newpandaIDVal = importToken(request,pandaIDVal)
@@ -2634,7 +2630,7 @@ def getJobList(request,requesttoken=None):
             jobs.extend(Jobsarchived.objects.filter(**newquery).values(*values))
 
 
-    print len(jobs)
+    print (len(jobs))
     if 'requestParams' in request.session and 'sortby' in request.session['requestParams']:
         sortby = request.session['requestParams']['sortby']
         if sortby == 'time-ascending':
@@ -2675,7 +2671,7 @@ def getJobList(request,requesttoken=None):
 
     jobs = cleanJobListLite(request, jobs)
 
-    print len(jobs)
+    print (len(jobs))
     jobtype = ''
     if 'requestParams' in request.session and 'jobtype' in request.session['requestParams']:
         jobtype = request.session['requestParams']['jobtype']
@@ -2761,7 +2757,7 @@ def getJobList(request,requesttoken=None):
         xurl = extensibleURL(request, request.META['HTTP_REFERER'])
     else:
         xurl = request.META['PATH_INFO'] + "?"+ request.META['QUERY_STRING']
-    print xurl
+    print (xurl)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
 
@@ -2829,7 +2825,7 @@ def getJobList(request,requesttoken=None):
         if doRefresh == True:
             data=getJobList(request, int(requesttoken))
         else:
-            print len(jobs)
+            print (len(jobs))
             data = {
             "selectionsummary": sumd,
             "jobs": jobs,
@@ -3029,12 +3025,12 @@ def jobList(request, mode=None, param=None):
         request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
 
     droppedList =[]
-    if request.user.is_authenticated() and request.user.is_tester:
+    if request.user.is_authenticated and request.user.is_tester:
         taskids = {}
         tk = 0
         if 'eventservice' in request.session['requestParams']:
             isEventTask = True
-            print 'Event Service!'
+            print ('Event Service!')
         else:
             isEventTask = False
         if 'jeditaskid' in request.session['requestParams']:
@@ -3149,10 +3145,10 @@ def jobList(request, mode=None, param=None):
         jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs,taskids.keys()[0],isReturnDroppedPMerge)
         end = time.time()
         print(end - start)
-        if request.user.is_authenticated() and request.user.is_tester:
+        if request.user.is_authenticated and request.user.is_tester:
             if 'eventservice' in request.session['requestParams']:
                 isEventTask = True
-                print 'Event Service!'
+                print ('Event Service!')
             else:
                 isEventTask = False
             start = time.time()
@@ -3364,24 +3360,24 @@ def jobList(request, mode=None, param=None):
         try:
             thread.join()
             jobsTotalCount = sum(tcount[dkey])
-            print dkey
-            print tcount[dkey]
+            print (dkey)
+            print (tcount[dkey])
             del tcount[dkey]
-            print tcount
-            print jobsTotalCount
+            print (tcount)
+            print (jobsTotalCount)
         except:
             jobsTotalCount = -1
     else: jobsTotalCount = -1
 
     listPar =[]
-    for key, val in request.session['requestParams'].iteritems():
+    for key, val in request.session['requestParams'].items():
         if (key!='limit' and key!='display_limit'):
             listPar.append(key + '=' + str(val))
     if len(listPar)>0:
         urlParametrs = '&'.join(listPar)+'&'
     else:
         urlParametrs = None
-    print listPar
+    print (listPar)
     del listPar
     if (math.fabs(njobs-jobsTotalCount)<1000 or jobsTotalCount == -1):
         jobsTotalCount=None
@@ -3399,7 +3395,7 @@ def jobList(request, mode=None, param=None):
 
     isincomparisonlist = False
     clist = []
-    if request.user.is_authenticated() and request.user.is_tester:
+    if request.user.is_authenticated and request.user.is_tester:
 
         cquery = {}
         cquery['object'] = 'job'
@@ -3429,7 +3425,7 @@ def jobList(request, mode=None, param=None):
         'json' not in request.session['requestParams'])):
 
         xurl = extensibleURL(request)
-        print xurl
+        print (xurl)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
         #nosorturl = removeParam(nosorturl, 'harvesterinstance', mode='extensible')
@@ -3538,7 +3534,7 @@ def importToken(request,errsByCount):
             transactionKey = random.randrange(1000000)
             if ('pandalist' in item):
                 item['tk'] = transactionKey
-                for key,values in item['pandalist'].iteritems():
+                for key,values in item['pandalist'].items():
             #print item['error'] , key , values
                     executionData.append((key, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
             #setCacheEntry(request,transactionKey,executionData,60*60, isData=True)
@@ -3553,7 +3549,7 @@ def importToken(request,errsByCount):
         #newErrsByCount =  {'tk':transactionKey, 'pandalist':newErrsByCount}
         newErrsByCount = transactionKey
         #print newErrsByCount['tk']
-        print len(errsByCount)
+        print (len(errsByCount))
     return newErrsByCount
 
 
@@ -3593,7 +3589,7 @@ def summaryErrorsList(request):
             'json' not in request.session['requestParams'])):
 
                 xurl = extensibleURL(request)
-                print xurl
+                print (xurl)
                 nosorturl = removeParam(xurl, 'sortby', mode='extensible')
                 nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
 
@@ -3629,7 +3625,7 @@ def summaryErrorsListJSON(request):
     codeval = request.session['requestParams']['codeval']
     fullListErrors = []
     #isJobsss = False
-    print request.session['requestParams']
+    print (request.session['requestParams'])
     for er in errorcodelist:
         if er['error'] == request.session['requestParams']['codename']:
             errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
@@ -4091,7 +4087,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     inputFilesSize = 0
     if 'nofiles' not in request.session['requestParams']:
         ## Get job files. First look in JEDI datasetcontents
-        print "Pulling file info"
+        print ("Pulling file info")
         files.extend(Filestable4.objects.filter(pandaid=pandaid).order_by('type').values())
         ninput = 0
         noutput = 0
@@ -4246,7 +4242,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         job['metadata'] = json.dumps(job['metastruct'], sort_keys=True, indent=4, separators=(',', ': '))
 
     ## Get job parameters
-    print "getting job parameters"
+    print ("getting job parameters")
     jobparamrec = Jobparamstable.objects.filter(pandaid=pandaid)
     jobparams = None
     if len(jobparamrec) > 0:
@@ -4260,7 +4256,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     countOfInvocations = []
     ## If this is a JEDI job, look for job retries
     if 'jeditaskid' in job and job['jeditaskid'] > 0:
-        print "looking for retries"
+        print ("looking for retries")
         ## Look for retries of this job
 
 
@@ -4291,7 +4287,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     runjobs = []
     mergejobs = []
     if 'jobset' in request.session['requestParams'] and 'jobsetid' in job and job['jobsetid'] > 0:
-        print "jobset info"
+        print ("jobset info")
         jsquery = {}
         jsquery['jobsetid'] = job['jobsetid']
         jsquery['produsername'] = job['produsername']
@@ -4356,7 +4352,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     runesjobs = []
     mergeesjobs = []
     if isEventService(job) and 'jobsetid' in job and job['jobsetid'] > 0:
-        print "jobset info"
+        print ("jobset info")
         esjsquery = {}
         esjsquery['jobsetid'] = job['jobsetid']
         esjsquery['produsername'] = job['produsername']
@@ -4406,7 +4402,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
     isincomparisonlist = False
     clist = []
-    if request.user.is_authenticated() and request.user.is_tester:
+    if request.user.is_authenticated and request.user.is_tester:
         cquery = {}
         cquery['object'] = 'job'
         cquery['userid'] = request.user.id
@@ -4691,7 +4687,7 @@ def userInfo(request, user=''):
 
         # Here we serve only personal user pages. No user parameter specified
         if user == '':
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
                 login = user = request.user.username
                 fullname = request.user.first_name + ' ' + request.user.last_name
                 userQueryTask = Q(username=login) | Q(username__startswith=fullname)
@@ -4871,7 +4867,7 @@ def userInfo(request, user=''):
 
 
     # getting most relevant links based on visit statistics
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         userids = BPUser.objects.filter(email=request.user.email).values('id')
         userid = userids[0]['id']
         fields = {'job': standard_fields, 'task': standard_taskfields, 'site': standard_sitefields}
@@ -5111,7 +5107,7 @@ def get_panda_resource(siterec):
             #     # resourcesDictSites[data[cs]['siteid']] = data[cs]['panda_resource']
                 return data[cs]['panda_resource']
     except Exception as exc:
-        print exc.message
+        print (exc.message)
     #return resourcesDictSites
 
 @login_customrequired
@@ -5696,7 +5692,7 @@ def getUcoreSites():
                 sites.append(data[cs]['siteid'])
     except Exception as exc:
         sites = []
-        print exc.message
+        print (exc.message)
     return sites
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
@@ -5745,7 +5741,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
             if rec['computingsite'] in homeCloud:
                 cloud = homeCloud[rec['computingsite']]
             else:
-                print "ERROR cloud not known", rec
+                print ("ERROR cloud not known", rec)
                 mismatchedSites.append([rec['computingsite'], rec['cloud']])
                 cloud = ''
         else:
@@ -5762,7 +5758,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         totstates[jobstatus] += count
 
         if cloud not in clouds:
-            print "Cloud:" + cloud
+            print ("Cloud:" + cloud)
             clouds[cloud] = {}
             clouds[cloud]['name'] = cloud
             if cloud in cloudinfo: clouds[cloud]['status'] = cloudinfo[cloud]
@@ -6292,7 +6288,7 @@ def getEffectiveFileSize(fsize, startEvent, endEvent, nEvents):
         effectiveFsize = inMB
     elif nEvents != None and startEvent != None and endEvent != None:
         # take event range into account
-        effectiveFsize = long(float(fsize) * float(endEvent - startEvent + 1) / float(nEvents))
+        effectiveFsize = np.long(float(fsize) * float(endEvent - startEvent + 1) / float(nEvents))
     else:
         effectiveFsize = fsize
     # use dummy size if input is too small
@@ -6336,7 +6332,7 @@ def calculateRWwithPrio_JEDI(query):
                 allCloudsNREMJ += progrEntry['nrem']
     retRWMap['All'] = allCloudsRW
     retNREMJMap['All'] = allCloudsNREMJ
-    for cloudName, rwValue in retRWMap.iteritems():
+    for cloudName, rwValue in retRWMap.items():
         retRWMap[cloudName] = int(rwValue / 24 / 3600)
     return retRWMap, retNREMJMap
 
@@ -7382,24 +7378,24 @@ def taskList(request):
         try:
             thread.join()
             tasksTotalCount = sum(tcount[dkey])
-            print dkey
-            print tcount[dkey]
+            print (dkey)
+            print (tcount[dkey])
             del tcount[dkey]
-            print tcount
-            print tasksTotalCount
+            print (tcount)
+            print (tasksTotalCount)
         except:
             tasksTotalCount = -1
     else: tasksTotalCount = -1
 
     listPar = []
-    for key, val in request.session['requestParams'].iteritems():
+    for key, val in request.session['requestParams'].items():
         if (key != 'limit' and key != 'display_limit'):
             listPar.append(key + '=' + str(val))
     if len(listPar) > 0:
         urlParametrs = '&'.join(listPar) + '&'
     else:
         urlParametrs = None
-    print listPar
+    print (listPar)
     del listPar
     if (math.fabs(ntasks - tasksTotalCount) < 1000 or tasksTotalCount == -1):
         tasksTotalCount = None
@@ -7514,7 +7510,7 @@ def killtasks(request):
         return response
 
     user = request.user
-    if user.is_authenticated() and (not user.social_auth is None) and (not user.social_auth.get(provider='cernauth2') is None) \
+    if user.is_authenticated and (not user.social_auth is None) and (not user.social_auth.get(provider='cernauth2') is None) \
             and (not user.social_auth.get(provider='cernauth2').extra_data is None) and ('username' in user.social_auth.get(provider='cernauth2').extra_data):
         username = user.social_auth.get(provider='cernauth2').extra_data['username']
         fullname = user.social_auth.get(provider='cernauth2').extra_data['name']
@@ -7663,7 +7659,7 @@ def getErrorSummaryForEvents(request):
     if not valid: return response
     data = {}
     eventsErrors = []
-    print 'getting error summary for events'
+    print ('getting error summary for events')
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
     else:
@@ -7928,7 +7924,7 @@ def getBrokerageLog(request):
     sites = {}
     for record in records:
         message = records['message']
-        print message
+        print (message)
 
 
 def taskprofileplot(request):
@@ -8005,10 +8001,10 @@ def taskInfo(request, jeditaskid=0):
         plotDict = {}
         if 'plotsDict' in data:
             oldPlotDict = json.loads(data['plotsDict'])
-            for plotName, plotData in oldPlotDict.iteritems():
+            for plotName, plotData in oldPlotDict.items():
                 if 'sites' in plotData and 'ranges' in plotData:
                     plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
-                    for dictSiteName, listValues in plotData['sites'].iteritems():
+                    for dictSiteName, listValues in plotData['sites'].items():
                         try:
                             plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
                             plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
@@ -8110,7 +8106,7 @@ def taskInfo(request, jeditaskid=0):
                 request, query, exclude={},  mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
             plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary2(
                 request, query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isOld')
-            if request.user.is_authenticated() and request.user.is_tester:
+            if request.user.is_authenticated and request.user.is_tester:
                 tk, droppedList, extra = dropalgorithm.dropRetrielsJobs(jeditaskid, extra, eventservice)
                 newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
                     request, query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isNew')
@@ -8185,7 +8181,7 @@ def taskInfo(request, jeditaskid=0):
                 request, query, exclude=exclude,extra=extra, mode=mode,algorithm='isOld')
             plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary2(
                 request, query, exclude={},extra=extra,  mode=mode, processingtype='pmerge',algorithm='isOld')
-            if request.user.is_authenticated() and request.user.is_tester:
+            if request.user.is_authenticated and request.user.is_tester:
                 if mode == 'drop':
                     tk, droppedList, extra = dropalgorithm.dropRetrielsJobs(jeditaskid, extra=None, isEventTask=False)
                 newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
@@ -8290,7 +8286,7 @@ def taskInfo(request, jeditaskid=0):
             errurl = mat.group(1)
             cmd = "curl -s -f --compressed '%s'" % errurl
             logpfx = u"logtxt: %s\n" % cmd
-            logout = commands.getoutput(cmd)
+            logout = subprocess.getoutput(cmd)
             if len(logout) > 0:
                 loglist = (logout.splitlines())[::-1]
                 logtxt = '\n'.join(loglist)
@@ -8363,7 +8359,7 @@ def taskInfo(request, jeditaskid=0):
     outctrs.extend(JediDatasets.objects.filter(**cquery).values_list('containername', flat=True).distinct())
     if len(outctrs) == 0 or outctrs[0] == '':
         outctrs = None
-    if isinstance(outctrs, basestring):
+    if isinstance(outctrs, np.basestring):
        outctrs = [outctrs]
 
     # getBrokerageLog(request)
@@ -8759,7 +8755,7 @@ def taskInfoNew(request, jeditaskid=0):
             errurl = mat.group(1)
             cmd = "curl -s -f --compressed '%s'" % errurl
             logpfx = u"logtxt: %s\n" % cmd
-            logout = commands.getoutput(cmd)
+            logout = subprocess.getoutput(cmd)
             if len(logout) > 0: logtxt = logout
 
     dsquery = {}
@@ -8831,7 +8827,7 @@ def taskInfoNew(request, jeditaskid=0):
     outctrs.extend(JediDatasets.objects.filter(**cquery).values_list('containername', flat=True).distinct())
     if len(outctrs) == 0 or outctrs[0] == '':
         outctrs = None
-    if isinstance(outctrs, basestring):
+    if isinstance(outctrs, np.basestring):
        outctrs = [outctrs]
 
     # getBrokerageLog(request)
@@ -8887,7 +8883,7 @@ def taskInfoNew(request, jeditaskid=0):
         inputfiles_list, ifs_summary, ifs_tk = input_summary_for_task(taskrec, dsets)
 
         # Putting list of inputs IDs to tmp table for connection with jobList
-        for tk, ids_list in ifs_tk.iteritems():
+        for tk, ids_list in ifs_tk.items():
             tk = insert_to_temp_table(ids_list, tk)
 
 
@@ -9165,7 +9161,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
     # newquery['jobstatus'] = 'finished'
 
     # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
-    print algorithm
+    print (algorithm)
     start = time.time()
     jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
 
@@ -9245,7 +9241,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
     jobs = newjobs
 
     if mode == 'drop' and len(jobs) < 400000:
-        print 'filtering retries'
+        print ('filtering retries')
         if algorithm == 'isNew':
             print('new algorithm!')
             start = time.time()
@@ -9332,7 +9328,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
     nbinsmax = 100
     for pname in plotsNames:
         rawdata = []
-        for k,d in plotsDict[pname]['sites'].iteritems():
+        for k,d in plotsDict[pname]['sites'].items():
             rawdata.extend(d)
         if len(rawdata) > 0:
             plotsDict[pname]['stats'] = []
@@ -9367,7 +9363,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
     essummary = dict((key, 0) for key in eventservicestatelist)
     transactionKey = -1
     if isEventServiceFlag and not isESMerge:
-        print 'getting events states summary'
+        print ('getting events states summary')
         if mode == 'drop' and len(jobs) < 400000:
             esjobs = []
             for job in jobs:
@@ -9454,10 +9450,10 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         plotDict = {}
         if 'plotsDict' in data:
             oldPlotDict = json.loads(data['plotsDict'])
-            for plotName, plotData in oldPlotDict.iteritems():
+            for plotName, plotData in oldPlotDict.items():
                 if 'sites' in plotData and 'ranges' in plotData:
                     plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
-                    for dictSiteName, listValues in plotData['sites'].iteritems():
+                    for dictSiteName, listValues in plotData['sites'].items():
                         try:
                             plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
                             plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
@@ -9565,7 +9561,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     errHist = {}
 
     flist = standard_errorfields
-    print len(jobs)
+    print (len(jobs))
     for job in jobs:
         if not testjobs:
             if job['jobstatus'] not in ['failed', 'holding']: continue
@@ -9701,7 +9697,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     kys.sort()
     for err in kys:
         v = {}
-        for key, value in sorted(errsByCount[err]['pandalist'].iteritems()):
+        for key, value in sorted(errsByCount[err]['pandalist'].items()):
             if value == '':
                 value = 'None'
             esjobs.append(key)
@@ -9815,7 +9811,7 @@ tcount = {}
 lock = Lock()
 
 def totalCount(panJobList, query, wildCardExtension,dkey):
-    print 'Thread started'
+    print ('Thread started')
     lock.acquire()
     try:
         tcount.setdefault(dkey,[])
@@ -9829,7 +9825,7 @@ def totalCount(panJobList, query, wildCardExtension,dkey):
             tcount[dkey].append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
     finally:
         lock.release()
-    print 'Thread finished'
+    print ('Thread finished')
 
 def digkey (rq):
     sk = rq.session.session_key
@@ -9855,7 +9851,7 @@ def errorSummary(request):
         data['request'] = request
         # Filtering data due to user settings
         # if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and request.session['IS_TESTER']:
-        if request.user.is_authenticated() and request.user.is_tester:
+        if request.user.is_authenticated and request.user.is_tester:
             data = filterErrorData(request, data)
         if data['errHist']:
             for list in data['errHist']:
@@ -9945,8 +9941,8 @@ def errorSummary(request):
     if not testjobs: query['jobstatus__in'] = ['failed', 'holding']
     jobs = []
     values = 'eventservice', 'produsername','produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid','taskid', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'currentpriority', 'computingelement','gshare'
-    print "step3-1"
-    print str(datetime.now())
+    print ("step3-1")
+    print (str(datetime.now()))
 
     if testjobs:
         jobs.extend(
@@ -9979,16 +9975,16 @@ def errorSummary(request):
         thread = None
 
 
-    print "step3-1-0"
-    print str(datetime.now())
+    print ("step3-1-0")
+    print (str(datetime.now()))
 
     jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta=False)
 
     njobs = len(jobs)
     tasknamedict = taskNameDict(jobs)
 
-    print "step3-1-1"
-    print str(datetime.now())
+    print ("step3-1-1")
+    print (str(datetime.now()))
 
     ## Build the error summary.
     errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
@@ -10018,11 +10014,11 @@ def errorSummary(request):
     taskname = ''
     if not testjobs:
         ## Build the task state summary and add task state info to task error summary
-        print "step3-1-2"
-        print str(datetime.now())
+        print ("step3-1-2")
+        print (str(datetime.now()))
         taskstatesummary = dashTaskSummary(request, hours, limit=limit, view=jobtype)
-        print "step3-2"
-        print str(datetime.now())
+        print ("step3-2")
+        print (str(datetime.now()))
 
         taskstates = {}
         for task in taskstatesummary:
@@ -10046,29 +10042,29 @@ def errorSummary(request):
         sortby = 'alpha'
     flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
 
-    print "step3-3"
-    print str(datetime.now())
+    print ("step3-3")
+    print (str(datetime.now()))
     if thread!=None:
         try:
             thread.join()
             jobsErrorsTotalCount = sum(tcount[dkey])
-            print dkey
-            print tcount[dkey]
+            print (dkey)
+            print (tcount[dkey])
             del tcount[dkey]
-            print tcount
-            print jobsErrorsTotalCount
+            print (tcount)
+            print (jobsErrorsTotalCount)
         except: jobsErrorsTotalCount = -1
     else: jobsErrorsTotalCount = -1
 
     listPar =[]
-    for key, val in request.session['requestParams'].iteritems():
+    for key, val in request.session['requestParams'].items():
         if (key!='limit' and key!='display_limit'):
             listPar.append(key + '=' + str(val))
     if len(listPar)>0:
         urlParametrs = '&'.join(listPar)+'&'
     else:
         urlParametrs = None
-    print listPar
+    print (listPar)
     del listPar
     if (math.fabs(njobs-jobsErrorsTotalCount)<1000):
         jobsErrorsTotalCount = None
@@ -10122,7 +10118,7 @@ def errorSummary(request):
         data.update(getContextVariables(request))
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
         # Filtering data due to user settings
-        if request.user.is_authenticated() and request.user.is_tester:
+        if request.user.is_authenticated and request.user.is_tester:
         # if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and \
         #         request.session['IS_TESTER']:
             data = filterErrorData(request, data)
@@ -10280,7 +10276,7 @@ def incidentList(request):
             pars['site'] = parsmat.group(2)
             pars['notifier'] = parsmat.group(3)
             pars['type'] = inc['typekey']
-            if homeCloud.has_key(pars['site']):
+            if pars['site'] in  homeCloud:
                 pars['cloud'] = homeCloud[pars['site']]
             if parsmat.group(4): pars['comment'] = parsmat.group(4)
         else:
@@ -10723,7 +10719,7 @@ def pandaLogger(request):
         enddate = request.session['requestParams']['enddate']
 
     iquery['bintime__range'] = [startdate, enddate]
-    print iquery
+    print (iquery)
     counts = Pandalog.objects.filter(**iquery).values('name', 'type', 'levelname').annotate(
         Count('levelname')).order_by('name', 'type', 'levelname')
     if getrecs:
@@ -11553,7 +11549,7 @@ def taskNotUpdated(request, query, state='submitted', hoursSinceUpdate=36, value
     query['statechangetime__lte'] = moddate
     # query['statechangetime__gte'] = mindate
     query['status'] = state
-
+    job = ''
     if count:
         tasks = JediTasks.objects.filter(**query).extra(where=[wildCardExtension]).values('name', 'status').annotate(
             Count('status'))
@@ -11578,11 +11574,11 @@ def getErrorDescription(job, mode='html', provideProcessedCodes = False):
     codesDescribed = []
 
     if 'metastruct' in job:
-        if type(job['metastruct']) is unicode:
+        if type(job['metastruct']) is np.unicode:
             try:
                 meta = json.loads(job['metastruct'])
             except:
-                print 'Meta type: '+str(type(job['metastruct']))
+                print ('Meta type: '+str(type(job['metastruct'])))
                 meta = job['metastruct']
             if 'exitCode' in meta and meta['exitCode'] != 0:
                 txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])
@@ -11606,7 +11602,7 @@ def getErrorDescription(job, mode='html', provideProcessedCodes = False):
 
     for errcode in errorCodes.keys():
         errval = 0
-        if job.has_key(errcode):
+        if errcode in job:
             errval = job[errcode]
             if errval != 0 and errval != '0' and errval != None and errval != '':
                 try:
@@ -11737,11 +11733,11 @@ def getFilePathForObjectStore(objectstore, filetype="logs"):
                     basepath = url + basepath
 
         if basepath == "":
-            print "Object store path could not be extracted using file type \'%s\' from objectstore=\'%s\'" % (
-            filetype, objectstore)
+            print ("Object store path could not be extracted using file type \'%s\' from objectstore=\'%s\'" % (
+            filetype, objectstore))
 
     else:
-        print "Object store not defined in queuedata"
+        print ("Object store not defined in queuedata")
 
     return basepath
 
@@ -12012,7 +12008,7 @@ def buildGoogleTaskFlow(request, tasks):
 # This function created backend dependable for avoiding numerous arguments in metadata query.
 # Transaction and cursors used due to possible issues with django connection pooling
 def addJobMetadata(jobs, require=False):
-    print 'adding metadata'
+    print ('adding metadata')
     pids = []
     for job in jobs:
         if (job['jobstatus'] == 'failed' or require): pids.append(job['pandaid'])
@@ -12054,7 +12050,7 @@ def addJobMetadata(jobs, require=False):
             except:
                 pass
                 # job['metadata'] = mdict[job['pandaid']]
-    print 'added metadata'
+    print ('added metadata')
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
  #   connection.commit()
  #   connection.leave_transaction_management()
@@ -12183,7 +12179,7 @@ def initSelfMonitor(request):
             qstring= '?'+request.META['QUERY_STRING']
         else: qstring =''
         urls = urlProto + request.META['SERVER_NAME'] + port + path + qstring
-    print urls
+    print (urls)
     qtime = str(timezone.now())
     load = psutil.cpu_percent(interval=1)
     mem = psutil.virtual_memory().percent
@@ -12240,7 +12236,7 @@ def statpixel(request):
         url = request.META['HTTP_REFERER']
         service = 0
         userid = -1
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             userids = BPUser.objects.filter(email=request.user.email).values('id')
             userid = userids[0]['id']
         Visits.objects.create(url=url, service=service, remote=ip, time=str(timezone.now()), userid=userid)
@@ -12260,7 +12256,7 @@ def statpixel(request):
 # retrieve global shares
 
 from PIL import Image
-import urllib2 as urllib
+import urllib.request
 import io
 
 whitelist = ["triumf.ca", "cern.ch"]
@@ -12276,13 +12272,15 @@ def image(request):
         if (len(urlConfim)==0):
             return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
         try:
-            fd = urllib.urlopen(url)
-            image_file = io.BytesIO(fd.read())
-            im = Image.open(image_file)
-            response = HttpResponse(content_type='image/jpg')
-            im.save(response, "JPEG")
-            return response
-        except:return redirect('/static/images/404-not-found-site.gif')
+            with urllib.request.urlopen(url) as fd:
+                image_file = io.BytesIO(fd.read())
+                im = Image.open(image_file)
+                rgb_im = im.convert('RGB')
+                response = HttpResponse(content_type='image/jpg')
+                rgb_im.save(response, "JPEG")
+                return response
+        except Exception as ex:
+            return redirect('/static/images/404-not-found-site.gif')
     else:
         return redirect('/static/images/error_z0my4n.png')
 
@@ -12534,7 +12532,7 @@ def serverStatusHealth(request):
 
     data = getCacheEntry(request, "StatusHealth")
 
-    print "serverStatusHealth ", datetime.now(), " runninghost:", request.session["hostname"], " ", data
+    print ("serverStatusHealth ", datetime.now(), " runninghost:", request.session["hostname"], " ", data)
 
     if data is None:
         q = collections.deque()

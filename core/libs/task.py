@@ -255,7 +255,7 @@ def event_summary_for_task(mode, query, transactionKeyDroppedJobs):
     eventslist = []
     essummary = dict((key, 0) for key in eventservicestatelist)
 
-    print 'getting events states summary'
+    print ('getting events states summary')
     if mode == 'drop':
         jeditaskid = query['jeditaskid']
         equerystr = """

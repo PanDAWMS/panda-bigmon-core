@@ -48,7 +48,7 @@ class Certificates(models.Model):
 
 class Classlist(models.Model):
     class_field = models.CharField(max_length=90, db_column='CLASS', primary_key=True)  # Field renamed because it was a Python reserved word.
-    name = models.CharField(max_length=180, db_column='NAME', primary_key=True)
+    name = models.CharField(max_length=180, db_column='NAME')
     rights = models.CharField(max_length=90, db_column='RIGHTS')
     priority = models.IntegerField(null=True, db_column='PRIORITY', blank=True)
     quota1 = models.BigIntegerField(null=True, db_column='QUOTA1', blank=True)
@@ -88,7 +88,7 @@ class Cloudconfig(models.Model):
 
 class Cloudspace(models.Model):
     cloud = models.CharField(max_length=60, db_column='CLOUD', primary_key=True)
-    store = models.CharField(max_length=150, db_column='STORE', primary_key=True)
+    store = models.CharField(max_length=150, db_column='STORE')
     space = models.IntegerField(db_column='SPACE')
     freespace = models.IntegerField(db_column='FREESPACE')
     moduser = models.CharField(max_length=90, db_column='MODUSER')
@@ -118,7 +118,7 @@ class Datasets(models.Model):
     numberfiles = models.IntegerField(null=True, db_column='NUMBERFILES', blank=True)
     currentfiles = models.IntegerField(null=True, db_column='CURRENTFILES', blank=True)
     creationdate = models.DateTimeField(null=True, db_column='CREATIONDATE', blank=True)
-    modificationdate = models.DateTimeField(db_column='MODIFICATIONDATE', primary_key=True)
+    modificationdate = models.DateTimeField(db_column='MODIFICATIONDATE')
     moverid = models.BigIntegerField(db_column='MOVERID')
     transferstatus = models.IntegerField(db_column='TRANSFERSTATUS')
     subtype = models.CharField(max_length=15, db_column='SUBTYPE', blank=True)
@@ -233,7 +233,7 @@ class Etask(models.Model):
 class Filestable4(models.Model):
     row_id = models.BigIntegerField(db_column='ROW_ID', primary_key=True)
     pandaid = models.BigIntegerField(db_column='PANDAID')
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME', primary_key=True)
+    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
     guid = models.CharField(max_length=192, db_column='GUID', blank=True)
     lfn = models.CharField(max_length=768, db_column='LFN', blank=True)
     type = models.CharField(max_length=60, db_column='TYPE', blank=True)
@@ -261,7 +261,7 @@ class Filestable4(models.Model):
 class FilestableArch(models.Model):
     row_id = models.BigIntegerField(db_column='ROW_ID', primary_key=True)
     pandaid = models.BigIntegerField(db_column='PANDAID') 
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME', primary_key=True)
+    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
     creationtime = models.DateTimeField(db_column='CREATIONTIME')
     guid = models.CharField(max_length=64, db_column='GUID', blank=True) 
     lfn = models.CharField(max_length=256, db_column='LFN', blank=True) 
@@ -369,10 +369,10 @@ class InfomodelsSitestatus(models.Model):
 class Installedsw(models.Model):
     siteid = models.CharField(max_length=180, db_column='SITEID', primary_key=True)
     cloud = models.CharField(max_length=30, db_column='CLOUD', blank=True)
-    release = models.CharField(max_length=30, db_column='RELEASE', primary_key=True)
-    cache = models.CharField(max_length=120, db_column='CACHE', primary_key=True)
+    release = models.CharField(max_length=30, db_column='RELEASE')
+    cache = models.CharField(max_length=120, db_column='CACHE')
     validation = models.CharField(max_length=30, db_column='VALIDATION', blank=True)
-    cmtconfig = models.CharField(max_length=120, db_column='CMTCONFIG', primary_key=True)
+    cmtconfig = models.CharField(max_length=120, db_column='CMTCONFIG')
     class Meta:
         db_table = u'installedsw'
         unique_together = ('siteid', 'release', 'cache', 'cmtconfig')
@@ -393,8 +393,8 @@ class JediAuxStatusMintaskid(models.Model):
 
 class JediDatasetContents(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
-    datasetid = models.BigIntegerField(db_column='DATASETID', primary_key=True)
-    fileid = models.BigIntegerField(db_column='FILEID', primary_key=True)
+    datasetid = models.BigIntegerField(db_column='DATASETID')
+    fileid = models.BigIntegerField(db_column='FILEID')
     creationdate = models.DateTimeField(db_column='CREATIONDATE')
     lastattempttime = models.DateTimeField(null=True, db_column='LASTATTEMPTTIME', blank=True)
     lfn = models.CharField(max_length=768, db_column='LFN')
@@ -425,7 +425,7 @@ class JediDatasetContents(models.Model):
 
 class JediDatasets(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
-    datasetid = models.BigIntegerField(db_column='DATASETID', primary_key=True)
+    datasetid = models.BigIntegerField(db_column='DATASETID')
     datasetname = models.CharField(max_length=765, db_column='DATASETNAME')
     type = models.CharField(max_length=60, db_column='TYPE')
     creationtime = models.DateTimeField(db_column='CREATIONTIME')
@@ -463,9 +463,9 @@ class JediDatasets(models.Model):
 
 class JediEvents(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
-    pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
-    fileid = models.BigIntegerField(db_column='FILEID', primary_key=True)
-    job_processid = models.IntegerField(db_column='JOB_PROCESSID', primary_key=True)
+    pandaid = models.BigIntegerField(db_column='PANDAID')
+    fileid = models.BigIntegerField(db_column='FILEID')
+    job_processid = models.IntegerField(db_column='JOB_PROCESSID')
     def_min_eventid = models.IntegerField(null=True, db_column='DEF_MIN_EVENTID', blank=True)
     def_max_eventid = models.IntegerField(null=True, db_column='DEF_MAX_EVENTID', blank=True)
     processed_upto_eventid = models.IntegerField(null=True, db_column='PROCESSED_UPTO_EVENTID', blank=True)
@@ -490,8 +490,8 @@ class JediJobparamsTemplate(models.Model):
 
 class JediJobRetryHistory(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
-    oldpandaid = models.BigIntegerField(db_column='OLDPANDAID', primary_key=True)
-    newpandaid = models.BigIntegerField(db_column='NEWPANDAID', primary_key=True)
+    oldpandaid = models.BigIntegerField(db_column='OLDPANDAID')
+    newpandaid = models.BigIntegerField(db_column='NEWPANDAID')
     ins_utc_tstamp = models.BigIntegerField(db_column='INS_UTC_TSTAMP', blank=True) 
     relationtype = models.CharField(max_length=48, db_column='RELATIONTYPE')
     class Meta:
@@ -500,8 +500,8 @@ class JediJobRetryHistory(models.Model):
 
 class JediOutputTemplate(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
-    datasetid = models.BigIntegerField(db_column='DATASETID', primary_key=True)
-    outtempid = models.BigIntegerField(db_column='OUTTEMPID', primary_key=True)
+    datasetid = models.BigIntegerField(db_column='DATASETID')
+    outtempid = models.BigIntegerField(db_column='OUTTEMPID')
     filenametemplate = models.CharField(max_length=768, db_column='FILENAMETEMPLATE')
     maxserialnr = models.IntegerField(null=True, db_column='MAXSERIALNR', blank=True)
     serialnr = models.IntegerField(null=True, db_column='SERIALNR', blank=True)
@@ -665,7 +665,7 @@ class Jobclass(models.Model):
 
 class Jobparamstable(models.Model):
     pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME', primary_key=True)
+    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
     jobparameters = models.TextField(db_column='JOBPARAMETERS', blank=True)
     class Meta:
         db_table = u'jobparamstable'
@@ -721,7 +721,7 @@ class Logstable(models.Model):
 
 class Members(models.Model):
     uname = models.CharField(max_length=90, db_column='UNAME', primary_key=True)
-    gname = models.CharField(max_length=90, db_column='GNAME', primary_key=True)
+    gname = models.CharField(max_length=90, db_column='GNAME')
     rights = models.CharField(max_length=90, db_column='RIGHTS', blank=True)
     since = models.DateTimeField(db_column='SINCE')
     class Meta:
@@ -731,7 +731,7 @@ class Members(models.Model):
 
 class Metatable(models.Model):
     pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME', primary_key=True)
+    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
     metadata = models.TextField(db_column='METADATA', blank=True)
     class Meta:
         db_table = u'metatable'
@@ -782,7 +782,7 @@ class PandaidsDeleted(models.Model):
 
 class PandaidsModiftime(models.Model):
     pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
-    modiftime = models.DateTimeField(db_column='MODIFTIME', primary_key=True)
+    modiftime = models.DateTimeField(db_column='MODIFTIME')
     class Meta:
         db_table = u'pandaids_modiftime'
         unique_together = ('pandaid', 'modiftime')
@@ -813,7 +813,7 @@ class Pilotqueue(models.Model):
     jobid = models.CharField(db_column='JOBID', max_length=100, primary_key=True)
     tpid = models.CharField(max_length=180, db_column='TPID')
     url = models.CharField(max_length=600, db_column='URL', blank=True)
-    nickname = models.CharField(max_length=180, db_column='NICKNAME', primary_key=True)
+    nickname = models.CharField(max_length=180, db_column='NICKNAME')
     system = models.CharField(max_length=60, db_column='SYSTEM')
     user_field = models.CharField(max_length=180, db_column='USER_')  # Field renamed because it was a Python reserved word.
     host = models.CharField(max_length=180, db_column='HOST')
@@ -1577,8 +1577,8 @@ class AllRequests(models.Model):
 
 class Savedpages(models.Model):
     name = models.CharField(max_length=90, db_column='NAME', primary_key=True)
-    flag = models.CharField(max_length=60, db_column='FLAG', primary_key=True)
-    hours = models.IntegerField(db_column='HOURS', primary_key=True)
+    flag = models.CharField(max_length=60, db_column='FLAG')
+    hours = models.IntegerField(db_column='HOURS')
     html = models.TextField(db_column='HTML')
     lastmod = models.DateTimeField(null=True, db_column='LASTMOD', blank=True)
     interval = models.IntegerField(null=True, db_column='INTERVAL', blank=True)
@@ -1626,8 +1626,8 @@ class Siteaccess(models.Model):
 
 class Sitedata(models.Model):
     site = models.CharField(max_length=90, db_column='SITE', primary_key=True)
-    flag = models.CharField(max_length=60, db_column='FLAG', primary_key=True)
-    hours = models.IntegerField(db_column='HOURS', primary_key=True)
+    flag = models.CharField(max_length=60, db_column='FLAG')
+    hours = models.IntegerField(db_column='HOURS')
     nwn = models.IntegerField(null=True, db_column='NWN', blank=True)
     memmin = models.IntegerField(null=True, db_column='MEMMIN', blank=True)
     memmax = models.IntegerField(null=True, db_column='MEMMAX', blank=True)
@@ -1675,9 +1675,9 @@ class Siteddm(models.Model):
 
 class Sitehistory(models.Model):
     site = models.CharField(max_length=90, db_column='SITE', primary_key=True)
-    flag = models.CharField(max_length=60, db_column='FLAG', primary_key=True)
-    time = models.DateTimeField(db_column='TIME', primary_key=True)
-    hours = models.IntegerField(db_column='HOURS', primary_key=True)
+    flag = models.CharField(max_length=60, db_column='FLAG')
+    time = models.DateTimeField(db_column='TIME')
+    hours = models.IntegerField(db_column='HOURS')
     nwn = models.IntegerField(null=True, db_column='NWN', blank=True)
     memmin = models.IntegerField(null=True, db_column='MEMMIN', blank=True)
     memmax = models.IntegerField(null=True, db_column='MEMMAX', blank=True)
@@ -1790,7 +1790,7 @@ class Submithosts(models.Model):
 
 class Sysconfig(models.Model):
     name = models.CharField(max_length=180, db_column='NAME', primary_key=True)
-    system = models.CharField(max_length=60, db_column='SYSTEM', primary_key=True)
+    system = models.CharField(max_length=60, db_column='SYSTEM')
     config = models.CharField(max_length=12000, db_column='CONFIG', blank=True)
     class Meta:
         db_table = u'sysconfig'
@@ -1829,7 +1829,7 @@ class TTier2Groups(models.Model):
 
 class Tablepart4Copying(models.Model):
     table_name = models.CharField(max_length=90, db_column='TABLE_NAME', primary_key=True)
-    partition_name = models.CharField(max_length=90, db_column='PARTITION_NAME', primary_key=True)
+    partition_name = models.CharField(max_length=90, db_column='PARTITION_NAME')
     copied_to_arch = models.CharField(max_length=30, db_column='COPIED_TO_ARCH')
     copying_done_on = models.DateTimeField(null=True, db_column='COPYING_DONE_ON', blank=True)
     deleted_on = models.DateTimeField(null=True, db_column='DELETED_ON', blank=True)
@@ -1904,8 +1904,8 @@ class Usagereport(models.Model):
 class Usercacheusage(models.Model):
     username = models.CharField(max_length=384, db_column='USERNAME')
     filename = models.CharField(db_column='FILENAME', max_length=255, primary_key=True)
-    hostname = models.CharField(max_length=192, db_column='HOSTNAME', primary_key=True)
-    creationtime = models.DateTimeField(db_column='CREATIONTIME', primary_key=True)
+    hostname = models.CharField(max_length=192, db_column='HOSTNAME')
+    creationtime = models.DateTimeField(db_column='CREATIONTIME')
     modificationtime = models.DateTimeField(null=True, db_column='MODIFICATIONTIME', blank=True)
     filesize = models.BigIntegerField(null=True, db_column='FILESIZE', blank=True)
     checksum = models.CharField(max_length=108, db_column='CHECKSUM', blank=True)
@@ -1985,8 +1985,8 @@ class Users(models.Model):
 class Userstats(models.Model):
     name = models.CharField(max_length=180, db_column='NAME', primary_key=True)
     label = models.CharField(max_length=60, db_column='LABEL', blank=True)
-    yr = models.IntegerField(db_column='YR', primary_key=True)
-    mo = models.IntegerField(db_column='MO', primary_key=True)
+    yr = models.IntegerField(db_column='YR')
+    mo = models.IntegerField(db_column='MO')
     jobs = models.BigIntegerField(null=True, db_column='JOBS', blank=True)
     idlo = models.BigIntegerField(null=True, db_column='IDLO', blank=True)
     idhi = models.BigIntegerField(null=True, db_column='IDHI', blank=True)
@@ -1997,7 +1997,7 @@ class Userstats(models.Model):
 
 class Usersubs(models.Model):
     datasetname = models.CharField(max_length=255, db_column='DATASETNAME', primary_key=True)
-    site = models.CharField(max_length=192, db_column='SITE', primary_key=True)
+    site = models.CharField(max_length=192, db_column='SITE')
     creationdate = models.DateTimeField(null=True, db_column='CREATIONDATE', blank=True)
     modificationdate = models.DateTimeField(null=True, db_column='MODIFICATIONDATE', blank=True)
     nused = models.IntegerField(null=True, db_column='NUSED', blank=True)
@@ -2008,8 +2008,8 @@ class Usersubs(models.Model):
 
 class VoToSite(models.Model):
     site_name = models.CharField(max_length=96, db_column='SITE_NAME', primary_key=True)
-    queue = models.CharField(max_length=192, db_column='QUEUE', primary_key=True)
-    vo_name = models.CharField(max_length=96, db_column='VO_NAME', primary_key=True)
+    queue = models.CharField(max_length=192, db_column='QUEUE')
+    vo_name = models.CharField(max_length=96, db_column='VO_NAME')
     class Meta:
         db_table = u'vo_to_site'
         unique_together = ('site_name', 'queue', 'vo_name')
@@ -2023,9 +2023,9 @@ class Vorspassfail(models.Model):
 
 class Wndata(models.Model):
     site = models.CharField(max_length=90, db_column='SITE', primary_key=True)
-    wn = models.CharField(max_length=150, db_column='WN', primary_key=True)
-    flag = models.CharField(max_length=60, db_column='FLAG', primary_key=True)
-    hours = models.IntegerField(db_column='HOURS', primary_key=True)
+    wn = models.CharField(max_length=150, db_column='WN')
+    flag = models.CharField(max_length=60, db_column='FLAG')
+    hours = models.IntegerField(db_column='HOURS')
     mem = models.IntegerField(null=True, db_column='MEM', blank=True)
     si2000 = models.IntegerField(null=True, db_column='SI2000', blank=True)
     os = models.CharField(max_length=90, db_column='OS', blank=True)

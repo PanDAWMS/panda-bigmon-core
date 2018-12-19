@@ -8,7 +8,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 ### #FIXME admin.autodiscover()
 
-import views as pbm_views
+import core.pbm.views as pbm_views
 
 urlpatterns = [
     url(r'^$', pbm_views.index, name='pbm-index'),

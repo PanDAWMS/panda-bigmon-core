@@ -1,5 +1,5 @@
 import operator
-import ReportsDataSource
+import core.reports.ReportsDataSource
 import time
 from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib.pagesizes import letter
@@ -8,7 +8,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
-import StringIO
+from io import StringIO
 
 
 

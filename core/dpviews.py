@@ -4,12 +4,12 @@
 # Prototyping for Data Product Catalog and associated functionality
 #
 from __future__ import unicode_literals
-import logging, re, json, commands, os, copy
+import logging, re, json, subprocess, os, copy
 from datetime import datetime, timedelta
 from datetime import tzinfo
 import time
 import json
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, render, redirect
@@ -30,7 +30,7 @@ from boto.dynamodb2.types import NUMBER
 from boto.dynamodb2.types import STRING
 from boto.dynamodb2.types import STRING_SET
 
-from settings.local import aws
+from core.settings.local import aws
 
 from core.common.models import TRequest, TProject, RequestStatus, ProductionTask, StepTemplate, StepExecution, InputRequestList, ProductionContainer, ProductionDataset, Ttrfconfig
 
@@ -41,9 +41,9 @@ from core.common.models import FilestableArch
 from core.common.models import JediDatasets
 from core.settings.config import ENV
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
-from django.utils.encoding import smart_unicode, DjangoUnicodeDecodeError
+from django.utils.encoding import smart_text, DjangoUnicodeDecodeError
 
-import views as coreviews
+import core.views as coreviews
 
 ENV['MON_VO'] = 'ATLAS'
 viewParams = {}
@@ -101,7 +101,7 @@ def doRequest(request):
                 dataset = formdata['dataset'].strip()
             else:
                 messages.warning(request, "The requested dataset search is not valid")
-                print 'POST', request.POST
+                print ('POST', request.POST)
         else:
             messages.warning(request, "Unrecognized form %s" % request.POST['type'])
 
@@ -336,7 +336,7 @@ def doRequest(request):
             for d in dsevs:
                 total_events += dsevs[d]
             for ds in taskinputdsl:
-                if ds not in dsevs: print 'missing dataset event count', ds
+                if ds not in dsevs: print ('missing dataset event count', ds)
 
         ## add info to slices
         sliceids = {}
@@ -988,11 +988,11 @@ def doRequest(request):
         'projeventsl' : projeventsl,
     }
     if 'json' in request.session['requestParams']  or request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
-        if len(data['slices']) > 0: print data['slices'][0]
-        if len(data['requests']) > 0: print data['requests'][0]
-        if len(data['tasks']) > 0: print data['tasks'][0]
-        if len(data['jeditasks']) > 0: print data['jeditasks'][0]
-        if len(data['datasets']) > 0: print data['datasets'][0]
+        if len(data['slices']) > 0: print (data['slices'][0])
+        if len(data['requests']) > 0: print (data['requests'][0])
+        if len(data['tasks']) > 0: print (data['tasks'][0])
+        if len(data['jeditasks']) > 0: print (data['jeditasks'][0])
+        if len(data['datasets']) > 0: print (data['datasets'][0])
         data['requests'] = list(data['requests'])
         data['slices'] = list(data['slices'])
         data['tasks'] = list(data['tasks'])
@@ -1006,7 +1006,7 @@ def doRequest(request):
             fh = open('dpc.json','w')
             fh.write(jsondump)
             fh.close()
-            print "wrote json to dpc.json"
+            print ("wrote json to dpc.json")
         except:
             pass
         return  HttpResponse(jsondump, content_type='application/json')

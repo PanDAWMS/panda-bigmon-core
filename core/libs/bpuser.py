@@ -4,9 +4,7 @@ Created on 18.12.2018
 User specific functions
 """
 from django.db import connection
-from urllib import unquote
-from urlparse import urlparse
-
+from urllib.parse import urlencode, unquote, urlparse, urlunparse, parse_qs
 
 def get_relevant_links(userid, fields):
 

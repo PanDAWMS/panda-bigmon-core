@@ -4,6 +4,7 @@ import pytz
 from datetime import datetime, timedelta
 from json import dumps as json_dumps  ### FIXME - cleanup
 
+import re
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.http import HttpResponse
@@ -146,8 +147,8 @@ def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
         :param vo: VO, e.g. 'core'
         :param nhours: #hours
     """
-    print 'vo: ...%s...' % (vo)
-    print 'nhours: ...%s...' % (nhours)
+    print ('vo: ...%s...' % (vo))
+    print ('nhours: ...%s...' % (nhours))
     _logger.debug('nhours: ...%s...' % (nhours))
     try:
         nhours = int(nhours)
@@ -181,8 +182,8 @@ def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
     startdate = startdate.strftime(defaultDatetimeFormat)
     enddate = datetime.utcnow().replace(tzinfo=pytz.utc).strftime(defaultDatetimeFormat)
 
-    print 'startdate=', startdate
-    print 'enddate=', enddate
+    print ('startdate=', startdate)
+    print ('enddate=', enddate)
 
     jobs.extend(Jobsactive4.objects.filter(\
                 vo=vo, \

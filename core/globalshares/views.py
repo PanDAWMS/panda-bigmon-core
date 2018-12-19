@@ -1,5 +1,7 @@
 from datetime import datetime
 import decimal
+
+import numpy as np
 import re
 from decimal import Decimal
 
@@ -14,7 +16,7 @@ from core.libs.CustomJSONSerializer import DecimalEncoder
 from core.views import initRequest, setupView, login_customrequired, endSelfMonitor, extensibleURL, DateEncoder
 import json
 
-import GlobalShares
+from core.globalshares import GlobalShares
 
 @login_customrequired
 def globalshares(request):
@@ -296,7 +298,7 @@ def get_shares(parents=''):
         # Get top level shares
         sql += "WHERE parent IS NULL"
 
-    elif type(parents) == unicode:
+    elif type(parents) == np.unicode:
         # Get the children of a specific share
         var_map = {':parent': parents}
         sql += "WHERE parent = :parent"
@@ -647,7 +649,7 @@ def get_agis_resources():
             resourcesDict.setdefault(data[cs]['resource_type'], []).append(cs)
             resourcesDictSites[data[cs]['siteid']] = data[cs]['resource_type']
     except Exception as exc:
-        print exc.message
+        print (exc.message)
     return resourcesDictSites
 
 def get_agis_fairsharepolicy():
@@ -663,7 +665,7 @@ def get_agis_fairsharepolicy():
             fairsharepolicyDict.setdefault(data[cs]['fairsharepolicy'], []).append(cs)
             fairsharepolicyDictSites[data[cs]['siteid']] = data[cs]['fairsharepolicy']
     except Exception as exc:
-        print exc.message
+        print (exc.message)
     return fairsharepolicyDictSites
 
 def resourcesType(request):

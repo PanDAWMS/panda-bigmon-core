@@ -6,7 +6,7 @@ import matplotlib.dates as md
 import os
 from django.db import connection
 from core.common.models import JediTasks
-import StringIO
+from io import StringIO
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt

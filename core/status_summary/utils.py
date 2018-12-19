@@ -345,11 +345,11 @@ def summarize_data(data, query, exclude_query, schedconfig_query, \
         item['corecount'] = corecount
         item['status'] = status
         item['comment'] = comment
-        print
-        print '348 query', query
-        print '348 exclude_query', exclude_query
-        print '348 schedconfig_query', schedconfig_query
-        print '348 schedconfig_exclude_query', schedconfig_exclude_query
+
+        print ('348 query', query)
+        print ('348 exclude_query', exclude_query)
+        print ('348 schedconfig_query', schedconfig_query)
+        print ('348 schedconfig_exclude_query', schedconfig_exclude_query)
         for schedconfig_key_base in ['corecount', 'status', 'comment', \
                                      'cloud', 'atlas_site', 'status']:
             ### handle excludes
@@ -405,13 +405,13 @@ def summarize_data(data, query, exclude_query, schedconfig_query, \
                         store = False
             if '%s__istartswith' % (schedconfig_key_base) in \
             schedconfig_query.keys():
-                print '401', '%s__istartswith' % (schedconfig_key_base)
+                print ('401', '%s__istartswith' % (schedconfig_key_base))
                 if str(item[schedconfig_key_base]).upper().find(\
                             str(schedconfig_query['%s__istartswith' % \
                                 (schedconfig_key_base)]).upper()) != 0:
-                    print '401', store
+                    print ('401', store)
                     store = False
-                    print '401', store
+                    print ('401', store)
             if '%s__iendswith' % (schedconfig_key_base) in \
             schedconfig_query.keys():
                 for sch_it in schedconfig_query['%s__iendswith' % (schedconfig_key_base)]:

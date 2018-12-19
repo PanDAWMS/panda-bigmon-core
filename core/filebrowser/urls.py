@@ -8,7 +8,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 ### #FIXME admin.autodiscover()
 
-import views as filebrowser_views
+import core.filebrowser.views as filebrowser_views
 
 urlpatterns = [
     url(r'^$', filebrowser_views.index, name='filebrowser'),

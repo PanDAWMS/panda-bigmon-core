@@ -1,5 +1,5 @@
 import pandas as pd
-import StringIO
+from io import StringIO
 import urllib3
 from core.common.models import Filestable4
 from core.common.models import FilestableArch

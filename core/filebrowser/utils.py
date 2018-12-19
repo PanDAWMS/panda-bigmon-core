@@ -2,7 +2,7 @@
     filebrowser.utils
     
 """
-import commands
+import subprocess
 import json
 import logging
 import os
@@ -27,7 +27,7 @@ def get_filebrowser_hostname():
         get_filebrowser_hostname
         
     """
-    return getattr(settings, "FILEBROWSER_HOSTNAME", commands.getoutput('hostname -f'))
+    return getattr(settings, "FILEBROWSER_HOSTNAME", subprocess.getoutput('hostname -f'))
 
 
 def get_filebrowser_directory():
@@ -155,7 +155,7 @@ def get_rucio_oauth_token():
     _logger.info('get_rucio_oauth_token: cmd=(%s)' % cmd)
 
     ### get the curl command output
-    status, output = commands.getstatusoutput(cmd)
+    status, output = subprocess.getstatusoutput(cmd)
 
     ### get the rucioToken
     rucioToken = output.rstrip()
@@ -186,7 +186,7 @@ def get_rucio_metalink_file(rucioToken, lfn, scope):
         }
 
     ### get the metalink file
-    status, output = commands.getstatusoutput(cmd)
+    status, output = subprocess.getstatusoutput(cmd)
 
     ### return the Rucio metalink file
     return output
@@ -351,7 +351,7 @@ def get_rucio_redirect_response(redirectUrl):
             'url': redirectUrl \
          }
     _logger.info('get_rucio_redirect_response: cmd=(%s)' % cmd)
-    status, output = commands.getstatusoutput(cmd)
+    status, output = subprocess.getstatusoutput(cmd)
     surl = get_location_from_rucio_redirect_output(output)
     return surl
 
@@ -529,9 +529,9 @@ def execute_cmd(cmd):
         execute_cmd
     """
     if len(cmd) > 0:
-        return commands.getstatusoutput(cmd)
+        return subprocess.getstatusoutput(cmd)
     else:
-        return commands.getstatusoutput('echo')
+        return subprocess.getstatusoutput('echo')
 
 
 def get_filename(fname, guid):
@@ -643,7 +643,7 @@ def unpack_file(fname):
     base = os.path.basename(fname)
 
     cmd = "cd %s; tar -xvzf %s" % (logdir, base)
-    (status, output) = commands.getstatusoutput(cmd)
+    (status, output) = subprocess.getstatusoutput(cmd)
     if status != 0:
         msg = 'Cannot unpack file [%s].' % (fname)
         _logger.error(msg)
@@ -669,7 +669,7 @@ def list_file_directory(logdir):
     filelist = []
     try:
         filelist = os.listdir(logdir)
-    except OSError, (errno, errMsg):
+    except OSError as errMsg:
         msg = "Error in filesystem call:" + str(errMsg)
         _logger.error(msg)
 
@@ -699,14 +699,14 @@ def list_file_directory(logdir):
             isFile[f] = os.path.isfile(myFile)
             try:
                 fileStats[f] = os.lstat(myFile)
-            except OSError, (errno, errMsg):
+            except OSError as errMsg:
                 err += 'Warning: Error in lstat on %s (%s).\n' % (myFile, errMsg)
                 fileStats[f] = None
             if os.path.islink(myFile):
                 try:
                     linkName[f] = os.readlink(myFile)
                     linkStats[f] = os.stat(myFile)
-                except OSError, (errno, errMsg):
+                except OSError as errMsg:
                     err += 'Warning: Error in stat on linked file %s linked from %s (%s).\n' % (linkName[f], f, errMsg)
                     linkStats[f] = None
         for f in contents:
@@ -718,7 +718,7 @@ def list_file_directory(logdir):
                     f_content['name'] = os.path.basename(f)
                     f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f))
             files.append(f_content)
-    except OSError, (errno, errMsg):
+    except OSError as errMsg:
         msg = "Error in filesystem call:" + str(errMsg)
         _logger.error(msg)
 

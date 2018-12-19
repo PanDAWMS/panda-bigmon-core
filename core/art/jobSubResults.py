@@ -140,7 +140,7 @@ def save_subresults(subResultsDict):
                                    subresult=data)
                 row.save()
     except DatabaseError as e:
-        print e.message
+        print (e.message)
         return False
 
     return True
@@ -161,7 +161,7 @@ def lock_nqueuedjobs(cur, nrows):
     try:
         cur.execute(lquery)
     except DatabaseError as e:
-        print e.message
+        print (e.message)
         raise
 
     return lock_time
@@ -180,7 +180,7 @@ def delete_queuedjobs(cur, lock_time):
     try:
         cur.execute(dquery)
     except DatabaseError as e:
-        print e.message
+        print (e.message)
         raise
 
     return True
@@ -198,7 +198,7 @@ def clear_queue(cur):
     try:
         cur.execute(cquery)
     except DatabaseError as e:
-        print e.message
+        print (e.message)
         raise
 
     return True

@@ -2,7 +2,7 @@
 
 from django import template
 from django.template import Template
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 
 def world_nucleussummary(context, kwargs):
