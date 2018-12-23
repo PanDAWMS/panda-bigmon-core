@@ -238,8 +238,8 @@ def login_customrequired(function):
           # else:
           #     return function(request, *args, **kwargs)
           return HttpResponseRedirect('/login/?next='+request.get_full_path())
-  wrap.__doc__=function.__doc__
-  wrap.__name__=function.__name__
+  wrap.__doc__= function.__doc__
+  wrap.__name__= function.__name__
   return wrap
 
 @login_customrequired
@@ -3046,7 +3046,7 @@ def jobList(request, mode=None, param=None):
         isJumbo = False
         if dropmode and (len(taskids) == 1) and 'eventservice' in request.session['requestParams']:
             if request.session['requestParams']['eventservice'] != '4' and request.session['requestParams']['eventservice'] != 'jumbo':
-                tk,droppedList,wildCardExtension = dropalgorithm.dropRetrielsJobs(taskids.keys()[0],wildCardExtension,isEventTask)
+                tk,droppedList,wildCardExtension = dropalgorithm.dropRetrielsJobs(list(taskids.keys())[0],wildCardExtension,isEventTask)
             else:
                 isJumbo = True
 
@@ -3142,7 +3142,7 @@ def jobList(request, mode=None, param=None):
     newjobs = copy.deepcopy(jobs)
     if dropmode and (len(taskids) == 1):
         start = time.time()
-        jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs,taskids.keys()[0],isReturnDroppedPMerge)
+        jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs,list(taskids.keys())[0],isReturnDroppedPMerge)
         end = time.time()
         print(end - start)
         if request.user.is_authenticated and request.user.is_tester:
@@ -3681,12 +3681,17 @@ def decimal_default(obj):
     elif (obj == 'None'): return -1
 
 def isEventService(job):
-    if 'specialhandling' in job and job['specialhandling'] and (
-                job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 or (
-            job['eventservice'] != 'ordinary' and job['eventservice'] and job['eventservice'] > 0)) and job['specialhandling'].find('sc:') == -1:
-        return True
+
+    if 'eventservice' in job and job['eventservice'] is not None:
+        if 'specialhandling' in job and job['specialhandling'] and (
+                    job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 or (
+                job['eventservice'] != 'ordinary' and job['eventservice'])) and job['specialhandling'].find('sc:') == -1:
+                return True
+        else:
+            return False
     else:
         return False
+
 
 
 def cleanURLFromDropPart(url):
