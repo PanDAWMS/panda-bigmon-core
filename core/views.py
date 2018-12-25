@@ -8416,16 +8416,17 @@ def taskInfo(request, jeditaskid=0):
     if len(countfailed) > 0 and countfailed[0] > 0:
         showtaskprof = True
 
-    # getting top memory consumers for analysis tasks
-    if taskrec['tasktype'] == 'anal':
-        tmcj_list = get_top_memory_consumers(taskrec)
-        if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
-            warning['memoryleaksuspicion'] = {}
-            warning['memoryleaksuspicion']['message'] = 'Some jobs in this task consumed a lot of memory. We suspect there might be memory leaks.'
-            warning['memoryleaksuspicion']['jobs'] = tmcj_list
-
 
     if taskrec:
+        
+        if 'tasktype' in taskrec and taskrec['tasktype'] == 'anal':
+            tmcj_list = get_top_memory_consumers(taskrec)
+            if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
+                warning['memoryleaksuspicion'] = {}
+                warning['memoryleaksuspicion'][
+                    'message'] = 'Some jobs in this task consumed a lot of memory. We suspect there might be memory leaks.'
+                warning['memoryleaksuspicion']['jobs'] = tmcj_list
+
         if taskrec['creationdate']:
             if taskrec['creationdate'] < datetime.now() - timedelta(days=180):
                 warning['dropmode'] = 'The drop mode is unavailable since the data of job retries was cleaned up. The data shown on the page is in nodrop mode.'
