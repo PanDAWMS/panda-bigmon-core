@@ -172,20 +172,20 @@ class RunningMCProdTasks:
             estProcTime = totEvRemaining/aveEvThrHours
 
 
-        for taskid, succEv in sitesDoneEvents.iteritems():
+        for taskid, succEv in sitesDoneEvents.items():
             if sitesSuccWall[taskid] > 0:
                 topNSitesWorstPerf[taskid] = sitesDoneEvents[taskid]/sitesSuccWall[taskid]
         topNSitesWorstPerf = sorted(topNSitesWorstPerf.items(), key=operator.itemgetter(1))[0:lenlists]
         avWallPerEv = totEvDone/totWallTime
         avWallPerEvH = totEvDoneHours/totWallTimeH
 
-        for taskid, succEv in taskSuccEvH.iteritems():
+        for taskid, succEv in taskSuccEvH.items():
             if succEv > 0:
                 topNTasksWorstWPerEvH[taskid] = taskSuccWallH[taskid]/succEv
         topNTasksWorstWPerEvH = sorted(topNTasksWorstWPerEvH.items(), key=operator.itemgetter(1), reverse=True)[0:lenlists]
 
 
-        for taskid, succEv in tasksSuccJobH.iteritems():
+        for taskid, succEv in tasksSuccJobH.items():
             if tasksSuccJobH[taskid] > 0:
                 topNTasksFailureRateHours[taskid] = tasksFailedJobsH[taskid]/tasksSuccJobH[taskid]
         sorted_x = sorted(topNTasksFailureRateHours.items(), key=operator.itemgetter(1), reverse=True)
@@ -212,7 +212,7 @@ class RunningMCProdTasks:
             topNSitesWithHighestFailureHours[sorted_x[i][0]] = sorted_x[i][1]
 
 
-        for taskid, succEv in sitesActivateJobs.iteritems():
+        for taskid, succEv in sitesActivateJobs.items():
             if sitesRunningJobs[taskid]:
                 topNSitesWithHighestActivatedRunningRat[taskid] = sitesActivateJobs[taskid]/sitesRunningJobs[taskid]
         sorted_x = sorted(topNSitesWithHighestActivatedRunningRat.items(), key=operator.itemgetter(1), reverse=True)
@@ -222,7 +222,7 @@ class RunningMCProdTasks:
             topNSitesWithHighestActivatedRunningRat[sorted_x[i][0]] = sorted_x[i][1]
 
 
-        for taskid, succEv in sitesActivateJobs.iteritems():
+        for taskid, succEv in sitesActivateJobs.items():
             if sitesRunningJobs[taskid] > 0:
                 topNSitesWithHighestAssignedRunningRat[taskid] = sitesAssignedJobs[taskid]/sitesRunningJobs[taskid]
         sorted_x = sorted(topNSitesWithHighestAssignedRunningRat.items(), key=operator.itemgetter(1), reverse=True)

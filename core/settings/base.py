@@ -111,7 +111,7 @@ INSTALLED_APPS_DJANGO_FRAMEWORK = (
 )
 
 SESSION_SERIALIZER = "core.libs.CustomJSONSerializer.CustomJSONSerializer"
-SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 
 INSTALLED_APPS_DJANGO_PLUGINS = (
     ### Django plugins

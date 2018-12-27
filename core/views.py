@@ -62,7 +62,7 @@ from core.common.models import JediWorkQueue
 from core.common.models import RequestStat, BPUser, Visits, BPUserSettings, AllRequests
 from core.compare.modelsCompare import ObjectsComparison
 from core.art.modelsART import ARTTests
-#from core.filebrowser.ruciowrapper import ruciowrapper
+from core.filebrowser.ruciowrapper import ruciowrapper
 
 from core.settings.local import dbaccess
 from core.settings.local import PRODSYS
@@ -238,8 +238,8 @@ def login_customrequired(function):
           # else:
           #     return function(request, *args, **kwargs)
           return HttpResponseRedirect('/login/?next='+request.get_full_path())
-  wrap.__doc__= function.__doc__
-  wrap.__name__= function.__name__
+  wrap.__doc__ = function.__doc__
+  wrap.__name__ = function.__name__
   return wrap
 
 @login_customrequired
@@ -1836,7 +1836,9 @@ def siteSummaryDict(sites):
         itemd['field'] = f
         iteml = []
         kys = sumd[f].keys()
-        kys = sorted(kys)
+
+        kys = sorted(kys, key=lambda x: (x is None, x))
+
         for ky in kys:
             iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
         itemd['list'] = iteml

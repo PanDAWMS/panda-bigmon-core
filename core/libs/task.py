@@ -177,7 +177,7 @@ def job_summary_for_task(request, query, pandaSites, statelist, extra="(1=1)", i
     # creating nevents piechart
     if 'nevents' in plotsDict and 'sites' in plotsDict['nevents'] and len(plotsDict['nevents']['sites']) > 0:
         plotsDict['neventsbysite'] = {}
-        for site, neventslist in plotsDict['nevents']['sites'].iteritems():
+        for site, neventslist in plotsDict['nevents']['sites'].items():
             plotsDict['neventsbysite'][str(site)] = sum(neventslist)
 
 
@@ -185,7 +185,7 @@ def job_summary_for_task(request, query, pandaSites, statelist, extra="(1=1)", i
     nbinsmax = 100
     for pname in plotsNames:
         rawdata = []
-        for k, d in plotsDict[pname]['sites'].iteritems():
+        for k, d in plotsDict[pname]['sites'].items():
             rawdata.extend(d)
         if len(rawdata) > 0:
             plotsDict[pname]['stats'] = []
@@ -448,7 +448,7 @@ def job_summary_for_task_light(taskrec):
     cur.close()
 
     jsCount = dict((state, count) for state, count in js_count)
-    for state, count in jsCount.iteritems():
+    for state, count in jsCount.items():
         if state in statelistlight:
             jobSummaryLight[state] += count
 

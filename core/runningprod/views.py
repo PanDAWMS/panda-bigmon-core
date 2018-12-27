@@ -52,7 +52,7 @@ def saveNeventsByProcessingType(neventsByProcessingType, qtime):
 
     try:
         with transaction.atomic():
-            for pt, data in neventsByProcessingType.iteritems():
+            for pt, data in neventsByProcessingType.items():
                 row = ProdNeventsHistory(processingtype=pt,
                                          neventstotal=data['total'],
                                          neventsused=data['used'],
@@ -816,9 +816,9 @@ def prodNeventsTrend(request):
 
 
 
-    for key, value in data.iteritems():
+    for key, value in data.items():
         newDict = {'state': key, 'values':[]}
-        for ts, nevents in value.iteritems():
+        for ts, nevents in value.items():
             newDict['values'].append({'timestamp': ts, 'nevents':nevents})
         newDict['values'] = sorted(newDict['values'], key=lambda k: k['timestamp'])
         plot_data.append(newDict)

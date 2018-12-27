@@ -40,7 +40,7 @@ def world_computingsitesummary(context, kwargs):
     hours = kwargs['hours']
     retStr = """"""
 
-    for computingsite, computingsiteval in nuclval.iteritems():
+    for computingsite, computingsiteval in nuclval.items():
         retStr += """<tr><td>{0}</td>""".format(computingsite)
         for jobstatus in statelist:
             retStr += """<td """

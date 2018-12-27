@@ -135,7 +135,7 @@ def save_subresults(subResultsDict):
     """
     try:
         with transaction.atomic():
-            for pandaid, data in subResultsDict.iteritems():
+            for pandaid, data in subResultsDict.items():
                 row = ARTSubResult(pandaid=pandaid,
                                    subresult=data)
                 row.save()

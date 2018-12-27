@@ -650,12 +650,12 @@ def artJobs(request):
 
     # transform dict of tests to list of test and sort alphabetically
     artjobslist = {}
-    for i, idict in artjobsdict.iteritems():
+    for i, idict in artjobsdict.items():
         artjobslist[i] = {}
-        for j, jdict in idict.iteritems():
+        for j, jdict in idict.tems():
             artjobslist[i][j] = []
-            for t, tdict in jdict.iteritems():
-                for ntg, jobs in tdict.iteritems():
+            for t, tdict in jdict.items():
+                for ntg, jobs in tdict.items():
                     tdict[ntg]['jobs'] = sorted(jobs['jobs'], key=lambda x: x['ntagtime'])
                 tdict['testname'] = t
                 if len(testdirectories[i][j]) > 0:
@@ -1079,9 +1079,9 @@ def sendArtReport(request):
 
 
     ### dict -> list & ordering
-    for branchname, sumdict in artjobsdictbranch.iteritems():
+    for branchname, sumdict in artjobsdictbranch.items():
         sumdict['packages'] = sorted(artjobsdictbranch[branchname]['packages'].values(), key=lambda k: k['name'])
-    for packagename, sumdict in artjobsdictpackage.iteritems():
+    for packagename, sumdict in artjobsdictpackage.items():
         sumdict['packages'] = sorted(artjobsdictpackage[packagename]['branches'].values(), key=lambda k: k['name'])
 
     summaryPerBranch = sorted(artjobsdictbranch.values(), key=lambda k: k['branch'], reverse=True)
