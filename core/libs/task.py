@@ -191,7 +191,10 @@ def job_summary_for_task(request, query, pandaSites, statelist, extra="(1=1)", i
             plotsDict[pname]['stats'] = []
             plotsDict[pname]['stats'].append(np.average(rawdata))
             plotsDict[pname]['stats'].append(np.std(rawdata))
-            bins, ranges = np.histogram(rawdata, bins='auto')
+            try:
+                bins, ranges = np.histogram(rawdata, bins='auto')
+            except MemoryError:
+                bins, ranges = np.histogram(rawdata, bins=nbinsmax)
             if len(ranges) > nbinsmax + 1:
                 bins, ranges = np.histogram(rawdata, bins=nbinsmax)
             plotsDict[pname]['ranges'] = list(np.ceil(ranges))
