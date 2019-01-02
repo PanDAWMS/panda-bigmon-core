@@ -7984,17 +7984,17 @@ def taskInfo(request, jeditaskid=0):
     # Temporary protection
     if data is not None:
         data = json.loads(data)
-
-        if 'built' in data:
+        if 'built' in data and data['built'] is not None:
             builtDate = datetime.strptime('2018-'+data['built'], defaultDatetimeFormat)
             if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
                 data = None
                 setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 1)
-
-        if 'eventservice' in data and data['eventservice']  == True and (
-                'version' not in request.session['requestParams'] or (
-                    'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old' )):
-            return redirect('/tasknew/'+str(jeditaskid))
+        if data is not None:
+            if 'eventservice' in data and data['eventservice'] is not None:
+                if data['eventservice'] == True and (
+                    'version' not in request.session['requestParams'] or (
+                        'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old' )):
+                    return redirect('/tasknew/'+str(jeditaskid))
 
     if data is not None:
         try:
