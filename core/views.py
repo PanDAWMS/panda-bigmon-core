@@ -7981,80 +7981,80 @@ def taskInfo(request, jeditaskid=0):
     # data = None
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
 
-    # Temporary protection
     if data is not None:
         data = json.loads(data)
-        if 'built' in data and data['built'] is not None:
-            builtDate = datetime.strptime('2019-'+data['built'], defaultDatetimeFormat)
-            if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
-                data = None
-                setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 1)
         if data is not None:
+
+            if 'built' in data and data['built'] is not None:
+                builtDate = datetime.strptime('2019-'+data['built'], defaultDatetimeFormat)
+                if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
+                    data = None
+                    setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 1)
+
             if 'eventservice' in data and data['eventservice'] is not None:
                 if data['eventservice'] == True and (
                     'version' not in request.session['requestParams'] or (
                         'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old' )):
                     return redirect('/tasknew/'+str(jeditaskid))
 
-    if data is not None:
-        try:
-            data = deleteCacheTestData(request, data)
-        except: pass
-        doRefresh = False
+            try:
+                data = deleteCacheTestData(request, data)
+            except: pass
+            doRefresh = False
 
-        plotDict = {}
-        if 'plotsDict' in data:
-            oldPlotDict = json.loads(data['plotsDict'])
-            for plotName, plotData in oldPlotDict.iteritems():
-                if 'sites' in plotData and 'ranges' in plotData:
-                    plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
-                    for dictSiteName, listValues in plotData['sites'].iteritems():
-                        try:
-                            plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
-                            plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
-                        except:
-                            pass
-            data['plotsDict'] = plotDict
+            plotDict = {}
+            if 'plotsDict' in data:
+                oldPlotDict = json.loads(data['plotsDict'])
+                for plotName, plotData in oldPlotDict.iteritems():
+                    if 'sites' in plotData and 'ranges' in plotData:
+                        plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
+                        for dictSiteName, listValues in plotData['sites'].iteritems():
+                            try:
+                                plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
+                                plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
+                            except:
+                                pass
+                data['plotsDict'] = plotDict
 
-        #We still want to refresh tasks if request came from central crawler and task not in the frozen state
-        if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
-                data['task'] and data['task']['status'] not in ['broken', 'aborted']):
-            doRefresh = True
+            #We still want to refresh tasks if request came from central crawler and task not in the frozen state
+            if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
+                    data['task'] and data['task']['status'] not in ['broken', 'aborted']):
+                doRefresh = True
 
-        # we check here whether task status didn't changed for both (user or crawler request)
-        if data['task'] and data['task']['status'] and data['task']['status'] in ['done', 'finished', 'failed']:
-            if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
-                request.session['requestParams']['jeditaskid'])
-            if jeditaskid != 0:
-                query = {'jeditaskid': jeditaskid}
-                values = ['status','superstatus','modificationtime']
-                tasks = JediTasks.objects.filter(**query).values(*values)[:1]
-                if len(tasks) > 0:
-                    task = tasks[0]
-                    if (task['status'] == data['task']['status'] and task['superstatus'] == data['task']['superstatus'] and
-                                task['modificationtime'].strftime(defaultDatetimeFormat) == data['task']['modificationtime']):
-                        doRefresh = False
+            # we check here whether task status didn't changed for both (user or crawler request)
+            if data['task'] and data['task']['status'] and data['task']['status'] in ['done', 'finished', 'failed']:
+                if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
+                    request.session['requestParams']['jeditaskid'])
+                if jeditaskid != 0:
+                    query = {'jeditaskid': jeditaskid}
+                    values = ['status','superstatus','modificationtime']
+                    tasks = JediTasks.objects.filter(**query).values(*values)[:1]
+                    if len(tasks) > 0:
+                        task = tasks[0]
+                        if (task['status'] == data['task']['status'] and task['superstatus'] == data['task']['superstatus'] and
+                                    task['modificationtime'].strftime(defaultDatetimeFormat) == data['task']['modificationtime']):
+                            doRefresh = False
+                        else:
+                            doRefresh = True
                     else:
                         doRefresh = True
+            # doRefresh = True
+
+            ### This is a temporary fix in order of avoiding 500 error for cached tasks not compartible to a new template
+            if not isinstance(data['jobscoutids']['ramcountscoutjob'], list):
+                if 'ramcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['ramcountscoutjob']
+                if 'iointensityscoutjob' in data['jobscoutids']: del data['jobscoutids']['iointensityscoutjob']
+                if 'outdiskcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['outdiskcountscoutjob']
+
+            if not doRefresh:
+                data['request'] = request
+                if data['eventservice'] == True:
+                    response = render_to_response('taskInfoES.html', data, content_type='text/html')
                 else:
-                    doRefresh = True
-        # doRefresh = True
-
-        ### This is a temporary fix in order of avoiding 500 error for cached tasks not compartible to a new template
-        if not isinstance(data['jobscoutids']['ramcountscoutjob'], list):
-            if 'ramcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['ramcountscoutjob']
-            if 'iointensityscoutjob' in data['jobscoutids']: del data['jobscoutids']['iointensityscoutjob']
-            if 'outdiskcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['outdiskcountscoutjob']
-
-        if not doRefresh:
-            data['request'] = request
-            if data['eventservice'] == True:
-                response = render_to_response('taskInfoES.html', data, content_type='text/html')
-            else:
-                response = render_to_response('taskInfo.html', data, content_type='text/html')
-            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-            endSelfMonitor(request)
-            return response
+                    response = render_to_response('taskInfo.html', data, content_type='text/html')
+                patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+                endSelfMonitor(request)
+                return response
 
     if 'taskname' in request.session['requestParams'] and request.session['requestParams']['taskname'].find('*') >= 0:
         return taskList(request)
@@ -8416,7 +8416,7 @@ def taskInfo(request, jeditaskid=0):
 
 
     if taskrec:
-        
+
         if 'tasktype' in taskrec and taskrec['tasktype'] == 'anal':
             tmcj_list = get_top_memory_consumers(taskrec)
             if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
