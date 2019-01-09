@@ -6,7 +6,7 @@ import json
 import copy
 import itertools, random
 import numpy as np
-import string as strm
+
 import math
 
 from urllib.parse import urlencode, unquote, urlparse, urlunparse, parse_qs
@@ -67,7 +67,7 @@ from core.filebrowser.ruciowrapper import ruciowrapper
 from core.settings.local import dbaccess
 from core.settings.local import PRODSYS
 from core.settings.local import ES
-import string as strm
+
 
 
 from core.TaskProgressPlot import TaskProgressPlot
@@ -313,7 +313,7 @@ def getObjectStoresNames():
 def escapeInput(strToEscape):
     charsToEscape = '$%^&()[]{};<>?\`~+%\'\"'
     charsToReplace = '_' * len(charsToEscape)
-    tbl = strm.maketrans(charsToEscape, charsToReplace)
+    tbl = str.maketrans(charsToEscape, charsToReplace)
     strToEscape = encoding.smart_str(strToEscape, encoding='ascii', errors='ignore')
     strToEscape = strToEscape.translate(tbl)
     return strToEscape
@@ -1077,7 +1077,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         extraQueryString = ''
 
 
-    wildSearchFields = (set(wildSearchFields) & set(request.session['requestParams'].keys()))
+    wildSearchFields = (set(wildSearchFields) & set(list(request.session['requestParams'].keys())))
     wildSearchFields1 = set()
     for currenfField in wildSearchFields:
         if not (currenfField.lower() == 'transformation'):
@@ -1765,7 +1765,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         itemd = {}
         itemd['field'] = f
         iteml = []
-        kys = sumd[f].keys()
+        kys = list(sumd[f].keys())
         if f == 'minramcount':
             newvalues = {}
             for ky in kys:
@@ -1893,7 +1893,7 @@ def userSummaryDict(jobs):
             'nactivated']
         sumd[user]['cputime'] = "%d" % float(sumd[user]['cputime'])
     ## convert to list ordered by username
-    ukeys = sumd.keys()
+    ukeys = list(sumd.keys())
     ukeys = sorted(ukeys)
     suml = []
     for u in ukeys:
@@ -2227,7 +2227,7 @@ def jobSummaryDictProto(request, cutsummary, requestToken):
             summaryhash[row[0]] = item
     # second checkpoint
 
-    shkeys = summaryhash.keys()
+    shkeys = list(summaryhash.keys())
     sumd = []
     jobsToList = set()
     njobs = 0
@@ -4591,10 +4591,10 @@ def userList(request):
                 udict['latestjob'] = u.latestjob.strftime(defaultDatetimeFormat)
                 udict['lastmod'] = u.lastmod.strftime(defaultDatetimeFormat)
             userdbl.append(udict)
-
-            if u.njobsa > 0: anajobs += u.njobsa
-            if u.njobsa >= 1000: n1000 += 1
-            if u.njobsa >= 10000: n10k += 1
+            if u.njobsa is not None:
+                if u.njobsa > 0: anajobs += u.njobsa
+                if u.njobsa >= 1000: n1000 += 1
+                if u.njobsa >= 10000: n10k += 1
             if u.latestjob != None:
                 latest = timezone.now() - u.latestjob
                 if latest.days < 4: nrecent3 += 1
@@ -5984,7 +5984,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         for state in sitestatelist:
             clouds[cloud]['statelist'].append(clouds[cloud]['states'][state])
         sites = clouds[cloud]['sites']
-        sitekeys = sites.keys()
+        sitekeys = list(sites.keys())
         sitekeys = sorted(sitekeys)
         cloudsummary = []
         for site in sitekeys:
@@ -6074,11 +6074,11 @@ def dashTaskSummary(request, hours, limit=999999, view='all'):
         tasks[taskid]['states'][jobstatus]['count'] += count
     if view == 'analysis':
         ## Show only tasks starting with 'user.'
-        kys = tasks.keys()
+        kys = list(tasks.keys())
         for t in kys:
             if not str(tasks[t]['name'].encode('ascii', 'ignore')).startswith('user.'): del tasks[t]
     ## Convert dict to summary list
-    taskkeys = tasks.keys()
+    taskkeys = list(tasks.keys())
     taskkeys = sorted(taskkeys)
     fullsummary = []
     for taskid in taskkeys:
@@ -6668,7 +6668,7 @@ def dashboard(request, view='production'):
             vos[vo]['count'] += count
             vos[vo]['states'][jobstatus]['count'] += count
         ## Convert dict to summary list
-        vokeys = vos.keys()
+        vokeys = list(vos.keys())
         vokeys = sorted(vokeys)
         vosummary = []
         for vo in vokeys:
@@ -12020,7 +12020,8 @@ def addJobMetadata(jobs, require=False):
     print ('adding metadata')
     pids = []
     for job in jobs:
-        if (job['jobstatus'] == 'failed' or require): pids.append(job['pandaid'])
+        if (job['jobstatus'] == 'failed' or require):
+            pids.append(job['pandaid'])
     query = {}
     query['pandaid__in'] = pids
     mdict = {}

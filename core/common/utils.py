@@ -155,7 +155,7 @@ class QuerySetChain(object):
         if type(ndx) is slice:
             return list(islice(self._all(), ndx.start, ndx.stop, ndx.step or 1))
         else:
-            return islice(self._all(), ndx, ndx + 1).next()
+            return next(islice(self._all(), ndx, ndx + 1))
 
     def get(self):
         res = []
