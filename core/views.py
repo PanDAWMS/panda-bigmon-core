@@ -216,7 +216,7 @@ standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'cor
                        'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
                        'reqid', 'ramcount', 'nucleus', 'eventservice', 'gshare']
 standard_errorfields = ['cloud', 'computingsite', 'eventservice', 'produsername', 'jeditaskid', 'jobstatus',
-                        'processingtype', 'prodsourcelabel', 'specialhandling','taskid' ,'transformation', 'workinggroup']
+                        'processingtype', 'prodsourcelabel', 'specialhandling','taskid' ,'transformation', 'workinggroup','reqid']
 
 VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
@@ -9949,7 +9949,13 @@ def errorSummary(request):
 
     if not testjobs: query['jobstatus__in'] = ['failed', 'holding']
     jobs = []
-    values = 'eventservice', 'produsername','produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid','taskid', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'currentpriority', 'computingelement','gshare'
+    values = 'eventservice', 'produsername','produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime',\
+             'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', \
+             'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid','taskid', 'starttime', \
+             'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', \
+             'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',\
+             'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',\
+             'destinationse', 'currentpriority', 'computingelement','gshare','reqid'
     print ("step3-1")
     print (str(datetime.now()))
 
@@ -10080,6 +10086,7 @@ def errorSummary(request):
     else:
         jobsErrorsTotalCount = int(math.ceil((jobsErrorsTotalCount+10000)/10000)*10000)
     request.session['max_age_minutes'] = 6
+
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
         nosorturl = removeParam(request.get_full_path(), 'sortby')
@@ -10170,6 +10177,9 @@ def filterErrorData(request, data):
         # userPreferences = defaultErrorsPreferences
     userPreferences['defaulttables'] = defaultErrorsPreferences['tables']
     userPreferences['defaultjobattr'] = defaultErrorsPreferences['jobattr']
+   ###TODO Temporary fix. Need to redesign
+    userPreferences['jobattr'].append('reqid')
+
     data['userPreferences'] = userPreferences
     if 'tables' in userPreferences:
         if 'jobattrsummary' in userPreferences['tables']:
@@ -10180,7 +10190,7 @@ def filterErrorData(request, data):
                         if attr == field['field']:
                             sumd_new.append(field)
                             continue
-                data['sumd'] = sumd_new
+                data['sumd'] = sorted(sumd_new, key=lambda x: x['field'])
         else:
             try:
                 del data['sumd']
