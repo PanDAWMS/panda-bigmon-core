@@ -3964,10 +3964,14 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         fileq = fileq.values('pandaid', 'type')
         if fileq and len(fileq) > 0:
             pandaid = fileq[0]['pandaid']
+            if len(fileq) > 1:
+                pandaid = fileq['pandaid']
         else:
             fileq = FilestableArch.objects.filter(**fquery).values('pandaid', 'type')
             if fileq and len(fileq) > 0:
                 pandaid = fileq[0]['pandaid']
+                if len(fileq) > 1:
+                    pandaid = fileq['pandaid']
     if pandaid:
         jobid = pandaid
         try:
@@ -5243,7 +5247,10 @@ def siteInfo(request, site=''):
 
 
 def updateCacheWithListOfMismatchedCloudSites(mismatchedSites):
-    listOfCloudSitesMismatched = cache.get('mismatched-cloud-sites-list')
+    try:
+        listOfCloudSitesMismatched = cache.get('mismatched-cloud-sites-list')
+    except:
+        listOfCloudSitesMismatched = None
     if (listOfCloudSitesMismatched is None) or (len(listOfCloudSitesMismatched) == 0):
         cache.set('mismatched-cloud-sites-list', mismatchedSites, 31536000)
     else:
@@ -9819,7 +9826,7 @@ def getTaskName(tasktype, taskid):
 tcount = {}
 lock = Lock()
 
-def totalCount(panJobList, query, wildCardExtension,dkey):
+def totalCount(panJobList, query, wildCardExtension, dkey):
     print ('Thread started')
     lock.acquire()
     try:

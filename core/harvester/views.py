@@ -574,7 +574,7 @@ def harvesters(request):
             defaulthours)
             URL += '&hours=' + str(request.session['requestParams']['hours'])
         else:
-            hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) AS DATE)) """ % (
+            hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) AS DATE) """ % (
                 defaulthours)
         if 'days' in request.session['requestParams']:
             days = """AND submittime  > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3)  AS DATE) """ % (
