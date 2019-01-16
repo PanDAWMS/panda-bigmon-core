@@ -3957,18 +3957,21 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         fquery = {}
         fquery['lfn'] = request.session['requestParams']['creator']
         fquery['type'] = 'output'
-        fileq = Filestable4.objects.filter(**fquery)
-        fileq = fileq.values('pandaid', 'type')
+        fileq = []
+        fileq.extend(Filestable4.objects.filter(**fquery).values('pandaid', 'type', 'status'))
         if fileq and len(fileq) > 0:
-            pandaid = fileq[0]['pandaid']
-            if len(fileq) > 1:
-                pandaid = fileq['pandaid']
-        else:
-            fileq = FilestableArch.objects.filter(**fquery).values('pandaid', 'type')
+            try:
+                pandaid = next(filei['pandaid'] for filei in fileq if filei['status'] != 'failed')
+            except:
+                pandaid = None
+        if not pandaid and fileq:
+            fileq.extend(FilestableArch.objects.filter(**fquery).values('pandaid', 'type', 'status'))
             if fileq and len(fileq) > 0:
-                pandaid = fileq[0]['pandaid']
-                if len(fileq) > 1:
-                    pandaid = fileq['pandaid']
+                try:
+                    pandaid = next(filei['pandaid'] for filei in fileq if filei['status'] != 'failed')
+                except:
+                    pandaid = None
+
     if pandaid:
         jobid = pandaid
         try:
