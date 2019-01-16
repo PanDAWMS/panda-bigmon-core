@@ -3959,12 +3959,12 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         fquery['type'] = 'output'
         fileq = []
         fileq.extend(Filestable4.objects.filter(**fquery).values('pandaid', 'type', 'status'))
-        if fileq and len(fileq) > 0:
+        if len(fileq) > 0:
             try:
                 pandaid = next(filei['pandaid'] for filei in fileq if filei['status'] != 'failed')
             except:
                 pandaid = None
-        if not pandaid and fileq:
+        if not pandaid or len(fileq) == 0:
             fileq.extend(FilestableArch.objects.filter(**fquery).values('pandaid', 'type', 'status'))
             if fileq and len(fileq) > 0:
                 try:
