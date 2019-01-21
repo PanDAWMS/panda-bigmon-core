@@ -1786,7 +1786,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 kys = []
                 for sk in skys:
                     kys.append(sk['key'])
-            elif f in ('attemptnr', 'jeditaskid', 'taskid','noutputdatafiles','actualcorecount'):
+            elif f in ('attemptnr', 'jeditaskid', 'taskid','noutputdatafiles','actualcorecount','corecount'):
                 kys = sorted(kys, key=lambda x: int(x))
             else:
                 kys = sorted(kys)
@@ -3087,11 +3087,11 @@ def jobList(request, mode=None, param=None):
             queryFrozenStates = []
             if 'jobstatus' in request.session['requestParams']:
                 if isEventTask:
-                    queryFrozenStates = filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
-                                           ['finished', 'failed', 'cancelled', 'closed', 'merging'])
+                    queryFrozenStates = list(filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
+                                           ['finished', 'failed', 'cancelled', 'closed', 'merging']))
                 else:
-                    queryFrozenStates = filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
-                                           ['finished', 'failed', 'cancelled', 'closed'])
+                    queryFrozenStates = list(filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
+                                           ['finished', 'failed', 'cancelled', 'closed']))
             ##hard limit is set to 2K
             if ('jobstatus' not in request.session['requestParams'] or len(queryFrozenStates) > 0):
 
@@ -8018,7 +8018,7 @@ def taskInfo(request, jeditaskid=0):
 
         plotDict = {}
         if 'plotsDict' in data:
-            oldPlotDict = json.loads(data['plotsDict'])
+            oldPlotDict = data['plotsDict']
             for plotName, plotData in oldPlotDict.items():
                 if 'sites' in plotData and 'ranges' in plotData:
                     plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
@@ -8501,7 +8501,7 @@ def taskInfo(request, jeditaskid=0):
             'showtaskprof': showtaskprof,
             'jobsummaryESMerge': jobsummaryESMerge,
             'jobsummaryPMERGE': jobsummaryPMERGE,
-            'plotsDict': json.dumps(plotsDict),
+            'plotsDict': plotsDict,
             'taskbrokerage': taskbrokerage,
             'jobscoutids' : jobScoutIDs,
             'request': request,
@@ -9468,7 +9468,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
 
         plotDict = {}
         if 'plotsDict' in data:
-            oldPlotDict = json.loads(data['plotsDict'])
+            oldPlotDict = data['plotsDict']
             for plotName, plotData in oldPlotDict.items():
                 if 'sites' in plotData and 'ranges' in plotData:
                     plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
@@ -9527,7 +9527,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         'jobsummary': jobsummary,
         'jobsummaryMerge': jobsummaryMerge,
         'jobScoutIDs': jobScoutIDs,
-        'plotsDict': json.dumps(plotsDict),
+        'plotsDict': plotsDict,
     }
     setCacheEntry(request, 'jobSummaryForTask'+str(jeditaskid)+mode, json.dumps(alldata, cls=DateEncoder), 60 * 10, isData=True)
 
