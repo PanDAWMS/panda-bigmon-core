@@ -2407,9 +2407,9 @@ def jobListP(request, mode=None, param=None):
     # Get request token. This sheme of getting tokens should be more sophisticated (at least not use sequential numbers)
     requestToken = 0
 
-    if len(request.GET.values()) == 0:
+    if len(list(request.GET.values())) == 0:
         requestToken = -1
-    elif len(request.GET.values()) == 1 and 'json' in request.GET:
+    elif len(list(request.GET.values())) == 1 and 'json' in request.GET:
         requestToken = -1
     else:
         sqlRequest = "SELECT ATLAS_PANDABIGMON.PANDAMON_REQUEST_TOKEN_SEQ.NEXTVAL as my_req_token FROM dual;"
@@ -5555,8 +5555,7 @@ def wnInfo(request, site, wnname='all'):
 
     ## Convert dict to summary list
     wnkeys = wns.keys()
-    wnkeys.sorted\
-        ()
+    wnkeys = sorted(wnkeys)
     wntot = len(wnkeys)
     fullsummary = []
 
@@ -8846,7 +8845,7 @@ def taskInfoNew(request, jeditaskid=0):
     outctrs.extend(JediDatasets.objects.filter(**cquery).values_list('containername', flat=True).distinct())
     if len(outctrs) == 0 or outctrs[0] == '':
         outctrs = None
-    if isinstance(outctrs, np.basestring):
+    if isinstance(outctrs, str):
        outctrs = [outctrs]
 
     # getBrokerageLog(request)
@@ -9795,8 +9794,8 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         itemd = {}
         itemd['field'] = f
         iteml = []
-        kys = sumd[f].keys()
-        errkeys = sorted(errkeys)
+        kys = sorted(sumd[f].keys())
+
         for ky in kys:
             iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
         itemd['list'] = iteml
@@ -11407,7 +11406,7 @@ def loadFileList(request, datasetid=-1):
 
     sortOrder = 'lfn'
 
-    if datasetid > 0:
+    if int(datasetid) > 0:
         query['datasetid'] = datasetid
         files.extend(JediDatasetContents.objects.filter(**query).values().order_by(sortOrder)[:limit])
 
