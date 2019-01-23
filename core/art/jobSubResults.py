@@ -114,15 +114,15 @@ def subresults_getter(url_params_str):
 
 
     # clean up ART test logs from media/filebrowser/ where guid is folder name
-    guid = None
-    try:
-        guid = url_params_str.split('=')[1].split('&')[0]
-    except:
-        _logger.exception('Exception was caught while getting GUID by parsing URL params str: {}'.format(url_params_str))
-        pass
-    if guid is not None:
-        urlClean = "http://" + HOSTNAME + '/filebrowser/delete/?json=1&guid=' + guid
-        http.request('GET', urlClean)
+    # guid = None
+    # try:
+    #     guid = url_params_str.split('=')[1].split('&')[0]
+    # except:
+    #     _logger.exception('Exception was caught while getting GUID by parsing URL params str: {}'.format(url_params_str))
+    #     pass
+    # if guid is not None:
+    #     urlClean = "http://" + HOSTNAME + '/filebrowser/delete/?json=1&guid=' + guid
+    #     http.request('GET', urlClean)
 
     return {pandaid: subresults_dict}
 
