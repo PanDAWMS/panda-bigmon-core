@@ -561,14 +561,14 @@ def artJobs(request):
                     jobdict['testresult'] = subresults
                     jobdict['testdirectory'] = testdirectory
 
-                    if not testdirectory in testdirectories[job['package']][job['branch']] and testdirectory is not None and isinstance(testdirectory, basestring):
+                    if not testdirectory in testdirectories[job['package']][job['branch']] and testdirectory is not None and isinstance(testdirectory, str):
                         testdirectories[job['package']][job['branch']].append(testdirectory)
 
                     artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
 
                     if job['outputcontainer'] is not None and len(job['outputcontainer']) > 0:
                         for oc in job['outputcontainer'].split(','):
-                            if not oc in outputcontainers[job['package']][job['branch']] and oc is not None and isinstance(oc, basestring):
+                            if not oc in outputcontainers[job['package']][job['branch']] and oc is not None and isinstance(oc, str):
                                 outputcontainers[job['package']][job['branch']].append(oc)
 
 
@@ -624,7 +624,7 @@ def artJobs(request):
                     jobdict['testresult'] = subresults
                     jobdict['testdirectory'] = testdirectory
 
-                    if not testdirectory in testdirectories[job['branch']][job['package']] and testdirectory is not None and isinstance(testdirectory, basestring):
+                    if not testdirectory in testdirectories[job['branch']][job['package']] and testdirectory is not None and isinstance(testdirectory, str):
                         testdirectories[job['branch']][job['package']].append(testdirectory)
 
                     artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
@@ -652,7 +652,7 @@ def artJobs(request):
     artjobslist = {}
     for i, idict in artjobsdict.items():
         artjobslist[i] = {}
-        for j, jdict in idict.tems():
+        for j, jdict in idict.items():
             artjobslist[i][j] = []
             for t, tdict in jdict.items():
                 for ntg, jobs in tdict.items():
