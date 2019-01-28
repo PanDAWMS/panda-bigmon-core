@@ -254,7 +254,7 @@ def event_summary_for_task(mode, query, transactionKeyDroppedJobs):
     :return: number of events in different states
     """
     eventservicestatelist = ['ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed',
-                             'fatal', 'merged']
+                             'fatal', 'merged', 'corrupted']
     eventslist = []
     essummary = dict((key, 0) for key in eventservicestatelist)
 

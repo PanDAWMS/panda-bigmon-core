@@ -1,7 +1,7 @@
-import AbstractTasksProvider
+from AbstractURLTasksProvider import AbstractURLTasksProvider
+import Queue
 
-
-class MainMenuURLs(AbstractTasksProvider):
+class MainMenuURLs(AbstractURLTasksProvider):
 
     BASIC_PRIORITY = 1
 
@@ -12,10 +12,10 @@ class MainMenuURLs(AbstractTasksProvider):
         return 2
 
     def getpayload(self):
-        urlsList = {}
+        urlsQueue = Queue.PriorityQueue(-1)
         with open('mainmenurls.txt') as urls:
             for line in urls:
                 line = line.rstrip('\r\n')
-                urlsList[line] = self.BASIC_PRIORITY
-        return urlsList
+                urlsQueue.put((self.BASIC_PRIORITY, line))
+        return urlsQueue
 
