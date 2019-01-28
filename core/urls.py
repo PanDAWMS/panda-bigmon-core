@@ -123,7 +123,7 @@ urlpatterns = [
 
 
     ### filebrowser
-    # re_path(r'^filebrowser/', include('core.filebrowser.urls'), name='filebrowser'),
+    re_path(r'^filebrowser/', include('core.filebrowser.urls'), name='filebrowser'),
     ### PanDA Brokerage Monitor
     re_path(r'^pbm/', include('core.pbm.urls'), name='pbm'),
     re_path(r'^status_summary/', include('core.status_summary.urls'), name='status_summary'),
