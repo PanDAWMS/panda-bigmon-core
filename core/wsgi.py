@@ -64,7 +64,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = DJANGO_SETTINGS_MODULE
 
 # Activate your virtual env
 activate_env = os.path.expanduser(virtualenvPath + '/bin/activate_this.py')
-execfile(activate_env, dict(__file__=activate_env))
+exec(open(activate_env).read(), dict(__file__=activate_env))
 
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
