@@ -37,7 +37,7 @@ except:
     # _logger.exception("Staying with default path: {}".format(path))
 
 # Add the site-packages of the chosen virtualenv to work with
-site.addsitedir(virtualenvPath + '/lib/python2.7/site-packages')
+site.addsitedir(virtualenvPath + '/lib/python3.7/site-packages')
 
 # Add the app's directory to the PYTHONPATH
 sys.path.append(path)
