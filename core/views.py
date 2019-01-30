@@ -3336,7 +3336,7 @@ def jobList(request, mode=None, param=None):
 
     # Here we getting extended data for site
     jobsToShow = jobs[:njobsmax]
-    from libs import exlib
+    from core.libs import exlib
     try:
         jobsToShow = exlib.fileList(jobsToShow)
     except Exception as e:
