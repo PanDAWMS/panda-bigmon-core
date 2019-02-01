@@ -8329,6 +8329,7 @@ def taskInfo(request, jeditaskid=0):
             if ds['masterid']: continue
             if not ds['nevents'] is None and int(ds['nevents']) > 0:
                 neventsTot += int(ds['nevents'])
+            if not ds['neventsused'] is None and int(ds['neventsused']) > 0:
                 neventsUsedTot += int(ds['neventsused'])
 
             if int(ds['nfiles']) > 0:
