@@ -169,7 +169,7 @@ statelist = ['defined', 'waiting', 'pending', 'assigned', 'throttled',
              'transferring', 'finished', 'failed', 'cancelled', 'merging', 'closed']
 sitestatelist = ['defined', 'waiting', 'assigned', 'throttled', 'activated', 'sent', 'starting', 'running', 'holding',
                  'merging', 'transferring', 'finished', 'failed', 'cancelled']
-eventservicestatelist = ['ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed', 'fatal','merged']
+eventservicestatelist = ['ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed', 'fatal','merged', 'corrupted']
 taskstatelist = ['registered', 'defined', 'assigning', 'ready', 'pending', 'scouting', 'scouted', 'running', 'prepared',
                  'done', 'failed', 'finished', 'aborting', 'aborted', 'finishing', 'topreprocess', 'preprocessing',
                  'tobroken', 'broken', 'toretry', 'toincexec', 'rerefine']
@@ -8332,6 +8332,7 @@ def taskInfo(request, jeditaskid=0):
             if ds['masterid']: continue
             if not ds['nevents'] is None and int(ds['nevents']) > 0:
                 neventsTot += int(ds['nevents'])
+            if not ds['neventsused'] is None and int(ds['neventsused']) > 0:
                 neventsUsedTot += int(ds['neventsused'])
 
             if int(ds['nfiles']) > 0:

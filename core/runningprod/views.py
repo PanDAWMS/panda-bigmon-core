@@ -414,7 +414,7 @@ def runningProdTasks(request):
     rjobs8coreTot = 0
     for task in task_list:
         task['rjobs'] = 0 if task['rjobs'] is None else task['rjobs']
-        task['percentage'] = round(100 * task['percentage'],1)
+        task['percentage'] = 0 if task['percentage'] is None else round(100 * task['percentage'],1)
         neventsTotSum += task['nevents'] if task['nevents'] is not None else 0
         neventsUsedTotSum += task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
         neventsToBeUsedTotSum += task['neventstobeused'] if 'neventstobeused' in task and task['neventstobeused'] is not None else 0
