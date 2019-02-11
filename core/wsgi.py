@@ -66,6 +66,14 @@ os.environ['DJANGO_SETTINGS_MODULE'] = DJANGO_SETTINGS_MODULE
 activate_env = os.path.expanduser(virtualenvPath + '/bin/activate_this.py')
 exec(open(activate_env).read(), dict(__file__=activate_env))
 
+from threading import Timer
+import requests
+
+def makeFirstRequest():
+    requests.get("http://127.0.0.1", params={'json':'1'})
+t = Timer(10.0, makeFirstRequest)
+t.start()
+
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
 
