@@ -2,7 +2,7 @@ from requests import ConnectionError, request
 from social_core.backends.oauth import BaseOAuth2
 import urllib
 import ssl
-
+from social_core.utils import url_add_parameters
 from social_core.exceptions import AuthMissingParameter, AuthStateMissing, AuthStateForbidden, AuthFailed
 
 import logging
@@ -22,7 +22,6 @@ class Cernauth2(BaseOAuth2):
         ('id', 'id'),
         ('expires', 'expires')
     ]
-    SSL_PROTOCOL = ssl.PROTOCOL_TLSv1
 
     def get_user_details(self, response):
          """Return user details from CERN account"""
@@ -63,37 +62,31 @@ class Cernauth2(BaseOAuth2):
         """Builds a simple User-Agent string to send in requests"""
         return 'social-auth-1.6.0'
 
+
     def request(self, url, method='GET', *args, **kwargs):
         logger = logging.getLogger('social')
-        logger.error('step 1')
         kwargs.setdefault('headers', {})
         if self.setting('VERIFY_SSL') is not None:
             kwargs.setdefault('verify', self.setting('VERIFY_SSL'))
         kwargs.setdefault('timeout', self.setting('REQUESTS_TIMEOUT') or
                                      self.setting('URLOPEN_TIMEOUT'))
-        logger.error('step 2')
         if self.SEND_USER_AGENT and 'User-Agent' not in kwargs['headers']:
             kwargs['headers']['User-Agent'] = self.setting('USER_AGENT') or \
                                               self.user_agent()
 
         try:
-            logger.error('step 3')
             if self.SSL_PROTOCOL:
-                logger.error('step 3-1')
                 session = SSLHttpAdapter.ssl_adapter_session(self.SSL_PROTOCOL)
-                logger.error('step 4')
                 response = session.request(method, url, *args, **kwargs)
-                logger.error('step 5')
             else:
-                logger.error('step 3-2')
+                if 'params' in kwargs:
+                    kwargs['data'] = kwargs['params']
+                    del kwargs['params']
                 response = request(method, url, *args, **kwargs)
-                logger.error('step 3-3')
         except ConnectionError as err:
             raise AuthFailed(self, str(err))
         response.raise_for_status()
-        logger.error('step 6')
         try:
-            logger.error('step 7')
             if self.message!='':
                 self.general_to_message(kwargs,response)
                 self.message_write()
