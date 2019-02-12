@@ -4269,7 +4269,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     dsfiles = []
     countOfInvocations = []
     ## If this is a JEDI job, look for job retries
-    if 'jeditaskid' in job and job['jeditaskid'] > 0:
+    if 'jeditaskid' in job and job['jeditaskid'] and job['jeditaskid'] > 0:
         print ("looking for retries")
         ## Look for retries of this job
 
