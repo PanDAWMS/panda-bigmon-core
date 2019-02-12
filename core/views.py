@@ -4879,7 +4879,7 @@ def userInfo(request, user=''):
         njobsmax = display_limit_jobs
         url_nolimit_jobs = request.get_full_path() + 'display_limit_jobs=' + str(len(jobs))
 
-
+    links = ''
     # getting most relevant links based on visit statistics
     if request.user.is_authenticated:
         userids = BPUser.objects.filter(email=request.user.email).values('id')
