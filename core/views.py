@@ -5121,7 +5121,7 @@ def get_panda_resource(siterec):
             #     # resourcesDictSites[data[cs]['siteid']] = data[cs]['panda_resource']
                 return data[cs]['panda_resource']
     except Exception as exc:
-        print (exc.message)
+        print (exc)
     #return resourcesDictSites
 
 @login_customrequired
