@@ -77,12 +77,15 @@ class Cernauth2(BaseOAuth2):
         try:
             logger.error('step 3')
             if self.SSL_PROTOCOL:
+                logger.error('step 3-1')
                 session = SSLHttpAdapter.ssl_adapter_session(self.SSL_PROTOCOL)
                 logger.error('step 4')
                 response = session.request(method, url, *args, **kwargs)
                 logger.error('step 5')
             else:
+                logger.error('step 3-2')
                 response = request(method, url, *args, **kwargs)
+                logger.error('step 3-3')
         except ConnectionError as err:
             raise AuthFailed(self, str(err))
         response.raise_for_status()
