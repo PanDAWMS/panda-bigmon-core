@@ -649,7 +649,7 @@ def get_agis_resources():
             resourcesDict.setdefault(data[cs]['resource_type'], []).append(cs)
             resourcesDictSites[data[cs]['siteid']] = data[cs]['resource_type']
     except Exception as exc:
-        print (exc.message)
+        print (exc)
     return resourcesDictSites
 
 def get_agis_fairsharepolicy():
@@ -665,7 +665,7 @@ def get_agis_fairsharepolicy():
             fairsharepolicyDict.setdefault(data[cs]['fairsharepolicy'], []).append(cs)
             fairsharepolicyDictSites[data[cs]['siteid']] = data[cs]['fairsharepolicy']
     except Exception as exc:
-        print (exc.message)
+        print (exc)
     return fairsharepolicyDictSites
 
 def resourcesType(request):

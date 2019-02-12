@@ -298,7 +298,7 @@ def getObjectStoresNames():
         r = http.request('GET', url)
         data = json.loads(r.data.decode('utf-8'))
     except Exception as exc:
-        print (exc.message)
+        print (exc)
         return
 
     for OSname, OSdescr in data.items():
@@ -5709,7 +5709,7 @@ def getUcoreSites():
                 sites.append(data[cs]['siteid'])
     except Exception as exc:
         sites = []
-        print (exc.message)
+        print (exc)
     return sites
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
