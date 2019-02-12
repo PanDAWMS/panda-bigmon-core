@@ -4864,7 +4864,7 @@ def userInfo(request, user=''):
         jobsets[jobset]['phigh'] = phigh
     jobsetl = []
     jsk = jobsets.keys()
-    jsk.sort(reverse=True)
+    jsk = sorted(jsk, reverse=True)
     for jobset in jsk:
         jobsetl.append(jobsets[jobset])
 

@@ -1,4 +1,4 @@
-from AbstractURLTasksProvider import AbstractURLTasksProvider
+from core.cachecontroller.AbstractURLTasksProvider import AbstractURLTasksProvider
 import Queue
 
 class MainMenuURLs(AbstractURLTasksProvider):
