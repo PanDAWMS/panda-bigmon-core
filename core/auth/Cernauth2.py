@@ -1,6 +1,7 @@
 from requests import ConnectionError, request
 from social_core.backends.oauth import BaseOAuth2
 import urllib
+import ssl
 
 from social_core.exceptions import AuthMissingParameter, AuthStateMissing, AuthStateForbidden, AuthFailed
 
@@ -21,6 +22,7 @@ class Cernauth2(BaseOAuth2):
         ('id', 'id'),
         ('expires', 'expires')
     ]
+    SSL_PROTOCOL = ssl.PROTOCOL_TLSv1
 
     def get_user_details(self, response):
          """Return user details from CERN account"""
