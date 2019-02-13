@@ -313,7 +313,7 @@
 {#            </ul>#}
 {#            </li>#}
 
-            {% if request.session.username %}
+            {% if "username" in request.session %}
             <li>
             <a href="{% url 'userInfo' request.session.username %}?display_limit=200">{{request.session.username}}</a>
             </li>

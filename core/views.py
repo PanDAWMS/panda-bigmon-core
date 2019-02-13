@@ -8,6 +8,8 @@ import itertools, random
 import numpy as np
 import string as strm
 import math
+from pandajob.SQLLookups import CastDate
+from django.db.models import DateTimeField
 from urllib import urlencode, unquote
 from urlparse import urlparse, urlunparse, parse_qs
 from django.utils.decorators import available_attrs
@@ -762,7 +764,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         query = {}
     else:
         query = {
-            'modificationtime__range': [startdate.strftime(defaultDatetimeFormat), enddate.strftime(defaultDatetimeFormat)]}
+            'modificationtime__castdate__range': [startdate.strftime(defaultDatetimeFormat), enddate.strftime(defaultDatetimeFormat)]}
 
     request.session['TFIRST'] = startdate  # startdate[:18]
     request.session['TLAST'] = enddate  # enddate[:18]
@@ -1120,7 +1122,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         extraJobParCondition += ')'
 
         pandaIDs = []
-        jobParamQuery = {'modificationtime__range': [startdate.strftime(defaultDatetimeFormat),
+        jobParamQuery = {'modificationtime__castdate__range': [startdate.strftime(defaultDatetimeFormat),
                                                      enddate.strftime(defaultDatetimeFormat)]}
 
         jobs = Jobparamstable.objects.filter(**jobParamQuery).extra(where=[extraJobParCondition]).values('pandaid')
@@ -1999,7 +2001,7 @@ def wgTaskSummary(request, fieldname='workinggroup', view='production', taskdays
     startdate = timezone.now() - timedelta(hours=hours)
     startdate = startdate.strftime(defaultDatetimeFormat)
     enddate = timezone.now().strftime(defaultDatetimeFormat)
-    query['modificationtime__range'] = [startdate, enddate]
+    query['modificationtime__castdate__range'] = [startdate, enddate]
     if fieldname == 'workinggroup': query['workinggroup__isnull'] = False
     if view == 'production':
         query['tasktype'] = 'prod'
@@ -2306,8 +2308,8 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     plsql += " REQUEST_TOKEN=>"+str(requestToken)+", "
     requestFields = {}
 
-    a = datetime.strptime(query['modificationtime__range'][0], defaultDatetimeFormat)
-    b = datetime.strptime(query['modificationtime__range'][1], defaultDatetimeFormat)
+    a = datetime.strptime(query['modificationtime__castdate__range'][0], defaultDatetimeFormat)
+    b = datetime.strptime(query['modificationtime__castdate__range'][1], defaultDatetimeFormat)
     delta = b - a
     range = delta.days+delta.seconds/86400.0
 
@@ -3074,8 +3076,8 @@ def jobList(request, mode=None, param=None):
         jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
     else:
         excludedTimeQuery = copy.deepcopy(query)
-        if ('modificationtime__range' in excludedTimeQuery and not 'date_to' in request.session['requestParams']):
-            del excludedTimeQuery['modificationtime__range']
+        if ('modificationtime__castdate__range' in excludedTimeQuery and not 'date_to' in request.session['requestParams']):
+            del excludedTimeQuery['modificationtime__castdate__range']
         jobs.extend(Jobsdefined4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
                     :request.session['JOB_LIMIT']].values(*values))
         jobs.extend(Jobsactive4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
@@ -3109,9 +3111,9 @@ def jobList(request, mode=None, param=None):
                 else:
                     request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
                     JOB_LIMITS = int(request.session['requestParams']['limit'])
-                if (((datetime.now() - datetime.strptime(query['modificationtime__range'][0],
+                if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
                                                          "%Y-%m-%d %H:%M:%S")).days > 1) or \
-                            ((datetime.now() - datetime.strptime(query['modificationtime__range'][1],
+                            ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
                                                                  "%Y-%m-%d %H:%M:%S")).days > 1)):
                     archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[
                            :request.session['JOB_LIMIT']].values(*values)
@@ -4005,7 +4007,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         jobs.extend(Jobsarchived4.objects.filter(**query).values())
         if len(jobs) == 0:
             try:
-                del query['modificationtime__range']
+                del query['modificationtime__castdate__range']
             except:
                 pass
             jobs.extend(Jobsarchived.objects.filter(**query).values())
@@ -4738,7 +4740,7 @@ def userInfo(request, user=''):
     if enddate == None:
         enddate = timezone.now()  # .strftime(defaultDatetimeFormat)
 
-    query['modificationtime__range'] = [startdate, enddate]
+    query['modificationtime__castdate__range'] = [startdate, enddate]
 
     if userQueryTask is None:
         query['username__icontains'] = user.strip()
@@ -4808,7 +4810,7 @@ def userInfo(request, user=''):
     #             startdate = timezone.now() - timedelta(hours=30*24)
     #             startdate = startdate.strftime(defaultDatetimeFormat)
     #             enddate = timezone.now().strftime(defaultDatetimeFormat)
-    #             query = { 'modificationtime__range' : [startdate, enddate] }
+    #             query = { 'modificationtime__castdate__range' : [startdate, enddate] }
     #             query['produsername'] = user
     #             jobsetids = Jobsarchived.objects.filter(**query).values('jobsetid').distinct()
 
@@ -5263,7 +5265,7 @@ def updateCacheWithListOfMismatchedCloudSites(mismatchedSites):
 def getListOfFailedBeforeSiteAssignedJobs(query, mismatchedSites, notime=True):
     jobs = []
     querynotime = copy.deepcopy(query)
-    if notime: del querynotime['modificationtime__range']
+    if notime: del querynotime['modificationtime__castdate__range']
     siteCondition = ''
     for site in mismatchedSites:
         siteQuery = Q(computingsite=site[0]) & Q(cloud=site[1])
@@ -5286,8 +5288,8 @@ def siteSummary(query, notime=True, extra="(1=1)"):
     querynotime = copy.deepcopy(query)
     summaryResources=[]
     if notime:
-        if 'modificationtime__range' in querynotime:
-            del querynotime['modificationtime__range']
+        if 'modificationtime__castdate__range' in querynotime:
+            del querynotime['modificationtime__castdate__range']
     # summary.extend(Jobsactive4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus').extra(where=[extra]).annotate(
     #     Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
     # summary.extend(Jobsdefined4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus').extra(where=[extra]).annotate(
@@ -5398,7 +5400,7 @@ def siteSummary(query, notime=True, extra="(1=1)"):
 def taskSummaryData(request, query):
     summary = []
     querynotime = query
-    del querynotime['modificationtime__range']
+    del querynotime['modificationtime__castdate__range']
     summary.extend(
         Jobsactive4.objects.filter(**querynotime).values('taskid', 'jobstatus').annotate(Count('jobstatus')).order_by(
             'taskid', 'jobstatus')[:request.session['JOB_LIMIT']])
@@ -5426,7 +5428,7 @@ def taskSummaryData(request, query):
 def voSummary(query):
     summary = []
     querynotime = query
-    del querynotime['modificationtime__range']
+    del querynotime['modificationtime__castdate__range']
     summary.extend(Jobsactive4.objects.filter(**querynotime).values('vo', 'jobstatus').annotate(Count('jobstatus')))
     summary.extend(Jobsdefined4.objects.filter(**querynotime).values('vo', 'jobstatus').annotate(Count('jobstatus')))
     summary.extend(Jobswaiting4.objects.filter(**querynotime).values('vo', 'jobstatus').annotate(Count('jobstatus')))
@@ -5437,7 +5439,7 @@ def voSummary(query):
 def wgSummary(query):
     summary = []
     querynotime = query
-    del querynotime['modificationtime__range']
+    del querynotime['modificationtime__castdate__range']
     summary.extend(
         Jobsdefined4.objects.filter(**querynotime).values('workinggroup', 'jobstatus').annotate(Count('jobstatus')))
     summary.extend(
@@ -5452,7 +5454,7 @@ def wgSummary(query):
 def wnSummary(query):
     summary = []
     querynotime = query
-    # del querynotime['modificationtime__range']    ### creates inconsistency with job lists. Stick to advertised 12hrs
+    # del querynotime['modificationtime__castdate__range']    ### creates inconsistency with job lists. Stick to advertised 12hrs
     summary.extend(Jobsactive4.objects.filter(**querynotime).values('modificationhost', 'jobstatus').annotate(
         Count('jobstatus')).order_by('modificationhost', 'jobstatus'))
     summary.extend(Jobsarchived4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
@@ -6134,11 +6136,11 @@ def preProcess(request):
 
 def dashTaskSummary_preprocess(request):
     #    query = setupView(request,hours=hours,limit=limit,opmode=view)
-    query = {'modificationtime__range': [timezone.now() - timedelta(hours=LAST_N_HOURS_MAX), timezone.now()]}
+    query = {'modificationtime__castdate__range': [timezone.now() - timedelta(hours=LAST_N_HOURS_MAX), timezone.now()]}
 
     tasksummarydata = []
     querynotime = query
-    del querynotime['modificationtime__range']
+    del querynotime['modificationtime__castdate__range']
     tasksummarydata.extend(
         Jobsactive4.objects.filter(**querynotime).values('taskid', 'jobstatus', 'computingsite', 'produsername',
                                                          'transexitcode', 'piloterrorcode', 'processingtype',
@@ -6708,8 +6710,8 @@ def dashboard(request, view='production'):
         cloudview = 'N/A'
     if view == 'production' and (cloudview == 'world' or cloudview == 'cloud'): #cloud view is the old way of jobs distributing;
         # just to avoid redirecting
-        if 'modificationtime__range' in query:
-            query = {'modificationtime__range': query['modificationtime__range']}
+        if 'modificationtime__castdate__range' in query:
+            query = {'modificationtime__castdate__range': query['modificationtime__castdate__range']}
         else:
             query = {}
         values = ['nucleus', 'computingsite', 'jobstatus']
@@ -6740,8 +6742,8 @@ def dashboard(request, view='production'):
         # This is done for compartibility with /jobs/ results
         excludedTimeQuery = copy.deepcopy(query)
         jobsarch4statuses = ['finished', 'failed', 'cancelled', 'closed']
-        if ('modificationtime__range' in excludedTimeQuery and not 'date_to' in request.session['requestParams']):
-            del excludedTimeQuery['modificationtime__range']
+        if ('modificationtime__castdate__range' in excludedTimeQuery and not 'date_to' in request.session['requestParams']):
+            del excludedTimeQuery['modificationtime__castdate__range']
         worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**excludedTimeQuery).values(*values).extra(where=[extra]).exclude(isarchive=1).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
         worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values).extra(where=[extra]).exclude(isarchive=0).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
         nucleus = {}
@@ -9981,8 +9983,8 @@ def errorSummary(request):
         Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
             *values))
 
-    if (((datetime.now() - datetime.strptime(query['modificationtime__range'][0], "%Y-%m-%d %H:%M:%S")).days > 1) or \
-                ((datetime.now() - datetime.strptime(query['modificationtime__range'][1],
+    if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0], "%Y-%m-%d %H:%M:%S")).days > 1) or \
+                ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
                                                      "%Y-%m-%d %H:%M:%S")).days > 1)):
         jobs.extend(
             Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
@@ -11243,7 +11245,7 @@ def fileInfo(request):
         files = JediDatasetContents.objects.filter(**query).values()
         if len(files) == 0:
             del query['creationdate__range']
-            query['modificationtime__range'] = [startdate.strftime(defaultDatetimeFormat),
+            query['modificationtime__castdate__range'] = [startdate.strftime(defaultDatetimeFormat),
                                                 enddate.strftime(defaultDatetimeFormat)]
             morefiles = Filestable4.objects.filter(**query).values()
             if len(morefiles) == 0:
@@ -12105,8 +12107,8 @@ def g4exceptions(request):
     jobs.extend(
         Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
             *values))
-    if (((datetime.now() - datetime.strptime(query['modificationtime__range'][0], "%Y-%m-%d %H:%M:%S")).days > 1) or \
-                ((datetime.now() - datetime.strptime(query['modificationtime__range'][1],
+    if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0], "%Y-%m-%d %H:%M:%S")).days > 1) or \
+                ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
                                                      "%Y-%m-%d %H:%M:%S")).days > 1)):
         jobs.extend(
             Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
