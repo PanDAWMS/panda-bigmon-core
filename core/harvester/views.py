@@ -40,7 +40,7 @@ def harvesterWorkersDash(request):
 
     tquery = {}
     tquery['status__in'] = ['missed', 'submitted', 'idle', 'finished', 'failed', 'cancelled']
-    tquery['lastupdate__range'] = query['modificationtime__range']
+    tquery['lastupdate__range'] = query['modificationtime__castdate__range']
     if 'harvesterid__in' in query:
         tquery['harvesterid__in'] = query['harvesterid__in']
 
@@ -93,7 +93,7 @@ def harvesterWorkList(request):
     else:
         tquery['status__in'] = ['missed', 'submitted', 'idle', 'finished', 'failed', 'cancelled']
 
-    tquery['lastupdate__range'] = query['modificationtime__range']
+    tquery['lastupdate__range'] = query['modificationtime__castdate__range']
 
     workerslist = []
     if len(tquery['status__in']) > 0:
