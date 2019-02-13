@@ -203,7 +203,7 @@ def errorsScattering(request):
         ( select siteid, cloud from ATLAS_PANDAMETA.SCHEDCONFIG  
         ) sc
         where j.computingsite = sc.siteid and j.ALLC > 0    
-    """ % (tmpTableName, transactionKey, query['modificationtime__range'][0], jcondition, tmpTableName, transactionKey, query['modificationtime__range'][0], jcondition)
+    """ % (tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition, tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition)
 
     new_cur.execute(querystr)
 
@@ -507,7 +507,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
             ) sc
             where j.computingsite = sc.siteid AND j.ALLC > 0  AND %s
             group by jeditaskid, COMPUTINGSITE, REQID, cloud
-    """ % (tmpTableName, transactionKey, query['modificationtime__range'][0], jcondition, tmpTableName, transactionKey, query['modificationtime__range'][0], jcondition, condition)
+    """ % (tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition, tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition, condition)
 
     new_cur.execute(querystr)
 

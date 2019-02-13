@@ -211,7 +211,7 @@ def build_query(GET_parameters):
         f_atlas_site, f_status = configure(GET_parameters)
 
     ### filter logdate__range
-    query['modificationtime__range'] = [starttime, endtime]
+    query['modificationtime__castdate__range'] = [starttime, endtime]
 
     ### filter mcp_cloud
     mcp_cloud_query, mcp_cloud_exclude_query = \

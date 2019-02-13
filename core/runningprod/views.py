@@ -383,7 +383,7 @@ def runningProdTasks(request):
             startdate = timezone.now() - timedelta(hours=hours)
             startdate = startdate.strftime(defaultDatetimeFormat)
             enddate = timezone.now().strftime(defaultDatetimeFormat)
-            tquery['modificationtime__range'] = [startdate, enddate]
+            tquery['modificationtime__castdate__range'] = [startdate, enddate]
 
         if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension:
             wildCardExtension = wildCardExtension.replace("((UPPER(status)  LIKE UPPER('all')))", "(1=1)")
