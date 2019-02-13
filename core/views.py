@@ -151,6 +151,7 @@ def get_renderedrow(context, **kwargs):
 
 
 inilock = Lock()
+DateTimeField.register_lookup(CastDate)
 
 
 
