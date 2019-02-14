@@ -249,18 +249,18 @@ class TaskProgressPlot:
         frame = self.get_raw_task_profile_fresh(taskid)
         if frame is not None:
             fig = self.make_verbose_profile_graph(frame, taskid, self.get_task_status(taskid))
-            imgdata = io.StringIO.StringIO()
+            imgdata = io.BytesIO()
             fig.savefig(imgdata, format='png')
             imgdata.seek(0)
-            return imgdata.buf
+            return imgdata
         return None
 
     def get_es_task_profile(self,taskid):
         frame = self.get_es_raw_task_profile_fresh(taskid)
         if frame is not None:
             fig = self.make_es_verbose_profile_graph(frame, taskid, self.get_task_status(taskid))
-            imgdata = io.StringIO.StringIO()
+            imgdata = io.BytesIO()
             fig.savefig(imgdata, format='png')
             imgdata.seek(0)
-            return imgdata.buf
+            return imgdata
         return None

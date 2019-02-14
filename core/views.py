@@ -7953,7 +7953,7 @@ def taskprofileplot(request):
     if 'jeditaskid' in request.GET: jeditaskid = int(request.GET['jeditaskid'])
     image = None
     if jeditaskid != 0:
-        dp = TaskProgressPlot.TaskProgressPlot()
+        dp = TaskProgressPlot()
         image = dp.get_task_profile(taskid=jeditaskid)
     if image is not None:
         return HttpResponse(image, content_type="image/png")
@@ -7969,7 +7969,7 @@ def taskESprofileplot(request):
     if 'jeditaskid' in request.GET: jeditaskid = int(request.GET['jeditaskid'])
     image = None
     if jeditaskid != 0:
-        dp = TaskProgressPlot.TaskProgressPlot()
+        dp = TaskProgressPlot()
         image = dp.get_es_task_profile(taskid=jeditaskid)
     if image is not None:
         return HttpResponse(image, content_type="image/png")
