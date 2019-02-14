@@ -8022,16 +8022,17 @@ def taskInfo(request, jeditaskid=0):
         plotDict = {}
         if 'plotsDict' in data:
             oldPlotDict = data['plotsDict']
-            for plotName, plotData in oldPlotDict.items():
-                if 'sites' in plotData and 'ranges' in plotData:
-                    plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
-                    for dictSiteName, listValues in plotData['sites'].items():
-                        try:
-                            plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
-                            plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
-                        except:
-                            pass
-            data['plotsDict'] = plotDict
+            if isinstance(oldPlotDict, dict):
+                for plotName, plotData in oldPlotDict.items():
+                    if 'sites' in plotData and 'ranges' in plotData:
+                        plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
+                        for dictSiteName, listValues in plotData['sites'].items():
+                            try:
+                                plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
+                                plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
+                            except:
+                                pass
+                data['plotsDict'] = plotDict
 
             #We still want to refresh tasks if request came from central crawler and task not in the frozen state
             if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
