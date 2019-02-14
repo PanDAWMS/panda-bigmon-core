@@ -6023,10 +6023,10 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
 
     if 'sortby' in request.session['requestParams']:
         if request.session['requestParams']['sortby'] in statelist:
-            fullsummary = sorted(fullsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']],
-                                 reverse=True)
-            cloudsummary = sorted(cloudsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']],
-                                  reverse=True)
+            #fullsummary = sorted(fullsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']]['count'],
+            #                     reverse=True)
+            #cloudsummary = sorted(cloudsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']],
+            #                      reverse=True)
             for cloud in clouds:
                 clouds[cloud]['summary'] = sorted(clouds[cloud]['summary'],
                                                   key=lambda x: x['states'][request.session['requestParams']['sortby']][
