@@ -11369,7 +11369,7 @@ def fileList(request):
         if len(dsets) > 0:
             datasetname = dsets[0]['datasetname']
 
-    if datasetid > 0:
+    if int(datasetid) > 0:
         query['datasetid'] = datasetid
         nfilestotal = JediDatasetContents.objects.filter(**query).count()
         nfilesunique = JediDatasetContents.objects.filter(**query).values('lfn').distinct().count()
