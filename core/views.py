@@ -9,7 +9,7 @@ import numpy as np
 
 import math
 
-from pandajob.SQLLookups import CastDate
+from core.pandajob.SQLLookups import CastDate
 from django.db.models import DateTimeField
 
 
