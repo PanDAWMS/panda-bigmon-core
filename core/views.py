@@ -5120,7 +5120,7 @@ def get_panda_resource(siterec):
         for cs in data.keys():
             # if (data[cs]['siteid']!=data[cs]['panda_resource']):
             #     print data[cs]['siteid']
-            if (siterec.siteid == data[cs]['siteid']):
+            if (data[cs] and siterec.siteid == data[cs]['siteid']):
             #     # resourcesDict.setdefault(data[cs]['resourcetype'], []).append(cs)
             #     # resourcesDictSites[data[cs]['siteid']] = data[cs]['panda_resource']
                 return data[cs]['panda_resource']
