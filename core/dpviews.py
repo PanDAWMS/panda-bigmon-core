@@ -303,9 +303,9 @@ def doRequest(request):
                 cloudtodo[cloud]['nfilesfinished'] += ds['nfilesfinished']
                 cloudtodo[cloud]['nfilesfailed'] += ds['nfilesfailed']
             for t in taskoutputdsd:
-                taskoutputdsd[t].sort()
+                taskoutputdsd[t] = sorted(taskoutputdsd[t])
             for t in taskinputdsd:
-                taskinputdsd[t].sort()
+                taskinputdsd[t] = sorted(taskinputdsd[t])
             for t in tasks:
                 if t['id'] in taskoutputdsd:
                     t['outdslist'] = taskoutputdsd[t['id']]
@@ -314,7 +314,7 @@ def doRequest(request):
 
         totalfiles_list = []
         tfkeys = totalfiles.keys()
-        tfkeys.sort()
+        tfkeys = sorted(tfkeys)
         for k in tfkeys:
             totalfiles[k]['processingtype'] = k
             if totalfiles[k]['total_in'] and totalfiles[k]['total_in'] > 0:
@@ -391,7 +391,7 @@ def doRequest(request):
                 tstates = []
                 for s in tjd[t]:
                     tstates.append(tjd[t][s])
-                tstates.sort()
+                tstates = sorted(tstates)
                 taskjobd[t] = tstates
 
         ## get the needed step templates (ctags)
@@ -434,7 +434,7 @@ def doRequest(request):
             try:
                 req = reqs[0]
                 colnames = req.keys()
-                colnames.sort()
+                colnames = sorted(colnames)
                 for k in colnames:
                     val = req[k]
                     if req[k] == None:
@@ -491,9 +491,9 @@ def doRequest(request):
                     statel = []
                     for istate in ntaskd[r['reqid']][istep]:
                         statel.append([istate, ntaskd[r['reqid']][istep][istate]])
-                    statel.sort()
+                    statel = sorted(statel)
                     stepl.append([istep, statel])
-                stepl.sort()
+                stepl = sorted(stepl)
                 r['ntasks'] = stepl
             else:
                 r['ntasks'] = None
@@ -569,12 +569,12 @@ def doRequest(request):
                         for ncore, nval in cval.items():
                             txt = "<tr><td width=100>%s</td><td width=70>%s</td><!-- 1 --><td colspan=20> <b>%s-core: " % ( typ, cloud, ncore )
                             states = nval.keys()
-                            states.sort()
+                            states = sorted(states)
                             for s in states:
                                 txt += " &nbsp; <span class='%s'>%s</span>:%s" % ( s, s, nval[s] )
                             txt += "</b></td></tr>"
                             cdtxt.append(txt)
-                cdtxt.sort()
+                cdtxt = sorted(cdtxt)
                 r['clouddisttxt'] = cdtxt
             else:
                 r['clouddist'] = None
@@ -600,11 +600,11 @@ def doRequest(request):
                         for ncore, nval in cval.items():
                             txt = "%s </td><td> %s </td><td> %s-core </td><td> " % ( typ, cloud, ncore )
                             states = nval.keys()
-                            states.sort()
+                            states = sorted(states)
                             for s in states:
                                 txt += " &nbsp; <span class='%s'>%s</span>:%sk evs (%s jobs)" % ( s, s, nval[s]['events'], nval[s]['jobs'] )
                             cdtxt.append(txt)
-                cdtxt.sort()
+                cdtxt = sorted(cdtxt)
                 r['jobdisttxt'] = cdtxt
 
         ## processed event counts, from prodsys task info
@@ -619,7 +619,7 @@ def doRequest(request):
                 for istep in ntaskd[r['reqid']]:
                     nEvents = float(ntaskd[r['reqid']][istep])/1000.
                     stepl.append([istep, nEvents ])
-                stepl.sort()
+                stepl = sorted(stepl)
                 r['nprocessedevents'] = stepl
                 if r['nrequestedevents'] and r['nrequestedevents'] > 0:
                     if 'completedevpct' not in r: r['completedevpct'] = []
@@ -628,7 +628,7 @@ def doRequest(request):
                         nreq = r['nrequestedevents']
                         pct = int(ndone / nreq * 100.)
                         r['completedevpct'].append([ istep, pct ])
-                    r['completedevpct'].sort()
+                    r['completedevpct'] = sorted(r['completedevpct'])
             else:
                 r['nprocessedevents'] = None
 
@@ -913,7 +913,7 @@ def doRequest(request):
     if events_processed:
         # Convert from dict to ordered list
         evkeys = events_processed.keys()
-        evkeys.sort()
+        evkeys = sorted(evkeys)
         evpl = []
         for e in evkeys:
             evpl.append([e, float(events_processed[e])/1000.])
@@ -1033,7 +1033,7 @@ def attSummaryDict(request, reqs, flist):
         itemd['field'] = f
         iteml = []
         kys = sumd[f].keys()
-        kys.sort()
+        kys = sorted(kys)
         for ky in kys:
             iteml.append({ 'kname' : ky, 'kvalue' : sumd[f][ky] })
         if 'sortby' in request.GET and request.GET['sortby'] == 'count':
