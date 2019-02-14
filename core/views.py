@@ -239,8 +239,8 @@ def login_customrequired(function):
           # if '/user/' in request.path:
           #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
           # else:
-          return function(request, *args, **kwargs)
-          #return HttpResponseRedirect('/login/?next='+request.get_full_path())
+          #return function(request, *args, **kwargs)
+          return HttpResponseRedirect('/login/?next='+request.get_full_path())
   wrap.__doc__ = function.__doc__
   wrap.__name__ = function.__name__
   return wrap
