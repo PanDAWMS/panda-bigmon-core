@@ -1,5 +1,5 @@
 import pandas as pd
-from io import StringIO
+import io
 import urllib3
 from core.common.models import Filestable4
 from core.common.models import FilestableArch
@@ -50,7 +50,7 @@ def collectData(pandaID):
     for f in files:
         url = urlBase+f['dirname']+"/"+f['name']
         resp = http.request('GET', url)
-        TESTDATA = StringIO.StringIO(resp.data)
+        TESTDATA = io.BytesIO()
         dfl.append(pd.read_csv(TESTDATA, sep="\t").iloc[:,range(9)])
 
     if len(dfl) > 0:
@@ -99,7 +99,7 @@ def collectData(pandaID):
         plt.minorticks_on()
         plt.yticks(minor_ticks)
 
-        plot1img = StringIO.StringIO()
+        plot1img = io.BytesIO()
         plt.savefig(plot1img, format='png')
         plot1img.seek(0)
 
@@ -129,7 +129,7 @@ def collectData(pandaID):
         plt.ylim(ymin=0)
         plt.xlim(xmin=0)
 
-        plot2img = StringIO.StringIO()
+        plot2img = io.BytesIO()
         plt.savefig(plot2img, format='png')
         plot2img.seek(0)
 
@@ -188,7 +188,7 @@ def collectData(pandaID):
         plt.ylim(ymin=0)
         plt.xlim(xmin=0)
 
-        plot3img = StringIO.StringIO()
+        plot3img = io.BytesIO()
         plt.savefig(plot3img, format='png')
         plot3img.seek(0)
 
@@ -205,7 +205,7 @@ def collectData(pandaID):
             new_im.paste(im, (0, y_offset))
             y_offset += im.size[1]
 
-        finPlotData = StringIO.StringIO()
+        finPlotData = io.BytesIO()
         new_im.save(finPlotData, format='png')
         finPlotData.seek(0)
 
