@@ -50,7 +50,7 @@ def collectData(pandaID):
     for f in files:
         url = urlBase+f['dirname']+"/"+f['name']
         resp = http.request('GET', url)
-        TESTDATA = io.BytesIO()
+        TESTDATA = io.BytesIO(resp.data)
         dfl.append(pd.read_csv(TESTDATA, sep="\t").iloc[:,range(9)])
 
     if len(dfl) > 0:
