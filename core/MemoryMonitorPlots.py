@@ -210,7 +210,7 @@ def collectData(pandaID):
         finPlotData.seek(0)
 
         if plot1img is not None:
-            return HttpResponse(finPlotData.buf, content_type="image/png")
+            return HttpResponse(finPlotData, content_type="image/png")
     return HttpResponse('')
 
 
