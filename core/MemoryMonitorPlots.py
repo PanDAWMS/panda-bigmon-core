@@ -11,6 +11,7 @@ from PIL import Image
 import numpy as np
 from core.views import initRequest
 from django.shortcuts import render_to_response
+import requests
 
 filebrowserURL = "http://bigpanda.cern.ch/filebrowser/" #This is deployment specific because memory monitoring is intended to work in ATLAS
 
@@ -49,9 +50,14 @@ def collectData(pandaID):
     pd.set_option('display.max_columns', 1000)
     for f in files:
         url = urlBase+f['dirname']+"/"+f['name']
-        resp = http.request('GET', url)
-        TESTDATA = io.BytesIO(resp.data)
-        dfl.append(pd.read_csv(TESTDATA, sep="\t").iloc[:,range(9)])
+        resp = requests.get(url, verify=False)
+        if resp and len(resp.text) > 0:
+            TESTDATA = io.StringIO(resp.text)
+            dfl.append(pd.read_csv(TESTDATA, sep="\t").iloc[:, range(9)])
+
+            #TESTDATA = io.StringIO(str(html))
+            #dfl.append(pd.read_csv(TESTDATA, sep="\t").iloc[:, range(9)])
+
 
     if len(dfl) > 0:
         df = pd.concat(dfl)
@@ -193,7 +199,7 @@ def collectData(pandaID):
         plot3img.seek(0)
 
         #Here we combine few plots
-        images = map(Image.open, [plot1img, plot2img, plot3img])
+        images = list(map(Image.open, [plot1img, plot2img, plot3img]))
         widths, heights = zip(*(i.size for i in images))
         max_width = max(widths)
         total_height = sum(heights)
@@ -201,7 +207,7 @@ def collectData(pandaID):
         new_im = Image.new('RGB', (max_width, total_height))
 
         y_offset = 0
-        for im in images:
+        for im in list(images):
             new_im.paste(im, (0, y_offset))
             y_offset += im.size[1]
 
@@ -210,7 +216,7 @@ def collectData(pandaID):
         finPlotData.seek(0)
 
         if plot1img is not None:
-            return HttpResponse(finPlotData, content_type="image/png")
+            return HttpResponse(finPlotData.getvalue(), content_type="image/png")
     return HttpResponse('')
 
 
