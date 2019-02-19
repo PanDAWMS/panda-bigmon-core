@@ -11288,7 +11288,8 @@ def fileInfo(request):
                 f['datasetname'] = mrecsDict[f['datasetid']]
 
     if len(files) > 0:
-        files = sorted(files, key=lambda x: x['pandaid'], reverse=True)
+
+        files = sorted(files, key=lambda x: x['pandaid'] if x['pandaid'] is not None else False, reverse=True)
         frec = files[0]
         file = frec['lfn']
         colnames = frec.keys()
