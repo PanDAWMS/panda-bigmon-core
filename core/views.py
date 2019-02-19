@@ -3237,9 +3237,8 @@ def jobList(request, mode=None, param=None):
         sortby = "fileattemptnr-descending"
         jobs = sorted(jobs, key=lambda x: x['fileattemptnr'], reverse=True)
     else:
-        sortby = "time-descending"
-        if len(jobs) > 0 and 'modificationtime' in jobs[0]:
-            jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+        sortby = "attemptnr-descending,pandaid-descending"
+        jobs = sorted(jobs, key=lambda x: [-x['attemptnr'],-x['pandaid']])
 
     taskname = ''
     if 'jeditaskid' in request.session['requestParams']:
