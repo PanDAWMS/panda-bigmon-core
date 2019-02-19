@@ -311,7 +311,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
         {% endif %}
 
         {% if inputfiles|length > 0 %}
-            <a href="{% url 'jobList' %}?jeditaskid={{ inputfiles.0.jeditaskid }}&datasetid={{ inputfiles.0.datasetid }}&fileid={{ inputfiles.0.fileid }}&eventservice=1|2|4|5">Jobs for {{ inputfiles.0.fileid }} event chunk </a>
+            <a href="{% url 'jobList' %}?jeditaskid={{ inputfiles.0.jeditaskid }}&datasetid={{ inputfiles.0.datasetid }}&fileid={{ inputfiles.0.fileid }}&mode=nodrop&eventservice=1|2|4|5">Jobs for {{ inputfiles.0.fileid }} event chunk </a>
             <a href="{% url 'jobList' %}?jeditaskid={{ inputfiles.0.jeditaskid }}&datasetid={{ inputfiles.0.datasetid }}&fileid={{ inputfiles.0.fileid }}&eventservice=1">ES jobs for {{ inputfiles.0.fileid }} event chunk </a>
             <a href="{% url 'jobList' %}?jeditaskid={{ inputfiles.0.jeditaskid }}&datasetid={{ inputfiles.0.datasetid }}&fileid={{ inputfiles.0.fileid }}&eventservice=2">ES merge jobs for {{ inputfiles.0.fileid }} event chunk</a>
         {% endif %}
