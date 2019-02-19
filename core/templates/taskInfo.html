@@ -174,14 +174,14 @@
 
                 {% if task.dsinfo %}
                     <td> {{ task.totev }} |
-                        <span class='finished'>{{ task.totevproc }} ({{ task.pctfinished }}%)</span></td>
+                        <span class='finished'>{{ task.totevproc }} ({{ task.pctfinished|floatformat }}%)</span></td>
                     <td style="text-align:right;"> {{ task.totevhs06 }}<br>{{ task.currenttotevhs06 }}<br><span
                             class='finished'>{{ task.totevprochs06 }}</span><br><span
                             class='failed'>{{ task.failedevprochs06 }}</span></td>
                     <td> {{ task.dsinfo.nfiles }} |
-                        <span class='finished'>{{ task.dsinfo.nfilesfinished }} ({{ task.dsinfo.pctfinished }}%)</span>
+                        <span class='finished'>{{ task.dsinfo.nfilesfinished }} ({{ task.dsinfo.pctfinished|floatformat }}%)</span>
                         {% if task.dsinfo.nfilesfailed > 0 %} |
-                            <span class='failed'>{{ task.dsinfo.nfilesfailed }} ({{ task.dsinfo.pctfailed }}%)</span>  {% endif %}
+                            <span class='failed'>{{ task.dsinfo.nfilesfailed }} ({{ task.dsinfo.pctfailed|floatformat }}%)</span>  {% endif %}
                     </td>
                 {% endif %}
                 <td>{{ task.creationdate }}</td>
