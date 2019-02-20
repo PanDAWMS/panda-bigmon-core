@@ -9599,7 +9599,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
                 taskname = tasknamedict[taskid]
             tasktype = 'jeditaskid'
         else:
-            taskid = job['taskid']
+            taskid = job['taskid'] if not job['taskid'] is None else 0
             if taskid in tasknamedict:
                 taskname = tasknamedict[taskid]
             tasktype = 'taskid'
@@ -9758,7 +9758,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByCountL = sorted(errsByCountL, key=lambda x: -x['count'])
 
-    kys = errsByUser.keys()
+    kys = list(errsByUser.keys())
     kys = sorted(kys)
     for user in kys:
         errsByUser[user]['errorlist'] = []
@@ -9770,7 +9770,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByUserL = sorted(errsByUserL, key=lambda x: -x['toterrors'])
 
-    kys = errsBySite.keys()
+    kys = list(errsBySite.keys())
     kys = sorted(kys)
     for site in kys:
         errsBySite[site]['errorlist'] = []
@@ -9782,7 +9782,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsBySiteL = sorted(errsBySiteL, key=lambda x: -x['toterrors'])
 
-    kys = errsByTask.keys()
+    kys = list(errsByTask.keys())
     kys = sorted(kys)
     for taskid in kys:
         errsByTask[taskid]['errorlist'] = []
