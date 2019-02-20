@@ -58,7 +58,9 @@
 .reassign { color:#FF8174 }
 .ok {color:#0a47ff}
 .queued { color:grey }
+.corrupted { color:red }
 
+.corrupted_fill { color:black;  background-color:#FF8174 }
 .alarm_fill { color:black;  background-color:#FF8174 }
 .error_fill { color:black;  background-color:#FF8174 }
 
