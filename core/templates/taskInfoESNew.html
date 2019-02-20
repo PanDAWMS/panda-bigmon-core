@@ -298,32 +298,76 @@
         {% endif %}
 
         {% if jobsummarylight %}
-            <table class="fresh-table unstriped">
-              <thead>
-                <tr>
-                    <th colspan=20>
-                        <b>Lightweight job status summary</b>
-                    </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                    {% for state in jobsummarylight %}
-                        <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
-                    {% endfor %}
-                </tr>
-                <tr>
-                    {% for state in jobsummarylight %}
-                        <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                            {% if state.count > 0 %}<b>
-                                <a class="blacklink" href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode=nodrop">{{ state.count }}</a></b>
-                            {% endif %}
-                        </td>
-                    {% endfor %}
-                </tr>
-              </tbody>
-            </table>
+
+            <div class="card card-tabs">
+
+              <div class="card-divider">
+                <h6 class="float-left"><b>Lightweight job status summary</b></h6>
+                <ul class="tabs menu align-right" data-active-collapse="true" data-tabs id="collapsing-tabs">
+                  <li class="tabs-title is-active"><a href="#paneljstotal" aria-selected="true">Total</a></li>
+                  <li class="tabs-title"><a href="#paneljssplitted">Splitted</a></li>
+                 </ul>
+               </div>
+               <div class="tabs-content" data-tabs-content="collapsing-tabs">
+                <div class="tabs-panel" id="paneljssplitted">
+                  <div class="card-section">
+                    <table class="fresh-table unstriped" style="border: none">
+                      <tbody>
+                        <tr>
+                            <th></th>
+                            {% for state in jobsummarylight %}
+                                <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
+                            {% endfor %}
+                        </tr>
+                        {% for estype, countslist in jobsummarylightsplitted.items %}
+                        <tr>
+                            <th>{% if estype == 'es' %}ES and cojumbo jobs{% elif estype == 'esmerge' %}ES merge jobs{% elif estype == 'jumbo' %}Jumbo jobs{% endif %}</th>
+                            {% for state in countslist %}
+                                <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
+                                    {% if state.count > 0 %}<b>
+                                        <a class="blacklink" href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}{% if estype == 'es' %}&eventservice=1|5{% elif estype == 'esmerge' %}&eventservice=2{% elif estype == 'jumbo' %}&eventservice=4{% endif %}&jobstatus={{ state.name }}&mode=nodrop">{{ state.count }}</a></b>
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="tabs-panel is-active" id="paneljstotal">
+                  <div class="card-section">
+
+                     <table class="fresh-table unstriped">
+                      <tbody>
+                        <tr>
+                            {% for state in jobsummarylight %}
+                                <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            {% for state in jobsummarylight %}
+                                <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
+                                    {% if state.count > 0 %}<b>
+                                        <a class="blacklink" href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode=nodrop">{{ state.count }}</a></b>
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                      </tbody>
+                    </table>
+
+
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
         {% endif %}
+
 
 
         {% if eventssummary|length > 0 %}

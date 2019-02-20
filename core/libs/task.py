@@ -425,40 +425,54 @@ def job_summary_for_task_light(taskrec):
     jeditaskidstr = str(taskrec['jeditaskid'])
     statelistlight = ['defined', 'assigned', 'activated', 'starting', 'running', 'holding', 'transferring', 'finished',
                       'failed']
+    estypes = ['es', 'esmerge', 'jumbo']
     jobSummaryLight = {}
+    jobSummaryLightSplitted = {}
     for state in statelistlight:
         jobSummaryLight[str(state)] = 0
 
+    for estype in estypes:
+        jobSummaryLightSplitted[estype] = {}
+        for state in statelistlight:
+            jobSummaryLightSplitted[estype][str(state)] = 0
+
     jsquery = """
-        select jobstatus, count(pandaid) as njobs from (
+        select jobstatus, case eventservice when 1 then 'es' when 5 then 'es' when 2 then 'esmerge' when 4 then 'jumbo' else 'unknown' end, count(pandaid) as njobs from (
         (
-        select pandaid, jobstatus from atlas_pandabigmon.combined_wait_act_def_arch4 where jeditaskid = :jtid
+        select pandaid, es as eventservice, jobstatus from atlas_pandabigmon.combined_wait_act_def_arch4 where jeditaskid = :jtid
         )
         union all
         (
-        select pandaid, jobstatus from atlas_pandaarch.jobsarchived where jeditaskid = :jtid
+        select pandaid, eventservice, jobstatus from atlas_pandaarch.jobsarchived where jeditaskid = :jtid
         minus
-        select pandaid, jobstatus from atlas_pandaarch.jobsarchived where jeditaskid = :jtid and pandaid in (
-            select pandaid from atlas_pandabigmon.combined_wait_act_def_arch4 where jeditaskid = :jtid)
-        
+        select pandaid, eventservice, jobstatus from atlas_pandaarch.jobsarchived where jeditaskid = :jtid and pandaid in (
+            select pandaid from atlas_pandabigmon.combined_wait_act_def_arch4 where jeditaskid = :jtid
+            )
         )
         )
-        group by jobstatus
+        group by jobstatus, eventservice
     """
     cur = connection.cursor()
     cur.execute(jsquery, {'jtid': jeditaskidstr})
     js_count = cur.fetchall()
     cur.close()
 
-    jsCount = dict((state, count) for state, count in js_count)
-    for state, count in jsCount.items():
-        if state in statelistlight:
-            jobSummaryLight[state] += count
+    js_count_names = ['state', 'es', 'count']
+    js_count_list = [dict(zip(js_count_names, row)) for row in js_count]
+
+    for row in js_count_list:
+        if row['state'] in statelistlight:
+            jobSummaryLight[row['state']] += row['count']
+            if row['es'] in estypes:
+                jobSummaryLightSplitted[row['es']][row['state']] += row['count']
 
     # dict -> list for template
     jobsummarylight = [dict(name=state, count=jobSummaryLight[state]) for state in statelistlight]
+    jobsummarylightsplitted = {}
+    for estype, count_dict in jobSummaryLightSplitted.items():
+        jobsummarylightsplitted[estype] = [dict(name=state, count=count_dict[state]) for state in statelistlight]
 
-    return jobsummarylight
+    return jobsummarylight, jobsummarylightsplitted
 
 def get_top_memory_consumers(taskrec):
     jeditaskidstr = str(taskrec['jeditaskid'])

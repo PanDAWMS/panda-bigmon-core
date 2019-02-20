@@ -8943,8 +8943,7 @@ def taskInfoNew(request, jeditaskid=0):
     naccsum = Jobsactive4.objects.filter(**ccquery).aggregate(naccsum=Sum(F('actualcorecount')*F('hs06')/F('corecount')/Value(10), output_field=FloatField()))
 
     # get lighted job summary
-    jobsummarylight = job_summary_for_task_light(taskrec)
-
+    jobsummarylight, jobsummarylightsplitted = job_summary_for_task_light(taskrec)
 
     if taskrec:
         taskrec['totevprochs06'] = int(hs06sSum['finished'])
@@ -9022,6 +9021,7 @@ def taskInfoNew(request, jeditaskid=0):
             'attrs': attrs,
             'jobsummary': jobsummary,
             'jobsummarylight': jobsummarylight,
+            'jobsummarylightsplitted': jobsummarylightsplitted,
             'eventssummary': eventsdict,
             'ossummary': objectStoreDict,
             'jeditaskid': jeditaskid,
