@@ -820,10 +820,10 @@ def fairsharePolicy(request):
     total_hs =0
     for hs_entry in hs_distribution_dict.keys():
         sum_hs = 0
-        pled += hs_distribution_dict[hs_entry]['pledged']
-        ignore += hs_distribution_dict[hs_entry]['ignore']
-        executing += hs_distribution_dict[hs_entry]['executing']
-        queued += hs_distribution_dict[hs_entry]['queued']
+        pled += float(hs_distribution_dict[hs_entry]['pledged'])
+        ignore += float(hs_distribution_dict[hs_entry]['ignore'])
+        executing += float(hs_distribution_dict[hs_entry]['executing'])
+        queued += float(hs_distribution_dict[hs_entry]['queued'])
         sum_hs = float(hs_distribution_dict[hs_entry]['pledged']) + \
                  float(hs_distribution_dict[hs_entry]['ignore']) + \
                  float(hs_distribution_dict[hs_entry]['executing']) + \
@@ -834,9 +834,9 @@ def fairsharePolicy(request):
     hs_distribution_list = []
     for hs_entry in hs_distribution_dict.keys():
        # hs_distribution_dict[hs_entry]['pledged_percent'] = pled * 100 / hs_distribution_dict[hs_entry]['pledged']
-        hs_distribution_dict[hs_entry]['ignore_percent'] =  (hs_distribution_dict[hs_entry]['ignore']/ignore)* 100
-        hs_distribution_dict[hs_entry]['executing_percent'] =  (hs_distribution_dict[hs_entry]['executing'] /executing) * 100
-        hs_distribution_dict[hs_entry]['queued_percent'] = (hs_distribution_dict[hs_entry]['queued']/queued) * 100
+        hs_distribution_dict[hs_entry]['ignore_percent'] = (float(hs_distribution_dict[hs_entry]['ignore'])/ignore)* 100
+        hs_distribution_dict[hs_entry]['executing_percent'] =  (float(hs_distribution_dict[hs_entry]['executing']) /executing) * 100
+        hs_distribution_dict[hs_entry]['queued_percent'] = (float(hs_distribution_dict[hs_entry]['queued'])/queued) * 100
         hs_distribution_list.append({'policy':hs_entry, 'pledged':hs_distribution_dict[hs_entry]['pledged'],
                                      'ignore':hs_distribution_dict[hs_entry]['ignore'],
                                      'ignore_percent': round(hs_distribution_dict[hs_entry]['ignore_percent'],2),
