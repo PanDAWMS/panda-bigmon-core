@@ -569,27 +569,28 @@ def preprocessWildCardString(strToProcess, fieldToLookAt):
 
             if not isNot:
                 if (leadStar and trailStar):
-                        extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'%%' + parameter + '%%\'))'
+                        extraQueryString += "(UPPER(" + fieldToLookAt + ")  LIKE UPPER('%%" + parameter + "%%'))"
                 elif (not leadStar and not trailStar):
-                        extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'' + parameter + '\'))'
+                        extraQueryString += "(UPPER(" + fieldToLookAt + ")  LIKE UPPER('" + parameter + "'))"
                 elif (leadStar and not trailStar):
-                        extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'%%' + parameter + '\'))'
+                        extraQueryString += "(UPPER(" + fieldToLookAt + ")  LIKE UPPER('%%" + parameter + "'))"
                 elif (not leadStar and trailStar):
-                        extraQueryString += '(UPPER(' + fieldToLookAt + ')  LIKE UPPER(\'' + parameter + '%%\'))'
+                        extraQueryString += "(UPPER(" + fieldToLookAt + ")  LIKE UPPER('" + parameter + "%%'))"
             else:
                 if (leadStar and trailStar):
-                    extraQueryString += '(UPPER(' + fieldToLookAt + ') NOT LIKE UPPER(\'%%' + parameter + '%%\'))'
+                    extraQueryString += "(UPPER(" + fieldToLookAt + ") NOT LIKE UPPER('%%" + parameter + "'%%'))"
                 elif (not leadStar and not trailStar):
-                    extraQueryString += '(UPPER(' + fieldToLookAt + ') NOT LIKE UPPER(\'' + parameter + '\'))'
+                    extraQueryString += "(UPPER(" + fieldToLookAt + ") NOT LIKE UPPER('" + parameter + "'))"
                 elif (leadStar and not trailStar):
-                    extraQueryString += '(UPPER(' + fieldToLookAt + ') NOT LIKE UPPER(\'%%' + parameter + '\'))'
+                    extraQueryString += "(UPPER(" + fieldToLookAt + ") NOT LIKE UPPER('%%" + parameter + "'))"
                 elif (not leadStar and trailStar):
-                    extraQueryString += '(UPPER(' + fieldToLookAt + ') NOT LIKE UPPER(\'' + parameter + '%%\'))'
+                    extraQueryString += "(UPPER(" + fieldToLookAt + ") NOT LIKE UPPER('" + parameter + "%%'))"
             currentRealParCount += 1
             if currentRealParCount < countRealParameters:
                 extraQueryString += ' AND '
         currentParCount += 1
     extraQueryString += ')'
+    extraQueryString = extraQueryString.replace("%20", " ")
     return extraQueryString
 
 
@@ -7200,6 +7201,7 @@ def taskList(request):
     if 'statenotupdated' in request.session['requestParams']:
         tasks = taskNotUpdated(request, query, wildCardExtension)
     else:
+        #wildCardExtension = "(((UPPER(taskname)  LIKE UPPER('%%.%%')) AND (UPPER(taskname)  LIKE UPPER('%%mc%%')) AND (UPPER(taskname)  LIKE UPPER('%%.CAOD_HIGG5D1.%%')) AND (UPPER(taskname)  LIKE UPPER('%%.32-07-8/'))))"
         tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
         listTasks.append(JediTasksOrdered)
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
