@@ -497,7 +497,9 @@ But if you want, you can check.
         <a href="https://rucio-ui.cern.ch/did?scope={{file.scope}}&name={{file.lfn}}" target="_blank"> Rucio</a>
             {% if job.jobstatus != 'defined' and job.jobstatus != 'pending' and job.jobstatus != 'waiting' %}
                 || <a href="http://dashb-atlas-ddm.cern.ch/ddm2/#d.dst.site={{file.ddmsite}}{% if file.dsttoken %}&d.dst.token={{ file.dsttoken }}{% endif %}&d.name={{file.lfn}}&d.scope={{ file.scope }}&grouping.dst=(site,token)&tab=details" target="_blank">DDM Dash</a>
-            {% endif %}
+                || <a href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&from=now-30d&to=now&panelId=56&fullscreen&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=All&var-src_cloud=All&var-src_site=All&var-src_country=All&var-src_endpoint=All&var-columns=src_cloud&var-dst_cloud=All&var-dst_site={{file.ddmsite}}&var-dst_country=All&var-dst_endpoint=All&var-rows=dst_cloud&var-enr_filters=data.name%7C%3D%7C{{file.lfn}}&var-enr_filters=data.scope%7C%3D%7C{{ file.scope }}{% if file.dsttoken %}&var-enr_filters=data.dst_token%7C%3D%7C{{ file.dsttoken }}{% endif %}&var-measurement=ddm_transfer&var-retention_policy=raw">
+        DDM Dash (Grafana)</a>
+       {% endif %}
         {% endif %}
         </font>
         </td>
