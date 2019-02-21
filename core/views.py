@@ -10,7 +10,7 @@ import numpy as np
 import math
 
 from core.pandajob.SQLLookups import CastDate
-from django.db.models import DateTimeField
+from django.db.models import DateTimeField, CharField
 
 
 from urllib.parse import urlencode, unquote, urlparse, urlunparse, parse_qs
@@ -150,6 +150,8 @@ def get_renderedrow(context, **kwargs):
 
 inilock = Lock()
 DateTimeField.register_lookup(CastDate)
+
+
 
 try:
     hostname = subprocess.getoutput('hostname')
@@ -590,7 +592,7 @@ def preprocessWildCardString(strToProcess, fieldToLookAt):
                 extraQueryString += ' AND '
         currentParCount += 1
     extraQueryString += ')'
-    extraQueryString = extraQueryString.replace("%20", " ")
+    extraQueryString = extraQueryString.replace("%20", " ") if not '%%20' in extraQueryString else extraQueryString
     return extraQueryString
 
 

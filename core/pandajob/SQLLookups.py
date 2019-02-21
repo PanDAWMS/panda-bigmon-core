@@ -1,4 +1,6 @@
 from django.db.models import Transform
+from django.db.models import Lookup
+
 
 class CastDate(Transform):
     lookup_name = 'castdate'
