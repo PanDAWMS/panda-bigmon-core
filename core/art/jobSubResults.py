@@ -140,7 +140,7 @@ def save_subresults(subResultsDict):
                                    subresult=data)
                 row.save()
     except DatabaseError as e:
-        print (e.message)
+        print (e)
         return False
 
     return True
