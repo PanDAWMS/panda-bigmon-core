@@ -656,7 +656,7 @@ def artJobs(request):
             artjobslist[i][j] = []
             for t, tdict in jdict.items():
                 for ntg, jobs in tdict.items():
-                    tdict[ntg]['jobs'] = sorted(jobs['jobs'], key=lambda x: x['ntagtime'])
+                    tdict[ntg]['jobs'] = sorted(jobs['jobs'], key=lambda x: (x['ntagtime'], x['origpandaid']), reverse=True)
                 tdict['testname'] = t
                 if len(testdirectories[i][j]) > 0:
                     if not 'view' in request.session['requestParams'] or (
