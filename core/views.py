@@ -1330,7 +1330,7 @@ def cleanJobListLite(request, jobl, mode='nodrop', doAddMeta=True):
             if job['starttime']:
                 starttime = job['starttime']
             else:
-                starttime = timezone.now()
+                starttime = job['modificationtime']
             wait = starttime - creationtime
             ndays = wait.days
             strwait = str(timedelta(seconds=wait.seconds))
@@ -1471,7 +1471,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             if job['starttime']:
                 starttime = job['starttime']
             else:
-                starttime = timezone.now()
+                starttime = job['modificationtime']
             wait = starttime - creationtime
             ndays = wait.days
             strwait = str(timedelta(seconds=wait.seconds))
