@@ -23,6 +23,7 @@ from core.libs.cache import setCacheEntry, getCacheEntry
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
+hostname = "bigpanda.cern.ch"
 
 def index(request):
     """
@@ -148,7 +149,7 @@ def index(request):
         'guid': guid,
         'MEDIA_URL': settings.MEDIA_URL,
         'viewParams' : {'MON_VO': str(get_filebrowser_vo()).upper()},
-        'HOSTNAME': get_filebrowser_hostname(),
+        'HOSTNAME': hostname,
         'totalLogSize': totalLogSize,
         'nfiles': len(files),
 #        , 'new_contents': new_contents
@@ -276,7 +277,7 @@ def api_single_pandaid(request):
         'timestamp': datetime.utcnow().isoformat() \
     }
     if not len(errors):
-        url = 'http://' + get_filebrowser_hostname() + \
+        url = 'http://' + hostname + \
                     settings.MEDIA_URL + dirprefix + '/' + lfn
         data['url'] = url
         ### set request response data
