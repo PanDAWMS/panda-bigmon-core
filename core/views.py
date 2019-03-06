@@ -5705,26 +5705,28 @@ def checkUcoreSite(site, usites):
        isUsite = True
     return isUsite
 
-def getUcoreSites():
+def getAGISSites():
     url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
     http = urllib3.PoolManager()
     data = {}
+    sitesUcore = []
+    sitesHarvester = []
     try:
-        sites = []
         r = http.request('GET', url)
         data = json.loads(r.data.decode('utf-8'))
         for cs in data.keys():
             if 'unifiedPandaQueue' in data[cs]['catchall'] or 'ucore' in data[cs]['capability']:
-                sites.append(data[cs]['siteid'])
+                sitesUcore.append(data[cs]['siteid'])
+            if 'harvester' in data[cs] and len(data[cs]['harvester']) != 0:
+                sitesHarvester.append(data[cs]['siteid'])
     except Exception as exc:
-        sites = []
         print (exc)
-    return sites
+    return sitesUcore, sitesHarvester
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
     pilots = getPilotCounts(view)
     query = setupView(request, hours=hours, limit=limit, opmode=view)
-    ucoreComputingSites = getUcoreSites()
+    ucoreComputingSites, harvesterComputingSites = getAGISSites()
     if VOMODE == 'atlas' and len(request.session['requestParams']) == 0:
         cloudinfol = Cloudconfig.objects.filter().exclude(name='CMS').exclude(name='OSG').values('name', 'status')
     else:
@@ -5820,6 +5822,9 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
                 clouds[cloud]['nojobabs'] += nojobabshash[site]
             else:
                 clouds[cloud]['sites'][site]['nojobabs'] = 0
+
+            if site in harvesterComputingSites:
+                clouds[cloud]['sites'][site]['isHarvester'] = True
 
             clouds[cloud]['sites'][site]['states'] = {}
             for state in sitestatelist:
