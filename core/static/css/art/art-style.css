@@ -32,14 +32,14 @@ li.artmenu-item > label {
 .with-ntagfull {
     margin: auto;
     background-color: transparent;
-    max-width: 100px;
+    max-width: 165px; /*120 px for status boxes +45px for cut ntag  */
     display: inline-flex;
 }
 
 /* stats divs*/
 .clickable {
     background-color: transparent;
-    width: 80px;
+    width: 120px;
     line-height: 21px;
     position: relative;
     font-size: 0;
@@ -62,11 +62,11 @@ li.artmenu-item > label {
       border-color: black;
   }
 
-.clickable .finished {
+.clickable .done {
   text-align: center;
   vertical-align: middle;
   height: 100%;
-  width: 33%;
+  width: 25%;
   display: inline-block;
   background: #3adb76;
   color: black;
@@ -78,7 +78,7 @@ li.artmenu-item > label {
   text-align: center;
   vertical-align: middle;
   height: 100%;
-  width: 33%;
+  width: 25%;
   display: inline-block;
   background: tomato;
   color: black;
@@ -89,26 +89,26 @@ li.artmenu-item > label {
   text-align: center;
   vertical-align: middle;
   height: 100%;
-  width: 33%;
+  width: 25%;
   display: inline-block;
   background: cornflowerblue;
   color: black;
   font-size: 14px;
   font-weight: bold;
 }
-.clickable .unrecoverable {
+.clickable .finished {
   text-align: center;
   vertical-align: middle;
   height: 100%;
-  width: 0%;
+  width: 25%;
   display: inline-block;
-  background:  	khaki;
+  background: #FADA5E;
   color: black;
   font-size: 14px;
   font-weight: bold;
 }
 
-.clickable .finished_job {
+.clickable .done_job {
   text-align: center;
   vertical-align: middle;
   height: 100%;
@@ -145,13 +145,13 @@ li.artmenu-item > label {
   font-weight: bold;
   border-color: tomato;
 }
-.clickable .closed_job {
+.clickable .finished_job {
   text-align: center;
   vertical-align: middle;
   height: 100%;
   width: 100%;
   display: inline-block;
-  background: #e6e6e6;
+  background: #FADA5E;
   color: black;
   font-size: 14px;
   font-weight: bold;
@@ -435,7 +435,7 @@ li.artmenu-item > label {
     margin: auto;
     clear: both;
     overflow: auto;
-    width: 250px;
+    width: 210px;
     display:table;
     text-align: right;
     z-index: 2;

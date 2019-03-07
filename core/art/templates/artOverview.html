@@ -52,9 +52,10 @@
                               <td class="cell">
                                 {% if files.finished > 0 or files.failed > 0 or files.active > 0 %}
                                     <div class="clickable">
+                                        <div class="active">{{ files.active }}</div>
+                                        <div class="done">{{ files.done }}</div>
                                         <div class="finished">{{ files.finished }}</div>
                                         <div class="failed">{{ files.failed }}</div>
-                                        <div class="active">{{ files.active }}</div>
                                         <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}{% if requestParams.branch  %}&branch={{ requestParams.branch }}{% endif %}{% else %}?branch={{ pname }}{% if requestParams.package  %}&package={{ requestParams.package }}{% endif %}{% endif %}&ntag={{ tags }}"></a>
                                     </div>
                                 {% else %}

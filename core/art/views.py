@@ -19,7 +19,7 @@ from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V
 from core.views import login_customrequired, initRequest, extensibleURL, removeParam
 from core.views import DateEncoder, endSelfMonitor
-from core.art.jobSubResults import getJobReport, getARTjobSubResults, subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue
+from core.art.jobSubResults import getJobReport, getARTjobSubResults, subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, getFinalResult
 from django.db.models import Q
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
@@ -260,7 +260,7 @@ def artOverview(request):
     jobs = [dict(zip(artJobs, row)) for row in tasks_raw]
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
 
-    statestocount = ['finished', 'failed', 'active']
+    statestocount = ['finished', 'failed', 'active', 'done']
     
     artpackagesdict = {}
     if not 'view' in request.session['requestParams'] or (
@@ -363,7 +363,7 @@ def artTasks(request):
 
     # tasks = ARTTasks.objects.filter(**query).values('package','branch','task_id', 'ntag', 'nfilesfinished', 'nfilesfailed')
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
-    statestocount = ['finished', 'failed', 'active']
+    statestocount = ['finished', 'failed', 'active', 'done']
     arttasksdict = {}
     jeditaskids = {}
     if not 'view' in request.session['requestParams'] or ('view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
@@ -699,44 +699,6 @@ def artJobs(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
         return response
-
-def getFinalResult(job):
-    finalresult = ''
-    testexitcode = None
-    subresults = None
-    testdirectory = None
-    if job['jobstatus'] in ('finished', 'failed'):
-        finalresult = job['jobstatus']
-    else:
-        finalresult = 'active'
-    try:
-        job['result'] = json.loads(job['result'])
-    except:
-        job['result'] = None
-    try:
-        testexitcode = job['result']['exit_code'] if 'exit_code' in job['result'] else None
-    except:
-        testexitcode = None
-    try:
-        subresults = job['result']['result'] if 'result' in job['result'] else []
-    except:
-        subresults = None
-    try:
-        testdirectory = job['result']['test_directory'] if 'test_directory' in job['result'] else []
-    except:
-        testdirectory = None
-
-
-    if job['result'] is not None:
-        if 'result' in job['result'] and len(job['result']['result']) > 0:
-            for r in job['result']['result']:
-                if int(r['result']) > 0:
-                    finalresult = 'failed'
-        elif 'exit_code' in job['result'] and job['result']['exit_code'] > 0:
-            finalresult = 'failed'
-
-
-    return finalresult, testexitcode, subresults, testdirectory
 
 
 def updateARTJobList(request):

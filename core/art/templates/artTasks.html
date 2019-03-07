@@ -53,11 +53,12 @@
                                     {% if ntfulldict|length > 1 %}
                                         {% for ntfull, files in ntfulldict.items %}
                                           {% if ntname in ntfull %}
-                                            {% if files.finished > 0 or files.active > 0 or files.failed > 0 %}
+                                            {% if files.finished > 0 or files.active > 0 or files.failed > 0 or files.done > 0 %}
                                               <div class="with-ntagfull">
                                                 <div class="clickable">
-                                                    <div class="finished">{{ files.finished }}</div>
                                                     <div class="active">{{ files.active }}</div>
+                                                    <div class="done">{{ files.done }}</div>
+                                                    <div class="finished">{{ files.finished }}</div>
                                                     <div class="failed">{{ files.failed }}</div>
                                                     <a href="{% url 'artJobs' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}&branch={{ brname }}{% else %}?package={{ brname }}&branch={{ pname }}{% endif %}&ntag_full={{ ntfull }}&view={{ requestParams.view }}"></a>
                                                 </div>

@@ -1,6 +1,7 @@
 
 
-import urllib, urllib3, json
+import urllib, urllib3, json, math
+import numpy as np
 from datetime import datetime
 from core.art.modelsART import ARTSubResult
 from django.db import connection, transaction, DatabaseError
@@ -202,3 +203,73 @@ def clear_queue(cur):
         raise
 
     return True
+
+def getFinalResult(job):
+    """ A function to determine the real ART test result depending on sub-step results, exitcode and PanDA job state
+    0 - finished - green
+    1 - ??? - yellow
+    2 - running - blue
+    3 - failed - red
+    """
+    finalresultDict = {0: 'done', 1: 'finished', 2: 'active', 3: 'failed'}
+    finalresult = ''
+    testexitcode = None
+    subresults = None
+    testdirectory = None
+    if job['jobstatus'] == 'finished':
+        finalresult = 0
+    elif job['jobstatus'] == 'failed':
+        finalresult = 3
+    else:
+        finalresult = 2
+    try:
+        job['result'] = json.loads(job['result'])
+    except:
+        job['result'] = None
+    try:
+        testexitcode = job['result']['exit_code'] if 'exit_code' in job['result'] else None
+    except:
+        testexitcode = None
+    try:
+        subresults = job['result']['result'] if 'result' in job['result'] else []
+    except:
+        subresults = None
+    try:
+        testdirectory = job['result']['test_directory'] if 'test_directory' in job['result'] else []
+    except:
+        testdirectory = None
+
+
+    if job['result'] is not None:
+        if 'result' in job['result'] and len(job['result']['result']) > 0:
+            finalresult = analize_test_subresults(job['result']['result'])
+            # for r in job['result']['result']:
+            #     if int(r['result']) > 0:
+            #         finalresult = 'failed'
+        elif 'exit_code' in job['result'] and job['result']['exit_code'] > 0:
+            finalresult = 3
+
+    finalresult = finalresultDict[finalresult]
+
+    return finalresult, testexitcode, subresults, testdirectory
+
+
+def analize_test_subresults(subresults):
+    """A function for analysing a sub-step results to decide if test failed in its first steps which are Athena or Reco
+    or in additional checks and comparison steps
+    """
+    finalstate = -1
+
+    if not any([r['result'] for r in subresults]) > 0:
+        finalstate = 0
+    else:
+        weights = [math.exp(-i) for i in range(0, len(subresults))]
+        weights_normalized = [w/sum(weights) for w in weights]
+        bin_subresults = [0 if int(r['result']) > 0 else 1 for r in subresults]
+        weighted_subresults = np.multiply(weights_normalized, bin_subresults)
+        if sum(weighted_subresults) > 0.5:
+            finalstate = 1
+        else:
+            finalstate = 3
+
+    return finalstate
