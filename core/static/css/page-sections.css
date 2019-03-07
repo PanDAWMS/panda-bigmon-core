@@ -34,8 +34,8 @@ a:hover, a:visited, a:link, a:active
 .doctextlight{ background-color:#F4FFDD; border-style:solid; border-width:1px; border-color:#324f00;}
 li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
 .help { color:#b2d546 }
-.helpsection{ font-weight:bold; font-size:14pt; background-color:forestgreen; color:white; border-style:solid; border-width:1px; border-color:forestgreen;}
-.helplight { color:#e4f9a6 }
+.helpsection{ font-weight:bold; font-size:14pt; background-color:#4ba173; color:white; border-style:solid; border-width:1px; border-color:#4ba173;}
+.helplight { background-color:#e6ffec; color: #222222 }
 .helpdark { color:forestgreen }
 .highlightcell { background-color:#ECE6E6 }
 .whitecell { background-color:white }

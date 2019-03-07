@@ -523,3 +523,32 @@ li.artmenu-item > label {
 .test-extra-info {
     display: none;
 }
+
+.art-legend {
+    width: 120px;
+    line-height: 21px;
+    position: relative;
+    border: 1px solid #dbdbdb;
+    text-align: center;
+    vertical-align: middle;
+    display: inline-block;
+    color: #222222;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.art-legend.finished_job {
+    background: #FADA5E;
+}
+
+.art-legend.done_job {
+    background: #3adb76;
+}
+
+.art-legend.failed_job {
+    background: tomato;
+}
+
+.art-legend.active_job {
+    background: cornflowerblue;
+}
