@@ -51,7 +51,7 @@ class ArtTest:
                 try:
                     r = r.json()
                 except:
-                    print 'The response was corrupted'
+                    print ('The response was corrupted')
                     raise
                 if 'exit_code' in r and r['exit_code'] == 0:
                     return True
