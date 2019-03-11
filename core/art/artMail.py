@@ -38,8 +38,8 @@ def send_mail_art(template, subject, summary, recipient):
             subject=subject,
             message=textify(html_message),
             from_email='atlas.pandamon@cern.ch',
-            # recipient_list=[recipient],
-            recipient_list=['tatiana.korchuganova@cern.ch'],
+            recipient_list=[recipient],
+            # recipient_list=['tatiana.korchuganova@cern.ch'],
             fail_silently=False,
         )
     except SMTPException as e:
