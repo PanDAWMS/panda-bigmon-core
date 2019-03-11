@@ -2,12 +2,12 @@
 <tr><td class="helplight">
 
 {% if viewParams.MON_VO == 'ATLAS' %}
-<b>Color coding of test states:</b>
+<b>The color coding of test result is the following:</b>
 <ul>
-    <li> <div class="art-legend done_job">Done</div> means either all sub-steps of a test successfully passed (exitcode = 0) or a PanDA job successfully finished in case a test has no sub-steps</li>
-    <li> <div class="art-legend finished_job">Finished</div> means the first sub-step of a test successfully passed but at least one rest sub-step failed  </li>
-    <li> <div class="art-legend failed_job">Failed</div> means either the first sub-step of a test failed or a test exitcode is non zero in case the test has no sub-steps or a PanDA job failed </li>
-    <li> <div class="art-legend active_job">Active</div> means a PanDA job still running </li>
+    <li> <div class="art-legend done_job">Done</div> - Athena and sub-steps succeeded;</li>
+    <li> <div class="art-legend finished_job">Finished</div> - Athena succeeded, sub-steps failed;  </li>
+    <li> <div class="art-legend failed_job">Failed</div> Athena failed or PanDA job failed; </li>
+    <li> <div class="art-legend active_job">Active</div> means a PanDA job still running. </li>
 </ul>
 
 {% endif %}
