@@ -1014,6 +1014,7 @@ def sendArtReport(request):
             if job['package'] not in artjobsdictbranch[job['branch']]['packages'].keys():
                 artjobsdictbranch[job['branch']]['packages'][job['package']] = {}
                 artjobsdictbranch[job['branch']]['packages'][job['package']]['name'] = job['package']
+                artjobsdictbranch[job['branch']]['packages'][job['package']]['ndone'] = 0
                 artjobsdictbranch[job['branch']]['packages'][job['package']]['nfailed'] = 0
                 artjobsdictbranch[job['branch']]['packages'][job['package']]['nfinished'] = 0
                 artjobsdictbranch[job['branch']]['packages'][job['package']]['nactive'] = 0
@@ -1029,6 +1030,7 @@ def sendArtReport(request):
             if job['branch'] not in artjobsdictpackage[job['package']]['branches'].keys():
                 artjobsdictpackage[job['package']]['branches'][job['branch']] = {}
                 artjobsdictpackage[job['package']]['branches'][job['branch']]['name'] = job['branch']
+                artjobsdictpackage[job['package']]['branches'][job['branch']]['ndone'] = 0
                 artjobsdictpackage[job['package']]['branches'][job['branch']]['nfailed'] = 0
                 artjobsdictpackage[job['package']]['branches'][job['branch']]['nfinished'] = 0
                 artjobsdictpackage[job['package']]['branches'][job['branch']]['nactive'] = 0
