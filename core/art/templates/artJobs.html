@@ -211,7 +211,7 @@ function toggleShowHide(divID, linkID) {
                                       {% if ntaglist|length == 1 %}
                                           <td class="cell" style="line-height:1.8rem;">
                                             {% for job in jobs.jobs %}
-                                              {{ job.computingsite }}<br>
+                                              <a class="bluelink" href="{% url 'siteInfo' job.computingsite  %}"><b>{{ job.computingsite }}</b></a><br>
                                             {% endfor %}
                                           </td>
                                           <td class="cell" style="line-height:1.8rem;">
