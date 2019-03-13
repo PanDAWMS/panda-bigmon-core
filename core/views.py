@@ -1330,8 +1330,10 @@ def cleanJobListLite(request, jobl, mode='nodrop', doAddMeta=True):
             creationtime = job['creationtime']
             if job['starttime']:
                 starttime = job['starttime']
-            else:
+            elif job['jobstatus'] in ('finished', 'failed', 'closed', 'cancelled'):
                 starttime = job['modificationtime']
+            else:
+                starttime = datetime.now()
             wait = starttime - creationtime
             ndays = wait.days
             strwait = str(timedelta(seconds=wait.seconds))
@@ -1471,8 +1473,10 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             creationtime = job['creationtime']
             if job['starttime']:
                 starttime = job['starttime']
-            else:
+            elif job['jobstatus'] in ('finished', 'failed', 'closed', 'cancelled'):
                 starttime = job['modificationtime']
+            else:
+                starttime = datetime.now()
             wait = starttime - creationtime
             ndays = wait.days
             strwait = str(timedelta(seconds=wait.seconds))
@@ -4416,7 +4420,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     if job['creationtime']:
         creationtime = job['creationtime']
         now = datetime.now()
-        tdelta =  now - creationtime
+        tdelta = now - creationtime
         delta = int(tdelta.days) + 1
         job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
     if job['modificationtime']:
