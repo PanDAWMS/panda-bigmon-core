@@ -8457,7 +8457,7 @@ def taskInfo(request, jeditaskid=0):
                 warning['memoryleaksuspicion']['jobs'] = tmcj_list
 
         if taskrec['creationdate']:
-            if taskrec['creationdate'] < datetime.now() - timedelta(days=180):
+            if taskrec['creationdate'] < datetime.strptime('2018-02-07', '%Y-%m-%d'):
                 warning['dropmode'] = 'The drop mode is unavailable since the data of job retries was cleaned up. The data shown on the page is in nodrop mode.'
             taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
         if taskrec['modificationtime']:
