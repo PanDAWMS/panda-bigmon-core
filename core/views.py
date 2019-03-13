@@ -569,24 +569,25 @@ def preprocessWildCardString(strToProcess, fieldToLookAt):
             if fieldToLookAt.lower() == 'resourcetype':
                 fieldToLookAt = 'resource_type'
 
-            if not isNot:
-                if (leadStar and trailStar):
-                        extraQueryString += "(UPPER(" + fieldToLookAt + ")  LIKE UPPER('%%" + parameter + "%%'))"
-                elif (not leadStar and not trailStar):
-                        extraQueryString += "(UPPER(" + fieldToLookAt + ")  LIKE UPPER('" + parameter + "'))"
-                elif (leadStar and not trailStar):
-                        extraQueryString += "(UPPER(" + fieldToLookAt + ")  LIKE UPPER('%%" + parameter + "'))"
-                elif (not leadStar and trailStar):
-                        extraQueryString += "(UPPER(" + fieldToLookAt + ")  LIKE UPPER('" + parameter + "%%'))"
-            else:
-                if (leadStar and trailStar):
-                    extraQueryString += "(UPPER(" + fieldToLookAt + ") NOT LIKE UPPER('%%" + parameter + "'%%'))"
-                elif (not leadStar and not trailStar):
-                    extraQueryString += "(UPPER(" + fieldToLookAt + ") NOT LIKE UPPER('" + parameter + "'))"
-                elif (leadStar and not trailStar):
-                    extraQueryString += "(UPPER(" + fieldToLookAt + ") NOT LIKE UPPER('%%" + parameter + "'))"
-                elif (not leadStar and trailStar):
-                    extraQueryString += "(UPPER(" + fieldToLookAt + ") NOT LIKE UPPER('" + parameter + "%%'))"
+            isEscape = False
+            if '_' in parameter:
+                parameter = parameter.replace('_', '!_')
+                isEscape = True
+
+            extraQueryString += "(UPPER(" + fieldToLookAt + ") "
+            if isNot:
+                extraQueryString += "NOT "
+            if leadStar and trailStar:
+                extraQueryString += " LIKE UPPER('%%" + parameter + "%%')"
+            elif not leadStar and not trailStar:
+                extraQueryString += " LIKE UPPER('" + parameter + "')"
+            elif leadStar and not trailStar:
+                extraQueryString += " LIKE UPPER('%%" + parameter + "')"
+            elif not leadStar and trailStar:
+                extraQueryString += " LIKE UPPER('" + parameter + "%%')"
+            if isEscape:
+                extraQueryString += " ESCAPE '!'"
+            extraQueryString += ")"
             currentRealParCount += 1
             if currentRealParCount < countRealParameters:
                 extraQueryString += ' AND '
