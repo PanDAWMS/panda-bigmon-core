@@ -1,5 +1,5 @@
 from core.cachecontroller.AbstractURLTasksProvider import AbstractURLTasksProvider
-import Queue
+import queue
 
 class MainMenuURLs(AbstractURLTasksProvider):
 
@@ -12,7 +12,7 @@ class MainMenuURLs(AbstractURLTasksProvider):
         return 2
 
     def getpayload(self):
-        urlsQueue = Queue.PriorityQueue(-1)
+        urlsQueue = queue.PriorityQueue(-1)
         with open('mainmenurls.txt') as urls:
             for line in urls:
                 line = line.rstrip('\r\n')

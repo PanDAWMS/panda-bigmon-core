@@ -1,6 +1,8 @@
-import urllib2, socket
+import urllib.request as urllibr
+from urllib.error import HTTPError
+import socket
 from BaseTasksProvider import BaseTasksProvider
-import Queue
+import queue
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIME_OUT_FOR_QUERY, NUMBER_OF_ITEMS_TO_DRAIN
@@ -15,7 +17,7 @@ class AbstractURLTasksProvider(BaseTasksProvider):
         self.EXECUTIONCAP = executioncap
 
     def getpayload(self):
-        return Queue.PriorityQueue(-1)
+        return queue.PriorityQueue(-1)
 
     def getvalidityperiod(self):
         pass
@@ -39,9 +41,9 @@ class AbstractURLTasksProvider(BaseTasksProvider):
             numsess = self.getNumberOfActiveDBSessions()
             if numsess != -1 and numsess < MAX_NUMBER_OF_ACTIVE_DB_SESSIONS:
                 try:
-                    req = urllib2.Request(self.baseURL + urltofetch)
-                    urllib2.urlopen(req, timeout=TIME_OUT_FOR_QUERY)
-                except Exception or urllib2.HTTPError as e:
+                    req = urllibr.Request(self.baseURL + urltofetch)
+                    urllibr.urlopen(req, timeout=TIME_OUT_FOR_QUERY)
+                except Exception or HTTPError as e:
                     if isinstance(e.reason, socket.timeout):
                         timeout = True
                     else:

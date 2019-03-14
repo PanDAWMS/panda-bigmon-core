@@ -18,4 +18,8 @@ while 1:
 
 
 
+"""
+Install:
+schedule
 
+"""
