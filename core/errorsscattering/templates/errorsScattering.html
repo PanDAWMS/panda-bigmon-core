@@ -92,7 +92,7 @@
                         {% if values.totalstats.minpercent < 80 %}class="sm_warning_fill"
                         {% else %}class="sm_ok_fill"{% endif %}
                     {% endif %}
-                  {% elif values.totalstats.allc > 0 and stats.allc <= 10 %}
+                  {% elif values.totalstats.allc > 0 and values.totalstats.allc <= 10 %}
                     {% if values.totalstats.minpercent < 50 %}class="sm_alarm_light_fill"
                     {% else %}
                         {% if values.totalstats.minpercent < 80 %}class="sm_warning_light_fill"
