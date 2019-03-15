@@ -58,7 +58,7 @@
                       {% for tags,files in pack.items %}
                           {% if tags == ntag %}
                               <td class="cell">
-                                {% if files.finished > 0 or files.failed > 0 or files.active > 0 %}
+                                {% if files.finished > 0 or files.failed > 0 or files.active > 0 or files.done > 0 %}
                                     <div class="clickable">
                                         <div class="active">{{ files.active }}</div>
                                         <div class="done">{{ files.done }}</div>
