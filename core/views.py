@@ -2002,6 +2002,8 @@ def taskSummaryDict(request, tasks, fieldlist=None):
     if 'processingtype' in sumd and 'panda-client-0.6.15-jedi-run' in sumd['processingtype']:
         logger = logging.getLogger('bigpandamon-error')
         logger.error(suml)
+        logger.error(sumd)
+
     return suml
 
 
