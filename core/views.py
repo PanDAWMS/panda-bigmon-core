@@ -1920,6 +1920,8 @@ def userSummaryDict(jobs):
 def taskSummaryDict(request, tasks, fieldlist=None):
     """ Return a dictionary summarizing the field values for the chosen most interesting fields """
     sumd = {}
+    logger = logging.getLogger('bigpandamon-error')
+
     if fieldlist:
         flist = fieldlist
     else:
@@ -1971,6 +1973,8 @@ def taskSummaryDict(request, tasks, fieldlist=None):
                 # if val == 'anal': val = 'analy'
                 if not f in sumd: sumd[f] = {}
                 if not val in sumd[f]: sumd[f][val] = 0
+                if f == 'processingtype' and val == 'panda-client-0.6.15-jedi-run':
+                    logger.error(sumd[f][val])
                 sumd[f][val] += 1
     ## convert to ordered lists
     suml = []
@@ -1998,12 +2002,6 @@ def taskSummaryDict(request, tasks, fieldlist=None):
         itemd['list'] = iteml
         suml.append(itemd)
     suml = sorted(suml, key=lambda x: x['field'])
-
-    if 'processingtype' in sumd and 'panda-client-0.6.15-jedi-run' in sumd['processingtype']:
-        logger = logging.getLogger('bigpandamon-error')
-        logger.error(suml)
-        logger.error(sumd)
-
     return suml
 
 
