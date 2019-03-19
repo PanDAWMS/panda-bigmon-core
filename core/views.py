@@ -1928,6 +1928,7 @@ def taskSummaryDict(request, tasks, fieldlist=None):
         flist = standard_taskfields
     for task in tasks:
         for f in flist:
+
             if 'tasktype' in request.session['requestParams'] and request.session['requestParams'][
                 'tasktype'].startswith('analy'):
                 ## Remove the noisy useless parameters in analysis listings
