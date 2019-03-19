@@ -1975,9 +1975,9 @@ def taskSummaryDict(request, tasks, fieldlist=None):
                 if not f in sumd: sumd[f] = {}
                 if not val in sumd[f]: sumd[f][val] = 0
 
-                if f == 'processingtype' and val == 'panda-client-0.6.15-jedi-run':
-                    logger.error(sumd[f][val])
-                    logger.error(task['jeditaskid'])
+#                if f == 'processingtype' and val == 'panda-client-0.6.15-jedi-run':
+#                    logger.error(sumd[f][val])
+#                    logger.error(task['jeditaskid'])
 
                 sumd[f][val] += 1
     ## convert to ordered lists
