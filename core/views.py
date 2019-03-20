@@ -7227,7 +7227,7 @@ def taskList(request):
         tasks = taskNotUpdated(request, query, wildCardExtension)
     else:
         #wildCardExtension = "(((UPPER(taskname)  LIKE UPPER('%%.%%')) AND (UPPER(taskname)  LIKE UPPER('%%mc%%')) AND (UPPER(taskname)  LIKE UPPER('%%.CAOD_HIGG5D1.%%')) AND (UPPER(taskname)  LIKE UPPER('%%.32-07-8/'))))"
-        tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
+        tasks = copy.deepcopy(list(JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()))
         listTasks.append(JediTasksOrdered)
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                     'json' not in request.session['requestParams'])):
