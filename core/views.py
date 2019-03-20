@@ -7159,6 +7159,20 @@ def taskESExtendedInfo(request):
         estaskstr += " %s(%s) " % (s['statusname'], s['count'])
     return HttpResponse(estaskstr, content_type='text/html')
 
+
+def removeDublicates(inlist, key):
+
+    ids = set([item[key] for item in inlist])
+    outlist = []
+    for item in inlist:
+        if item[key] in ids:
+            outlist.append(item)
+            ids.remove(item[key])
+    return outlist
+
+
+
+
 @login_customrequired
 @csrf_exempt
 def taskList(request):
@@ -7227,8 +7241,8 @@ def taskList(request):
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                     'json' not in request.session['requestParams'])):
             pass
-            #thread = Thread(target=totalCount, args=(listTasks, query, wildCardExtension, dkey))
-            #thread.start()
+            thread = Thread(target=totalCount, args=(listTasks, query, wildCardExtension, dkey))
+            thread.start()
         else:
             thread = None
     # Getting hashtags for task selection
@@ -7487,6 +7501,7 @@ def taskList(request):
         del request.session['TLAST']
         return HttpResponse(dump, content_type='text/html')
     else:
+        tasks = removeDublicates(tasks, "jeditaskid")
         sumd = taskSummaryDict(request, tasks)
         del request.session['TFIRST']
         del request.session['TLAST']
