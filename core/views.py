@@ -1925,14 +1925,13 @@ def taskSummaryDict(request, tasks, fieldlist=None):
     if fieldlist:
         flist = fieldlist
     else:
-        flist = standard_taskfields
+        flist = copy.deepcopy(standard_taskfields)
+        logger.error(flist)
 
-    tasks = removeDublicates(tasks, "jeditaskid")
     for task in tasks:
         logger.error(task)
         for f in flist:
             logger.error(f)
-            logger.error(flist)
 
             if 'tasktype' in request.session['requestParams'] and request.session['requestParams'][
                 'tasktype'].startswith('analy'):
