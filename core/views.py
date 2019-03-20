@@ -71,7 +71,7 @@ from core.filebrowser.ruciowrapper import ruciowrapper
 from core.settings.local import dbaccess
 from core.settings.local import PRODSYS
 from core.settings.local import ES
-
+from core.settings.local import GRAFANA
 
 
 from core.TaskProgressPlot import TaskProgressPlot
@@ -12337,6 +12337,35 @@ def image(request):
                 response = HttpResponse(content_type='image/jpg')
                 rgb_im.save(response, "JPEG")
                 return response
+        except Exception as ex:
+            return redirect('/static/images/404-not-found-site.gif')
+    else:
+        return redirect('/static/images/error_z0my4n.png')
+
+def grafana_image(request):
+    if ('url' in request.GET):
+        param = request.build_absolute_uri()
+        url = param[param.index("=")+1:len(param)]
+        for urlw in whitelist:
+            pattern = "^((http[s]?):\/)?\/?([^:\/\s]+"+urlw+")"
+            urlConfim = re.findall(pattern,url)
+            if (len(urlConfim)>0):
+                break
+        if (len(urlConfim)==0):
+            return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
+        try:
+            if 'Authorization' in GRAFANA:
+                grafana_token = GRAFANA['Authorization']
+            import requests
+            headers = {"Authorization": grafana_token}
+            r = requests.get(url, headers = headers)
+            r.raise_for_status()
+            with io.BytesIO(r.content) as f:
+                with Image.open(f) as img:
+                    rgb_im = img.convert('RGB')
+                    response = HttpResponse(content_type='image/jpg')
+                    rgb_im.save(response, "JPEG")
+                    return response
         except Exception as ex:
             return redirect('/static/images/404-not-found-site.gif')
     else:

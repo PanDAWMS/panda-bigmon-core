@@ -1,5 +1,5 @@
 {% extends "_base_core.html" %}
-
+{% load static %}
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA sites{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
@@ -53,17 +53,23 @@
 
 {% if sites %}
 
+<script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+	    $(".comment").shorten();
+	});
+</script>
 <table>
 <tr class='tablesection' id="siteatt"><th colspan=20> Site attribute summary </th></tr>
 {% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td><div class="comment more">
 {% for item in fdict.list %}
 {% if item.kname != '' %}
-{% if fdict.field == 'status' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
+<span {% if fdict.field == 'status' %}  class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
 <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
 {% endif %}
 {% endfor %}
-</td></tr>
+</div></td></tr>
 {% endfor %}
 </table>
 
