@@ -1926,6 +1926,8 @@ def taskSummaryDict(request, tasks, fieldlist=None):
         flist = fieldlist
     else:
         flist = standard_taskfields
+
+    tasks = removeDublicates(tasks, "jeditaskid")
     for task in tasks:
         logger.error(task)
         for f in flist:
@@ -7501,7 +7503,7 @@ def taskList(request):
         del request.session['TLAST']
         return HttpResponse(dump, content_type='text/html')
     else:
-        tasks = removeDublicates(tasks, "jeditaskid")
+        #tasks = removeDublicates(tasks, "jeditaskid")
         sumd = taskSummaryDict(request, tasks)
         del request.session['TFIRST']
         del request.session['TLAST']
