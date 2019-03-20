@@ -1920,12 +1920,17 @@ def userSummaryDict(jobs):
 def taskSummaryDict(request, tasks, fieldlist=None):
     """ Return a dictionary summarizing the field values for the chosen most interesting fields """
     sumd = {}
+    logger = logging.getLogger('bigpandamon-error')
+
     if fieldlist:
         flist = fieldlist
     else:
         flist = standard_taskfields
     for task in tasks:
+        logger.error(task)
         for f in flist:
+            logger.error(f)
+
             if 'tasktype' in request.session['requestParams'] and request.session['requestParams'][
                 'tasktype'].startswith('analy'):
                 ## Remove the noisy useless parameters in analysis listings
@@ -7217,7 +7222,7 @@ def taskList(request):
         tasks = taskNotUpdated(request, query, wildCardExtension)
     else:
         #wildCardExtension = "(((UPPER(taskname)  LIKE UPPER('%%.%%')) AND (UPPER(taskname)  LIKE UPPER('%%mc%%')) AND (UPPER(taskname)  LIKE UPPER('%%.CAOD_HIGG5D1.%%')) AND (UPPER(taskname)  LIKE UPPER('%%.32-07-8/'))))"
-        tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
+        tasks = copy.deepcopy(list(JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()))
         listTasks.append(JediTasksOrdered)
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                     'json' not in request.session['requestParams'])):
