@@ -150,6 +150,7 @@ urlpatterns = [
 
     ###Images###
     re_path('^img/',coremon_views.image, name='img'),
+    re_path('^grafana/',coremon_views.grafana_image, name='grafana'),
 
     re_path(r'^oauth/', include('social_django.urls', namespace='social')),  # <--
     re_path(r'^testauth/$', coremon_views.testauth, name='testauth'),
