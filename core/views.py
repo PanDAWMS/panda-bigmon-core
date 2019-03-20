@@ -1926,13 +1926,9 @@ def taskSummaryDict(request, tasks, fieldlist=None):
         flist = fieldlist
     else:
         flist = copy.deepcopy(standard_taskfields)
-        logger.error(flist)
 
     for task in tasks:
-        logger.error(task)
         for f in flist:
-            logger.error(f)
-
             if 'tasktype' in request.session['requestParams'] and request.session['requestParams'][
                 'tasktype'].startswith('analy'):
                 ## Remove the noisy useless parameters in analysis listings
@@ -4905,7 +4901,7 @@ def userInfo(request, user=''):
     if request.user.is_authenticated:
         userids = BPUser.objects.filter(email=request.user.email).values('id')
         userid = userids[0]['id']
-        fields = {'job': standard_fields, 'task': standard_taskfields, 'site': standard_sitefields}
+        fields = {'job': standard_fields, 'task': copy.deepcopy(standard_taskfields), 'site': standard_sitefields}
         links = get_relevant_links(userid, fields)
 
     sumd = userSummaryDict(jobs)
