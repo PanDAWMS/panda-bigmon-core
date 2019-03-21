@@ -122,3 +122,10 @@ def dictfetchall(cursor):
         dict(zip([col[0] for col in desc], row))
         for row in cursor.fetchall()
         ]
+
+
+def is_timestamp(key):
+    if key in ('creationtime', 'endtime', 'modificationtime', 'proddbupdatetime', 'starttime', 'statechangetime',
+                    'creationdate', 'frozentime', 'ttcrequested', 'submittime', 'lastupdate'):
+        return True
+    return False
