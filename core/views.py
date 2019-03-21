@@ -1477,7 +1477,8 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             strduration = str(timedelta(seconds=duration.seconds))
             job['duration'] = "%s:%s" % (ndays, strduration)
             job['durationsec'] = ndays * 24 * 3600 + duration.seconds
-            job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds)/60)
+            if job['jobstatus'] in ['finished', 'failed', 'holding', 'cancelled', 'closed']:
+                job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds)/60)
 
         job['waittime'] = ""
         # if job['jobstatus'] in ['running','finished','failed','holding','cancelled','transferring']:
@@ -1804,8 +1805,9 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             nbinsmax = 20
             dstep = 10 if (max(kys)-min(kys))/20 < 10 else int((max(kys)-min(kys))/20)
             rangebounds = [lb-1 for lb in range(min(kys), max(kys), dstep)]
-
-            bins, ranges = np.histogram(kys, bins=rangebounds[:-1])
+            if len(rangebounds) == 1:
+                rangebounds.append(rangebounds[0]+dstep)
+            bins, ranges = np.histogram(kys, bins=rangebounds)
             for i, bin in enumerate(bins):
                 iteml.append({'kname': str(ranges[i]) + '-' + str(ranges[i+1]), 'kvalue':bin})
 
