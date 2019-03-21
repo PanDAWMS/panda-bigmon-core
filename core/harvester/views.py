@@ -14,6 +14,7 @@ from django.utils.cache import patch_cache_control, patch_response_headers
 from django.utils import timezone
 
 from core.libs.cache import setCacheEntry, getCacheEntry
+from core.libs.exlib import is_timestamp
 
 from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder, extensibleURL, DateTimeEncoder
 from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots
@@ -163,10 +164,18 @@ def harvesterWorkerInfo(request):
                     workerinfo['jobsSubStatuses'][job['jobsubstatus']] = 1
                 else:
                     workerinfo['jobsSubStatuses'][job['jobsubstatus']] += 1
+            for k, v in workerinfo.items():
+                if is_timestamp(k):
+                    try:
+                        val = v.strftime(defaultDatetimeFormat)
+                        workerinfo[k] = val
+                    except:
+                        pass
         else:
             workerinfo = None
     else:
         error = "Harvesterid + Workerid is not specified"
+
 
     data = {
         'request': request,
