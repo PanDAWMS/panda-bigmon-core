@@ -99,7 +99,7 @@ function toggleByID(id) {
 </tr>
 <tr>
 	<td>{{ job.pandaid }}  {% if not job.jeditaskid %} <br>Attempt {{ job.attemptnr }} {% endif %}</td>
-	<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if job.workinggroup %} / <a href="{{xurl}}workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }} {% endif %}{% endif %}</td>
+	<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if job.workinggroup %} / <a href="{% url 'workingGroups' %}?workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }} {% endif %}{% endif %}</td>
 	<td>{% if job.jeditaskid %}<a href="{% url 'taskInfo' job.jeditaskid %}">{{ job.jeditaskid }}</a> {% else %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
 {% if job.parentid %}
     <td> <a href="{% url 'jobInfo' %}?pandaid={{ job.parentid }}"> {{ job.parentid }} </a>
