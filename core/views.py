@@ -11056,6 +11056,8 @@ def workingGroups(request):
     tasksummary = wgTaskSummary(request, view='working group', taskdays=taskdays)
 
     ## WG job summary
+    if 'workinggroup' in request.session['requestParams'] and request.session['requestParams']['workinggroup']:
+        query['workinggroup'] = request.session['requestParams']['workinggroup']
     wgsummarydata = wgSummary(query)
     wgs = {}
     for rec in wgsummarydata:
