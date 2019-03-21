@@ -855,6 +855,17 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     if (count < (len(listOfCloudSitesMismatched) - 1)):
                         extraQueryString += ' OR '
                 extraQueryString += ')'
+        elif param == 'durationmin' and request.session['requestParams'][param]:
+            try:
+                durationrange = request.session['requestParams'][param].split('-')
+            except:
+                continue
+            try:
+                extraQueryString += ' AND ( '
+            except NameError:
+                extraQueryString = '('
+            extraQueryString += ' endtime is not NULL and starttime is not null and (endtime - starttime) * 24 * 60 > {} and (endtime - starttime) * 24 * 60 < {} ) '.format(str(durationrange[0]), str(durationrange[1]))
+
 
         if querytype == 'task':
             for field in JediTasks._meta.get_fields():
@@ -1466,6 +1477,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             strduration = str(timedelta(seconds=duration.seconds))
             job['duration'] = "%s:%s" % (ndays, strduration)
             job['durationsec'] = ndays * 24 * 3600 + duration.seconds
+            job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds)/60)
 
         job['waittime'] = ""
         # if job['jobstatus'] in ['running','finished','failed','holding','cancelled','transferring']:
@@ -1788,6 +1800,15 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             for ky in newvalues:
                 iteml.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
             iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
+        elif f == 'durationmin':
+            nbinsmax = 20
+            dstep = 10 if (max(kys)-min(kys))/20 < 10 else int((max(kys)-min(kys))/20)
+            rangebounds = [lb-1 for lb in range(min(kys), max(kys), dstep)]
+
+            bins, ranges = np.histogram(kys, bins=rangebounds[:-1])
+            for i, bin in enumerate(bins):
+                iteml.append({'kname': str(ranges[i]) + '-' + str(ranges[i+1]), 'kvalue':bin})
+
         else:
             if f in ('priorityrange', 'jobsetrange'):
                 skys = []
@@ -3324,7 +3345,7 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     # Sort in order to see the most important tasks
-    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount','noutputdatafiles','actualcorecount','schedulerid'])
+    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount','noutputdatafiles','actualcorecount','schedulerid','durationmin'])
     if sumd:
         for item in sumd:
             if item['field'] == 'jeditaskid':
