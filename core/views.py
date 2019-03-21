@@ -115,7 +115,7 @@ from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 #from libs import exlib
 from core.libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, preparePlotData
-from core.libs.exlib import insert_to_temp_table, dictfetchall
+from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers
 from core.libs.bpuser import get_relevant_links
@@ -4089,7 +4089,13 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         colnames = sorted(colnames)
         produsername = ''
         for k in colnames:
-            val = job[k]
+            if is_timestamp(k):
+                try:
+                    val = job[k].strftime(defaultDatetimeFormat)
+                except:
+                    val = job[k]
+            else:
+                val = job[k]
             if job[k] == None:
                 val = ''
                 continue
@@ -8279,7 +8285,13 @@ def taskInfo(request, jeditaskid=0):
         colnames = taskrec.keys()
         colnames = sorted(colnames)
         for k in colnames:
-            val = taskrec[k]
+            if is_timestamp(k):
+                try:
+                    val = taskrec[k].strftime(defaultDatetimeFormat)
+                except:
+                    val = taskrec[k]
+            else:
+                val = taskrec[k]
             if taskrec[k] == None:
                 val = ''
                 continue
@@ -8750,7 +8762,13 @@ def taskInfoNew(request, jeditaskid=0):
         colnames = taskrec.keys()
         colnames = sorted(colnames)
         for k in colnames:
-            val = taskrec[k]
+            if is_timestamp(k):
+                try:
+                    val = taskrec[k].strftime(defaultDatetimeFormat)
+                except:
+                    val = taskrec[k]
+            else:
+                val = taskrec[k]
             if taskrec[k] == None:
                 val = ''
                 continue
@@ -11155,7 +11173,13 @@ def datasetInfo(request):
         colnames = dsrec.keys()
         colnames = sorted(colnames)
         for k in colnames:
-            val = dsrec[k]
+            if is_timestamp(k):
+                try:
+                    val = dsrec[k].strftime(defaultDatetimeFormat)
+                except:
+                    val = dsrec[k]
+            else:
+                val = dsrec[k]
             if dsrec[k] == None:
                 val = ''
                 continue
@@ -11331,7 +11355,13 @@ def fileInfo(request):
         colnames = frec.keys()
         colnames = sorted(colnames)
         for k in colnames:
-            val = frec[k]
+            if is_timestamp(k):
+                try:
+                    val = frec[k].strftime(defaultDatetimeFormat)
+                except:
+                    val = frec[k]
+            else:
+                val = frec[k]
             if frec[k] == None:
                 val = ''
                 continue
