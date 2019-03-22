@@ -1804,10 +1804,10 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         elif f == 'durationmin':
             nbinsmax = 20
             dstep = 10 if (max(kys)-min(kys))/20 < 10 else int((max(kys)-min(kys))/20)
-            rangebounds = [lb-1 for lb in range(min(kys), max(kys), dstep)]
+            rangebounds = [lb-1 for lb in range(min(kys), max(kys)+dstep, dstep)]
             if len(rangebounds) == 1:
                 rangebounds.append(rangebounds[0]+dstep)
-            bins, ranges = np.histogram(kys, bins=rangebounds)
+            bins, ranges = np.histogram([job['durationmin'] for job in jobs if 'durationmin' in job], bins=rangebounds)
             for i, bin in enumerate(bins):
                 iteml.append({'kname': str(ranges[i]) + '-' + str(ranges[i+1]), 'kvalue':bin})
 
