@@ -1803,7 +1803,8 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
         elif f == 'durationmin':
             nbinsmax = 20
-            dstep = 10 if (max(kys)-min(kys))/20 < 10 else int((max(kys)-min(kys))/20)
+            minstep = 10
+            dstep = minstep if (max(kys)-min(kys))/nbinsmax < minstep else int((max(kys)-min(kys))/nbinsmax)
             rangebounds = [lb-1 for lb in range(min(kys), max(kys)+dstep, dstep)]
             if len(rangebounds) == 1:
                 rangebounds.append(rangebounds[0]+dstep)
