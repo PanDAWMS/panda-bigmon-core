@@ -8399,10 +8399,13 @@ def taskInfo(request, jeditaskid=0):
     if len(dsets) > 0:
         for ds in dsets:
             if len (ds['datasetname']) > 0:
-               scope = str(ds['datasetname']).split('.')[0]
-               if ':' in scope:
-                   scope = str(scope).split(':')[0]
-               ds['scope']=scope
+                if not str(ds['datasetname']).startswith('user'):
+                    scope = str(ds['datasetname']).split('.')[0]
+                else:
+                    scope = '.'.join(str(ds['datasetname']).split('.')[:2])
+                if ':' in scope:
+                    scope = str(scope).split(':')[0]
+                ds['scope'] = scope
             newdslist.append(ds)
             if ds['type'] not in ['input', 'pseudo_input']: continue
             if ds['masterid']: continue
