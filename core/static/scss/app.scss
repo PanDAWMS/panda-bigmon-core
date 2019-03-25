@@ -1,0 +1,18 @@
+@import "settings";
+@import "../foundation-sites/scss/foundation";
+
+$dark-blue: #dddddd;
+$light-blue: #ffffdf;
+$white-nice: #fefefe;
+
+.top-bar {
+  background: #333;
+  color: $white-nice;
+  padding:0;
+  margin: 0;
+  border: 0;
+  font-size: 85%;
+  z-index: 10000;
+
+
+}
