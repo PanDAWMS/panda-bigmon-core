@@ -6,17 +6,13 @@
 
 {% block body %}
 
-<table style="margin:30px" ><tr><td>
-
-<p>
-<b> Oops! Something went wrong. </b>
-</p>
-
-<p>
-{{ errormessage }}
-</p>
-
-</td></tr></table>
+<div class="callout alert" data-closable>
+  <h5>Oops! Something went wrong.</h5>
+    <p>{{ errormessage }}</p>
+    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
 
 {% endblock %}
 

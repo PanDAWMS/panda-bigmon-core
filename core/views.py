@@ -4251,6 +4251,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     logfile['site'] = logfilerec[0]['destinationse']
                     logfile['guid'] = logfilerec[0]['guid']
             logfile['scope'] = file['scope']
+            logfile['fileid'] = file['fileid']
         file['fsize'] = int(file['fsize'])
         if file['type'] == 'input':
             file['attemptnr'] = dcfilesDict[file['fileid']]['attemptnr'] if file['fileid'] in dcfilesDict else file['attemptnr']

@@ -17,7 +17,7 @@ from django.utils.cache import patch_response_headers
 from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_filebrowser_vo, \
 get_filebrowser_hostname, remove_folder
 
-from core.common.models import Filestable4
+from core.common.models import Filestable4, FilestableArch
 from core.views import DateEncoder, DateTimeEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
 
@@ -55,7 +55,7 @@ def index(request):
     guid = ''
     site = ''
     pattern_string='^[a-zA-Z0-9.\-_]+$'
-    pattern_site = '^[a-zA-Z0-9.,\-_]+$'
+    pattern_site = '^[a-zA-Z0-9.,\-_\/]+$'
     pattern_guid='^(\{){0,1}[0-9a-zA-Z]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\}){0,1}$'
     try:
         guid = request.GET['guid']
@@ -94,10 +94,38 @@ def index(request):
     except:
         pass
 
+    # check if size of logfile is too big return to user error message containing rucio cli command to download it locally
+    max_sizemb = 1000
+    try:
+        fileid = int(request.GET['fileid'])
+    except:
+        fileid = None
+    lquery = {}
+    if fileid:
+        lquery['fileid'] = fileid
+    elif lfn:
+        lquery['lfn'] = lfn
+
+    sizemb = None
+    fsize = Filestable4.objects.filter(**lquery).values('fsize')
+    if len(fsize) == 0:
+        fsize = FilestableArch.objects.filter(**lquery).values('fsize')
+    if len(fsize) > 0:
+        sizemb = round(int(fsize[0]['fsize'])/1000/1000)
+
     ### download the file
     files = []
     dirprefix = ''
     tardir = ''
+    if sizemb and sizemb > max_sizemb:
+        _logger.warning('Size of the requested log is {} MB which is more than limit {} MB'.format(sizemb, max_sizemb))
+        errormessage = """The size of requested log is too big ({}MB). 
+                            Please try to download it locally using Rucio CLI by the next command: 
+                            rucio download {}:{}""".format(sizemb, scope, lfn)
+        data = {
+            'errormessage': errormessage
+        }
+        return render_to_response('errorPage.html', data, content_type='text/html')
     if not (guid is None or lfn is None or scope is None):
         files, errtxt, dirprefix, tardir = get_rucio_file(scope,lfn, guid)
     else:
