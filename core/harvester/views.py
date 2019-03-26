@@ -187,10 +187,14 @@ def harvesterWorkerInfo(request):
         'requestParams': request.session['requestParams'],
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-
-    endSelfMonitor(request)
-    response = render_to_response('harvworkerinfo.html', data, content_type='text/html')
-    return response
+    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+            'json' in request.session['requestParams']):
+        endSelfMonitor(request)
+        return HttpResponse(json.dumps(data['workerinfo'], cls=DateEncoder), content_type='application/json')
+    else:
+        endSelfMonitor(request)
+        response = render_to_response('harvworkerinfo.html', data, content_type='text/html')
+        return response
 
 
 def harvesterfm (request):
