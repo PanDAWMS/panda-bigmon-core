@@ -115,7 +115,7 @@ from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 #from libs import exlib
 from core.libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, preparePlotData
-from core.libs.exlib import insert_to_temp_table, dictfetchall
+from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers
 from core.libs.bpuser import get_relevant_links
@@ -855,6 +855,17 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     if (count < (len(listOfCloudSitesMismatched) - 1)):
                         extraQueryString += ' OR '
                 extraQueryString += ')'
+        elif param == 'durationmin' and request.session['requestParams'][param]:
+            try:
+                durationrange = request.session['requestParams'][param].split('-')
+            except:
+                continue
+            try:
+                extraQueryString += ' AND ( '
+            except NameError:
+                extraQueryString = '('
+            extraQueryString += ' endtime is not NULL and starttime is not null and (endtime - starttime) * 24 * 60 > {} and (endtime - starttime) * 24 * 60 < {} ) '.format(str(durationrange[0]), str(durationrange[1]))
+
 
         if querytype == 'task':
             for field in JediTasks._meta.get_fields():
@@ -1220,7 +1231,7 @@ def saveSettings(request):
         return HttpResponse(status=204)
     else:
         data = {"error": "no jeditaskid supplied"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
 def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     # dropping algorithm for jobs belong to single task
@@ -1466,6 +1477,8 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             strduration = str(timedelta(seconds=duration.seconds))
             job['duration'] = "%s:%s" % (ndays, strduration)
             job['durationsec'] = ndays * 24 * 3600 + duration.seconds
+            if job['jobstatus'] in ['finished', 'failed', 'holding', 'cancelled', 'closed']:
+                job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds)/60)
 
         job['waittime'] = ""
         # if job['jobstatus'] in ['running','finished','failed','holding','cancelled','transferring']:
@@ -1788,6 +1801,17 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             for ky in newvalues:
                 iteml.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
             iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
+        elif f == 'durationmin':
+            nbinsmax = 20
+            minstep = 10
+            dstep = minstep if (max(kys)-min(kys))/nbinsmax < minstep else int((max(kys)-min(kys))/nbinsmax)
+            rangebounds = [lb-1 for lb in range(min(kys), max(kys)+dstep, dstep)]
+            if len(rangebounds) == 1:
+                rangebounds.append(rangebounds[0]+dstep)
+            bins, ranges = np.histogram([job['durationmin'] for job in jobs if 'durationmin' in job], bins=rangebounds)
+            for i, bin in enumerate(bins):
+                iteml.append({'kname': str(ranges[i]) + '-' + str(ranges[i+1]), 'kvalue':bin})
+
         else:
             if f in ('priorityrange', 'jobsetrange'):
                 skys = []
@@ -2213,7 +2237,7 @@ def jobParamList(request):
     jobparams = Jobparamstable.objects.filter(**query).values()
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
-        return HttpResponse(json.dumps(jobparams, cls=DateEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(jobparams, cls=DateEncoder), content_type='application/json')
     else:
         return HttpResponse('not supported', content_type='text/html')
 
@@ -2469,7 +2493,7 @@ def jobListP(request, mode=None, param=None):
         return response
     else:
         data = getJobList(request,requestToken)
-        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
         return response
@@ -3324,7 +3348,7 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     # Sort in order to see the most important tasks
-    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount','noutputdatafiles','actualcorecount','schedulerid'])
+    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount','noutputdatafiles','actualcorecount','schedulerid','durationmin'])
     if sumd:
         for item in sumd:
             if item['field'] == 'jeditaskid':
@@ -3533,7 +3557,7 @@ def jobList(request, mode=None, param=None):
         }
         ##self monitor
         endSelfMonitor(request)
-        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -3691,7 +3715,7 @@ SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTER
                 pass
             rowDict = {"taskid": error[1], "pandaid": error[0], "desc": descr}
             fullListErrors.append(rowDict)
-    return HttpResponse(json.dumps(fullListErrors), content_type='text/html')
+    return HttpResponse(json.dumps(fullListErrors), content_type='application/json')
 
 def decimal_default(obj):
     if isinstance(obj, decimal.Decimal):
@@ -3865,7 +3889,7 @@ def descendentjoberrsinfo(request):
         data = {"error": "no pandaid or jeditaskid supplied"}
         del request.session['TFIRST']
         del request.session['TLAST']
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     query = setupView(request, hours=365 * 24)
     jobs = []
@@ -3880,7 +3904,7 @@ def descendentjoberrsinfo(request):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {"error": "job not found"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     job = jobs[0]
     countOfInvocations = []
@@ -3931,7 +3955,7 @@ def descendentjoberrsinfo(request):
 def eventsInfo(request, mode=None, param=None):
     if not 'jeditaskid' in request.GET:
         data = {}
-        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
     jeditaskid = request.GET['jeditaskid']
 
@@ -3947,7 +3971,7 @@ def eventsInfo(request, mode=None, param=None):
         data[ev[1]] = ev[0]
     data['jeditaskid'] = jeditaskid
 
-    return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 @login_customrequired
 @csrf_exempt
@@ -4089,7 +4113,13 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         colnames = sorted(colnames)
         produsername = ''
         for k in colnames:
-            val = job[k]
+            if is_timestamp(k):
+                try:
+                    val = job[k].strftime(defaultDatetimeFormat)
+                except:
+                    val = job[k]
+            else:
+                val = job[k]
             if job[k] == None:
                 val = ''
                 continue
@@ -4221,6 +4251,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     logfile['site'] = logfilerec[0]['destinationse']
                     logfile['guid'] = logfilerec[0]['guid']
             logfile['scope'] = file['scope']
+            logfile['fileid'] = file['fileid']
         file['fsize'] = int(file['fsize'])
         if file['type'] == 'input':
             file['attemptnr'] = dcfilesDict[file['fileid']]['attemptnr'] if file['fileid'] in dcfilesDict else file['attemptnr']
@@ -4536,7 +4567,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         ##self monitor
         endSelfMonitor(request)
 
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
     else:
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -4700,7 +4731,7 @@ def userList(request):
         resp = sumd
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(resp), content_type='text/html')
+        return HttpResponse(json.dumps(resp), content_type='application/json')
 
 #@login_required(login_url='loginauth2')
 @login_customrequired
@@ -4972,7 +5003,7 @@ def userInfo(request, user=''):
         resp = sumd
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(resp,default=datetime_handler),content_type='text/html')
+        return HttpResponse(json.dumps(resp,default=datetime_handler),content_type='application/json')
 
 @login_customrequired
 def siteList(request):
@@ -5121,7 +5152,7 @@ def siteList(request):
         resp = sites
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(resp, cls=DateEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(resp, cls=DateEncoder), content_type='application/json')
 
 def get_panda_resource(siterec):
     url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
@@ -5263,7 +5294,7 @@ def siteInfo(request, site=''):
                          'produserid': job.produserid})
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(resp), content_type='text/html')
+        return HttpResponse(json.dumps(resp), content_type='application/json')
 
 
 def updateCacheWithListOfMismatchedCloudSites(mismatchedSites):
@@ -5704,7 +5735,7 @@ def wnInfo(request, site, wnname='all'):
         }
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
 
 def checkUcoreSite(site, usites):
@@ -6475,7 +6506,7 @@ def worldjobs(request, view='production'):
         data = {
         }
 
-        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
 @login_customrequired
@@ -6623,7 +6654,7 @@ def worldhs06s(request):
         data = {
         }
 
-        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 @login_customrequired
 def dashboard(request, view='production'):
@@ -6852,7 +6883,7 @@ def dashboard(request, view='production'):
             }
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
     elif view == 'objectstore':
         global objectStoresNames
@@ -7026,7 +7057,7 @@ def dashboard(request, view='production'):
             ##self monitor
             endSelfMonitor(request)
 
-            return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+            return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 @login_customrequired
 def dashAnalysis(request):
@@ -7137,7 +7168,7 @@ def dashTasks(request, hours, view='production'):
         }
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
 
 
 def taskESExtendedInfo(request):
@@ -7720,7 +7751,7 @@ def getErrorSummaryForEvents(request):
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
     else:
         data = {"error": "no jeditaskid supplied"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
     if 'mode' in request.session['requestParams']:
         mode = request.session['requestParams']['mode']
     else:
@@ -7789,7 +7820,7 @@ def getErrorSummaryForEvents(request):
             group by error_code""".format(jeditaskid, tmpTableName, transactionKeyDJ)
         else:
             data = {"error": "no failed events found"}
-            return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+            return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
         new_cur.execute(eequery)
         eventsErrorsUP = dictfetchall(new_cur)
     elif mode == 'nodrop':
@@ -7811,7 +7842,7 @@ def getErrorSummaryForEvents(request):
         eventsErrorsUP = dictfetchall(new_cur)
     else:
         data = {"error": "wrong mode specified"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
 
     for error in eventsErrorsUP:
@@ -8279,7 +8310,13 @@ def taskInfo(request, jeditaskid=0):
         colnames = taskrec.keys()
         colnames = sorted(colnames)
         for k in colnames:
-            val = taskrec[k]
+            if is_timestamp(k):
+                try:
+                    val = taskrec[k].strftime(defaultDatetimeFormat)
+                except:
+                    val = taskrec[k]
+            else:
+                val = taskrec[k]
             if taskrec[k] == None:
                 val = ''
                 continue
@@ -8363,10 +8400,13 @@ def taskInfo(request, jeditaskid=0):
     if len(dsets) > 0:
         for ds in dsets:
             if len (ds['datasetname']) > 0:
-               scope = str(ds['datasetname']).split('.')[0]
-               if ':' in scope:
-                   scope = str(scope).split(':')[0]
-               ds['scope']=scope
+                if not str(ds['datasetname']).startswith('user'):
+                    scope = str(ds['datasetname']).split('.')[0]
+                else:
+                    scope = '.'.join(str(ds['datasetname']).split('.')[:2])
+                if ':' in scope:
+                    scope = str(scope).split(':')[0]
+                ds['scope'] = scope
             newdslist.append(ds)
             if ds['type'] not in ['input', 'pseudo_input']: continue
             if ds['masterid']: continue
@@ -8520,7 +8560,7 @@ def taskInfo(request, jeditaskid=0):
 
         del request.session['TFIRST']
         del request.session['TLAST']
-        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
         attrs = []
         do_redirect = False
@@ -8750,7 +8790,13 @@ def taskInfoNew(request, jeditaskid=0):
         colnames = taskrec.keys()
         colnames = sorted(colnames)
         for k in colnames:
-            val = taskrec[k]
+            if is_timestamp(k):
+                try:
+                    val = taskrec[k].strftime(defaultDatetimeFormat)
+                except:
+                    val = taskrec[k]
+            else:
+                val = taskrec[k]
             if taskrec[k] == None:
                 val = ''
                 continue
@@ -9025,7 +9071,7 @@ def taskInfoNew(request, jeditaskid=0):
 
         del request.session['TFIRST']
         del request.session['TLAST']
-        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
         attrs = []
         do_redirect = False
@@ -9138,7 +9184,7 @@ def getEventsDetails(request, mode='drop', jeditaskid=0):
     objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
     for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
 
-    return HttpResponse(json.dumps(objectStoreDict, cls=DateEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(objectStoreDict, cls=DateEncoder), content_type='application/json')
 
 
 def taskchain(request):
@@ -9149,7 +9195,7 @@ def taskchain(request):
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid == -1:
         data = {"error": "no jeditaskid supplied"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     new_cur = connection.cursor()
     taskChainSQL = "SELECT * FROM table(ATLAS_PANDABIGMON.GETTASKSCHAIN_TEST(%i))" % jeditaskid
@@ -9175,7 +9221,7 @@ def ganttTaskChain(request):
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid == -1:
         data = {"error": "no jeditaskid supplied"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     new_cur = connections["deft_adcr"].cursor()
     sql_request_str = chainsql.query.replace('%i', str(jeditaskid))
@@ -9530,7 +9576,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         elif infotype == 'scouts':
             response = render_to_response('scoutsForTask.html', data, content_type='text/html')
         elif infotype == 'plots':
-            response = HttpResponse(json.dumps(data['plotsDict'], cls=DateEncoder), content_type='text/html')
+            response = HttpResponse(json.dumps(data['plotsDict'], cls=DateEncoder), content_type='application/json')
         else:
             response = None
         endSelfMonitor(request)
@@ -9587,7 +9633,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         }
         response = render_to_response('scoutsForTask.html', data, content_type='text/html')
     elif infotype == 'plots':
-        response = HttpResponse(json.dumps(plotsDict, cls=DateEncoder), content_type='text/html')
+        response = HttpResponse(json.dumps(plotsDict, cls=DateEncoder), content_type='application/json')
     else:
         response = HttpResponse(status=204)
     endSelfMonitor(request)
@@ -10202,7 +10248,7 @@ def errorSummary(request):
                          'produserid': job['produserid']})
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(resp), content_type='text/html')
+        return HttpResponse(json.dumps(resp), content_type='application/json')
 
 def filterErrorData(request, data):
     defaultErrorsPreferences = {}
@@ -10425,6 +10471,8 @@ def incidentList(request):
         endSelfMonitor(request)
         jsonResp = json.dumps(clearedInc)
         return HttpResponse(jsonResp, content_type='text/html')
+
+
 def esatlasPandaLoggerJson(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -10490,8 +10538,9 @@ def esatlasPandaLoggerJson(request):
                 jdlist['Count'] = levelnames['doc_count']
                 jdListFinal.append(jdlist)
 
+    return HttpResponse(json.dumps(jdListFinal), content_type='application/json')
 
-    return HttpResponse(json.dumps(jdListFinal), content_type='text/html')
+
 def esatlasPandaLogger(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -10882,7 +10931,7 @@ def pandaLogger(request):
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
         resp = data
-        return HttpResponse(json.dumps(resp, cls=DateEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(resp, cls=DateEncoder), content_type='application/json')
 
 
 # def percentile(N, percent, key=lambda x:x):
@@ -10917,7 +10966,7 @@ def ttc(request):
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
     if jeditaskid == -1:
         data = {"error": "no jeditaskid supplied"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     query = {'jeditaskid': jeditaskid}
     task = JediTasks.objects.filter(**query).values('jeditaskid', 'taskname', 'workinggroup', 'tasktype',
@@ -10925,12 +10974,12 @@ def ttc(request):
                                                     'creationdate', 'status')
     if len(task) == 0:
         data = {"error": ("jeditaskid " + str(jeditaskid) + " does not exist")}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
     taskrec = task[0]
 
     if taskrec['tasktype'] != 'prod' or taskrec['ttcrequested'] == None:
         data = {"error": "TTC for this type of task has not implemented yet"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     if taskrec['ttcrequested']:
         taskrec['ttc'] = taskrec['ttcrequested']
@@ -11038,6 +11087,8 @@ def workingGroups(request):
     tasksummary = wgTaskSummary(request, view='working group', taskdays=taskdays)
 
     ## WG job summary
+    if 'workinggroup' in request.session['requestParams'] and request.session['requestParams']['workinggroup']:
+        query['workinggroup'] = request.session['requestParams']['workinggroup']
     wgsummarydata = wgSummary(query)
     wgs = {}
     for rec in wgsummarydata:
@@ -11104,7 +11155,7 @@ def workingGroups(request):
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = []
-        return HttpResponse(json.dumps(resp), content_type='text/html')
+        return HttpResponse(json.dumps(resp), content_type='application/json')
 
 
 @login_customrequired
@@ -11155,7 +11206,13 @@ def datasetInfo(request):
         colnames = dsrec.keys()
         colnames = sorted(colnames)
         for k in colnames:
-            val = dsrec[k]
+            if is_timestamp(k):
+                try:
+                    val = dsrec[k].strftime(defaultDatetimeFormat)
+                except:
+                    val = dsrec[k]
+            else:
+                val = dsrec[k]
             if dsrec[k] == None:
                 val = ''
                 continue
@@ -11182,7 +11239,7 @@ def datasetInfo(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(dsrec), content_type='text/html')
+        return HttpResponse(json.dumps(dsrec), content_type='application/json')
 
 @login_customrequired
 def datasetList(request):
@@ -11221,7 +11278,7 @@ def datasetList(request):
     else:
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(dsets), content_type='text/html')
+        return HttpResponse(json.dumps(dsets), content_type='application/json')
 
 @login_customrequired
 def fileInfo(request):
@@ -11331,7 +11388,13 @@ def fileInfo(request):
         colnames = frec.keys()
         colnames = sorted(colnames)
         for k in colnames:
-            val = frec[k]
+            if is_timestamp(k):
+                try:
+                    val = frec[k].strftime(defaultDatetimeFormat)
+                except:
+                    val = frec[k]
+            else:
+                val = frec[k]
             if frec[k] == None:
                 val = ''
                 continue
@@ -11378,7 +11441,7 @@ def fileInfo(request):
             'filename': file,
             'columns': columns,
         }
-        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 @login_customrequired
 def fileList(request):
@@ -11433,7 +11496,7 @@ def fileList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(files), content_type='text/html')
+        return HttpResponse(json.dumps(files), content_type='application/json')
 
 
 def loadFileList(request, datasetid=-1):
@@ -11533,7 +11596,7 @@ def workQueues(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(queues), content_type='text/html')
+        return HttpResponse(json.dumps(queues), content_type='application/json')
 
 
 def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values=standard_fields, count=False,
@@ -12218,7 +12281,7 @@ def g4exceptions(request):
 
     del request.session['TFIRST']
     del request.session['TLAST']
-    return HttpResponse(json.dumps(resp), content_type='text/plain')
+    return HttpResponse(json.dumps(resp), content_type='application/json')
 
 
 def initSelfMonitor(request):
@@ -12491,7 +12554,7 @@ def getBadEventsForTask(request):
         dataitem['COUNT'] = row[4]
         data.append(dataitem)
     cursor.close()
-    return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
 
 def getEventsChunks(request):
@@ -12531,7 +12594,7 @@ def getEventsChunks(request):
             eventsChunk['prevAttempts'] = []
             eventsChunk['attemptnrDS'] = 0
 
-    return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='application/json')
 
 
 def getJobStatusLog(request, pandaid = None):
@@ -12744,4 +12807,4 @@ def testip(request):
     #     ip = x_forwarded_for.split(',')[0]
     # else:
     #     ip = request.META.get('REMOTE_ADDR')
-    return HttpResponse(json.dumps(x_forwarded_for, cls=DateTimeEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(x_forwarded_for, cls=DateTimeEncoder), content_type='application/json')

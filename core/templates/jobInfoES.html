@@ -99,7 +99,7 @@ function toggleByID(id) {
 </tr>
 <tr>
 	<td>{{ job.pandaid }}  {% if not job.jeditaskid %} <br>Attempt {{ job.attemptnr }} {% endif %}</td>
-	<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if job.workinggroup %} / <a href="{{xurl}}workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }} {% endif %}{% endif %}</td>
+	<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if job.workinggroup %} / <a href="{% url 'workingGroups' %}?workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }} {% endif %}{% endif %}</td>
 	<td>{% if job.jeditaskid %}<a href="{% url 'taskInfo' job.jeditaskid %}">{{ job.jeditaskid }}</a> {% else %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
 {% if job.parentid %}
     <td> <a href="{% url 'jobInfo' %}?pandaid={{ job.parentid }}"> {{ job.parentid }} </a>
@@ -195,7 +195,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
               {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'closed' %}
                 {% if logfile.guid %}
                     {% if job.jobstatus == 'failed' or job.jobstatus == 'finished'  or job.jobstatus == 'closed' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled'  %}
-                        <a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}">Log files</a>
+                        <a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}&fileid={{ fileid }}">Log files</a>
                         <script>
                           logLinksArray[logLinksArray.length] = "/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}"
                         </script>
