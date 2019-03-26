@@ -10239,6 +10239,24 @@ def errorSummary(request):
         response = render_to_response('errorSummary.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+    elif 'fields' in request.session['requestParams'] and request.session['requestParams']['fields']:
+        del request.session['TFIRST']
+        del request.session['TLAST']
+        fields = request.session['requestParams']['fields'].split(',')
+        data = {}
+        if 'jobSummary' in fields:
+            data['jobSummary'] = sumd
+        if 'errsByCount' in fields:
+            data['errsByCount'] = errsByCount
+        if 'errsBySite' in fields:
+            data['errsBySite'] = errsBySite
+        if 'errsByUser' in fields:
+            data['errsByUser'] = errsByUser
+        if 'errsByTask' in fields:
+            data['errsByTask'] = errsByTask
+        ##self monitor
+        endSelfMonitor(request)
+        return HttpResponse(json.dumps(data), content_type='application/json')
     else:
         del request.session['TFIRST']
         del request.session['TLAST']
