@@ -2,9 +2,10 @@ import schedule
 import time
 from MainMenuURLs import MainMenuURLs
 import threading
+from settingscron import EXECUTION_CAP_FOR_MAINMENUURLS
 
 
-mainMenuURLs = MainMenuURLs(5)
+mainMenuURLs = MainMenuURLs(EXECUTION_CAP_FOR_MAINMENUURLS)
 #mainMenuURLs.processPayload()
 
 def run_threaded(job_func):

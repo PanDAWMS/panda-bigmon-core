@@ -5,13 +5,12 @@ from BaseTasksProvider import BaseTasksProvider
 import queue
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
-from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIME_OUT_FOR_QUERY, NUMBER_OF_ITEMS_TO_DRAIN
+from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIME_OUT_FOR_QUERY, NUMBER_OF_ITEMS_TO_DRAIN, \
+    EXECUTION_CAP_FOR_MAINMENUURLS, BASE_URL, TIMEOUT_WHEN_DB_LOADED
 
-class AbstractURLTasksProvider(BaseTasksProvider):
+class BaseURLTasksProvider(BaseTasksProvider):
 
-    EXECUTIONCAP = 5
     isActive = False
-    baseURL = "http://bigpanda.cern.ch"
 
     def __init__(self, executioncap):
         self.EXECUTIONCAP = executioncap
@@ -41,7 +40,7 @@ class AbstractURLTasksProvider(BaseTasksProvider):
             numsess = self.getNumberOfActiveDBSessions()
             if numsess != -1 and numsess < MAX_NUMBER_OF_ACTIVE_DB_SESSIONS:
                 try:
-                    req = urllibr.Request(self.baseURL + urltofetch)
+                    req = urllibr.Request(BASE_URL + urltofetch)
                     urllibr.urlopen(req, timeout=TIME_OUT_FOR_QUERY)
                 except Exception or HTTPError as e:
                     if isinstance(e.reason, socket.timeout):
@@ -50,10 +49,9 @@ class AbstractURLTasksProvider(BaseTasksProvider):
                         failedFetch = True
             else:
                 #We postpone the job if DB is oveloaded
-                payload.put(jobtofetch)
-                time.sleep(10)
-                return (None, None, None, None)  # Operation did not performe due to DB overload
-            return (time.time() - start, timeout, failedFetch, urltofetch)
+                time.sleep(TIMEOUT_WHEN_DB_LOADED)
+                return (None, None, None, jobtofetch)  # Operation did not performe due to DB overload
+            return (time.time() - start, timeout, failedFetch, jobtofetch)
 
         futuresList = []
         payload = self.getpayload()
@@ -63,16 +61,24 @@ class AbstractURLTasksProvider(BaseTasksProvider):
         totalurls = payload.qsize()
 
         while 1:
+            futuresList = []
             while not payload.empty():
                 item = executor.submit(fetchURL, (payload.get()))
                 futuresList.append(item)
             for future in as_completed(futuresList):
                 try:
-                    (exectime, timeout, failure, urltofetch) = future.result(timeout=TIME_OUT_FOR_QUERY + 100)
-                    if urltofetch:
-                        print(urltofetch + " Done")
+                    (exectime, timeout, failedFetch, jobtofetch) = future.result(timeout=TIME_OUT_FOR_QUERY + 100)
+                    if not failedFetch is None:
+                        totalurls += 1
+                        print(jobtofetch[1] + " Done")
+                        if failedFetch:
+                            urlsfailed += 1
                     else:
-                        print(" Yielding ")
+                        payload.put((1, jobtofetch[1]))
+                        print(jobtofetch[1] + " Yielding ")
+
+                    if timeout:
+                        utlsfimeout += 1
 
                 except TimeoutError:
                     success = False

@@ -1,7 +1,6 @@
-from core.cachecontroller.AbstractURLTasksProvider import AbstractURLTasksProvider
+from core.cachecontroller.BaseURLTasksProvider import BaseURLTasksProvider
 import queue
-
-class MainMenuURLs(AbstractURLTasksProvider):
+class MainMenuURLs(BaseURLTasksProvider):
 
     BASIC_PRIORITY = 1
 

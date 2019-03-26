@@ -26,7 +26,7 @@ class BaseTasksProvider(object):
             cursor.close()
         except:
             pass
-        return  totalSessionCount
+        return totalSessionCount
 
     def logActivity(self):
         pass
