@@ -11,7 +11,8 @@ class BaseTasksProvider(object):
     ORACLE_CONNECTION_URL = "(DESCRIPTION=(ADDRESS= (PROTOCOL=TCP) (HOST=adcr-s.cern.ch) (PORT=10121) ) (LOAD_BALANCE=on)" \
                             "(ENABLE=BROKEN)(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME="+ORACLE_SNAME+".cern.ch)))"
     pool = cx_Oracle.SessionPool(ORACLE_USERNAME, ORACLE_PWD, ORACLE_CONNECTION_URL, 2, 3, 1, threaded=True)
-    lock = threading.Semaphore(1) # We allow to pileup not more than 2 consecutive calls
+    #lock = threading.RLock() # should be instantiated in a nested class.
+    # If instantiated here become the same over all child classes
 
     def getNumberOfActiveDBSessions(self):
         totalSessionCount = -1
@@ -36,8 +37,10 @@ class BaseTasksProvider(object):
 
     def execute(self):
         if self.lock.acquire(blocking=False):
-            self.processPayload()
-            self.lock.release()
+            try:
+                self.processPayload()
+            finally:
+                self.lock.release()
 
 
 

@@ -3,7 +3,7 @@ from urllib.error import HTTPError
 import socket
 from BaseTasksProvider import BaseTasksProvider
 import queue
-import time
+import time, json
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIME_OUT_FOR_QUERY, NUMBER_OF_ITEMS_TO_DRAIN, \
     EXECUTION_CAP_FOR_MAINMENUURLS, BASE_URL, TIMEOUT_WHEN_DB_LOADED
@@ -15,18 +15,33 @@ class BaseURLTasksProvider(BaseTasksProvider):
     def __init__(self, executioncap):
         self.EXECUTIONCAP = executioncap
 
+
     def getpayload(self):
-        return queue.PriorityQueue(-1)
+        raise NotImplementedError("Must override getpayload")
+
 
     def getvalidityperiod(self):
-        pass
+        raise NotImplementedError("Must override getvalidityperiod")
+
 
     def getaggressiveness(self):
-        # tasks executed:
+        # tasks executed (to be implemented):
         # 0 - one-by-one basing on the articular queue priority
         # 1 - in parallel with basic competition
         # 2 - all tasks should be completed within the validity time interval in exception to 0 priority
-        pass
+        raise NotImplementedError("Must override getaggressiveness")
+
+
+    def downloadPayloadJSON(self, URL):
+        response = None
+        try:
+            req = urllibr.Request(BASE_URL + URL)
+            response = urllibr.urlopen(req, timeout=TIME_OUT_FOR_QUERY).read()
+            response = json.loads(response)
+        except Exception or HTTPError as e:
+            pass
+        return response
+
 
     def processPayload(self):
         starttask = time.time()
@@ -43,7 +58,7 @@ class BaseURLTasksProvider(BaseTasksProvider):
                     req = urllibr.Request(BASE_URL + urltofetch)
                     urllibr.urlopen(req, timeout=TIME_OUT_FOR_QUERY)
                 except Exception or HTTPError as e:
-                    if isinstance(e.reason, socket.timeout):
+                    if isinstance(e, socket.timeout):
                         timeout = True
                     else:
                         failedFetch = True
@@ -53,7 +68,6 @@ class BaseURLTasksProvider(BaseTasksProvider):
                 return (None, None, None, jobtofetch)  # Operation did not performe due to DB overload
             return (time.time() - start, timeout, failedFetch, jobtofetch)
 
-        futuresList = []
         payload = self.getpayload()
         executor = ThreadPoolExecutor(max_workers=self.EXECUTIONCAP)
         urlsfailed = 0

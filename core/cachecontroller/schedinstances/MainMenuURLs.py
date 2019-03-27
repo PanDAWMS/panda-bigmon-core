@@ -1,16 +1,13 @@
 from core.cachecontroller.BaseURLTasksProvider import BaseURLTasksProvider
-import queue
+import queue, threading
+
 class MainMenuURLs(BaseURLTasksProvider):
 
     BASIC_PRIORITY = 1
-
-    def getvalidityperiod(self):
-        return 20
-
-    def getaggressiveness(self):
-        return 2
+    lock = threading.RLock() #
 
     def getpayload(self):
+        print("MainMenuURLs")
         urlsQueue = queue.PriorityQueue(-1)
         with open('mainmenurls.txt') as urls:
             for line in urls:
