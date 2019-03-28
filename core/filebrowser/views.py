@@ -107,11 +107,11 @@ def index(request):
         lquery['lfn'] = lfn
 
     sizemb = None
-    fsize = Filestable4.objects.filter(**lquery).values('fsize')
-    if len(fsize) == 0:
-        fsize = FilestableArch.objects.filter(**lquery).values('fsize')
-    if len(fsize) > 0:
-        sizemb = round(int(fsize[0]['fsize'])/1000/1000)
+    # fsize = Filestable4.objects.filter(**lquery).values('fsize')
+    # if len(fsize) == 0:
+    #     fsize = FilestableArch.objects.filter(**lquery).values('fsize')
+    # if len(fsize) > 0:
+    #     sizemb = round(int(fsize[0]['fsize'])/1000/1000)
 
     ### download the file
     files = []
