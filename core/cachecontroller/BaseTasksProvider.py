@@ -30,10 +30,10 @@ class BaseTasksProvider(object):
         return totalSessionCount
 
     def logActivity(self):
-        pass
+        raise NotImplementedError("Must override logActivity")
 
     def processPayload(self):
-        pass
+        raise NotImplementedError("Must override processPayload")
 
     def execute(self):
         if self.lock.acquire(blocking=False):
