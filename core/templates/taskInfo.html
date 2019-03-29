@@ -688,7 +688,13 @@ function buildDatasetsTable() {
     "ajax": {
         "processing": true,
         "url": "{% url 'taskInfo' %}?transkey={{ transkey }}&dt",
-        "dataSrc" : ''},
+        "dataSrc" : function ( data ) {
+          if ( data === null ) {
+            return alert('The data was not loaded. Please press "Reload" button on the top right corner of page');
+          }
+          return data;
+        }
+    },
     "aoColumns": [
         {
             "data": "datasetname",
