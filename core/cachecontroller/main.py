@@ -28,7 +28,7 @@ def run_threaded(job_func):
 schedule.every(20).minutes.do(run_threaded, mainMenuURLs.execute)
 schedule.every(20).minutes.do(run_threaded, artPackages.execute)
 schedule.every(20).minutes.do(run_threaded, bigTasks.execute)
-schedule.every().day.at("00:00").do(run_threaded, artMails.execute)
+#schedule.every().day.at("00:00").do(run_threaded, artMails.execute)
 schedule.every(20).minutes.do(run_threaded, harvester.execute)
 schedule.every(1).hour.do(run_threaded, sQLAggregator.execute)
 
