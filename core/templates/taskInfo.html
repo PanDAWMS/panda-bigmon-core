@@ -694,7 +694,7 @@ function buildDatasetsTable() {
             "data": "datasetname",
             sDefaultContent: "---",
             "render": function(data, type, row, meta) {
-                return '<a href = "{% url 'datasetInfo' %}datasetid=' + row['datasetid'] + '">'+row['datasetname']+'</a>' + ' <a href = "{% url 'jobList' %}?datasetid=' + row['datasetid'] + 'jeditaskid' + row['jeditaskid'] + '">jobs</a>'
+                return '<a href = "{% url 'datasetInfo' %}?datasetid=' + row['datasetid'] + '">'+row['datasetname']+'</a>'
             }
         },
         {
