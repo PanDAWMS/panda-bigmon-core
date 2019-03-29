@@ -445,52 +445,6 @@
                     }
                 }
             </script>
-            <div class="table-scroll">
-                <table>
-                    {% if dstypes %}
-                        <tr bgcolor='lightcyan'>
-                            <th colspan=20>
-                                {{ datasets|length }} datasets, show/hide by type:
-                                &nbsp; <a style="cursor: pointer;" onclick="javascript:toggleRowsDisplay('type-all');">all</a>
-                                {% for dst in dstypes %}
-                                    &nbsp;<a style="cursor: pointer;"
-                                             onclick="javascript:toggleRowsDisplay('type-{{ dst.type }}');">{{ dst.type }}({{ dst.count }})</a>
-                                {% endfor %}
-                            </th>
-                        </tr>
-                    {% endif %}
-                    <tr bgcolor='lightcyan'>
-                        <th>Dataset, container name</th>
-                        <th>Type</th>
-                        <th>Stream</th>
-                        <th>State</th>
-                        <th>Status</th>
-                        <th>Nfiles</th>
-                        <th>Created</th>
-                        <th>Modified</th>
-                    </tr>{% for dsrec in datasets %}
-                    <tr class="type-{{ dsrec.type }} type-all" style="display:none">
-                        <td><font size=-1><a href="{% url 'datasetInfo' %}?datasetid={{ dsrec.datasetid }}&jeditaskid={{ jeditaskid }}">{{ dsrec.datasetname }}</a></font>
-                            {% if  'tmpl' not in dsrec.type %}
-                                <br/>
-                                <a href="https://rucio-ui.cern.ch/did?scope={{ dsrec.scope }}&name={{ dsrec.datasetname }}"
-                                   target="_blank"> Dataset (Rucio)</a>
-                            {% endif %}
-                        </td>
-                        <td>{{ dsrec.type }}</td>
-                        <td>{{ dsrec.streamname }}</td>
-                        <td class='{{ dsrec.state }}'>{{ dsrec.state }}</td>
-                        <td class='{{ dsrec.status }}'>{{ dsrec.status }}</td>
-                        <td>{{ dsrec.nfiles }}</td>
-                        <td>{{ dsrec.creationtime }}</td>
-                        <td>{{ dsrec.modificationtime }}</td>
-                    </tr>
-                {% endfor %}
-
-                </table>
-            </div>
-            </p>
-
         {% else %}
 
             No datasets were found for this task
