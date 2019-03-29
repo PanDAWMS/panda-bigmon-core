@@ -8083,10 +8083,16 @@ def taskInfo(request, jeditaskid=0):
 
     if ('dt' in request.session['requestParams'] and 'transkey' in request.session['requestParams']):
         tk = request.session['requestParams']['transkey']
-        data = getCacheEntry(request, tk, isData=True)
-        return HttpResponse(data, content_type='text/html')
+        datasets = getCacheEntry(request, tk, isData=True)
+        if datasets is None:
+            commondata = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
+            if commondata is not None:
+                commondata = json.loads(commondata)
+                if commondata is not None:
+                    datasets = commondata['datasets'] if 'datasets' in commondata else None
+        return HttpResponse(datasets, content_type='text/html')
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
-
+    data = None #temporarily turm off caching
     if data is not None:
         data = json.loads(data)
         if data is not None:
