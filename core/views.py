@@ -3032,8 +3032,26 @@ def jobList(request, mode=None, param=None):
                     (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
                     ) """.format(jeditaskid, datasetid, tk, jeditaskid, datasetid, tk)
         # warning['jobsforfiles'] = 'Only jobs for last 4 days are shown. Support of filtering older jobs associated with files will be implemented soon.'
+    elif 'jeditaskid' in request.session['requestParams'] and 'datasetid' in request.session['requestParams']:
+        fileid = None
+        if 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
+            datasetid = request.session['requestParams']['datasetid']
+        else:
+            datasetid = None
+        if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
+            jeditaskid = request.session['requestParams']['jeditaskid']
+        else:
+            jeditaskid = None
+        if datasetid and jeditaskid:
+            extraquery_files += """
+                pandaid in (
+                (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid = {} )
+                union all
+                (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid = {})
+                ) """.format(jeditaskid, datasetid, jeditaskid, datasetid)
     else:
         fileid = None
+
 
 
 
@@ -8062,6 +8080,11 @@ def taskInfo(request, jeditaskid=0):
     if not valid: return response
     # Here we try to get cached data. We get any cached data is available
     # data = None
+
+    if ('dt' in request.session['requestParams'] and 'transkey' in request.session['requestParams']):
+        tk = request.session['requestParams']['transkey']
+        data = getCacheEntry(request, tk, isData=True)
+        return HttpResponse(data, content_type='text/html')
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
 
     if data is not None:
@@ -8416,9 +8439,11 @@ def taskInfo(request, jeditaskid=0):
                 neventsUsedTot += int(ds['neventsused'])
 
             if int(ds['nfiles']) > 0:
+                ds['percentfinished'] = int(100. * int(ds['nfilesfinished']) / int(ds['nfiles']))
                 nfiles += int(ds['nfiles'])
                 nfinished += int(ds['nfilesfinished'])
                 nfailed += int(ds['nfilesfailed'])
+
         dsets = newdslist
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
         if nfiles > 0:
@@ -8447,7 +8472,7 @@ def taskInfo(request, jeditaskid=0):
     ## get input containers
     inctrs = []
     if taskparams and 'dsForIN' in taskparams:
-        inctrs = [taskparams['dsForIN'], ]
+        inctrs = taskparams['dsForIN'].split(',')
 
     ## get output containers
     cquery = {}
@@ -8538,6 +8563,10 @@ def taskInfo(request, jeditaskid=0):
         if dset['statechecktime'] is not None:
             dset['statechecktime'] = dset['statechecktime'].strftime(defaultDatetimeFormat)
 
+    ### Putting list of datasets to cache separately for dataTables plugin
+    transKey = random.randrange(100000000)
+    setCacheEntry(request, transKey, json.dumps(dsets, cls=DateEncoder), 60 * 30, isData=True)
+
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
 
@@ -8606,11 +8635,12 @@ def taskInfo(request, jeditaskid=0):
             'vomode': VOMODE,
             'eventservice': eventservice,
             'tk': transactionKey,
+            'transkey': transKey,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
             'newjobsummary_test': newjobsummary,
             'newjobsummaryPMERGE_test':newjobsummaryPMERGE,
             'newjobsummaryESMerge_test': newjobsummaryESMerge,
-            'neweventssummary_test':neweventsdict,
+            'neweventssummary_test': neweventsdict,
             'warning': warning,
         }
         data.update(getContextVariables(request))
@@ -11487,6 +11517,11 @@ def fileList(request):
         if len(dsets) > 0:
             datasetname = dsets[0]['datasetname']
 
+    extraparams = ''
+    if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
+        query['procstatus'] = request.session['requestParams']['procstatus']
+        extraparams += '&procstatus=' + request.session['requestParams']['procstatus']
+
     if int(datasetid) > 0:
         query['datasetid'] = datasetid
         nfilestotal = JediDatasetContents.objects.filter(**query).count()
@@ -11507,6 +11542,7 @@ def fileList(request):
             'datasetid': datasetid,
             'nfilestotal': nfilestotal,
             'nfilesunique': nfilesunique,
+            'extraparams': extraparams,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
@@ -11526,6 +11562,10 @@ def loadFileList(request, datasetid=-1):
     limit = 1000
     if 'limit' in request.session['requestParams']:
         limit = int(request.session['requestParams']['limit'])
+
+    if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
+        query['procstatus'] = request.session['requestParams']['procstatus']
+
 
     sortOrder = 'lfn'
 

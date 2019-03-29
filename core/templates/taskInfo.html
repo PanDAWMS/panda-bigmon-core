@@ -1,120 +1,25 @@
 {% extends "_base_core.html" %}
-{% load staticfiles %}
+{% load static %}
 {% block page_title %} {{ jeditaskid }} task  {% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <style>
+        #datasetstable_wrapper .row {
+            max-width: 99%;
+        }
+    </style>
+{% endblock %}
 {% block extra_js %}
     <script type="text/javascript" src="/static/js/d3jsplot.js"></script>
-    <script>
-        function toggleDetailDisplay(className) {
-            el = document.getElementsByClassName(className);
-            for (i = 0; i < el.length; i++) {
-                el[i].style.display = (el[i].style.display == "none") ? "" : "none";
-            }
-        }
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 
-        (function ($) {
-            $.fn.goTo = function () {
-                $('html, body').animate({
-                    scrollTop: $(this).offset().top + 'px'
-                }, 'fast');
-                return this;
-            }
-        })(jQuery);
-
-        function killtasks(taskID, action) {
-            var message = ''
-            if (action == 0)
-                message = 'Are you sure you want to FINISH this task?'
-            else
-                message = 'Are you sure you want to ABORT this task?'
-            if (confirm(message)) {
-                $.ajax({
-                    url: {% url 'killtasks' %},
-                    data: {'task': taskID, 'action': action},
-                    async: true
-                })
-                    .done(function (response) {
-                        var parcedResponse = $.parseJSON(response);
-                        alert(parcedResponse.detail);
-                        location.reload();
-                    });
-            } else {
-                // Do nothing!
-            }
-        }
-
-        function buildPlots(classname) {
-
-            el = document.getElementsByClassName(classname);
-            var flag = 0;
-            for (i = 0; i < el.length; i++) {
-                flag = (el[i].innerHTML) ? flag : flag + 1;
-            }
-            if (flag > 0) {
-                $("#jobsconsumptionplots").html("<img src='{% static "images/load.gif" %}'>  ");
-
-                var values = {{ plotsDict|safe }};
-                if ('maxpss' in values) {
-                    pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
-                }
-                if ('maxpssf' in values) {
-                    pandamonplotHistNew(values['maxpssf'], "#plot3", "Maximum PSS histogram (failed jobs)");
-                }
-                if ('walltime' in values) {
-                    pandamonplotHistNew(values['walltime'], "#plot2", "Walltime histogram");
-                }
-                if ('walltimef' in values) {
-                    pandamonplotHistNew(values['walltimef'], "#plot4", "Walltime histogram (failed jobs)");
-                }
-                if ('maxpsspercore' in values) {
-                    pandamonplotHistNew(values['maxpsspercore'], "#plot5", "Maximum PSS per core histogram");
-                }
-                if ('maxpsspercoref' in values) {
-                    pandamonplotHistNew(values['maxpsspercoref'], "#plot6", "Maximum PSS per core histogram (failed jobs)");
-                }
-                if ('hs06s' in values) {
-                    pandamonplotHistNew(values['hs06s'], "#plot7", "HS06s histogram");
-                }
-                if ('hs06sf' in values) {
-                    pandamonplotHistNew(values['hs06sf'], "#plot8", "HS06s histogram (failed jobs)");
-                }
-                if ('walltimeperevent' in values) {
-                    pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
-                }
-                if ('cputime' in values) {
-                    pandamonplotHistNew(values['cputime'], "#plot10", "CPU time histogram");
-                }
-                if ('cputimeperevent' in values) {
-                    pandamonplotHistNew(values['cputimeperevent'], "#plot11", "CPU time per event histogram");
-                }
-                if ('cputimef' in values) {
-                    pandamonplotHistNew(values['cputimef'], "#plot12", "CPU time histogram (failed jobs)");
-                }
-                if ('cputimepereventf' in values) {
-                    pandamonplotHistNew(values['cputimepereventf'], "#plot13", "CPU time per event histogram (failed jobs)");
-                }
-                $("#jobsconsumptionplots").html("");
-                toggleDetailDisplay(classname);
-                {#        $('#jobsconsumptionplots').goTo();#}
-            }
-            else {
-                toggleDetailDisplay(classname);
-            }
-        }
-
-        $(document).ready(function () {
-            var url = window.location.href;
-            if (url.indexOf("#jobsconsumptionplots") > -1) {
-                buildPlots('d3splot');
-                {#        $('#jobsconsumptionplots').goTo();#}
-            }
-        })
-
-    </script>
 {% endblock %}
 {% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <b>{{ task.taskname }}</b>{% endblock %}
 
 {% block body %}
-    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+{#    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>#}
 
     {% if columns %}
         <table>
@@ -515,6 +420,23 @@
         {% endif %}
 
         {% if datasets %}
+            <table class="data-table left-aligned nowrap" id="datasetstable">
+                <thead>
+                <tr>
+                    <th>Dataset, container name</th>
+                    <th>Type</th>
+                    <th>Stream</th>
+                    <th>Status</th>
+                    <th>Nfiles</th>
+                    <th>Nfiles finished</th>
+                    <th>Nfiles failed</th>
+                    <th>%</th>
+                    <th>Links</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+
             <script type="text/javascript">
                 function toggleRowsDisplay(className) {
                     el = document.getElementsByClassName(className);
@@ -698,8 +620,221 @@
 
     {% endif %}
 
-{% endblock %}
 
+
+<script>
+function toggleDetailDisplay(className) {
+    el = document.getElementsByClassName(className);
+    for (i = 0; i < el.length; i++) {
+        el[i].style.display = (el[i].style.display == "none") ? "" : "none";
+    }
+}
+
+(function ($) {
+    $.fn.goTo = function () {
+        $('html, body').animate({
+            scrollTop: $(this).offset().top + 'px'
+        }, 'fast');
+        return this;
+    }
+})(jQuery);
+
+function killtasks(taskID, action) {
+    var message = ''
+    if (action == 0)
+        message = 'Are you sure you want to FINISH this task?'
+    else
+        message = 'Are you sure you want to ABORT this task?'
+    if (confirm(message)) {
+        $.ajax({
+            url: {% url 'killtasks' %},
+            data: {'task': taskID, 'action': action},
+            async: true
+        })
+            .done(function (response) {
+                var parcedResponse = $.parseJSON(response);
+                alert(parcedResponse.detail);
+                location.reload();
+            });
+    } else {
+        // Do nothing!
+    }
+}
+
+function buildPlots(classname) {
+
+    el = document.getElementsByClassName(classname);
+    var flag = 0;
+    for (i = 0; i < el.length; i++) {
+        flag = (el[i].innerHTML) ? flag : flag + 1;
+    }
+    if (flag > 0) {
+        $("#jobsconsumptionplots").html("<img src='{% static "images/load.gif" %}'>  ");
+
+        var values = {{ plotsDict|safe }};
+        if ('maxpss' in values) {
+            pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
+        }
+        if ('maxpssf' in values) {
+            pandamonplotHistNew(values['maxpssf'], "#plot3", "Maximum PSS histogram (failed jobs)");
+        }
+        if ('walltime' in values) {
+            pandamonplotHistNew(values['walltime'], "#plot2", "Walltime histogram");
+        }
+        if ('walltimef' in values) {
+            pandamonplotHistNew(values['walltimef'], "#plot4", "Walltime histogram (failed jobs)");
+        }
+        if ('maxpsspercore' in values) {
+            pandamonplotHistNew(values['maxpsspercore'], "#plot5", "Maximum PSS per core histogram");
+        }
+        if ('maxpsspercoref' in values) {
+            pandamonplotHistNew(values['maxpsspercoref'], "#plot6", "Maximum PSS per core histogram (failed jobs)");
+        }
+        if ('hs06s' in values) {
+            pandamonplotHistNew(values['hs06s'], "#plot7", "HS06s histogram");
+        }
+        if ('hs06sf' in values) {
+            pandamonplotHistNew(values['hs06sf'], "#plot8", "HS06s histogram (failed jobs)");
+        }
+        if ('walltimeperevent' in values) {
+            pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
+        }
+        if ('cputime' in values) {
+            pandamonplotHistNew(values['cputime'], "#plot10", "CPU time histogram");
+        }
+        if ('cputimeperevent' in values) {
+            pandamonplotHistNew(values['cputimeperevent'], "#plot11", "CPU time per event histogram");
+        }
+        if ('cputimef' in values) {
+            pandamonplotHistNew(values['cputimef'], "#plot12", "CPU time histogram (failed jobs)");
+        }
+        if ('cputimepereventf' in values) {
+            pandamonplotHistNew(values['cputimepereventf'], "#plot13", "CPU time per event histogram (failed jobs)");
+        }
+        $("#jobsconsumptionplots").html("");
+        toggleDetailDisplay(classname);
+        {#        $('#jobsconsumptionplots').goTo();#}
+    }
+    else {
+        toggleDetailDisplay(classname);
+    }
+}
+
+function buildDatasetsTable() {
+  $('#datasetstable').dataTable({
+    //"bRetrieve": true,
+    "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+    "paging": true,
+    {#"scrollX": true,#}
+    "aaSorting": [[0,'asc']],
+    "columnDefs": [
+        {"type": "num-html", "targets": [4,5,6,7] }
+    ],
+
+    "ajax": {
+        "processing": true,
+        "url": "{% url 'taskInfo' %}?transkey={{ transkey }}&dt",
+        "dataSrc" : ''},
+    "aoColumns": [
+        {
+            "data": "datasetname",
+            sDefaultContent: "---",
+            "render": function(data, type, row, meta) {
+                return '<a href = "{% url 'datasetInfo' %}datasetid=' + row['datasetid'] + '">'+row['datasetname']+'</a>' + ' <a href = "{% url 'jobList' %}?datasetid=' + row['datasetid'] + 'jeditaskid' + row['jeditaskid'] + '">jobs</a>'
+            }
+        },
+        {
+            "data": "type",
+            sDefaultContent: "-",
+        },
+        {
+            "data": "streamname",
+            sDefaultContent: "-",
+        },
+        {
+            "data": "status",
+            sDefaultContent: "-"
+        },
+        {
+            "data": "nfiles",
+            sDefaultContent: "-",
+            className: 'dt-body-right',
+            "render": function(data, type, full, meta) {
+                if (data > 0) {
+                    return '<a href = "{% url 'fileList' %}?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '">' + full['nfiles'] + '</a>'
+                }
+                else {
+                    return data;
+                }
+            }
+        },
+        {
+            "data": "nfilesfinished",
+            sDefaultContent: "-",
+            className: 'dt-body-right',
+            "render": function(data, type, full, meta) {
+                if (full['type'] == 'input' && data > 0) {
+                    return '<a href = "{% url 'fileList' %}?procstatus=finished&jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] +  '"><snap class="finished">' + full['nfilesfinished'] + '</snap></a>'
+                }
+                else if (full['type'] == 'input' && data == 0) {
+                    return data;
+                }
+                else {
+                    return '-';
+                }
+                }
+        },
+        {
+            "data": "nfilesfailed",
+            sDefaultContent: "-",
+            className: 'dt-body-right',
+            "render": function(data, type, full, meta) {
+                if (full['type'] == 'input' && data > 0) {
+                    return '<a href = "{% url 'fileList' %}?procstatus=failed&jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '"><snap class="failed">' + full['nfilesfailed'] + '</snap></a>'
+                }
+                else if (full['type'] == 'input' && data == 0) {
+                    return data;
+                }
+                else {
+                    return '-';
+                }
+            }
+        },
+        {
+            "data": "percentfinished",
+            sDefaultContent: "-",
+            className: 'dt-body-right'
+        },
+        {
+            "data": "type",
+            sDefaultContent: "-",
+            "render": function(data, type, row, meta) {
+                var links = '<a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                if (row['type'] == 'input') {
+                     links += ', <a href = "{% url 'jobList' %}?datasetid=' + row['datasetid'] + '&jeditaskid=' + row['jeditaskid'] + '"> jobs </a>'
+                }
+                return links;
+            }
+
+        },
+
+    ],
+    "createdRow": function ( row, data, index ) {
+        $('td', row).eq(3).addClass(data['status'] + '_fill');
+    }
+  })
+}
+
+$(document).ready(function () {
+    buildDatasetsTable();
+    var url = window.location.href;
+    if (url.indexOf("#jobsconsumptionplots") > -1) {
+        buildPlots('d3splot');
+        {#        $('#jobsconsumptionplots').goTo();#}
+    }
+});
+</script>
+{% endblock %}
 
 {% block helptext %}
     <a name="help"></a>
