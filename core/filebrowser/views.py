@@ -96,22 +96,22 @@ def index(request):
 
     # check if size of logfile is too big return to user error message containing rucio cli command to download it locally
     max_sizemb = 1000
+    sizemb = None
     try:
         fileid = int(request.GET['fileid'])
     except:
-        fileid = None
-    lquery = {}
-    if fileid:
-        lquery['fileid'] = fileid
-    elif lfn:
+        fileid = -1
+    lquery = {'type': 'log'}
+    if lfn and len(lfn) > 0:
         lquery['lfn'] = lfn
-
-    sizemb = None
-    # fsize = Filestable4.objects.filter(**lquery).values('fsize')
-    # if len(fsize) == 0:
-    #     fsize = FilestableArch.objects.filter(**lquery).values('fsize')
-    # if len(fsize) > 0:
-    #     sizemb = round(int(fsize[0]['fsize'])/1000/1000)
+        fsize = Filestable4.objects.filter(**lquery).values('fsize', 'fileid')
+        if len(fsize) == 0:
+            fsize = FilestableArch.objects.filter(**lquery).values('fsize', 'fileid')
+        if len(fsize) > 0:
+            try:
+                sizemb = round(int([f['fsize'] for f in fsize if f['fileid'] == fileid][0])/1000/1000)
+            except:
+                pass
 
     ### download the file
     files = []
