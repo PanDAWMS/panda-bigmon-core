@@ -8092,7 +8092,9 @@ def taskInfo(request, jeditaskid=0):
                     datasets = commondata['datasets'] if 'datasets' in commondata else None
         return HttpResponse(datasets, content_type='text/html')
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
+
     # data = None #temporarily turm off caching
+
     if data is not None:
         data = json.loads(data)
         if data is not None:
