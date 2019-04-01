@@ -9886,9 +9886,12 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         errkeys = sorted(errkeys)
         for err in errkeys:
             errsByUser[user]['errorlist'].append(errsByUser[user]['errors'][err])
+        if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+            errsByUser[user]['errorlist'] = sorted(errsByUser[user]['errorlist'], key=lambda x: -x['count'])
         errsByUserL.append(errsByUser[user])
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByUserL = sorted(errsByUserL, key=lambda x: -x['toterrors'])
+
 
     kys = list(errsBySite.keys())
     kys = sorted(kys)
@@ -9898,6 +9901,8 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         errkeys = sorted(errkeys)
         for err in errkeys:
             errsBySite[site]['errorlist'].append(errsBySite[site]['errors'][err])
+        if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+            errsBySite[site]['errorlist'] = sorted(errsBySite[site]['errorlist'], key=lambda x: -x['count'])
         errsBySiteL.append(errsBySite[site])
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsBySiteL = sorted(errsBySiteL, key=lambda x: -x['toterrors'])
@@ -9910,6 +9915,8 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         errkeys = sorted(errkeys)
         for err in errkeys:
             errsByTask[taskid]['errorlist'].append(errsByTask[taskid]['errors'][err])
+        if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+            errsByTask[taskid]['errorlist'] = sorted(errsByTask[taskid]['errorlist'], key=lambda x: -x['count'])
         errsByTaskL.append(errsByTask[taskid])
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByTaskL = sorted(errsByTaskL, key=lambda x: -x['toterrors'])
