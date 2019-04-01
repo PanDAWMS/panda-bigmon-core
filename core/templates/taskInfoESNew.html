@@ -913,7 +913,12 @@
 
             $("#plots").html("<img src='{% static "images/load.gif" %}'>  ");
             {#var values = {{ plotsDict|safe }};#}
-            var values = $.parseJSON(data);
+            if (data.constructor === String) {
+                var values = JSON.parse(data);
+            }
+            else {
+                var values = data
+            }
             if ('nevents' in values) {
                 pandamonplotHistNew(values['nevents'], "#plot0", "Number of events histogram (finished non-merge jobs)");
             }
