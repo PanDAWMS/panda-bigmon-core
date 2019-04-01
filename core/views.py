@@ -5534,6 +5534,8 @@ def wnInfo(request, site, wnname='all'):
 
     if 'hours' in request.GET:
         hours = int(request.GET['hours'])
+    elif 'days' in request.GET:
+        hours = 24*int(request.GET['days'])
     else:
         hours = 12
 
