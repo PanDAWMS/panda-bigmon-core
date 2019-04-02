@@ -215,11 +215,17 @@ Click on column titles to sort.
                 $('#cloudsitesummary tr td:nth-child('+(17+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+startshift+shift).toString()+')').show();
         });
 
-        $('#pctfail').change(function() {
+        $('#closed').change(function() {
             if ($('#cloudsitesummary tr td:nth-child('+(18+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+startshift+shift).toString()+')').is(':visible'))
                 $('#cloudsitesummary tr td:nth-child('+(18+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+startshift+shift).toString()+')').hide();
             else
                 $('#cloudsitesummary tr td:nth-child('+(18+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+startshift+shift).toString()+')').show();
+        });
+        $('#pctfail').change(function() {
+            if ($('#cloudsitesummary tr td:nth-child('+(19+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(19+startshift+shift).toString()+')').is(':visible'))
+                $('#cloudsitesummary tr td:nth-child('+(19+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(19+startshift+shift).toString()+')').hide();
+            else
+                $('#cloudsitesummary tr td:nth-child('+(19+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(19+startshift+shift).toString()+')').show();
         });
 
         if (!$("#defined").is(':checked'))
@@ -264,8 +270,11 @@ Click on column titles to sort.
         if (!$("#cancelled").is(':checked'))
             $('#cloudsitesummary tr td:nth-child('+(17+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(17+startshift+shift).toString()+')').hide();
 
-        if (!$("#pctfail").is(':checked'))
+        if (!$("#closed").is(':checked'))
             $('#cloudsitesummary tr td:nth-child('+(18+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(18+startshift+shift).toString()+')').hide();
+
+        if (!$("#pctfail").is(':checked'))
+            $('#cloudsitesummary tr td:nth-child('+(19+startshift+shift).toString()+'),#cloudsitesummary th:nth-child('+(19+startshift+shift).toString()+')').hide();
 
         toggle('hiderow');
 
@@ -297,7 +306,8 @@ Click on column titles to sort.
 <td>activated <input id="activated" type="checkbox" checked/></td>
 <td>sent <input id="sent" type="checkbox" checked/></td>
 <td>starting <input id="starting" type="checkbox" checked/></td>
-<tr class='hiderow'><td>running <input id="running" type="checkbox" checked/></td>
+<td>running <input id="running" type="checkbox" checked/></td>
+<tr class='hiderow'>
 <td>holding <input id="holding" type="checkbox" checked/></td>
 {% if viewParams.MON_VO == 'ATLAS' %}
     <td>merging <input id="merging" type="checkbox" checked/></td>
@@ -306,6 +316,7 @@ Click on column titles to sort.
 <td>finished <input id="finished" type="checkbox" checked/></td>
 <td>failed <input id="failed" type="checkbox" checked/></td>
 <td>cancelled <input id="cancelled" type="checkbox" checked/></td>
+<td>closed <input id="closed" type="checkbox" checked/></td>
 <td>pctfail <input id="pctfail" type="checkbox" checked/></td></tr>
 
 </table>
@@ -343,20 +354,22 @@ Click on column titles to sort.
 <th> <a href="{{nosorturl}}">VO</a> </th>
 <th>  </th>
 <th> nJobs </th>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=defined">defined</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=waiting">waiting</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=assigned">assigned</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=throttled">throttled</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=activated">activated</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=sent">sent</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=starting">starting</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=running">running</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=holding">holding</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=transferring">transferring</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=finished">finished</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=failed">failed</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=cancelled">cancelled</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=pctfail">% failed</a> </td>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=defined">defined</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=waiting">waiting</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=assigned">assigned</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=throttled">throttled</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=activated">activated</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=sent">sent</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=starting">starting</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=running">running</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=holding">holding</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=merging">merging</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=transferring">transferring</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=finished">finished</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=failed">failed</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=cancelled">cancelled</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=closed">closed</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=pctfail">% failed</a></div> </th>
 </tr>
 
 
@@ -406,21 +419,22 @@ of all jobs
 {% if cloudview == 'region' %}
 <th> nPilots (Sum(nojobabs)) </th>
 {% endif %}
-<th> <a href="{{nosorturl}}sortby=defined">defined</a> </th>
-<th> <a href="{{nosorturl}}sortby=waiting">waiting</a> </th>
-<th> <a href="{{nosorturl}}sortby=assigned">assigned</a> </th>
-<th> <a href="{{nosorturl}}sortby=throttled">throttled</a> </th>
-<th> <a href="{{nosorturl}}sortby=activated">activated</a> </th>
-<th> <a href="{{nosorturl}}sortby=sent">sent</a> </th>
-<th> <a href="{{nosorturl}}sortby=starting">starting</a> </th>
-<th> <a href="{{nosorturl}}sortby=running">running</a> </th>
-<th> <a href="{{nosorturl}}sortby=holding">holding</a> </th>
-<th> <a href="{{nosorturl}}sortby=merging">merging</a> </th>
-<th> <a href="{{nosorturl}}sortby=transferring">transferring</a> </th>
-<th> <a href="{{nosorturl}}sortby=finished&mode=nodrop">finished</a> </th>
-<th> <a href="{{nosorturl}}sortby=failed">failed</a> </th>
-<th> <a href="{{nosorturl}}sortby=cancelled">cancelled</a> </th>
-<th> <a href="{{nosorturl}}sortby=pctfail">% failed</a> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=defined">defined</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=waiting">waiting</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=assigned">assigned</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=throttled">throttled</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=activated">activated</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=sent">sent</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=starting">starting</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=running">running</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=holding">holding</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=merging">merging</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=transferring">transferring</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=finished">finished</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=failed">failed</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=cancelled">cancelled</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=closed">closed</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=pctfail">% failed</a></div> </th>
 </tr>
 
 {% for cloud in summary %}
@@ -446,27 +460,28 @@ of all jobs
 
 <tr height=10 colspan=12></tr>
 <tr>
-<td class="tablesection"> <a name="cloud_{{ cloud.name }}"><span class="{{cloud.status}}">{{ cloud.name }} Cloud</span></a>, Sites </td>
-<td class="tablesection"> Status</td>
-<td class="tablesection"> nJobs </td>
+<th class="tablesection"> <a name="cloud_{{ cloud.name }}"><span class="{{cloud.status}}">{{ cloud.name }} Cloud</span></a>, Sites </th>
+<th class="tablesection"> Status</th>
+<th class="tablesection"> nJobs </th>
 {% if cloudview == 'region' %}
-<td class="tablesection"> nPilots (sum(nojobabs)) </td>
+<th class="tablesection"> nPilots (sum(nojobabs)) </th>
 {% endif %}
-<td class="tablesection"> <a href="{{nosorturl}}sortby=defined">defined</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=waiting">waiting</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=assigned">assigned</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=throttled">throttled</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=activated">activated</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=sent">sent</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=starting">starting</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=running">running</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=holding">holding</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=merging">merging</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=transferring">transferring</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=finished">finished</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=failed">failed</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=cancelled">cancelled</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=pctfail">% failed</a> </td>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=defined">defined</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=waiting">waiting</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=assigned">assigned</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=throttled">throttled</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=activated">activated</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=sent">sent</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=starting">starting</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=running">running</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=holding">holding</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=merging">merging</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=transferring">transferring</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=finished">finished</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=failed">failed</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=cancelled">cancelled</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=closed">closed</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=pctfail">% failed</a></div> </th>
 </tr>
 
 
@@ -522,20 +537,22 @@ of all jobs
 </th>
 <th> Status </th>
 <th> nJobs </th>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=defined">defined</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=waiting">waiting</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=assigned">assigned</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=throttled">throttled</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=activated">activated</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=sent">sent</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=starting">starting</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=running">running</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=holding">holding</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=transferring">transferring</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=finished">finished</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=failed">failed</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=cancelled">cancelled</a> </td>
-<td class="tablesection"> <a href="{{nosorturl}}sortby=pctfail">% failed</a> </td>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=defined">defined</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=waiting">waiting</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=assigned">assigned</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=throttled">throttled</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=activated">activated</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=sent">sent</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=starting">starting</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=running">running</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=holding">holding</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=merging">merging</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=transferring">transferring</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=finished">finished</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=failed">failed</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=cancelled">cancelled</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=closed">closed</a></div> </th>
+<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=pctfail">% failed</a></div> </th>
 </tr>
 {% for task in taskJobSummary %}
 <tr>
