@@ -23,6 +23,7 @@ sQLAggregator = SQLAggregator()
 
 def run_threaded(job_func):
     job_thread = threading.Thread(target=job_func)
+    job_thread.daemon = True
     job_thread.start()
 
 schedule.every(20).minutes.do(run_threaded, mainMenuURLs.execute)
