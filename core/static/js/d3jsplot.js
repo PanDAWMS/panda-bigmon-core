@@ -448,7 +448,7 @@ function pandamonplotHistNew(data, divToShow, title, numberofbins) {
     Object.keys(values).forEach(function(key) {
         intermediateData.push({site:key, values: []});
         values[key].forEach(function (d,i) {
-            intermediateData[layer].values.push({x: x(ranges[i]), y:d})
+            intermediateData[layer].values.push({x: x(ranges[i]), y:parseInt(d,10)})
         });
         layer +=1;
     });

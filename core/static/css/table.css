@@ -186,6 +186,31 @@ table.matrix tbody td {
     max-width: 4rem;
 }
 
+/*Class to rotate headers of table*/
+
+div.vertical-dash-header
+{
+ margin-left: -2.3rem;
+ position: absolute;
+ width: 90px;
+ transform: rotate(-90deg);
+ -webkit-transform: rotate(-90deg); /* Safari/Chrome */
+ -moz-transform: rotate(-90deg); /* Firefox */
+ -o-transform: rotate(-90deg); /* Opera */
+ -ms-transform: rotate(-90deg); /* IE 9 */
+}
+
+th.vertical-dash-header
+{
+ height: 100px;
+ line-height: 14px;
+ padding-bottom: 20px;
+ text-align: left;
+}
+
+div.vertical-dash-header > a {
+    color: black !important;
+}
 
 div.vertical {
   margin-left: -7.5rem;
@@ -514,3 +539,4 @@ th.vertical {
 .fixed col.w90 {
     width: 90%;
 }
+

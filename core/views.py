@@ -173,7 +173,7 @@ statelist = ['defined', 'waiting', 'pending', 'assigned', 'throttled',
              'activated', 'sent', 'starting', 'running', 'holding',
              'transferring', 'finished', 'failed', 'cancelled', 'merging', 'closed']
 sitestatelist = ['defined', 'waiting', 'assigned', 'throttled', 'activated', 'sent', 'starting', 'running', 'holding',
-                 'merging', 'transferring', 'finished', 'failed', 'cancelled']
+                 'merging', 'transferring', 'finished', 'failed', 'cancelled', 'closed']
 eventservicestatelist = ['ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed', 'fatal','merged', 'corrupted']
 taskstatelist = ['registered', 'defined', 'assigning', 'ready', 'pending', 'scouting', 'scouted', 'running', 'prepared',
                  'done', 'failed', 'finished', 'aborting', 'aborted', 'finishing', 'topreprocess', 'preprocessing',
@@ -5534,6 +5534,8 @@ def wnInfo(request, site, wnname='all'):
 
     if 'hours' in request.GET:
         hours = int(request.GET['hours'])
+    elif 'days' in request.GET:
+        hours = 24*int(request.GET['days'])
     else:
         hours = 12
 
@@ -8092,7 +8094,9 @@ def taskInfo(request, jeditaskid=0):
                     datasets = commondata['datasets'] if 'datasets' in commondata else None
         return HttpResponse(datasets, content_type='text/html')
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
+
     # data = None #temporarily turm off caching
+
     if data is not None:
         data = json.loads(data)
         if data is not None:
@@ -9884,9 +9888,12 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         errkeys = sorted(errkeys)
         for err in errkeys:
             errsByUser[user]['errorlist'].append(errsByUser[user]['errors'][err])
+        if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+            errsByUser[user]['errorlist'] = sorted(errsByUser[user]['errorlist'], key=lambda x: -x['count'])
         errsByUserL.append(errsByUser[user])
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByUserL = sorted(errsByUserL, key=lambda x: -x['toterrors'])
+
 
     kys = list(errsBySite.keys())
     kys = sorted(kys)
@@ -9896,6 +9903,8 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         errkeys = sorted(errkeys)
         for err in errkeys:
             errsBySite[site]['errorlist'].append(errsBySite[site]['errors'][err])
+        if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+            errsBySite[site]['errorlist'] = sorted(errsBySite[site]['errorlist'], key=lambda x: -x['count'])
         errsBySiteL.append(errsBySite[site])
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsBySiteL = sorted(errsBySiteL, key=lambda x: -x['toterrors'])
@@ -9908,6 +9917,8 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         errkeys = sorted(errkeys)
         for err in errkeys:
             errsByTask[taskid]['errorlist'].append(errsByTask[taskid]['errors'][err])
+        if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+            errsByTask[taskid]['errorlist'] = sorted(errsByTask[taskid]['errorlist'], key=lambda x: -x['count'])
         errsByTaskL.append(errsByTask[taskid])
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByTaskL = sorted(errsByTaskL, key=lambda x: -x['toterrors'])
