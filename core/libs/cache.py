@@ -47,7 +47,8 @@ def cacheIsAvailable(request):
     return False
 
 def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False):
-    isCache = cacheIsAvailable(request)
+    # isCache = cacheIsAvailable(request)
+    isCache = True
     if isCache:
         is_json = False
 
@@ -82,7 +83,7 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
 
 def setCacheEntry(request, viewType, data, timeout, isData = False):
     # isCache = cacheIsAvailable(request)
-    isCache = True 
+    isCache = True
     if isCache:
         is_json = False
         request._cache_update_cache = False
