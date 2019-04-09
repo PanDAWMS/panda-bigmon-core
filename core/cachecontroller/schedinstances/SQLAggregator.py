@@ -5,7 +5,7 @@ from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIMEOUT_WHEN_DB_LOADE
 
 class SQLAggregator(BaseTasksProvider):
 
-    lock = threading.RLock() #
+    lock = threading.RLock()
 
     def processPayload(self):
 

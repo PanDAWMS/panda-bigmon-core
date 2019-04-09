@@ -41,7 +41,3 @@ class BaseTasksProvider(object):
                 self.processPayload()
             finally:
                 self.lock.release()
-
-
-
-

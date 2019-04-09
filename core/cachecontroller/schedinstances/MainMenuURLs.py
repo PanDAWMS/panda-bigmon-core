@@ -4,7 +4,7 @@ import queue, threading
 class MainMenuURLs(BaseURLTasksProvider):
 
     BASIC_PRIORITY = 1
-    lock = threading.RLock() #
+    lock = threading.RLock()
 
     def getpayload(self):
         print("MainMenuURLs")

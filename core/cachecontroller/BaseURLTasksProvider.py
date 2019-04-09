@@ -101,6 +101,3 @@ class BaseURLTasksProvider(BaseTasksProvider):
 
         totalTime = time.time()-starttask
         return (starttask, totalTime, totalurls, utlsfimeout, urlsfailed)
-
-
-

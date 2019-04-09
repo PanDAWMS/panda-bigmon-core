@@ -3,6 +3,7 @@
 /tasks/?eventservice=1&display_limit=301
 /dash/production/
 /dash/production/?cloudview=region
+/dash/production/?cloudview=world
 /workingGroups/
 /dash/analysis/?mode=task
 /dash/production/?mode=task

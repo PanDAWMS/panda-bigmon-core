@@ -7,7 +7,7 @@ from settingscron import HARVESTER_LIST_URL
 class Harvester(BaseURLTasksProvider):
 
     BASIC_PRIORITY = 1
-    lock = threading.RLock() #
+    lock = threading.RLock()
 
     def getpayload(self):
         print("Harvester")

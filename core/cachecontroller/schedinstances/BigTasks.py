@@ -7,7 +7,7 @@ from settingscron import URL_WITH_BIG_TASKS, URL_WITH_ES_TASKS
 class BigTasks(BaseURLTasksProvider):
 
     BASIC_PRIORITY = 1
-    lock = threading.RLock() #
+    lock = threading.RLock()
 
     def getpayload(self):
         print("BigTasks")

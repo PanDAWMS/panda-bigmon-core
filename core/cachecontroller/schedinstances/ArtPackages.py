@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 class ArtPackages(BaseURLTasksProvider):
 
     BASIC_PRIORITY = 1
-    lock = threading.RLock() #
+    lock = threading.RLock()
 
     def getpayload(self):
         print("ArtPackages")
