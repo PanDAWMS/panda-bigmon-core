@@ -401,26 +401,27 @@ def __get_hs_leave_distribution():
 
 def stripTree(node, rows):
     row = {}
-    if node.level > 0:
-        if node.level == 1:
-            row['level1'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
-            row['level2'] = ''
-            row['level3'] = ''
-        if node.level == 2:
-            row['level1'] = ''
-            row['level2'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
-            row['level3'] = ''
-        if node.level == 3:
-            row['level1'] = ''
-            row['level2'] = ''
-            row['level3'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
-        row['executing'] = node.executing
-        row['pledged'] = node.pledged
-        row['delta'] = node.delta
-        row['queued'] = node.queued
-        row['ratio'] = node.ratio
-        row['value'] = node.value
-        rows.append(row)
+    if hasattr(node,'level'):
+        if node.level > 0:
+            if node.level == 1:
+                row['level1'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
+                row['level2'] = ''
+                row['level3'] = ''
+            if node.level == 2:
+                row['level1'] = ''
+                row['level2'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
+                row['level3'] = ''
+            if node.level == 3:
+                row['level1'] = ''
+                row['level2'] = ''
+                row['level3'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
+            row['executing'] = node.executing
+            row['pledged'] = node.pledged
+            row['delta'] = node.delta
+            row['queued'] = node.queued
+            row['ratio'] = node.ratio
+            row['value'] = node.value
+            rows.append(row)
     for item in node.children:
         stripTree(item, rows)
 
@@ -431,7 +432,7 @@ def getChildStat(node, hs_distribution_dict, level):
     delta = 0
     queued = 0
     ratio = 0
-    if node.name in hs_distribution_dict:
+    if node.name in hs_distribution_dict and len(node.children) == 0:
         executing = hs_distribution_dict[node.name]['executing']
         pledged = hs_distribution_dict[node.name]['pledged']
         delta = hs_distribution_dict[node.name]['executing'] - hs_distribution_dict[node.name]['pledged']
