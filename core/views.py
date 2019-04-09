@@ -4279,8 +4279,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         stdout = job['pilotid'].split('|')[0]
         stderr = stdout.replace('.out', '.err')
         stdlog = stdout.replace('.out', '.log')
+        stdjdl = stdout.replace('.out', '.jdl')
     else:
-        stdout = stderr = stdlog = None
+        stdout = stderr = stdlog = stdjdl = None
 
     # input,pseudo_input,output,log and alphabetically within those please
 
@@ -4535,6 +4536,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'stdout': stdout,
             'stderr': stderr,
             'stdlog': stdlog,
+            'stdjdl': stdjdl,
             'jobparams': jobparams,
             'jobid': jobid,
             'coreData': coreData,

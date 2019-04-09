@@ -238,10 +238,12 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
                 <a href='{{stdout}}'>Pilot job stdout</a>
                 <a href='{{stderr}}'>Pilot job stderr</a>
                 <a href='{{stdlog}}'>Batch log of pilot job</a>
+                <a href='{{stdjdl}}'>Pilot job jdl</a>
                <script>
                   logLinksArray[logLinksArray.length] ='{{stdout}}'
                   logLinksArray[logLinksArray.length] ='{{stderr}}'
                   logLinksArray[logLinksArray.length] ='{{stdlog}}'
+                  logLinksArray[logLinksArray.length] ='{{stdjdl}}'
               </script>
 
             {% endif %}
