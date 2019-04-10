@@ -11618,8 +11618,8 @@ def loadFileList(request, datasetid=-1):
         ruciolink = ""
         if f['fileid'] in filesFromFileTableDict:
             if len(filesFromFileTableDict[f['fileid']]['dispatchdblock']) > 0:
-                ruciolink = 'https://rucio-ui.cern.ch/did?scope=panda&name=' + filesFromFileTableDict[f['fileid']][
-                    'dispatchdblock']
+                ruciolink = 'https://rucio-ui.cern.ch/did?scope=' + filesFromFileTableDict[f['fileid']][
+                        'scope'] + '&name=' + filesFromFileTableDict[f['fileid']]['dispatchdblock']
             else:
                 if len(filesFromFileTableDict[f['fileid']]['destinationdblock']) > 0:
                     ruciolink = 'https://rucio-ui.cern.ch/did?scope=' + filesFromFileTableDict[f['fileid']][
