@@ -194,7 +194,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
           {% if viewParams.MON_VO == 'ATLAS' %}
               {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'closed' %}
                 {% if logfile.guid %}
-                    {% if job.jobstatus == 'failed' or job.jobstatus == 'finished'  or job.jobstatus == 'closed' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled'  %}
+                    {% if job.jobstatus == 'failed' or job.jobstatus == 'finished'  or job.jobstatus == 'closed' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'merging' %}
                         <a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}&fileid={{ fileid }}">Log files</a>
                         <script>
                           logLinksArray[logLinksArray.length] = "/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}"
@@ -233,7 +233,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
         {% else %}
             <a>No logs available</a>
         {% endif %}
-        {% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
+        {% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed'  or job.jobstatus == 'merging'  or job.jobstatus == 'transferring' %}
             {% if stdout %}
                 <a href='{{stdout}}'>Pilot job stdout</a>
                 <a href='{{stderr}}'>Pilot job stderr</a>
