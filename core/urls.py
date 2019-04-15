@@ -191,6 +191,7 @@ urlpatterns = [
     re_path(r'^datatable/data/fairsharePolicy', globalshares.fairsharePolicy, name='fairsharePolicy'),
     ###Grafana###
     re_path(r'^api/grafana', grafana.grafana_api, name='grafana_api'),
+    re_path(r'^grafanaapiplots', grafana.index, name='grafana_api_plots'),
 
     ###Compare###
     re_path(r'^compare/jobs/$', compare_views.compareJobs, name='compareJobs'),
