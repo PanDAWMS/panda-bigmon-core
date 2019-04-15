@@ -200,7 +200,7 @@ errorcodelist = [
 _logger = logging.getLogger('bigpandamon')
 # logging.basicConfig()
 
-notcachedRemoteAddress = ['188.184.185.129']
+notcachedRemoteAddress = ['188.184.185.129', '188.184.116.46']
 
 
 LAST_N_HOURS_MAX = 0
