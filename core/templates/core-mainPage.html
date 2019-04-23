@@ -132,7 +132,33 @@
     <img width='100%' src='{% url 'grafana' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=89&orgId=17&height=500' alt='Monthly World All Queues'></a>
 </td>
 </tr>
+<tr><td colspan=10>
+<b>Global concurrent running job core counts, all sites, all job types, by country, last 1, 7, 30 days (Grafana)</b>
+</td></tr>
+<tr>
+<td width='30%' class="hide-for-small">
+<!-- Day: -->
+<div style="overflow-y:auto; height:365px">
+<a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/adc-live-page-stats?panelId=90&fullscreen&orgId=17'>
+    <img width='100%' src='{% url 'grafana' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=90&orgId=17&height=700' alt='Daily World All Queues'></a>
+</div>
+</td>
+<td width='30%'>
+<!-- Week -->
+<div style="overflow-y:auto; height:365px">
+<a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/adc-live-page-stats?panelId=91&fullscreen&orgId=17'>
+    <img width='100%' src='{% url 'grafana' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=91&orgId=17&height=700' alt='Weekly World All Queues'> </a>
+</div>
+</td>
 
+<td width='30%' class="hide-for-small">
+<!-- Month -->
+<div style="overflow-y:auto; height:365px">
+<a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/adc-live-page-stats?panelId=92&fullscreen&orgId=17'>
+    <img width='100%' src='{% url 'grafana' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=92&orgId=17&height=700' alt='Monthly World All Queues'></a>
+</div>
+</td>
+</tr>
 </table>
 
 {% comment %}
