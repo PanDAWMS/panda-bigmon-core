@@ -58,7 +58,7 @@
 <p>
 
 
-<div class="d3splot" id="cpucons" style="float:left"></div>
+<div class="d3splot" id="plots" style="float:left"></div>
 
 <script>
 
@@ -67,7 +67,7 @@ function onSubElementChoice() {
     warning.style.display = '';
 }
 function go() {
-
+    d3.select("#plots").selectAll("*").remove();
     var group_byQ = "";
     var split_seriesQ = "";
     var group_by = document.getElementById ("group_by");
@@ -83,7 +83,7 @@ function go() {
         if (group_byQ.length > 1) {
             query += group_byQ+"&";
         }
-        query = query.substring(0, query.length - 1);
+        query += "type=d3js"
     }
     $.ajax({
         url: '{% url 'grafana_api' %}',
@@ -91,7 +91,7 @@ function go() {
         dataType:'json',
         success: function(response) {
             var plotData = response;
-            stackedHistOrdinal(plotData, '#cpucons', 'CPU Consumption');
+            stackedHistOrdinal(plotData, '#plots', 'CPU Consumption');
         }
     });
 }
