@@ -687,7 +687,7 @@ function buildDatasetsTable() {
 
     "ajax": {
         "processing": true,
-        "url": "{% url 'taskInfo' %}?transkey={{ transkey }}&dt",
+        "url": "{% url 'taskInfo' task.jeditaskid %}?transkey={{ transkey }}&dt",
         "dataSrc" : function ( data ) {
           if ( data === null ) {
             return alert('The data was not loaded. Please press "Reload" button on the top right corner of page');
