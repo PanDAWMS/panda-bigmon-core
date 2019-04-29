@@ -42,7 +42,7 @@
         <td>
           <ul class="no-bullet">
               {% for plot, name in plots.items %}
-                  <li class="item"><input id="{{ plot }}" class="fieldtoplot" type="checkbox"><label for="{{ plot }}">{{ name }}</label></li>
+                  <li class="item"><input id="{{ plot }}" class="fieldtoplot" type="checkbox" disabled="disabled"><label for="{{ plot }}">{{ name }}</label></li>
               {% endfor %}
           </ul>
         </td>
@@ -58,8 +58,9 @@
 <div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
 <p>
 
-
-<canvas id="chartjs" style="float:left"></canvas>
+<div id="canvasWrapper" style="position: relative; height: 1000px">
+<canvas id="chartjs"></canvas>
+</div>
 
 <script>
 
@@ -70,8 +71,6 @@ function onSubElementChoice() {
 var chartjs=null;
 
 var ctx = document.getElementById("chartjs").getContext("2d");
-
-Chart.defaults.global.animation.duration = 3000;
 
 var BarChartMethods = {
     // sort a dataset
@@ -143,7 +142,7 @@ function go() {
     if (split_series.value.length > 0 && split_series.value != 'no') group_byQ += ',' + split_series.value;
 
     if ((group_byQ.length>1) || (split_seriesQ.length>1) ) {
-        query += "table=completed&field=sum_cpuconsumptiontime&";
+        query += "table=completed&field=sum_hs06sec&";
         if (group_byQ.length > 1) {
             query += group_byQ+"&";
         }
@@ -158,14 +157,16 @@ function go() {
         dataType:'json',
         success: function(response) {
             //var plotData = response;
-            labels = response.labels
-            datasets = response.datasets
+           labels = response.labels
+           datasets = response.datasets
            chartjs = new Chart(ctx, {
                 type: 'horizontalBar',
                 data: {
                     labels: labels,
                     datasets: datasets,
                     options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
 					title: {
 						display: true,
 						text: 'Chart.js Bar Chart - Stacked'
@@ -174,18 +175,22 @@ function go() {
 						mode: 'index',
 						intersect: false
 					},
-					responsive: true,
 					scales: {
 						xAxes: [{
 							stacked: true
-                        {#    ticks: {#}
                         {#            callback: function(value) {#}
                         {#                    return numberWithCommas(value);#}
                         {#    },#}
                         {#,#}
 						}],
 						yAxes: [{
-							stacked: true
+							stacked: true,
+                            afterFit: function(scale) {
+                                scale.width = 15  //<-- set value as you wish
+                            },
+                            ticks: {
+							    fontSize: 15
+                            }
 						}]
 					}
 				}
