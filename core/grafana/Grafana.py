@@ -20,6 +20,8 @@ class Grafana(object):
             return "9023"
         if datasource == "pending":
             return "9024"
+        if datasource == "pledges":
+            return "8261"
 
     def get_query(self, object):
         query_object = object
@@ -51,104 +53,124 @@ class Grafana(object):
             startMillisec =  int(startD.strftime("%s")) * 1000
 
             endMillisec = int(endD.strftime("%s")) * 1000
+        if query_object.table == "pledges":
+            if '.*' not in query_object.dst_country:
+                dst_country = '(' + query_object.dst_country + ')'
+            else:
+                dst_country = query_object.dst_country
+            if '.*' not in query_object.dst_federation:
+                dst_federation = '(' + query_object.dst_federation + ')'
+            else:
+                dst_federation = query_object.dst_federation
+            query = \
+                '''
+                SELECT {0}("atlas") FROM "long"."{1}" 
+                WHERE ("pledge_type" = 'CPU' AND "real_federation" =~ /^{2}/ AND "country" =~ /^{3}/)  
+                AND time >= {4}ms and time <= {5}ms GROUP BY {6}
+                '''.format(query_object.agg_func, query_object._get_table(query_object.table), dst_federation, dst_country,
+                           startMillisec, endMillisec, query_object.grouping)
+            query = re.sub(r"([\n ])\1*", r"\1", query).replace('\n', ' ').lstrip().strip()
+            query = re.sub(' +', ' ', query)
+            return query
+        else:
+            if '.*' not in query_object.dst_experiment_site:
+                dst_experiment_site = '('+query_object.dst_experiment_site+')'
+            else: dst_experiment_site = query_object.dst_experiment_site
+            if '.*' not in query_object.dst_cloud:
+                dst_cloud = '('+query_object.dst_cloud+')'
+            else:
+                dst_cloud = query_object.dst_cloud
+            if '.*' not in query_object.dst_country:
+                dst_country = '('+query_object.dst_country+')'
+            else:
+                dst_country = query_object.dst_country
+            if '.*' not in query_object.dst_federation:
+                dst_federation = '('+query_object.dst_federation+')'
+            else:
+                dst_federation = query_object.dst_federation
+            if '.*' not in query_object.adcactivity:
+                adcactivity = '('+query_object.adcactivity+')'
+            else:
+                adcactivity = query_object.adcactivity
+            if '.*' not in query_object.resourcesreporting:
+                resourcesreporting = '('+query_object.resourcesreporting+')'
+            else:
+                resourcesreporting = query_object.resourcesreporting
+            if '.*' not in query_object.actualcorecount:
+                actualcorecount = '('+query_object.actualcorecount+')'
+            else:
+                actualcorecount = query_object.actualcorecount
+            if '.*' not in query_object.resource_type:
+                resource_type = '('+query_object.resource_type+')'
+            else:
+                resource_type = query_object.resource_type
+            if '.*' not in query_object.workinggroup:
+                workinggroup = '('+query_object.workinggroup+')'
+            else:
+                workinggroup = query_object.workinggroup
+            if '.*' not in query_object.inputfiletype:
+                inputfiletype = '('+query_object.inputfiletype+')'
+            else:
+                inputfiletype = query_object.inputfiletype
+            if '.*' not in query_object.eventservice:
+                eventservice = '('+query_object.eventservice+')'
+            else:
+                eventservice = query_object.eventservice
+            if '.*' not in query_object.inputfileproject:
+                inputfileproject = '('+query_object.inputfileproject+')'
+            else:
+                inputfileproject = query_object.inputfileproject
+            if '.*' not in query_object.outputproject:
+                outputproject = '('+query_object.outputproject+')'
+            else:
+                outputproject = query_object.outputproject
+            if '.*' not in query_object.jobstatus:
+                jobstatus = '('+query_object.jobstatus+')'
+            else:
+                jobstatus = query_object.jobstatus
+            if '.*' not in query_object.computingsite:
+                computingsite = '('+query_object.computingsite+')'
+            else:
+                computingsite = query_object.computingsite
+            if '.*' not in query_object.gshare:
+                gshare = '('+query_object.gshare+')'
+            else:
+                gshare = query_object.gshare
+            if '.*' not in query_object.dst_tier:
+                dst_tier = '('+query_object.dst_tier+')'
+            else:
+                dst_tier = query_object.dst_tier
+            if '.*' not in query_object.processingtype:
+                processingtype = '('+query_object.processingtype+')'
+            else:
+                processingtype = query_object.processingtype
+            if '.*' not in query_object.nucleus:
+                nucleus = '('+query_object.nucleus+')'
+            else:
+                nucleus = query_object.nucleus
+            if query_object.table == 'pending':
+                pquery = """"jobstatus" = 'pending' AND """
+            else: pquery = ''
 
-        if '.*' not in query_object.dst_experiment_site:
-            dst_experiment_site = '('+query_object.dst_experiment_site+')'
-        else: dst_experiment_site = query_object.dst_experiment_site
-        if '.*' not in query_object.dst_cloud:
-            dst_cloud = '('+query_object.dst_cloud+')'
-        else:
-            dst_cloud = query_object.dst_cloud
-        if '.*' not in query_object.dst_country:
-            dst_country = '('+query_object.dst_country+')'
-        else:
-            dst_country = query_object.dst_country
-        if '.*' not in query_object.dst_federation:
-            dst_federation = '('+query_object.dst_federation+')'
-        else:
-            dst_federation = query_object.dst_federation
-        if '.*' not in query_object.adcactivity:
-            adcactivity = '('+query_object.adcactivity+')'
-        else:
-            adcactivity = query_object.adcactivity
-        if '.*' not in query_object.resourcesreporting:
-            resourcesreporting = '('+query_object.resourcesreporting+')'
-        else:
-            resourcesreporting = query_object.resourcesreporting
-        if '.*' not in query_object.actualcorecount:
-            actualcorecount = '('+query_object.actualcorecount+')'
-        else:
-            actualcorecount = query_object.actualcorecount
-        if '.*' not in query_object.resource_type:
-            resource_type = '('+query_object.resource_type+')'
-        else:
-            resource_type = query_object.resource_type
-        if '.*' not in query_object.workinggroup:
-            workinggroup = '('+query_object.workinggroup+')'
-        else:
-            workinggroup = query_object.workinggroup
-        if '.*' not in query_object.inputfiletype:
-            inputfiletype = '('+query_object.inputfiletype+')'
-        else:
-            inputfiletype = query_object.inputfiletype
-        if '.*' not in query_object.eventservice:
-            eventservice = '('+query_object.eventservice+')'
-        else:
-            eventservice = query_object.eventservice
-        if '.*' not in query_object.inputfileproject:
-            inputfileproject = '('+query_object.inputfileproject+')'
-        else:
-            inputfileproject = query_object.inputfileproject
-        if '.*' not in query_object.outputproject:
-            outputproject = '('+query_object.outputproject+')'
-        else:
-            outputproject = query_object.outputproject
-        if '.*' not in query_object.jobstatus:
-            jobstatus = '('+query_object.jobstatus+')'
-        else:
-            jobstatus = query_object.jobstatus
-        if '.*' not in query_object.computingsite:
-            computingsite = '('+query_object.computingsite+')'
-        else:
-            computingsite = query_object.computingsite
-        if '.*' not in query_object.gshare:
-            gshare = '('+query_object.gshare+')'
-        else:
-            gshare = query_object.gshare
-        if '.*' not in query_object.dst_tier:
-            dst_tier = '('+query_object.dst_tier+')'
-        else:
-            dst_tier = query_object.dst_tier
-        if '.*' not in query_object.processingtype:
-            processingtype = '('+query_object.processingtype+')'
-        else:
-            processingtype = query_object.processingtype
-        if '.*' not in query_object.nucleus:
-            nucleus = '('+query_object.nucleus+')'
-        else:
-            nucleus = query_object.nucleus
-        if query_object.table == 'pending':
-            pquery = """"jobstatus" = 'pending' AND """
-        else: pquery = ''
-        query =  \
-        '''
-        SELECT {0}("{1}") FROM "long"."{2}_{3}" 
-        WHERE ({26}"dst_experiment_site" =~ /^{4}$/ AND "dst_cloud" =~ /^{5}$/ 
-        AND "dst_country" =~ /^{6}$/ AND "dst_federation" =~ /^{7}$/ 
-        AND "adcactivity" =~ /^{8}$/ AND "resourcesreporting" =~ /^{9}$/ AND "actualcorecount" =~ /^{10}$/ 
-        AND "resource_type" =~ /^{11}$/ AND "workinggroup" =~ /^{12}$/ 
-        AND "inputfiletype" =~ /^{13}$/ AND "eventservice" =~ /^{14}$/ 
-        AND "inputfileproject" =~ /^{15}$/ AND "outputproject" =~ /^{16}$/ 
-        AND "jobstatus" =~ /^{17}$/ AND "computingsite" =~ /^{18}$/ AND "gshare" =~ /^{19}$/ 
-        AND "dst_tier" =~ /^{20}$/ AND "processingtype" =~ /^{21}$/ AND "nucleus" =~ /^{22}$/ )  
-        AND  time >= {23}ms and time <= {24}ms GROUP BY {25} fill(0)&epoch=ms
-        '''.format(query_object.agg_func, query_object.field, query_object._get_table(query_object.table), query_object.bin, dst_experiment_site, dst_cloud, dst_country,
-                   dst_federation, adcactivity, resourcesreporting, actualcorecount, resource_type, workinggroup,
-                   inputfiletype, eventservice, inputfileproject, outputproject, jobstatus, computingsite, gshare,
-                   dst_tier, processingtype, nucleus, startMillisec, endMillisec, query_object.grouping, pquery)
-        query = re.sub(r"([\n ])\1*", r"\1", query).replace('\n', ' ').lstrip().strip()
-        query = re.sub(' +', ' ', query)
-        return query
+            query =  \
+            '''
+            SELECT {0}("{1}") FROM "long"."{2}_{3}" 
+            WHERE ({26}"dst_experiment_site" =~ /^{4}$/ AND "dst_cloud" =~ /^{5}$/ 
+            AND "dst_country" =~ /^{6}$/ AND "dst_federation" =~ /^{7}$/ 
+            AND "adcactivity" =~ /^{8}$/ AND "resourcesreporting" =~ /^{9}$/ AND "actualcorecount" =~ /^{10}$/ 
+            AND "resource_type" =~ /^{11}$/ AND "workinggroup" =~ /^{12}$/ 
+            AND "inputfiletype" =~ /^{13}$/ AND "eventservice" =~ /^{14}$/ 
+            AND "inputfileproject" =~ /^{15}$/ AND "outputproject" =~ /^{16}$/ 
+            AND "jobstatus" =~ /^{17}$/ AND "computingsite" =~ /^{18}$/ AND "gshare" =~ /^{19}$/ 
+            AND "dst_tier" =~ /^{20}$/ AND "processingtype" =~ /^{21}$/ AND "nucleus" =~ /^{22}$/ )  
+            AND  time >= {23}ms and time <= {24}ms GROUP BY {25} fill(0)&epoch=ms
+            '''.format(query_object.agg_func, query_object.field, query_object._get_table(query_object.table), query_object.bin, dst_experiment_site, dst_cloud, dst_country,
+                    dst_federation, adcactivity, resourcesreporting, actualcorecount, resource_type, workinggroup,
+                    inputfiletype, eventservice, inputfileproject, outputproject, jobstatus, computingsite, gshare,
+                    dst_tier, processingtype, nucleus, startMillisec, endMillisec, query_object.grouping, pquery)
+            query = re.sub(r"([\n ])\1*", r"\1", query).replace('\n', ' ').lstrip().strip()
+            query = re.sub(' +', ' ', query)
+            return query
 
     def get_url(self, query):
         url = self.grafana_proxy + self._get_datsource(query.table) + '/query?db=' + self.grafana_database + '&q=' + self.get_query(query)

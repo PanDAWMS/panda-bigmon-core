@@ -169,20 +169,33 @@ def grafana_api(request):
 
     q = Query()
     q = q.request_to_query(request)
+    sum_pledges  = Query(agg_func='last', table='pledges', field='atlas', grouping='real_federation')
+
+    #sum_pledges = Query(agg_func='sum', table='pledges', field='atlas', grouping='time(1m),real_federation')
     try:
         result = Grafana().get_data(q)
+        #last_pledges = Grafana().get_data(last_pledges)
+        sum_pledges = Grafana().get_data(sum_pledges)
         if 'type' in request.session['requestParams'] and request.session['requestParams']['type'] == 'd3js':
             data = stacked_hist(result['results'][0]['series'], group_by, split_series)
             return JsonResponse(data)
         if 'type' in request.session['requestParams'] and request.session['requestParams']['type'] == 'chartjs':
             data = {}
             data = stacked_hist(result['results'][0]['series'], group_by, split_series)
+            sum_pledges = stacked_hist(sum_pledges['results'][0]['series'], 'real_federation')
             lables = list(data.keys())
+            pledges_keys = list(sum_pledges.keys())
             datasets = []
             elements = {}
+
             for object in data:
                 for element in data[object]:
                     elements.setdefault(element,[]).append(data[object][element])
+                if object in pledges_keys:
+                    elements.setdefault('pledges',[]).append(sum_pledges[object]['all']*7*24*60*60)
+                else:
+                    elements.setdefault('pledges', []).append(0)
+
             background = ''
             for key in elements:
                 if key in colours_codes:
@@ -190,9 +203,12 @@ def grafana_api(request):
                 else:
                     r = lambda: random.randint(0, 255)
                     background = '#%02X%02X%02X' % (r(),r(),r())
-                datasets.append({'label': key,'stack':'Stack 0','data': elements[key], 'backgroundColor': background})
+                if key != 'pledges':
+                    datasets.append({'label': key,'stack':'Stack 0','data': elements[key], 'backgroundColor': background})
+                else:
+                    datasets.append(
+                {'label': key, 'stack': 'Stack 1', 'data': elements[key], 'backgroundColor': '#FF0000'})
             data = {'labels': lables, 'datasets': datasets}
-            v = 0
             return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
     except Exception as ex:
         result.append(ex)

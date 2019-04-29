@@ -52,7 +52,16 @@ class Query(object):
         self.nucleus = nucleus
         self.starttime = starttime
         self.endtime = endtime
-        self.grouping = '"' + '","'.join(grouping) + '"'
+        if ',' in grouping:
+            newgroups = ''
+            groups = grouping.split(',')
+            for group in groups:
+                if group != 'time':
+                    newgroups += '"' + group + '"' + ','
+            newgroups = newgroups[:-1]
+            self.grouping = newgroups
+        else:
+            self.grouping = '"' + str(grouping) + '"'
         self.days = days
 
     def _get_table(self, table):
@@ -66,6 +75,8 @@ class Query(object):
             return "atlasjm_current"
         if table == "finalising":
             return "atlasjm_finalising"
+        if table == "pledges":
+            return "pledges"
 
     def request_to_query(self, request):
         if 'agg_func' in request.session['requestParams']:
