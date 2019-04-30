@@ -171,12 +171,12 @@ class Query(object):
             self.nucleus = request.session['requestParams']['nucleus']
         else:
             self.nucleus = ".*"
-        if 'starttime' in request.session['requestParams']:
-            self.starttime = request.session['requestParams']['starttime']
+        if 'date_from' in request.session['requestParams']:
+            self.starttime = request.session['requestParams']['date_from']
         else:
             self.starttime = str(_round_to_hour(datetime.utcnow() - timedelta(days=7)))
-        if 'endtime' in request.session['requestParams']:
-            self.endtime = request.session['requestParams']['endtime']
+        if 'date_to' in request.session['requestParams']:
+            self.endtime = request.session['requestParams']['date_to']
         else:
             self.endtime = str(_round_to_hour(datetime.utcnow() - timedelta(hours=1)))
         if 'groupby' in request.session['requestParams']:
