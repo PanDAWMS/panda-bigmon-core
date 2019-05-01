@@ -2,12 +2,16 @@ from BaseTasksProvider import BaseTasksProvider
 from datetime import datetime, timedelta
 import threading
 from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIMEOUT_WHEN_DB_LOADED
+import logging
 
 class SQLAggregator(BaseTasksProvider):
 
     lock = threading.RLock()
+    logger = logging.getLogger(__name__)
 
     def processPayload(self):
+
+        self.logger.info("processPayload started")
 
         while (self.getNumberOfActiveDBSessions() > MAX_NUMBER_OF_ACTIVE_DB_SESSIONS):
             threading.sleep(TIMEOUT_WHEN_DB_LOADED)

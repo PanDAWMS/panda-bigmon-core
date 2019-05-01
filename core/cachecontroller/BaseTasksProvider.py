@@ -1,9 +1,12 @@
 from core import settings
 import cx_Oracle
 import threading
+import logging
 
 
 class BaseTasksProvider(object):
+    logger = logging.getLogger(__name__)
+
     # Retreive DB settings
     ORACLE_USERNAME = settings.local.dbaccess['default']['USER']
     ORACLE_PWD = settings.local.dbaccess['default']['PASSWORD']
@@ -27,6 +30,7 @@ class BaseTasksProvider(object):
             cursor.close()
         except:
             pass
+        self.logger.debug("Number of DB sessions:" + str(totalSessionCount))
         return totalSessionCount
 
     def logActivity(self):

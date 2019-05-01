@@ -4,9 +4,11 @@ import socket
 from BaseTasksProvider import BaseTasksProvider
 import queue
 import time, json
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIME_OUT_FOR_QUERY, NUMBER_OF_ITEMS_TO_DRAIN, \
     EXECUTION_CAP_FOR_MAINMENUURLS, BASE_URL, TIMEOUT_WHEN_DB_LOADED
+
 
 class BaseURLTasksProvider(BaseTasksProvider):
 
@@ -14,7 +16,7 @@ class BaseURLTasksProvider(BaseTasksProvider):
 
     def __init__(self, executioncap):
         self.EXECUTIONCAP = executioncap
-
+        self.logger = logging.getLogger(__name__)
 
     def getpayload(self):
         raise NotImplementedError("Must override getpayload")
@@ -44,6 +46,9 @@ class BaseURLTasksProvider(BaseTasksProvider):
 
 
     def processPayload(self):
+
+        self.logger.info("started processPayload")
+
         starttask = time.time()
 
         def fetchURL(jobtofetch):
@@ -84,13 +89,12 @@ class BaseURLTasksProvider(BaseTasksProvider):
                     (exectime, timeout, failedFetch, jobtofetch) = future.result(timeout=TIME_OUT_FOR_QUERY + 100)
                     if not failedFetch is None:
                         totalurls += 1
-                        print(jobtofetch[1] + " Done")
+                        self.logger.debug(jobtofetch[1] + " Done")
                         if failedFetch:
                             urlsfailed += 1
                     else:
                         payload.put((1, jobtofetch[1]))
-                        print(jobtofetch[1] + " Yielding ")
-
+                        self.logger.debug(jobtofetch[1] + " Yielding")
                     if timeout:
                         utlsfimeout += 1
 
@@ -100,4 +104,5 @@ class BaseURLTasksProvider(BaseTasksProvider):
                 break
 
         totalTime = time.time()-starttask
+        self.logger.info("finished processPayload")
         return (starttask, totalTime, totalurls, utlsfimeout, urlsfailed)

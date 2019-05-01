@@ -1,16 +1,19 @@
 import schedule
 import time
 import threading
+import logging.config
+
 from schedinstances.MainMenuURLs import MainMenuURLs
 from schedinstances.ArtPackages import ArtPackages
 from schedinstances.ArtMails import ArtMails
 from schedinstances.BigTasks import BigTasks
 from schedinstances.Harvester import Harvester
 from schedinstances.SQLAggregator import SQLAggregator
-
-
 from settingscron import EXECUTION_CAP_FOR_MAINMENUURLS
+from settingscron import LOG_PATH
 
+
+logging.basicConfig(level=logging.DEBUG, filename=LOG_PATH, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 mainMenuURLs = MainMenuURLs(EXECUTION_CAP_FOR_MAINMENUURLS)
 artPackages = ArtPackages(EXECUTION_CAP_FOR_MAINMENUURLS)

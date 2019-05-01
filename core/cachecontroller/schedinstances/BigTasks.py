@@ -2,15 +2,18 @@ from core.cachecontroller.BaseURLTasksProvider import BaseURLTasksProvider
 import queue, threading
 from datetime import datetime, timedelta
 from settingscron import URL_WITH_BIG_TASKS, URL_WITH_ES_TASKS
+import logging
 
 
 class BigTasks(BaseURLTasksProvider):
 
     BASIC_PRIORITY = 1
     lock = threading.RLock()
+    logger = logging.getLogger(__name__)
 
     def getpayload(self):
-        print("BigTasks")
+        self.logger.info("getpayload started")
+
         urlsQueue = queue.PriorityQueue(-1)
         esTaskList = self.downloadPayloadJSON(URL_WITH_ES_TASKS)
 
