@@ -7,7 +7,7 @@ class ArtPackages(BaseURLTasksProvider):
 
     BASIC_PRIORITY = 1
     lock = threading.RLock()
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(__name__ + ' ArtPackages')
 
     def getpayload(self):
         self.logger.info("getpayload started")

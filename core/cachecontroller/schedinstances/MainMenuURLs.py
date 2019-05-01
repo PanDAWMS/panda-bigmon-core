@@ -6,7 +6,7 @@ class MainMenuURLs(BaseURLTasksProvider):
 
     BASIC_PRIORITY = 1
     lock = threading.RLock()
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(__name__+' MainMenuURLs')
 
     def getpayload(self):
         self.logger.info("getpayload started")

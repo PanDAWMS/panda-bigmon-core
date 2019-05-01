@@ -6,7 +6,7 @@ import logging
 class ArtMails(BaseURLTasksProvider):
     lock = threading.RLock() #
     BASIC_PRIORITY = 1
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(__name__ + ' ArtMails')
 
     def getpayload(self):
         self.logger.info("getpayload started")

@@ -7,7 +7,7 @@ import logging
 class SQLAggregator(BaseTasksProvider):
 
     lock = threading.RLock()
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(__name__ + ' Harvester')
 
     def processPayload(self):
 
