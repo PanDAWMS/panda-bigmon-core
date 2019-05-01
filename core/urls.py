@@ -11,6 +11,8 @@ from core.art import views as art_views
 
 from core.monitor import views as monitor_views
 from core.harvester import views as harvester
+from core.grafana import views as grafana
+
 from core.globalshares import views as globalshares
 from core.runningprod import views as runningprod_views
 from core.errorsscattering import views as errorsscat_views
@@ -187,7 +189,10 @@ urlpatterns = [
     re_path(r'^datatable/data/resourcesType', globalshares.resourcesType, name='resourcesType'),
     re_path(r'^datatable/data/coreTypes', globalshares.coreTypes, name='coreTypes'),
     re_path(r'^datatable/data/fairsharePolicy', globalshares.fairsharePolicy, name='fairsharePolicy'),
-
+    ###Grafana###
+    re_path(r'^api/grafana', grafana.grafana_api, name='grafana_api'),
+    # re_path(r'^grafanaplots', grafana.index, name='grafana_plots'),
+    re_path(r'^grafanaplots', grafana.chartjs, name='grafana_chartjsplots'),
     ###Compare###
     re_path(r'^compare/jobs/$', compare_views.compareJobs, name='compareJobs'),
     re_path(r'^deletefromcomparison/$', compare_views.deleteFromComparison),

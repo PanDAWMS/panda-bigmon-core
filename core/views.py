@@ -8089,11 +8089,15 @@ def taskInfo(request, jeditaskid=0):
         tk = request.session['requestParams']['transkey']
         datasets = getCacheEntry(request, tk, isData=True)
         if datasets is None:
+            request.META['QUERY_STRING'] = ''
             commondata = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
             if commondata is not None:
                 commondata = json.loads(commondata)
                 if commondata is not None:
                     datasets = commondata['datasets'] if 'datasets' in commondata else None
+                    datasets = json.dumps(datasets)
+        if datasets is None:
+            _logger.error('No datasets data found for task in cache!!! Request: {}'.format(str(request.get_full_path())))
         return HttpResponse(datasets, content_type='text/html')
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
 

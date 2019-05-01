@@ -1,0 +1,201 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+{% block page_title %} Plots generator from Grafana API data {% endblock %}
+{% block subtitle %} Plots
+{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" />
+{% endblock %}
+{% block extra_js %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+
+{% endblock %}
+{% block body %}
+
+<table class="minimalistic-table">
+  <thead>
+    <tr>
+        <th>Group by</th>
+        <th>Split series</th>
+        <th>Plots</th>
+        <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+        <td>
+            <select id="group_by" onchange="onSubElementChoice()">
+                {% for gb, name in group_by.items %}
+                    <option value={{ gb }}{% if gb == requestParams.group_by %} selected="selected" {% endif %}> {{ name }} </option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <select id="split_series" onchange="onSubElementChoice()">
+                <option value="no"{% if not requestParams.split_series or requestParams.split_series == 'no' %} selected="selected" {% endif %}>No</option>
+                {% for ss, name in split_series.items %}
+                    <option value={{ ss }}{% if ss == requestParams.split_series %} selected="selected" {% endif %}> {{ name }} </option>
+                {% endfor %}
+            </select>
+        </td>
+{#        <td>#}
+{#          <ul class="no-bullet">#}
+{#              {% for plot, name in plots.items %}#}
+{#                  <li class="item"><input id="{{ plot }}" class="fieldtoplot" type="checkbox" disabled="disabled"><label for="{{ plot }}">{{ name }}</label></li>#}
+{#              {% endfor %}#}
+{#          </ul>#}
+{#        </td>#}
+        <td>
+            <a onclick="go()" class="button primary">Go!</a>
+        </td>
+    </tr>
+  </tbody>
+</table>
+<p>
+
+<p>
+<div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
+<p>
+
+<div id="canvasWrapper" style="position: relative; height: 1000px">
+<canvas id="chartjs"></canvas>
+</div>
+
+<script>
+
+function onSubElementChoice() {
+    var warning = document.getElementById ("warning");
+    warning.style.display = '';
+}
+var chartjs=null;
+
+var ctx = document.getElementById("chartjs").getContext("2d");
+
+var BarChartMethods = {
+    // sort a dataset
+   datasets: [],
+   getData(labels, datasets) {
+      const sum = [];
+      for (i = 0; i < datasets[0].length; i++) {
+         sum.push({
+            label: labels[i],
+            data: datasets.map(e => e[i]),
+            get sum() { // ES6 - getter
+               return this.data.reduce((a, b) => a + b);
+            }
+         });
+      }
+      return sum;
+   },
+    sort: function (chart) {
+       if (this.datasets.length>0)
+       {
+           this.datasets = []
+       }
+       chart.data.datasets.forEach((dataset, datasetIndex) => {
+         this.datasets.push(dataset.data);
+      });
+      data_store = this.getData(chart.data.labels, this.datasets),
+         	sorted = data_store.map(e => e.sum).sort((a, b) => b - a);
+      sorted.forEach((n, ni) => {
+         data_store.forEach(d => {
+            if (d.sum === n) {
+               chart.data.labels[ni] = d.label;
+               d.data.forEach((v, vi) => {
+                  chart.data.datasets[vi].data[ni] = v;
+               });
+            }
+         });
+      });
+        chart.update();
+    },
+    // reload data
+    reload: function (chart, datasetIndex, labels, values) {
+        var diff = chart.datasets[datasetIndex].bars.length - values.length;
+        if (diff < 0) {
+            for (var i = 0; i < -diff; i++)
+                chart.addData([0], "");
+        } else if (diff > 0) {
+            for (var i = 0; i < diff; i++)
+                chart.removeData();
+        }
+
+        chart.datasets[datasetIndex].bars.forEach(function (bar, i) {
+            chart.scale.xLabels[i] = labels[i];
+            bar.value = values[i];
+        })
+        chart.update();
+    }
+}
+
+function go() {
+    {#d3.select("#plots").selectAll("*").remove();#}
+    var group_byQ = "";
+    var split_seriesQ = "";
+    var group_by = document.getElementById ("group_by");
+    var split_series = document.getElementById ("split_series");
+    var query = '' ;
+
+
+    if (group_by.value.length > 0) group_byQ = "groupby="+group_by.value;
+    if (split_series.value.length > 0 && split_series.value != 'no') group_byQ += ',' + split_series.value;
+
+    if ((group_byQ.length>1) || (split_seriesQ.length>1) ) {
+        query += "table=completed&field=sum_hs06sec&";
+        if (group_byQ.length > 1) {
+            query += group_byQ+"&";
+        }
+        query += "type=chartjs"
+    }
+    if(chartjs!=null){
+        chartjs.destroy();
+    }
+    $.ajax({
+        url: '{% url 'grafana_api' %}',
+        data: query,
+        dataType:'json',
+        success: function(response) {
+            //var plotData = response;
+           labels = response.labels
+           datasets = response.datasets
+           chartjs = new Chart(ctx, {
+                type: 'horizontalBar',
+                data: {
+                    labels: labels,
+                    datasets: datasets,
+                    options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+					title: {
+						display: true,
+						text: 'Chart.js Bar Chart - Stacked'
+					},
+					tooltips: {
+						mode: 'index',
+						intersect: false
+					},
+					scales: {
+						xAxes: [{
+							stacked: true
+						}],
+						yAxes: [{
+							stacked: true,
+                            afterFit: function(scale) {
+                                scale.width = 15
+                            },
+                            ticks: {
+							    fontSize: 15
+                            }
+						}]
+					}
+				}
+                },
+            });
+           BarChartMethods.sort(chartjs)
+        }
+    });
+}
+</script>
+
+{% endblock %}
