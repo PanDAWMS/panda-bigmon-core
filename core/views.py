@@ -6683,7 +6683,8 @@ def dashboard(request, view='production'):
     valid, response = initRequest(request)
     if not valid: return response
 
-    data = getCacheEntry(request, "dashboard", skipCentralRefresh=True)
+#    data = getCacheEntry(request, "dashboard", skipCentralRefresh=True)
+    data = getCacheEntry(request, "dashboard")
     if data is not None:
         data = json.loads(data)
         data['request'] = request
