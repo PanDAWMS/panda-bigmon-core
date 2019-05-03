@@ -29,11 +29,11 @@ def run_threaded(job_func):
     job_thread.daemon = True
     job_thread.start()
 
-schedule.every(20).minutes.do(run_threaded, mainMenuURLs.execute)
-schedule.every(20).minutes.do(run_threaded, artPackages.execute)
-schedule.every(20).minutes.do(run_threaded, bigTasks.execute)
-#schedule.every().day.at("00:00").do(run_threaded, artMails.execute)
-schedule.every(20).minutes.do(run_threaded, harvester.execute)
+schedule.every(10).minutes.do(run_threaded, mainMenuURLs.execute)
+schedule.every(10).minutes.do(run_threaded, artPackages.execute)
+schedule.every(10).minutes.do(run_threaded, bigTasks.execute)
+#schedule.every().day.at("09:00").do(run_threaded, artMails.execute)
+schedule.every(10).minutes.do(run_threaded, harvester.execute)
 schedule.every(1).hour.do(run_threaded, sQLAggregator.execute)
 
 while 1:
