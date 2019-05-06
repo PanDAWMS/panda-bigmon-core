@@ -3314,9 +3314,11 @@ def jobList(request, mode=None, param=None):
 
     if (('datasets' in request.session['requestParams']) and (
         request.session['requestParams']['datasets'] == 'yes') and (
-        ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')))):
+        ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or
+            ('json' in request.session['requestParams'])):
         for job in jobs:
             files = []
+            pandaid = job['pandaid']
             files.extend(JediDatasetContents.objects.filter(pandaid=pandaid).order_by('type').values())
             ninput = 0
             if len(files) > 0:
