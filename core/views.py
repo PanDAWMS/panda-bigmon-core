@@ -3325,7 +3325,7 @@ def jobList(request, mode=None, param=None):
                 for f in files:
                     if f['type'] == 'input': ninput += 1
                     f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
-                    dsets = JediDatasets.objects.filter(datasetid=f['datasetid']).values()
+                    dsets = JediDatasets.objects.filter(jeditaskid=job['jeditaskid'], datasetid=f['datasetid']).values()
                     if len(dsets) > 0:
                         f['datasetname'] = dsets[0]['datasetname']
             if True:
