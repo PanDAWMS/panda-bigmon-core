@@ -7,7 +7,7 @@ import logging
 class SQLAggregator(BaseTasksProvider):
 
     lock = threading.RLock()
-    logger = logging.getLogger(__name__ + ' Harvester')
+    logger = logging.getLogger(__name__ + ' SQLAggregator')
 
     def processPayload(self):
 
@@ -23,7 +23,8 @@ class SQLAggregator(BaseTasksProvider):
             db = self.pool.acquire()
             cursor = db.cursor()
             rows = cursor.execute(query)
-        except:
+        except Exception as e:
+            self.logger.error(e)
             return -1
 
         users = {}
@@ -46,7 +47,8 @@ class SQLAggregator(BaseTasksProvider):
                                 FROM %s WHERE modificationTime > :start_time AND (prodSourceLabel = 'user' OR \
                                 prodSourceLabel = 'panda') AND jobStatus != 'cancelled' GROUP BY workingGroup, prodUserName" % (t)
                     rows = cursor.execute(query, {'start_time':start_time})
-                except:
+                except Exception as e:
+                    self.logger.error(e)
                     return -1
 
                 for r in rows:
@@ -74,9 +76,12 @@ class SQLAggregator(BaseTasksProvider):
                 for p in ('cpup%s' % days, 'cpua%s' % days):
                     if p in users[u]: userdict[p] = users[u][p]
             userlist.append(userdict)
+        try:
+            cursor.executemany("UPDATE ATLAS_PANDAMETA.USERS SET cpua1 = :cpua1, cpua7 = :cpua7, cpup1 = :cpup1, cpup7 = :cpup7 where name = :name", userlist)
+            db.commit()
+        except Exception as e:
+            self.logger.error(e)
 
-        cursor.executemany("UPDATE ATLAS_PANDAMETA.USERS SET cpua1 = :cpua1, cpua7 = :cpua7, cpup1 = :cpup1, cpup7 = :cpup7 where name = :name", userlist)
-        db.commit()
         cursor.close()
         return 0
 
