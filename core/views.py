@@ -3319,7 +3319,7 @@ def jobList(request, mode=None, param=None):
         for job in jobs:
             files = []
             pandaid = job['pandaid']
-            files.extend(JediDatasetContents.objects.filter(pandaid=pandaid).order_by('type').values())
+            files.extend(JediDatasetContents.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
             ninput = 0
             if len(files) > 0:
                 for f in files:
