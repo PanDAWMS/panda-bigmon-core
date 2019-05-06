@@ -3330,9 +3330,9 @@ def jobList(request, mode=None, param=None):
                         f['datasetname'] = dsets[0]['datasetname']
             if True:
                 # if ninput == 0:
-                files.extend(Filestable4.objects.filter(pandaid=pandaid).order_by('type').values())
+                files.extend(Filestable4.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
                 if len(files) == 0:
-                    files.extend(FilestableArch.objects.filter(pandaid=pandaid).order_by('type').values())
+                    files.extend(FilestableArch.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
                 if len(files) > 0:
                     for f in files:
                         if 'creationdate' not in f: f['creationdate'] = f['modificationtime']
