@@ -3312,7 +3312,7 @@ def jobList(request, mode=None, param=None):
     ## set up google flow diagram
     flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
 
-    if (('datasets' in request.session['requestParams']) and (
+    if ('datasets' in request.session['requestParams']) and ((
         request.session['requestParams']['datasets'] == 'yes') and (
         ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or
             ('json' in request.session['requestParams'])):
@@ -3341,7 +3341,7 @@ def jobList(request, mode=None, param=None):
                         for file in files:
                             if 'DSQuery' in file and file['DSQuery']['jeditaskid'] == ds['jeditaskid'] and \
                                     file['DSQuery']['datasetid'] == ds['datasetid']:
-                                file['datasetname'] = ds['datasetname']
+                                file['dataset'] = ds['datasetname']
                                 del file['DSQuery']
 
                     #dsets = JediDatasets.objects.filter(jeditaskid=job['jeditaskid'], datasetid=f['datasetid']).extra(select={"dummy1" : '/*+ INDEX_RS_ASC(ds JEDI_DATASETS_PK) */ 1 '}).values()
@@ -3358,7 +3358,7 @@ def jobList(request, mode=None, param=None):
                     for f in files:
                         if 'creationdate' not in f: f['creationdate'] = f['modificationtime']
                         if 'fileid' not in f: f['fileid'] = f['row_id']
-                        if 'datasetname' not in f: f['datasetname'] = f['dataset']
+                        if 'datasetname' not in f and 'dataset' in f: f['datasetname'] = f['dataset']
                         if 'modificationtime' in f: f['oldfiletable'] = 1
                         if 'destinationdblock' in f and f['destinationdblock'] is not None:
                             f['destinationdblock_vis'] = f['destinationdblock'].split('_')[-1]
