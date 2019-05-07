@@ -6,7 +6,7 @@ from django.utils import encoding
 from django.conf import settings as djangosettings
 from django.core.cache import cache
 
-notcachedRemoteAddress = ['188.184.185.129']
+notcachedRemoteAddress = ['188.184.185.129', '188.184.116.46']
 
 def deleteCacheTestData(request,data):
 ### Filtering data
@@ -52,9 +52,13 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
     if isCache:
         is_json = False
 
+        #logger = logging.getLogger('bigpandamon-error')
+        #logger.error(request.META.get('HTTP_X_FORWARDED_FOR'))
+
         # We do this check to always rebuild cache for the page when it called from the crawler
         if (('HTTP_X_FORWARDED_FOR' in request.META) and (request.META['HTTP_X_FORWARDED_FOR'] in notcachedRemoteAddress) and
                 skipCentralRefresh == False):
+
             return None
 
         request._cache_update_cache = False
