@@ -18,7 +18,7 @@ class BaseTasksProvider(object):
     # If instantiated here become the same over all child classes
 
     def getNumberOfActiveDBSessions(self):
-        totalSessionCount = 0
+        totalSessionCount, totalActiveSessionCount = 0, 0
         try:
             db = self.pool.acquire()
             cursor = db.cursor()
