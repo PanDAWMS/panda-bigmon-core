@@ -29,6 +29,9 @@ def run_threaded(job_func):
     job_thread.daemon = True
     job_thread.start()
 
+#schedule.every(10).seconds.do(run_threaded, mainMenuURLs.execute)
+
+
 schedule.every(10).minutes.do(run_threaded, mainMenuURLs.execute)
 schedule.every(10).minutes.do(run_threaded, artPackages.execute)
 schedule.every(10).minutes.do(run_threaded, bigTasks.execute)

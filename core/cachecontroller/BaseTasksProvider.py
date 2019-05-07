@@ -31,7 +31,7 @@ class BaseTasksProvider(object):
         except:
             pass
         self.logger.debug("Number of DB sessions:" + str(totalSessionCount))
-        return totalSessionCount
+        return totalActiveSessionCount
 
     def logActivity(self):
         raise NotImplementedError("Must override logActivity")
