@@ -3321,13 +3321,34 @@ def jobList(request, mode=None, param=None):
             pandaid = job['pandaid']
             files.extend(JediDatasetContents.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
             ninput = 0
+
+            dsquery = Q()
+            counter = 0
             if len(files) > 0:
                 for f in files:
                     if f['type'] == 'input': ninput += 1
                     f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
-                    dsets = JediDatasets.objects.filter(jeditaskid=job['jeditaskid'], datasetid=f['datasetid']).values()
-                    if len(dsets) > 0:
-                        f['datasetname'] = dsets[0]['datasetname']
+
+                    f['DSQuery'] = {'jeditaskid': job['jeditaskid'], 'datasetid': f['datasetid']}
+                    dsquery = dsquery | Q(Q(jeditaskid=job['jeditaskid']) & Q(datasetid=f['datasetid']))
+                    counter += 1
+                    if counter == 30:
+                        break
+
+                dsets = JediDatasets.objects.filter(dsquery).extra(select={"dummy1": '/*+ INDEX_RS_ASC(ds JEDI_DATASETS_PK) */ 1 '}).values()
+                if len(dsets) > 0:
+                    for ds in dsets:
+                        for file in files:
+                            if 'DSQuery' in file and file['DSQuery']['jeditaskid'] == ds['jeditaskid'] and \
+                                    file['DSQuery']['datasetid'] == ds['datasetid']:
+                                file['datasetname'] = ds['datasetname']
+                                del file['DSQuery']
+
+                    #dsets = JediDatasets.objects.filter(jeditaskid=job['jeditaskid'], datasetid=f['datasetid']).extra(select={"dummy1" : '/*+ INDEX_RS_ASC(ds JEDI_DATASETS_PK) */ 1 '}).values()
+                    #if len(dsets) > 0:
+                    #    f['datasetname'] = dsets[0]['datasetname']
+
+
             if True:
                 # if ninput == 0:
                 files.extend(Filestable4.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
