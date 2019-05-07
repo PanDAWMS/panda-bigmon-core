@@ -11,7 +11,7 @@ class SQLAggregator(BaseTasksProvider):
 
     def processPayload(self):
 
-        self.logger.info("processPayload started")
+        self.logger.info("SQLAggregator started")
 
         while (self.getNumberOfActiveDBSessions() > MAX_NUMBER_OF_ACTIVE_DB_SESSIONS):
             threading.sleep(TIMEOUT_WHEN_DB_LOADED)
@@ -82,6 +82,7 @@ class SQLAggregator(BaseTasksProvider):
         except Exception as e:
             self.logger.error(e)
 
+        self.logger.info("SQLAggregator finished")
         cursor.close()
         return 0
 
