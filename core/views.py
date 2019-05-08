@@ -6,6 +6,7 @@ import json
 import copy
 import itertools, random
 import numpy as np
+from io import BytesIO
 
 import math
 
@@ -12509,14 +12510,26 @@ def image(request):
         if (len(urlConfim)==0):
             return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
         try:
-            with urllib.request.urlopen(url) as fd:
-                image_file = io.BytesIO(fd.read())
-                im = Image.open(image_file)
-                rgb_im = im.convert('RGB')
-                response = HttpResponse(content_type='image/jpg')
-                rgb_im.save(response, "JPEG")
+            data = getCacheEntry(request, "imagewrap")
+            if data is not None:
+                data = base64.b64decode(data)
+                response = HttpResponse(data, content_type='image/jpg')
                 return response
+            else:
+                with urllib.request.urlopen(url) as fd:
+                    image_file = io.BytesIO(fd.read())
+                    im = Image.open(image_file)
+                    rgb_im = im.convert('RGB')
+                    response = HttpResponse(content_type='image/jpg')
+                    rgb_im.save(response, "JPEG")
+                    byte_io = BytesIO()
+                    rgb_im.save(byte_io, 'JPEG')
+                    data = base64.b64encode(byte_io.getvalue())
+                    setCacheEntry(request, "imagewrap", data, 60 * 10)
+                    return response
+
         except Exception as ex:
+            print(ex)
             return redirect('/static/images/404-not-found-site.gif')
     else:
         return redirect('/static/images/error_z0my4n.png')
