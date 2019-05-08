@@ -8,3 +8,4 @@ URL_WITH_BIG_TASKS = '/tasks/?site=ORNL_Titan_MCORE&status=running&json'
 URL_WITH_ES_TASKS = '/tasks/?eventservice=eventservice&json'
 HARVESTER_LIST_URL = '/harvesters/?json'
 LOG_PATH = "/data/wenaus/bigpandamon_virtualhosts/twrpm/logs/cachecontroller.log"
+PANDA_LOGGER_PATH = "/cephfs/atlpan/filebrowser"

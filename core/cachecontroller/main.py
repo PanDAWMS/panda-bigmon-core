@@ -9,6 +9,7 @@ from schedinstances.ArtMails import ArtMails
 from schedinstances.BigTasks import BigTasks
 from schedinstances.Harvester import Harvester
 from schedinstances.SQLAggregator import SQLAggregator
+from schedinstances.PandaLogsStorageCleanUp import PandaLogsStorageCleanUp
 from settingscron import EXECUTION_CAP_FOR_MAINMENUURLS
 from settingscron import LOG_PATH
 
@@ -20,6 +21,7 @@ artPackages = ArtPackages(EXECUTION_CAP_FOR_MAINMENUURLS)
 artMails = ArtMails(EXECUTION_CAP_FOR_MAINMENUURLS)
 bigTasks = BigTasks(EXECUTION_CAP_FOR_MAINMENUURLS)
 harvester = Harvester(EXECUTION_CAP_FOR_MAINMENUURLS)
+cephCleanUp = PandaLogsStorageCleanUp()
 sQLAggregator = SQLAggregator()
 
 #mainMenuURLs.processPayload()
@@ -29,9 +31,7 @@ def run_threaded(job_func):
     job_thread.daemon = True
     job_thread.start()
 
-#schedule.every(10).seconds.do(run_threaded, mainMenuURLs.execute)
-
-
+schedule.every().day.at("20:18").do(run_threaded, cephCleanUp.execute)
 schedule.every(10).minutes.do(run_threaded, mainMenuURLs.execute)
 schedule.every(10).minutes.do(run_threaded, artPackages.execute)
 schedule.every(10).minutes.do(run_threaded, bigTasks.execute)
