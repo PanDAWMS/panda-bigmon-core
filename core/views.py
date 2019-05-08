@@ -12514,6 +12514,7 @@ def image(request):
             if data is not None:
                 data = base64.b64decode(data)
                 response = HttpResponse(data, content_type='image/jpg')
+                patch_response_headers(response, cache_timeout=10 * 60)
                 return response
             else:
                 with urllib.request.urlopen(url) as fd:
@@ -12526,6 +12527,7 @@ def image(request):
                     rgb_im.save(byte_io, 'JPEG')
                     data = base64.b64encode(byte_io.getvalue())
                     setCacheEntry(request, "imagewrap", data, 60 * 10)
+                    patch_response_headers(response, cache_timeout=10 * 60)
                     return response
 
         except Exception as ex:
