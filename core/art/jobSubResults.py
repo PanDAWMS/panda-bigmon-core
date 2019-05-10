@@ -218,7 +218,7 @@ def getFinalResult(job):
     testdirectory = None
     if job['jobstatus'] == 'finished':
         finalresult = 0
-    elif job['jobstatus'] == 'failed':
+    elif job['jobstatus'] in ('failed', 'cancelled'):
         finalresult = 3
     else:
         finalresult = 2
