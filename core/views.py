@@ -118,7 +118,7 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 from core.libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, preparePlotData
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
-    job_summary_for_task_light, get_top_memory_consumers
+    job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.bpuser import get_relevant_links
 
 @register.filter(takes_context=True)
@@ -12884,6 +12884,21 @@ def serverStatusHealth(request):
     # print "serverStatusHealth ", "Normal operations1"
     return HttpResponse("Normal operation", content_type='text/html')
 
+
+def getHarversterWorkersForTask(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+    if 'requestParams' in request.session and 'jeditaskid' in request.session['requestParams']:
+        try:
+            jeditaskid = int(request.session['requestParams']['jeditaskid'])
+        except:
+            return HttpResponse(status=400)
+
+        data = get_harverster_workers_for_task(jeditaskid)
+        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+    return HttpResponse(status=400)
 
 
 #import logging

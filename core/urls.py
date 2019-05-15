@@ -180,7 +180,9 @@ urlpatterns = [
     re_path(r'^harvesters/$', harvester.harvesters, name='harvesters'),
     re_path(r'^harvesters/slots/$', harvester.harvesterslots, name='harvesterslots'),
     re_path(r'^workers/$', harvester.workersJSON, name='workers'),
-    #re_path(r'^json/harvesterinstances/$', harvester.harvesterinstancesjson, name='harvesterinstancesJSON'),
+    re_path(r'^workersfortask/$', coremon_views.getHarversterWorkersForTask, name='workersfortask'),
+
+     #re_path(r'^json/harvesterinstances/$', harvester.harvesterinstancesjson, name='harvesterinstancesJSON'),
     ####GLOBALSHARES#####
     re_path(r'^globalshares/$', globalshares.globalshares, name='globalshares'),
     re_path(r'^datatable/data/detailedInformationJSON', globalshares.detailedInformationJSON, name='detailedInformationJSON'),
