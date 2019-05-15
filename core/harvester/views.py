@@ -76,7 +76,6 @@ def harvesterWorkersDash(request):
     response = render_to_response('harvworksummarydash.html', data, content_type='text/html')
     return response
 
-
 # SELECT COMPUTINGSITE,STATUS, count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS WHERE SUBMITTIME > (sysdate - interval '35' day) group by COMPUTINGSITE,STATUS
 @login_customrequired
 def harvesterWorkList(request):
@@ -117,7 +116,6 @@ def harvesterWorkList(request):
     endSelfMonitor(request)
     response = render_to_response('harvworkerslist.html', data, content_type='text/html')
     return response
-
 
 @login_customrequired
 def harvesterWorkerInfo(request):
@@ -195,7 +193,6 @@ def harvesterWorkerInfo(request):
         endSelfMonitor(request)
         response = render_to_response('harvworkerinfo.html', data, content_type='text/html')
         return response
-
 
 def harvesterfm (request):
     return redirect('/harvesters/')
@@ -309,6 +306,7 @@ def harvesters(request):
             for dialog in dialogsList:
                 dialog['creationtime'] = datetime.strptime(str(dialog['creationtime']), old_format).strftime(new_format)
                 dialogs.append(dialog)
+
             return HttpResponse(json.dumps(dialogs, cls=DateTimeEncoder), content_type='text/html')
 
         lastupdateCache = ''
@@ -362,8 +360,21 @@ def harvesters(request):
             defaulthours = int(request.session['requestParams']['days']) * 24
 
         sqlquery = """
-        SELECT * FROM ATLAS_PANDABIGMON.HARVESTERINSTANCEINFO
-        where harvester_id like '{0}' and ROWNUM=1
+        SELECT
+        ii.harvester_id,
+        ii.description,
+        to_char(ii.starttime, 'dd-mm-yyyy hh24:mi:ss') as starttime,
+        to_char(ii.lastupdate, 'dd-mm-yyyy hh24:mi:ss') as lastupdate,
+        ii.owner,
+        ii.hostname,
+        ii.sw_version,
+        ii.commit_stamp,
+        to_char(ww.submittime, 'dd-mm-yyyy hh24:mi:ss') as submittime
+        FROM
+        atlas_panda.harvester_instances ii INNER JOIN 
+        atlas_panda.harvester_workers ww on ww.harvesterid = ii.harvester_id and ww.submittime = (select max(submittime) 
+        from atlas_panda.harvester_workers 
+        where harvesterid like '{0}') and ii.harvester_id like '{0}'
         """.format(str(instance))
 
         cur = connection.cursor()
@@ -451,7 +462,9 @@ def harvesters(request):
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
         endSelfMonitor(request)
+
         return render_to_response('harvesters.html', data, content_type='text/html')
+
     elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
         computingsite = request.session['requestParams']['computingsite']
         if ('workersstats' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']):
@@ -470,6 +483,7 @@ def harvesters(request):
             for stat in harvsterworkerstat:
                 stat['lastupdate'] = datetime.strptime(str(stat['lastupdate']), old_format).strftime(new_format)
                 harvsterworkerstats.append(stat)
+
             return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='text/html')
         if ('dialogs' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']):
             dialogs = []
@@ -908,6 +922,7 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='')
     columns = [str(column[0]).lower() for column in cur.description]
     for pid in pandaids:
         pandaidsList.append(dict(zip(columns, pid)))
+
     return pandaidsList
 
 def isHarvesterJob(pandaid):
@@ -933,6 +948,7 @@ def isHarvesterJob(pandaid):
     columns = [str(column[0]).lower() for column in cur.description]
     for pid in job:
         jobHarvesterInfo.append(dict(zip(columns, pid)))
+
     return jobHarvesterInfo
 
 def workersJSON(request):
@@ -949,6 +965,7 @@ def workersJSON(request):
     if data is not None:
         data = json.loads(data)
         endSelfMonitor(request)
+
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
 
     status = ''
@@ -1021,6 +1038,7 @@ def workersJSON(request):
                 workersList.append(object)
             if 'key' not in request.session['requestParams']:
                 setCacheEntry(request, xurl, json.dumps(workersList, cls=DateTimeEncoder), 60 * 20, isData = True)
+
             return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='text/html')
 
     elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
@@ -1054,6 +1072,7 @@ def workersJSON(request):
                 workersList.append(object)
             if 'key' not in request.session['requestParams']:
                 setCacheEntry(request, xurl, json.dumps(workersList, cls=DateTimeEncoder), 60 * 20, isData = True)
+
             return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='text/html')
 
     elif 'pandaid' in request.session['requestParams'] and 'computingsite' not in request.session[
@@ -1092,6 +1111,7 @@ def workersJSON(request):
                 object = {}
                 object = dict(zip(columns, worker))
                 workersList.append(object)
+
             return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='text/html')
 
 @login_customrequired
@@ -1148,7 +1168,6 @@ def getWorkersList(sqlWorkersList):
     query = """SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}""".format(transactionKey)
 
     return transactionKey, query
-
 
 def getWorkersByJobID(pandaid, instance=''):
     instancequery = ''
