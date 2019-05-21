@@ -863,7 +863,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     extraQueryString += ' AND ( '
                 except NameError:
                     extraQueryString = '('
-                extraQueryString += 'pilotid not like \'%%|%%\''
+                extraQueryString += '(pilotid not like \'%%|%%\') or (pilotid is null)'
                 extraQueryString += ')'
             else:
                 query['pilotid__endswith'] = val
