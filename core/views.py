@@ -12276,12 +12276,13 @@ def addJobMetadata(jobs, require=False):
         if (job['jobstatus'] == 'failed' or require):
             pids.append(job['pandaid'])
 
-        tdelta = datetime.now() - job['creationtime']
-        delta = int(tdelta.days) + 1
-        if delta > 3:
-            useMetaArch = True
-        else:
-            useMeta = True
+        if 'creationtime' in job:
+            tdelta = datetime.now() - job['creationtime']
+            delta = int(tdelta.days) + 1
+            if delta > 3:
+                useMetaArch = True
+            else:
+                useMeta = True
 
     query = {}
     query['pandaid__in'] = pids
