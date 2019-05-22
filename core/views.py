@@ -12268,9 +12268,21 @@ def buildGoogleTaskFlow(request, tasks):
 def addJobMetadata(jobs, require=False):
     print ('adding metadata')
     pids = []
+
+    useMetaArch = False
+    useMeta = False
+
     for job in jobs:
         if (job['jobstatus'] == 'failed' or require):
             pids.append(job['pandaid'])
+
+        tdelta = datetime.now() - job['creationtime']
+        delta = int(tdelta.days) + 1
+        if delta > 3:
+            useMetaArch = True
+        else:
+            useMeta = True
+
     query = {}
     query['pandaid__in'] = pids
     mdict = {}
@@ -12280,28 +12292,39 @@ def addJobMetadata(jobs, require=False):
 
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         metaTableName = "ATLAS_PANDA.METATABLE"
+        metaTableNameArch = "ATLAS_PANDAARCH.METATABLE_ARCH"
         tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+
     else:
         metaTableName = "METATABLE"
+        metaTableNameArch = "METATABLE_ARCH"
         tmpTableName = "TMP_IDS1"
 
     transactionKey = random.randrange(1000000)
- #   connection.enter_transaction_management()
     new_cur = connection.cursor()
     for id in pids:
         new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
         tmpTableName, id, transactionKey))  # Backend dependable
- #   connection.commit()
-    new_cur.execute(
-        "SELECT METADATA,MODIFICATIONTIME,PANDAID FROM %s WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
-        metaTableName, tmpTableName, transactionKey))
-    mrecs = dictfetchall(new_cur)
 
-    for m in mrecs:
-        try:
-            mdict[m['PANDAID']] = m['METADATA']
-        except:
-            pass
+    mrecs = []
+    if useMeta:
+        new_cur.execute(
+            "SELECT METADATA,MODIFICATIONTIME,PANDAID FROM %s WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
+            metaTableName, tmpTableName, transactionKey))
+        mrecs = dictfetchall(new_cur)
+    if useMetaArch:
+        new_cur.execute(
+            "SELECT METADATA,MODIFICATIONTIME,PANDAID FROM %s WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
+            metaTableNameArch, tmpTableName, transactionKey))
+
+        mrecs.extend(dictfetchall(new_cur))
+
+    if mrecs:
+        for m in mrecs:
+            try:
+                mdict[m['PANDAID']] = m['METADATA']
+            except:
+                pass
     for job in jobs:
         if job['pandaid'] in mdict:
             try:
