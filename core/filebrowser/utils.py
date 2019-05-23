@@ -652,7 +652,7 @@ def unpack_file(fname):
     return status, errtxt
 
 
-def list_file_directory(logdir):
+def list_file_directory(logdir, limit=1000):
     """
         list_file_directory
         
@@ -689,6 +689,8 @@ def list_file_directory(logdir):
             os.walk(os.path.join(logdir, tardir), followlinks=False):
             for name in walk_files:
                 contents.append(os.path.join(walk_root, name))
+                if len(contents) > limit:
+                    break
         _logger.debug(contents)
         fileStats = {}
         linkStats = {}
@@ -783,7 +785,7 @@ def fetch_file(pfn, guid, unpack=True, listfiles=True):
     ### return list of files
     return files, errtxt, urlbase, tardir
 
-def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True):
+def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
 
     errtxt = ''
     files = []
@@ -822,7 +824,7 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True):
     files = ''
     if listfiles:
         ### list the files
-        files, err, tardir = list_file_directory(dir)
+        files, err, tardir = list_file_directory(dir, limit)
         if len(err):
             msg = 'File listing failed for file [%s]: [%s].' % (fname, err)
             _logger.error(msg)
