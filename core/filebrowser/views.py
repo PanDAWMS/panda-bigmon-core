@@ -36,9 +36,7 @@ def index(request):
 
     errors = {}
 
-
-    _logger.error("index started - " + datetime.now().strftime("%H:%M:%S") + "  ")
-
+    #_logger.error("index started - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     ### check that all expected parameters are in URL
     expectedFields = ['guid', 'site', 'scope', 'lfn']
@@ -117,8 +115,7 @@ def index(request):
             except:
                 pass
 
-    _logger.error("index step1 - " + datetime.now().strftime("%H:%M:%S") + "  ")
-
+    #_logger.error("index step1 - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     ### download the file
     files = []
@@ -158,7 +155,7 @@ def index(request):
             errors['download'] = ''
         errors['download'] += errtxt
 
-    _logger.error("index step2 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+#    _logger.error("index step2 - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     totalLogSize = 0
     if type(files) is list and len(files) > 0:
@@ -198,7 +195,7 @@ def index(request):
         return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
     else:
         resp = HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
-        _logger.error("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+ #       _logger.error("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")
         return resp
 
 

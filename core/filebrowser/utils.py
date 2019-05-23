@@ -803,6 +803,8 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
     errtxt = ''
     files = []
 
+    _logger.error("get_rucio_file step1 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+
     ### logdir
     logdir = get_fullpath_filebrowser_directory() + '/' + guid.lower()
     #### basename for the file
@@ -826,6 +828,9 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
         _logger.error(msg)
         errtxt += msg
 
+    _logger.error("get_rucio_file step2 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+
+
     if unpack:
         ### untar the file
         status, err = unpack_file(fname)
@@ -844,6 +849,8 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
 
     ### urlbase
     urlbase = get_filebrowser_directory() +'/'+ guid.lower()+'/'+scope
+
+    _logger.error("get_rucio_file step3 - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     ### return list of files
     return files, errtxt, urlbase, tardir
