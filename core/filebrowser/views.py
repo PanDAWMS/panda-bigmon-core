@@ -127,7 +127,7 @@ def index(request):
         }
         return render_to_response('errorPage.html', data, content_type='text/html')
     if not (guid is None or lfn is None or scope is None):
-        files, errtxt, dirprefix, tardir = get_rucio_file(scope,lfn, guid, 1000)
+        files, errtxt, dirprefix, tardir = get_rucio_file(scope,lfn, guid, 100)
     else:
         errormessage = ''
         if guid is None:
