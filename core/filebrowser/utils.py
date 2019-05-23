@@ -685,12 +685,16 @@ def list_file_directory(logdir, limit=1000):
     # Now list the contents of the tarball directory:
     try:
         contents = []
+        dobrake = False
         for walk_root, walk_dirs, walk_files in \
             os.walk(os.path.join(logdir, tardir), followlinks=False):
             for name in walk_files:
                 contents.append(os.path.join(walk_root, name))
                 if len(contents) > limit:
+                    dobrake = True
                     break
+            if dobrake:
+                break
         _logger.debug(contents)
         fileStats = {}
         linkStats = {}
