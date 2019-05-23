@@ -659,7 +659,7 @@ def list_file_directory(logdir, limit=1000):
         list_file_directory
         
     """
-    _logger.error("list_file_directory started - " + datetime.now().strftime("%H:%M:%S") + "  " + logdir)
+    #_logger.error("list_file_directory started - " + datetime.now().strftime("%H:%M:%S") + "  " + logdir)
 
     files = []
     err = ''
@@ -692,7 +692,7 @@ def list_file_directory(logdir, limit=1000):
         dobrake = False
         for walk_root, walk_dirs, walk_files in \
             os.walk(os.path.join(logdir, tardir), followlinks=False):
-            _logger.error("walk - " + datetime.now().strftime("%H:%M:%S") + "  " + os.path.join(logdir, tardir))
+            #_logger.error("walk - " + datetime.now().strftime("%H:%M:%S") + "  " + os.path.join(logdir, tardir))
 
             for name in walk_files:
                 contents.append(os.path.join(walk_root, name))
@@ -737,7 +737,7 @@ def list_file_directory(logdir, limit=1000):
     ### sort the files - no need since DataTable plugin applied
     # files = sorted(files, key=lambda x: (str(x['dirname']).lower(), str(x['name']).lower()))
 
-    _logger.error("list_file_directory finished - " + datetime.now().strftime("%H:%M:%S") + "  " + logdir)
+    #_logger.error("list_file_directory finished - " + datetime.now().strftime("%H:%M:%S") + "  " + logdir)
 
 
     if status != 0:
