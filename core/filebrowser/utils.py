@@ -838,6 +838,9 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
             msg = 'File unpacking failed for file [%s].' % (fname)
             _logger.error(msg)
 
+    _logger.error("get_rucio_file step2-1 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
+
+
     tardir = ''
     files = ''
     if listfiles:
