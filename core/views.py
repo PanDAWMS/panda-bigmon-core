@@ -1722,9 +1722,8 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         for f in flist:
             if f == 'actualcorecount' and job[f] is None: job[f] = 1
             if f == 'pilotversion':
-                pilotver = job['pilotid']
-                if '|' in pilotver:
-                    job[f] = pilotver.split('|')[-1]
+                if 'pilotid' in job and '|' in job['pilotid']:
+                    job[f] = job['pilotid'].split('|')[-1]
                 else:
                     job[f] = 'Not specified'
             if f == 'schedulerid':
