@@ -5,7 +5,6 @@
 import logging
 import re
 import json
-from datetime import datetime
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, render
 from django.template import RequestContext, loader
@@ -20,6 +19,7 @@ get_filebrowser_hostname, remove_folder
 from core.common.models import Filestable4, FilestableArch
 from core.views import DateEncoder, DateTimeEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
+from datetime import datetime
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"

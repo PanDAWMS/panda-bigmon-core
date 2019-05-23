@@ -10,6 +10,8 @@ import re
 import time
 import shutil
 from django.conf import settings
+from datetime import datetime
+
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
@@ -688,6 +690,8 @@ def list_file_directory(logdir, limit=1000):
         dobrake = False
         for walk_root, walk_dirs, walk_files in \
             os.walk(os.path.join(logdir, tardir), followlinks=False):
+            _logger.error("walk - " + datetime.now().strftime("%H:%M:%S") + "  " + os.path.join(logdir, tardir))
+
             for name in walk_files:
                 contents.append(os.path.join(walk_root, name))
                 if len(contents) > limit:
