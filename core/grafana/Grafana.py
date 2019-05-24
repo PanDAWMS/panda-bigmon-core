@@ -64,7 +64,7 @@ class Grafana(object):
                 dst_federation = query_object.dst_federation
             query = \
                 '''
-                SELECT {0}("atlas") FROM "long"."{1}" 
+                SELECT {0}("atlas") FROM "long_1d"."{1}" 
                 WHERE ("pledge_type" = 'CPU' AND "real_federation" =~ /^{2}/ AND "country" =~ /^{3}/)  
                 AND time >= {4}ms and time <= {5}ms GROUP BY {6}
                 '''.format(query_object.agg_func, query_object._get_table(query_object.table), dst_federation, dst_country,
@@ -154,7 +154,7 @@ class Grafana(object):
 
             query =  \
             '''
-            SELECT {0}("{1}") FROM "long"."{2}_{3}" 
+            SELECT {0}("{1}") FROM "long_{3}"."{2}_{3}" 
             WHERE ({26}"dst_experiment_site" =~ /^{4}$/ AND "dst_cloud" =~ /^{5}$/ 
             AND "dst_country" =~ /^{6}$/ AND "dst_federation" =~ /^{7}$/ 
             AND "adcactivity" =~ /^{8}$/ AND "resourcesreporting" =~ /^{9}$/ AND "actualcorecount" =~ /^{10}$/ 
@@ -173,11 +173,13 @@ class Grafana(object):
             return query
 
     def get_url(self, query):
-        url = self.grafana_proxy + self._get_datsource(query.table) + '/query?db=' + self.grafana_database + '&q=' + self.get_query(query)
+        url = self.grafana_proxy + self._get_datsource(query.table) + '/query?db=' + self.grafana_database+'_'+ query.table + '&q=' + self.get_query(query)
         return url
 
     def get_data(self, query):
-        url = self.grafana_proxy + self._get_datsource(query.table)+'/query?db='+self.grafana_database+'&q='+ self.get_query(query)
+        if query.table == 'pledges':
+            query.table = 'completed'
+        url = self.grafana_proxy + self._get_datsource(query.table)+'/query?db='+self.grafana_database+'_'+ query.table+'&q='+ self.get_query(query)
         r = get(url, headers=self.grafana_headers)
         res = loads(r.text)
         return res
