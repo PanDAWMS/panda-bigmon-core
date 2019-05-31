@@ -19,7 +19,7 @@ from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V
 from core.views import login_customrequired, initRequest, extensibleURL, removeParam
 from core.views import DateEncoder, endSelfMonitor
-from core.art.jobSubResults import getJobReport, getARTjobSubResults, subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, getFinalResult
+from core.art.jobSubResults import getJobReport, getARTjobSubResults, subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
 from django.db.models import Q
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
@@ -275,7 +275,7 @@ def artOverview(request):
                         artpackagesdict[j['package']][n.strftime(artdateformat)][state] = 0
     
             if j['ntag'].strftime(artdateformat) in artpackagesdict[j['package']]:
-                finalresult, testexitcode, subresults, testdirectory = getFinalResult(j)
+                finalresult, extraparams = get_final_result(j)
                 artpackagesdict[j['package']][j['ntag'].strftime(artdateformat)][finalresult] +=1
 
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
@@ -289,7 +289,7 @@ def artOverview(request):
                         artpackagesdict[j['branch']][n.strftime(artdateformat)][state] = 0
 
             if j['ntag'].strftime(artdateformat) in artpackagesdict[j['branch']]:
-                finalresult, testexitcode, subresults, testdirectory = getFinalResult(j)
+                finalresult, extraparams = get_final_result(j)
                 artpackagesdict[j['branch']][j['ntag'].strftime(artdateformat)][finalresult] += 1
         
     xurl = extensibleURL(request)
@@ -380,7 +380,7 @@ def artTasks(request):
                 for state in statestocount:
                     arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)][job['nightly_tag']][state] = 0
             if job['nightly_tag'] in arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)]:
-                finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
+                finalresult, extraparams = get_final_result(job)
                 arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)][job['nightly_tag']][finalresult] += 1
 
             if job['package'] not in jeditaskids.keys():
@@ -404,7 +404,7 @@ def artTasks(request):
                 for state in statestocount:
                     arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)][job['nightly_tag']][state] = 0
             if job['nightly_tag'] in arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)]:
-                finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
+                finalresult, extraparams = get_final_result(job)
                 arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)][job['nightly_tag']][finalresult] += 1
 
             if job['branch'] not in jeditaskids.keys():
@@ -554,15 +554,17 @@ def artJobs(request):
                     except:
                         jobdict['tarindex'] = ''
 
-                    finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
+                    finalresult, extraparams = get_final_result(job)
 
                     jobdict['finalresult'] = finalresult
-                    jobdict['testexitcode'] = testexitcode
-                    jobdict['testresult'] = subresults
-                    jobdict['testdirectory'] = testdirectory
+                    jobdict['testexitcode'] = extraparams['testexitcode']
+                    jobdict['testresult'] = extraparams['subresults']
+                    jobdict['testdirectory'] = extraparams['testdirectory']
+                    jobdict['reportjira'] = extraparams['reportjira']
+                    jobdict['reportmail'] = extraparams['reportmail']
 
-                    if not testdirectory in testdirectories[job['package']][job['branch']] and testdirectory is not None and isinstance(testdirectory, str):
-                        testdirectories[job['package']][job['branch']].append(testdirectory)
+                    if not extraparams['testdirectory'] in testdirectories[job['package']][job['branch']] and extraparams['testdirectory'] is not None and isinstance(extraparams['testdirectory'], str):
+                        testdirectories[job['package']][job['branch']].append(extraparams['testdirectory'])
 
                     artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
 
@@ -617,15 +619,17 @@ def artJobs(request):
                     except:
                         jobdict['tarindex'] = ''
 
-                    finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
+                    finalresult, extraparams = get_final_result(job)
 
                     jobdict['finalresult'] = finalresult
-                    jobdict['testexitcode'] = testexitcode
-                    jobdict['testresult'] = subresults
-                    jobdict['testdirectory'] = testdirectory
+                    jobdict['testexitcode'] = extraparams['testexitcode']
+                    jobdict['testresult'] = extraparams['subresults']
+                    jobdict['testdirectory'] = extraparams['testdirectory']
+                    jobdict['reportjira'] = extraparams['reportjira']
+                    jobdict['reportmail'] = extraparams['reportmail']
 
-                    if not testdirectory in testdirectories[job['branch']][job['package']] and testdirectory is not None and isinstance(testdirectory, str):
-                        testdirectories[job['branch']][job['package']].append(testdirectory)
+                    if not extraparams['testdirectory'] in testdirectories[job['branch']][job['package']] and extraparams['testdirectory'] is not None and isinstance(extraparams['testdirectory'], str):
+                        testdirectories[job['branch']][job['package']].append(extraparams['testdirectory'])
 
                     artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
 
@@ -1037,7 +1041,7 @@ def sendArtReport(request):
                 artjobsdictpackage[job['package']]['branches'][job['branch']][
                     'linktoeos'] = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{}/{}/{}/'.format(
                     job['branch'], job['nightly_tag'], job['package'])
-            finalresult, testexitcode, subresults, testdirectory = getFinalResult(job)
+            finalresult, extraparams = get_final_result(job)
             artjobsdictbranch[job['branch']]['packages'][job['package']]['n' + finalresult] += 1
             artjobsdictpackage[job['package']]['branches'][job['branch']]['n' + finalresult] += 1
 
