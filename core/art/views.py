@@ -499,6 +499,7 @@ def artJobs(request):
 
     testdirectories = {}
     outputcontainers = {}
+    reportTo = {'mail': [], 'jira': {}}
     gitlabids = []
     gitlabids = list(sorted(set([x['gitlabid'] for x in jobs])))
 
@@ -572,6 +573,14 @@ def artJobs(request):
                         for oc in job['outputcontainer'].split(','):
                             if not oc in outputcontainers[job['package']][job['branch']] and oc is not None and isinstance(oc, str):
                                 outputcontainers[job['package']][job['branch']].append(oc)
+
+                    if jobdict['reportjira'] is not None:
+                        for jira, link in jobdict['reportjira'].items():
+                            if jira not in reportTo['jira'].keys():
+                                reportTo['jira'][jira] = link
+                    if jobdict['reportmail'] is not None and jobdict['reportmail'] not in reportTo['mail']:
+                            reportTo['mail'].append(jobdict['reportmail'])
+
 
 
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
@@ -697,6 +706,7 @@ def artJobs(request):
             'taskids' : jeditaskids,
             'gitlabids': gitlabids,
             'outputcontainers': outputcontainers,
+            'reportto': reportTo,
         }
         setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artJobs.html', data, content_type='text/html')
