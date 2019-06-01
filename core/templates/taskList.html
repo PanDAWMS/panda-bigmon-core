@@ -1,18 +1,25 @@
 {% extends "_base_core.html" %}
+{% load static %}
 
 <script type="text/javascript"
            src="/core/static/js/progressbartaskpage.js">
 </script>
 
 
-
-{% load staticfiles %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA tasks{% endblock %}
 {% block subtitle %}PanDA {% if viewParams.MON_VO == 'ATLAS' %} JEDI {% endif %} task list{{viewParams.selection|safe }}
 {% if vo %} &nbsp; for VO {{ vo }}
 {% endif %}
 {% endblock %}
+
 {% block body %}
+
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+
 
 {% if requestParams.statenotupdated %}<br><b>Tasks in <span class="{{ requestParams.status }}">{{ requestParams.status }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}
 {% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
@@ -84,6 +91,46 @@ Too many to list
     </tr>
 {% endif %}
 </table>
+{% endif %}
+
+{% if datasetstage %}
+<p>
+            <table class="table table-striped table-bordered" id="stagingdatasetstable" style="clear: both;">
+                <thead>
+                <tr>
+                    <th>Dataset</th>
+                    <th>Status</th>
+                    <th>Staged files</th>
+                    <th>Total files</th>
+                    <th>Start time</th>
+                    <th>End time</th>
+                    <th>Update time</th>
+                    <th>Rse</th>
+                </tr>
+                </thead>
+            </table>
+        <script type="text/javascript">
+
+        $(document).ready(function(){
+            var jsonData = JSON.parse('{{ datasetstage | safe}}');
+            $('#stagingdatasetstable').dataTable({
+                data: jsonData,
+                columns: [
+                    { data: 'DATASET' },
+                    { data: 'STATUS' },
+                    { data: 'STAGED_FILES' },
+                    { data: 'TOTAL_FILES' },
+                    { data: 'START_TIME' },
+                    { data: 'END_TIME' },
+                    { data: 'UPDATE_TIME' },
+                    { data: 'RSE' },
+                ]
+            });
+        });
+
+
+        </script>
+
 {% endif %}
 
 <p>

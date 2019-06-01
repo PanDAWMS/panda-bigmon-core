@@ -7307,7 +7307,7 @@ def taskList(request):
         'eventservice'] == '1'):
         eventservice = True
         hours = 7 * 24
-    extrahashtagquery = ''
+    extraquery = ''
     if 'hashtag' in request.session['requestParams']:
         hashtagsrt = request.session['requestParams']['hashtag']
         if ',' in hashtagsrt:
@@ -7317,14 +7317,17 @@ def taskList(request):
         else:
             hashtaglistquery = "'" + request.session['requestParams']['hashtag'] + "'"
         hashtaglistquery = hashtaglistquery[:-1] if hashtaglistquery[-1] == ',' else hashtaglistquery
-        extrahashtagquery = """JEDITASKID IN ( SELECT HTT.TASKID FROM ATLAS_DEFT.T_HASHTAG H, ATLAS_DEFT.T_HT_TO_TASK HTT WHERE JEDITASKID = HTT.TASKID AND H.HT_ID = HTT.HT_ID AND H.HASHTAG IN ( %s ))""" % (hashtaglistquery)
+        extraquery = """JEDITASKID IN ( SELECT HTT.TASKID FROM ATLAS_DEFT.T_HASHTAG H, ATLAS_DEFT.T_HT_TO_TASK HTT WHERE JEDITASKID = HTT.TASKID AND H.HT_ID = HTT.HT_ID AND H.HASHTAG IN ( %s ))""" % (hashtaglistquery)
+
+    if 'tape' in  request.session['requestParams']:
+        extraquery = """JEDITASKID IN (SELECT TASKID FROM ATLAS_DEFT.t_production_task where PRIMARY_INPUT in (select DATASET FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH) )"""
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
-    if len(extrahashtagquery) > 0:
+    if len(extraquery) > 0:
         if len(wildCardExtension) > 0:
-            wildCardExtension += ' AND ( ' + extrahashtagquery + ' )'
+            wildCardExtension += ' AND ( ' + extraquery + ' )'
         else:
-            wildCardExtension = extrahashtagquery
+            wildCardExtension = extraquery
     listTasks = []
     if 'statenotupdated' in request.session['requestParams']:
         tasks = taskNotUpdated(request, query, wildCardExtension)
@@ -7368,6 +7371,19 @@ def taskList(request):
         """ % (tmpTableName, transactionKey)
     )
     taskhashtags = dictfetchall(new_cur)
+
+    datasetstage = []
+    new_cur.execute(
+        """
+        SELECT DATASET, STATUS, STAGED_FILES, START_TIME, END_TIME, RSE, TOTAL_FILES, UPDATE_TIME FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH
+        WHERE DATASET in (SELECT PRIMARY_INPUT FROM ATLAS_DEFT.t_production_task where taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i))
+        """ % (tmpTableName, transactionKey)
+    )
+    datasetstage = dictfetchall(new_cur)
+    for datasetstageitem in datasetstage:
+        datasetstageitem['START_TIME'] = datasetstageitem['START_TIME'].strftime(defaultDatetimeFormat)
+        datasetstageitem['END_TIME'] = datasetstageitem['END_TIME'].strftime(defaultDatetimeFormat)
+        datasetstageitem['UPDATE_TIME'] = datasetstageitem['UPDATE_TIME'].strftime(defaultDatetimeFormat)
 
 
     eventInfoDict = {}
@@ -7604,6 +7620,7 @@ def taskList(request):
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'tasks': tasksToShow,
+            'datasetstage': json.dumps(datasetstage, cls=DateEncoder),
             'ntasks': ntasks,
             'sumd': sumd,
             'hashtags': hashtags,
