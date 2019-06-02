@@ -47,3 +47,14 @@ class ruciowrapper(object):
             accounts = [account['rucio_account'] for account in accounts]
         return accounts
 
+"""
+    def getT1TapeSEForRR(self, RR = None, dataset = None):
+        if not self.client is None:
+            replicas = self.client.list_dataset_replicas(scope=None, name=dataset)
+            for replica in replicas:
+                print(replica)
+                pass
+"""
+
+
+

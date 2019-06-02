@@ -7373,17 +7373,19 @@ def taskList(request):
     taskhashtags = dictfetchall(new_cur)
 
     datasetstage = []
-    new_cur.execute(
-        """
-        SELECT DATASET, STATUS, STAGED_FILES, START_TIME, END_TIME, RSE, TOTAL_FILES, UPDATE_TIME FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH
-        WHERE DATASET in (SELECT PRIMARY_INPUT FROM ATLAS_DEFT.t_production_task where taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i))
-        """ % (tmpTableName, transactionKey)
-    )
-    datasetstage = dictfetchall(new_cur)
-    for datasetstageitem in datasetstage:
-        datasetstageitem['START_TIME'] = datasetstageitem['START_TIME'].strftime(defaultDatetimeFormat)
-        datasetstageitem['END_TIME'] = datasetstageitem['END_TIME'].strftime(defaultDatetimeFormat)
-        datasetstageitem['UPDATE_TIME'] = datasetstageitem['UPDATE_TIME'].strftime(defaultDatetimeFormat)
+    if 'tape' in  request.session['requestParams']:
+        new_cur.execute(
+            """
+            SELECT DATASET, STATUS, STAGED_FILES, START_TIME, END_TIME, RSE, TOTAL_FILES, UPDATE_TIME FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH
+            WHERE DATASET in (SELECT PRIMARY_INPUT FROM ATLAS_DEFT.t_production_task where taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i))
+            """ % (tmpTableName, transactionKey)
+        )
+        datasetstage = dictfetchall(new_cur)
+        for datasetstageitem in datasetstage:
+            datasetstageitem['START_TIME'] = datasetstageitem['START_TIME'].strftime(defaultDatetimeFormat)
+            datasetstageitem['END_TIME'] = datasetstageitem['END_TIME'].strftime(defaultDatetimeFormat)
+            datasetstageitem['UPDATE_TIME'] = datasetstageitem['UPDATE_TIME'].strftime(defaultDatetimeFormat)
+            
 
 
     eventInfoDict = {}
