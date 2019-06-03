@@ -7382,9 +7382,20 @@ def taskList(request):
         )
         datasetstage = dictfetchall(new_cur)
         for datasetstageitem in datasetstage:
-            datasetstageitem['START_TIME'] = datasetstageitem['START_TIME'].strftime(defaultDatetimeFormat)
-            datasetstageitem['END_TIME'] = datasetstageitem['END_TIME'].strftime(defaultDatetimeFormat)
-            datasetstageitem['UPDATE_TIME'] = datasetstageitem['UPDATE_TIME'].strftime(defaultDatetimeFormat)
+            if datasetstageitem['START_TIME']:
+                datasetstageitem['START_TIME'] = datasetstageitem['START_TIME'].strftime(defaultDatetimeFormat)
+            else:
+                datasetstageitem['START_TIME'] = ''
+
+            if datasetstageitem['END_TIME']:
+                datasetstageitem['END_TIME'] = datasetstageitem['END_TIME'].strftime(defaultDatetimeFormat)
+            else:
+                datasetstageitem['END_TIME'] = ''
+
+            if datasetstageitem['UPDATE_TIME']:
+                datasetstageitem['UPDATE_TIME'] = datasetstageitem['UPDATE_TIME'].strftime(defaultDatetimeFormat)
+            else:
+                datasetstageitem['UPDATE_TIME'] = ''
             
 
 
