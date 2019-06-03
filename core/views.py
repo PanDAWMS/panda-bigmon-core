@@ -7374,14 +7374,23 @@ def taskList(request):
 
     datasetstage = []
     if 'tape' in  request.session['requestParams']:
+        stagesource = ''
+        if 'stagesource' in request.session['requestParams'] and request.session['requestParams']['stagesource']!='Unknown':
+            stagesource = ' and t1.SOURCE_RSE=\'' + request.session['requestParams']['stagesource'].strip()+"\'"
+        elif 'stagesource' in request.session['requestParams'] and request.session['requestParams']['stagesource']=='Unknown':
+            stagesource = ' and t1.SOURCE_RSE is null'
+            
+
         new_cur.execute(
             """
-            SELECT DATASET, STATUS, STAGED_FILES, START_TIME, END_TIME, RSE, TOTAL_FILES, UPDATE_TIME FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH
-            WHERE DATASET in (SELECT PRIMARY_INPUT FROM ATLAS_DEFT.t_production_task where taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i))
-            """ % (tmpTableName, transactionKey)
+            SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE, t1.TOTAL_FILES, t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH t1 
+            join ATLAS_DEFT.t_production_task t2 ON t1.DATASET=t2.PRIMARY_INPUT %s and taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)
+            """ % (stagesource, tmpTableName, transactionKey)
         )
         datasetstage = dictfetchall(new_cur)
+        taskslistfiltered = set()
         for datasetstageitem in datasetstage:
+            taskslistfiltered.add(datasetstageitem['TASKID'])
             if datasetstageitem['START_TIME']:
                 datasetstageitem['START_TIME'] = datasetstageitem['START_TIME'].strftime(defaultDatetimeFormat)
             else:
@@ -7392,11 +7401,25 @@ def taskList(request):
             else:
                 datasetstageitem['END_TIME'] = ''
 
+            if not datasetstageitem['SOURCE_RSE']:
+                datasetstageitem['SOURCE_RSE'] = 'Unknown'
+
+
             if datasetstageitem['UPDATE_TIME']:
                 datasetstageitem['UPDATE_TIME'] = datasetstageitem['UPDATE_TIME'].strftime(defaultDatetimeFormat)
             else:
                 datasetstageitem['UPDATE_TIME'] = ''
-            
+
+        if 'stagesource' in request.session['requestParams']:
+            newtasks = []
+            newtaskl = []
+
+            for task in tasks:
+                if task['jeditaskid'] in taskslistfiltered:
+                    newtaskl.append(task['jeditaskid'])
+                    newtasks.append(task)
+            tasks =  newtasks
+            taskl = newtaskl
 
 
     eventInfoDict = {}
@@ -7478,6 +7501,16 @@ def taskList(request):
     # print 'SQL query:', connection.queries
 
     tasks = getTaskScoutingInfo(tasks, nmax)
+
+    if 'tape' in  request.session['requestParams'] and len(datasetstage)>0:
+        datasetRSEsHash = {}
+        for dataset in datasetstage:
+            datasetRSEsHash[dataset['TASKID']] = dataset['SOURCE_RSE']
+
+        for task in tasks:
+            task['stagesource'] = datasetRSEsHash.get(task['jeditaskid'], 'Unknown')
+
+
 
     ## For event service, pull the jobs and event ranges
 
@@ -7625,7 +7658,8 @@ def taskList(request):
         return HttpResponse(dump, content_type='text/html')
     else:
         #tasks = removeDublicates(tasks, "jeditaskid")
-        sumd = taskSummaryDict(request, tasks)
+        sumd = taskSummaryDict(request, tasks, copy.deepcopy(standard_taskfields) +
+                                               ['stagesource'] if 'tape' in  request.session['requestParams'] else copy.deepcopy(standard_taskfields))
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
