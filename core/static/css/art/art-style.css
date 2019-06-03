@@ -516,6 +516,10 @@ li.artmenu-item > label {
     color: rgba(53,86,129, 0.8) !important;
 }
 
+.redlink {
+    color: firebrick !important;
+}
+
 .greylink {
     color: grey !important;
 }

@@ -204,18 +204,22 @@ def clear_queue(cur):
 
     return True
 
-def getFinalResult(job):
+def get_final_result(job):
     """ A function to determine the real ART test result depending on sub-step results, exitcode and PanDA job state
-    0 - finished - green
-    1 - ??? - yellow
+    0 - done - green
+    1 - finished - yellow
     2 - running - blue
     3 - failed - red
     """
-    finalresultDict = {0: 'done', 1: 'finished', 2: 'active', 3: 'failed'}
+    finalResultDict = {0: 'done', 1: 'finished', 2: 'active', 3: 'failed'}
+    extraParamsDict = {
+        'testexitcode': None,
+        'subresults': None,
+        'testdirectory': None,
+        'reportjira': None,
+        'reportmail': None
+        }
     finalresult = ''
-    testexitcode = None
-    subresults = None
-    testdirectory = None
     if job['jobstatus'] == 'finished':
         finalresult = 0
     elif job['jobstatus'] in ('failed', 'cancelled'):
@@ -227,18 +231,25 @@ def getFinalResult(job):
     except:
         job['result'] = None
     try:
-        testexitcode = job['result']['exit_code'] if 'exit_code' in job['result'] else None
+        extraParamsDict['testexitcode'] = job['result']['exit_code'] if 'exit_code' in job['result'] else None
     except:
-        testexitcode = None
+        pass
     try:
-        subresults = job['result']['result'] if 'result' in job['result'] else []
+        extraParamsDict['subresults'] = job['result']['result'] if 'result' in job['result'] else []
     except:
-        subresults = None
+        pass
     try:
-        testdirectory = job['result']['test_directory'] if 'test_directory' in job['result'] else []
+        extraParamsDict['testdirectory'] = job['result']['test_directory'] if 'test_directory' in job['result'] else []
     except:
-        testdirectory = None
-
+        pass
+    try:
+        extraParamsDict['reportjira'] = job['result']['report-to']['jira'] if 'report-to' in job['result'] and 'jira' in job['result']['report-to'] else None
+    except:
+        pass
+    try:
+        extraParamsDict['reportmail'] = job['result']['report-to']['mail'] if 'report-to' in job['result'] and 'mail' in job['result']['report-to'] else None
+    except:
+        pass
 
     if job['result'] is not None:
         if 'result' in job['result'] and len(job['result']['result']) > 0:
@@ -249,9 +260,9 @@ def getFinalResult(job):
         elif 'exit_code' in job['result'] and job['result']['exit_code'] > 0:
             finalresult = 3
 
-    finalresult = finalresultDict[finalresult]
+    finalresult = finalResultDict[finalresult]
 
-    return finalresult, testexitcode, subresults, testdirectory
+    return finalresult, extraParamsDict
 
 
 def analize_test_subresults(subresults):
