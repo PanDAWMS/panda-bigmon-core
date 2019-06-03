@@ -82,7 +82,10 @@ function toggleShowHide(divID, linkID) {
 {% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 {% if requestParams.ntag_full %}<b>Nightly tag is {{ requestParams.ntag_full }}</b> <br>{% endif %}
 {% if requestParams.ntag_full or gitlabids|length == 1 %}<b>Gitlab ID: <a class="bluelink" target="_blank" href="https://gitlab.cern.ch/art/art-submit/pipelines/{{ gitlabids.0 }}/">{{ gitlabids.0 }}</a></b>{% endif %}
-{% if requestParams.package and reportto.jira|length == 1 %}<b>Report an issue to responsible, JIRA: {% with reportjira=reportto.jira %}{% for jiraproject, jiralink in reportjira.items %} <a class="redlink" target="_blank" href="{{ jiralink }} ">{{ jiraproject }}</a> {% endfor %} {% endwith %} </b>{% endif %}
+{% if requestParams.package and artjobs.values|length == 1 %} {% if reportto.jira|length == 1 or reportto.mail|length == 1 %}<b>Report an issue to responsible,
+    {% if reportto.jira|length == 1 %} JIRA: {% with reportjira=reportto.jira %}{% for jiraproject, jiralink in reportjira.items %} <a class="redlink" target="_blank" href="{{ jiralink }} ">{{ jiraproject }}</a> {% endfor %} {% endwith %} {% endif %}
+    {% if reportto.mail|length == 1 %} ,  {% with reportmail=reportto.mail %}{% for email in reportmail %} <a href="mailto:{{ email }} ">email</a> {% endfor %} {% endwith %} {% endif %}
+</b>{% endif %} {% endif %}
 
 
 
