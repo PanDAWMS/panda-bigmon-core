@@ -124,7 +124,7 @@
         <div class="callout warning">
         Dear BigPanDA monitor users,<br><br>
 
-        We propose to participate in testing the <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:''),sort:!('@timestamp',desc))" target="_blank"> first prototype </a> (only CERN inside) of Elasticsearch+Kibana engine for harvester monitoring. <br>
+        We propose to participate in testing the <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:''),sort:!('@timestamp',desc))" target="_blank"> first prototype </a> (only CERN inside) of Elasticsearch+Kibana engine for harvester monitoring. <br>
         Data in Elasticsearch is synchronized with PanDA DB every minute. Timestamp field = submittime field. <br>
         If you find an error or you have comments or suggestions, please inform us to the following address:<br>
         atlas-adc-pandamon-support@cern.ch<br><br>
@@ -145,7 +145,7 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td>
                             {% for n,v in value.items %}
-                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:'status: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> <span class='{{ n }} item'>{{ n }}</span></a>
+                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'status: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> <span class='{{ n }} item'>{{ n }}</span></a>
                                 <a href="{{ xurl }}status={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </td>
@@ -153,7 +153,7 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td><div class="comment more">
                             {% for n,v in value.items %}
-                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:'computingsite: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}computingsite={{ n|safe }}">({{ v }})</a>
+                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'computingsite: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}computingsite={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </div>
                         </td>
@@ -161,7 +161,7 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td><div class="comment more">
                             {% for n,v in value.items %}
-                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:'resourcetype: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}resourcetype={{ n|safe }}">({{ v }})</a>
+                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'resourcetype: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}resourcetype={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </div>
                         </td>
@@ -169,7 +169,7 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td><div class="comment more">
                             {% for n,v in value.items %}
-                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:'computingelement: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}computingelement={{ n|safe }}">({{ v }})</a>
+                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'computingelement: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}computingelement={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </div>
                         </td>
@@ -177,7 +177,7 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td><div class="comment more">
                             {% for n,v in value.items %}
-                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'9184d500-8428-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:'harvesterid: &quot;{{ n }}&quot;%20AND%20computingsite:&quot;{{ computingsite|safe }}&quot;'),sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}instance={{ n|safe }}">({{ v }})</a>
+                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'harvesterid: &quot;{{ n }}&quot;%20AND%20computingsite:&quot;{{ computingsite|safe }}&quot;'),sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}instance={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </div>
                         </td>
