@@ -16,10 +16,12 @@
     <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 
 {% endblock %}
+
 {% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <b>{{ task.taskname }}</b>{% endblock %}
 
 {% block body %}
 {#    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>#}
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
 
     {% if columns %}
         <table>
@@ -419,7 +421,29 @@
             </table>
         {% endif %}
 
+
+        <div id="dsStageDiv" class="badevents" ng-app="taskInfoAppAJS" ng-controller="StagingDSController" style="display:none;">
+        <table>
+            <tr bgcolor='lightcyan'>
+                <th colspan=20> Dataset staging information</th>
+            </tr>
+
+            <tr>
+                 <th>Staged / Total files</th>
+                 <td>{$ json['staged_files'] $} / {$ json['total_files'] $}</td>
+            </tr>
+
+            <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">
+                 <th>{$ key $}</th>
+                 <td>{$ value $}</td>
+            </tr>
+        </table>
+
+
+        </div>
+
         {% if datasets %}
+            <h4>Dataset processing information</h4>
             <table class="data-table left-aligned nowrap" id="datasetstable">
                 <thead>
                 <tr>
@@ -577,6 +601,40 @@
 
 
 <script>
+
+    var app = angular.module('taskInfoAppAJS', []).config(function ($interpolateProvider) {
+        $interpolateProvider.startSymbol('{$');
+        $interpolateProvider.endSymbol('$}');
+    }).config(['$compileProvider', function ($compileProvider) {
+    $compileProvider.debugInfoEnabled(false);
+    }]);
+
+    app.controller('StagingDSController', function ($scope, $http) {
+        $scope.json = "";
+        $scope.getStagingDS = function () {
+
+            $http({
+                    url: '/getstaginginfofortask/',
+                    method: "GET",
+                    params: {'jeditaskid':{{jeditaskid}}}
+                }
+            ).then(function (res) {
+                $scope.json = angular.fromJson(res.data);
+                if  ({{ jeditaskid }} in $scope.json) {
+                    var displaydiv = document.getElementById('dsStageDiv');
+                    displaydiv.style.display = "";
+                    $scope.json = $scope.json[{{ jeditaskid }}];
+                }
+            });
+        };
+        var init = function () {
+            $scope.getStagingDS();
+        };
+        init();
+    });
+
+
+
 function toggleDetailDisplay(className) {
     el = document.getElementsByClassName(className);
     for (i = 0; i < el.length; i++) {
@@ -675,6 +733,7 @@ function buildPlots(classname) {
 }
 
 function buildDatasetsTable() {
+
   $('#datasetstable').dataTable({
     //"bRetrieve": true,
     "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],

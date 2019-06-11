@@ -106,12 +106,11 @@ urlpatterns = [
                        #    re_path(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
     ### data product catalog prototyping
     re_path(r'^dp/$', dpviews.doRequest, name='doRequest'),
-
     re_path(r'^report/$', coremon_views.report, name='report'),
-
     re_path(r'^serverstatushealth/$', coremon_views.serverStatusHealth, name='serverStatusHealth'),
+    re_path(r'^getstaginginfofortask/$', coremon_views.getStagingInfoForTask, name='getStagingInfoForTask'),
 
-    ### ART nightly tests
+                  ### ART nightly tests
     re_path(r'^art/$', art_views.art, name='art-mainPage'),
     re_path(r'^art/overview/$', art_views.artOverview, name='artOverview'),
     re_path(r'^art/tasks/$', art_views.artTasks, name='artTasks'),
