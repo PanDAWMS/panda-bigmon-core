@@ -2146,6 +2146,19 @@ def mainPage(request):
         debuginfo += "<br>******* Environment<br>"
         for env in os.environ:
             debuginfo += "%s = %s<br>" % (env, os.environ[env])
+    #TODO It should be removed in the future
+    hostname = "dashb-atlas-job.cern.ch"
+    port = "80"
+    try:
+        import socket
+        host = socket.gethostbyname(hostname)
+        s = socket.create_connection((host, port), 2)
+        if(s):
+            old_monitoring = 1
+    except Exception as e:
+        old_monitoring = 0
+
+
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
@@ -2158,6 +2171,7 @@ def mainPage(request):
             'requestParams': request.session['requestParams'],
             'debuginfo': debuginfo,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'old_monitoring': old_monitoring,
         }
         data.update(getContextVariables(request))
         ##self monitor
