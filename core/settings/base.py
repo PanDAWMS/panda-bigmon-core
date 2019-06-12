@@ -202,6 +202,7 @@ INSTALLED_APPS_BIGPANDAMON_core = (
     'core.errorsscattering',
     'core.compare',
     'core.grafana',
+    'core.dashboards'
 )
 INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_core
 

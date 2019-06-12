@@ -14,6 +14,8 @@ from core.harvester import views as harvester
 from core.grafana import views as grafana
 
 from core.globalshares import views as globalshares
+from core.dashboards import dtcdboard as dtcdboard
+
 from core.runningprod import views as runningprod_views
 from core.errorsscattering import views as errorsscat_views
 from core.compare import views as compare_views
@@ -76,6 +78,12 @@ urlpatterns = [
     re_path(r'^errorslist/$', coremon_views.summaryErrorsList, name='summaryErrorsList'),
     re_path(r'^worldjobs/$', coremon_views.worldjobs, name='worldjobs'),
     re_path(r'^getbadeventsfortask/$', coremon_views.getBadEventsForTask, name='getbadeventsfortask'),
+    re_path(r'^getstaginginfofortask/$', dtcdboard.getStagingInfoForTask, name='getStagingInfoForTask'),
+    re_path(r'^getdtcsubmissionhist/$', dtcdboard.getDTCSubmissionHist, name='getDTCSubmissionHist'),
+
+    re_path(r'^dtcdboard/$', dtcdboard.datatapeCarouselleDashBoard, name='datatapeCarouselleDashBoard'),
+
+
 
 #    re_path(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
 #    re_path(r'^worldjobs/production/$', coremon_views.dashWorldProduction, name='dashWorldProduction'),
@@ -108,7 +116,6 @@ urlpatterns = [
     re_path(r'^dp/$', dpviews.doRequest, name='doRequest'),
     re_path(r'^report/$', coremon_views.report, name='report'),
     re_path(r'^serverstatushealth/$', coremon_views.serverStatusHealth, name='serverStatusHealth'),
-    re_path(r'^getstaginginfofortask/$', coremon_views.getStagingInfoForTask, name='getStagingInfoForTask'),
 
                   ### ART nightly tests
     re_path(r'^art/$', art_views.art, name='art-mainPage'),

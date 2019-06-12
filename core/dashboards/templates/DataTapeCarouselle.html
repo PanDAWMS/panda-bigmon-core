@@ -1,0 +1,54 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Data Tape Carousel DashBoard{% endblock %}
+{% block subtitle %}Data Tape Carousel DashBoard <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+
+
+{% block extra_css %}
+    <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/hideCells.js' %}"></script>
+    <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+
+    <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}"></script>
+    <script type="text/javascript">
+
+        $(document).ready(
+            function () {
+                $.ajax({
+                    url: {% url 'getDTCSubmissionHist' %},
+                    data: '',
+                    async: true,
+                }).done(function (response) {
+                      var data = google.visualization.arrayToDataTable(response.submittime);
+                      var options = {
+                          title: 'Queueing time',
+                          legend: { position: 'none' },
+                          hAxis: {title: 'Time', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
+                      };
+                      var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+                      chart.draw(data, options);
+                      $('chart_div').html(response);
+
+                      });
+
+        });
+
+
+    </script>
+    <div id="chart_div" style="height: 500px;"></div>
+
+
+
+
+{% endblock %}
+
+
+
+

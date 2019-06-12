@@ -13009,43 +13009,6 @@ def getHarversterWorkersForTask(request):
     return HttpResponse(status=400)
 
 
-def getStagingInfoForTask(request):
-    valid, response = initRequest(request)
-    data = {}
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
-
-    if 'jeditaskid' in request.session['requestParams']:
-        jeditaskid = request.session['requestParams']['jeditaskid']
-        taskl = [int(jeditaskid)] if '|' not in jeditaskid else [int(taskid) for taskid in jeditaskid.split('|')]
-        new_cur = connection.cursor()
-        transactionKey = random.randrange(1000000)
-        executionData = []
-        for id in taskl:
-            executionData.append((id, transactionKey))
-
-        new_cur = connection.cursor()
-        query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
-        new_cur.executemany(query, executionData)
-        connection.commit()
-
-        new_cur.execute(
-            """
-                    SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE, t1.TOTAL_FILES, t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH t1 
-                                join ATLAS_DEFT.t_production_task t2 ON t1.DATASET=t2.PRIMARY_INPUT and taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)
-            """ % (tmpTableName, transactionKey)
-        )
-        datasets = dictfetchall(new_cur)
-        for dataset in datasets:
-            dataset = {k.lower(): v for k, v in dataset.items()}
-            data[dataset['taskid']] = dataset
-    response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
-    return response
-
-
 #import logging
 #logging.basicConfig()
 @never_cache
