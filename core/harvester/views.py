@@ -1017,7 +1017,7 @@ def workersJSON(request):
             generalWorkersFields = ['workerid', 'status', 'batchid', 'nodeid', 'queuename', 'computingsite','harvesterid',
                                 'submittime', 'lastupdate', 'starttime', 'endtime', 'ncore', 'errorcode',
                                 'stdout', 'stderr', 'batchlog', 'resourcetype', 'nativeexitcode', 'nativestatus',
-                                'diagmessage', 'njobs', 'computingelement']
+                                'diagmessage', 'njobs', 'computingelement','jdl']
 
             fields = ','.join(generalWorkersFields)
 
@@ -1052,7 +1052,7 @@ def workersJSON(request):
             generalWorkersFields = ['workerid', 'status', 'batchid', 'nodeid', 'queuename', 'computingsite','harvesterid',
                                     'submittime', 'lastupdate', 'starttime', 'endtime', 'ncore', 'errorcode',
                                     'stdout', 'stderr', 'batchlog', 'resourcetype', 'nativeexitcode', 'nativestatus',
-                                    'diagmessage', 'njobs', 'computingelement']
+                                    'diagmessage', 'njobs', 'computingelement','jdl']
 
             fields = ','.join(generalWorkersFields)
             sqlquery = """
@@ -1093,7 +1093,7 @@ def workersJSON(request):
             generalWorkersFields = ['workerid', 'status', 'batchid', 'nodeid', 'queuename', 'computingsite','harvesterid',
                                     'submittime', 'lastupdate', 'starttime', 'endtime', 'ncore', 'errorcode',
                                     'stdout', 'stderr', 'batchlog', 'resourcetype', 'nativeexitcode', 'nativestatus',
-                                    'diagmessage', 'njobs', 'computingelement']
+                                    'diagmessage', 'njobs', 'computingelement','jdl']
 
             fields = ','.join(generalWorkersFields)
             sqlquery = """

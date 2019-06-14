@@ -260,6 +260,7 @@
                         <th>Stdout</th>
                         <th>Stderr</th>
                         <th>Batchlog</th>
+                        <th>JDL</th>
                         <th>Resource type</th>
                         <th>Nativeexitcode</th>
                         <th>Native status</th>
@@ -642,11 +643,22 @@ height="1000" width="100%"></iframe>
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
 
-                                if (full['batchlog'] == 0  || full['batchlog']==null) {
+                                if (full['batchlog'] == 0 || full['batchlog'] == null) {
+                                    return "-"
+                                } else {
+                                    return '<a href = "' + full['batchlog'] + '" target="_blank">' + 'Link' + '</a>'
+                                }
+                            }
+                        },
+                        {
+                            "data": "jdl",
+                            sDefaultContent: "",
+                            "render": function (data, type, full, meta) {
+                                if (full['jdl'] == 0  || full['jdl']==null) {
                                     return "-"
                                 }
                                 else {
-                                    return '<a href = "' + full['batchlog'] + '" target="_blank">' + 'Link' + '</a>'
+                                    return '<a href = "' + full['jdl'] + '" target="_blank">' + 'Link' + '</a>'
                                 }
                             }
                         },
