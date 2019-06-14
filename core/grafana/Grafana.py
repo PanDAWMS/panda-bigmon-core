@@ -64,10 +64,10 @@ class Grafana(object):
                 dst_federation = query_object.dst_federation
             query = \
                 '''
-                SELECT {0}("atlas") FROM "long_1d"."{1}" 
-                WHERE ("pledge_type" = 'CPU' AND "real_federation" =~ /^{2}/ AND "country" =~ /^{3}/)  
-                AND time >= {4}ms and time <= {5}ms GROUP BY {6}
-                '''.format(query_object.agg_func, query_object._get_table(query_object.table), dst_federation, dst_country,
+                SELECT {0}("atlas") FROM "long_1d"."pledges" 
+                WHERE ("pledge_type" = 'CPU' AND "real_federation" =~ /^{1}/ AND "country" =~ /^{2}/)  
+                AND time >= {3}ms and time <= {4}ms GROUP BY {5}
+                '''.format(query_object.agg_func, dst_federation, dst_country,
                            startMillisec, endMillisec, query_object.grouping)
             query = re.sub(r"([\n ])\1*", r"\1", query).replace('\n', ' ').lstrip().strip()
             query = re.sub(' +', ' ', query)
@@ -173,13 +173,18 @@ class Grafana(object):
             return query
 
     def get_url(self, query):
+        
         url = self.grafana_proxy + self._get_datsource(query.table) + '/query?db=' + self.grafana_database+'_'+ query.table + '&q=' + self.get_query(query)
         return url
 
     def get_data(self, query):
-        if query.table == 'pledges':
-            query.table = 'completed'
         url = self.grafana_proxy + self._get_datsource(query.table)+'/query?db='+self.grafana_database+'_'+ query.table+'&q='+ self.get_query(query)
+        if query.table == 'pledges':
+            url = self.grafana_proxy + self._get_datsource(
+                query.table) + '/query?db=' + self.grafana_database + '_completed'  + '&q=' + self.get_query(query)
+        else:
+            url = self.grafana_proxy + self._get_datsource(
+                query.table) + '/query?db=' + self.grafana_database + '_' + query.table + '&q=' + self.get_query(query)
         r = get(url, headers=self.grafana_headers)
         res = loads(r.text)
         return res
