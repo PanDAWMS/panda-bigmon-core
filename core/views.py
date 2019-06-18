@@ -7397,8 +7397,9 @@ def taskList(request):
 
         new_cur.execute(
             """
-            SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE, t1.TOTAL_FILES, t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH t1 
-            join ATLAS_DEFT.t_production_task t2 ON t1.DATASET=t2.PRIMARY_INPUT %s and taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)
+            SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE, t1.TOTAL_FILES, 
+                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH t1
+                INNER join ATLAS_DEFT.T_ACTION_STAGING@INTR.CERN.CH t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID %s and taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)
             """ % (stagesource, tmpTableName, transactionKey)
         )
         datasetstage = dictfetchall(new_cur)

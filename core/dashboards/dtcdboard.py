@@ -17,8 +17,9 @@ from core.settings.local import dbaccess
 import pandas as pd
 import numpy as np
 from django.views.decorators.cache import never_cache
+from django.utils import timezone
 
-
+@never_cache
 @login_customrequired
 def datatapeCarouselleDashBoard(request):
     initRequest(request)
@@ -43,13 +44,42 @@ def getDTCSubmissionHist(request):
     valid, response = initRequest(request)
     staginData = getStagingData(request)
 
-
     timelistQueued = []
     timelistInterval = []
+    datatableDict = {}
+
+
+
     for task, dsdata in staginData.items():
         timelistQueued.append(dsdata['start_time'])
         if dsdata['end_time']:
             timelistInterval.append(dsdata['end_time'] - dsdata['start_time'])
+        else:
+            timelistInterval.append(timezone.now() - dsdata['start_time'])
+
+        dictSE = datatableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_90pdone":0, "files_rem":0, "files_done":0})
+        if dsdata['end_time'] != None:
+            dictSE["ds_done"]+=1
+        else:
+            dictSE["ds_active"]+=1
+            if dsdata['staged_files'] >= dsdata['total_files']*0.9:
+                dictSE["ds_90pdone"] += 1
+
+        dictSE["files_done"] += dsdata['staged_files']
+        dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
+        datatableDict[dsdata['source_rse']] = dictSE
+    datatableList = list(datatableDict.values())
+
+
+    timedelta = pd.to_timedelta(timelistInterval)
+    timedelta = (timedelta / pd.Timedelta(hours=1))
+    bins = np.linspace(timedelta.min(), timedelta.max(), 50)
+    hist, bin_edges = np.histogram(timedelta.tolist(), bins=bins, density=True)
+
+    data = [['Time', 'Count']]
+    for time, count in zip(bin_edges, hist):
+        data.append([time, count])
+    finalvalue = {"epltime": data}
 
     times = pd.to_datetime(timelistQueued)
     df = pd.DataFrame({
@@ -57,23 +87,41 @@ def getDTCSubmissionHist(request):
     }, index=times)
 
     grp = df.groupby([pd.Grouper(freq="12h")]).count()
-    #grp = df.groupby([pd.Grouper(20)]).count()
-
     values = grp.values.tolist()
     index = grp.index.to_pydatetime().tolist()  # an ndarray method, you probably shouldn't depend on this
 
     data = [['Time', 'Count']]
-
     for time, count in zip(index, values):
         data.append([time, count[0]])
 
-    finalvalue = {"submittime": data}
+    finalvalue["submittime"] = data
+    finalvalue["progresstable"] = datatableList
 
     response = HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
     return response
 
 
 def getStagingData(request):
+
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
+    timewindow = query['modificationtime__castdate__range']
+
+    if 'source' in request.GET:
+        source = request.GET['source']
+    else:
+        source = None
+
+    if 'destination' in request.GET:
+        destination = request.GET['destination']
+    else:
+        destination = None
+
+    if 'campaign' in request.GET:
+        campaign = request.GET['campaign']
+    else:
+        campaign = None
+
+
     data = {}
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
@@ -82,7 +130,7 @@ def getStagingData(request):
 
     new_cur = connection.cursor()
 
-    selection = ""
+    selection = "where 1=1 "
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = request.session['requestParams']['jeditaskid']
         taskl = [int(jeditaskid)] if '|' not in jeditaskid else [int(taskid) for taskid in jeditaskid.split('|')]
@@ -95,13 +143,22 @@ def getStagingData(request):
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
         connection.commit()
-        selection = "and taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)"  % (tmpTableName, transactionKey)
+        selection += "and taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)"  % (tmpTableName, transactionKey)
     else:
-        selection = "where t2.TASKID in (select taskid from ATLAS_DEFT.T_ACTION_STAGING @ INTR.CERN.CH)"
+        selection += "and t2.TASKID in (select taskid from ATLAS_DEFT.T_ACTION_STAGING @ INTR.CERN.CH)"
+
+    if source:
+        sourcel = [source] if '|' not in source else [SE for SE in source.split('|')]
+        selection += "AND t1.SOURCE_RSE in (" + ','.join(str(x) for x in sourcel) + ")"
+
+    selection += " AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or END_TIME is NULL)" \
+                 % (timewindow[0], timewindow[1])
+
     new_cur.execute(
         """
-                SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE, t1.TOTAL_FILES, t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH t1 
-                            join ATLAS_DEFT.t_production_task t2 ON t1.DATASET=t2.PRIMARY_INPUT %s 
+                SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE, t1.TOTAL_FILES, 
+                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH t1
+                INNER join ATLAS_DEFT.T_ACTION_STAGING@INTR.CERN.CH t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID %s 
         """ % selection
     )
     datasets = dictfetchall(new_cur)

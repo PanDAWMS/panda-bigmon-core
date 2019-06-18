@@ -15,36 +15,144 @@
 {% endblock %}
 
 {% block body %}
-
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
     <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}"></script>
     <script type="text/javascript">
 
-        $(document).ready(
-            function () {
-                $.ajax({
-                    url: {% url 'getDTCSubmissionHist' %},
-                    data: '',
-                    async: true,
-                }).done(function (response) {
-                      var data = google.visualization.arrayToDataTable(response.submittime);
-                      var options = {
-                          title: 'Queueing time',
+        var app = angular.module('dataviewapp', []).config(function ($interpolateProvider) {
+            $interpolateProvider.startSymbol('{$');
+            $interpolateProvider.endSymbol('$}');
+        })
+            .config(['$compileProvider', function ($compileProvider) {
+        $compileProvider.debugInfoEnabled(false);
+        }])
+            .service('Service', ['$http', service])
+            .controller('dataviewctrl', ['$scope','Service', controller]);
+
+        function service($http, $scope){
+            var get = function() {
+             return $http({
+              method: 'GET',
+              url: '{% url 'getDTCSubmissionHist' %}',
+              cache: false
+            })};
+            return {
+              get: get
+            }
+        }
+
+        function controller($scope, Service){
+            var options = {
+                          title: 'Activation time',
                           legend: { position: 'none' },
                           hAxis: {title: 'Time', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
+                          explorer: {
+                            actions: ['dragToZoom', 'rightClickToReset'],
+                            axis: 'horizontal',
+                            keepInBounds: true,
+                            maxZoomIn: 4.0
+                          },
                       };
-                      var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
-                      chart.draw(data, options);
-                      $('chart_div').html(response);
+            var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+            $scope.progresstablearr = [];
 
+            Service.get().then(function(response) {
+                                       response.data.submittime = response.data.submittime.map(function (row) {
+                          return [
+                            new Date(row[0]),
+                            row[1]
+                          ];
                       });
+                      var data = google.visualization.arrayToDataTable(response.data.submittime);
+                      chart.draw(data, options);
+                      $scope.progresstablearr = response.data.progresstable;
 
-        });
+            });
+        }
 
-
+elapsed
     </script>
-    <div id="chart_div" style="height: 500px;"></div>
+
+    <style>
+        .panel {
+          padding: 0;
+          margin: 0;
+        }
+    </style>
 
 
+    <div class="large-12 columns" ng-app="dataviewapp" data-ng-controller="dataviewctrl">
+     <div class="row">
+        <div id="chart_div" class="large-6 panel columns" style="width: 70% !important;; height: 500px;"></div>
+         <div id="selectionpane" class="small-3 panel columns">
+            <b>Staging finished within:</b>
+            <select id="timewindow" onchange="onSubElementChoice()">
+               <option value="" >Last day</option>
+               <option value="" >Last 12 hours</option>
+               <option value="" >Last week</option>
+               <option value="" selected="selected">Last month</option>
+            </select>
+            <b>Campaign:</b>
+            <select id="campaign" onchange="onSubElementChoice()" multiple>
+               <option value="" selected="selected">All</option>
+            </select>
+            <b>Source:</b>
+            <select id="source" onchange="onSubElementChoice()" multiple>
+               <option value="" selected="selected">All</option>
+            </select>
+            <b>Destination:</b>
+            <select id="destination" onchange="onSubElementChoice()" multiple>
+               <option value="" selected="selected">All</option>
+            </select>
+        </div>
+     </div>
+
+        <div class="row">
+        <div class="medium-6 panel columns">
+            <table id="transfersmatrix" class="unstriped errorsscat floatThead" style="width: 100%;">
+              <thead>
+                <tr>
+                    <th>Source</th>
+                    <th>Datasets Activee</th>
+                    <th>Datasets Done <br>(+ 90% readiness)</th>
+                    <th>Files Remaining</th>
+                    <th>Files Done</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr ng-repeat="x in progresstablearr" class="low-stat">
+                    <th class="sm_ok_fill">{$ x.source $}</th>
+                    <td class="sm_ok_light_fill">
+                        {$ x.ds_active $}
+                    </td>
+                    <td class="sm_ok_light_fill">
+                        {$ x.ds_done $} (+{$ x.ds_90pdone $})
+                    </td>
+                    <td class="sm_ok_light_fill">
+                        {$ x.files_rem $}
+                    </td>
+                    <td class="sm_ok_light_fill">
+                        {$ x.files_done $}
+                    </td>
+                </tr>
+
+              </tbody>
+            </table>
+        </div>
+     </div>
+
+     <div class="row">
+        <div class="large-6 panel columns" style="width: 70% !important;; height: 500px;">Plot with Queing time distribution per SE</div>
+     </div>
+     <div class="row">
+        <div class="large-6 panel columns" style="width: 70% !important;; height: 500px;">Plot with Progress distibution for scheduled datasets per SE</div>
+     </div>
+     <div class="row">
+        <div class="large-6 panel columns" style="width: 70% !important;; height: 500px;">Task List</div>
+     </div>
+
+    </div>
 
 
 {% endblock %}
