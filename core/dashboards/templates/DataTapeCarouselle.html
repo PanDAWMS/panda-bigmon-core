@@ -42,7 +42,7 @@
         }
 
         function controller($scope, Service){
-            var options = {
+            var optionsACTCH = {
                           title: 'Activation time',
                           legend: { position: 'none' },
                           hAxis: {title: 'Time', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
@@ -53,24 +53,62 @@
                             maxZoomIn: 4.0
                           },
                       };
-            var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
-            $scope.progresstablearr = [];
+            var chartACTCH = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
+            var chartETCH = new google.visualization.Histogram(document.getElementById('chartETCH_div'));
+            var optionsETCH = {
+                          title: 'Elapsed time (h)',
+                          legend: { position: 'none' },
+                          hAxis: {title: 'Time (h)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
+                          explorer: {
+                            actions: ['dragToZoom', 'rightClickToReset'],
+                            axis: 'horizontal',
+                            keepInBounds: true,
+                            maxZoomIn: 4.0
+                          },
+                          histogram: {
+                              minNumBuckets: 20,
+                          },
+                      };
 
+            var chartPRCH = new google.visualization.Histogram(document.getElementById('chartPRCH_div'));
+            var optionsPRCH = {
+                          title: 'Progress of active stagings (%)',
+                          legend: { position: 'none' },
+                          hAxis: {title: 'Progress (%)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
+                          explorer: {
+                            actions: ['dragToZoom', 'rightClickToReset'],
+                            axis: 'horizontal',
+                            keepInBounds: true,
+                            maxZoomIn: 4.0
+                          },
+                          histogram: {
+                              minNumBuckets: 10,
+                          },
+                      };
+
+            $scope.progresstablearr = [];
             Service.get().then(function(response) {
-                                       response.data.submittime = response.data.submittime.map(function (row) {
-                          return [
-                            new Date(row[0]),
+                response.data.submittime = response.data.submittime.map(function (row) {
+                   return [
+                   new Date(row[0]),
                             row[1]
-                          ];
-                      });
-                      var data = google.visualization.arrayToDataTable(response.data.submittime);
-                      chart.draw(data, options);
-                      $scope.progresstablearr = response.data.progresstable;
+                      ];
+                   });
+                 var dataACTCH = google.visualization.arrayToDataTable(response.data.submittime);
+                 chartACTCH.draw(dataACTCH, optionsACTCH);
+
+                 var dataETCH = google.visualization.arrayToDataTable(response.data.epltime);
+                 chartETCH.draw(dataETCH, optionsETCH);
+
+                 var dataPRCH = google.visualization.arrayToDataTable(response.data.progress);
+                 chartPRCH.draw(dataPRCH, optionsPRCH);
+
+
+                 $scope.progresstablearr = response.data.progresstable;
 
             });
         }
 
-elapsed
     </script>
 
     <style>
@@ -83,7 +121,10 @@ elapsed
 
     <div class="large-12 columns" ng-app="dataviewapp" data-ng-controller="dataviewctrl">
      <div class="row">
-        <div id="chart_div" class="large-6 panel columns" style="width: 70% !important;; height: 500px;"></div>
+        <div id="chartACTCH_div" class="large-6 panel columns" style="width: 70% !important;; height: 500px;"></div>
+        <div id="chartETCH_div" class="large-6 panel columns" style="width: 70% !important;; height: 500px;"></div>
+        <div id="chartPRCH_div" class="large-6 panel columns" style="width: 70% !important;; height: 500px;"></div>
+
          <div id="selectionpane" class="small-3 panel columns">
             <b>Staging finished within:</b>
             <select id="timewindow" onchange="onSubElementChoice()">
@@ -142,12 +183,6 @@ elapsed
         </div>
      </div>
 
-     <div class="row">
-        <div class="large-6 panel columns" style="width: 70% !important;; height: 500px;">Plot with Queing time distribution per SE</div>
-     </div>
-     <div class="row">
-        <div class="large-6 panel columns" style="width: 70% !important;; height: 500px;">Plot with Progress distibution for scheduled datasets per SE</div>
-     </div>
      <div class="row">
         <div class="large-6 panel columns" style="width: 70% !important;; height: 500px;">Task List</div>
      </div>

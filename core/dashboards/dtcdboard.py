@@ -46,6 +46,7 @@ def getDTCSubmissionHist(request):
 
     timelistQueued = []
     timelistInterval = []
+    progressDistribution = []
     datatableDict = {}
 
 
@@ -64,6 +65,7 @@ def getDTCSubmissionHist(request):
             dictSE["ds_active"]+=1
             if dsdata['staged_files'] >= dsdata['total_files']*0.9:
                 dictSE["ds_90pdone"] += 1
+            progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
 
         dictSE["files_done"] += dsdata['staged_files']
         dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
@@ -73,13 +75,15 @@ def getDTCSubmissionHist(request):
 
     timedelta = pd.to_timedelta(timelistInterval)
     timedelta = (timedelta / pd.Timedelta(hours=1))
-    bins = np.linspace(timedelta.min(), timedelta.max(), 50)
-    hist, bin_edges = np.histogram(timedelta.tolist(), bins=bins, density=True)
+    arr = [["EplTime"]]
+    arr.extend([[x] for x in timedelta.tolist()])
+    finalvalue = {"epltime": arr}
 
-    data = [['Time', 'Count']]
-    for time, count in zip(bin_edges, hist):
-        data.append([time, count])
-    finalvalue = {"epltime": data}
+
+    arr = [["Progress"]]
+    arr.extend([[x*100] for x in progressDistribution])
+    finalvalue["progress"] = arr
+
 
     times = pd.to_datetime(timelistQueued)
     df = pd.DataFrame({
