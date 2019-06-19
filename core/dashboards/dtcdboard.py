@@ -40,6 +40,7 @@ def getStagingInfoForTask(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
     return response
 
+
 @never_cache
 def getDTCSubmissionHist(request):
     valid, response = initRequest(request)
@@ -47,10 +48,11 @@ def getDTCSubmissionHist(request):
 
     timelistQueued = []
     timelistInterval = []
+
     progressDistribution = []
     datatableDict = {}
-
-
+    selectCampaign = []
+    selectSource = []
 
     for task, dsdata in staginData.items():
         timelistQueued.append(dsdata['start_time'])
@@ -71,8 +73,14 @@ def getDTCSubmissionHist(request):
         dictSE["files_done"] += dsdata['staged_files']
         dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
         datatableDict[dsdata['source_rse']] = dictSE
-    datatableList = list(datatableDict.values())
+        selectCampaign.append({"name": dsdata['campaign'], "value": dsdata['campaign'], "selected": "0"})
+        selectSource.append({"name": dsdata['source_rse'], "value": dsdata['source_rse'], "selected": "0"})
 
+    #For uniquiness
+    selectSource = list({v['name']: v for v in selectSource}.values())
+    selectCampaign = list({v['name']: v for v in selectCampaign}.values())
+
+    datatableList = list(datatableDict.values())
 
     timedelta = pd.to_timedelta(timelistInterval)
     timedelta = (timedelta / pd.Timedelta(hours=1))
@@ -80,11 +88,9 @@ def getDTCSubmissionHist(request):
     arr.extend([[x] for x in timedelta.tolist()])
     finalvalue = {"epltime": arr}
 
-
     arr = [["Progress"]]
     arr.extend([[x*100] for x in progressDistribution])
     finalvalue["progress"] = arr
-
 
     times = pd.to_datetime(timelistQueued)
     df = pd.DataFrame({
@@ -101,6 +107,26 @@ def getDTCSubmissionHist(request):
 
     finalvalue["submittime"] = data
     finalvalue["progresstable"] = datatableList
+
+    selectTime = [
+        {"name": "Last 1 hour", "value": "hours1", "selected": "0"},
+        {"name":"Last 12 hours", "value":"hours12", "selected":"0"},
+        {"name":"Last day", "value":"hours24", "selected":"0"},
+        {"name":"Last week","value":"hours168", "selected":"0"},
+        {"name":"Last month","value":"hours720", "selected":"0"}]
+
+    hours = ""
+    if 'hours' in request.session['requestParams']:
+        hours = request.session['requestParams']['hours']
+
+    for selectTimeItem in selectTime:
+        if selectTimeItem["value"] == "hours"+str(hours):
+            selectTimeItem["selected"] = "1"
+            break
+
+    finalvalue["selectsource"] = selectSource
+    finalvalue["selecttime"] = selectTime
+    finalvalue["selectcampaign"] = selectCampaign
 
     response = HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
     return response
@@ -125,7 +151,6 @@ def getStagingData(request):
         campaign = request.GET['campaign']
     else:
         campaign = None
-
 
     data = {}
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
@@ -153,8 +178,12 @@ def getStagingData(request):
         selection += "and t2.TASKID in (select taskid from ATLAS_DEFT.T_ACTION_STAGING @ INTR.CERN.CH)"
 
     if source:
-        sourcel = [source] if '|' not in source else [SE for SE in source.split('|')]
-        selection += "AND t1.SOURCE_RSE in (" + ','.join(str(x) for x in sourcel) + ")"
+        sourcel = [source] if ',' not in source else [SE for SE in source.split(',')]
+        selection += " AND t1.SOURCE_RSE in (" + ','.join('\''+str(x)+'\'' for x in sourcel) + ")"
+
+    if campaign:
+        campaignl = [campaign] if ',' not in campaign else [camp for camp in campaign.split(',')]
+        selection += " AND t3.campaign in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ")"
 
     selection += " AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or END_TIME is NULL)" \
                  % (timewindow[0], timewindow[1])
@@ -162,8 +191,9 @@ def getStagingData(request):
     new_cur.execute(
         """
                 SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE, t1.TOTAL_FILES, 
-                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH t1
-                INNER join ATLAS_DEFT.T_ACTION_STAGING@INTR.CERN.CH t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID %s 
+                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH t1
+                INNER join ATLAS_DEFT.T_ACTION_STAGING@INTR.CERN.CH t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID
+                INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID %s 
         """ % selection
     )
     datasets = dictfetchall(new_cur)

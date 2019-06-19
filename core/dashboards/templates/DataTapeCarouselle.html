@@ -30,10 +30,10 @@
             .controller('dataviewctrl', ['$scope','Service', controller]);
 
         function service($http, $scope){
-            var get = function() {
+            var get = function(requestparams) {
              return $http({
               method: 'GET',
-              url: '{% url 'getDTCSubmissionHist' %}',
+              url: '{% url 'getDTCSubmissionHist' %}'+requestparams,
               cache: false
             })};
             return {
@@ -42,6 +42,33 @@
         }
 
         function controller($scope, Service){
+
+            $scope.gog = function(){
+                var request = "";
+                if ($scope.selectedTime == "hours720") request = '?hours=720';
+                if ($scope.selectedTime == "hours168") request = '?hours=168';
+                if ($scope.selectedTime == "hours24") request = '?hours=24';
+                if ($scope.selectedTime == "hours12") request = '?hours=12';
+                if ($scope.selectedTime == "hours1") request = '?hours=1';
+
+                if (request.length == 0) request = "?"; else request += "&";
+                if ($scope.selectedCampaign) request += ('campaign=' + $scope.selectedCampaign);
+                if (request.length == 0) request = "?"; else request += "&";
+                if ($scope.selectedSource) request += ('source=' + $scope.selectedSource);
+
+                Service.get(request).then($scope.processResponce);
+            };
+
+
+            $scope.updateByTime = function(){
+               if ($scope.selectedTime == "hours720") Service.get('?hours=720').then($scope.processResponce);
+               if ($scope.selectedTime == "hours168") Service.get('?hours=168').then($scope.processResponce);
+               if ($scope.selectedTime == "hours24") Service.get('?hours=24').then($scope.processResponce);
+               if ($scope.selectedTime == "hours12") Service.get('?hours=12').then($scope.processResponce);
+               if ($scope.selectedTime == "hours1") Service.get('?hours=1').then($scope.processResponce);
+            };
+
+
             var optionsACTCH = {
                           title: 'Activation time',
                           legend: { position: 'none' },
@@ -65,9 +92,9 @@
                             keepInBounds: true,
                             maxZoomIn: 4.0
                           },
-                          histogram: {
-                              minNumBuckets: 20,
-                          },
+histogram: {
+                        bucketSize: .01
+                    }
                       };
 
             var chartPRCH = new google.visualization.Histogram(document.getElementById('chartPRCH_div'));
@@ -81,13 +108,12 @@
                             keepInBounds: true,
                             maxZoomIn: 4.0
                           },
-                          histogram: {
-                              minNumBuckets: 10,
-                          },
-                      };
+histogram: {
+                        bucketSize: .1
+                    }
+            };
 
-            $scope.progresstablearr = [];
-            Service.get().then(function(response) {
+            $scope.processResponce = function(response) {
                 response.data.submittime = response.data.submittime.map(function (row) {
                    return [
                    new Date(row[0]),
@@ -104,10 +130,22 @@
                  chartPRCH.draw(dataPRCH, optionsPRCH);
 
                  $scope.progresstablearr = response.data.progresstable;
+                 $scope.selecttime = response.data.selecttime;
+                 $scope.selectedTime = {};
+                 for (item of $scope.selecttime) {
+                     if (item.selected == "1") $scope.selectedTime = item.value;
+                     console.error(item.value);
+                 }
 
-            });
+
+                 $scope.selectedCampaign = null;
+                 $scope.selectedSource = null;
+
+                 $scope.selectcampaign = response.data.selectcampaign;
+                 $scope.selectsource = response.data.selectsource;
+            }
+            Service.get('').then($scope.processResponce);
         }
-
     </script>
 
     <style>
@@ -121,24 +159,26 @@
     <div class="large-12 columns" ng-app="dataviewapp" data-ng-controller="dataviewctrl">
      <div class="row">
         <div id="chartACTCH_div" class="column column-block panel" ></div>
-         <div id="selectionpane" class="column column-block medium-4">
-            <b>Staging finished within:</b>
-            <select id="timewindow" onchange="onSubElementChoice()">
-               <option value="" >Last day</option>
-               <option value="" >Last 12 hours</option>
-               <option value="" >Last week</option>
-               <option value="" selected="selected">Last month</option>
+         <div id="selectionpane" class="column column-block medium-4" style="margin-top: 60px">
+            <select id="timewindow" ng-model="selectedTime" ng-options="timeitem.value as timeitem.name for timeitem in selecttime" ng-change="updateByTime();">
+               <option value="" disabled>Select Time Window</option>
             </select>
+
             <b>Campaign:</b>
-            <select id="campaign" onchange="onSubElementChoice()" multiple>
-               <option value="" selected="selected">All</option>
+            <select id="campaign" ng-model="selectedCampaign" ng-options="campitem.value as campitem.name for campitem in selectcampaign" multiple>
+                <option value="" selected="selected">All</option>
             </select>
+
             <b>Source:</b>
-            <select id="source" onchange="onSubElementChoice()" multiple>
+            <select id="source" ng-model="selectedSource" ng-options="source.value as source.name for source in selectsource" multiple>
                <option value="" selected="selected">All</option>
             </select>
-        </div>
+            <a ng-click="gog();" class="button primary">Update</a>
+         </div>
      </div>
+
+
+
      <div class="row">
          <div id="chartETCH_div" class="column column-block panel" ></div>
          <div id="chartPRCH_div" class="column column-block panel" ></div>
@@ -149,7 +189,7 @@
               <thead>
                 <tr>
                     <th>Source</th>
-                    <th>Datasets Activee</th>
+                    <th>Datasets Active</th>
                     <th>Datasets Done <br>(+ 90% readiness)</th>
                     <th>Files Remaining</th>
                     <th>Files Done</th>
@@ -157,7 +197,7 @@
               </thead>
               <tbody>
                 <tr ng-repeat="x in progresstablearr" class="low-stat">
-                    <th class="sm_ok_fill">{$ x.source $}</th>
+                    <th class="sm_ok_fill"> <a href="{% url 'taskList' %}?tape=true&source={$ x.source $}">{$ x.source $}</a></th>
                     <td class="sm_ok_light_fill">
                         {$ x.ds_active $}
                     </td>
@@ -177,9 +217,5 @@
      </div>
     </div>
 
-
 {% endblock %}
-
-
-
 
