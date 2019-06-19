@@ -161,6 +161,7 @@ def getStagingData(request):
     new_cur = connection.cursor()
 
     selection = "where 1=1 "
+    jeditaskid = None
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = request.session['requestParams']['jeditaskid']
         taskl = [int(jeditaskid)] if '|' not in jeditaskid else [int(taskid) for taskid in jeditaskid.split('|')]
@@ -173,7 +174,7 @@ def getStagingData(request):
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
         connection.commit()
-        selection += "and taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)"  % (tmpTableName, transactionKey)
+        selection += "and t2.taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)"  % (tmpTableName, transactionKey)
     else:
         selection += "and t2.TASKID in (select taskid from ATLAS_DEFT.T_ACTION_STAGING @ INTR.CERN.CH)"
 
@@ -185,8 +186,9 @@ def getStagingData(request):
         campaignl = [campaign] if ',' not in campaign else [camp for camp in campaign.split(',')]
         selection += " AND t3.campaign in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ")"
 
-    selection += " AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or END_TIME is NULL)" \
-                 % (timewindow[0], timewindow[1])
+    if not jeditaskid:
+        selection += " AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or END_TIME is NULL)" \
+                     % (timewindow[0], timewindow[1])
 
     new_cur.execute(
         """
