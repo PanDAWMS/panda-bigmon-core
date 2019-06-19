@@ -103,7 +103,6 @@
                  var dataPRCH = google.visualization.arrayToDataTable(response.data.progress);
                  chartPRCH.draw(dataPRCH, optionsPRCH);
 
-
                  $scope.progresstablearr = response.data.progresstable;
 
             });
@@ -113,19 +112,16 @@
 
     <style>
         .panel {
-          padding: 0;
-          margin: 0;
+            width: 600px;
+            height: 500px;
         }
     </style>
 
 
     <div class="large-12 columns" ng-app="dataviewapp" data-ng-controller="dataviewctrl">
      <div class="row">
-        <div id="chartACTCH_div" class="large-6 panel columns" style="width: 70% !important;; height: 500px;"></div>
-        <div id="chartETCH_div" class="large-6 panel columns" style="width: 70% !important;; height: 500px;"></div>
-        <div id="chartPRCH_div" class="large-6 panel columns" style="width: 70% !important;; height: 500px;"></div>
-
-         <div id="selectionpane" class="small-3 panel columns">
+        <div id="chartACTCH_div" class="column column-block panel" ></div>
+         <div id="selectionpane" class="column column-block medium-4">
             <b>Staging finished within:</b>
             <select id="timewindow" onchange="onSubElementChoice()">
                <option value="" >Last day</option>
@@ -141,16 +137,15 @@
             <select id="source" onchange="onSubElementChoice()" multiple>
                <option value="" selected="selected">All</option>
             </select>
-            <b>Destination:</b>
-            <select id="destination" onchange="onSubElementChoice()" multiple>
-               <option value="" selected="selected">All</option>
-            </select>
         </div>
      </div>
-
-        <div class="row">
-        <div class="medium-6 panel columns">
-            <table id="transfersmatrix" class="unstriped errorsscat floatThead" style="width: 100%;">
+     <div class="row">
+         <div id="chartETCH_div" class="column column-block panel" ></div>
+         <div id="chartPRCH_div" class="column column-block panel" ></div>
+     </div>
+     <div class="row">
+        <div class="column small-offset-7 medium-centered">
+            <table id="transfersmatrix" class="unstriped errorsscat floatThead">
               <thead>
                 <tr>
                     <th>Source</th>
@@ -161,7 +156,6 @@
                 </tr>
               </thead>
               <tbody>
-
                 <tr ng-repeat="x in progresstablearr" class="low-stat">
                     <th class="sm_ok_fill">{$ x.source $}</th>
                     <td class="sm_ok_light_fill">
@@ -177,16 +171,10 @@
                         {$ x.files_done $}
                     </td>
                 </tr>
-
               </tbody>
             </table>
         </div>
      </div>
-
-     <div class="row">
-        <div class="large-6 panel columns" style="width: 70% !important;; height: 500px;">Task List</div>
-     </div>
-
     </div>
 
 
