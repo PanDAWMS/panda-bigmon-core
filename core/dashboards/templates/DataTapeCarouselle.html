@@ -17,6 +17,13 @@
 {% block body %}
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
     <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}"></script>
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+
+
 
     <script type="text/javascript">
 
@@ -138,8 +145,32 @@
 
                  $scope.selectcampaign = response.data.selectcampaign;
                  $scope.selectsource = response.data.selectsource;
-                 $scope.detailstable = response.data.detailstable;
 
+                $('#stagingdatasetstable').dataTable({
+                    "bDestroy": true,
+                    data: response.data.detailstable,
+                    columns: [
+                        { data: 'campaign' },
+                        { data: 'pr_id' },
+                        { data: 'taskid',
+                          "render": function(data, type, full, meta) {
+                                return '<a href='+{% url 'taskInfo' %}+full['taskid']+'">'+full['taskid']+'</a>';
+                          },
+                        },
+                        { data: 'status' },
+                        { data: 'total_files' },
+                        { data: 'staged_files' },
+                        { data: 'progress' },
+                        { data: 'source_rse' },
+                        { data: 'elapsedtime' },
+                        { data: 'start_time' },
+                        { data: 'rse',
+                          "render": function(data, type, full, meta) {
+                                return '<a href="https://rucio-ui.cern.ch/rule?rule_id='+full['rse']+'">'+full['rse']+'</a>';
+                            },
+                        }
+                    ]
+                });
             }
             Service.get('').then($scope.processResponce);
 
@@ -216,7 +247,7 @@
      <div class="row">
          <div class="panel-body">
 
-             <table datatable="" class="row-border hover">
+             <table class="table table-striped table-bordered" id="stagingdatasetstable">
                  <thead>
                  <tr>
                      <th>Campaign</th>
@@ -232,7 +263,15 @@
                      <th>Rucio Rule</th>
                  </tr>
                  </thead>
-                 <tbody>
+             </table>
+         </div>
+     </div>
+    </div>
+
+{% endblock %}
+
+{% comment %}
+                     <tbody>
                  <tr ng-repeat="n in detailstable">
                      <td>{$ n[0] $}</td>
                      <td>{$ n[1] $}</td>
@@ -247,10 +286,5 @@
                      <td><a href="https://rucio-ui.cern.ch/rule?rule_id={$ n[10] $}">{$ n[10] $}</a></td>
                  </tr>
                  </tbody>
-             </table>
-         </div>
-     </div>
-    </div>
 
-{% endblock %}
-
+{% endcomment %}

@@ -76,9 +76,9 @@ def getDTCSubmissionHist(request):
         summarytableDict[dsdata['source_rse']] = dictSE
         selectCampaign.append({"name": dsdata['campaign'], "value": dsdata['campaign'], "selected": "0"})
         selectSource.append({"name": dsdata['source_rse'], "value": dsdata['source_rse'], "selected": "0"})
-        detailsTable.append([dsdata['campaign'], dsdata['pr_id'], dsdata['taskid'], dsdata['status'], dsdata['total_files'],
-                             dsdata['staged_files'], int(round(dsdata['staged_files'] / dsdata['total_files'])) * 100,
-                             dsdata['source_rse'], timelistInterval[-1], dsdata['start_time'], dsdata['rse'] ])
+        detailsTable.append({'campaign': dsdata['campaign'], 'pr_id': dsdata['pr_id'], 'taskid': dsdata['taskid'], 'status': dsdata['status'], 'total_files': dsdata['total_files'],
+                             'staged_files': dsdata['staged_files'], 'progress': int(round(dsdata['staged_files'] / dsdata['total_files'])) * 100,
+                             'source_rse': dsdata['source_rse'], 'elapsedtime': timelistInterval[-1], 'start_time': dsdata['start_time'], 'rse': dsdata['rse']})
 
     #For uniquiness
     selectSource = list({v['name']: v for v in selectSource}.values())
