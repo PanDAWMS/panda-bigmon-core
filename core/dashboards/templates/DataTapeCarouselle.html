@@ -17,6 +17,7 @@
 {% block body %}
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
     <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}"></script>
+
     <script type="text/javascript">
 
         var app = angular.module('dataviewapp', []).config(function ($interpolateProvider) {
@@ -143,8 +144,11 @@ histogram: {
 
                  $scope.selectcampaign = response.data.selectcampaign;
                  $scope.selectsource = response.data.selectsource;
+                 $scope.detailstable = response.data.detailstable;
+
             }
             Service.get('').then($scope.processResponce);
+
         }
     </script>
 
@@ -214,6 +218,43 @@ histogram: {
               </tbody>
             </table>
         </div>
+     </div>
+     <div class="row">
+         <div class="panel-body">
+
+             <table datatable="" class="row-border hover">
+                 <thead>
+                 <tr>
+                     <th>Campaign</th>
+                     <th>Request ID</th>
+                     <th>TaskID</th>
+                     <th>Status</th>
+                     <th>Total Files</th>
+                     <th>Staged Files</th>
+                     <th>Progress (%)</th>
+                     <th>Source RSE</th>
+                     <th>Time Elapsed</th>
+                     <th>Started At</th>
+                     <th>Rucio Rule</th>
+                 </tr>
+                 </thead>
+                 <tbody>
+                 <tr ng-repeat="n in detailstable">
+                     <td>{$ n[0] $}</td>
+                     <td>{$ n[1] $}</td>
+                     <td><a href="{% url 'taskInfo' %}{$ n[2] $}">{$ n[2] $}</a></td>
+                     <td>{$ n[3] $}</td>
+                     <td>{$ n[4] $}</td>
+                     <td>{$ n[5] $}</td>
+                     <td>{$ n[6] $}</td>
+                     <td>{$ n[7] $}</td>
+                     <td>{$ n[8] $}</td>
+                     <td>{$ n[9] $}</td>
+                     <td><a href="https://rucio-ui.cern.ch/rule?rule_id={$ n[10] $}">{$ n[10] $}</a></td>
+                 </tr>
+                 </tbody>
+             </table>
+         </div>
      </div>
     </div>
 

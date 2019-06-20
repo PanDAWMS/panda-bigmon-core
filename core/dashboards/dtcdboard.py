@@ -50,9 +50,10 @@ def getDTCSubmissionHist(request):
     timelistInterval = []
 
     progressDistribution = []
-    datatableDict = {}
+    summarytableDict = {}
     selectCampaign = []
     selectSource = []
+    detailsTable = []
 
     for task, dsdata in staginData.items():
         timelistQueued.append(dsdata['start_time'])
@@ -61,7 +62,7 @@ def getDTCSubmissionHist(request):
         else:
             timelistInterval.append(timezone.now() - dsdata['start_time'])
 
-        dictSE = datatableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_90pdone":0, "files_rem":0, "files_done":0})
+        dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_90pdone":0, "files_rem":0, "files_done":0})
         if dsdata['end_time'] != None:
             dictSE["ds_done"]+=1
         else:
@@ -72,15 +73,18 @@ def getDTCSubmissionHist(request):
 
         dictSE["files_done"] += dsdata['staged_files']
         dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
-        datatableDict[dsdata['source_rse']] = dictSE
+        summarytableDict[dsdata['source_rse']] = dictSE
         selectCampaign.append({"name": dsdata['campaign'], "value": dsdata['campaign'], "selected": "0"})
         selectSource.append({"name": dsdata['source_rse'], "value": dsdata['source_rse'], "selected": "0"})
+        detailsTable.append([dsdata['campaign'], dsdata['pr_id'], dsdata['taskid'], dsdata['status'], dsdata['total_files'],
+                             dsdata['staged_files'], int(round(dsdata['staged_files'] / dsdata['total_files'])) * 100,
+                             dsdata['source_rse'], timelistInterval[-1], dsdata['start_time'], dsdata['rse'] ])
 
     #For uniquiness
     selectSource = list({v['name']: v for v in selectSource}.values())
     selectCampaign = list({v['name']: v for v in selectCampaign}.values())
 
-    datatableList = list(datatableDict.values())
+    summarytableList = list(summarytableDict.values())
 
     timedelta = pd.to_timedelta(timelistInterval)
     timedelta = (timedelta / pd.Timedelta(hours=1))
@@ -106,7 +110,7 @@ def getDTCSubmissionHist(request):
         data.append([time, count[0]])
 
     finalvalue["submittime"] = data
-    finalvalue["progresstable"] = datatableList
+    finalvalue["progresstable"] = summarytableList
 
     selectTime = [
         {"name": "Last 1 hour", "value": "hours1", "selected": "0"},
@@ -127,6 +131,8 @@ def getDTCSubmissionHist(request):
     finalvalue["selectsource"] = selectSource
     finalvalue["selecttime"] = selectTime
     finalvalue["selectcampaign"] = selectCampaign
+    finalvalue["detailstable"] = detailsTable
+
 
     response = HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
     return response
@@ -193,7 +199,7 @@ def getStagingData(request):
     new_cur.execute(
         """
                 SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE, t1.TOTAL_FILES, 
-                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH t1
+                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign, t3.PR_ID FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH t1
                 INNER join ATLAS_DEFT.T_ACTION_STAGING@INTR.CERN.CH t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID
                 INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID %s 
         """ % selection
