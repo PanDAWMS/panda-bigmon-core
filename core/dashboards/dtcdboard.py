@@ -69,7 +69,7 @@ def getDTCSubmissionHist(request):
             dictSE["ds_active"]+=1
             if dsdata['staged_files'] >= dsdata['total_files']*0.9:
                 dictSE["ds_90pdone"] += 1
-            progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
+        progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
 
         dictSE["files_done"] += dsdata['staged_files']
         dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
