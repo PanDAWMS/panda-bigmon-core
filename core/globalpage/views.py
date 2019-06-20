@@ -7,6 +7,7 @@ from django.http import HttpResponseRedirect
 import json
 from collections import defaultdict
 from operator import itemgetter, attrgetter
+from core.views import login_customrequired
 
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -16,11 +17,11 @@ class DateEncoder(json.JSONEncoder):
             return str(obj)
         return json.JSONEncoder.default(self, obj)
 
-
+@login_customrequired
 def globaldemo(request):
     valid, response = initRequest(request)
     nname = '20.20.X-VAL'
-    data={"nightly": nname}
+    data={"nightly": nname, 'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,}
     return render_to_response('globaldemo.html', data, content_type='text/html')
 
 def globaldata(request):
