@@ -20,6 +20,8 @@ from core.runningprod import views as runningprod_views
 from core.errorsscattering import views as errorsscat_views
 from core.compare import views as compare_views
 
+from core.globalpage import views as globalpage
+
 #import core.views as coremon_views
 import core.pandajob.views_support as core_coremon_support_views
 #import core.pandajob.views as core_coremon_views
@@ -83,9 +85,10 @@ urlpatterns = [
 
     re_path(r'^dtcdboard/$', dtcdboard.datatapeCarouselleDashBoard, name='datatapeCarouselleDashBoard'),
 
+    re_path(r'^globalpage/$', globalpage.globaldemo, name='SITGlobalPage'),
+    re_path(r'^globalpagedata/$', globalpage.globaldata, name='SITGlobalData'),
 
-
-#    re_path(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
+                  #    re_path(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
 #    re_path(r'^worldjobs/production/$', coremon_views.dashWorldProduction, name='dashWorldProduction'),
 
     re_path(r'^runningmcprodtasks/$', runningprod_views.runningMCProdTasks, name='runningMCProdTasks'),
