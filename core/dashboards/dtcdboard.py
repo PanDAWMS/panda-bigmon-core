@@ -47,20 +47,24 @@ def getDTCSubmissionHist(request):
     staginData = getStagingData(request)
 
     timelistQueued = []
-    timelistInterval = []
 
     progressDistribution = []
     summarytableDict = {}
     selectCampaign = []
     selectSource = []
     detailsTable = []
+    timelistIntervalfin = []
+    timelistIntervalact = []
 
     for task, dsdata in staginData.items():
+        epltime = None
         timelistQueued.append(dsdata['start_time'])
         if dsdata['end_time']:
-            timelistInterval.append(dsdata['end_time'] - dsdata['start_time'])
+            epltime = dsdata['end_time'] - dsdata['start_time']
+            timelistIntervalfin.append(epltime)
         else:
-            timelistInterval.append(timezone.now() - dsdata['start_time'])
+            epltime = timezone.now() - dsdata['start_time']
+            timelistIntervalact.append(epltime)
 
         dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_90pdone":0, "files_rem":0, "files_done":0})
         if dsdata['end_time'] != None:
@@ -78,7 +82,7 @@ def getDTCSubmissionHist(request):
         selectSource.append({"name": dsdata['source_rse'], "value": dsdata['source_rse'], "selected": "0"})
         detailsTable.append({'campaign': dsdata['campaign'], 'pr_id': dsdata['pr_id'], 'taskid': dsdata['taskid'], 'status': dsdata['status'], 'total_files': dsdata['total_files'],
                              'staged_files': dsdata['staged_files'], 'progress': int(round(dsdata['staged_files'] / dsdata['total_files'])) * 100,
-                             'source_rse': dsdata['source_rse'], 'elapsedtime': timelistInterval[-1], 'start_time': dsdata['start_time'], 'rse': dsdata['rse']})
+                             'source_rse': dsdata['source_rse'], 'elapsedtime': epltime, 'start_time': dsdata['start_time'], 'rse': dsdata['rse']})
 
     #For uniquiness
     selectSource = list({v['name']: v for v in selectSource}.values())
@@ -86,10 +90,16 @@ def getDTCSubmissionHist(request):
 
     summarytableList = list(summarytableDict.values())
 
-    timedelta = pd.to_timedelta(timelistInterval)
+    timedelta = pd.to_timedelta(timelistIntervalfin)
     timedelta = (timedelta / pd.Timedelta(hours=1))
     arr = [["EplTime"]]
     arr.extend([[x] for x in timedelta.tolist()])
+
+    timedelta = pd.to_timedelta(timelistIntervalact)
+    timedelta = (timedelta / pd.Timedelta(hours=1))
+    #arr1 = [["EplTime"]]
+    arr.extend([[x] for x in timedelta.tolist()])
+
     finalvalue = {"epltime": arr}
 
     arr = [["Progress"]]
