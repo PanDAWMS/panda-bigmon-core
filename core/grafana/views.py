@@ -215,18 +215,22 @@ def grafana_api(request):
             if request.session['requestParams']['export'] =='csv':
                 data = stacked_hist(result['results'][0]['series'], group_by, split_series)
                 import csv
+                import copy
                 response = HttpResponse(content_type='text/csv')
 
-                column_titles = groupby_params
+                column_titles = copy.deepcopy(groupby_params)
                 column_titles.append('value')
 
                 response['Content-Disposition'] = 'attachment; filename={0}.csv'.format('_'.join(groupby_params))
                 writer = csv.writer(response, delimiter=";")
 
-
                 writer.writerow(column_titles)
-
-                csvList = grab_children(data)
+                csvList = []
+                if len(groupby_params)> 1:
+                    csvList = grab_children(data)
+                else:
+                    for key,value in data.items():
+                        csvList.append([key,value['all']])
                 writer.writerows(csvList)
 
                 return response
