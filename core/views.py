@@ -646,7 +646,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     if querytype == 'job':
         for field in Jobsactive4._meta.get_fields():
             if (field.get_internal_type() == 'CharField'):
-                if not (field.name == 'jobstatus' or field.name == 'modificationhost' or field.name == 'batchid' or (
+                if not (field.name == 'jobstatus' or field.name == 'modificationhost' #or field.name == 'batchid'
+                        or (
                     excludeJobNameFromWildCard and field.name == 'jobname')):
                     wildSearchFields.append(field.name)
     if querytype == 'task':
@@ -693,6 +694,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         ## Call param overrides default hours, but not a param on the URL
         LAST_N_HOURS_MAX = hours
     ## For site-specific queries, allow longer time window
+
+    if 'batchid' in request.session['requestParams'] and hours is None:
+        LAST_N_HOURS_MAX = 12
     if 'computingsite' in request.session['requestParams'] and hours is None:
         LAST_N_HOURS_MAX = 12
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
@@ -3098,8 +3102,8 @@ def jobList(request, mode=None, param=None):
     if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
         return render_to_response('message.html', {'desc':'Request token is not found or data is outdated. Please reload the original page.'}, content_type='text/html')
     ####
-    if 'batchid' in request.session['requestParams']:
-        query['batchid'] = request.session['requestParams']['batchid']
+#    if 'batchid' in request.session['requestParams']:
+#        query['batchid'] = request.session['requestParams']['batchid']
     jobs = []
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
