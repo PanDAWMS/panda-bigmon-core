@@ -83,7 +83,7 @@ urlpatterns = [
     re_path(r'^getstaginginfofortask/$', dtcdboard.getStagingInfoForTask, name='getStagingInfoForTask'),
     re_path(r'^getdtcsubmissionhist/$', dtcdboard.getDTCSubmissionHist, name='getDTCSubmissionHist'),
 
-    re_path(r'^dtcdboard/$', dtcdboard.datatapeCarouselleDashBoard, name='datatapeCarouselleDashBoard'),
+    re_path(r'^datacardash/$', dtcdboard.dataCarouselleDashBoard, name='dataCarouselleDashBoard'),
 
     re_path(r'^globalpage/$', globalpage.globaldemo, name='SITGlobalPage'),
     re_path(r'^globalpagedata/$', globalpage.globaldata, name='SITGlobalData'),

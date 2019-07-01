@@ -2,8 +2,8 @@
 {% load humanize %}
 {% load static %}
 
-{% block page_title %}Data Tape Carousel DashBoard{% endblock %}
-{% block subtitle %}Data Tape Carousel DashBoard <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+{% block page_title %}Data Carousel DashBoard{% endblock %}
+{% block subtitle %}Data Carousel DashBoard <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
 
 
 {% block extra_css %}
@@ -89,7 +89,7 @@
                           },
                       };
             var chartACTCH = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
-            var chartETCH = new google.visualization.Histogram(document.getElementById('chartETCH_div'));
+            var chartETCH = new google.visualization.ColumnChart(document.getElementById('chartETCH_div'));
 
             var optionsETCH = {
                           title: 'Elapsed time (h)',
@@ -101,7 +101,9 @@
                             keepInBounds: true,
                             maxZoomIn: 4.0
                           },
-                          //colors: ['green', 'blue'],
+                          colors: ['green', 'blue'],
+                          legend: { position: "top" },
+
                       };
 
 

@@ -21,7 +21,7 @@ from django.utils import timezone
 
 @never_cache
 @login_customrequired
-def datatapeCarouselleDashBoard(request):
+def dataCarouselleDashBoard(request):
     initRequest(request)
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=4, limit=9999999, querytype='task', wildCardExt=True)
     data = {
@@ -39,6 +39,50 @@ def getStagingInfoForTask(request):
     response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
     return response
+
+def getBinnedData(listData, additionalList = None):
+    isTimeNotDelta = True
+    timesadd = None
+    try:
+        times = pd.to_datetime(listData)
+        if additionalList:
+            timesadd = pd.to_datetime(additionalList)
+    except:
+        times = pd.to_timedelta(listData)
+        isTimeNotDelta = False
+        if additionalList:
+            timesadd = pd.to_timedelta(additionalList)
+
+    #if not timesadd is None:
+    #    mergedIndex = times.union(timesadd)
+    #else:
+    #    mergedIndex = times
+
+
+    df = pd.DataFrame({
+        "Count1": [1 for _ in listData]
+    }, index=times)
+
+    if not timesadd is None:
+        dfadd = pd.DataFrame({
+            "Count2": [1 for _ in additionalList]
+        }, index=timesadd)
+        result = pd.concat([df, dfadd])
+    else:
+        result = df
+        
+
+    grp = result.groupby([pd.Grouper(freq="24h")]).count()
+    values = grp.values.tolist()
+    if isTimeNotDelta:
+        index = grp.index.to_pydatetime().tolist()  # an ndarray method, you probably shouldn't depend on this
+    else:
+        index = (grp.index / pd.Timedelta(hours=1)).tolist()  # an ndarray method, you probably shouldn't depend on this
+
+    data = []
+    for time, count in zip(index, values):
+        data.append([time, count])
+    return data
 
 
 @never_cache
@@ -90,36 +134,27 @@ def getDTCSubmissionHist(request):
 
     summarytableList = list(summarytableDict.values())
 
-    timedelta = pd.to_timedelta(timelistIntervalfin)
-    timedelta = (timedelta / pd.Timedelta(hours=1))
-    arr = [["EplTime"]]
-    arr.extend([[x] for x in timedelta.tolist()])
+    # timedelta = pd.to_timedelta(timelistIntervalfin)
+    # timedelta = (timedelta / pd.Timedelta(hours=1))
+    # arr = [["EplTime"]]
+    # arr.extend([[x] for x in timedelta.tolist()])
+    #
+    # timedelta = pd.to_timedelta(timelistIntervalact)
+    # timedelta = (timedelta / pd.Timedelta(hours=1))
+    # #arr1 = [["EplTime"]]
+    # arr.extend([[x] for x in timedelta.tolist()])
 
-    timedelta = pd.to_timedelta(timelistIntervalact)
-    timedelta = (timedelta / pd.Timedelta(hours=1))
-    #arr1 = [["EplTime"]]
-    arr.extend([[x] for x in timedelta.tolist()])
+    binnedActFinData = getBinnedData(timelistIntervalact, timelistIntervalfin)
+    eplTime = [['Time', 'Active staging', 'Finished staging']] + [[time, data[0], data[1]] for (time, data) in binnedActFinData]
 
-    finalvalue = {"epltime": arr}
+    finalvalue = {"epltime": eplTime}
 
     arr = [["Progress"]]
     arr.extend([[x*100] for x in progressDistribution])
     finalvalue["progress"] = arr
 
-    times = pd.to_datetime(timelistQueued)
-    df = pd.DataFrame({
-        "Count": [1 for _ in timelistQueued]
-    }, index=times)
-
-    grp = df.groupby([pd.Grouper(freq="12h")]).count()
-    values = grp.values.tolist()
-    index = grp.index.to_pydatetime().tolist()  # an ndarray method, you probably shouldn't depend on this
-
-    data = [['Time', 'Count']]
-    for time, count in zip(index, values):
-        data.append([time, count[0]])
-
-    finalvalue["submittime"] = data
+    binnedSubmData = getBinnedData(timelistQueued)
+    finalvalue["submittime"] = [['Time', 'Count']] + [[time, data[0]] for (time, data) in binnedSubmData]
     finalvalue["progresstable"] = summarytableList
 
     selectTime = [
