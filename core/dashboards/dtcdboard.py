@@ -125,7 +125,7 @@ def getDTCSubmissionHist(request):
         selectCampaign.append({"name": dsdata['campaign'], "value": dsdata['campaign'], "selected": "0"})
         selectSource.append({"name": dsdata['source_rse'], "value": dsdata['source_rse'], "selected": "0"})
         detailsTable.append({'campaign': dsdata['campaign'], 'pr_id': dsdata['pr_id'], 'taskid': dsdata['taskid'], 'status': dsdata['status'], 'total_files': dsdata['total_files'],
-                             'staged_files': dsdata['staged_files'], 'progress': int(round(dsdata['staged_files'] / dsdata['total_files'])) * 100,
+                             'staged_files': dsdata['staged_files'], 'progress': int(round(dsdata['staged_files'] * 100.0 / dsdata['total_files'])),
                              'source_rse': dsdata['source_rse'], 'elapsedtime': epltime, 'start_time': dsdata['start_time'], 'rse': dsdata['rse']})
 
     #For uniquiness

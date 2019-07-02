@@ -695,7 +695,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         LAST_N_HOURS_MAX = hours
     ## For site-specific queries, allow longer time window
 
-    if 'batchid' in request.session['requestParams'] and hours is None:
+    if 'batchid' in request.session['requestParams'] and (hours is None or hours == 0):
         LAST_N_HOURS_MAX = 12
     if 'computingsite' in request.session['requestParams'] and hours is None:
         LAST_N_HOURS_MAX = 12
@@ -712,7 +712,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if 'taskid' in request.session['requestParams']: deepquery = True
         if 'pandaid' in request.session['requestParams']: deepquery = True
         if 'jobname' in request.session['requestParams']: deepquery = True
-        if 'batchid' in request.session['requestParams']: deepquery = True
+        #if 'batchid' in request.session['requestParams']: deepquery = True
     if deepquery:
         opmode = 'notime'
         hours = LAST_N_HOURS_MAX = 24 * 180
