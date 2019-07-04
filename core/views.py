@@ -11436,7 +11436,7 @@ def datasetInfo(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(dsrec), content_type='application/json')
+        return HttpResponse(json.dumps(dsrec, cls=DateEncoder), content_type='application/json')
 
 @login_customrequired
 def datasetList(request):
