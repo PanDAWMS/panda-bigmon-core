@@ -5751,7 +5751,7 @@ def wnInfo(request, site, wnname='all'):
 
     if 'sortby' in request.session['requestParams']:
         if request.session['requestParams']['sortby'] in sitestatelist:
-            fullsummary = sorted(fullsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']] if not isinstance(x['states'][request.session['requestParams']['sortby']], dict) else 0,
+            fullsummary = sorted(fullsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']] if not isinstance(x['states'][request.session['requestParams']['sortby']], dict) else x['states'][request.session['requestParams']['sortby']]['count'],
                                  reverse=True)
         elif request.session['requestParams']['sortby'] == 'pctfail':
             fullsummary = sorted(fullsummary, key=lambda x: x['pctfail'], reverse=True)
