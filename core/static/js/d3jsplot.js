@@ -1725,7 +1725,7 @@ let colors= [
     "#c94860","#d9a276","#a05981","#cd5644","#b3439b","#4569b1","#d9b63a","#dc3238"];
 
 var data = $.map(values, function(value, key) { if (value>0) {return value} });
-var labels = $.map(values, function(value, key) { if (value>0) {return key} }).sort();
+var labels = $.map(values, function(value, key) { if (value>0) {return key} });
 var tot = 0;
 for (var i = 0; i < data.length; i++) { tot += data[i] << 0;}
 var margin = {top: 30, right: 270, bottom: 30, left: 30},
