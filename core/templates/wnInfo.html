@@ -98,6 +98,7 @@
 <th> <a href="{{nosorturl}}?sortby=finished">finished</a> </th>
 <th> <a href="{{nosorturl}}?sortby=failed">failed</a> </th>
 <th> <a href="{{nosorturl}}?sortby=cancelled">cancelled</a> </th>
+<th> <a href="{{nosorturl}}?sortby=closed">closed</a> </th>
 <th> <a href="{{nosorturl}}?sortby=pctfail">% failed</a> </th>
 <th> outliers </th>
 </tr>
@@ -106,10 +107,10 @@
 <tr {% if wn.outlier != '' %} class='warning' {% endif %}>
 <th> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </th>
 <td>{{ wn.slotcount  }} </td>
-<td><a href="{% url 'jobList' %}?computingsite={{ site }}&modificationhost={{ wn.name }}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
+<td><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
 {% if state.name != 'assigned' and state.name != 'activated' %}
-<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}&modificationhost={{ wn.name }}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% endif %} </td>
+<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% endif %} </td>
 {% endif %}
 {% endfor %}
 <td> {% if wn.pctfail > errthreshold %} <font color=red>{{ wn.pctfail  }}</font> {% else %} {{ wn.pctfail  }} {% endif %} </td>
@@ -141,6 +142,7 @@
 <th> <a href="{{nosorturl}}?sortby=finished">finished</a> </th>
 <th> <a href="{{nosorturl}}?sortby=failed">failed</a> </th>
 <th> <a href="{{nosorturl}}?sortby=cancelled">cancelled</a> </th>
+<th> <a href="{{nosorturl}}?sortby=closed">closed</a> </th>
 <th> <a href="{{nosorturl}}?sortby=pctfail">% failed</a> </th>
 <th> outliers </th>
 </tr>
@@ -151,10 +153,10 @@
 <tr {% if wn.outlier != '' %} class='warning' {% endif %}>
 <th> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </th>
 <td>{{ wn.slotcount  }} </th>
-<td><a href="{% url 'jobList' %}?computingsite={{ site }}&modificationhost={{ wn.name }}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
+<td><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
 {% if state.name != 'assigned' and state.name != 'activated' %}
-<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}&modificationhost={{ wn.name }}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% endif %} </td>
+<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% endif %} </td>
 {% endif %}
 {% endfor %}
 <td> {% if wn.pctfail > errthreshold %} <font color=red>{{ wn.pctfail  }}</font> {% else %} {{ wn.pctfail  }} {% endif %} </th>
@@ -184,6 +186,7 @@
 <th> <a href="{{nosorturl}}?sortby=finished">finished</a> </th>
 <th> <a href="{{nosorturl}}?sortby=failed">failed</a> </th>
 <th> <a href="{{nosorturl}}?sortby=cancelled">cancelled</a> </th>
+<th> <a href="{{nosorturl}}?sortby=closed">closed</a> </th>
 <th> <a href="{{nosorturl}}?sortby=pctfail">% failed</a> </th>
 <th> outliers </th>
 </tr>
@@ -192,10 +195,10 @@
 <tr {% if wn.outlier != '' %} class='warning' {% endif %}>
 <th> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </th>
 <td>{{ wn.slotcount  }} </th>
-<td><a href="{% url 'jobList' %}?computingsite={{ site }}&modificationhost={{ wn.name }}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
+<td><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
 {% if state.name != 'assigned' and state.name != 'activated' %}
-<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}&modificationhost={{ wn.name }}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% endif %} </td>
+<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% endif %} </td>
 {% endif %}
 {% endfor %}
 <td> {% if wn.pctfail > errthreshold %} <font color=red>{{ wn.pctfail  }}</font> {% else %} {{ wn.pctfail  }} {% endif %} </th>

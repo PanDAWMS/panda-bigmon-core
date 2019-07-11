@@ -1717,16 +1717,23 @@ function globalSharesPieChartFunc(values,divToShow,title){
 
 var formatDecimal = d3.format(",.2f"),
 	formatPercent = d3.format(",.1%");
+let colors= [
+    "#62c9ae","#52cad7","#d5a9e4","#e38924","#9bd438","#438760","#ca46ce","#e08284","#4ba930",
+    "#a191d6","#57a3cf","#476be2","#85713b","#e35625","#a5be48","#a0c284","#498635","#e135ac","#d6c175","#dc82e1",
+    "#7458df","#e8875c","#b36eee","#5bdd61","#c39438","#d4c926","#dd74b6","#cf4482","#9e6c28","#86cd6f","#af511c",
+    "#6759bd","#a45d4d","#5c94e5","#e28fb1","#ec2c6b","#4fd08e","#9d43ba","#7a8435","#6b699b","#7f84ea","#8d5cac",
+    "#c94860","#d9a276","#a05981","#cd5644","#b3439b","#4569b1","#d9b63a","#dc3238"];
+
 var data = $.map(values, function(value, key) { if (value>0) {return value} });
 var labels = $.map(values, function(value, key) { if (value>0) {return key} });
 var tot = 0;
 for (var i = 0; i < data.length; i++) { tot += data[i] << 0;}
-var margin = {top: 30, right: 170, bottom: 30, left: 30},
-    w = 600 - margin.left - margin.right,
+var margin = {top: 30, right: 270, bottom: 30, left: 30},
+    w = 700 - margin.left - margin.right,
     h = 400 - margin.top - margin.bottom,
     r = Math.min(w, h) / 2,
-    color = d3.scale.category20()
-		.domain(labels);
+    color = d3.scale.ordinal()
+		.range(colors).domain(labels);
 
 var svg = d3.select(divToShow);
 var vis = svg
@@ -1787,9 +1794,9 @@ vis.append("g")
           .enter().append("g")
             .attr("class", "legendoutpie")
             .attr("transform", function(d, i) {
-                maxLegendWidth = 200;
-                maxLegendHeight = Math.floor(i) * 20;
-                return "translate(" + (r + margin.left) + ", " + (- r + maxLegendHeight) + ")";
+                maxLegendWidth =  (i % 2) * (margin.right - 20 + w - 2*r - margin.left)/2;
+                maxLegendHeight = Math.floor(i/2) * 20;
+                return "translate(" + (r + 20 + maxLegendWidth) + ", " + (- r + maxLegendHeight) + ")";
             });
 
     legend.append("rect")
@@ -1805,8 +1812,6 @@ vis.append("g")
             .text(function(d) {
                 return d;
             });
-
-
 }
 
 // Line chart for prodNeventsTrend page

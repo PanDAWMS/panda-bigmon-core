@@ -53,7 +53,7 @@
 <table><tr>
 <th class='tablesection'> View: </th>
 <td>
-<a href="{% url 'wnInfo' site.siteid %}">worker nodes</a>
+<a href="{% url 'wnInfo' site.siteid %}?hours={{ njobhours }}">worker nodes</a>
 </td>
 <td>
 <a href="{% url 'jobList' %}?computingsite={{site.siteid}}&hours={{njobhours}}&display_limit=100">jobs</a>, <a href="{% url 'errorSummary' %}?computingsite={{site.siteid}}">job errors</a>
