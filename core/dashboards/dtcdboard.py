@@ -79,6 +79,12 @@ def getBinnedData(listData, additionalList = None):
     else:
         index = (grp.index / pd.Timedelta(hours=1)).tolist()  # an ndarray method, you probably shouldn't depend on this
 
+    if not additionalList is None and len(additionalList) == 0:
+        tmpval = []
+        for item in values:
+            tmpval.append([item[0], 0])
+        values = tmpval
+
     data = []
     for time, count in zip(index, values):
         data.append([time, count])
