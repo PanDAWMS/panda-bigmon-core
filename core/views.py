@@ -880,7 +880,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 extraQueryString += ' AND ( '
             except NameError:
                 extraQueryString = '('
-            extraQueryString += ' endtime is not NULL and starttime is not null and (endtime - starttime) * 24 * 60 > {} and (endtime - starttime) * 24 * 60 < {} ) '.format(str(durationrange[0]), str(durationrange[1]))
+            if durationrange[0] == '0' and durationrange[1] == '0':
+                extraQueryString += ' (endtime is NULL and starttime is null) ) '
+            else:
+                extraQueryString += """ 
+            (endtime is not NULL and starttime is not null 
+            and (endtime - starttime) * 24 * 60 > {} and (endtime - starttime) * 24 * 60 < {} ) 
+            or 
+            (endtime is NULL and starttime is not null 
+            and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 > {} and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 < {} ) 
+            ) """.format(str(durationrange[0]), str(durationrange[1]), str(durationrange[0]), str(durationrange[1]))
 
 
         if querytype == 'task':
@@ -1493,8 +1502,18 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             strduration = str(timedelta(seconds=duration.seconds))
             job['duration'] = "%s:%s" % (ndays, strduration)
             job['durationsec'] = ndays * 24 * 3600 + duration.seconds
-            if job['jobstatus'] in ['finished', 'failed', 'holding', 'cancelled', 'closed']:
+            job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds)/60)
+
+        # durationmin for active jobs = now - starttime, for non-started = 0
+        if not 'durationmin' in job:
+            if 'starttime' in job and job['starttime'] is not None and 'endtime' in job and job['endtime'] is None:
+                endtime = timezone.now()
+                starttime = job['starttime']
+                duration = max(endtime - starttime, timedelta(seconds=0))
+                ndays = duration.days
                 job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds)/60)
+            else:
+                job['durationmin'] = 0
 
         job['waittime'] = ""
         # if job['jobstatus'] in ['running','finished','failed','holding','cancelled','transferring']:
@@ -1751,7 +1770,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                     if not f in sumd: sumd[f] = {}
                     if not job[f] in sumd[f]: sumd[f][job[f]] = 0
                     sumd[f][job[f]] += 1
-        for extra in ('jobmode', 'substate', 'outputfiletype'):
+        for extra in ('jobmode', 'substate', 'outputfiletype', 'durationmin'):
             if extra in job:
                 if not extra in sumd: sumd[extra] = {}
                 if not job[extra] in sumd[extra]: sumd[extra][job[extra]] = 0
@@ -1823,15 +1842,24 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 iteml.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
             iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
         elif f == 'durationmin':
-            nbinsmax = 20
-            minstep = 10
-            dstep = minstep if (max(kys)-min(kys))/nbinsmax < minstep else int((max(kys)-min(kys))/nbinsmax)
-            rangebounds = [lb-1 for lb in range(min(kys), max(kys)+dstep, dstep)]
-            if len(rangebounds) == 1:
-                rangebounds.append(rangebounds[0]+dstep)
-            bins, ranges = np.histogram([job['durationmin'] for job in jobs if 'durationmin' in job], bins=rangebounds)
-            for i, bin in enumerate(bins):
-                iteml.append({'kname': str(ranges[i]) + '-' + str(ranges[i+1]), 'kvalue':bin})
+            if len(kys) == 1 and kys[0] == 0:
+                iteml.append({'kname': '0-0', 'kvalue': sumd[f][0]})
+            else:
+                nbinsmax = 20
+                minstep = 10
+                rangebounds = []
+                if min(kys) == 0:
+                    iteml.append({'kname': '0-0', 'kvalue': sumd[f][0]})
+                    dstep = minstep if (max(kys)-min(kys)+1)/nbinsmax < minstep else int((max(kys)-min(kys)+1)/nbinsmax)
+                    rangebounds.extend([lb for lb in range(min(kys)+1, max(kys)+dstep, dstep)])
+                else:
+                    dstep = minstep if (max(kys)-min(kys))/nbinsmax < minstep else int((max(kys)-min(kys))/nbinsmax)
+                    rangebounds.extend([lb-1 for lb in range(min(kys), max(kys)+dstep, dstep)])
+                if len(rangebounds) == 1:
+                    rangebounds.append(rangebounds[0]+dstep)
+                bins, ranges = np.histogram([job['durationmin'] for job in jobs if 'durationmin' in job], bins=rangebounds)
+                for i, bin in enumerate(bins):
+                    iteml.append({'kname': str(ranges[i]) + '-' + str(ranges[i+1]), 'kvalue':bin})
 
 #        elif f == 'pilotversion':
 #            pilotver =
@@ -3426,7 +3454,7 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     # Sort in order to see the most important tasks
-    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount','noutputdatafiles','actualcorecount','schedulerid','durationmin', 'pilotversion'])
+    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount','noutputdatafiles','actualcorecount','schedulerid', 'pilotversion'])
     if sumd:
         for item in sumd:
             if item['field'] == 'jeditaskid':
@@ -3546,6 +3574,7 @@ def jobList(request, mode=None, param=None):
         'json' not in request.session['requestParams'])):
 
         xurl = extensibleURL(request)
+        nodurminurl = removeParam(xurl, 'durationmin', mode='extensible')
         print (xurl)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
@@ -3588,6 +3617,7 @@ def jobList(request, mode=None, param=None):
             'display_limit': display_limit,
             'sortby': sortby,
             'nosorturl': nosorturl,
+            'nodurminurl': nodurminurl,
             'taskname': taskname,
             'flowstruct': flowstruct,
             'nodropPartURL': nodropPartURL,
