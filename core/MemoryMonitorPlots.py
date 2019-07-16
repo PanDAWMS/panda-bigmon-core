@@ -53,7 +53,7 @@ def collectData(pandaID):
         resp = requests.get(url, verify=False)
         if resp and len(resp.text) > 0:
             TESTDATA = io.StringIO(resp.text)
-            dfl.append(pd.read_csv(TESTDATA, sep="\t").iloc[:, range(9)])
+            dfl.append(pd.read_csv(TESTDATA, sep="\t").iloc[:])
 
             #TESTDATA = io.StringIO(str(html))
             #dfl.append(pd.read_csv(TESTDATA, sep="\t").iloc[:, range(9)])
@@ -61,37 +61,39 @@ def collectData(pandaID):
 
     if len(dfl) > 0:
         df = pd.concat(dfl)
-        df.columns = ['Time','VMEM','PSS','RSS','Swap','rchar','wchar','rbytes','wbytes']
-        df = df.sort_values(by='Time')
-        tstart = df['Time'].min()
+        column_names = sorted([cn.lower() for cn in list(df.columns)], key=lambda s: s.startswith('unnamed'))
+        df.columns = column_names
+        # df.columns = ['Time','VMEM','PSS','RSS','Swap','rchar','wchar','rbytes','wbytes']
+        df = df.sort_values(by='time')
+        tstart = df['time'].min()
 
-        df['Time'] = df['Time'].apply(lambda x: x-tstart)
-        df['PSS'] = df['PSS'].apply(lambda x: x / 1024.0 / 1024.0)
-        df['RSS'] = df['RSS'].apply(lambda x: x / 1024.0 / 1024.0)
-        df['VMEM'] = df['VMEM'].apply(lambda x: x / 1024.0 / 1024.0)
-        df['Swap'] = df['Swap'].apply(lambda x: x / 1024.0 / 1024.0)
-        df['rchar'] = df['rchar'].apply(lambda x: x / 1024.0 / 1024.0)
-        df['wchar'] = df['wchar'].apply(lambda x: x / 1024.0 / 1024.0)
-        df['rbytes'] = df['rbytes'].apply(lambda x: x / 1024.0 / 1024.0)
-        df['wbytes'] = df['wbytes'].apply(lambda x: x / 1024.0 / 1024.0)
 
+        df['time'] = df['time'].apply(lambda x: x-tstart)
+        memory_columns = ['pss', 'rss', 'vmem', 'swap', 'rchar', 'wchar', 'rbytes', 'wbytes']
+        if 'read_bytes' in df.columns:
+            df = df.rename(columns={'read_bytes': 'rbytes'})
+        if 'write_bytes' in df.columns:
+            df = df.rename(columns={'write_bytes': 'wbytes'})
+
+        for mc in memory_columns:
+            df[mc] = df[mc].apply(lambda x: x / 1024.0 / 1024.0)
 
         # Make plot for memory consumption
         f1 = plt.figure(figsize=(15, 10))
         ax1 = f1.add_subplot(111)
-        ax1.plot(df['Time'], df['PSS'], label="PSS")
+        ax1.plot(df['time'], df['pss'], label="PSS")
         ax1.legend(loc="upper right")
 
         ax2 = f1.add_subplot(111)
-        ax2.plot(df['Time'], df['RSS'], label="RSS")
+        ax2.plot(df['time'], df['rss'], label="RSS")
         ax2.legend(loc="upper right")
 
         ax3 = f1.add_subplot(111)
-        ax3.plot(df['Time'], df['Swap'], label="Swap")
+        ax3.plot(df['time'], df['swap'], label="Swap")
         ax3.legend(loc="upper right")
 
         ax4 = f1.add_subplot(111)
-        ax4.plot(df['Time'], df['VMEM'], label="VMEM")
+        ax4.plot(df['time'], df['vmem'], label="VMEM")
         ax4.legend(loc="upper right")
 
         plt.title("Memory consumption, job " + str(pandaID))
@@ -101,7 +103,7 @@ def collectData(pandaID):
         plt.xlim(xmin=0)
         plt.grid()
 
-        minor_ticks = np.arange(0, plt.ylim()[1], 1)
+        minor_ticks = np.arange(0, plt.ylim()[1], 1) if plt.ylim()[1] > 1 else np.arange(0, plt.ylim()[1], 0.1)
         plt.minorticks_on()
         plt.yticks(minor_ticks)
 
@@ -113,19 +115,19 @@ def collectData(pandaID):
         #Make plot for IO
         f1 = plt.figure(figsize=(15, 10))
         ax1 = f1.add_subplot(111)
-        ax1.plot(df['Time'], df['rchar'], label="rchar")
+        ax1.plot(df['time'], df['rchar'], label="rchar")
         ax1.legend(loc="upper right")
 
         ax2 = f1.add_subplot(111)
-        ax2.plot(df['Time'], df['wchar'], label="wchar")
+        ax2.plot(df['time'], df['wchar'], label="wchar")
         ax2.legend(loc="upper right")
 
         ax3 = f1.add_subplot(111)
-        ax3.plot(df['Time'], df['rbytes'], label="rbytes")
+        ax3.plot(df['time'], df['rbytes'], label="rbytes")
         ax3.legend(loc="upper right")
 
         ax4 = f1.add_subplot(111)
-        ax4.plot(df['Time'], df['wbytes'], label="wbytes")
+        ax4.plot(df['time'], df['wbytes'], label="wbytes")
         ax4.legend(loc="upper right")
 
         plt.title("IO, job " + str(pandaID))
@@ -154,12 +156,12 @@ def collectData(pandaID):
 
         for index, row in df.iterrows():
             if index > 0:
-                dt = row['Time']-lasttime
+                dt = row['time']-lasttime
                 drchar.append((row['rchar']-lastrchar)/dt)
                 dwchar.append((row['wchar']-lastwchar)/dt)
                 drbytes.append((row['rbytes']-lastrbytes)/dt)
                 dwbytes.append((row['wbytes']-lastwbytes)/dt)
-            lasttime = row['Time']
+            lasttime = row['time']
             lastrchar = row['rchar']
             lastwchar = row['wchar']
             lastrbytes = row['rbytes']
@@ -172,19 +174,19 @@ def collectData(pandaID):
 
         f1 = plt.figure(figsize=(15, 10))
         ax1 = f1.add_subplot(111)
-        ax1.plot(df['Time'], drchar, label="rchar")
+        ax1.plot(df['time'], drchar, label="rchar")
         ax1.legend(loc="upper right")
 
         ax2 = f1.add_subplot(111)
-        ax2.plot(df['Time'], dwchar, label="wchar")
+        ax2.plot(df['time'], dwchar, label="wchar")
         ax2.legend(loc="upper right")
 
         ax3 = f1.add_subplot(111)
-        ax3.plot(df['Time'], drbytes, label="rbytes")
+        ax3.plot(df['time'], drbytes, label="rbytes")
         ax3.legend(loc="upper right")
 
         ax4 = f1.add_subplot(111)
-        ax4.plot(df['Time'], dwbytes, label="wbytes")
+        ax4.plot(df['time'], dwbytes, label="wbytes")
         ax4.legend(loc="upper right")
 
         plt.title("IO rate, job " + str(pandaID))
