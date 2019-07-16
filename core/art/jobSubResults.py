@@ -217,7 +217,8 @@ def get_final_result(job):
         'subresults': None,
         'testdirectory': None,
         'reportjira': None,
-        'reportmail': None
+        'reportmail': None,
+        'description': None
         }
     finalresult = ''
     if job['jobstatus'] == 'finished':
@@ -248,6 +249,10 @@ def get_final_result(job):
         pass
     try:
         extraParamsDict['reportmail'] = job['result']['report-to']['mail'] if 'report-to' in job['result'] and 'mail' in job['result']['report-to'] else None
+    except:
+        pass
+    try:
+        extraParamsDict['description'] = job['result']['description'] if 'description' in job['result'] else None
     except:
         pass
 

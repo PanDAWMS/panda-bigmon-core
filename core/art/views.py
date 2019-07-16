@@ -558,11 +558,7 @@ def artJobs(request):
                     finalresult, extraparams = get_final_result(job)
 
                     jobdict['finalresult'] = finalresult
-                    jobdict['testexitcode'] = extraparams['testexitcode']
-                    jobdict['testresult'] = extraparams['subresults']
-                    jobdict['testdirectory'] = extraparams['testdirectory']
-                    jobdict['reportjira'] = extraparams['reportjira']
-                    jobdict['reportmail'] = extraparams['reportmail']
+                    jobdict.update(extraparams)
 
                     if not extraparams['testdirectory'] in testdirectories[job['package']][job['branch']] and extraparams['testdirectory'] is not None and isinstance(extraparams['testdirectory'], str):
                         testdirectories[job['package']][job['branch']].append(extraparams['testdirectory'])
@@ -631,11 +627,7 @@ def artJobs(request):
                     finalresult, extraparams = get_final_result(job)
 
                     jobdict['finalresult'] = finalresult
-                    jobdict['testexitcode'] = extraparams['testexitcode']
-                    jobdict['testresult'] = extraparams['subresults']
-                    jobdict['testdirectory'] = extraparams['testdirectory']
-                    jobdict['reportjira'] = extraparams['reportjira']
-                    jobdict['reportmail'] = extraparams['reportmail']
+                    jobdict.update(extraparams)
 
                     if not extraparams['testdirectory'] in testdirectories[job['branch']][job['package']] and extraparams['testdirectory'] is not None and isinstance(extraparams['testdirectory'], str):
                         testdirectories[job['branch']][job['package']].append(extraparams['testdirectory'])
