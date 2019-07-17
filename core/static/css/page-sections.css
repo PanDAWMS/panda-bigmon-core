@@ -249,6 +249,20 @@ float: none !important; }
     color: #0a0a0a !important;
 }
 
+.bluelink {
+    color: rgba(53,86,129, 0.8);
+    font-weight: bold;
+}
+
+.bluelink:hover {
+    color: #0a0a0a;
+}
+
+.disabled {
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
 /*Colors for errors scattering matrix*/
 
 .sm_alarm_fill {  color:black;  background-color:#ff6666 }

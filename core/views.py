@@ -116,7 +116,7 @@ from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 #from libs import exlib
 from core.libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, preparePlotData
-from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp
+from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.bpuser import get_relevant_links
@@ -506,7 +506,7 @@ def initRequest(request, callselfmon = True):
             if p.lower() in ('date_from', 'date_to'):
                 try:
                     requestVal = request.GET[p]
-                    i = datetime.strptime(requestVal, '%Y-%m-%d')
+                    i = parse_datetime(requestVal)
                 except:
                     data = {
                         'viewParams': request.session['viewParams'],
@@ -745,15 +745,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     startdate = None
     if 'date_from' in request.session['requestParams']:
-        time_from_struct = time.strptime(request.session['requestParams']['date_from'], '%Y-%m-%d')
-        startdate = datetime.utcfromtimestamp(time.mktime(time_from_struct))
+        startdate = parse_datetime(request.session['requestParams']['date_from'])
     if not startdate:
         startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
     # startdate = startdate.strftime(defaultDatetimeFormat)
     enddate = None
     if 'date_to' in request.session['requestParams']:
-        time_from_struct = time.strptime(request.session['requestParams']['date_to'], '%Y-%m-%d')
-        enddate = datetime.utcfromtimestamp(time.mktime(time_from_struct))
+        enddate = parse_datetime(request.session['requestParams']['date_to'])
     if 'earlierthan' in request.session['requestParams']:
         enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthan']))
     # enddate = enddate.strftime(defaultDatetimeFormat)
@@ -1555,9 +1553,9 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             newjobs.append(job)
     jobs = newjobs
 
-    if mode == 'nodrop':
-        print ('job list cleaned')
-        return jobs
+    # if mode == 'nodrop':
+    #     print ('job list cleaned')
+    #     return jobs
 
     global PLOW, PHIGH
     request.session['TFIRST'] = timezone.now()  # .strftime(defaultDatetimeFormat)
@@ -3574,6 +3572,9 @@ def jobList(request, mode=None, param=None):
         'json' not in request.session['requestParams'])):
 
         xurl = extensibleURL(request)
+        time_locked_url = removeParam(removeParam(xurl, 'date_from', mode='extensible'), 'date_to', mode='extensible') + \
+                          'date_from=' + request.session['TFIRST'].strftime('%Y-%m-%dT%H:%M') + \
+                          '&date_to=' + request.session['TLAST'].strftime('%Y-%m-%dT%H:%M')
         nodurminurl = removeParam(xurl, 'durationmin', mode='extensible')
         print (xurl)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
@@ -3618,6 +3619,7 @@ def jobList(request, mode=None, param=None):
             'sortby': sortby,
             'nosorturl': nosorturl,
             'nodurminurl': nodurminurl,
+            'time_locked_url': time_locked_url,
             'taskname': taskname,
             'flowstruct': flowstruct,
             'nodropPartURL': nodropPartURL,
@@ -10396,6 +10398,9 @@ def errorSummary(request):
         'json' not in request.session['requestParams'])):
         nosorturl = removeParam(request.get_full_path(), 'sortby')
         xurl = extensibleURL(request)
+        time_locked_url = removeParam(removeParam(xurl, 'date_from', mode='extensible'), 'date_to', mode='extensible') + \
+                          'date_from=' + request.session['TFIRST'].strftime('%Y-%m-%dT%H:%M') + \
+                          '&date_to=' + request.session['TLAST'].strftime('%Y-%m-%dT%H:%M')
         jobsurl = xurlsubst.replace('/errors/', '/jobs/')
         jobsurlNoSite = xurlsubstNoSite.replace('/errors/', '')
 
@@ -10422,6 +10427,7 @@ def errorSummary(request):
             'jobsurlNoSite': jobsurlNoSite,
             'jobsurl': jobsurl,
             'nosorturl': nosorturl,
+            'time_locked_url': time_locked_url,
             'errsByCount': errsByCount,
             'errsBySite': errsBySite,
             'errsByUser': errsByUser,
@@ -10547,7 +10553,7 @@ def removeParam(urlquery, parname, mode='complete'):
     """Remove a parameter from current query"""
     urlquery = urlquery.replace('&&', '&')
     urlquery = urlquery.replace('?&', '?')
-    pstr = '.*(%s=[a-zA-Z0-9\.\-\_\,]*).*' % parname
+    pstr = '.*(%s=[a-zA-Z0-9\.\-\_\,\:]*).*' % parname
     pat = re.compile(pstr)
     mat = pat.match(urlquery)
     if mat:

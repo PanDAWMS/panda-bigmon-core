@@ -86,6 +86,23 @@
             }
         });
     }
+
+    $(document).ready(function() {
+        let clipboard = new ClipboardJS('#copy-button'); //needed for copy to clipboard button
+
+        clipboard.on('success', function (e) {
+            let copy_button = document.getElementById('copy-button');
+            copy_button.innerHTML = 'copied!';
+            copy_button.classList.add('disabled');
+            e.clearSelection();
+        });
+
+        clipboard.on('error', function (e) {
+            let copy_button = document.getElementById('copy-button');
+            copy_button.innerHTML = 'copying failed!';
+            copy_button.classList.add('disabled');
+        });
+    });
 </script>
 
 
@@ -114,7 +131,9 @@
 
 <p>
 
-<p>Job modification times in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b><p>
+<p>Job modification times in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>,
+<a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a>
+<p>
 
 <p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} summary
 
