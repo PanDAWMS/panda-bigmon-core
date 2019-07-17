@@ -1558,13 +1558,13 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
     #     return jobs
 
     global PLOW, PHIGH
-    request.session['TFIRST'] = timezone.now()  # .strftime(defaultDatetimeFormat)
-    request.session['TLAST'] = (timezone.now() - timedelta(hours=2400))  # .strftime(defaultDatetimeFormat)
+    # request.session['TFIRST'] = timezone.now()  # .strftime(defaultDatetimeFormat)
+    # request.session['TLAST'] = (timezone.now() - timedelta(hours=2400))  # .strftime(defaultDatetimeFormat)
     PLOW = 1000000
     PHIGH = -1000000
     for job in jobs:
-        if job['modificationtime'] > request.session['TLAST']: request.session['TLAST'] = job['modificationtime']
-        if job['modificationtime'] < request.session['TFIRST']: request.session['TFIRST'] = job['modificationtime']
+        # if job['modificationtime'] > request.session['TLAST']: request.session['TLAST'] = job['modificationtime']
+        # if job['modificationtime'] < request.session['TFIRST']: request.session['TFIRST'] = job['modificationtime']
         if job['currentpriority'] > PHIGH: PHIGH = job['currentpriority']
         if job['currentpriority'] < PLOW: PLOW = job['currentpriority']
     jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
