@@ -3652,7 +3652,8 @@ def jobList(request, mode=None, param=None):
         if (('fields' in request.session['requestParams']) and (len(jobs) > 0)):
             fields = request.session['requestParams']['fields'].split(',')
             fields = (set(fields) & set(jobs[0].keys()))
-
+            if 'pandaid' not in fields:
+                list(fields).append('pandaid')
             for job in jobs:
                 for field in list(job.keys()):
                     if field in fields:
@@ -7700,13 +7701,39 @@ def taskList(request):
                 for ds in dsets:
                     dslist.append(ds)
                 task['datasets'] = dslist
+
+        # getting jobs metadata if it is requested in URL [ATLASPANDA-492]
+        if 'extra' in request.session['requestParams'] and 'metastruct' in request.session['requestParams']['extra']:
+            jeditaskids = list(set([task['jeditaskid'] for task in tasks]))
+            MAX_N_TASKS = 100 #protection against DB overloading
+            if len(jeditaskids) <= MAX_N_TASKS:
+                job_pids = []
+                jobQuery = {
+                    'jobstatus__in': ['finished', 'failed', 'transferring', 'merging', 'cancelled', 'closed', 'holding'],
+                    'jeditaskid__in': jeditaskids
+                }
+                job_pids.extend(Jobsarchived4.objects.filter(**jobQuery).values('pandaid', 'jeditaskid', 'jobstatus', 'creationtime'))
+                job_pids.extend(Jobsarchived.objects.filter(**jobQuery).values('pandaid', 'jeditaskid', 'jobstatus', 'creationtime'))
+                if len(job_pids) > 0:
+                    jobs = addJobMetadata(job_pids, require=True)
+                    taskMetadata = {}
+                    for job in jobs:
+                        if not job['jeditaskid'] in taskMetadata:
+                            taskMetadata[job['jeditaskid']] = {}
+                        if 'metastruct' in job:
+                            taskMetadata[job['jeditaskid']][job['pandaid']] = job['metastruct']
+
+                    for task in tasks:
+                        if task['jeditaskid'] in taskMetadata:
+                            task['jobs_metadata'] = taskMetadata[task['jeditaskid']]
+
         ##self monitor
         endSelfMonitor(request)
 
         dump = json.dumps(tasks, cls=DateEncoder)
         del request.session['TFIRST']
         del request.session['TLAST']
-        return HttpResponse(dump, content_type='text/html')
+        return HttpResponse(dump, content_type='application/json')
     else:
         #tasks = removeDublicates(tasks, "jeditaskid")
         sumd = taskSummaryDict(request, tasks, copy.deepcopy(standard_taskfields) +
