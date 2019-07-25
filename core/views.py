@@ -5637,6 +5637,21 @@ def wnInfo(request, site, wnname='all'):
     valid, response = initRequest(request)
     if not valid: return response
 
+    if site and site not in pandaSites:
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'alert': {'title': 'This site does not exist!',
+                      'message': 'There is no {} registered in the system, please check spelling.'.format(site)},
+            'built': datetime.now().strftime("%H:%M:%S"),
+        }
+        response = render_to_response('wnInfo.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        endSelfMonitor(request)
+        return response
+
+
     # Here we try to get cached data
     data = getCacheEntry(request, "wnInfo")
     if data is not None:

@@ -7,7 +7,21 @@
 
 {{ viewParams.header }}
 
-<div class='section'>Worker node slot performance {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at <a href="{% url 'siteInfo' site %}">{{ site }}</a></div>
+{% if alert and 'title' in alert %}
+<div class="callout alert" data-closable>
+  <h5>{{ alert.title }}</h5>
+  {% if 'message' in alert %}
+    <p>{{ alert.message }}</p>
+  {% endif %}
+    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
+
+{% if wnname %}
+    <div class='section'>Worker node slot performance {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at <a href="{% url 'siteInfo' site %}">{{ site }}</a></div>
+{% endif %}
 
 {% if requestParams.sortby %} <p><b>Sorted by: {{ requestParams.sortby }} </b><p> {% endif %}
 
@@ -60,15 +74,16 @@
     </script>
 {% if wnPlotFailed|length > 0 %}
 
-  {% if 'message' in warning %}
-    <div class="callout warning" data-closable>
-      <h5>Warning! </h5>
-      <p>{{ warning.message }} See details in summary table below.</p>
-        <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-            <span aria-hidden="true">&times;</span>
-      </button>
-    </div>
-  {% endif %}
+
+{% if 'message' in warning %}
+<div class="callout warning" data-closable>
+  <h5>Warning! </h5>
+  <p>{{ warning.message }} See details in summary table below.</p>
+    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
 
     <div id="chart_div" style="height: 500px;"></div>
 {% endif %}
@@ -78,7 +93,7 @@
 
 {% endif %}
 
-{% if wnname != 'all' %}
+{% if wnname and wnname != 'all' %}
 
 <table>
 <tr class='tablesection'><th colspan=20> Slot info for worker node {{ wnname }} at {{ site }}</th></tr>
@@ -168,6 +183,7 @@
 </table>
 {% endcomment %}
 
+{% if summary %}
 <table>
 <tr class='tablesection'><th colspan=20> WN summary for {{ site }} </th></tr>
 <tr bgcolor="lightcyan">
@@ -207,6 +223,7 @@
 {% endfor %}
 
 </table>
+{% endif %}
 
 {% endif %}
 
