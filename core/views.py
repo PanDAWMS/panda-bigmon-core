@@ -725,13 +725,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             request.session['viewParams']['selection'] = ", last %d days" % (float(LAST_N_HOURS_MAX) / 24.)
         # if JOB_LIMIT < 999999 and JOB_LIMIT > 0:
         #    viewParams['selection'] += ", <font style='color:#FF8040; size=-1'>Warning: limit %s per job table</font>" % JOB_LIMIT
-        request.session['viewParams']['selection'] += ".     <b>Params:</b> "
+        request.session['viewParams']['selection'] += ". <b>Params:</b> "
         # if 'days' not in requestParams:
         #    viewParams['selection'] += "hours=%s" % LAST_N_HOURS_MAX
         # else:
         #    viewParams['selection'] += "days=%s" % int(LAST_N_HOURS_MAX/24)
         if request.session['JOB_LIMIT'] < 100000 and request.session['JOB_LIMIT'] > 0:
-            request.session['viewParams']['selection'] += "      <b>limit=</b>%s" % request.session['JOB_LIMIT']
+            request.session['viewParams']['selection'] += " <b>limit=</b>%s" % request.session['JOB_LIMIT']
     else:
         request.session['viewParams']['selection'] = ""
     for param in request.session['requestParams']:
@@ -740,7 +740,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if param == 'display_limit': continue
         if param == 'sortby': continue
         if param == 'limit' and request.session['JOB_LIMIT'] > 0: continue
-        request.session['viewParams']['selection'] += "      <b>%s=</b>%s " % (
+        request.session['viewParams']['selection'] += " <b>%s=</b>%s " % (
         param, request.session['requestParams'][param])
 
     startdate = None

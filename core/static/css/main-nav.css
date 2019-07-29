@@ -208,14 +208,17 @@
   padding-right: 1em;
   height: 1.8em;
   margin-bottom: 5px;
+  font-size: 80%;
 }
 
 .top-subbar .right {
     float: right;
+    font-size: inherit;
 }
 
 .top-subbar .left {
     float: left;
+    font-size: inherit;
 }
 
 .invisible {

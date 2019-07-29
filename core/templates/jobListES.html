@@ -2,8 +2,10 @@
 {% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA ES jobs{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
-{% block subtitle %}PanDA Event Service jobs<font size=-1>{{ viewParams.selection|safe }}
-</font>
+{% block subtitle %}PanDA Event Service jobs {{ viewParams.selection|safe }}
+{% endblock %}
+{% block subtitle_params %}
+{% if jobsTotalCount != None%} <b> Total jobs found &#x7E; <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{jobsTotalCount}}">{{ jobsTotalCount }}</a></b> {% endif %}
 {% endblock %}
 {% block body %}
 

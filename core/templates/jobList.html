@@ -1,13 +1,14 @@
 {% extends "_base_core.html" %}
 {% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
-{% block subtitle %}PanDA jobs<font size=-1>{{ viewParams.selection|safe }}
-</font>
+{% block subtitle %}PanDA jobs {{ viewParams.selection|safe }}
 {% if showwarn and njobs%}
-<font style="color:#FF8040; size=-1"><b>Warning: limit {{joblimit}} per job table</b> </font>
+    <span style="color:#FF8040;"><b>Warning: limit {{joblimit}} per job table</b></span>
 {% endif %}
-{% if showTop %} <font style="color:#FF8040; size=-1"><b>Task has {{totalJobs}} jobs in table Jobsarchived, limit is set to {{limit}}</b> </font>{% endif %}
-</font>
+{% endblock %}
+{% block subtitle_params %}
+{% if jobsTotalCount != None%}
+    <b> Total jobs found &#x7E; <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{jobsTotalCount}}">{{ jobsTotalCount }}</a></b> {% endif %}
 {% endblock %}
 {% block body %}
 

@@ -11,7 +11,9 @@
 {% if vo %}     for VO {{ vo }}
 {% endif %}
 {% endblock %}
-
+{% block subtitle_params %}
+{% if tasksTotalCount != None%} <b> Total tasks found &#x7E; <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{tasksTotalCount}}">{{ tasksTotalCount }}</a></b> {% endif %}
+{% endblock %}
 {% block body %}
 
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">

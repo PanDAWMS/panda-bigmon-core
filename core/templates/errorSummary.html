@@ -62,6 +62,9 @@
 {% if site %}     site={{ site }} {% endif %}
 {% if vo %}     VO={{ vo }} {% endif %}
 {% endblock %}
+{% block subtitle_params %}
+{% if jobsErrorsTotalCount != None%} <b> Total jobs found &#x7E; <a href="{% url 'errorSummary' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">{{ jobsErrorsTotalCount }}</a></b> {% endif %}
+{% endblock %}
 {% block body %}
 {{ viewParams.header }}
 <script>

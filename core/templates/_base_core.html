@@ -380,39 +380,20 @@
 <div class="top-subbar">
 
     <!-- sub-title -->
-    <div class="left" id="div-subtitle"><font size=-1>{% block subtitle %}Subtitle goes here{% endblock %}
-      {% if jobsErrorsTotalCount != None%} <b> Total jobs found &asymp; <a href="{% url 'errorSummary' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">
-          {{ jobsErrorsTotalCount }}</a></b> {% endif %}
-      {% if jobsTotalCount != None%} <b> Total jobs found &asymp; <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{jobsTotalCount}}">
-          {{ jobsTotalCount }}</a></b> {% endif %}
-      {% if tasksTotalCount != None%} <b> Total tasks found &asymp; <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{tasksTotalCount}}">
-          {{ tasksTotalCount }}</a></b> {% endif %}
-    </font>
+    <div class="left" id="div-subtitle">
+        {% block subtitle %}Subtitle goes here{% endblock %}
+        {% block subtitle_params %} {% endblock %}
     </div>
     <!-- End sub-title -->
 
     <!-- bread-crumbs -->
     <div class="right">
     {#      {% block header-nav-chain %}#}
-          <span class="hide-for-small"><font size=-1>
+          <span class="hide-for-small">
               {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
               {% if built != None %} {{ built }}, {% endif %}
                <a id="reloadlink" href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a>
-{#              {% if request.session.ADFS_EMAIL %}   You are logged as {{ request.session.ADFS_FULLNAME }}(#}
-{#                  {% if request.session.ADFS_LOGIN %}{{request.session.ADFS_LOGIN}}{% endif %}#}
-{#                  ,#}
-{#                  {% if request.session.ADFS_EMAIL %}{{request.session.ADFS_EMAIL}}{% endif %})#}
-{#                <a href="https://login.cern.ch/adfs/ls/?wa=wsignout1.0">Logout</a>    #}
-{#              {% else %}#}
-{#                <a href="https://bigpanda.cern.ch{{ request.path }}">Login</a>{% endif %}#}
-{#          {% if request.user and request.user.is_authenticated %}#}
-{#              | {{ request.user.first_name }} {{ request.user.last_name }}, {{ request.user.email }} <a href="{% url 'logout' %}">Logout</a>#}
-{#          {% else %}#}
-{#                <a href="{% url 'loginauth2' %}">Login</a>#}
-{#          {% endif %}#}
-
-
-          </font></span>
+          </span>
     {#      {% endblock %}#}
     </div>
     <!-- End bread-crumbs -->

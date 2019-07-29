@@ -9,6 +9,9 @@
 {% endif %}
 {% endblock %}
 
+{% block subtitle_params %}
+{% if tasksTotalCount != None%} <b> Total tasks found &#x7E; <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{tasksTotalCount}}">{{ tasksTotalCount }}</a></b> {% endif %}
+{% endblock %}
 {% block body %}
 
 {% if requestParams.statenotupdated %}<br><b>Tasks in <span class="{{ requestParams.status }}">{{ requestParams.status }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}
