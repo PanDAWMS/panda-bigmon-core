@@ -494,9 +494,9 @@
                 <table>
                     <tr bgcolor="lightcyan">
                         <th colspan=20>
-                            <b>States of jobs in this task</b> &nbsp; &nbsp; <a
+                            <b>States of jobs in this task</b>         <a
                                 href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&eventservice=not2&display_limit=100">Show
-                            jobs</a> &nbsp; &nbsp; &nbsp;
+                            jobs</a>
                             {% if requestParams.mode and requestParams.mode == 'nodrop' %}
                                 <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Switch to drop mode</a>
                             {% else %}
@@ -540,7 +540,7 @@
             <table>
                 <tr bgcolor="lightcyan">
                     <th colspan=20>
-                        <b>States of es_merge jobs in this task</b> &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&eventservice=2&display_limit=100">Show
+                        <b>States of es_merge jobs in this task</b>         <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&eventservice=2&display_limit=100">Show
                         jobs</a>
                     </th>
                 </tr>
@@ -788,9 +788,9 @@
                         <tr bgcolor='lightcyan'>
                             <th colspan=20>
                                 {{ datasets|length }} datasets, show/hide by type:
-                                &nbsp; <a style="cursor: pointer;" onclick="javascript:toggleRowsDisplay('type-all');">all</a>
+                                    <a style="cursor: pointer;" onclick="javascript:toggleRowsDisplay('type-all');">all</a>
                                 {% for dst in dstypes %}
-                                    &nbsp;<a style="cursor: pointer;"
+                                       <a style="cursor: pointer;"
                                              onclick="javascript:toggleRowsDisplay('type-{{ dst.type }}');">{{ dst.type }}({{ dst.count }})</a>
                                 {% endfor %}
                             </th>
@@ -846,7 +846,7 @@
                             {% for item in fdict.list %}
                                 {% if fdict.field == 'status' %} <span class='{{ item.kname }}'> {% else %}
                                     <span> {% endif %}  {{ item.kname }} </span>
-                                <a href="{{ xurl }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a> &nbsp;
+                                <a href="{{ xurl }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
                             {% endfor %}
                         </td>
                     </tr>

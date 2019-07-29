@@ -844,7 +844,7 @@ extend( QUnit, {
 			result.id = "qunit-testresult";
 			result.className = "result";
 			tests.parentNode.insertBefore( result, tests );
-			result.innerHTML = "Running...<br/>&nbsp;";
+			result.innerHTML = "Running...<br/>   ";
 		}
 	},
 
@@ -1903,7 +1903,7 @@ QUnit.jsDump = (function() {
 				return type;
 			},
 			separator: function() {
-				return this.multiline ?	this.HTML ? "<br />" : "\n" : this.HTML ? "&nbsp;" : " ";
+				return this.multiline ?	this.HTML ? "<br />" : "\n" : this.HTML ? "   " : " ";
 			},
 			// extra can be a number, shortcut for increasing-calling-decreasing
 			indent: function( extra ) {
@@ -1912,7 +1912,7 @@ QUnit.jsDump = (function() {
 				}
 				var chr = this.indentChar;
 				if ( this.HTML ) {
-					chr = chr.replace( /\t/g, "   " ).replace( / /g, "&nbsp;" );
+					chr = chr.replace( /\t/g, "   " ).replace( / /g, "   " );
 				}
 				return new Array( this.depth + ( extra || 0 ) ).join(chr);
 			},

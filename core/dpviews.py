@@ -222,7 +222,7 @@ def doRequest(request):
             i=0
             for p in lparams:
                 if vparams[i] != 'NONE':
-                    txt = "&nbsp; %s=%s" % ( lparams[i], vparams[i] )
+                    txt = "    %s=%s" % ( lparams[i], vparams[i] )
                     t['params'] += txt
                 i += 1
             ctag = "%s%s" % ( t['tag'], t['cid'] )
@@ -553,7 +553,7 @@ def doRequest(request):
                                 if tobedone > 0:
                                     done = cloudtodo[cloud]['nfilesfinished']
                                     donepct = 100. * ( float(done) / float(cloudtodo[cloud]['nfiles']) )
-                                    todotxt = "<td> %.0f%% &nbsp; <a href='/tasks/?reqid=%s&cloud=%s&processingtype=%s&days=90'>%s/%s</a> " % (donepct, r['reqid'], cloud, typ, done, cloudtodo[cloud]['nfiles'])
+                                    todotxt = "<td> %.0f%%     <a href='/tasks/?reqid=%s&cloud=%s&processingtype=%s&days=90'>%s/%s</a> " % (donepct, r['reqid'], cloud, typ, done, cloudtodo[cloud]['nfiles'])
                                     width = int(200.*cloudtodo[cloud]['nfiles']/steptotd[typ])
                                     progresstxt = "</td><td width=210><progress style='width:%spx' max='100' value='%s'></progress>" % (width, donepct )
                                 else:
@@ -561,7 +561,7 @@ def doRequest(request):
                                     width = int(200.*cloudtodo[cloud]['nfiles']/steptotd[typ])
                                     progresstxt = "</td><td width=210><progress style='width:%spx' max='100' value='%s'></progress>" % (width, 100 )
                                 if cloudtodo[cloud]['nfilesfailed'] > 0:
-                                    failtxt = " &nbsp; <font color=red>%.0f%% fail (%s)</font>" % ( 100.*float(cloudtodo[cloud]['nfilesfailed'])/float(cloudtodo[cloud]['nfiles']), cloudtodo[cloud]['nfilesfailed'] )
+                                    failtxt = "     <font color=red>%.0f%% fail (%s)</font>" % ( 100.*float(cloudtodo[cloud]['nfilesfailed'])/float(cloudtodo[cloud]['nfiles']), cloudtodo[cloud]['nfilesfailed'] )
                             if cloud != '':
                                 txt = "<tr><td>%s</td><td>%s</td><!-- 2 -->%s  %s %s</td>" % ( typ, cloud, todotxt, failtxt, progresstxt)
                                 txt += "<tr>"
@@ -571,7 +571,7 @@ def doRequest(request):
                             states = nval.keys()
                             states = sorted(states)
                             for s in states:
-                                txt += " &nbsp; <span class='%s'>%s</span>:%s" % ( s, s, nval[s] )
+                                txt += "     <span class='%s'>%s</span>:%s" % ( s, s, nval[s] )
                             txt += "</b></td></tr>"
                             cdtxt.append(txt)
                 cdtxt = sorted(cdtxt)
@@ -602,7 +602,7 @@ def doRequest(request):
                             states = nval.keys()
                             states = sorted(states)
                             for s in states:
-                                txt += " &nbsp; <span class='%s'>%s</span>:%sk evs (%s jobs)" % ( s, s, nval[s]['events'], nval[s]['jobs'] )
+                                txt += "     <span class='%s'>%s</span>:%sk evs (%s jobs)" % ( s, s, nval[s]['events'], nval[s]['jobs'] )
                             cdtxt.append(txt)
                 cdtxt = sorted(cdtxt)
                 r['jobdisttxt'] = cdtxt

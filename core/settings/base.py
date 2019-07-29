@@ -37,6 +37,7 @@ STATICFILES_FINDERS = (
 MIDDLEWARE = (
     'core.ddosprotection.DDOSMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
+    'htmlmin.middleware.HtmlMinifyMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     #'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
@@ -48,6 +49,7 @@ MIDDLEWARE = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',
+    'htmlmin.middleware.MarkRequestMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
     'core.auth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
 )

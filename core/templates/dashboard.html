@@ -65,7 +65,7 @@ Click on column titles to sort.
 {% if cloudTaskSummary %}
 
 <table>
-<tr class='tablesection'><th colspan=30> {{ view }} task summary by cloud, last {{ taskdays }} days</span> &nbsp; &nbsp; <font size=-1>Hover over state name to see full name. <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">Task state documentation</a></font> </th></tr>
+<tr class='tablesection'><th colspan=30> {{ view }} task summary by cloud, last {{ taskdays }} days</span>         <font size=-1>Hover over state name to see full name. <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">Task state documentation</a></font> </th></tr>
 <tr class='tablesection'>
 <th>Cloud</th>
 
@@ -402,12 +402,12 @@ of all jobs
 {% endif %}
 {% if view != 'analysis' %}
 {% if cloudview == 'region' %}
-- Region view &nbsp; &nbsp; For a description of region view 
+- Region view         For a description of region view
 {% else %}
-- Cloud view &nbsp; &nbsp; For a description of cloud view 
+- Cloud view         For a description of cloud view
 {% endif %}
 {% else %}
-&nbsp; &nbsp; For a description 
+        For a description
 {% endif %}
 <a href="#doc"><span class="helpdark">see below</a>
 </th></tr>
@@ -533,7 +533,7 @@ of all jobs
 <table>
 <tr class='tablesection'>
 <th> Job summary for {{ taskJobSummary|length }} recently active {{ view }} tasks. 
-{% if display_limit >= taskJobSummary|length %} &nbsp; display_limit={{ display_limit }} {% endif %}
+{% if display_limit >= taskJobSummary|length %}     display_limit={{ display_limit }} {% endif %}
 </th>
 <th> Status </th>
 <th> nJobs </th>

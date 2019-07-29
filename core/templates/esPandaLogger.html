@@ -3,9 +3,9 @@
 {% block page_title %} {{ viewParams.MON_VO }} PanDA logger{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA logger{{ viewParams.selection|safe }}
-{% if user %} &nbsp; user={{ user }} {% endif %}
-{% if site %} &nbsp; site={{ site }} {% endif %}
-{% if vo %} &nbsp; VO={{ vo }} {% endif %}
+{% if user %}     user={{ user }} {% endif %}
+{% if site %}     site={{ site }} {% endif %}
+{% if vo %}     VO={{ vo }} {% endif %}
 {% endblock %}
 {% block body %}
 
@@ -76,7 +76,7 @@ function searchTaskBr() {
 {% for key,level in levels.items %}
 <a href="https://aianalytics01.cern.ch/?#/discover?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now%2Fd,mode:quick,to:now%2Fd))&_a=(columns:!('@message.module','@message.Type','@message.name','@message.levelname','@message.message'),index:%5B{% if "dev" in name %}pandaloggerdev{% else %}pandalogger{% endif %}-%5DYYYY-MM-DD,interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'@message.name:%22{{name}}%22AND%20@message.Type:%22{{type}}%22AND%20@message.levelname:%22{{level.levelname}}%22')),sort:!('@timestamp',desc))" target="_blank">
 <span class="{{ level.levelname|lower }}">{{ level.levelname }}</span>({{ level.lcount }})
-</a> &nbsp;
+</a>
 {% endfor %}
 </td></tr>
 {% endfor %}

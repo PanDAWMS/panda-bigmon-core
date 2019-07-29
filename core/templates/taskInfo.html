@@ -236,9 +236,9 @@
             <table>
                 <tr bgcolor="lightcyan">
                     <th colspan=20>
-                        <b>States of jobs in this task (merge jobs excluded)</b> &nbsp; &nbsp; &nbsp; &nbsp; <a
+                        <b>States of jobs in this task (merge jobs excluded)</b>                 <a
                             href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">Show
-                        all jobs</a> &nbsp; &nbsp; &nbsp;
+                        all jobs</a>
                         {% if requestParams.mode and requestParams.mode == 'nodrop' %}
                             <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Switch to drop mode</a>
                         {% else %}
@@ -289,7 +289,7 @@
             <table>
                 <tr bgcolor="lightcyan">
                     <th colspan=20>
-                        <b>States of pmerge jobs in this task</b> &nbsp; &nbsp; <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&processingtype=pmerge&display_limit=100">Show
+                        <b>States of pmerge jobs in this task</b>         <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&processingtype=pmerge&display_limit=100">Show
                         jobs</a>
                     </th>
                 </tr>
@@ -481,7 +481,7 @@
                             {% for item in fdict.list %}
                                 {% if fdict.field == 'status' %} <span class='{{ item.kname }}'> {% else %}
                                     <span> {% endif %}  {{ item.kname }} </span>
-                                <a href="{{ xurl }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a> &nbsp;
+                                <a href="{{ xurl }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
                             {% endfor %}
                         </td>
                     </tr>

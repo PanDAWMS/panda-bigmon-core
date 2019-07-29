@@ -52,24 +52,24 @@ alt='Daily World Production and Analysis Queues (combined)'></a>
 
 <table>
 <tr><td><form action="{% url 'jobInfo' %}" method='get'>
-Panda ID </td><td><font size=-1> <input id="pandaid" name="pandaid" size="15" maxlength="15" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+Panda ID </td><td><font size=-1> <input id="pandaid" name="pandaid" size="15" maxlength="15" class="inputW" />   <input type='submit' value='Submit' /></form></font></td></tr>
 
 <tr><td><form action="{% url 'jobInfo' %}" method='get'>
-Batch ID</td><td><font size=-1> <input id="batchid" name="batchid" size="15" maxlength="200" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+Batch ID</td><td><font size=-1> <input id="batchid" name="batchid" size="15" maxlength="200" class="inputW" />   <input type='submit' value='Submit' /></form></font></td></tr>
 
 {% if viewParams.MON_VO == 'ATLAS' %}
 <tr><td><form action="{% url 'taskInfo' %}" method='get'>
-JEDI Task ID </td><td><font size=-1><input id="jeditaskid" name="jeditaskid" size="15" maxlength="15" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+JEDI Task ID </td><td><font size=-1><input id="jeditaskid" name="jeditaskid" size="15" maxlength="15" class="inputW" />   <input type='submit' value='Submit' /></form></font></td></tr>
 {% endif %}
 
 <tr><td><form action="{% url 'jobList' %}" method='get'>
-Task ID </td><td><font size=-1><input id="taskid" name="taskid" size="15" maxlength="15" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+Task ID </td><td><font size=-1><input id="taskid" name="taskid" size="15" maxlength="15" class="inputW" />   <input type='submit' value='Submit' /></form></font></td></tr>
 
 <tr><td><form action="{% url 'siteInfo' %}" method='get'>
-Site </td><td><font size=-1><input id="site" name="site" size="15" maxlength="15" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+Site </td><td><font size=-1><input id="site" name="site" size="15" maxlength="15" class="inputW" />   <input type='submit' value='Submit' /></form></font></td></tr>
 
 <tr><td><form action="{% url 'userInfo' %}" method='get'>
-User </td><td><font size=-1><input id="user" name="user" size="15" maxlength="15" class="inputW" />&nbsp;<input type='submit' value='Submit' /></form></font></td></tr>
+User </td><td><font size=-1><input id="user" name="user" size="15" maxlength="15" class="inputW" />   <input type='submit' value='Submit' /></form></font></td></tr>
 </table>
 
 </td></tr>

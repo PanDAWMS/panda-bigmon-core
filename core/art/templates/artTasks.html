@@ -70,7 +70,7 @@
                                                     <div class="failed">{{ files.failed }}</div>
                                                     <a href="{% url 'artJobs' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}&branch={{ brname }}{% else %}?package={{ brname }}&branch={{ pname }}{% endif %}&ntag_full={{ ntfull }}&view={{ requestParams.view }}"></a>
                                                 </div>
-                                                &nbsp;<b>{{ ntfull|get_time }}</b>
+                                                   <b>{{ ntfull|get_time }}</b>
                                               </div>
                                               {% if not forloop.last %}<br>{% endif %}
                                             {% else %}

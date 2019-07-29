@@ -322,7 +322,7 @@ ENV = {
     ### Page title default
     'PAGE_TITLE': "PanDA Monitor", \
     ### Menu item separator
-    'SEPARATOR_MENU_ITEM': "&nbsp;&nbsp;&nbsp;", \
+    'SEPARATOR_MENU_ITEM': "         ", \
     ### Navigation chain item separator
-    'SEPARATOR_NAVIGATION_ITEM': "&nbsp;&#187;&nbsp;" , \
+    'SEPARATOR_NAVIGATION_ITEM': "   &#187;   " , \
 }

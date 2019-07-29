@@ -81,7 +81,7 @@ function toggleByID(id) {
 <table width="100%">
 <tr bgcolor='lightcyan'>
 	<th>PandaID {% if not job.jeditaskid %} <br>Attempt# {% endif %}</th>
-	<th>Owner{% if job.workinggroup %} &nbsp;  WG{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / VO{% endif %}{% endif %}</th>
+	<th>Owner{% if job.workinggroup %}      WG{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / VO{% endif %}{% endif %}</th>
 	<th>Request <br> Task ID</th>
 {% if job.parentid %}
     <th>Parent</th>
@@ -113,16 +113,16 @@ function toggleByID(id) {
 </tr>
 <tr>
 	<td colspan="20"><b>Job name:</b> <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&sortby=attemptnr">{{ job.jobname }}</a> 
-	{% if job.processingtype %} &nbsp; <b>type:</b> {{ job.processingtype }} {% endif %}
-    {% if job.transformation %} &nbsp; <b>transformation:</b> {{ job.transformation|safe }} {% endif %}
+	{% if job.processingtype %}     <b>type:</b> {{ job.processingtype }} {% endif %}
+    {% if job.transformation %}     <b>transformation:</b> {{ job.transformation|safe }} {% endif %}
 	</td>
 </tr>
 <tr> 
-	<td colspan="20" class='highlightcell'> <b>Datasets:</b> &nbsp; {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> &nbsp;{% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.destinationdblock }} </a> {% endif %} </td>
+	<td colspan="20" class='highlightcell'> <b>Datasets:</b>     {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br>    {% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.destinationdblock }} </a> {% endif %} </td>
 </tr>
 {%if not fileSummary == '' %}
 <tr>
-	<td colspan="20"> <b> Dataset summary:</b> &nbsp; {{ fileSummary }} </td>
+	<td colspan="20"> <b> Dataset summary:</b>     {{ fileSummary }} </td>
 </tr>
 {% endif %}
 </table>
@@ -292,7 +292,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
         {% endif %}
 
         {% if coreData %}
-            &nbsp; <a href="http://srs.slac.stanford.edu/Pipeline-II/exp/SRS/pi.jsp?pi={{coreData.processinstance}}">{{coreData.processinstance}} process for {{ coreData.pipelinetask }} pipeline task</a>
+                <a href="http://srs.slac.stanford.edu/Pipeline-II/exp/SRS/pi.jsp?pi={{coreData.processinstance}}">{{coreData.processinstance}} process for {{ coreData.pipelinetask }} pipeline task</a>
         {% endif %}
 
         {% if rucioUserName|length > 0 %}
@@ -382,7 +382,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
         <td>
             <div class="section">This job is a descendent of upstream job(s), with relationship shown</div>
             {% for pretry in pretries %}
-                <a href="{% url 'jobInfo' pretry.oldpandaid %}">{{ pretry.oldpandaid }}</a>:{% if pretry.relationtype %}{{ pretry.relationtype }}{% else %}retry{% endif %} &nbsp;
+                <a href="{% url 'jobInfo' pretry.oldpandaid %}">{{ pretry.oldpandaid }}</a>:{% if pretry.relationtype %}{{ pretry.relationtype }}{% else %}retry{% endif %}
             {% endfor %}
         </td>
     </tr>
@@ -396,7 +396,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
         <td>
             <div class="section">This job has descendents downstream, with relationship shown</div>
             {% for retry in retries %}
-                <a href="{% url 'jobInfo' retry.newpandaid %}">{{ retry.newpandaid }}</a>:{% if retry.relationtype %}{{ retry.relationtype }}{% else %}retry{% endif %} &nbsp;
+                <a href="{% url 'jobInfo' retry.newpandaid %}">{{ retry.newpandaid }}</a>:{% if retry.relationtype %}{{ retry.relationtype }}{% else %}retry{% endif %}
             {% endfor %}
         </td>
     </tr>
@@ -478,7 +478,7 @@ But if you want, you can check.
 {% else %}
 {{ file.lfn}}
 {% endif %} ({{ file.type }})
-{% if file.type == 'input' %} &nbsp; <a href="{% url 'jobInfo' %}?creator={{file.lfn}}">Find creator job</a> {% endif %}
+{% if file.type == 'input' %}     <a href="{% url 'jobInfo' %}?creator={{file.lfn}}">Find creator job</a> {% endif %}
 {% if file.type != 'pseudo_input' %} <br>
 <a href="https://rucio-ui.cern.ch/did?scope={{file.scope}}&name={{file.lfn}}" target="_blank"> Rucio</a>
     {% if job.jobstatus != 'defined' and job.jobstatus != 'pending' and job.jobstatus != 'waiting' %}

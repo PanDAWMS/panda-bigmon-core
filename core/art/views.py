@@ -25,6 +25,7 @@ from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
 from core.art.artMail import send_mail_art
 from django.template.defaulttags import register
+from htmlmin.decorators import minified_response
 
 _logger = logging.getLogger('bigpandamon-error')
 
@@ -179,6 +180,7 @@ def setupView(request, querytype='task'):
 
     return query
 
+# @minified_response
 @login_customrequired
 def art(request):
     valid, response = initRequest(request)

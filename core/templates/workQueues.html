@@ -3,7 +3,7 @@
 {% block page_title %} {{ viewParams.MON_VO }} PanDA work queues{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA work queues{{viewParams.selection|safe }}
-{% if vo %} &nbsp; for VO {{ vo }}
+{% if vo %}     for VO {{ vo }}
 {% endif %}
 {% endblock %}
 {% block body %}
@@ -23,7 +23,7 @@
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
 {% for item in fdict.list %}
 {% if fdict.field == 'status' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
-<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
 {% endfor %}
 </td></tr>
 {% endfor %}

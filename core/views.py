@@ -725,13 +725,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             request.session['viewParams']['selection'] = ", last %d days" % (float(LAST_N_HOURS_MAX) / 24.)
         # if JOB_LIMIT < 999999 and JOB_LIMIT > 0:
         #    viewParams['selection'] += ", <font style='color:#FF8040; size=-1'>Warning: limit %s per job table</font>" % JOB_LIMIT
-        request.session['viewParams']['selection'] += ". &nbsp; <b>Params:</b> "
+        request.session['viewParams']['selection'] += ".     <b>Params:</b> "
         # if 'days' not in requestParams:
         #    viewParams['selection'] += "hours=%s" % LAST_N_HOURS_MAX
         # else:
         #    viewParams['selection'] += "days=%s" % int(LAST_N_HOURS_MAX/24)
         if request.session['JOB_LIMIT'] < 100000 and request.session['JOB_LIMIT'] > 0:
-            request.session['viewParams']['selection'] += "  &nbsp; <b>limit=</b>%s" % request.session['JOB_LIMIT']
+            request.session['viewParams']['selection'] += "      <b>limit=</b>%s" % request.session['JOB_LIMIT']
     else:
         request.session['viewParams']['selection'] = ""
     for param in request.session['requestParams']:
@@ -740,7 +740,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if param == 'display_limit': continue
         if param == 'sortby': continue
         if param == 'limit' and request.session['JOB_LIMIT'] > 0: continue
-        request.session['viewParams']['selection'] += "  &nbsp; <b>%s=</b>%s " % (
+        request.session['viewParams']['selection'] += "      <b>%s=</b>%s " % (
         param, request.session['requestParams'][param])
 
     startdate = None
@@ -845,7 +845,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             listOfCloudSitesMismatched = cache.get('mismatched-cloud-sites-list')
             if (listOfCloudSitesMismatched is None) or (len(listOfCloudSitesMismatched) == 0):
                 request.session['viewParams'][
-                    'selection'] += "  &nbsp; <b>The query can not be processed because list of mismatches is not found. Please visit %s/dash/production/?cloudview=region page and then try again</b>" % \
+                    'selection'] += "      <b>The query can not be processed because list of mismatches is not found. Please visit %s/dash/production/?cloudview=region page and then try again</b>" % \
                                     request.session['hostname']
             else:
                 try:
@@ -5225,9 +5225,9 @@ def siteList(request):
             cloud['mcpsites'] = ''
             for s in mcpsites[cloud['name']]:
                 if s['type'] == 'home':
-                    cloud['mcpsites'] += "<b>%s</b> &nbsp; " % s['name']
+                    cloud['mcpsites'] += "<b>%s</b>     " % s['name']
                 else:
-                    cloud['mcpsites'] += "%s &nbsp; " % s['name']
+                    cloud['mcpsites'] += "%s     " % s['name']
             if cloud['modtime']:
                 cloud['modtime'] = cloud['modtime'].strftime("%m-%d %H:%M")
     else:
@@ -10655,7 +10655,7 @@ def incidentList(request):
     incHist = {}
     for inc in incidents:
         desc = inc['description']
-        desc = desc.replace('&nbsp;', ' ')
+        desc = desc.replace('   ', ' ')
         parsmat = re.match('^([a-z\s]+):\s+queue=([^\s]+)\s+DN=(.*)\s\s\s*([A-Za-z^ \.0-9]*)$', desc)
         tm = inc['at_time']
         tm = tm - timedelta(minutes=tm.minute % 30, seconds=tm.second, microseconds=tm.microsecond)

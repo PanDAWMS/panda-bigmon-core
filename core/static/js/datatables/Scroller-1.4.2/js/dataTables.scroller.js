@@ -959,7 +959,7 @@ $.extend( Scroller.prototype, {
 		// CSS styles don't come into play - take the size of the middle row
 		$('tbody tr:lt(4)', origTable).clone().appendTo( tbody );
 		while( $('tr', tbody).length < 3 ) {
-			tbody.append( '<tr><td>&nbsp;</td></tr>' );
+			tbody.append( '<tr><td>   </td></tr>' );
 		}
 
 		$('div.'+dt.oClasses.sScrollBody, container).append( nTable );

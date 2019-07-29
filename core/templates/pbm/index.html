@@ -3,8 +3,8 @@
 {% block page_title %}{{ viewParams.MON_VO }} PanDA Brokerage Monitor{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA Brokerage Monitor {{ viewParams.selection|safe }}
-{% if startdate %} &nbsp; startdate={{ startdate }} {% endif %}
-{% if enddate %} &nbsp; enddate={{ enddate }}{% endif %}
+{% if startdate %}     startdate={{ startdate }} {% endif %}
+{% if enddate %}     enddate={{ enddate }}{% endif %}
 {% endblock %}
 {% block extra_js %}
 	<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js" %}"/>

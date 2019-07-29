@@ -3,7 +3,7 @@
 {% block page_title %} {{ viewParams.MON_VO }} PanDA users{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}Recent PanDA users{{viewParams.selection|safe }}
-{% if vo %} &nbsp; for VO {{ vo }}{% endif %}
+{% if vo %}     for VO {{ vo }}{% endif %}
 {% endblock %}
 {% block body %}
 
@@ -20,7 +20,7 @@
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
 {% for item in fdict.list %}
 {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
-<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
 {% endfor %}
 </td></tr>
 {% endfor %}
@@ -80,12 +80,12 @@ No dynamic usage information found.
 <b>Job count for the last 7 days:</b> {{ userstats.anajobs }}
 </td><td>
 <b>Users in last 3 days:</b> {{ userstats.nrecent3 }}
-&nbsp; <b>7:</b> {{ userstats.nrecent7 }}
-&nbsp; <b>30:</b> {{ userstats.nrecent30 }}
-&nbsp; <b>90:</b> {{ userstats.nrecent90 }}
+    <b>7:</b> {{ userstats.nrecent7 }}
+    <b>30:</b> {{ userstats.nrecent30 }}
+    <b>90:</b> {{ userstats.nrecent90 }}
 </td><td>
 <b>Users with &gt;1000 jobs:</b> {{ userstats.n1000 }}
-&nbsp; <b>&gt;10k:</b> {{ userstats.n10k }}
+    <b>&gt;10k:</b> {{ userstats.n10k }}
 </td></tr></table>
 {% endif %}
 

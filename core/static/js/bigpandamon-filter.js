@@ -43,7 +43,7 @@ function buildSummary(divid, data)
 	if (typeof(data.aaData) != 'undefined'){
 		var s = '<div class="large-12 columns"><ul>';
 		for (var key in data.aaData) {
-			s += '<li><span><strong>' +  key + ':</strong>&nbsp;</span>';
+			s += '<li><span><strong>' +  key + ':</strong>   </span>';
 			for (var r in data.aaData[key]){
 				if (data.aaData[key][r].c != null){
 					var smryURL = updateQueryStringParameter(
@@ -386,7 +386,7 @@ function fnFormatDetails(tD, dD){
 //      dD ... dataDict:  dictionary with key=field name, value=value of the field
 //  returns:
 //      HTML code of table rows
-  return '&nbsp;'
+  return '   '
   ;
 //+ gTV("p_description", tD, dD, 3)
 }

@@ -4,9 +4,9 @@
 {% block subtitle %}PanDA jobs<font size=-1>{{ viewParams.selection|safe }}
 </font>
 {% if showwarn and njobs%}
-&nbsp;&nbsp;<font style="color:#FF8040; size=-1"><b>Warning: limit {{joblimit}} per job table</b> </font>
+      <font style="color:#FF8040; size=-1"><b>Warning: limit {{joblimit}} per job table</b> </font>
 {% endif %}
-{% if showTop %}&nbsp;&nbsp; <font style="color:#FF8040; size=-1"><b>Task has {{totalJobs}} jobs in table Jobsarchived, limit is set to {{limit}}</b> </font>{% endif %}
+{% if showTop %}       <font style="color:#FF8040; size=-1"><b>Task has {{totalJobs}} jobs in table Jobsarchived, limit is set to {{limit}}</b> </font>{% endif %}
 </font>
 {% endblock %}
 {% block body %}
@@ -20,10 +20,10 @@
 {% if requestParams.jobtype %}<br><b>Job type: {{ requestParams.jobtype }}</b> {% endif %}
 {% if requestParams.jobstatus %}<br><b>Job status: <span class={{requestParams.jobstatus}}>{{ requestParams.jobstatus }}</span></b> {% endif %}
 {% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a> &nbsp; <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a></b> {% endif %}
-{% if user %}<br><b>User: <a href="{% url 'userInfo' user %}?display_limit=100">{{ user }}</a> &nbsp; <a href="{% url 'userInfo' user %}?display_limit=100">Show user page</a></b> {% endif %}
-{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}  &nbsp; {{ taskname }}</a> </b> {% endif %}
-{% if requestParams.taskid and requestParams.taskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.taskid  %}">{{ requestParams.taskid }}  &nbsp; {{ taskname }}</a></b> {% endif %}
+{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a>     <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a></b> {% endif %}
+{% if user %}<br><b>User: <a href="{% url 'userInfo' user %}?display_limit=100">{{ user }}</a>     <a href="{% url 'userInfo' user %}?display_limit=100">Show user page</a></b> {% endif %}
+{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}      {{ taskname }}</a> </b> {% endif %}
+{% if requestParams.taskid and requestParams.taskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.taskid  %}">{{ requestParams.taskid }}      {{ taskname }}</a></b> {% endif %}
 {% if requestParams.jobsetid %}<br><b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}
 {% if requestParams.parentid %}<br><b>Parent ID: {{ requestParams.parentid }}</b> {% endif %}
 
@@ -78,7 +78,7 @@ function toggleDetailDisplay(className) {
 <font size=-1>
 <br>Dropped (retry):<br>
 {% for drop in droplist %}
-<a href="{% url 'jobInfo' drop.pandaid %}">{{ drop.pandaid }}</a>&nbsp;(<a href="{% url 'jobInfo' drop.newpandaid %}">{{ drop.newpandaid }}</a>) &nbsp;
+<a href="{% url 'jobInfo' drop.pandaid %}">{{ drop.pandaid }}</a>   (<a href="{% url 'jobInfo' drop.newpandaid %}">{{ drop.newpandaid }}</a>)
 {% endfor %}
 </font>
 </div>
@@ -95,7 +95,7 @@ function toggleDetailDisplay(className) {
 
 {% if sumd %}
 <table>
-<tr class='tablesection'><th colspan=20> Job attribute summary   &nbsp; Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
+<tr class='tablesection'><th colspan=20> Job attribute summary       Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
 {% for fdict in sumd %}
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
     <td><div class="comment more">
@@ -104,7 +104,7 @@ function toggleDetailDisplay(className) {
 
             {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
                 <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
-                                                              href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a> &nbsp;
+                                                              href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a>
             {% endif %}
         {% endfor %}
         </div>
@@ -134,7 +134,7 @@ function toggleDetailDisplay(className) {
 
 <table>
 <tr class='tablesection'><th colspan=20>
-<a name="joblist"></a> Job list &nbsp; &nbsp; 
+<a name="joblist"></a> Job list
 {% if display_limit  and display_limit < njobs %}
 <font size=-1>Only the most recent {{ display_limit }} jobs are shown. Remove the limit and sort by
 {% if sortby == "PandaID" %}
@@ -210,9 +210,9 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
 		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}
 		</td>
-	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan=11> <font size=-1>Job name: <a href="{% url 'jobListProto' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></font> &nbsp; #{{ job.attemptnr }} </td></tr>
+	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan=11> <font size=-1>Job name: <a href="{% url 'jobListProto' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></font>     #{{ job.attemptnr }} </td></tr>
 	</tr>
-	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan="20" class='highlightcell'> Datasets: &nbsp; {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> &nbsp;{% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
+	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan="20" class='highlightcell'> Datasets:     {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br>    {% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
 
     {% endfor %}
 </table>

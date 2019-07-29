@@ -2,9 +2,9 @@
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA self monitor {% endblock %}
 {% block subtitle %}view summary{{ viewParams.selection|safe }} {% if nmax %}<b> display limit:{{nmax}}</b> {% endif %}
-{% if user %} &nbsp; user={{ user }} {% endif %}
-{% if site %} &nbsp; site={{ site }} {% endif %}
-{% if vo %} &nbsp; VO={{ vo }} {% endif %}
+{% if user %}     user={{ user }} {% endif %}
+{% if site %}     site={{ site }} {% endif %}
+{% if vo %}     VO={{ vo }} {% endif %}
 {% endblock %}
 {% block body %}
 
@@ -92,22 +92,22 @@
 
 <table>
   <tr class='tablesection'>
-    <th>Sort by: <a href="{{ url }}sortby=id">Query time</a> ; <a href="{{ url }}sortby=duration">Query Duration </a>&nbsp;</th>
+    <th>Sort by: <a href="{{ url }}sortby=id">Query time</a> ; <a href="{{ url }}sortby=duration">Query Duration </a>   </th>
   </tr>
 </table>
 <table>
   <tr class='tablesection'>
-    <td style="word-wrap:break-word;word-break:break-all;">URL&nbsp;</td>
-    <td>REMOTE&nbsp;</td>
-    <td>QUERY START TIME&nbsp;</td>
+    <td style="word-wrap:break-word;word-break:break-all;">URL   </td>
+    <td>REMOTE   </td>
+    <td>QUERY START TIME   </td>
     <td>DURATION</td>
   </tr>
 {% for pg in reqPages %}
   <tr>
-    <td style="word-wrap:break-word;word-break:break-all;">{{ pg.urls}}&nbsp;</td>
-    <td>{{ pg.remote}}&nbsp;</td>
-    <td>{{ pg.qtime}}&nbsp;</td>
-    <td>{{ pg.duration}}s&nbsp;</td>
+    <td style="word-wrap:break-word;word-break:break-all;">{{ pg.urls}}   </td>
+    <td>{{ pg.remote}}   </td>
+    <td>{{ pg.qtime}}   </td>
+    <td>{{ pg.duration}}s   </td>
   </tr>
 {% endfor %}
 

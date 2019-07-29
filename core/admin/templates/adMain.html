@@ -2,9 +2,9 @@
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA self monitor {% endblock %}
 {% block subtitle %}view summary{{ viewParams.selection|safe }} {% if nmax %}<b> display limit:{{nmax}}</b> {% endif %}
-{% if user %} &nbsp; user={{ user }} {% endif %}
-{% if site %} &nbsp; site={{ site }} {% endif %}
-{% if vo %} &nbsp; VO={{ vo }} {% endif %}
+{% if user %}     user={{ user }} {% endif %}
+{% if site %}     site={{ site }} {% endif %}
+{% if vo %}     VO={{ vo }} {% endif %}
 {% endblock %}
 {% block body %}
 

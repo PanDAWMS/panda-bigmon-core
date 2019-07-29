@@ -58,9 +58,9 @@
 
 
 {% block subtitle %}PanDA job error summary{{ viewParams.selection|safe }}
-{% if user %} &nbsp; user={{ user }} {% endif %}
-{% if site %} &nbsp; site={{ site }} {% endif %}
-{% if vo %} &nbsp; VO={{ vo }} {% endif %}
+{% if user %}     user={{ user }} {% endif %}
+{% if site %}     site={{ site }} {% endif %}
+{% if vo %}     VO={{ vo }} {% endif %}
 {% endblock %}
 {% block body %}
 {{ viewParams.header }}
@@ -107,8 +107,8 @@
 
 
 <b>{{ njobs }} jobs found. Show jobs: </b>
-&nbsp;  <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}jobstatus=failed&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>Failed</b></a>
-&nbsp; &nbsp;  <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{limit}}&mode=nodrop"><b>All</b></a>
+     <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}jobstatus=failed&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>Failed</b></a>
+         <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{limit}}&mode=nodrop"><b>All</b></a>
 
 {% if sortby == "count" %}
 <p>Sort by <b>count</b>, <a href="{{nosorturl}}">alpha</a>
@@ -120,7 +120,7 @@
 {% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
 {% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a></b> {% endif %}
 {% if requestParams.produsername %}<br><b>User: <a href="{% url 'userInfo' requestParams.produsername %}?display_limit=100">{{ requestParams.produsername }}</a></b> {% endif %}
-{% if requestParams.jeditaskid %}<br><b>JEDI Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }} &nbsp; {{ taskname }}</a> </b> {% endif %}
+{% if requestParams.jeditaskid %}<br><b>JEDI Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}     {{ taskname }}</a> </b> {% endif %}
 
 {% if requestParams.reqid_from %}<br><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
 {% if requestParams.reqid_to %}<br><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
@@ -183,7 +183,7 @@
             {% else %}
                     {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
                     <a href="{{xurlsubst}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
-            &nbsp;{% endif %}
+               {% endif %}
         {% endfor %}
     </div>
 </td></tr>
@@ -231,11 +231,11 @@
 {% for site in errsBySite %}
 <tr><th class="wrap-words"> <a href="{{xurlsubstNoSite}}computingsite={{ site.name }}"> {{ site.name }} </a> </th>
 <th> {{ site.toterrors }} </th>
-<th> Total errors in {{ site.toterrjobs }} jobs. &nbsp; <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ site.finished }} </span></a> &nbsp; <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ site.failed }} </span></a> &nbsp; % failed: {{ site.pctfail }} &nbsp; <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ site.holding }} </span></a> &nbsp;  <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ site.cancelled }} </span></a> </th>  </tr>
+<th> Total errors in {{ site.toterrjobs }} jobs.     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ site.finished }} </span></a>     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ site.failed }} </span></a>     % failed: {{ site.pctfail }}     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ site.holding }} </span></a>      <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ site.cancelled }} </span></a> </th>  </tr>
 {% for errval in site.errorlist %}
 <tr><td>  </td>
     <td> <a href="{{jobsurlNoSite}}?computingsite={{site.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td>
-    <td class="wrap-words"> <b>{{ errval.error }}</b> &nbsp; <font size=-1> {{ errval.diag }} </font></td>
+    <td class="wrap-words"> <b>{{ errval.error }}</b>     <font size=-1> {{ errval.diag }} </font></td>
 </tr>
 {% endfor %}
 {% endfor %}
@@ -254,7 +254,7 @@
 {% for user in errsByUser %}
 <tr><th class="wrap-words"> <a href="{{xurl}}produsername={{ user.name }}"> {{ user.name }} </a> </th> <th> {{ user.toterrors }} </th> <th> Total errors </th>  </tr>
 {% for errval in user.errorlist %}
-<tr><td>  </td> <td> <a href="{{jobsurl}}produsername={{user.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b> &nbsp; {{ errval.diag }} </td>  </tr>
+<tr><td>  </td> <td> <a href="{{jobsurl}}produsername={{user.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b>     {{ errval.diag }} </td>  </tr>
 {% endfor %}
 {% endfor %}
 </table>
@@ -269,13 +269,13 @@
 </colgroup>
 <tr class='tablesection'><th colspan=2> Task error summary </th></tr>
 {% for task in errsByTask %}
-<tr><th colspan=10> <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}"> {{ task.tasktype }} &nbsp; {{ task.name }} </a> &nbsp; &nbsp; {% if task.longname != '' %} <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}">{{ task.longname }}</a>{% endif %} </th></tr>
+<tr><th colspan=10> <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}"> {{ task.tasktype }}     {{ task.name }} </a>         {% if task.longname != '' %} <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}">{{ task.longname }}</a>{% endif %} </th></tr>
 <tr>
 <th> {{ task.toterrors }} </th>
-<th> Total errors in {{ task.toterrjobs }} jobs. &nbsp; <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ task.finished }} </span></a> &nbsp; <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ task.failed }} </span></a> &nbsp; % failed: {{ task.pctfail }} &nbsp; <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ task.holding }} </span></a> &nbsp;  <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ task.cancelled }} </span></a> </th>
+<th> Total errors in {{ task.toterrjobs }} jobs.     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ task.finished }} </span></a>     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ task.failed }} </span></a>     % failed: {{ task.pctfail }}     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ task.holding }} </span></a>      <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ task.cancelled }} </span></a> </th>
 </tr>
 {% for errval in task.errorlist %}
-<tr><td> <a href="{{jobsurl}}{{task.tasktype}}={{task.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b> &nbsp;  {{ errval.diag }} </td>  </tr>
+<tr><td> <a href="{{jobsurl}}{{task.tasktype}}={{task.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b>      {{ errval.diag }} </td>  </tr>
 {% endfor %}
 {% endfor %}
 </table>

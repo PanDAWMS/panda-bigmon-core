@@ -187,7 +187,7 @@ function toggleShowHide(divID, linkID) {
                                                             <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
                                                         </div>
                                                         <div class="extra-links">
-                                                            <b>&nbsp;{{ job.ntagtime }}</b>
+                                                            <b>   {{ job.ntagtime }}</b>
                                                             <span class="tarindex tooltip-upper"> {{ job.tarindex }}<span class="tooltip-text">Index of tar file</span></span>
                                                             <span class="attempt tooltip-upper"> {{ job.attemptnr }}/{{ job.maxattempt }}<span class="tooltip-text">Attempt number / max attempts</span></span>
                                                             <a  class="to-logs blacklink" target="_blank" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link tooltip-upper"><span class="tooltip-text">Link to logs of last attempt</span></i></a>

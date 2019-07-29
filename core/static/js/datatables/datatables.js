@@ -91129,7 +91129,7 @@ window.pdfMake = window.pdfMake || {}; window.pdfMake.vfs = {"LICENSE.txt":"DQog
 		for ( var i=0, ien=settings.aoData.length ; i<ien ; i++ ) {
 			s = _fnGetCellData( settings, i, colIdx, 'display' )+'';
 			s = s.replace( __re_html_remove, '' );
-			s = s.replace( /&nbsp;/g, ' ' );
+			s = s.replace( /   /g, ' ' );
 	
 			if ( s.length > max ) {
 				max = s.length;
@@ -114119,7 +114119,7 @@ $.extend( Scroller.prototype, {
 		// CSS styles don't come into play - take the size of the middle row
 		$('tbody tr:lt(4)', origTable).clone().appendTo( tbody );
 		while( $('tr', tbody).length < 3 ) {
-			tbody.append( '<tr><td>&nbsp;</td></tr>' );
+			tbody.append( '<tr><td>   </td></tr>' );
 		}
 
 		$('div.'+dt.oClasses.sScrollBody, container).append( nTable );

@@ -602,9 +602,9 @@
                         <tr>
                             <th colspan=20>
                                 {{ datasets|length }} datasets, show/hide by type:
-                                &nbsp; <a style="cursor: pointer;" onclick="javascript:toggleRowsDisplay('type-all');">all</a>
+                                    <a style="cursor: pointer;" onclick="javascript:toggleRowsDisplay('type-all');">all</a>
                                 {% for dst in dstypes %}
-                                    &nbsp;<a style="cursor: pointer;"
+                                       <a style="cursor: pointer;"
                                              onclick="javascript:toggleRowsDisplay('type-{{ dst.type }}');">{{ dst.type }}({{ dst.count }})</a>
                                 {% endfor %}
                             </th>
@@ -662,7 +662,7 @@
                             {% for item in fdict.list %}
                                 {% if fdict.field == 'status' %} <span class='{{ item.kname }}'> {% else %}
                                     <span> {% endif %}  {{ item.kname }} </span>
-                                <a href="{{ xurl }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a> &nbsp;
+                                <a href="{{ xurl }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
                             {% endfor %}
                         </td>
                     </tr>
