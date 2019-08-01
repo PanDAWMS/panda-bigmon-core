@@ -255,7 +255,7 @@ def runningProdTasks(request):
     if ('dt' in request.session['requestParams'] and 'tk' in request.session['requestParams']):
         tk = request.session['requestParams']['tk']
         data = getCacheEntry(request, tk, isData=True)
-        return HttpResponse(data, content_type='text/html')
+        return HttpResponse(data, content_type='application/json')
     # Here we try to get cached data
     data = getCacheEntry(request, "runningProdTasks")
     # data = None

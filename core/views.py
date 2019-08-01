@@ -8298,7 +8298,7 @@ def taskInfo(request, jeditaskid=0):
                     datasets = json.dumps(datasets)
         if datasets is None:
             _logger.error('No datasets data found for task in cache!!! Request: {}'.format(str(request.get_full_path())))
-        return HttpResponse(datasets, content_type='text/html')
+        return HttpResponse(datasets, content_type='application/json')
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
 
     # data = None #temporarily turm off caching
@@ -11839,7 +11839,7 @@ def loadFileList(request, datasetid=-1):
     ##self monitor
     endSelfMonitor(request)
     dump = json.dumps(files, cls=DateEncoder)
-    return HttpResponse(dump, content_type='text/html')
+    return HttpResponse(dump, content_type='application/json')
 
 @login_customrequired
 def workQueues(request):
