@@ -194,7 +194,7 @@ def index(request):
     if 'json' not in request.GET:
         return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
     else:
-        resp = HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        resp = HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
  #       _logger.error("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")
         return resp
 
@@ -353,7 +353,7 @@ def delete_files(request):
     if guid is not None:
         logdir = remove_folder(guid)
         data = {'message':'The folder was cleaned ' + logdir}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
     else:
         return HttpResponse(status=404)
 

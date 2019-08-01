@@ -37,7 +37,7 @@ def monitorJson(request):
     #from bs4 import BeautifulSoup
     #soup = BeautifulSoup(page)
     #all_tables = soup.find_all('table')
-        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
         return response
     return HttpResponse(json.dumps({'message':'Forbidden!'}), content_type='text/html')
 

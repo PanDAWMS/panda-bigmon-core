@@ -233,7 +233,7 @@ def harvesters(request):
             for stat in harvsterworkerstat:
                 stat['lastupdate'] = datetime.strptime(str(stat['lastupdate']), old_format).strftime(new_format)
                 harvsterworkerstats.append(stat)
-            return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='text/html')
+            return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='application/json')
         if ('pandaids' in request.session['requestParams']  and 'instance' in request.session['requestParams']) :
             status = ''
             computingsite = ''
@@ -291,7 +291,7 @@ def harvesters(request):
                 object = dict(zip(columns, job))
                 harvsterpandaids.append(object)
 
-            return HttpResponse(json.dumps(harvsterpandaids, cls=DateTimeEncoder), content_type='text/html')
+            return HttpResponse(json.dumps(harvsterpandaids, cls=DateTimeEncoder), content_type='application/json')
         if ('dialogs' in request.session['requestParams'] and 'instance' in request.session['requestParams']):
             dialogs = []
             tquery = {}
@@ -307,7 +307,7 @@ def harvesters(request):
                 dialog['creationtime'] = datetime.strptime(str(dialog['creationtime']), old_format).strftime(new_format)
                 dialogs.append(dialog)
 
-            return HttpResponse(json.dumps(dialogs, cls=DateTimeEncoder), content_type='text/html')
+            return HttpResponse(json.dumps(dialogs, cls=DateTimeEncoder), content_type='application/json')
 
         lastupdateCache = ''
 
@@ -484,7 +484,7 @@ def harvesters(request):
                 stat['lastupdate'] = datetime.strptime(str(stat['lastupdate']), old_format).strftime(new_format)
                 harvsterworkerstats.append(stat)
 
-            return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='text/html')
+            return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='application/json')
         if ('dialogs' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']):
             dialogs = []
             tquery = {}
@@ -499,7 +499,7 @@ def harvesters(request):
             for dialog in dialogsList:
                 dialog['creationtime'] = datetime.strptime(str(dialog['creationtime']), old_format).strftime(new_format)
                 dialogs.append(dialog)
-            return HttpResponse(json.dumps(dialogs, cls=DateTimeEncoder), content_type='text/html')
+            return HttpResponse(json.dumps(dialogs, cls=DateTimeEncoder), content_type='application/json')
         if ('pandaids' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']):
             status = ''
             computingsite = ''
@@ -573,7 +573,7 @@ def harvesters(request):
                 object = dict(zip(columns, job))
                 harvsterpandaids.append(object)
 
-            return HttpResponse(json.dumps(harvsterpandaids, cls=DateTimeEncoder), content_type='text/html')
+            return HttpResponse(json.dumps(harvsterpandaids, cls=DateTimeEncoder), content_type='application/json')
 
         URL += '?computingsite=' + request.session['requestParams']['computingsite']
         status = ''
@@ -838,7 +838,7 @@ def harvesters(request):
                 'json' not in request.session['requestParams'])):
             return render_to_response('harvesters.html', data, content_type='text/html')
         else:
-            return HttpResponse(json.dumps(instanceDictionary, cls=DateTimeEncoder), content_type='text/html')
+            return HttpResponse(json.dumps(instanceDictionary, cls=DateTimeEncoder), content_type='application/json')
 
 def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields=''):
 
@@ -966,7 +966,7 @@ def workersJSON(request):
         data = json.loads(data)
         endSelfMonitor(request)
 
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='text/html')
+        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     status = ''
     computingsite = ''
@@ -1039,7 +1039,7 @@ def workersJSON(request):
             if 'key' not in request.session['requestParams']:
                 setCacheEntry(request, xurl, json.dumps(workersList, cls=DateTimeEncoder), 60 * 20, isData = True)
 
-            return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='text/html')
+            return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='application/json')
 
     elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
         computingsite = request.session['requestParams']['computingsite']
@@ -1073,7 +1073,7 @@ def workersJSON(request):
             if 'key' not in request.session['requestParams']:
                 setCacheEntry(request, xurl, json.dumps(workersList, cls=DateTimeEncoder), 60 * 20, isData = True)
 
-            return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='text/html')
+            return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='application/json')
 
     elif 'pandaid' in request.session['requestParams'] and 'computingsite' not in request.session[
         'requestParams'] and 'instance' not in request.session['requestParams']:
@@ -1112,7 +1112,7 @@ def workersJSON(request):
                 object = dict(zip(columns, worker))
                 workersList.append(object)
 
-            return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='text/html')
+            return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='application/json')
 
 @login_customrequired
 def harvesterslots(request):

@@ -197,7 +197,7 @@ def api_status_summary(request):
 
     if not len(errors) and len(raw_data):
         ### set request response data
-        return  HttpResponse(json.dumps(data), content_type='text/html')
+        return  HttpResponse(json.dumps(data), content_type='application/json')
     elif not len(raw_data):
         return  HttpResponse(json.dumps(data), content_type='application/json', status=404)
     else:

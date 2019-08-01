@@ -61,7 +61,7 @@ class DDOSMiddleware(object):
                 if countRequest[0]['remote__count'] > self.maxAllowedJSONRequstesPerHour or x_forwarded_for in self.blacklist:
                     reqs.is_rejected = 1
                     reqs.save()
-                    return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), content_type='text/html')
+                    return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), content_type='application/json')
 
         reqs.save()
         response = self.get_response(request)

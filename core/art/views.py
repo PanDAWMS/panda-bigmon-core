@@ -214,7 +214,7 @@ def art(request):
                 'json' not in request.session['requestParams'])):
         response = render_to_response('artMainPage.html', data, content_type='text/html')
     else:
-        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     setCacheEntry(request, "artMain", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     endSelfMonitor(request)
@@ -305,7 +305,7 @@ def artOverview(request):
         }
 
         dump = json.dumps(data, cls=DateEncoder)
-        return HttpResponse(dump, content_type='text/html')
+        return HttpResponse(dump, content_type='application/json')
     else:
         data = {
             'request': request,
@@ -428,7 +428,7 @@ def artTasks(request):
         }
 
         dump = json.dumps(data, cls=DateEncoder)
-        return HttpResponse(dump, content_type='text/html')
+        return HttpResponse(dump, content_type='application/json')
     else:
         data = {
             'request': request,
@@ -687,7 +687,7 @@ def artJobs(request):
         }
 
         dump = json.dumps(data, cls=DateEncoder)
-        return HttpResponse(dump, content_type='text/html')
+        return HttpResponse(dump, content_type='application/json')
     else:
         data = {
             'request': request,
@@ -802,7 +802,7 @@ def updateARTJobList(request):
         'endt': datetime.now()
     }
     endSelfMonitor(request)
-    return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
 
@@ -871,48 +871,48 @@ def registerARTTest(request):
             testname = request.session['requestParams']['testname']
     else:
         data = {'exit_code': -1, 'message': "There were not recieved any pandaid and testname"}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
 
     if 'nightly_release_short' in request.session['requestParams']:
         nightly_release_short = request.session['requestParams']['nightly_release_short']
     else:
         data = {'exit_code': -1, 'message': "No nightly_release_short provided"}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
     if 'platform' in request.session['requestParams']:
         platform = request.session['requestParams']['platform']
     else:
         data = {'exit_code': -1, 'message': "No platform provided"}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
     if 'project' in request.session['requestParams']:
         project = request.session['requestParams']['project']
     else:
         data = {'exit_code': -1, 'message': "No project provided"}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
     if 'package' in request.session['requestParams']:
         package = request.session['requestParams']['package']
     else:
         data = {'exit_code': -1, 'message': "No package provided"}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
     if 'nightly_tag' in request.session['requestParams']:
         nightly_tag = request.session['requestParams']['nightly_tag']
     else:
         data = {'exit_code': -1, 'message': "No nightly_tag provided"}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
 
     ### Checking whether params is valid
     try:
         pandaid = int(pandaid)
     except:
         data = {'exit_code': -1, 'message': "Illegal pandaid was recieved"}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
 
     if pandaid < 0:
         data = {'exit_code': -1, 'message': "Illegal pandaid was recieved"}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
 
     if not str(testname).startswith('test_'):
         data = {'exit_code': -1, 'message': "Illegal test name was recieved"}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
 
     ### Checking if provided pandaid exists in panda db
     query={}
@@ -927,12 +927,12 @@ def registerARTTest(request):
        job = jobs[0]
     except:
         data = {'exit_code': -1, 'message': "Provided pandaid does not exists"}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
 
     ### Checking whether provided pandaid is art job
     if 'jobname' in job and not job['jobname'].startswith('user.artprod'):
         data = {'exit_code': -1, 'message': "Provided pandaid is not art job"}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
 
     ### Preparing params to register art job
 
@@ -971,7 +971,7 @@ def registerARTTest(request):
 
 
     endSelfMonitor(request)
-    return HttpResponse(json.dumps(data), content_type='text/html')
+    return HttpResponse(json.dumps(data), content_type='application/json')
 
 
 def sendArtReport(request):
@@ -992,7 +992,7 @@ def sendArtReport(request):
         valid = False
         errorMessage = 'Provided ntag is not valid'
     if not valid:
-        return HttpResponse(json.dumps({'errorMessage': errorMessage}), content_type='text/html')
+        return HttpResponse(json.dumps({'errorMessage': errorMessage}), content_type='application/json')
 
     query = setupView(request, 'job')
 
@@ -1088,7 +1088,7 @@ def sendArtReport(request):
 
 
     endSelfMonitor(request)
-    return HttpResponse(json.dumps({'isSent': isSent, 'nTries': i}), content_type='text/html')
+    return HttpResponse(json.dumps({'isSent': isSent, 'nTries': i}), content_type='application/json')
 
 
 

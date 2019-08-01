@@ -140,7 +140,7 @@ def globalshares(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(DecimalEncoder().encode(gs), content_type='text/html')
+        return HttpResponse(DecimalEncoder().encode(gs), content_type='application/json')
 
 
 def get_child_elements(tree,childsgsharelist):
@@ -515,7 +515,7 @@ order by gshare, corecount, jobstatus
             corecount = 'Multicore (' + str(gs[1]) + ')'
         rowDict = {"gshare": gs[0], "corecount": corecount, "jobstatus": gs[2], "count": gs[3], "hs06":gs[4]}
         fullListGS.append(rowDict)
-    return HttpResponse(json.dumps(fullListGS), content_type='text/html')
+    return HttpResponse(json.dumps(fullListGS), content_type='application/json')
 
 def sharesDistributionJSON(request):
     fullListGS = []
@@ -577,7 +577,7 @@ order by gshare,COMPUTINGSITE, corecount, jobstatus
             hs06count= 0
         rowDict = {"gshare": gs[0],"computingsite": gs[1],"resources":resource, "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4], "hs06":gs[5],"hs06/count": hs06count}
         fullListGS.append(rowDict)
-    return HttpResponse(json.dumps(fullListGS), content_type='text/html')
+    return HttpResponse(json.dumps(fullListGS), content_type='application/json')
 
 def siteWorkQueuesJSON(request):
     fullListGS = []
@@ -629,7 +629,7 @@ order by COMPUTINGSITE,gshare, corecount, jobstatus
         else: corecount = 'Multicore ('+str(gs[2])+')'
         rowDict = {"computingsite": gs[0],"gshare": gs[1], "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4]}
         fullListGS.append(rowDict)
-    return HttpResponse(json.dumps(fullListGS), content_type='text/html')
+    return HttpResponse(json.dumps(fullListGS), content_type='application/json')
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
@@ -745,7 +745,7 @@ def resourcesType(request):
                                      'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
                                      'total_hs_percent': round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100,2)
                                      })
-    return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='application/json')
 
 def fairsharePolicy(request):
     EXECUTING = 'executing'
@@ -848,7 +848,7 @@ def fairsharePolicy(request):
                                      'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
                                      'total_hs_percent': round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100,2)
                                      })
-    return  HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
+    return  HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='application/json')
 
 
 
@@ -939,5 +939,5 @@ def coreTypes(request):
                                      'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
                                      'total_hs_percent': round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100,2)
                                      })
-    return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='application/json')
 

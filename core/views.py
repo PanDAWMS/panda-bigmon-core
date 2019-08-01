@@ -7815,7 +7815,7 @@ def killtasks(request):
     else:
         resp = {"detail": "Action is not recognized"}
         dump = json.dumps(resp, cls=DateEncoder)
-        response = HttpResponse(dump, content_type='text/plain')
+        response = HttpResponse(dump, content_type='application/json')
         return response
 
     user = request.user
@@ -7827,7 +7827,7 @@ def killtasks(request):
     else:
         resp = {"detail": "User not authenticated. Please login to bigpanda mon with CERN"}
         dump = json.dumps(resp, cls=DateEncoder)
-        response = HttpResponse(dump, content_type='text/plain')
+        response = HttpResponse(dump, content_type='application/json')
         return response
 
     if action == 1:
@@ -7862,7 +7862,7 @@ def killtasks(request):
     else:
         resp = {"detail": "Error with sending request to prodsys"}
     dump = json.dumps(resp, cls=DateEncoder)
-    response = HttpResponse(dump, content_type='text/plain')
+    response = HttpResponse(dump, content_type='application/json')
     return response
 
 
@@ -8186,7 +8186,7 @@ def report(request):
         reportGen = MC16aCPReport.MC16aCPReport()
         resp = reportGen.getDKBEventsSummaryRequestedBreakDownHashTag(request)
         dump = json.dumps(resp, cls=DateEncoder)
-        return HttpResponse(dump, content_type='text/html')
+        return HttpResponse(dump, content_type='application/json')
 
 
     if 'requestParams' in request.session and 'obstasks' in request.session['requestParams']:
@@ -8899,7 +8899,7 @@ def taskInfoNew(request, jeditaskid=0):
     if 'dt' in request.session['requestParams'] and 'tkiec' in request.session['requestParams']:
         tkiec = request.session['requestParams']['tkiec']
         data = getCacheEntry(request, tkiec, isData=True)
-        return HttpResponse(data, content_type='text/html')
+        return HttpResponse(data, content_type='application/json')
 
 
     data = getCacheEntry(request, "taskInfoNew", skipCentralRefresh=True)
@@ -10745,7 +10745,7 @@ def incidentList(request):
         ##self monitor
         endSelfMonitor(request)
         jsonResp = json.dumps(clearedInc)
-        return HttpResponse(jsonResp, content_type='text/html')
+        return HttpResponse(jsonResp, content_type='application/json')
 
 
 def esatlasPandaLoggerJson(request):

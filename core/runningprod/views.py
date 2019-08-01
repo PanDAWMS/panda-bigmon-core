@@ -217,7 +217,7 @@ def runningMCProdTasks(request):
         dump = json.dumps(tasks, cls=DateEncoder)
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(dump, content_type='text/html')
+        return HttpResponse(dump, content_type='application/json')
     else:
         data = {
             'request': request,
@@ -505,9 +505,9 @@ def runningProdTasks(request):
             else:
                 data = {'message': 'fail'}
             dump = json.dumps(data, cls=DateEncoder)
-            return HttpResponse(dump, content_type='text/html')
+            return HttpResponse(dump, content_type='application/json')
         dump = json.dumps(task_list, cls=DateEncoder)
-        return HttpResponse(dump, content_type='text/html')
+        return HttpResponse(dump, content_type='application/json')
     else:
         data = {
             'request': request,
@@ -707,7 +707,7 @@ def runningDPDProdTasks(request):
         endSelfMonitor(request)
 
         dump = json.dumps(tasks, cls=DateEncoder)
-        return HttpResponse(dump, content_type='text/html')
+        return HttpResponse(dump, content_type='application/json')
     else:
         data = {
             'request': request,
@@ -829,7 +829,7 @@ def prodNeventsTrend(request):
         endSelfMonitor(request)
 
         dump = json.dumps(plot_data, cls=DateEncoder)
-        return HttpResponse(dump, content_type='text/html')
+        return HttpResponse(dump, content_type='application/json')
     else:
         data = {
             'request': request,
@@ -853,7 +853,7 @@ def runningProdRequests(request):
     if ('dt' in request.session['requestParams'] and 'tk' in request.session['requestParams']):
         tk = request.session['requestParams']['tk']
         data = getCacheEntry(request, tk, isData=True)
-        return HttpResponse(data, content_type='text/html')
+        return HttpResponse(data, content_type='application/json')
 
     # Here we try to get cached data
     data = getCacheEntry(request, "runningProdRequests")
@@ -940,7 +940,7 @@ def runningProdRequests(request):
         ##self monitor
         endSelfMonitor(request)
         dump = json.dumps(request_list, cls=DateEncoder)
-        return HttpResponse(dump, content_type='text/html')
+        return HttpResponse(dump, content_type='application/json')
     else:
         data = {
             'request': request,

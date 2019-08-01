@@ -50,7 +50,7 @@ def addToComparison(request):
     dump = json.dumps(data, cls=DateEncoder)
     ##self monitor
     endSelfMonitor(request)
-    return HttpResponse(dump, content_type='text/html')
+    return HttpResponse(dump, content_type='application/json')
 
 @login_customrequired
 def deleteFromComparison(request):
@@ -74,7 +74,7 @@ def deleteFromComparison(request):
     dump = json.dumps(data, cls=DateEncoder)
     ##self monitor
     endSelfMonitor(request)
-    return HttpResponse(dump, content_type='text/html')
+    return HttpResponse(dump, content_type='application/json')
 
 
 @login_customrequired
@@ -97,7 +97,7 @@ def clearComparison(request):
     dump = json.dumps(data, cls=DateEncoder)
     ##self monitor
     endSelfMonitor(request)
-    return HttpResponse(dump, content_type='text/html')
+    return HttpResponse(dump, content_type='application/json')
 
 @login_customrequired
 def compareJobs(request):

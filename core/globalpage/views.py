@@ -110,5 +110,5 @@ j.jid BETWEEN to_number(to_char(SYSDATE-6, 'YYYYMMDD'))*10000000
         a0002=str(row[27])+' ('+str(row[28])+')'
         list9.append(row[1]);list9.append(row[0]);list9.append(row[14]);list9.append(row[9]);list9.append(a0001);list9.append(a0002);list9.append(row[29]);
         reslt3.append(list9)
-    return HttpResponse(json.dumps(reslt3, cls=DateEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(reslt3, cls=DateEncoder), content_type='application/json')
     #return render_to_response('demonstrator.html', data, content_type='text/html')
