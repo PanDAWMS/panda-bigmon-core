@@ -372,10 +372,8 @@ def harvesters(request):
         to_char(ww.submittime, 'dd-mm-yyyy hh24:mi:ss') as submittime
         FROM
         atlas_panda.harvester_instances ii INNER JOIN 
-        atlas_panda.harvester_workers ww on ww.harvesterid = ii.harvester_id and ww.submittime = (select max(submittime) 
-        from atlas_panda.harvester_workers 
-        where harvesterid like '{0}') and ii.harvester_id like '{0}'
-        """.format(str(instance))
+        atlas_panda.harvester_workers ww on ww.harvesterid = ii.harvester_id {0} and ii.harvester_id like '{1}'
+        """.format(hours,str(instance))
 
         cur = connection.cursor()
         cur.execute(sqlquery)
@@ -385,10 +383,35 @@ def harvesters(request):
         for info in qinstanceinfo:
             instanceinfo = dict(zip(columns, info))
 
-        if bool(instanceinfo) != True or instanceinfo['submittime'] is None:
-            message = """Instance is not found OR no workers for this instance or time period"""
-            return HttpResponse(json.dumps({'message': message}),
-                                content_type='text/html')
+        if len(qinstanceinfo) == 0:
+            sqlquery = """
+            SELECT
+            ii.harvester_id,
+            ii.description,
+            to_char(ii.starttime, 'dd-mm-yyyy hh24:mi:ss') as starttime,
+            to_char(ii.lastupdate, 'dd-mm-yyyy hh24:mi:ss') as lastupdate,
+            ii.owner,
+            ii.hostname,
+            ii.sw_version,
+            ii.commit_stamp,
+            to_char(ww.submittime, 'dd-mm-yyyy hh24:mi:ss') as submittime
+            FROM
+            atlas_panda.harvester_instances ii INNER JOIN 
+            atlas_panda.harvester_workers ww on ww.harvesterid = ii.harvester_id and ww.submittime = (select max(submittime) 
+        from atlas_panda.harvester_workers 
+        where harvesterid like '{0}') and ii.harvester_id like '{0}'
+            """.format(str(instance))
+
+            cur = connection.cursor()
+            cur.execute(sqlquery)
+            qinstanceinfo = cur.fetchall()
+            columns = [str(i[0]).lower() for i in cur.description]
+            for info in qinstanceinfo:
+                instanceinfo = dict(zip(columns, info))
+            if bool(instanceinfo) != True or instanceinfo['submittime'] is None:
+                message = """Instance is not found OR no workers for this instance or time period"""
+                return HttpResponse(json.dumps({'message': message}),
+                                    content_type='text/html')
 
         if datetime.strptime(instanceinfo['submittime'], '%d-%m-%Y %H:%M:%S') < datetime.now() - timedelta(hours=24):
             days = """AND submittime > CAST(TO_DATE('{0}', 'dd-mm-yyyy hh24:mi:ss') - interval '{1}' day AS DATE)""".format(instanceinfo['submittime'], 1)
