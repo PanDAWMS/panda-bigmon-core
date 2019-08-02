@@ -13,7 +13,6 @@ import math
 from core.pandajob.SQLLookups import CastDate
 from django.db.models import DateTimeField, CharField
 
-
 from urllib.parse import urlencode, unquote, urlparse, urlunparse, parse_qs
 from django.utils.decorators import available_attrs
 from django.http import HttpResponse
@@ -74,7 +73,6 @@ from core.settings.local import PRODSYS
 from core.settings.local import ES
 from core.settings.local import GRAFANA
 
-
 from core.TaskProgressPlot import TaskProgressPlot
 from core.ErrorCodes import ErrorCodes
 import hashlib
@@ -82,7 +80,7 @@ import hashlib
 import core.Customrenderer as Customrenderer
 import collections, pickle
 
-from threading import Thread,Lock
+from threading import Thread, Lock
 import decimal
 import base64
 import urllib3
@@ -100,8 +98,8 @@ errorStages = {}
 
 from django.template.defaulttags import register
 
-#from django import template
-#register = template.Library()
+# from django import template
+# register = template.Library()
 
 
 from core.reports import RunningMCProdTasks
@@ -114,16 +112,19 @@ from core.auth.utils import grant_rights, deny_rights
 
 from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
-#from libs import exlib
-from core.libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, preparePlotData
+# from libs import exlib
+from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, preparePlotData
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.bpuser import get_relevant_links
+from core.libs.query_threading import QueryThread
+
 
 @register.filter(takes_context=True)
 def get_count(dict, key):
     return dict[key]['count']
+
 
 @register.filter(takes_context=True)
 def get_tk(dict, key):
@@ -134,25 +135,24 @@ def get_tk(dict, key):
 def get_item(dictionary, key):
     return dictionary.get(key)
 
+
 @register.simple_tag(takes_context=True)
 def get_renderedrow(context, **kwargs):
-    if kwargs['type']=="world_nucleussummary":
+    if kwargs['type'] == "world_nucleussummary":
         kwargs['statelist'] = statelist
         return Customrenderer.world_nucleussummary(context, kwargs)
 
-    if kwargs['type']=="world_computingsitesummary":
+    if kwargs['type'] == "world_computingsitesummary":
         kwargs['statelist'] = statelist
         return Customrenderer.world_computingsitesummary(context, kwargs)
 
-    if kwargs['type']=="region_sitesummary":
+    if kwargs['type'] == "region_sitesummary":
         kwargs['statelist'] = statelist
         return Customrenderer.region_sitesummary(context, kwargs)
 
 
 inilock = Lock()
 DateTimeField.register_lookup(CastDate)
-
-
 
 try:
     hostname = subprocess.getoutput('hostname')
@@ -166,7 +166,6 @@ objectStores = {}
 objectStoresNames = {}
 objectStoresSites = {}
 
-
 pandaSites = {}
 cloudList = ['CA', 'CERN', 'DE', 'ES', 'FR', 'IT', 'ND', 'NL', 'RU', 'TW', 'UK', 'US']
 
@@ -175,7 +174,8 @@ statelist = ['defined', 'waiting', 'pending', 'assigned', 'throttled',
              'transferring', 'finished', 'failed', 'cancelled', 'merging', 'closed']
 sitestatelist = ['defined', 'waiting', 'assigned', 'throttled', 'activated', 'sent', 'starting', 'running', 'holding',
                  'merging', 'transferring', 'finished', 'failed', 'cancelled', 'closed']
-eventservicestatelist = ['ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed', 'fatal','merged', 'corrupted']
+eventservicestatelist = ['ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed', 'fatal',
+                         'merged', 'corrupted']
 taskstatelist = ['registered', 'defined', 'assigning', 'ready', 'pending', 'scouting', 'scouted', 'running', 'prepared',
                  'done', 'failed', 'finished', 'aborting', 'aborted', 'finishing', 'topreprocess', 'preprocessing',
                  'tobroken', 'broken', 'toretry', 'toincexec', 'rerefine']
@@ -203,7 +203,6 @@ _logger = logging.getLogger('bigpandamon')
 
 notcachedRemoteAddress = ['188.184.185.129', '188.184.116.46']
 
-
 LAST_N_HOURS_MAX = 0
 # JOB_LIMIT = 0
 # TFIRST = timezone.now()
@@ -211,42 +210,47 @@ LAST_N_HOURS_MAX = 0
 PLOW = 1000000
 PHIGH = -1000000
 
-
 standard_fields = ['processingtype', 'computingsite', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid',
                    'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype',
                    'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount', 'eventservice',
-                   'jobsubstatus', 'nucleus','gshare', 'resourcetype']
+                   'jobsubstatus', 'nucleus', 'gshare', 'resourcetype']
 standard_sitefields = ['region', 'gocname', 'nickname', 'status', 'tier', 'comment_field', 'cloud', 'allowdirectaccess',
                        'allowfax', 'copytool', 'faxredirector', 'retry', 'timefloor']
-standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'username', 'transuses',
+standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'username',
+                       'transuses',
                        'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
                        'reqid', 'ramcount', 'nucleus', 'eventservice', 'gshare']
 standard_errorfields = ['cloud', 'computingsite', 'eventservice', 'produsername', 'jeditaskid', 'jobstatus',
-                        'processingtype', 'prodsourcelabel', 'specialhandling','taskid' ,'transformation', 'workinggroup','reqid']
+                        'processingtype', 'prodsourcelabel', 'specialhandling', 'taskid', 'transformation',
+                        'workinggroup', 'reqid']
 
 VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
 VOMODE = ' '
 
+
 def login_customrequired(function):
-  def wrap(request, *args, **kwargs):
+    def wrap(request, *args, **kwargs):
 
-      #we check here if it is a crawler:
-      x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-      if x_forwarded_for and x_forwarded_for in notcachedRemoteAddress:
-          return function(request, *args, **kwargs)
+        # we check here if it is a crawler:
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for and x_forwarded_for in notcachedRemoteAddress:
+            return function(request, *args, **kwargs)
 
-      if request.user.is_authenticated or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
-          return function(request, *args, **kwargs)
-      else:
-          # if '/user/' in request.path:
-          #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
-          # else:
-          #return function(request, *args, **kwargs)
-          return HttpResponseRedirect('/login/?next='+request.get_full_path())
-  wrap.__doc__ = function.__doc__
-  wrap.__name__ = function.__name__
-  return wrap
+        if request.user.is_authenticated or (('HTTP_ACCEPT' in request.META) and (
+                request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
+            return function(request, *args, **kwargs)
+        else:
+            # if '/user/' in request.path:
+            #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
+            # else:
+            # return function(request, *args, **kwargs)
+            return HttpResponseRedirect('/login/?next=' + request.get_full_path())
+
+    wrap.__doc__ = function.__doc__
+    wrap.__name__ = function.__name__
+    return wrap
+
 
 @login_customrequired
 def grantRights(request):
@@ -278,8 +282,8 @@ def datetime_handler(x):
         return x.isoformat()
     raise TypeError("Unknown type")
 
-def jobSuppression(request):
 
+def jobSuppression(request):
     extra = '(1=1)'
 
     if not 'notsuppress' in request.session['requestParams']:
@@ -291,7 +295,7 @@ def jobSuppression(request):
                 pass
         extra = '( not( (JOBDISPATCHERERRORCODE=100 OR ' \
                 'PILOTERRORCODE in (1200, 1201, 1202, 1203, 1204, 1206, 1207) ) and ((ENDTIME-STARTTIME)*24*60 < ' + str(
-        suppressruntime) + ')))'
+            suppressruntime) + ')))'
     return extra
 
 
@@ -304,7 +308,7 @@ def getObjectStoresNames():
         r = http.request('GET', url)
         data = json.loads(r.data.decode('utf-8'))
     except Exception as exc:
-        print (exc)
+        print(exc)
         return
 
     for OSname, OSdescr in data.items():
@@ -312,8 +316,6 @@ def getObjectStoresNames():
             objectStoresNames[OSdescr["resource"]["bucket_id"]] = OSname
         objectStoresNames[OSdescr["id"]] = OSname
         objectStoresSites[OSname] = OSdescr["site"]
-
-
 
 
 def escapeInput(strToEscape):
@@ -340,7 +342,7 @@ def setupSiteInfo(request):
             pandaSites[site['siteid']][f] = site[f]
         homeCloud[site['siteid']] = site['cloud']
         if (site['catchall'] != None) and (
-                        site['catchall'].find('log_to_objectstore') >= 0 or site['objectstore'] != ''):
+                site['catchall'].find('log_to_objectstore') >= 0 or site['objectstore'] != ''):
             # print 'object store site', site['siteid'], site['catchall'], site['objectstore']
             try:
                 fpath = getFilePathForObjectStore(site['objectstore'], filetype="logs")
@@ -352,7 +354,7 @@ def setupSiteInfo(request):
                 pass
 
 
-def initRequest(request, callselfmon = True):
+def initRequest(request, callselfmon=True):
     global VOMODE, ENV, hostname
     ENV = {}
     VOMODE = ''
@@ -379,7 +381,10 @@ def initRequest(request, callselfmon = True):
                     request.session['IS_TESTER'] = user.is_tester
                     request.session['USER_ID'] = user.id
                 except BPUser.DoesNotExist:
-                    user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'], first_name=request.session['ADFS_FIRSTNAME'], last_name=request.session['ADFS_LASTNAME'])
+                    user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'],
+                                                      email=request.session['ADFS_EMAIL'],
+                                                      first_name=request.session['ADFS_FIRSTNAME'],
+                                                      last_name=request.session['ADFS_LASTNAME'])
                     user.set_unusable_password()
                     user.save()
 
@@ -394,7 +399,6 @@ def initRequest(request, callselfmon = True):
     #     request.session['IS_TESTER'] = user.is_tester
 
     # print("IP Address for debug-toolbar: " + request.META['REMOTE_ADDR'])
-
 
     viewParams = {}
     # if not 'viewParams' in request.session:
@@ -415,7 +419,7 @@ def initRequest(request, callselfmon = True):
 
     request.session['secureurl'] = 'https://bigpanda.cern.ch' + url
 
-    #if 'USER' in os.environ and os.environ['USER'] != 'apache':
+    # if 'USER' in os.environ and os.environ['USER'] != 'apache':
     #    request.session['debug'] = True
     if 'debug' in request.GET and request.GET['debug'] == 'insider':
         request.session['debug'] = True
@@ -484,10 +488,13 @@ def initRequest(request, callselfmon = True):
                 pval = pval.replace('#', '')
             ## is it int, if it's supposed to be?
             if p.lower() in (
-            'days', 'hours', 'limit', 'display_limit', 'taskid', 'jeditaskid', 'jobsetid', 'reqid', 'corecount', 'taskpriority',
-            'priority', 'attemptnr', 'statenotupdated', 'tasknotupdated','corepower','wansourcelimit','wansinklimit','nqueue','nodes','queuehours','memory','maxtime','space',
-            'maxinputsize','timefloor','depthboost','idlepilotsupression','pilotlimit','transferringlimit','cachedse','stageinretry','stageoutretry','maxwdir','minmemory','maxmemory','minrss',
-            'maxrss','mintime',):
+                    'days', 'hours', 'limit', 'display_limit', 'taskid', 'jeditaskid', 'jobsetid', 'reqid', 'corecount',
+                    'taskpriority',
+                    'priority', 'attemptnr', 'statenotupdated', 'tasknotupdated', 'corepower', 'wansourcelimit',
+                    'wansinklimit', 'nqueue', 'nodes', 'queuehours', 'memory', 'maxtime', 'space',
+                    'maxinputsize', 'timefloor', 'depthboost', 'idlepilotsupression', 'pilotlimit', 'transferringlimit',
+                    'cachedse', 'stageinretry', 'stageoutretry', 'maxwdir', 'minmemory', 'maxmemory', 'minrss',
+                    'maxrss', 'mintime',):
                 try:
                     requestVal = request.GET[p]
                     if '|' in requestVal:
@@ -608,7 +615,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     for paramName, paramVal in request.session['requestParams'].items():
         try:
             request.session['requestParams'][paramName] = urllib.unquote(paramVal)
-        except: request.session['requestParams'][paramName] = paramVal
+        except:
+            request.session['requestParams'][paramName] = paramVal
 
     excludeJobNameFromWildCard = True
     if 'jobname' in request.session['requestParams']:
@@ -617,15 +625,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             excludeJobNameFromWildCard = False
     excludeWGFromWildCard = False
     excludeSiteFromWildCard = False
-    if 'workinggroup' in request.session['requestParams'] and 'preset' in request.session['requestParams'] and request.session['requestParams']['preset']=='MC':
+    if 'workinggroup' in request.session['requestParams'] and 'preset' in request.session['requestParams'] and \
+            request.session['requestParams']['preset'] == 'MC':
         # if 'workinggroup' in request.session['requestParams']:
         workinggroupQuery = request.session['requestParams']['workinggroup']
         extraQueryString = '('
         for card in workinggroupQuery.split(','):
             if card[0] == '!':
-                extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
+                extraQueryString += ' NOT workinggroup=\'' + escapeInput(card[1:]) + '\' AND'
             else:
-                extraQueryString += ' workinggroup=\''+escapeInput(card[0:])+'\' OR'
+                extraQueryString += ' workinggroup=\'' + escapeInput(card[0:]) + '\' OR'
         if extraQueryString.endswith('AND'):
             extraQueryString = extraQueryString[:-3]
         elif extraQueryString.endswith('OR'):
@@ -633,27 +642,28 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         extraQueryString += ')'
         excludeWGFromWildCard = True
     elif 'workinggroup' in request.session['requestParams'] and request.session['requestParams']['workinggroup'] and \
-                        '*' not in request.session['requestParams']['workinggroup'] and \
-                        ',' not in request.session['requestParams']['workinggroup']:
+            '*' not in request.session['requestParams']['workinggroup'] and \
+            ',' not in request.session['requestParams']['workinggroup']:
         excludeWGFromWildCard = True
 
     if 'site' in request.session['requestParams'] and (request.session['requestParams']['site'] == 'hpc' or not (
-                    '*' in request.session['requestParams']['site'] or '|' in request.session['requestParams']['site'])):
+            '*' in request.session['requestParams']['site'] or '|' in request.session['requestParams']['site'])):
         excludeSiteFromWildCard = True
-
 
     wildSearchFields = []
     if querytype == 'job':
         for field in Jobsactive4._meta.get_fields():
             if (field.get_internal_type() == 'CharField'):
-                if not (field.name == 'jobstatus' or field.name == 'modificationhost' #or field.name == 'batchid'
+                if not (field.name == 'jobstatus' or field.name == 'modificationhost'  # or field.name == 'batchid'
                         or (
-                    excludeJobNameFromWildCard and field.name == 'jobname')):
+                                excludeJobNameFromWildCard and field.name == 'jobname')):
                     wildSearchFields.append(field.name)
     if querytype == 'task':
         for field in JediTasks._meta.get_fields():
             if (field.get_internal_type() == 'CharField'):
-                if not (field.name == 'modificationhost' or (excludeWGFromWildCard and field.name == 'workinggroup') or (excludeSiteFromWildCard and field.name == 'site')):
+                if not (field.name == 'modificationhost' or (
+                        excludeWGFromWildCard and field.name == 'workinggroup') or (
+                                excludeSiteFromWildCard and field.name == 'site')):
                     wildSearchFields.append(field.name)
 
     deepquery = False
@@ -679,9 +689,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             'requestParams'] or 'user' in request.session['requestParams']:
             if 'jobsetid' not in fields: fields.append('jobsetid')
             if ('hours' not in request.session['requestParams']) and (
-                'days' not in request.session['requestParams']) and (
-                        'jobsetid' in request.session['requestParams'] or 'taskid' in request.session[
-                    'requestParams'] or 'jeditaskid' in request.session['requestParams']):
+                    'days' not in request.session['requestParams']) and (
+                    'jobsetid' in request.session['requestParams'] or 'taskid' in request.session[
+                'requestParams'] or 'jeditaskid' in request.session['requestParams']):
                 ## Cases where deep query is safe. Unless the time depth is specified in URL.
                 if 'hours' not in request.session['requestParams'] and 'days' not in request.session['requestParams']:
                     deepquery = True
@@ -712,14 +722,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if 'taskid' in request.session['requestParams']: deepquery = True
         if 'pandaid' in request.session['requestParams']: deepquery = True
         if 'jobname' in request.session['requestParams']: deepquery = True
-        #if 'batchid' in request.session['requestParams']: deepquery = True
+        # if 'batchid' in request.session['requestParams']: deepquery = True
     if deepquery:
         opmode = 'notime'
         hours = LAST_N_HOURS_MAX = 24 * 180
         request.session['JOB_LIMIT'] = 999999
     if opmode != 'notime':
-        if LAST_N_HOURS_MAX <= 72 and not ('date_from' in request.session['requestParams'] or 'date_to' in request.session['requestParams']
-                                           or 'earlierthan' in request.session['requestParams'] or 'earlierthandays' in request.session['requestParams']):
+        if LAST_N_HOURS_MAX <= 72 and not (
+                'date_from' in request.session['requestParams'] or 'date_to' in request.session['requestParams']
+                or 'earlierthan' in request.session['requestParams'] or 'earlierthandays' in request.session[
+                    'requestParams']):
             request.session['viewParams']['selection'] = ", last %s hours" % LAST_N_HOURS_MAX
         else:
             request.session['viewParams']['selection'] = ", last %d days" % (float(LAST_N_HOURS_MAX) / 24.)
@@ -741,7 +753,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if param == 'sortby': continue
         if param == 'limit' and request.session['JOB_LIMIT'] > 0: continue
         request.session['viewParams']['selection'] += " <b>%s=</b>%s " % (
-        param, request.session['requestParams'][param])
+            param, request.session['requestParams'][param])
 
     startdate = None
     if 'date_from' in request.session['requestParams']:
@@ -768,14 +780,15 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         query = {}
     else:
         query = {
-            'modificationtime__castdate__range': [startdate.strftime(defaultDatetimeFormat), enddate.strftime(defaultDatetimeFormat)]}
+            'modificationtime__castdate__range': [startdate.strftime(defaultDatetimeFormat),
+                                                  enddate.strftime(defaultDatetimeFormat)]}
 
     request.session['TFIRST'] = startdate  # startdate[:18]
     request.session['TLAST'] = enddate  # enddate[:18]
 
     ### Add any extensions to the query determined from the URL
-    #query['vo'] = 'atlas'
-    #for vo in ['atlas', 'core']:
+    # query['vo'] = 'atlas'
+    # for vo in ['atlas', 'core']:
     #    if 'HTTP_HOST' in request.META and request.META['HTTP_HOST'].startswith(vo):
     #        query['vo'] = vo
     for param in request.session['requestParams']:
@@ -783,17 +796,17 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if param == 'cloud' and request.session['requestParams'][param] == 'All':
             continue
         elif param == 'harvesterinstance' or param == 'harvesterid':
-             if request.session['requestParams'][param] == 'all':
-                 query['schedulerid__startswith'] = 'harvester'
-             else:
-                 val = request.session['requestParams'][param]
-                 query['schedulerid'] = 'harvester-'+val
+            if request.session['requestParams'][param] == 'all':
+                query['schedulerid__startswith'] = 'harvester'
+            else:
+                val = request.session['requestParams'][param]
+                query['schedulerid'] = 'harvester-' + val
         elif param == 'schedulerid':
-             if 'harvester-*' in request.session['requestParams'][param]:
-                 query['schedulerid__startswith'] = 'harvester'
-             else:
-                 val = request.session['requestParams'][param]
-                 query['schedulerid__startswith'] = val
+            if 'harvester-*' in request.session['requestParams'][param]:
+                query['schedulerid__startswith'] = 'harvester'
+            else:
+                val = request.session['requestParams'][param]
+                query['schedulerid__startswith'] = val
         elif param == 'priorityrange':
             mat = re.match('([0-9]+)\:([0-9]+)', request.session['requestParams'][param])
             if mat:
@@ -838,7 +851,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         elif param == 'reqid_to':
             val = int(request.session['requestParams'][param])
             query['reqid__lte'] = val
-        elif param == 'processingtype' and '|' not in request.session['requestParams'][param] and '*' not in request.session['requestParams'][param]:
+        elif param == 'processingtype' and '|' not in request.session['requestParams'][param] and '*' not in \
+                request.session['requestParams'][param]:
             val = request.session['requestParams'][param]
             query['processingtype'] = val
         elif param == 'mismatchedcloudsite' and request.session['requestParams'][param] == 'true':
@@ -854,7 +868,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     extraQueryString = '('
                 for count, cloudSitePair in enumerate(listOfCloudSitesMismatched):
                     extraQueryString += ' ( (cloud=\'%s\') and (computingsite=\'%s\') ) ' % (
-                    cloudSitePair[1], cloudSitePair[0])
+                        cloudSitePair[1], cloudSitePair[0])
                     if (count < (len(listOfCloudSitesMismatched) - 1)):
                         extraQueryString += ' OR '
                 extraQueryString += ')'
@@ -888,7 +902,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             (endtime is NULL and starttime is not null 
             and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 > {} and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 < {} ) 
             ) """.format(str(durationrange[0]), str(durationrange[1]), str(durationrange[0]), str(durationrange[1]))
-
 
         if querytype == 'task':
             for field in JediTasks._meta.get_fields():
@@ -926,7 +939,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         if request.session['requestParams'][param] and \
                                 '*' not in request.session['requestParams'][param] and \
                                 ',' not in request.session['requestParams'][param]:
-                            query[param]=request.session['requestParams'][param]
+                            query[param] = request.session['requestParams'][param]
                     elif param == 'reqid':
                         val = escapeInput(request.session['requestParams'][param])
                         if val.find('|') >= 0:
@@ -940,7 +953,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query['site__contains'] = request.session['requestParams'][param]
                     elif param == 'eventservice':
                         if request.session['requestParams'][param] == 'eventservice' or \
-                                        request.session['requestParams'][param] == '1':
+                                request.session['requestParams'][param] == '1':
                             query['eventservice'] = 1
                         else:
                             query['eventservice'] = 0
@@ -948,24 +961,25 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         if (param not in wildSearchFields):
                             query[param] = request.session['requestParams'][param]
         elif param == 'reqtoken':
-                data = getCacheData(request, request.session['requestParams']['reqtoken'])
-                if data is not None:
-                    if 'pandaid' in data:
-                        pid = data['pandaid']
-                        if pid.find(',') >= 0:
-                            pidl = pid.split(',')
-                            query['pandaid__in'] = pidl
-                        else:
-                            query['pandaid'] = int(pid)
-                    elif 'jeditaskid' in data:
-                        tid = data['jeditaskid']
-                        if tid.find(',') >= 0:
-                            tidl = tid.split(',')
-                            query['jeditaskid__in'] = tidl
-                        else:
-                            query['jeditaskid'] = int(tid)
+            data = getCacheData(request, request.session['requestParams']['reqtoken'])
+            if data is not None:
+                if 'pandaid' in data:
+                    pid = data['pandaid']
+                    if pid.find(',') >= 0:
+                        pidl = pid.split(',')
+                        query['pandaid__in'] = pidl
+                    else:
+                        query['pandaid'] = int(pid)
+                elif 'jeditaskid' in data:
+                    tid = data['jeditaskid']
+                    if tid.find(',') >= 0:
+                        tidl = tid.split(',')
+                        query['jeditaskid__in'] = tidl
+                    else:
+                        query['jeditaskid'] = int(tid)
 
-                else: return 'reqtoken', None, None
+            else:
+                return 'reqtoken', None, None
 
         else:
             for field in Jobsactive4._meta.get_fields():
@@ -1005,7 +1019,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                 query[param] = request.session['requestParams'][param]
                     elif param == 'taskid':
                         if request.session['requestParams']['taskid'] != 'None': query[param] = \
-                        request.session['requestParams'][param]
+                            request.session['requestParams'][param]
                     elif param == 'pandaid':
                         try:
                             pid = request.session['requestParams']['pandaid']
@@ -1017,9 +1031,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         except:
                             query['jobname'] = request.session['requestParams']['pandaid']
                     elif param == 'jobstatus' and request.session['requestParams'][param] == 'finished' \
-                            and (('mode' in  request.session['requestParams'] and request.session['requestParams']['mode'] == 'eventservice') or (
-                                    'jobtype' in request.session['requestParams'] and request.session['requestParams'][
-                                'jobtype'] == 'eventservice')):
+                            and (('mode' in request.session['requestParams'] and request.session['requestParams'][
+                        'mode'] == 'eventservice') or (
+                                         'jobtype' in request.session['requestParams'] and
+                                         request.session['requestParams'][
+                                             'jobtype'] == 'eventservice')):
                         query['jobstatus__in'] = ('finished', 'cancelled')
                     elif param == 'jobstatus':
                         val = escapeInput(request.session['requestParams'][param])
@@ -1049,11 +1065,12 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             elif request.session['requestParams'][param] == 'jumbo' or request.session['requestParams'][
                                 param] == '4':
                                 query['eventservice'] = 4
-                            elif request.session['requestParams'][param] == 'cojumbo' or request.session['requestParams'][
-                                param] == '5':
+                            elif request.session['requestParams'][param] == 'cojumbo' or \
+                                    request.session['requestParams'][
+                                        param] == '5':
                                 query['eventservice'] = 5
                             elif request.session['requestParams'][param] == 'eventservice' or \
-                                            request.session['requestParams'][param] == '1':
+                                    request.session['requestParams'][param] == '1':
                                 query['eventservice'] = 1
                                 try:
                                     extraQueryString += " not specialhandling like \'%%sc:%%\' "
@@ -1117,13 +1134,12 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     except NameError:
         extraQueryString = ''
 
-
     wildSearchFields = (set(wildSearchFields) & set(list(request.session['requestParams'].keys())))
     wildSearchFields1 = set()
     for currenfField in wildSearchFields:
         if not (currenfField.lower() == 'transformation'):
             if not ((currenfField.lower() == 'cloud') & (
-            any(card.lower() == 'all' for card in request.session['requestParams'][currenfField].split('|')))):
+                    any(card.lower() == 'all' for card in request.session['requestParams'][currenfField].split('|')))):
                 if not any(currenfField in key for key, value in query.items()):
                     wildSearchFields1.add(currenfField)
     wildSearchFields = wildSearchFields1
@@ -1158,7 +1174,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
         pandaIDs = []
         jobParamQuery = {'modificationtime__castdate__range': [startdate.strftime(defaultDatetimeFormat),
-                                                     enddate.strftime(defaultDatetimeFormat)]}
+                                                               enddate.strftime(defaultDatetimeFormat)]}
 
         jobs = Jobparamstable.objects.filter(**jobParamQuery).extra(where=[extraJobParCondition]).values('pandaid')
         for values in jobs:
@@ -1176,10 +1192,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
 
 def saveUserSettings(request, page):
-
     if page == 'errors':
         errorspage_tables = ['jobattrsummary', 'errorsummary', 'siteerrorsummary', 'usererrorsummary',
-                            'taskerrorsummary']
+                             'taskerrorsummary']
         preferences = {}
         if 'jobattr' in request.session['requestParams']:
             preferences["jobattr"] = request.session['requestParams']['jobattr'].split(",")
@@ -1198,7 +1213,7 @@ def saveUserSettings(request, page):
         else:
             preferences['tables'] = errorspage_tables
         query = {}
-        query['page']= str(page)
+        query['page'] = str(page)
         if request.user.is_authenticated:
             userids = BPUser.objects.filter(email=request.user.email).values('id')
             userid = userids[0]['id']
@@ -1210,6 +1225,7 @@ def saveUserSettings(request, page):
                 userSetting = BPUserSettings(page=page, userid=userid, preferences=json.dumps(preferences))
                 userSetting.save()
 
+
 def saveSettings(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -1218,7 +1234,7 @@ def saveSettings(request):
         page = request.session['requestParams']['page']
         if page == 'errors':
             errorspage_tables = ['jobattrsummary', 'errorsummary', 'siteerrorsummary', 'usererrorsummary',
-                                'taskerrorsummary']
+                                 'taskerrorsummary']
             preferences = {}
             if 'jobattr' in request.session['requestParams']:
                 preferences["jobattr"] = request.session['requestParams']['jobattr'].split(",")
@@ -1239,7 +1255,7 @@ def saveSettings(request):
             else:
                 preferences['tables'] = errorspage_tables
             query = {}
-            query['page']= str(page)
+            query['page'] = str(page)
             if request.user.is_authenticated:
                 userids = BPUser.objects.filter(email=request.user.email).values('id')
                 userid = userids[0]['id']
@@ -1256,6 +1272,7 @@ def saveSettings(request):
         data = {"error": "no jeditaskid supplied"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
+
 def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     # dropping algorithm for jobs belong to single task
     # !!! Necessary job's attributes:
@@ -1268,15 +1285,13 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     droppedIDs = set()
     droppedPmerge = set()
 
-
-
     retryquery = {}
     retryquery['jeditaskid'] = jeditaskid
     retries = JediJobRetryHistory.objects.filter(**retryquery).extra(
         where=["OLDPANDAID!=NEWPANDAID AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', "
                "'jobset_retry', 'es_merge', 'originpandaid')"]).order_by('newpandaid').values()
-    print ('got retriels %d %d' % (len(retries),len(jobs)))
-    print ('doing the drop')
+    print('got retriels %d %d' % (len(retries), len(jobs)))
+    print('doing the drop')
     hashRetries = {}
     for retry in retries:
         hashRetries[retry['oldpandaid']] = retry
@@ -1289,12 +1304,13 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
             if pandaid in hashRetries:
                 retry = hashRetries[pandaid]
                 if retry['relationtype'] == '' or retry['relationtype'] == 'retry' or (
-                            job['processingtype'] == 'pmerge' and (job['jobstatus'] == 'failed' or job['jobstatus'] == 'cancelled') and retry[
-                    'relationtype'] == 'merge'):
+                        job['processingtype'] == 'pmerge' and (
+                        job['jobstatus'] == 'failed' or job['jobstatus'] == 'cancelled') and retry[
+                            'relationtype'] == 'merge'):
                     dropJob = retry['newpandaid']
             else:
                 if (job['jobsetid'] in hashRetries) and (
-                    hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
+                        hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
                     dropJob = 1
         else:
 
@@ -1308,7 +1324,7 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
 
             if (dropJob == 0):
                 if (job['jobsetid'] in hashRetries) and (
-                            hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
+                        hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry'):
                     dropJob = 1
 
                 if (job['jobstatus'] == 'closed' and (job['jobsubstatus'] in ('es_unused', 'es_inaction'))):
@@ -1333,11 +1349,10 @@ def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
             if not pandaid in droppedIDs:
                 droppedIDs.add(pandaid)
                 droplist.append({'pandaid': pandaid, 'newpandaid': dropJob})
-    print ('%d jobs dropped' % (len(jobs) - len(newjobs)))
+    print('%d jobs dropped' % (len(jobs) - len(newjobs)))
     droplist = sorted(droplist, key=lambda x: -x['pandaid'])
     jobs = newjobs
     return jobs, droplist, droppedPmerge
-
 
 
 def cleanJobListLite(request, jobl, mode='nodrop', doAddMeta=True):
@@ -1383,8 +1398,6 @@ def cleanJobListLite(request, jobl, mode='nodrop', doAddMeta=True):
     return jobl
 
 
-
-
 def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': mode = 'drop'
     doAddMetaStill = False
@@ -1399,17 +1412,17 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
         jobs = jobl
     for job in jobs:
         if isEventService(job):
-            #if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 111:
+            # if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 111:
             #    job['taskbuffererrordiag'] = 'Rerun scheduled to pick up unprocessed events'
             #    job['piloterrorcode'] = 0
             #    job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
             # job['jobstatus'] = 'finished'
-            #if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 112:
-                #                job['taskbuffererrordiag'] = 'All events processed, merge job created'
+            # if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 112:
+            #                job['taskbuffererrordiag'] = 'All events processed, merge job created'
             #    job['piloterrorcode'] = 0
             #    job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
             # job['jobstatus'] = 'finished'
-            #if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 114:
+            # if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 114:
             #    job['taskbuffererrordiag'] = 'No rerun to pick up unprocessed, at max attempts'
             #    job['piloterrorcode'] = 0
             #    job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
@@ -1419,11 +1432,11 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             #    job['piloterrorcode'] = 0
             #    job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
             #    #job['jobstatus'] = 'finished'
-            #if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 116:
+            # if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 116:
             #    job['taskbuffererrordiag'] = 'No remaining event ranges to allocate'
             #    job['piloterrorcode'] = 0
             #    job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-                # job['jobstatus'] = 'finished'
+            # job['jobstatus'] = 'finished'
             if 'jobmetrics' in job:
                 pat = re.compile('.*mode\=([^\s]+).*HPCStatus\=([A-Za-z0-9]+)')
                 mat = pat.match(job['jobmetrics'])
@@ -1500,7 +1513,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             strduration = str(timedelta(seconds=duration.seconds))
             job['duration'] = "%s:%s" % (ndays, strduration)
             job['durationsec'] = ndays * 24 * 3600 + duration.seconds
-            job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds)/60)
+            job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds) / 60)
 
         # durationmin for active jobs = now - starttime, for non-started = 0
         if not 'durationmin' in job:
@@ -1509,7 +1522,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
                 starttime = job['starttime']
                 duration = max(endtime - starttime, timedelta(seconds=0))
                 ndays = duration.days
-                job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds)/60)
+                job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds) / 60)
             else:
                 job['durationmin'] = 0
 
@@ -1532,9 +1545,9 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             phi = plo + 99
             job['priorityrange'] = "%d:%d" % (plo, phi)
         if 'jobsetid' in job and job['jobsetid']:
-                plo = int(job['jobsetid']) - int(job['jobsetid']) % 100
-                phi = plo + 99
-                job['jobsetrange'] = "%d:%d" % (plo, phi)
+            plo = int(job['jobsetid']) - int(job['jobsetid']) % 100
+            phi = plo + 99
+            job['jobsetrange'] = "%d:%d" % (plo, phi)
         if 'corecount' in job and job['corecount'] is None:
             job['corecount'] = 1
     ## drop duplicate jobs
@@ -1569,7 +1582,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
         if job['currentpriority'] < PLOW: PLOW = job['currentpriority']
     jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
 
-    print ('job list cleaned')
+    print('job list cleaned')
     return jobs
 
 
@@ -1592,13 +1605,12 @@ def reconstructJobsConsumersHelper(chainsDict):
         return reconstructionDict
 
 
-
 def reconstructJobsConsumers(jobsList):
     consumers = []
     jobsInheritance = {}
     chainsList = {}
 
-    #Fill out all possible consumers
+    # Fill out all possible consumers
     for job in jobsList:
         jobsInheritance[job['pandaid']] = [job['parentid']]
 
@@ -1610,7 +1622,6 @@ def reconstructJobsConsumers(jobsList):
             for pandaid in value[:-2]:
                 cleanChain[pandaid] = value[-2]
 
-    
     for job in jobsList:
         if job['pandaid'] in cleanChain:
             job['consumer'] = cleanChain[job['pandaid']]
@@ -1618,7 +1629,6 @@ def reconstructJobsConsumers(jobsList):
             job['consumer'] = None
 
     return jobsList
-    
 
 
 def cleanTaskList(request, tasks):
@@ -1642,12 +1652,12 @@ def cleanTaskList(request, tasks):
 
     random.seed()
     transactionKey = random.randrange(1000000)
-#    connection.enter_transaction_management()
+    #    connection.enter_transaction_management()
     new_cur = connection.cursor()
     for id in taskl:
         new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
             tmpTableName, id, transactionKey))  # Backend dependable
-#    connection.commit()
+    #    connection.commit()
     dsets = JediDatasets.objects.filter(**dsquery).extra(
         where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values(
         'jeditaskid', 'nfiles', 'nfilesfinished', 'nfilesfailed')
@@ -1660,8 +1670,8 @@ def cleanTaskList(request, tasks):
             dsinfo[taskid].append(ds)
 
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-#    connection.commit()
-#   connection.leave_transaction_management()
+    #    connection.commit()
+    #   connection.leave_transaction_management()
 
     for task in tasks:
         if 'totevrem' not in task:
@@ -1671,8 +1681,9 @@ def cleanTaskList(request, tasks):
                 task['eventservice'] = 'eventservice'
             else:
                 task['eventservice'] = 'ordinary'
-        if 'reqid' in task and task['reqid'] is not None and task['reqid'] < 100000 and task['reqid'] > 100 and task['reqid'] != 300 and (
-            ('tasktype' in task) and (not task['tasktype'].startswith('anal'))):
+        if 'reqid' in task and task['reqid'] is not None and task['reqid'] < 100000 and task['reqid'] > 100 and task[
+            'reqid'] != 300 and (
+                ('tasktype' in task) and (not task['tasktype'].startswith('anal'))):
             task['deftreqid'] = task['reqid']
         if 'corecount' in task and task['corecount'] is None:
             task['corecount'] = 1
@@ -1750,9 +1761,10 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             if f == 'schedulerid':
                 if 'schedulerid' in job and job[f] is not None:
                     if 'harvester' in job[f]:
-                        job[f] = job[f].replace('harvester-','')
-                    #del job[f]
-                    else: del job[f]
+                        job[f] = job[f].replace('harvester-', '')
+                    # del job[f]
+                    else:
+                        del job[f]
 
             if f in job and job[f]:
                 if f == 'taskid' and int(job[f]) < 1000000 and 'produsername' not in request.session[
@@ -1795,21 +1807,23 @@ def jobSummaryDict(request, jobs, fieldlist=None):
 
         transactionKey = random.randrange(1000000)
 
- #       connection.enter_transaction_management()
+        #       connection.enter_transaction_management()
         new_cur = connection.cursor()
         executionData = []
         for id in esjobs:
             executionData.append((id, transactionKey))
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
- #       connection.commit()
+        #       connection.commit()
 
-        new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM (SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */ PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY = %i AND  PANDAID = ID) t1 GROUP BY STATUS" % (tmpTableName, transactionKey))
+        new_cur.execute(
+            "SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM (SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */ PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY = %i AND  PANDAID = ID) t1 GROUP BY STATUS" % (
+            tmpTableName, transactionKey))
 
         evtable = dictfetchall(new_cur)
         new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-#        connection.commit()
- #       connection.leave_transaction_management()
+        #        connection.commit()
+        #       connection.leave_transaction_management()
 
         for ev in evtable:
             evstat = eventservicestatelist[ev['STATUS']]
@@ -1848,20 +1862,23 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 rangebounds = []
                 if min(kys) == 0:
                     iteml.append({'kname': '0-0', 'kvalue': sumd[f][0]})
-                    dstep = minstep if (max(kys)-min(kys)+1)/nbinsmax < minstep else int((max(kys)-min(kys)+1)/nbinsmax)
-                    rangebounds.extend([lb for lb in range(min(kys)+1, max(kys)+dstep, dstep)])
+                    dstep = minstep if (max(kys) - min(kys) + 1) / nbinsmax < minstep else int(
+                        (max(kys) - min(kys) + 1) / nbinsmax)
+                    rangebounds.extend([lb for lb in range(min(kys) + 1, max(kys) + dstep, dstep)])
                 else:
-                    dstep = minstep if (max(kys)-min(kys))/nbinsmax < minstep else int((max(kys)-min(kys))/nbinsmax)
-                    rangebounds.extend([lb-1 for lb in range(min(kys), max(kys)+dstep, dstep)])
+                    dstep = minstep if (max(kys) - min(kys)) / nbinsmax < minstep else int(
+                        (max(kys) - min(kys)) / nbinsmax)
+                    rangebounds.extend([lb - 1 for lb in range(min(kys), max(kys) + dstep, dstep)])
                 if len(rangebounds) == 1:
-                    rangebounds.append(rangebounds[0]+dstep)
-                bins, ranges = np.histogram([job['durationmin'] for job in jobs if 'durationmin' in job], bins=rangebounds)
+                    rangebounds.append(rangebounds[0] + dstep)
+                bins, ranges = np.histogram([job['durationmin'] for job in jobs if 'durationmin' in job],
+                                            bins=rangebounds)
                 for i, bin in enumerate(bins):
-                    iteml.append({'kname': str(ranges[i]) + '-' + str(ranges[i+1]), 'kvalue':bin})
+                    iteml.append({'kname': str(ranges[i]) + '-' + str(ranges[i + 1]), 'kvalue': bin})
 
-#        elif f == 'pilotversion':
-#            pilotver =
-#            iteml.append({'kname': , 'kvalue':bin})
+        #        elif f == 'pilotversion':
+        #            pilotver =
+        #            iteml.append({'kname': , 'kvalue':bin})
 
         else:
             if f in ('priorityrange', 'jobsetrange'):
@@ -1872,7 +1889,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 kys = []
                 for sk in skys:
                     kys.append(sk['key'])
-            elif f in ('attemptnr', 'jeditaskid', 'taskid','noutputdatafiles','actualcorecount','corecount'):
+            elif f in ('attemptnr', 'jeditaskid', 'taskid', 'noutputdatafiles', 'actualcorecount', 'corecount'):
                 kys = sorted(kys, key=lambda x: int(x))
             else:
                 kys = sorted(kys)
@@ -1880,7 +1897,8 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
             if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
                 iteml = sorted(iteml, key=lambda x: x['kvalue'], reverse=True)
-            elif f not in ('priorityrange', 'jobsetrange', 'attemptnr', 'jeditaskid', 'taskid','noutputdatafiles','actualcorecount'):
+            elif f not in (
+            'priorityrange', 'jobsetrange', 'attemptnr', 'jeditaskid', 'taskid', 'noutputdatafiles', 'actualcorecount'):
                 iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
 
         itemd['list'] = iteml
@@ -1911,7 +1929,7 @@ def siteSummaryDict(sites):
             isProd = False
             sumd['category']['test'] += 1
         if (site['multicloud'] is not None) and (site['multicloud'] != 'None') and (
-        re.match('[A-Z]+', site['multicloud'])):
+                re.match('[A-Z]+', site['multicloud'])):
             sumd['category']['multicloud'] += 1
         if isProd: sumd['category']['production'] += 1
     if VOMODE != 'atlas': del sumd['cloud']
@@ -2037,8 +2055,6 @@ def taskSummaryDict(request, tasks, fieldlist=None):
                             if not tag in sumd[f]: sumd[f][tag] = 0
                             sumd[f][tag] += 1
 
-
-
                             #                            for tag in tagl:
                             #                                if not tag in sumd[f]: sumd[f][tag] = 0
                             #                                sumd[f][tag] += 1
@@ -2057,7 +2073,7 @@ def taskSummaryDict(request, tasks, fieldlist=None):
         itemd['field'] = f
         iteml = []
         kys = sumd[f].keys()
-        kys =sorted(kys)
+        kys = sorted(kys)
         if f != 'ramcount':
             for ky in kys:
                 iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
@@ -2162,6 +2178,7 @@ def extensibleURL(request, xurl=''):
     #    xurl += "jobtype=%s&" % requestParams['jobtype']
     return xurl
 
+
 def mainPage(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -2176,22 +2193,20 @@ def mainPage(request):
         debuginfo += "<br>******* Environment<br>"
         for env in os.environ:
             debuginfo += "%s = %s<br>" % (env, os.environ[env])
-    #TODO It should be removed in the future
+    # TODO It should be removed in the future
     hostname = "dashb-atlas-job.cern.ch"
     port = "80"
     try:
         import socket
         host = socket.gethostbyname(hostname)
         s = socket.create_connection((host, port), 2)
-        if(s):
+        if (s):
             old_monitoring = 1
     except Exception as e:
         old_monitoring = 0
 
-
-
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
@@ -2210,7 +2225,7 @@ def mainPage(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     elif (('HTTP_ACCEPT' in request.META) and request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or (
-        'json' in request.session['requestParams']):
+            'json' in request.session['requestParams']):
         return HttpResponse('json', content_type='text/html')
     else:
         return HttpResponse('not understood', content_type='text/html')
@@ -2223,7 +2238,7 @@ def helpPage(request):
     del request.session['TFIRST']
     del request.session['TLAST']
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         data = {
             'prefix': getPrefix(request),
             'request': request,
@@ -2269,7 +2284,8 @@ def errorInfo(job, nchars=300, mode='html'):
     if int(job['taskbuffererrorcode']) != 0 and int(job['taskbuffererrorcode']) not in codesDescribed:
         errtxt += 'Task buffer error %s: %s <br>' % (job['taskbuffererrorcode'], job['taskbuffererrordiag'])
         if err1 == '': err1 = 'Taskbuffer: %s' % job['taskbuffererrordiag']
-    if job['transexitcode'] != '' and job['transexitcode'] is not None and int(job['transexitcode']) > 0 and int(job['transexitcode']) not in codesDescribed:
+    if job['transexitcode'] != '' and job['transexitcode'] is not None and int(job['transexitcode']) > 0 and int(
+            job['transexitcode']) not in codesDescribed:
         errtxt += 'Trf exit code %s.' % job['transexitcode']
         if err1 == '': err1 = 'Trf exit code %s' % job['transexitcode']
     if len(desc) > 0:
@@ -2301,7 +2317,7 @@ def jobParamList(request):
     query['pandaid__in'] = idlist
     jobparams = Jobparamstable.objects.filter(**query).values()
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+            'json' in request.session['requestParams']):
         return HttpResponse(json.dumps(jobparams, cls=DateEncoder), content_type='application/json')
     else:
         return HttpResponse('not supported', content_type='text/html')
@@ -2397,38 +2413,36 @@ def postpone(function):
         t = Thread(target=function, args=args, kwargs=kwargs)
         t.daemon = True
         t.start()
+
     return decorator
 
 
 @postpone
 def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension):
-
     plsql = "BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE("
-    plsql += " REQUEST_TOKEN=>"+str(requestToken)+", "
+    plsql += " REQUEST_TOKEN=>" + str(requestToken) + ", "
     requestFields = {}
 
     a = datetime.strptime(query['modificationtime__castdate__range'][0], defaultDatetimeFormat)
     b = datetime.strptime(query['modificationtime__castdate__range'][1], defaultDatetimeFormat)
     delta = b - a
-    range = delta.days+delta.seconds/86400.0
+    range = delta.days + delta.seconds / 86400.0
 
-
-    #if (range == 180.0):
+    # if (range == 180.0):
     #    plsql += " RANGE_DAYS=>null, "
-    #else:
+    # else:
     #    plsql += " RANGE_DAYS=>"+str(range)+", "
 
     for item in request.GET:
         requestFields[item.lower()] = request.GET[item]
 
-    if (('jeditaskid' in requestFields) and range == 180.0): #This is a temporary patch to avoid absence of pandaids
+    if (('jeditaskid' in requestFields) and range == 180.0):  # This is a temporary patch to avoid absence of pandaids
         plsql += " RANGE_DAYS=>null, "
     else:
         plsql += " RANGE_DAYS=>" + str(range) + ", "
 
-    if ('priorityrange' in requestFields): #This is a temporary patch to avoid absence of pandaids
-        plsql += " PRIORITYRANGE=>'"+escapeInput(requestFields['priorityrange'])+"', "
-
+    if ('priorityrange' in requestFields):  # This is a temporary patch to avoid absence of pandaids
+        plsql += " PRIORITYRANGE=>'" + escapeInput(requestFields['priorityrange']) + "', "
 
     if not dropmode:
         plsql += " WITH_RETRIALS=>'Y', "
@@ -2436,7 +2450,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
         plsql += " WITH_RETRIALS=>'N', "
 
     if ('noenddate' in request.session and request.session['noenddate'] == False):
-        plsql += " END_DATE=>'"+str(b.date().strftime('%d-%m-%Y'))+"', "
+        plsql += " END_DATE=>'" + str(b.date().strftime('%d-%m-%Y')) + "', "
 
     if ('pandaid' in requestFields):
         plsql += " PANDAID=>("
@@ -2446,19 +2460,16 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
                 pandaID = int(pandaID)
                 plsql += str(pandaID) + ','
             except:
-                pass # it is better to add here wrong data handler
-        plsql = plsql[:-1] +'), '
+                pass  # it is better to add here wrong data handler
+        plsql = plsql[:-1] + '), '
     # if ('computingsite' in requestFields):
     #     plsql += "COMPUTINGSITE=>("
 
-
-
-
-    for item in standard_fields+['corecount','noutputdatafiles','actualcorecount']:
+    for item in standard_fields + ['corecount', 'noutputdatafiles', 'actualcorecount']:
         if ((item + '__in') in query):
-            plsql += " " + item.upper() + "=>'" + str(query[item+'__in'][0]) + "', "
-        if ((item + '__endswith') in query and item=='transformation'):
-            plsql += " " + item.upper() + "=>'" + str(query[item+'__endswith']) + "', "
+            plsql += " " + item.upper() + "=>'" + str(query[item + '__in'][0]) + "', "
+        if ((item + '__endswith') in query and item == 'transformation'):
+            plsql += " " + item.upper() + "=>'" + str(query[item + '__endswith']) + "', "
         elif (item in query):
             plsql += " " + item.upper() + "=>'" + str(query[item]) + "', "
         elif (((item + '__range') in query) and (item == 'minramcount')):
@@ -2470,11 +2481,11 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
                 sec = wildCardExtension.find("'", firstc)
                 value = wildCardExtension[firstc: sec]
                 if '%%' in value:
-                    value = value.replace('%%','*')
-                plsql += " "+item.upper()+"=>'"+value+"', "
+                    value = value.replace('%%', '*')
+                plsql += " " + item.upper() + "=>'" + value + "', "
     plsql = plsql[:-2]
     plsql += "); END;;"
-    print (plsql)
+    print(plsql)
     # Here we call stored proc to fill temporary data
     cursor = connection.cursor()
     countCalls = 0
@@ -2483,7 +2494,7 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
             cursor.execute(plsql)
             countCalls += 1
         except Exception as ex:
-            print (ex)
+            print(ex)
             if ex[0].code == 8103:
                 pass
             else:
@@ -2495,18 +2506,17 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 # cursor.execute(plsql, {'REQUEST_TOKEN': 54, 'RANGE_DAYS': 1})
 
 
-
 def jobListP(request, mode=None, param=None):
     valid, response = initRequest(request)
-  #  initSelfMonitor(request)
-    #if 'JOB_LIMIT' in request.session:
+    #  initSelfMonitor(request)
+    # if 'JOB_LIMIT' in request.session:
     #    del request.session['JOB_LIMIT']
     # Hack to void limit caption in the params label
     request.session['requestParams']['limit'] = 10000000
-    #is_json = False
+    # is_json = False
     # Here We start Retreiving Summary and return almost empty template
     if ('requesttoken' in request.session):
-        print ('Existing')
+        print('Existing')
     # Get request token. This sheme of getting tokens should be more sophisticated (at least not use sequential numbers)
     requestToken = 0
 
@@ -2523,7 +2533,7 @@ def jobListP(request, mode=None, param=None):
         requestToken = requestToken[0][0]
 
     if (requestToken == 0):
-        print ("Error in getting reuest token")
+        print("Error in getting reuest token")
         return
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
@@ -2540,7 +2550,7 @@ def jobListP(request, mode=None, param=None):
     if not (requestToken == -1):
         startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
 
-    #request.session['viewParams']['selection'] = request.session['viewParams']['selection'][:request.session['viewParams']['selection'].index('<b>limit=</b>')]
+    # request.session['viewParams']['selection'] = request.session['viewParams']['selection'][:request.session['viewParams']['selection'].index('<b>limit=</b>')]
     if 'json' not in request.session['requestParams']:
         data = {
             'request': request,
@@ -2554,22 +2564,18 @@ def jobListP(request, mode=None, param=None):
         del request.session['TFIRST']
         del request.session['TLAST']
         response = render_to_response('jobListWrapper.html', data, content_type='text/html')
-        #endSelfMonitor(request)
+        # endSelfMonitor(request)
         return response
     else:
-        data = getJobList(request,requestToken)
+        data = getJobList(request, requestToken)
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
         return response
 
 
-
-
-
-
-def getJobList(request,requesttoken=None):
-    rawsummary={}
+def getJobList(request, requesttoken=None):
+    rawsummary = {}
     newpandaIDVal = {}
     if 'requestParams' in request.session and u'display_limit' in request.session['requestParams']:
         display_limit = int(request.session['requestParams']['display_limit'])
@@ -2581,14 +2587,15 @@ def getJobList(request,requesttoken=None):
     cur = connection.cursor()
     if 'requesttoken' in request.GET:
         sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.GET[
-        'requesttoken']
+            'requesttoken']
         cur.execute(sqlRequest)
         rawsummary = cur.fetchall()
         # if 'requesttoken' not in request.session:
         #     request.session['requesttoken'] = request.REQUEST[
         #     'requesttoken']
     else:
-        sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % int(requesttoken)
+        sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % int(
+            requesttoken)
         cur.execute(sqlRequest)
         rawsummary = cur.fetchall()
         time.sleep(10)
@@ -2597,7 +2604,7 @@ def getJobList(request,requesttoken=None):
         #     request.session['requesttoken'] = requesttoken
     cur.close()
 
-    #if 'requesttoken' not in request.GET:
+    # if 'requesttoken' not in request.GET:
     #    return HttpResponse('')
 
     errsByCount = []
@@ -2622,7 +2629,8 @@ def getJobList(request,requesttoken=None):
     jobsToList = set()
     njobs = 0
     for shkey in shkeys:
-        if not shkey in ['PANDAID', 'ErrorCode', 'MINRAMCOUNT','PRIORITYRANGE','CORECOUNT','NOUTPUTDATAFILES','ACTUALCORECOUNT']:
+        if not shkey in ['PANDAID', 'ErrorCode', 'MINRAMCOUNT', 'PRIORITYRANGE', 'CORECOUNT', 'NOUTPUTDATAFILES',
+                         'ACTUALCORECOUNT']:
             # check this condition
             entry = {}
             entry['field'] = shkey
@@ -2659,7 +2667,7 @@ def getJobList(request,requesttoken=None):
             newvalues = {}
 
             for subshkey in summaryhash[shkey].keys():
-                roundedval = int( int(subshkey) / 1000)
+                roundedval = int(int(subshkey) / 1000)
                 if roundedval in newvalues:
                     newvalues[roundedval] += summaryhash[shkey][subshkey]
                 else:
@@ -2686,11 +2694,11 @@ def getJobList(request,requesttoken=None):
                 if len(error) > 0 and error[0] in errorCodes and int(errval['codeval']) in errorCodes[error[0]]:
                     errval['diag'] = errorCodes[error[0]][int(errval['codeval'])]
                 errsByCount.append(errval)
-        elif shkey in ['CORECOUNT','NOUTPUTDATAFILES','ACTUALCORECOUNT']:
+        elif shkey in ['CORECOUNT', 'NOUTPUTDATAFILES', 'ACTUALCORECOUNT']:
             entry = {}
             entry['field'] = shkey
             entrlist = []
-            for subshkey in sorted(summaryhash[shkey], key = int):
+            for subshkey in sorted(summaryhash[shkey], key=int):
                 entrlist.append({'kname': subshkey, 'kvalue': summaryhash[shkey][subshkey]})
             entry['list'] = entrlist
             sumd.append(entry)
@@ -2703,29 +2711,31 @@ def getJobList(request,requesttoken=None):
     jobs = []
 
     if not doRefresh:
-        print (len(jobsToList))
+        print(len(jobsToList))
         pandaIDVal = [int(val) for val in jobsToList]
 
-        newpandaIDVal = importToken(request,pandaIDVal)
+        newpandaIDVal = importToken(request, pandaIDVal)
         pandaIDVal = pandaIDVal[:njobsmax]
         newquery = {}
         newquery['pandaid__in'] = pandaIDVal
 
         eventservice = False
-        if 'requestParams' in request.session and 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
+        if 'requestParams' in request.session and 'jobtype' in request.session['requestParams'] and \
+                request.session['requestParams']['jobtype'] == 'eventservice':
             eventservice = True
         if 'requestParams' in request.session and 'eventservice' in request.session['requestParams'] and (
-                        request.session['requestParams']['eventservice'] == 'eventservice' or
-                        request.session['requestParams'][
-                            'eventservice'] == '1'):
+                request.session['requestParams']['eventservice'] == 'eventservice' or
+                request.session['requestParams'][
+                    'eventservice'] == '1'):
             eventservice = True
-        if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-                    'requestParams' in request.session and 'json' in request.session['requestParams']):
+        if (('HTTP_ACCEPT' in request.META) and (
+                request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+                'requestParams' in request.session and 'json' in request.session['requestParams']):
             values = [f.name for f in Jobsactive4._meta.get_fields()]
         elif eventservice:
-            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice','gshare','noutputdatafiles','actualcorecount'
+            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice', 'gshare', 'noutputdatafiles', 'actualcorecount'
         else:
-            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice','gshare','noutputdatafiles','actualcorecount'
+            values = 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'gshare', 'noutputdatafiles', 'actualcorecount'
 
         jobs.extend(Jobsdefined4.objects.filter(**newquery).values(*values))
         jobs.extend(Jobsactive4.objects.filter(**newquery).values(*values))
@@ -2734,8 +2744,7 @@ def getJobList(request,requesttoken=None):
         if (len(jobs) < njobsmax):
             jobs.extend(Jobsarchived.objects.filter(**newquery).values(*values))
 
-
-    print (len(jobs))
+    print(len(jobs))
     if 'requestParams' in request.session and 'sortby' in request.session['requestParams']:
         sortby = request.session['requestParams']['sortby']
         if sortby == 'time-ascending':
@@ -2761,9 +2770,6 @@ def getJobList(request,requesttoken=None):
         if len(jobs) > 0 and 'modificationtime' in jobs[0]:
             jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
 
-
-
-
     ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
     taskids = {}
 
@@ -2776,7 +2782,7 @@ def getJobList(request,requesttoken=None):
 
     jobs = cleanJobListLite(request, jobs)
 
-    print (len(jobs))
+    print(len(jobs))
     jobtype = ''
     if 'requestParams' in request.session and 'jobtype' in request.session['requestParams']:
         jobtype = request.session['requestParams']['jobtype']
@@ -2784,7 +2790,6 @@ def getJobList(request,requesttoken=None):
         jobtype = 'analysis'
     elif '/production' in request.path:
         jobtype = 'production'
-
 
     if 'requestParams' in request.session and 'sortby' in request.session['requestParams']:
         sortby = request.session['requestParams']['sortby']
@@ -2861,8 +2866,8 @@ def getJobList(request,requesttoken=None):
     if 'HTTP_REFERER' in request.META:
         xurl = extensibleURL(request, request.META['HTTP_REFERER'])
     else:
-        xurl = request.META['PATH_INFO'] + "?"+ request.META['QUERY_STRING']
-    print (xurl)
+        xurl = request.META['PATH_INFO'] + "?" + request.META['QUERY_STRING']
+    print(xurl)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
 
@@ -2877,10 +2882,10 @@ def getJobList(request,requesttoken=None):
     if 'viewParams' in request.session and 'limit' in request.session['viewParams']:
         del request.session['viewParams']['limit']
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         nodropPartURL = cleanURLFromDropPart(xurl)
-    #sumd = None
-    #errsByCount = None
+        # sumd = None
+        # errsByCount = None
 
         data = {
             'errsByCount': errsByCount,
@@ -2928,19 +2933,20 @@ def getJobList(request,requesttoken=None):
                     else:
                         del job[field]
         if doRefresh == True:
-            data=getJobList(request, int(requesttoken))
+            data = getJobList(request, int(requesttoken))
         else:
-            print (len(jobs))
+            print(len(jobs))
             data = {
-            "selectionsummary": sumd,
-            "jobs": jobs,
-            "errsByCount": errsByCount,
+                "selectionsummary": sumd,
+                "jobs": jobs,
+                "errsByCount": errsByCount,
             }
 
-   # if not doRefresh:
-   #     endSelfMonitor(request)
+    # if not doRefresh:
+    #     endSelfMonitor(request)
 
     return data
+
 
 def jobListPDiv(request, mode=None, param=None):
     initRequest(request, False)
@@ -2950,14 +2956,12 @@ def jobListPDiv(request, mode=None, param=None):
         data['request'] = request
         response = render_to_response('jobListWrapper.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        #endSelfMonitor(request)
+        # endSelfMonitor(request)
         return response
     data = getJobList(request)
 
-
     if 'requesttoken' in request.GET:
         requesttoken = request.GET['requesttoken']
-
 
     startdate = timezone.now() - timedelta(hours=2)
     enddate = timezone.now()
@@ -2971,9 +2975,9 @@ def jobListPDiv(request, mode=None, param=None):
 
     data.update(getContextVariables(request))
     setCacheEntry(request, "jobListWrapper", json.dumps(data, cls=DateEncoder), 60 * 20)
-        ##self monitor
+    ##self monitor
 
-    #endSelfMonitor(request)
+    # endSelfMonitor(request)
 
     #    if eventservice:
     #        response = render_to_response('jobListESProto.html', data, RequestContext(request))
@@ -2986,6 +2990,7 @@ def jobListPDiv(request, mode=None, param=None):
             endSelfMonitor(request)
     return response
 
+
 def cache_filter(timeout):
     # This function provides splitting cache keys depending on conditions above the parameters specified in the URL
     def decorator(view_func):
@@ -2996,7 +3001,7 @@ def cache_filter(timeout):
 
             # here we can apply any conditions to separate cache streams
             if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
-                        'json' in request.GET)):
+                    'json' in request.GET)):
                 is_json = True
 
             key_prefix = "%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX)
@@ -3014,23 +3019,37 @@ def cache_filter(timeout):
                 cache_key = ucache.learn_cache_key(request, responce, timeout, key_prefix, cache)
                 cache.set(cache_key, responce, timeout)
             return responce
+
         return _wrapped_view
+
     return decorator
 
+
 @login_customrequired
-def jobList(request, mode=None, param=None):
+def job_list(request, mode=None):
+    """
+    A view for list of jobs
+    :param request:
+    :param mode: drop or nodrop
+    :return:
+    """
+    # check request query for validity
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
+
     dkey = digkey(request)
     thread = None
     isEventTask = False
-    #Here we try to get data from cache
+
+    # Here we try to get data from cache
     data = getCacheEntry(request, "jobList")
     if data is not None:
         data = json.loads(data)
         try:
-            data = deleteCacheTestData(request,data)
-        except: pass
+            data = deleteCacheTestData(request, data)
+        except:
+            pass
         data['request'] = request
         if data['eventservice'] == True:
             response = render_to_response('jobListES.html', data, content_type='text/html')
@@ -3050,11 +3069,14 @@ def jobList(request, mode=None, param=None):
         eventservice = True
     if 'eventservice' in request.session['requestParams'] and (
             request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
-        'eventservice'] == '1' or request.session['requestParams']['eventservice'] == '4' or request.session['requestParams']['eventservice'] == 'jumbo'):
+        'eventservice'] == '1' or request.session['requestParams']['eventservice'] == '4' or
+            request.session['requestParams']['eventservice'] == 'jumbo'):
         eventservice = True
     elif 'eventservice' in request.session['requestParams'] and (
-        '1' in request.session['requestParams']['eventservice'] or '2' in request.session['requestParams']['eventservice'] or
-        '4' in request.session['requestParams']['eventservice'] or '5' in request.session['requestParams']['eventservice']):
+            '1' in request.session['requestParams']['eventservice'] or '2' in request.session['requestParams'][
+        'eventservice'] or
+            '4' in request.session['requestParams']['eventservice'] or '5' in request.session['requestParams'][
+                'eventservice']):
         eventservice = True
 
     noarchjobs = False
@@ -3123,19 +3145,44 @@ def jobList(request, mode=None, param=None):
         wildCardExtension += ' AND ' + extraquery_files
     ###TODO Rework it?
     if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
-        return render_to_response('message.html', {'desc':'Request token is not found or data is outdated. Please reload the original page.'}, content_type='text/html')
+        return render_to_response('message.html', {
+            'desc': 'Request token is not found or data is outdated. Please reload the original page.'},
+                                  content_type='text/html')
     ####
-#    if 'batchid' in request.session['requestParams']:
-#        query['batchid'] = request.session['requestParams']['batchid']
+    #    if 'batchid' in request.session['requestParams']:
+    #        query['batchid'] = request.session['requestParams']['batchid']
     jobs = []
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+            'json' in request.session['requestParams']):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     elif eventservice:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt',  'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype', 'schedulerid', 'pilotid'
+        values = 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice', 'nevents', 'gshare', 'noutputdatafiles', 'parentid', 'attemptnr', 'actualcorecount', 'resourcetype', 'schedulerid', 'pilotid'
     else:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype','schedulerid', 'pilotid'
+        values = 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents', 'gshare', 'noutputdatafiles', 'parentid', 'attemptnr', 'actualcorecount', 'resourcetype', 'schedulerid', 'pilotid'
+
+    # simpleresult = Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).values('gshare').annotate(total=Count('gshare')).order_by('total')
+
+    attributes_summary_raw = {}
+    threads = {}
+    for value in values:
+        attributes_summary_raw[value] = QueryThread(
+            model_name=Jobsarchived4,
+            query=query,
+            wild_card_extension=wildCardExtension,
+            tkey=dkey,
+            param_name=value)
+        threads[value] = Thread(target=attributes_summary_raw[value].run_query_in_thread(aggregation_type='count_distinct'), name=str(dkey) + '_' + value)
+        threads[value].setDaemon(True)
+        threads[value].start()
+
+    if len(threads) > 0:
+        try:
+            for value in values:
+                threads[value].join()
+        except:
+            pass
+
 
     JOB_LIMITS = request.session['JOB_LIMIT']
     totalJobs = 0
@@ -3144,13 +3191,13 @@ def jobList(request, mode=None, param=None):
     if 'limit' in request.session['requestParams']:
         request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
 
-    droppedList =[]
+    droppedList = []
     if request.user.is_authenticated and request.user.is_tester:
         taskids = {}
         tk = 0
         if 'eventservice' in request.session['requestParams']:
             isEventTask = True
-            print ('Event Service!')
+            print('Event Service!')
         else:
             isEventTask = False
         if 'jeditaskid' in request.session['requestParams']:
@@ -3160,13 +3207,15 @@ def jobList(request, mode=None, param=None):
             'mode'] == 'drop': dropmode = True
         if 'mode' in request.session['requestParams'] and request.session['requestParams'][
             'mode'] == 'nodrop': dropmode = False
-        isReturnDroppedPMerge=False
+        isReturnDroppedPMerge = False
         if 'processingtype' in request.session['requestParams'] and \
-            request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge=True
+                request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge = True
         isJumbo = False
         if dropmode and (len(taskids) == 1) and 'eventservice' in request.session['requestParams']:
-            if request.session['requestParams']['eventservice'] != '4' and request.session['requestParams']['eventservice'] != 'jumbo':
-                tk,droppedList,wildCardExtension = dropalgorithm.dropRetrielsJobs(list(taskids.keys())[0],wildCardExtension,isEventTask)
+            if request.session['requestParams']['eventservice'] != '4' and request.session['requestParams'][
+                'eventservice'] != 'jumbo':
+                tk, droppedList, wildCardExtension = dropalgorithm.dropRetrielsJobs(list(taskids.keys())[0],
+                                                                                    wildCardExtension, isEventTask)
             else:
                 isJumbo = True
 
@@ -3186,12 +3235,14 @@ def jobList(request, mode=None, param=None):
     elif 'harvesterid' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
         jobs = getHarvesterJobs(request, instance=request.session['requestParams']['harvesterid'],
                                 workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
-    elif ('harvesterinstance' not in request.session['requestParams'] and 'harvesterid' not in request.session['requestParams']) and 'workerid' in request.session['requestParams']:
-        jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
+    elif ('harvesterinstance' not in request.session['requestParams'] and 'harvesterid' not in request.session[
+        'requestParams']) and 'workerid' in request.session['requestParams']:
+        jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'],
+                                jobstatus=harvesterjobstatus)
     else:
         excludedTimeQuery = copy.deepcopy(query)
-        if ('modificationtime__castdate__range' in excludedTimeQuery and
-                set(['date_to', 'hours']).intersection(request.session['requestParams'].keys()) == 0):
+        if ('modificationtime__castdate__range' in excludedTimeQuery and not 'date_to' in request.session[
+            'requestParams']):
             del excludedTimeQuery['modificationtime__castdate__range']
         jobs.extend(Jobsdefined4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
                     :request.session['JOB_LIMIT']].values(*values))
@@ -3201,16 +3252,18 @@ def jobList(request, mode=None, param=None):
                     :request.session['JOB_LIMIT']].values(*values))
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[
                     :request.session['JOB_LIMIT']].values(*values))
-        listJobs = [Jobsarchived4,Jobsactive4,Jobswaiting4,Jobsdefined4]
+        listJobs = [Jobsarchived4, Jobsactive4, Jobswaiting4, Jobsdefined4]
         if not noarchjobs:
             queryFrozenStates = []
             if 'jobstatus' in request.session['requestParams']:
                 if isEventTask:
-                    queryFrozenStates = list(filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
-                                           ['finished', 'failed', 'cancelled', 'closed', 'merging']))
+                    queryFrozenStates = list(
+                        filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
+                               ['finished', 'failed', 'cancelled', 'closed', 'merging']))
                 else:
-                    queryFrozenStates = list(filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
-                                           ['finished', 'failed', 'cancelled', 'closed']))
+                    queryFrozenStates = list(
+                        filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
+                               ['finished', 'failed', 'cancelled', 'closed']))
             ##hard limit is set to 2K
             if ('jobstatus' not in request.session['requestParams'] or len(queryFrozenStates) > 0):
 
@@ -3228,20 +3281,20 @@ def jobList(request, mode=None, param=None):
                     JOB_LIMITS = int(request.session['requestParams']['limit'])
                 if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
                                                          "%Y-%m-%d %H:%M:%S")).days > 1) or \
-                            ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
-                                                                 "%Y-%m-%d %H:%M:%S")).days > 1)):
+                        ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
+                                                             "%Y-%m-%d %H:%M:%S")).days > 1)):
                     if 'jeditaskid' in request.session['requestParams'] and 'json' in request.session['requestParams'] \
                             and ('fulllist' in request.session['requestParams'] and
-                                              request.session['requestParams']['fulllist'] == 'true'):
+                                 request.session['requestParams']['fulllist'] == 'true'):
                         del query['modificationtime__castdate__range']
                     archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[
-                           :request.session['JOB_LIMIT']].values(*values)
+                               :request.session['JOB_LIMIT']].values(*values)
                     listJobs.append(Jobsarchived)
                     totalJobs = len(archJobs)
                     jobs.extend(archJobs)
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-                    'json' not in request.session['requestParams'])):
-            thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
+                'json' not in request.session['requestParams'])):
+            thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension, dkey))
             thread.start()
         else:
             thread = None
@@ -3256,9 +3309,9 @@ def jobList(request, mode=None, param=None):
         'mode'] == 'drop': dropmode = True
     if 'mode' in request.session['requestParams'] and request.session['requestParams'][
         'mode'] == 'nodrop': dropmode = False
-    isReturnDroppedPMerge=False
+    isReturnDroppedPMerge = False
     if 'processingtype' in request.session['requestParams'] and \
-        request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge=True
+            request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge = True
     droplist = []
     newdroplist = []
     droppedPmerge = set()
@@ -3267,22 +3320,26 @@ def jobList(request, mode=None, param=None):
     newjobs = copy.deepcopy(jobs)
     if dropmode and (len(taskids) == 1):
         start = time.time()
-        jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs,list(taskids.keys())[0],isReturnDroppedPMerge)
+        jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs, list(taskids.keys())[0], isReturnDroppedPMerge)
         end = time.time()
         print(end - start)
         if request.user.is_authenticated and request.user.is_tester:
             if 'eventservice' in request.session['requestParams']:
                 isEventTask = True
-                print ('Event Service!')
+                print('Event Service!')
             else:
                 isEventTask = False
             start = time.time()
             if isJumbo == False:
-                newjobs,newdroppedPmerge,newdroplist = dropalgorithm.clearDropRetrielsJobs(tk=tk,droplist=droppedList,jobs=newjobs,isEventTask=isEventTask,isReturnDroppedPMerge=isReturnDroppedPMerge)
+                newjobs, newdroppedPmerge, newdroplist = dropalgorithm.clearDropRetrielsJobs(tk=tk,
+                                                                                             droplist=droppedList,
+                                                                                             jobs=newjobs,
+                                                                                             isEventTask=isEventTask,
+                                                                                             isReturnDroppedPMerge=isReturnDroppedPMerge)
             end = time.time()
             print(end - start)
 
-    #get attemps of file if fileid in request params
+    # get attemps of file if fileid in request params
     files_attempts_dict = {}
     files_attempts = []
     if fileid:
@@ -3293,10 +3350,12 @@ def jobList(request, mode=None, param=None):
             files_attempts.extend(Filestable4.objects.filter(**fquery).values('pandaid', 'attemptnr'))
             files_attempts.extend(FilestableArch.objects.filter(**fquery).values('pandaid', 'attemptnr'))
             if len(files_attempts) > 0:
-                files_attempts_dict = dict(zip([f['pandaid'] for f in files_attempts], [ff['attemptnr'] for ff in files_attempts]))
+                files_attempts_dict = dict(
+                    zip([f['pandaid'] for f in files_attempts], [ff['attemptnr'] for ff in files_attempts]))
 
             jfquery = {'jeditaskid': jeditaskid, 'datasetid': datasetid, 'fileid': fileid}
-            jedi_file = JediDatasetContents.objects.filter(**jfquery).values('attemptnr', 'maxattempt', 'failedattempt', 'maxfailure')
+            jedi_file = JediDatasetContents.objects.filter(**jfquery).values('attemptnr', 'maxattempt', 'failedattempt',
+                                                                             'maxfailure')
             if jedi_file and len(jedi_file) > 0:
                 jedi_file = jedi_file[0]
             if len(files_attempts_dict) > 0:
@@ -3335,13 +3394,22 @@ def jobList(request, mode=None, param=None):
         sortby = request.session['requestParams']['sortby']
 
         if sortby == 'time-ascending':
-            jobs = sorted(jobs, key=lambda x:x['modificationtime'] if not x['modificationtime'] is None else datetime(1900, 1, 1))
+            jobs = sorted(jobs,
+                          key=lambda x: x['modificationtime'] if not x['modificationtime'] is None else datetime(1900,
+                                                                                                                 1, 1))
         if sortby == 'time-descending':
-            jobs = sorted(jobs, key=lambda x:x['modificationtime'] if not x['modificationtime'] is None else datetime(1900, 1, 1), reverse=True)
+            jobs = sorted(jobs,
+                          key=lambda x: x['modificationtime'] if not x['modificationtime'] is None else datetime(1900,
+                                                                                                                 1, 1),
+                          reverse=True)
         if sortby == 'statetime':
-            jobs = sorted(jobs, key=lambda x:x['statechangetime'] if not x['statechangetime'] is None else datetime(1900, 1, 1), reverse=True)
+            jobs = sorted(jobs,
+                          key=lambda x: x['statechangetime'] if not x['statechangetime'] is None else datetime(1900, 1,
+                                                                                                               1),
+                          reverse=True)
         elif sortby == 'priority':
-            jobs = sorted(jobs, key=lambda x:x['currentpriority'] if not x['currentpriority'] is None else 0, reverse=True)
+            jobs = sorted(jobs, key=lambda x: x['currentpriority'] if not x['currentpriority'] is None else 0,
+                          reverse=True)
         elif sortby == 'attemptnr':
             jobs = sorted(jobs, key=lambda x: x['attemptnr'], reverse=True)
         elif sortby == 'duration-ascending':
@@ -3357,7 +3425,7 @@ def jobList(request, mode=None, param=None):
         jobs = sorted(jobs, key=lambda x: x['fileattemptnr'], reverse=True)
     else:
         sortby = "attemptnr-descending,pandaid-descending"
-        jobs = sorted(jobs, key=lambda x: [-x['attemptnr'],-x['pandaid']])
+        jobs = sorted(jobs, key=lambda x: [-x['attemptnr'], -x['pandaid']])
 
     taskname = ''
     if 'jeditaskid' in request.session['requestParams']:
@@ -3375,8 +3443,13 @@ def jobList(request, mode=None, param=None):
     ## set up google flow diagram
     flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
 
-    if ('datasets' in request.session['requestParams']) and (request.session['requestParams']['datasets'] == 'yes') and ((
-        ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams'])):
+    if ('datasets' in request.session['requestParams']) and (
+            request.session['requestParams']['datasets'] == 'yes') and ((
+                                                                                ('HTTP_ACCEPT' in request.META) and (
+                                                                                request.META.get('HTTP_ACCEPT') in (
+                                                                        'text/json', 'application/json'))) or (
+                                                                                'json' in request.session[
+                                                                            'requestParams'])):
         for job in jobs:
             files = []
             pandaid = job['pandaid']
@@ -3396,7 +3469,8 @@ def jobList(request, mode=None, param=None):
                     if counter == 30:
                         break
 
-                dsets = JediDatasets.objects.filter(dsquery).extra(select={"dummy1": '/*+ INDEX_RS_ASC(ds JEDI_DATASETS_PK) */ 1 '}).values()
+                dsets = JediDatasets.objects.filter(dsquery).extra(
+                    select={"dummy1": '/*+ INDEX_RS_ASC(ds JEDI_DATASETS_PK) */ 1 '}).values()
                 if len(dsets) > 0:
                     for ds in dsets:
                         for file in files:
@@ -3405,10 +3479,9 @@ def jobList(request, mode=None, param=None):
                                 file['dataset'] = ds['datasetname']
                                 del file['DSQuery']
 
-                    #dsets = JediDatasets.objects.filter(jeditaskid=job['jeditaskid'], datasetid=f['datasetid']).extra(select={"dummy1" : '/*+ INDEX_RS_ASC(ds JEDI_DATASETS_PK) */ 1 '}).values()
-                    #if len(dsets) > 0:
+                    # dsets = JediDatasets.objects.filter(jeditaskid=job['jeditaskid'], datasetid=f['datasetid']).extra(select={"dummy1" : '/*+ INDEX_RS_ASC(ds JEDI_DATASETS_PK) */ 1 '}).values()
+                    # if len(dsets) > 0:
                     #    f['datasetname'] = dsets[0]['datasetname']
-
 
             if True:
                 # if ninput == 0:
@@ -3450,12 +3523,13 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     # Sort in order to see the most important tasks
-    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount','noutputdatafiles','actualcorecount','schedulerid', 'pilotversion'])
+    sumd, esjobdict = jobSummaryDict(request, jobs,
+                                     standard_fields + ['corecount', 'noutputdatafiles', 'actualcorecount',
+                                                        'schedulerid', 'pilotversion'])
     if sumd:
         for item in sumd:
             if item['field'] == 'jeditaskid':
                 item['list'] = sorted(item['list'], key=lambda k: k['kvalue'], reverse=True)
-
 
     if 'jeditaskid' in request.session['requestParams']:
         if len(jobs) > 0:
@@ -3467,7 +3541,6 @@ def jobList(request, mode=None, param=None):
                 if 'maxpss' in job:
                     if type(job['maxpss']) is int and job['maxpss'] > 0:
                         job['maxpss'] = "%0.2f" % (job['maxpss'] / 1024.)
-
 
     testjobs = False
     if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams'][
@@ -3505,30 +3578,30 @@ def jobList(request, mode=None, param=None):
         try:
             thread.join()
             jobsTotalCount = sum(tcount[dkey])
-            print (dkey)
-            print (tcount[dkey])
+            print(dkey)
+            print(tcount[dkey])
             del tcount[dkey]
-            print (tcount)
-            print (jobsTotalCount)
+            print(tcount)
+            print(jobsTotalCount)
         except:
             jobsTotalCount = -1
-    else: jobsTotalCount = -1
+    else:
+        jobsTotalCount = -1
 
-    listPar =[]
+    listPar = []
     for key, val in request.session['requestParams'].items():
-        if (key!='limit' and key!='display_limit'):
+        if (key != 'limit' and key != 'display_limit'):
             listPar.append(key + '=' + str(val))
-    if len(listPar)>0:
-        urlParametrs = '&'.join(listPar)+'&'
+    if len(listPar) > 0:
+        urlParametrs = '&'.join(listPar) + '&'
     else:
         urlParametrs = None
-    print (listPar)
+    print(listPar)
     del listPar
-    if (math.fabs(njobs-jobsTotalCount)<1000 or jobsTotalCount == -1):
-        jobsTotalCount=None
+    if (math.fabs(njobs - jobsTotalCount) < 1000 or jobsTotalCount == -1):
+        jobsTotalCount = None
     else:
-        jobsTotalCount = int(math.ceil((jobsTotalCount+10000)/10000)*10000)
-
+        jobsTotalCount = int(math.ceil((jobsTotalCount + 10000) / 10000) * 10000)
 
     for job in jobsToShow:
         if job['creationtime']:
@@ -3564,29 +3637,27 @@ def jobList(request, mode=None, param=None):
             except:
                 clist = []
 
-
-
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
 
         xurl = extensibleURL(request)
         time_locked_url = removeParam(removeParam(xurl, 'date_from', mode='extensible'), 'date_to', mode='extensible') + \
                           'date_from=' + request.session['TFIRST'].strftime('%Y-%m-%dT%H:%M') + \
                           '&date_to=' + request.session['TLAST'].strftime('%Y-%m-%dT%H:%M')
         nodurminurl = removeParam(xurl, 'durationmin', mode='extensible')
-        print (xurl)
+        print(xurl)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
-        #nosorturl = removeParam(nosorturl, 'harvesterinstance', mode='extensible')
+        # nosorturl = removeParam(nosorturl, 'harvesterinstance', mode='extensible')
         xurl = removeParam(nosorturl, 'mode', mode='extensible')
 
         TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
         del request.session['TLAST']
-        errsByCount = importToken(request,errsByCount=errsByCount)
+        errsByCount = importToken(request, errsByCount=errsByCount)
         nodropPartURL = cleanURLFromDropPart(xurl)
-        difDropList = dropalgorithm.compareDropAlgorithm(droplist,newdroplist)
+        difDropList = dropalgorithm.compareDropAlgorithm(droplist, newdroplist)
         data = {
             'prefix': getPrefix(request),
             'errsByCount': errsByCount,
@@ -3627,10 +3698,10 @@ def jobList(request, mode=None, param=None):
             'built': datetime.now().strftime("%H:%M:%S"),
             'newndrop_test': len(newdroplist) if len(newdroplist) > 0 else (- len(newdroppedPmerge)),
             'cntStatus_test': cntStatus,
-            'ndropPmerge_test':len(newdroppedPmerge),
-            'droppedPmerge2_test':newdroppedPmerge,
-            'pandaIDList_test':newdroplist,
-            'difDropList_test':difDropList,
+            'ndropPmerge_test': len(newdroppedPmerge),
+            'droppedPmerge2_test': newdroppedPmerge,
+            'pandaIDList_test': newdroplist,
+            'difDropList_test': difDropList,
             'clist': clist,
             'warning': warning,
         }
@@ -3670,7 +3741,692 @@ def jobList(request, mode=None, param=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-def importToken(request,errsByCount):
+
+@login_customrequired
+def jobList(request, mode=None, param=None):
+    valid, response = initRequest(request)
+    if not valid: return response
+    dkey = digkey(request)
+    thread = None
+    isEventTask = False
+    # Here we try to get data from cache
+    data = getCacheEntry(request, "jobList")
+    if data is not None:
+        data = json.loads(data)
+        try:
+            data = deleteCacheTestData(request, data)
+        except:
+            pass
+        data['request'] = request
+        if data['eventservice'] == True:
+            response = render_to_response('jobListES.html', data, content_type='text/html')
+        else:
+            response = render_to_response('jobList.html', data, content_type='text/html')
+        endSelfMonitor(request)
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+    # if 'instance' in request.session['requestParams']:
+    #     request.session['requestParams']['schedulerid'] =  'harvester-'+request.session['requestParams']['instance']
+    #     del request.session['requestParams']['instance']
+    if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
+        return jobParamList(request)
+    eventservice = False
+    if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
+        eventservice = True
+    if 'eventservice' in request.session['requestParams'] and (
+            request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
+        'eventservice'] == '1' or request.session['requestParams']['eventservice'] == '4' or
+            request.session['requestParams']['eventservice'] == 'jumbo'):
+        eventservice = True
+    elif 'eventservice' in request.session['requestParams'] and (
+            '1' in request.session['requestParams']['eventservice'] or '2' in request.session['requestParams'][
+        'eventservice'] or
+            '4' in request.session['requestParams']['eventservice'] or '5' in request.session['requestParams'][
+                'eventservice']):
+        eventservice = True
+
+    noarchjobs = False
+    if ('noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs'] == '1'):
+        noarchjobs = True
+    warning = {}
+    extraquery_files = ' '
+    if 'fileid' in request.session['requestParams'] or 'ecstate' in request.session['requestParams']:
+        if 'fileid' in request.session['requestParams'] and request.session['requestParams']['fileid']:
+            fileid = request.session['requestParams']['fileid']
+        else:
+            fileid = None
+        if 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
+            datasetid = request.session['requestParams']['datasetid']
+        else:
+            datasetid = None
+        if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
+            jeditaskid = request.session['requestParams']['jeditaskid']
+        else:
+            jeditaskid = None
+        if 'tk' in request.session['requestParams'] and request.session['requestParams']['tk']:
+            tk = request.session['requestParams']['tk']
+            del request.session['requestParams']['tk']
+        else:
+            tk = None
+
+        if jeditaskid and datasetid and fileid:
+            extraquery_files += """
+                pandaid in (
+                (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
+                union all
+                (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
+                ) """.format(jeditaskid, datasetid, fileid, jeditaskid, datasetid, fileid)
+
+        if 'ecstate' in request.session['requestParams'] and tk and datasetid:
+            extraquery_files += """
+                pandaid in (
+                    (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
+                    union all 
+                    (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
+                    ) """.format(jeditaskid, datasetid, tk, jeditaskid, datasetid, tk)
+        # warning['jobsforfiles'] = 'Only jobs for last 4 days are shown. Support of filtering older jobs associated with files will be implemented soon.'
+    elif 'jeditaskid' in request.session['requestParams'] and 'datasetid' in request.session['requestParams']:
+        fileid = None
+        if 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
+            datasetid = request.session['requestParams']['datasetid']
+        else:
+            datasetid = None
+        if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
+            jeditaskid = request.session['requestParams']['jeditaskid']
+        else:
+            jeditaskid = None
+        if datasetid and jeditaskid:
+            extraquery_files += """
+                pandaid in (
+                (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid = {} )
+                union all
+                (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid = {})
+                ) """.format(jeditaskid, datasetid, jeditaskid, datasetid)
+    else:
+        fileid = None
+
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
+
+    if len(extraquery_files) > 1:
+        wildCardExtension += ' AND ' + extraquery_files
+    ###TODO Rework it?
+    if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
+        return render_to_response('message.html', {
+            'desc': 'Request token is not found or data is outdated. Please reload the original page.'},
+                                  content_type='text/html')
+    ####
+    #    if 'batchid' in request.session['requestParams']:
+    #        query['batchid'] = request.session['requestParams']['batchid']
+    jobs = []
+
+    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+            'json' in request.session['requestParams']):
+        values = [f.name for f in Jobsactive4._meta.get_fields()]
+    elif eventservice:
+        values = 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice', 'nevents', 'gshare', 'noutputdatafiles', 'parentid', 'attemptnr', 'actualcorecount', 'resourcetype', 'schedulerid', 'pilotid'
+    else:
+        values = 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents', 'gshare', 'noutputdatafiles', 'parentid', 'attemptnr', 'actualcorecount', 'resourcetype', 'schedulerid', 'pilotid'
+
+    JOB_LIMITS = request.session['JOB_LIMIT']
+    totalJobs = 0
+    showTop = 0
+
+    if 'limit' in request.session['requestParams']:
+        request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
+
+    droppedList = []
+    if request.user.is_authenticated and request.user.is_tester:
+        taskids = {}
+        tk = 0
+        if 'eventservice' in request.session['requestParams']:
+            isEventTask = True
+            print('Event Service!')
+        else:
+            isEventTask = False
+        if 'jeditaskid' in request.session['requestParams']:
+            taskids[request.session['requestParams']['jeditaskid']] = 1
+        dropmode = True
+        if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+            'mode'] == 'drop': dropmode = True
+        if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+            'mode'] == 'nodrop': dropmode = False
+        isReturnDroppedPMerge = False
+        if 'processingtype' in request.session['requestParams'] and \
+                request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge = True
+        isJumbo = False
+        if dropmode and (len(taskids) == 1) and 'eventservice' in request.session['requestParams']:
+            if request.session['requestParams']['eventservice'] != '4' and request.session['requestParams'][
+                'eventservice'] != 'jumbo':
+                tk, droppedList, wildCardExtension = dropalgorithm.dropRetrielsJobs(list(taskids.keys())[0],
+                                                                                    wildCardExtension, isEventTask)
+            else:
+                isJumbo = True
+
+    harvesterjobstatus = ''
+
+    from core.harvester.views import getHarvesterJobs
+
+    if 'jobstatus' in request.session['requestParams']:
+        harvesterjobstatus = request.session['requestParams']['jobstatus']
+    if 'transferringnotupdated' in request.session['requestParams']:
+        jobs = stateNotUpdated(request, state='transferring', values=values, wildCardExtension=wildCardExtension)
+    elif 'statenotupdated' in request.session['requestParams']:
+        jobs = stateNotUpdated(request, values=values, wildCardExtension=wildCardExtension)
+    elif 'harvesterinstance' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
+        jobs = getHarvesterJobs(request, instance=request.session['requestParams']['harvesterinstance'],
+                                workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
+    elif 'harvesterid' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
+        jobs = getHarvesterJobs(request, instance=request.session['requestParams']['harvesterid'],
+                                workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
+    elif ('harvesterinstance' not in request.session['requestParams'] and 'harvesterid' not in request.session[
+        'requestParams']) and 'workerid' in request.session['requestParams']:
+        jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'],
+                                jobstatus=harvesterjobstatus)
+    else:
+        excludedTimeQuery = copy.deepcopy(query)
+        if ('modificationtime__castdate__range' in excludedTimeQuery and not 'date_to' in request.session[
+            'requestParams']):
+            del excludedTimeQuery['modificationtime__castdate__range']
+        jobs.extend(Jobsdefined4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
+                    :request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(Jobsactive4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
+                    :request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(Jobswaiting4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
+                    :request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[
+                    :request.session['JOB_LIMIT']].values(*values))
+        listJobs = [Jobsarchived4, Jobsactive4, Jobswaiting4, Jobsdefined4]
+        if not noarchjobs:
+            queryFrozenStates = []
+            if 'jobstatus' in request.session['requestParams']:
+                if isEventTask:
+                    queryFrozenStates = list(
+                        filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
+                               ['finished', 'failed', 'cancelled', 'closed', 'merging']))
+                else:
+                    queryFrozenStates = list(
+                        filter(set(request.session['requestParams']['jobstatus'].split('|')).__contains__,
+                               ['finished', 'failed', 'cancelled', 'closed']))
+            ##hard limit is set to 2K
+            if ('jobstatus' not in request.session['requestParams'] or len(queryFrozenStates) > 0):
+
+                if ('limit' not in request.session['requestParams'] and 'jeditaskid' not in request.session[
+                    'requestParams']):
+                    request.session['JOB_LIMIT'] = 20000
+                    JOB_LIMITS = 20000
+                    showTop = 1
+                elif ('limit' not in request.session['requestParams'] and 'jeditaskid' in request.session[
+                    'requestParams']):
+                    request.session['JOB_LIMIT'] = 200000
+                    JOB_LIMITS = 200000
+                else:
+                    request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
+                    JOB_LIMITS = int(request.session['requestParams']['limit'])
+                if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
+                                                         "%Y-%m-%d %H:%M:%S")).days > 1) or \
+                        ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
+                                                             "%Y-%m-%d %H:%M:%S")).days > 1)):
+                    if 'jeditaskid' in request.session['requestParams'] and 'json' in request.session['requestParams'] \
+                            and ('fulllist' in request.session['requestParams'] and
+                                 request.session['requestParams']['fulllist'] == 'true'):
+                        del query['modificationtime__castdate__range']
+                    archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[
+                               :request.session['JOB_LIMIT']].values(*values)
+                    listJobs.append(Jobsarchived)
+                    totalJobs = len(archJobs)
+                    jobs.extend(archJobs)
+        if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+                'json' not in request.session['requestParams'])):
+            thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension, dkey))
+            thread.start()
+        else:
+            thread = None
+
+    ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
+    taskids = {}
+
+    for job in jobs:
+        if 'jeditaskid' in job: taskids[job['jeditaskid']] = 1
+    dropmode = True
+    if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+        'mode'] == 'drop': dropmode = True
+    if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+        'mode'] == 'nodrop': dropmode = False
+    isReturnDroppedPMerge = False
+    if 'processingtype' in request.session['requestParams'] and \
+            request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge = True
+    droplist = []
+    newdroplist = []
+    droppedPmerge = set()
+    newdroppedPmerge = set()
+    cntStatus = []
+    newjobs = copy.deepcopy(jobs)
+    if dropmode and (len(taskids) == 1):
+        start = time.time()
+        jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs, list(taskids.keys())[0], isReturnDroppedPMerge)
+        end = time.time()
+        print(end - start)
+        if request.user.is_authenticated and request.user.is_tester:
+            if 'eventservice' in request.session['requestParams']:
+                isEventTask = True
+                print('Event Service!')
+            else:
+                isEventTask = False
+            start = time.time()
+            if isJumbo == False:
+                newjobs, newdroppedPmerge, newdroplist = dropalgorithm.clearDropRetrielsJobs(tk=tk,
+                                                                                             droplist=droppedList,
+                                                                                             jobs=newjobs,
+                                                                                             isEventTask=isEventTask,
+                                                                                             isReturnDroppedPMerge=isReturnDroppedPMerge)
+            end = time.time()
+            print(end - start)
+
+    # get attemps of file if fileid in request params
+    files_attempts_dict = {}
+    files_attempts = []
+    if fileid:
+        if fileid and jeditaskid and datasetid:
+            fquery = {}
+            fquery['pandaid__in'] = [job['pandaid'] for job in jobs if len(jobs) > 0]
+            fquery['fileid'] = fileid
+            files_attempts.extend(Filestable4.objects.filter(**fquery).values('pandaid', 'attemptnr'))
+            files_attempts.extend(FilestableArch.objects.filter(**fquery).values('pandaid', 'attemptnr'))
+            if len(files_attempts) > 0:
+                files_attempts_dict = dict(
+                    zip([f['pandaid'] for f in files_attempts], [ff['attemptnr'] for ff in files_attempts]))
+
+            jfquery = {'jeditaskid': jeditaskid, 'datasetid': datasetid, 'fileid': fileid}
+            jedi_file = JediDatasetContents.objects.filter(**jfquery).values('attemptnr', 'maxattempt', 'failedattempt',
+                                                                             'maxfailure')
+            if jedi_file and len(jedi_file) > 0:
+                jedi_file = jedi_file[0]
+            if len(files_attempts_dict) > 0:
+                for job in jobs:
+                    if job['pandaid'] in files_attempts_dict:
+                        job['fileattemptnr'] = files_attempts_dict[job['pandaid']]
+                    else:
+                        job['fileattemptnr'] = None
+                    if jedi_file and 'maxattempt' in jedi_file:
+                        job['filemaxattempts'] = jedi_file['maxattempt']
+
+    jobs = cleanJobList(request, jobs)
+    jobs = reconstructJobsConsumers(jobs)
+
+    njobs = len(jobs)
+    jobtype = ''
+    if 'jobtype' in request.session['requestParams']:
+        jobtype = request.session['requestParams']['jobtype']
+    elif '/analysis' in request.path:
+        jobtype = 'analysis'
+    elif '/production' in request.path:
+        jobtype = 'production'
+
+    if u'display_limit' in request.session['requestParams']:
+        if int(request.session['requestParams']['display_limit']) > njobs:
+            display_limit = njobs
+        else:
+            display_limit = int(request.session['requestParams']['display_limit'])
+        url_nolimit = removeParam(request.get_full_path(), 'display_limit')
+    else:
+        display_limit = 1000
+        url_nolimit = request.get_full_path()
+    njobsmax = display_limit
+
+    if 'sortby' in request.session['requestParams']:
+        sortby = request.session['requestParams']['sortby']
+
+        if sortby == 'time-ascending':
+            jobs = sorted(jobs,
+                          key=lambda x: x['modificationtime'] if not x['modificationtime'] is None else datetime(1900,
+                                                                                                                 1, 1))
+        if sortby == 'time-descending':
+            jobs = sorted(jobs,
+                          key=lambda x: x['modificationtime'] if not x['modificationtime'] is None else datetime(1900,
+                                                                                                                 1, 1),
+                          reverse=True)
+        if sortby == 'statetime':
+            jobs = sorted(jobs,
+                          key=lambda x: x['statechangetime'] if not x['statechangetime'] is None else datetime(1900, 1,
+                                                                                                               1),
+                          reverse=True)
+        elif sortby == 'priority':
+            jobs = sorted(jobs, key=lambda x: x['currentpriority'] if not x['currentpriority'] is None else 0,
+                          reverse=True)
+        elif sortby == 'attemptnr':
+            jobs = sorted(jobs, key=lambda x: x['attemptnr'], reverse=True)
+        elif sortby == 'duration-ascending':
+            jobs = sorted(jobs, key=lambda x: x['durationsec'])
+        elif sortby == 'duration-descending':
+            jobs = sorted(jobs, key=lambda x: x['durationsec'], reverse=True)
+        elif sortby == 'duration':
+            jobs = sorted(jobs, key=lambda x: x['durationsec'])
+        elif sortby == 'PandaID':
+            jobs = sorted(jobs, key=lambda x: x['pandaid'], reverse=True)
+    elif fileid:
+        sortby = "fileattemptnr-descending"
+        jobs = sorted(jobs, key=lambda x: x['fileattemptnr'], reverse=True)
+    else:
+        sortby = "attemptnr-descending,pandaid-descending"
+        jobs = sorted(jobs, key=lambda x: [-x['attemptnr'], -x['pandaid']])
+
+    taskname = ''
+    if 'jeditaskid' in request.session['requestParams']:
+        taskname = getTaskName('jeditaskid', request.session['requestParams']['jeditaskid'])
+    if 'taskid' in request.session['requestParams']:
+        taskname = getTaskName('jeditaskid', request.session['requestParams']['taskid'])
+
+    if 'produsername' in request.session['requestParams']:
+        user = request.session['requestParams']['produsername']
+    elif 'user' in request.session['requestParams']:
+        user = request.session['requestParams']['user']
+    else:
+        user = None
+
+    ## set up google flow diagram
+    flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
+
+    if ('datasets' in request.session['requestParams']) and (
+            request.session['requestParams']['datasets'] == 'yes') and ((
+                                                                                ('HTTP_ACCEPT' in request.META) and (
+                                                                                request.META.get('HTTP_ACCEPT') in (
+                                                                        'text/json', 'application/json'))) or (
+                                                                                'json' in request.session[
+                                                                            'requestParams'])):
+        for job in jobs:
+            files = []
+            pandaid = job['pandaid']
+            files.extend(JediDatasetContents.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
+            ninput = 0
+
+            dsquery = Q()
+            counter = 0
+            if len(files) > 0:
+                for f in files:
+                    if f['type'] == 'input': ninput += 1
+                    f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
+
+                    f['DSQuery'] = {'jeditaskid': job['jeditaskid'], 'datasetid': f['datasetid']}
+                    dsquery = dsquery | Q(Q(jeditaskid=job['jeditaskid']) & Q(datasetid=f['datasetid']))
+                    counter += 1
+                    if counter == 30:
+                        break
+
+                dsets = JediDatasets.objects.filter(dsquery).extra(
+                    select={"dummy1": '/*+ INDEX_RS_ASC(ds JEDI_DATASETS_PK) */ 1 '}).values()
+                if len(dsets) > 0:
+                    for ds in dsets:
+                        for file in files:
+                            if 'DSQuery' in file and file['DSQuery']['jeditaskid'] == ds['jeditaskid'] and \
+                                    file['DSQuery']['datasetid'] == ds['datasetid']:
+                                file['dataset'] = ds['datasetname']
+                                del file['DSQuery']
+
+                    # dsets = JediDatasets.objects.filter(jeditaskid=job['jeditaskid'], datasetid=f['datasetid']).extra(select={"dummy1" : '/*+ INDEX_RS_ASC(ds JEDI_DATASETS_PK) */ 1 '}).values()
+                    # if len(dsets) > 0:
+                    #    f['datasetname'] = dsets[0]['datasetname']
+
+            if True:
+                # if ninput == 0:
+                files.extend(Filestable4.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
+                if len(files) == 0:
+                    files.extend(FilestableArch.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
+                if len(files) > 0:
+                    for f in files:
+                        if 'creationdate' not in f: f['creationdate'] = f['modificationtime']
+                        if 'fileid' not in f: f['fileid'] = f['row_id']
+                        if 'datasetname' not in f and 'dataset' in f: f['datasetname'] = f['dataset']
+                        if 'modificationtime' in f: f['oldfiletable'] = 1
+                        if 'destinationdblock' in f and f['destinationdblock'] is not None:
+                            f['destinationdblock_vis'] = f['destinationdblock'].split('_')[-1]
+            files = sorted(files, key=lambda x: x['type'])
+            nfiles = len(files)
+            logfile = {}
+            for file in files:
+                if file['type'] == 'log':
+                    logfile['lfn'] = file['lfn']
+                    logfile['guid'] = file['guid']
+                    if 'destinationse' in file:
+                        logfile['site'] = file['destinationse']
+                    else:
+                        logfilerec = Filestable4.objects.filter(pandaid=pandaid, lfn=logfile['lfn']).values()
+                        if len(logfilerec) == 0:
+                            logfilerec = FilestableArch.objects.filter(pandaid=pandaid, lfn=logfile['lfn']).values()
+                        if len(logfilerec) > 0:
+                            logfile['site'] = logfilerec[0]['destinationse']
+                            logfile['guid'] = logfilerec[0]['guid']
+                    logfile['scope'] = file['scope']
+                file['fsize'] = int(file['fsize'] / 1000000)
+            job['datasets'] = files
+
+    # show warning or not
+    if njobs <= request.session['JOB_LIMIT']:
+        showwarn = 0
+    else:
+        showwarn = 1
+
+    # Sort in order to see the most important tasks
+    sumd, esjobdict = jobSummaryDict(request, jobs,
+                                     standard_fields + ['corecount', 'noutputdatafiles', 'actualcorecount',
+                                                        'schedulerid', 'pilotversion'])
+    if sumd:
+        for item in sumd:
+            if item['field'] == 'jeditaskid':
+                item['list'] = sorted(item['list'], key=lambda k: k['kvalue'], reverse=True)
+
+    if 'jeditaskid' in request.session['requestParams']:
+        if len(jobs) > 0:
+            for job in jobs:
+                if 'maxvmem' in job:
+                    if type(job['maxvmem']) is int and job['maxvmem'] > 0:
+                        job['maxvmemmb'] = "%0.2f" % (job['maxvmem'] / 1000.)
+                        job['avgvmemmb'] = "%0.2f" % (job['avgvmem'] / 1000.)
+                if 'maxpss' in job:
+                    if type(job['maxpss']) is int and job['maxpss'] > 0:
+                        job['maxpss'] = "%0.2f" % (job['maxpss'] / 1024.)
+
+    testjobs = False
+    if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams'][
+        'prodsourcelabel'].lower().find('test') >= 0:
+        testjobs = True
+    tasknamedict = taskNameDict(jobs)
+    errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
+                                                                                          testjobs)
+
+    # Here we getting extended data for site
+    jobsToShow = jobs[:njobsmax]
+    from core.libs import exlib
+    try:
+        jobsToShow = exlib.fileList(jobsToShow)
+    except Exception as e:
+        logger = logging.getLogger('bigpandamon-error')
+        logger.error(e)
+    ###RESERVE
+    distinctComputingSites = []
+    for job in jobsToShow:
+        distinctComputingSites.append(job['computingsite'])
+    distinctComputingSites = list(set(distinctComputingSites))
+    query = {}
+    query['siteid__in'] = distinctComputingSites
+    siteres = Schedconfig.objects.filter(**query).exclude(cloud='CMS').extra().values('siteid', 'status',
+                                                                                      'comment_field')
+    siteHash = {}
+    for site in siteres:
+        siteHash[site['siteid']] = (site['status'], site['comment_field'])
+    for job in jobsToShow:
+        if job['computingsite'] in siteHash.keys():
+            job['computingsitestatus'] = siteHash[job['computingsite']][0]
+            job['computingsitecomment'] = siteHash[job['computingsite']][1]
+    if thread != None:
+        try:
+            thread.join()
+            jobsTotalCount = sum(tcount[dkey])
+            print(dkey)
+            print(tcount[dkey])
+            del tcount[dkey]
+            print(tcount)
+            print(jobsTotalCount)
+        except:
+            jobsTotalCount = -1
+    else:
+        jobsTotalCount = -1
+
+    listPar = []
+    for key, val in request.session['requestParams'].items():
+        if (key != 'limit' and key != 'display_limit'):
+            listPar.append(key + '=' + str(val))
+    if len(listPar) > 0:
+        urlParametrs = '&'.join(listPar) + '&'
+    else:
+        urlParametrs = None
+    print(listPar)
+    del listPar
+    if (math.fabs(njobs - jobsTotalCount) < 1000 or jobsTotalCount == -1):
+        jobsTotalCount = None
+    else:
+        jobsTotalCount = int(math.ceil((jobsTotalCount + 10000) / 10000) * 10000)
+
+    for job in jobsToShow:
+        if job['creationtime']:
+            job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
+        if job['modificationtime']:
+            job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
+        if job['statechangetime']:
+            job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
+
+    isincomparisonlist = False
+    clist = []
+    if request.user.is_authenticated and request.user.is_tester:
+
+        cquery = {}
+        cquery['object'] = 'job'
+        cquery['userid'] = request.user.id
+        try:
+            jobsComparisonList = ObjectsComparison.objects.get(**cquery)
+        except ObjectsComparison.DoesNotExist:
+            jobsComparisonList = None
+
+        if jobsComparisonList:
+            try:
+                clist = json.loads(jobsComparisonList.comparisonlist)
+                newlist = []
+                for ce in clist:
+                    try:
+                        ceint = int(ce)
+                        newlist.append(ceint)
+                    except:
+                        pass
+                clist = newlist
+            except:
+                clist = []
+
+    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+            'json' not in request.session['requestParams'])):
+
+        xurl = extensibleURL(request)
+        time_locked_url = removeParam(removeParam(xurl, 'date_from', mode='extensible'), 'date_to', mode='extensible') + \
+                          'date_from=' + request.session['TFIRST'].strftime('%Y-%m-%dT%H:%M') + \
+                          '&date_to=' + request.session['TLAST'].strftime('%Y-%m-%dT%H:%M')
+        nodurminurl = removeParam(xurl, 'durationmin', mode='extensible')
+        print(xurl)
+        nosorturl = removeParam(xurl, 'sortby', mode='extensible')
+        nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
+        # nosorturl = removeParam(nosorturl, 'harvesterinstance', mode='extensible')
+        xurl = removeParam(nosorturl, 'mode', mode='extensible')
+
+        TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
+        TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
+        del request.session['TFIRST']
+        del request.session['TLAST']
+        errsByCount = importToken(request, errsByCount=errsByCount)
+        nodropPartURL = cleanURLFromDropPart(xurl)
+        difDropList = dropalgorithm.compareDropAlgorithm(droplist, newdroplist)
+        data = {
+            'prefix': getPrefix(request),
+            'errsByCount': errsByCount,
+            'errdSumd': errdSumd,
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'jobList': jobsToShow,
+            'jobtype': jobtype,
+            'njobs': njobs,
+            'user': user,
+            'sumd': sumd,
+            'xurl': xurl,
+            'xurlnopref': xurl[5:],
+            'droplist': droplist,
+            'ndrops': len(droplist) if len(droplist) > 0 else (- len(droppedPmerge)),
+            'tfirst': TFIRST,
+            'tlast': TLAST,
+            'plow': PLOW,
+            'phigh': PHIGH,
+            'showwarn': showwarn,
+            'joblimit': request.session['JOB_LIMIT'],
+            'limit': JOB_LIMITS,
+            'totalJobs': totalJobs,
+            'showTop': showTop,
+            'url_nolimit': url_nolimit,
+            'display_limit': display_limit,
+            'sortby': sortby,
+            'nosorturl': nosorturl,
+            'nodurminurl': nodurminurl,
+            'time_locked_url': time_locked_url,
+            'taskname': taskname,
+            'flowstruct': flowstruct,
+            'nodropPartURL': nodropPartURL,
+            'eventservice': eventservice,
+            'jobsTotalCount': jobsTotalCount,
+            'requestString': urlParametrs,
+            'built': datetime.now().strftime("%H:%M:%S"),
+            'newndrop_test': len(newdroplist) if len(newdroplist) > 0 else (- len(newdroppedPmerge)),
+            'cntStatus_test': cntStatus,
+            'ndropPmerge_test': len(newdroppedPmerge),
+            'droppedPmerge2_test': newdroppedPmerge,
+            'pandaIDList_test': newdroplist,
+            'difDropList_test': difDropList,
+            'clist': clist,
+            'warning': warning,
+        }
+        data.update(getContextVariables(request))
+        setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
+        ##self monitor
+        endSelfMonitor(request)
+        if eventservice:
+            response = render_to_response('jobListES.html', data, content_type='text/html')
+        else:
+            response = render_to_response('jobList.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+    else:
+        del request.session['TFIRST']
+        del request.session['TLAST']
+        if (('fields' in request.session['requestParams']) and (len(jobs) > 0)):
+            fields = request.session['requestParams']['fields'].split(',')
+            fields = (set(fields) & set(jobs[0].keys()))
+            if 'pandaid' not in fields:
+                list(fields).append('pandaid')
+            for job in jobs:
+                for field in list(job.keys()):
+                    if field in fields:
+                        pass
+                    else:
+                        del job[field]
+
+        data = {
+            "selectionsummary": sumd,
+            "jobs": jobs,
+            "errsByCount": errsByCount,
+        }
+        ##self monitor
+        endSelfMonitor(request)
+        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+
+def importToken(request, errsByCount):
     newErrsByCount = []
     random.seed()
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
@@ -3686,10 +4442,10 @@ def importToken(request,errsByCount):
             transactionKey = random.randrange(1000000)
             if ('pandalist' in item):
                 item['tk'] = transactionKey
-                for key,values in item['pandalist'].items():
-            #print item['error'] , key , values
+                for key, values in item['pandalist'].items():
+                    # print item['error'] , key , values
                     executionData.append((key, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
-            #setCacheEntry(request,transactionKey,executionData,60*60, isData=True)
+            # setCacheEntry(request,transactionKey,executionData,60*60, isData=True)
         else:
             executionData.append((item, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
             if isListPID == False:
@@ -3698,10 +4454,10 @@ def importToken(request,errsByCount):
         new_cur.executemany(query, executionData)
         newErrsByCount.append(item)
     if isListPID == True:
-        #newErrsByCount =  {'tk':transactionKey, 'pandalist':newErrsByCount}
+        # newErrsByCount =  {'tk':transactionKey, 'pandalist':newErrsByCount}
         newErrsByCount = transactionKey
-        #print newErrsByCount['tk']
-        print (len(errsByCount))
+        # print newErrsByCount['tk']
+        print(len(errsByCount))
     return newErrsByCount
 
 
@@ -3709,12 +4465,13 @@ def importToken(request,errsByCount):
 def summaryErrorsList(request):
     initRequest(request)
     notTkLive = 0
-    if ('tk' in request.session['requestParams'] and 'codename' in request.session['requestParams'] and 'codeval' in request.session['requestParams']):
+    if ('tk' in request.session['requestParams'] and 'codename' in request.session['requestParams'] and 'codeval' in
+            request.session['requestParams']):
         transactionkey = request.session['requestParams']['tk']
         codename = request.session['requestParams']['codename']
         codeval = request.session['requestParams']['codeval']
 
-        if (transactionkey!='' and codename != '' and codeval!=''):
+        if (transactionkey != '' and codename != '' and codeval != ''):
             checkTKeyQuery = '''
              SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}
          '''
@@ -3725,7 +4482,7 @@ def summaryErrorsList(request):
                 errorsList = cur.fetchall()
             except:
                 return redirect('/jobs/?limit=100')
-            if (len(errorsList) == 0 or errorsList ==''):
+            if (len(errorsList) == 0 or errorsList == ''):
                 data = getCacheEntry(request, transactionkey, isData=True)
                 if dbaccess['default']['ENGINE'].find('oracle') >= 0:
                     tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
@@ -3737,27 +4494,27 @@ def summaryErrorsList(request):
                     new_cur.executemany(query, data)
                 else:
                     notTkLive = 1
-            if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-            'json' not in request.session['requestParams'])):
-
+            if (not (
+                    ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+                    'json' not in request.session['requestParams'])):
                 xurl = extensibleURL(request)
-                print (xurl)
+                print(xurl)
                 nosorturl = removeParam(xurl, 'sortby', mode='extensible')
                 nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
 
-        #TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
-        #TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
-        #del request.session['TFIRST']
-        #del request.session['TLAST']
+                # TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
+                # TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
+                # del request.session['TFIRST']
+                # del request.session['TLAST']
 
                 nodropPartURL = cleanURLFromDropPart(xurl)
                 data = {
                     'prefix': getPrefix(request),
                     'tk': transactionkey,
-                    'codename':codename,
-                    'codeval':codeval,
+                    'codename': codename,
+                    'codeval': codeval,
                     'request': request,
-                    'notTkLive':str(notTkLive),
+                    'notTkLive': str(notTkLive),
                     'viewParams': request.session['viewParams'],
                     'requestParams': request.session['requestParams'],
                     'built': datetime.now().strftime("%H:%M:%S"),
@@ -3765,10 +4522,13 @@ def summaryErrorsList(request):
                 data.update(getContextVariables(request))
                 response = render_to_response('errorSummaryList.html', data, content_type='text/html')
                 return response
-        else: return redirect('/jobs/?limit=100')
+        else:
+            return redirect('/jobs/?limit=100')
 
     else:
         return redirect('/jobs/?limit=100')
+
+
 ###JSON for Datatables errors###
 def summaryErrorsListJSON(request):
     initRequest(request)
@@ -3776,17 +4536,16 @@ def summaryErrorsListJSON(request):
     codename = request.session['requestParams']['codename']
     codeval = request.session['requestParams']['codeval']
     fullListErrors = []
-    #isJobsss = False
-    print (request.session['requestParams'])
+    # isJobsss = False
+    print(request.session['requestParams'])
     for er in errorcodelist:
         if er['error'] == request.session['requestParams']['codename']:
             errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
         if er['name'] == str(request.session['requestParams']['codename']):
             codename = er['error']
             errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
-            #isJobsss=True
-    #d = dict((k, v) for k, v in errorcodelist if v >= request.session['requestParams']['codename'])
-
+            # isJobsss=True
+    # d = dict((k, v) for k, v in errorcodelist if v >= request.session['requestParams']['codename'])
 
     condition = request.session['requestParams']['tk']
     sqlRequest = '''
@@ -3801,8 +4560,8 @@ SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTER
 UNION ALL
 SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDAARCH.JOBSARCHIVED, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID)
     '''
-    #if isJobsss:
-    sqlRequest += ' WHERE '+ codename + '='+codeval
+    # if isJobsss:
+    sqlRequest += ' WHERE ' + codename + '=' + codeval
     # INPUT_EVENTS, TOTAL_EVENTS, STEP
     shortListErrors = []
     sqlRequestFull = sqlRequest.format(condition)
@@ -3813,7 +4572,7 @@ SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTER
         if (errorcode in error):
             try:
                 errnum = int(codeval)
-                if str(error[error.index(errorcode) + 1]) !='' and 'transformation' not in errorcode:
+                if str(error[error.index(errorcode) + 1]) != '' and 'transformation' not in errorcode:
                     descr = str(error[error.index(errorcode) + 1])
                 else:
                     if codename in errorCodes and errnum in errorCodes[codename]:
@@ -3826,24 +4585,27 @@ SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTER
             fullListErrors.append(rowDict)
     return HttpResponse(json.dumps(fullListErrors), content_type='application/json')
 
+
 def decimal_default(obj):
     if isinstance(obj, decimal.Decimal):
         return float(obj)
-    elif (obj == 0): return 0
-    elif (obj == 'None'): return -1
+    elif (obj == 0):
+        return 0
+    elif (obj == 'None'):
+        return -1
+
 
 def isEventService(job):
-
     if 'eventservice' in job and job['eventservice'] is not None:
         if 'specialhandling' in job and job['specialhandling'] and (
-                    job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 or (
-                job['eventservice'] != 'ordinary' and job['eventservice'])) and job['specialhandling'].find('sc:') == -1:
-                return True
+                job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 or (
+                job['eventservice'] != 'ordinary' and job['eventservice'])) and job['specialhandling'].find(
+            'sc:') == -1:
+            return True
         else:
             return False
     else:
         return False
-
 
 
 def cleanURLFromDropPart(url):
@@ -4050,7 +4812,6 @@ def descendentjoberrsinfo(request):
     errors = {}
 
     for job in jobs:
-
         errors[job['pandaid']] = getErrorDescription(job, mode='txt')
 
     endSelfMonitor(request)
@@ -4071,7 +4832,7 @@ def eventsInfo(request, mode=None, param=None):
     cur = connection.cursor()
     cur.execute(
         "select sum(decode(c.startevent,NULL,c.nevents,endevent-startevent+1)) nevents,c.status from atlas_panda.jedi_datasets d,atlas_panda.jedi_dataset_contents c where d.jeditaskid=c.jeditaskid and d.datasetid=c.datasetid and d.jeditaskid=%s and d.type in ('input','pseudo_input') and d.masterid is null group by c.status;" % (
-        jeditaskid))
+            jeditaskid))
     events = cur.fetchall()
     cur.close()
     data = {}
@@ -4081,6 +4842,7 @@ def eventsInfo(request, mode=None, param=None):
     data['jeditaskid'] = jeditaskid
 
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+
 
 @login_customrequired
 @csrf_exempt
@@ -4100,7 +4862,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
         return response
-
 
     eventservice = False
     query = setupView(request, hours=365 * 24)
@@ -4194,7 +4955,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 CNs = dn.split("/CN=")
                 if len(CNs) > 1:
                     int(CNs[-1])
-                    dn = dn[:-(len(CNs[-1])+4)]
+                    dn = dn[:-(len(CNs[-1]) + 4)]
             except ValueError:
                 pass
             rw = ruciowrapper()
@@ -4215,7 +4976,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
         harvesterInfo = isHarvesterJob(job['pandaid'])
         if harvesterInfo == False:
-           harvesterInfo = {}
+            harvesterInfo = {}
 
         pandaid = job['pandaid']
         colnames = job.keys()
@@ -4257,7 +5018,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     inputFilesSize = 0
     if 'nofiles' not in request.session['requestParams']:
         ## Get job files. First look in JEDI datasetcontents
-        print ("Pulling file info")
+        print("Pulling file info")
         files.extend(Filestable4.objects.filter(pandaid=pandaid).order_by('type').values())
         ninput = 0
         noutput = 0
@@ -4291,7 +5052,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 f['fsizemb'] = "%0.2f" % (f['fsize'] / 1048576.)
                 dsets = JediDatasets.objects.filter(datasetid=f['datasetid']).values()
                 if len(dsets) > 0:
-                    if  f['scope']+":" in f['dataset']:
+                    if f['scope'] + ":" in f['dataset']:
                         f['datasetname'] = dsets[0]['datasetname']
                         f['ruciodatasetname'] = dsets[0]['datasetname'].split(":")[1]
                     else:
@@ -4305,9 +5066,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     f['ddmsite'] = parced[0][4:]
                     f['dsttoken'] = parced[1]
 
-
             files = [x for x in files if x['destination'] != 'S3']
-
 
         if len(typeFiles) > 0:
             inputFilesSize = "%0.2f" % inputFilesSize
@@ -4323,7 +5082,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 if 'creationdate' not in f: f['creationdate'] = f['modificationtime']
                 if 'fileid' not in f: f['fileid'] = f['row_id']
                 if 'datasetname' not in f:
-                    if  f['scope']+":" in f['dataset']:
+                    if f['scope'] + ":" in f['dataset']:
                         f['datasetname'] = f['dataset']
                         f['ruciodatasetname'] = f['dataset'].split(":")[1]
                     else:
@@ -4363,7 +5122,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             logfile['fileid'] = file['fileid']
         file['fsize'] = int(file['fsize'])
         if file['type'] == 'input':
-            file['attemptnr'] = dcfilesDict[file['fileid']]['attemptnr'] if file['fileid'] in dcfilesDict else file['attemptnr']
+            file['attemptnr'] = dcfilesDict[file['fileid']]['attemptnr'] if file['fileid'] in dcfilesDict else file[
+                'attemptnr']
             file['maxattempt'] = dcfilesDict[file['fileid']]['maxattempt'] if file['fileid'] in dcfilesDict else None
 
     if 'pilotid' in job and job['pilotid'] is not None and job['pilotid'].startswith('http'):
@@ -4383,7 +5143,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     filesSorted.extend(sorted([file for file in files if file['type'] == 'log'], key=lambda x: x['lfn']))
     files = filesSorted
 
-    inputfiles = [{'jeditaskid':file['jeditaskid'], 'datasetid':file['datasetid'], 'fileid':file['fileid']} for file in files if file['type'] == 'input']
+    inputfiles = [{'jeditaskid': file['jeditaskid'], 'datasetid': file['datasetid'], 'fileid': file['fileid']} for file
+                  in files if file['type'] == 'input']
 
     ## Check for object store based log
     oslogpath = None
@@ -4414,7 +5175,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         job['metadata'] = json.dumps(job['metastruct'], sort_keys=True, indent=4, separators=(',', ': '))
 
     ## Get job parameters
-    print ("getting job parameters")
+    print("getting job parameters")
     jobparamrec = Jobparamstable.objects.filter(pandaid=pandaid)
     jobparams = None
     if len(jobparamrec) > 0:
@@ -4428,9 +5189,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     countOfInvocations = []
     ## If this is a JEDI job, look for job retries
     if 'jeditaskid' in job and job['jeditaskid'] and job['jeditaskid'] > 0:
-        print ("looking for retries")
+        print("looking for retries")
         ## Look for retries of this job
-
 
         if not isEventService(job):
             retryquery = {}
@@ -4459,7 +5219,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     runjobs = []
     mergejobs = []
     if 'jobset' in request.session['requestParams'] and 'jobsetid' in job and job['jobsetid'] > 0:
-        print ("jobset info")
+        print("jobset info")
         jsquery = {}
         jsquery['jobsetid'] = job['jobsetid']
         jsquery['produsername'] = job['produsername']
@@ -4479,7 +5239,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     libjob = id
                 if j['processingtype'] == 'usermerge':
                     mergejobs.append(id)
-
 
     esjobstr = ''
     if isEventService(job):
@@ -4524,7 +5283,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     runesjobs = []
     mergeesjobs = []
     if isEventService(job) and 'jobsetid' in job and job['jobsetid'] > 0:
-        print ("jobset info")
+        print("jobset info")
         esjsquery = {}
         esjsquery['jobsetid'] = job['jobsetid']
         esjsquery['produsername'] = job['produsername']
@@ -4599,15 +5358,13 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             if job['pandaid'] in clist:
                 isincomparisonlist = True
 
-
     # if it is ART test, get test name
     art_test = []
     artqueue = {'pandaid': pandaid}
     art_test.extend(ARTTests.objects.filter(**artqueue).values())
 
-
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-                'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
@@ -4647,13 +5404,13 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'esjobstr': esjobstr,
             'fileSummary': fileSummary,
             'built': datetime.now().strftime("%H:%M:%S"),
-            'produsername':produsername,
-            'harvesterInfo':harvesterInfo,
+            'produsername': produsername,
+            'harvesterInfo': harvesterInfo,
             'isincomparisonlist': isincomparisonlist,
             'clist': clist,
             'timedelta': delta,
             'inputfiles': inputfiles,
-            'rucioUserName':rucioUserName
+            'rucioUserName': rucioUserName
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -4666,8 +5423,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     elif (
-        ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+            ('HTTP_ACCEPT' in request.META) and (
+            request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+            'json' in request.session['requestParams']):
         del request.session['TFIRST']
         del request.session['TLAST']
 
@@ -4689,6 +5447,7 @@ class DateTimeEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime):
             return o.isoformat()
+
 
 @login_customrequired
 def userList(request):
@@ -4807,7 +5566,7 @@ def userList(request):
         jobsumd = jobSummaryDict(request, jobs, sumparams)[0]
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         TFIRST = request.session['TFIRST']
         TLAST = request.session['TLAST']
         del request.session['TFIRST']
@@ -4835,8 +5594,9 @@ def userList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     elif (
-        ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+            ('HTTP_ACCEPT' in request.META) and (
+            request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+            'json' in request.session['requestParams']):
         del request.session['TFIRST']
         del request.session['TLAST']
         resp = sumd
@@ -4844,7 +5604,8 @@ def userList(request):
         endSelfMonitor(request)
         return HttpResponse(json.dumps(resp), content_type='application/json')
 
-#@login_required(login_url='loginauth2')
+
+# @login_required(login_url='loginauth2')
 @login_customrequired
 def userInfo(request, user=''):
     valid, response = initRequest(request)
@@ -4908,7 +5669,6 @@ def userInfo(request, user=''):
     else:
         tasks = JediTasks.objects.filter(**query).filter(userQueryTask).values()
 
-
     tasks = sorted(tasks, key=lambda x: -x['jeditaskid'])
     tasks = cleanTaskList(request, tasks)
     ntasks = len(tasks)
@@ -4944,25 +5704,28 @@ def userInfo(request, user=''):
         if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
             jobs.extend(Jobsarchived.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
     else:
-        jobs.extend(Jobsdefined4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
-        jobs.extend(Jobsactive4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
-        jobs.extend(Jobswaiting4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
-        jobs.extend(Jobsarchived4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
-
+        jobs.extend(
+            Jobsdefined4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(
+            Jobsactive4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(
+            Jobswaiting4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
+        jobs.extend(
+            Jobsarchived4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
 
         # Here we go to an archive. Separation OR condition is done to enforce Oracle to perform indexed search.
         if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
-            query['produsername__startswith'] = user.strip() #.filter(userQueryJobs)
+            query['produsername__startswith'] = user.strip()  # .filter(userQueryJobs)
             archjobs = []
             # This two filters again to force Oracle search
-            archjobs.extend(Jobsarchived.objects.filter(**query).filter(Q(produsername=user.strip()))[:request.session['JOB_LIMIT']].values(*values))
+            archjobs.extend(Jobsarchived.objects.filter(**query).filter(Q(produsername=user.strip()))[
+                            :request.session['JOB_LIMIT']].values(*values))
             if len(archjobs) > 0:
-                jobs = jobs+archjobs
+                jobs = jobs + archjobs
             elif len(fullname) > 0:
-                #del query['produsername']
+                # del query['produsername']
                 query['produsername__startswith'] = fullname
                 jobs.extend(Jobsarchived.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-
 
     jobsetids = None
     # if len(jobs) < limit and ntasks == 0:
@@ -5032,7 +5795,8 @@ def userInfo(request, user=''):
             request.session['requestParams']['display_limit_jobs']) < len(jobs):
         display_limit_jobs = int(request.session['requestParams']['display_limit_jobs'])
         njobsmax = display_limit_jobs
-        url_nolimit_jobs = removeParam(request.get_full_path(), 'display_limit_jobs') + 'display_limit_jobs=' + str(len(jobs))
+        url_nolimit_jobs = removeParam(request.get_full_path(), 'display_limit_jobs') + 'display_limit_jobs=' + str(
+            len(jobs))
     else:
         display_limit_jobs = 100
         njobsmax = display_limit_jobs
@@ -5048,7 +5812,7 @@ def userInfo(request, user=''):
 
     sumd = userSummaryDict(jobs)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         flist = ['jobstatus', 'prodsourcelabel', 'processingtype', 'specialhandling', 'transformation', 'jobsetid',
                  'jeditaskid', 'computingsite', 'cloud', 'workinggroup', 'homepackage', 'inputfileproject',
                  'inputfiletype', 'attemptnr', 'priorityrange', 'jobsetrange']
@@ -5100,7 +5864,7 @@ def userInfo(request, user=''):
             'ntasks': ntasks,
             'tasksumd': tasksumd,
             'built': datetime.now().strftime("%H:%M:%S"),
-            'links' : links,
+            'links': links,
         }
         data.update(getContextVariables(request))
         ##self monitor
@@ -5114,7 +5878,8 @@ def userInfo(request, user=''):
         resp = sumd
         ##self monitor
         endSelfMonitor(request)
-        return HttpResponse(json.dumps(resp,default=datetime_handler),content_type='application/json')
+        return HttpResponse(json.dumps(resp, default=datetime_handler), content_type='application/json')
+
 
 @login_customrequired
 def siteList(request):
@@ -5130,7 +5895,6 @@ def siteList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
         return response
-
 
     for param in request.session['requestParams']:
         request.session['requestParams'][param] = escapeInput(request.session['requestParams'][param])
@@ -5233,7 +5997,7 @@ def siteList(request):
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         sumd = siteSummaryDict(sites)
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -5265,6 +6029,7 @@ def siteList(request):
         endSelfMonitor(request)
         return HttpResponse(json.dumps(resp, cls=DateEncoder), content_type='application/json')
 
+
 def get_panda_resource(siterec):
     url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
     http = urllib3.PoolManager()
@@ -5276,12 +6041,13 @@ def get_panda_resource(siterec):
             # if (data[cs]['siteid']!=data[cs]['panda_resource']):
             #     print data[cs]['siteid']
             if (data[cs] and siterec.siteid == data[cs]['siteid']):
-            #     # resourcesDict.setdefault(data[cs]['resourcetype'], []).append(cs)
-            #     # resourcesDictSites[data[cs]['siteid']] = data[cs]['panda_resource']
+                #     # resourcesDict.setdefault(data[cs]['resourcetype'], []).append(cs)
+                #     # resourcesDictSites[data[cs]['siteid']] = data[cs]['panda_resource']
                 return data[cs]['panda_resource']
     except Exception as exc:
-        print (exc)
-    #return resourcesDictSites
+        print(exc)
+    # return resourcesDictSites
+
 
 @login_customrequired
 def siteInfo(request, site=''):
@@ -5308,8 +6074,6 @@ def siteInfo(request, site=''):
             if queue['lastmod']:
                 queue['lastmod'] = queue['lastmod'].strftime(defaultDatetimeFormat)
 
-
-
     HPC = False
     njobhours = 12
     try:
@@ -5320,7 +6084,7 @@ def siteInfo(request, site=''):
         pass
     panda_resource = get_panda_resource(siterec)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         attrs = []
         if siterec:
             attrs.append({'name': 'GOC name', 'value': siterec.gocname})
@@ -5358,7 +6122,7 @@ def siteInfo(request, site=''):
             if siterec.maxtime > 0:
                 attrs.append({'name': 'Maximum time', 'value': "%.1f hours" % (float(siterec.maxtime) / 3600.)})
             attrs.append({'name': 'Space', 'value': "%d TB as of %s" % (
-            (float(siterec.space) / 1000.), siterec.tspace.strftime('%m-%d %H:%M'))})
+                (float(siterec.space) / 1000.), siterec.tspace.strftime('%m-%d %H:%M'))})
             attrs.append({'name': 'Last modified', 'value': "%s" % (siterec.lastmod.strftime('%Y-%m-%d %H:%M'))})
 
             iquery = {}
@@ -5381,7 +6145,7 @@ def siteInfo(request, site=''):
             'request': request,
             'viewParams': request.session['viewParams'],
             'site': siterec,
-            'panda_resource':panda_resource,
+            'panda_resource': panda_resource,
             'queues': sites,
             'colnames': colnames,
             'attrs': attrs,
@@ -5446,7 +6210,7 @@ def getListOfFailedBeforeSiteAssignedJobs(query, mismatchedSites, notime=True):
 def siteSummary(query, notime=True, extra="(1=1)"):
     summary = []
     querynotime = copy.deepcopy(query)
-    summaryResources=[]
+    summaryResources = []
     if notime:
         if 'modificationtime__castdate__range' in querynotime:
             del querynotime['modificationtime__castdate__range']
@@ -5459,17 +6223,22 @@ def siteSummary(query, notime=True, extra="(1=1)"):
     # summary.extend(Jobsarchived4.objects.filter(**query).values('cloud', 'computingsite', 'jobstatus').extra(where=[extra]).annotate(
     #     Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
     summaryResources.extend(
-        Jobsactive4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus', 'resourcetype','corecount').extra(
+        Jobsactive4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus', 'resourcetype',
+                                                         'corecount').extra(
             where=[extra]).annotate(
             Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
     summaryResources.extend(
-        Jobsdefined4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus', 'resourcetype','corecount').extra(
+        Jobsdefined4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus', 'resourcetype',
+                                                          'corecount').extra(
             where=[extra]).annotate(
             Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
-    summaryResources.extend(Jobswaiting4.objects.filter(**querynotime).values('cloud', 'computingsite','jobstatus', 'resourcetype','corecount').extra(where=[extra]).annotate(
-        Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
     summaryResources.extend(
-        Jobsarchived4.objects.filter(**query).values('cloud', 'computingsite', 'jobstatus', 'resourcetype','corecount').extra(
+        Jobswaiting4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus', 'resourcetype',
+                                                          'corecount').extra(where=[extra]).annotate(
+            Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
+    summaryResources.extend(
+        Jobsarchived4.objects.filter(**query).values('cloud', 'computingsite', 'jobstatus', 'resourcetype',
+                                                     'corecount').extra(
             where=[extra]).annotate(
             Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
 
@@ -5481,36 +6250,46 @@ def siteSummary(query, notime=True, extra="(1=1)"):
         else:
             actualcorecount = sumS['corecount']
         if sumS['cloud'] not in summaryResourcesDict:
-            summaryResourcesDict[sumS['cloud']] ={}
+            summaryResourcesDict[sumS['cloud']] = {}
             if sumS['computingsite'] not in summaryResourcesDict[sumS['cloud']]:
                 summaryResourcesDict[sumS['cloud']][sumS['computingsite']] = {}
                 if sumS['jobstatus'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']]:
                     summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']] = {}
-                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']]:
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {}
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
+                        sumS['jobstatus']]:
+                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
+                            sumS['resourcetype']] = {}
+                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
+                            sumS['resourcetype']] = {'jobstatus__count': sumS['jobstatus__count'],
+                                                     'corecount': actualcorecount}
                 else:
                     if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
                         sumS['jobstatus']]:
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
                             sumS['resourcetype']] = {}
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+                            sumS['resourcetype']] = {'jobstatus__count': sumS['jobstatus__count'],
+                                                     'corecount': actualcorecount}
         else:
             if sumS['computingsite'] not in summaryResourcesDict[sumS['cloud']]:
                 summaryResourcesDict[sumS['cloud']][sumS['computingsite']] = {}
                 if sumS['jobstatus'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']]:
                     summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']] = {}
-                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']]:
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {}
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
+                        sumS['jobstatus']]:
+                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
+                            sumS['resourcetype']] = {}
+                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
+                            sumS['resourcetype']] = {'jobstatus__count': sumS['jobstatus__count'],
+                                                     'corecount': actualcorecount}
                 else:
                     if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
                         sumS['jobstatus']]:
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
                             sumS['resourcetype']] = {}
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+                            sumS['resourcetype']] = {'jobstatus__count': sumS['jobstatus__count'],
+                                                     'corecount': actualcorecount}
             else:
                 if sumS['jobstatus'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']]:
                     summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']] = {}
@@ -5519,35 +6298,38 @@ def siteSummary(query, notime=True, extra="(1=1)"):
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
                             sumS['resourcetype']] = {}
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+                            sumS['resourcetype']] = {'jobstatus__count': sumS['jobstatus__count'],
+                                                     'corecount': actualcorecount}
                 else:
                     if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
                         sumS['jobstatus']]:
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
                             sumS['resourcetype']] = {}
                         summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+                            sumS['resourcetype']] = {'jobstatus__count': sumS['jobstatus__count'],
+                                                     'corecount': actualcorecount}
     summaryList = []
     obj = {}
     for cloud in summaryResourcesDict.keys():
         for site in summaryResourcesDict[cloud].keys():
             for jobstatus in summaryResourcesDict[cloud][site].keys():
-                jobscount =0
+                jobscount = 0
                 obj['resource'] = {}
-                for i,resource in enumerate(summaryResourcesDict[cloud][site][jobstatus]):
+                for i, resource in enumerate(summaryResourcesDict[cloud][site][jobstatus]):
                     # obj['resource'].append({resource:summaryResourcesDict[cloud][site][jobstatus][resource]})
-                    #obj['resource'][resource] = summaryResourcesDict[cloud][site][jobstatus][resource]
+                    # obj['resource'][resource] = summaryResourcesDict[cloud][site][jobstatus][resource]
                     if resource not in obj['resource']:
                         obj['resource'][resource] = {}
                         obj['resource'][resource]['jobstatus__count'] = {}
                     if resource not in obj['resource']:
                         obj['resource'][resource] = {}
                         obj['resource'][resource]['corecount'] = {}
-                    obj['resource'][resource]['jobstatus__count'] = summaryResourcesDict[cloud][site][jobstatus][resource]['jobstatus__count']
-                    obj['resource'][resource]['corecount'] = summaryResourcesDict[cloud][site][jobstatus][resource]['corecount']
+                    obj['resource'][resource]['jobstatus__count'] = \
+                    summaryResourcesDict[cloud][site][jobstatus][resource]['jobstatus__count']
+                    obj['resource'][resource]['corecount'] = summaryResourcesDict[cloud][site][jobstatus][resource][
+                        'corecount']
                     jobscount += summaryResourcesDict[cloud][site][jobstatus][resource]['jobstatus__count']
                     if i == len(summaryResourcesDict[cloud][site][jobstatus]) - 1:
-
                         obj['cloud'] = cloud
                         obj['computingsite'] = site
                         obj['jobstatus'] = jobstatus
@@ -5621,6 +6403,7 @@ def wnSummary(query):
         Count('jobstatus')).order_by('modificationhost', 'jobstatus'))
     return summary
 
+
 @login_customrequired
 def wnInfo(request, site, wnname='all'):
     """ Give worker node level breakdown of site activity. Spot hot nodes, error prone nodes. """
@@ -5628,7 +6411,7 @@ def wnInfo(request, site, wnname='all'):
     if 'hours' in request.GET:
         hours = int(request.GET['hours'])
     elif 'days' in request.GET:
-        hours = 24*int(request.GET['days'])
+        hours = 24 * int(request.GET['days'])
     else:
         hours = 12
 
@@ -5649,7 +6432,6 @@ def wnInfo(request, site, wnname='all'):
         endSelfMonitor(request)
         return response
 
-
     # Here we try to get cached data
     data = getCacheEntry(request, "wnInfo")
     if data is not None:
@@ -5659,7 +6441,6 @@ def wnInfo(request, site, wnname='all'):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
         return response
-
 
     errthreshold = 15
 
@@ -5724,10 +6505,13 @@ def wnInfo(request, site, wnname='all'):
     ## Remove None wn from failed jobs plot if it is in system, add warning banner
     warning = {}
     if 'None' in wnPlotFailed:
-        warning['message'] = '%i failed jobs are excluded from "Failed jobs per WN slot" plot because of None value of modificationhost.' % (wnPlotFailed['None'])
+        warning[
+            'message'] = '%i failed jobs are excluded from "Failed jobs per WN slot" plot because of None value of modificationhost.' % (
+        wnPlotFailed['None'])
         try:
             del wnPlotFailed['None']
-        except: pass
+        except:
+            pass
 
     ## Convert dict to summary list
     wnkeys = wns.keys()
@@ -5787,7 +6571,7 @@ def wnInfo(request, site, wnname='all'):
             wns[wn]['statelist'].append(wns[wn]['states'][state])
         if wns[wn]['states']['finished']['count'] + wns[wn]['states']['failed']['count'] > 0:
             wns[wn]['pctfail'] = int(100. * float(wns[wn]['states']['failed']['count']) / (
-            wns[wn]['states']['finished']['count'] + wns[wn]['states']['failed']['count']))
+                    wns[wn]['states']['finished']['count'] + wns[wn]['states']['failed']['count']))
         if float(wns[wn]['states']['finished']['count']) < float(avgstates['finished']) / 5.:
             outlier += " LowFinished "
         if float(wns[wn]['states']['failed']['count']) > max(float(avgstates['failed']) * 3., 5.):
@@ -5797,7 +6581,10 @@ def wnInfo(request, site, wnname='all'):
 
     if 'sortby' in request.session['requestParams']:
         if request.session['requestParams']['sortby'] in sitestatelist:
-            fullsummary = sorted(fullsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']] if not isinstance(x['states'][request.session['requestParams']['sortby']], dict) else x['states'][request.session['requestParams']['sortby']]['count'],
+            fullsummary = sorted(fullsummary, key=lambda x: x['states'][
+                request.session['requestParams']['sortby']] if not isinstance(
+                x['states'][request.session['requestParams']['sortby']], dict) else
+            x['states'][request.session['requestParams']['sortby']]['count'],
                                  reverse=True)
         elif request.session['requestParams']['sortby'] == 'pctfail':
             fullsummary = sorted(fullsummary, key=lambda x: x['pctfail'], reverse=True)
@@ -5815,7 +6602,7 @@ def wnInfo(request, site, wnname='all'):
         wnPlotFinishedL.append([k, wnPlotFinished[k]])
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         xurl = extensibleURL(request)
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -5869,8 +6656,9 @@ def wnInfo(request, site, wnname='all'):
 def checkUcoreSite(site, usites):
     isUsite = False
     if site in usites:
-       isUsite = True
+        isUsite = True
     return isUsite
+
 
 def getAGISSites():
     url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
@@ -5887,8 +6675,9 @@ def getAGISSites():
             if 'harvester' in data[cs] and len(data[cs]['harvester']) != 0:
                 sitesHarvester.append(data[cs]['siteid'])
     except Exception as exc:
-        print (exc)
+        print(exc)
     return sitesUcore, sitesHarvester
+
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
     pilots = getPilotCounts(view)
@@ -5922,7 +6711,6 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
     for item in nojobabs:
         nojobabshash[item['site']] = item['dcount']
 
-
     mismatchedSites = []
     clouds = {}
     totstates = {}
@@ -5936,7 +6724,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
             if rec['computingsite'] in homeCloud:
                 cloud = homeCloud[rec['computingsite']]
             else:
-                print ("ERROR cloud not known", rec)
+                print("ERROR cloud not known", rec)
                 mismatchedSites.append([rec['computingsite'], rec['cloud']])
                 cloud = ''
         else:
@@ -5953,7 +6741,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         totstates[jobstatus] += count
 
         if cloud not in clouds:
-            print ("Cloud:" + cloud)
+            print("Cloud:" + cloud)
             clouds[cloud] = {}
             clouds[cloud]['name'] = cloud
             if cloud in cloudinfo: clouds[cloud]['status'] = cloudinfo[cloud]
@@ -6001,7 +6789,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         clouds[cloud]['sites'][site]['count'] += count
         clouds[cloud]['sites'][site]['states'][jobstatus]['count'] += count
 
-        if checkUcoreSite(site,ucoreComputingSites):
+        if checkUcoreSite(site, ucoreComputingSites):
             if 'resources' not in clouds[cloud]['sites'][site]['states'][jobstatus]:
                 clouds[cloud]['sites'][site]['states'][jobstatus]['resources'] = {}
                 clouds[cloud]['sites'][site]['states'][jobstatus]['resources'] = resources
@@ -6037,21 +6825,24 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
                     else:
                         clouds[cloud]['sites'][ressite]['states'][jobstatus] = {}
                         clouds[cloud]['sites'][ressite]['states'][jobstatus]['count'] = resources[reshash][
-                             'jobstatus__count']
+                            'jobstatus__count']
                         clouds[cloud]['sites'][ressite]['states'][jobstatus]['name'] = jobstatus
                         clouds[cloud]['sites'][ressite]['states'][jobstatus]['corecount'] = resources[reshash][
-                                'corecount']
+                            'corecount']
                         clouds[cloud]['sites'][ressite]['count'] += resources[reshash][
                             'jobstatus__count']
             else:
                 hashreskeys = clouds[cloud]['sites'][site]['states'][jobstatus]['resources'].keys()
                 for reshash in resources.keys():
                     if reshash in hashreskeys:
-                        clouds[cloud]['sites'][site]['states'][jobstatus]['resources'][reshash]['jobstatus__count'] += resources[reshash]['jobstatus__count']
+                        clouds[cloud]['sites'][site]['states'][jobstatus]['resources'][reshash]['jobstatus__count'] += \
+                        resources[reshash]['jobstatus__count']
                     else:
                         clouds[cloud]['sites'][site]['states'][jobstatus]['resources'][reshash] = {}
-                        clouds[cloud]['sites'][site]['states'][jobstatus]['resources'][reshash]['jobstatus__count'] = resources[reshash]['jobstatus__count']
-                        clouds[cloud]['sites'][site]['states'][jobstatus]['resources'][reshash]['corecount'] = resources[reshash]['corecount']
+                        clouds[cloud]['sites'][site]['states'][jobstatus]['resources'][reshash]['jobstatus__count'] = \
+                        resources[reshash]['jobstatus__count']
+                        clouds[cloud]['sites'][site]['states'][jobstatus]['resources'][reshash]['corecount'] = \
+                        resources[reshash]['corecount']
                     ressite = site + ' ' + reshash
                     if ressite not in clouds[cloud]['sites']:
                         clouds[cloud]['sites'][ressite] = {}
@@ -6097,12 +6888,13 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
     for cloud in clouds.keys():
         for site in clouds[cloud]['sites'].keys():
             if 'sumres' in clouds[cloud]['sites'][site]:
-                clouds[cloud]['sites'][site]['sumres']=list(clouds[cloud]['sites'][site]['sumres'])
+                clouds[cloud]['sites'][site]['sumres'] = list(clouds[cloud]['sites'][site]['sumres'])
             for jobstate in clouds[cloud]['sites'][site]['states'].keys():
                 if 'resources' in clouds[cloud]['sites'][site]['states'][jobstate]:
                     for res in cloudsresources[cloud]['sites'][site]['sumres']:
                         if res not in clouds[cloud]['sites'][site]['states'][jobstate]['resources'].keys():
-                            clouds[cloud]['sites'][site]['states'][jobstate]['resources'][res] = {'jobstatus__count':0, 'corecount':0}
+                            clouds[cloud]['sites'][site]['states'][jobstate]['resources'][res] = {'jobstatus__count': 0,
+                                                                                                  'corecount': 0}
 
     updateCacheWithListOfMismatchedCloudSites(mismatchedSites)
 
@@ -6184,7 +6976,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
             sites[site]['summary'] = sitesummary
             if sites[site]['states']['finished']['count'] + sites[site]['states']['failed']['count'] > 0:
                 sites[site]['pctfail'] = int(100. * float(sites[site]['states']['failed']['count']) / (
-                sites[site]['states']['finished']['count'] + sites[site]['states']['failed']['count']))
+                        sites[site]['states']['finished']['count'] + sites[site]['states']['failed']['count']))
             else:
                 sites[site]['pctfail'] = 0
 
@@ -6192,7 +6984,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         clouds[cloud]['summary'] = cloudsummary
         if clouds[cloud]['states']['finished']['count'] + clouds[cloud]['states']['failed']['count'] > 0:
             clouds[cloud]['pctfail'] = int(100. * float(clouds[cloud]['states']['failed']['count']) / (
-                clouds[cloud]['states']['finished']['count'] + clouds[cloud]['states']['failed']['count']))
+                    clouds[cloud]['states']['finished']['count'] + clouds[cloud]['states']['failed']['count']))
         else:
             clouds[cloud]['pctfail'] = 0
 
@@ -6200,9 +6992,9 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
 
     if 'sortby' in request.session['requestParams']:
         if request.session['requestParams']['sortby'] in statelist:
-            #fullsummary = sorted(fullsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']]['count'],
+            # fullsummary = sorted(fullsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']]['count'],
             #                     reverse=True)
-            #cloudsummary = sorted(cloudsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']],
+            # cloudsummary = sorted(cloudsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']],
             #                      reverse=True)
             for cloud in clouds:
                 clouds[cloud]['summary'] = sorted(clouds[cloud]['summary'],
@@ -6276,7 +7068,7 @@ def dashTaskSummary(request, hours, limit=999999, view='all'):
             tasks[taskid]['statelist'].append(tasks[taskid]['states'][state])
         if tasks[taskid]['states']['finished']['count'] + tasks[taskid]['states']['failed']['count'] > 0:
             tasks[taskid]['pctfail'] = int(100. * float(tasks[taskid]['states']['failed']['count']) / (
-            tasks[taskid]['states']['finished']['count'] + tasks[taskid]['states']['failed']['count']))
+                    tasks[taskid]['states']['finished']['count'] + tasks[taskid]['states']['failed']['count']))
 
         fullsummary.append(tasks[taskid])
     if 'sortby' in request.session['requestParams']:
@@ -6310,10 +7102,6 @@ def preProcess(request):
 
 
 # class prepDashTaskSummary:
-
-
-
-
 
 
 def dashTaskSummary_preprocess(request):
@@ -6548,7 +7336,7 @@ def worldjobs(request, view='production'):
     valid, response = initRequest(request)
 
     data = getCacheEntry(request, "worldjobs")
-    #data = None
+    # data = None
 
     if data is not None:
         data = json.loads(data)
@@ -6558,12 +7346,11 @@ def worldjobs(request, view='production'):
         endSelfMonitor(request)
         return response
 
-
     query = {}
     values = ['nucleus', 'computingsite', 'jobstatus', 'countjobsinstate']
     worldTasksSummary = []
 
-    if view=='production':
+    if view == 'production':
         query['tasktype'] = 'prod'
     else:
         query['tasktype'] = 'anal'
@@ -6602,7 +7389,7 @@ def worldjobs(request, view='production'):
                     nucleusSummary[nucleusInfo][state] = nucleus[nucleusInfo][site][state]
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         #        del request.session['TFIRST']
@@ -6619,7 +7406,7 @@ def worldjobs(request, view='production'):
             'nosorturl': nosorturl,
             'user': None,
             'built': datetime.now().strftime("%H:%M:%S"),
-            'hours':48,
+            'hours': 48,
         }
         ##self monitor
         endSelfMonitor(request)
@@ -6650,7 +7437,6 @@ def worldhs06s(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
         return response
-
 
     roundflag = False
     condition = ''
@@ -6703,7 +7489,7 @@ def worldhs06s(request):
         dictsite['usedhs06spersite'] = site['usedhs06spersite'] if site['usedhs06spersite'] else 0
         dictsite['failedhs06spersite'] = site['failedhs06spersite'] if site['failedhs06spersite'] else 0
         dictsite['failedhs06spersitepct'] = 100 * dictsite['failedhs06spersite'] / dictsite['usedhs06spersite'] if (
-        site['usedhs06spersite'] and site['usedhs06spersite'] > 0) else 0
+                site['usedhs06spersite'] and site['usedhs06spersite'] > 0) else 0
         nucleus[site['nucleus']].append(dictsite)
 
     for nuc in nucleus:
@@ -6754,7 +7540,7 @@ def worldhs06s(request):
         sortby = 'satellite-asc'
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         data = {
@@ -6784,12 +7570,13 @@ def worldhs06s(request):
 
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
+
 @login_customrequired
 def dashboard(request, view='production'):
     valid, response = initRequest(request)
     if not valid: return response
 
-#    data = getCacheEntry(request, "dashboard", skipCentralRefresh=True)
+    #    data = getCacheEntry(request, "dashboard", skipCentralRefresh=True)
     data = getCacheEntry(request, "dashboard")
     if data is not None:
         data = json.loads(data)
@@ -6824,7 +7611,8 @@ def dashboard(request, view='production'):
             extra = "(not eventservice is null and eventservice=2 and not specialhandling like '%%sc:%%')"
             estailtojobslinks = '&eventservice=2'
         noldtransjobs, transclouds, transrclouds = stateNotUpdated(request, state='transferring',
-                                                                   hoursSinceUpdate=hoursSinceUpdate, count=True, wildCardExtension=extra)
+                                                                   hoursSinceUpdate=hoursSinceUpdate, count=True,
+                                                                   wildCardExtension=extra)
     else:
         hours = 3
         noldtransjobs = 0
@@ -6867,7 +7655,7 @@ def dashboard(request, view='production'):
                 vos[vo]['statelist'].append(vos[vo]['states'][state])
                 if int(vos[vo]['states']['finished']['count']) + int(vos[vo]['states']['failed']['count']) > 0:
                     vos[vo]['pctfail'] = int(100. * float(vos[vo]['states']['failed']['count']) / (
-                    vos[vo]['states']['finished']['count'] + vos[vo]['states']['failed']['count']))
+                            vos[vo]['states']['finished']['count'] + vos[vo]['states']['failed']['count']))
             vosummary.append(vos[vo])
 
         if 'sortby' in request.session['requestParams']:
@@ -6891,7 +7679,8 @@ def dashboard(request, view='production'):
         cloudview = 'region'
     elif view != 'production':
         cloudview = 'N/A'
-    if view == 'production' and (cloudview == 'world' or cloudview == 'cloud'): #cloud view is the old way of jobs distributing;
+    if view == 'production' and (
+            cloudview == 'world' or cloudview == 'cloud'):  # cloud view is the old way of jobs distributing;
         # just to avoid redirecting
         if 'modificationtime__castdate__range' in query:
             query = {'modificationtime__castdate__range': query['modificationtime__castdate__range']}
@@ -6902,7 +7691,7 @@ def dashboard(request, view='production'):
         estailtojobslinks = ''
 
         if 'days' in request.session['requestParams']:
-            hours = int(request.session['requestParams']['days'])*24
+            hours = int(request.session['requestParams']['days']) * 24
         if 'hours' in request.session['requestParams']:
             hours = int(request.session['requestParams']['hours'])
 
@@ -6921,14 +7710,18 @@ def dashboard(request, view='production'):
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
             query['es'] = 0
 
-
         # This is done for compartibility with /jobs/ results
         excludedTimeQuery = copy.deepcopy(query)
         jobsarch4statuses = ['finished', 'failed', 'cancelled', 'closed']
-        if ('modificationtime__castdate__range' in excludedTimeQuery and not 'date_to' in request.session['requestParams']):
+        if ('modificationtime__castdate__range' in excludedTimeQuery and not 'date_to' in request.session[
+            'requestParams']):
             del excludedTimeQuery['modificationtime__castdate__range']
-        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**excludedTimeQuery).values(*values).extra(where=[extra]).exclude(isarchive=1).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
-        worldJobsSummary.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values).extra(where=[extra]).exclude(isarchive=0).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
+        worldJobsSummary.extend(
+            CombinedWaitActDefArch4.objects.filter(**excludedTimeQuery).values(*values).extra(where=[extra]).exclude(
+                isarchive=1).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
+        worldJobsSummary.extend(
+            CombinedWaitActDefArch4.objects.filter(**query).values(*values).extra(where=[extra]).exclude(
+                isarchive=0).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
         nucleus = {}
         statelist1 = statelist
         #    del statelist1[statelist1.index('jclosed')]
@@ -6939,19 +7732,21 @@ def dashboard(request, view='production'):
                 if jobs['nucleus'] in nucleus:
                     if jobs['computingsite'] in nucleus[jobs['nucleus']]:
                         nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] += jobs['countjobsinstate']
-                        if (jobs['jobstatus'] in ('finished', 'failed','merging')):
-                            nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ jobs['jobstatus']] += jobs['counteventsinstate']
+                        if (jobs['jobstatus'] in ('finished', 'failed', 'merging')):
+                            nucleus[jobs['nucleus']][jobs['computingsite']]['events' + jobs['jobstatus']] += jobs[
+                                'counteventsinstate']
 
                     else:
                         nucleus[jobs['nucleus']][jobs['computingsite']] = {}
                         for state in statelist1:
                             nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
-                            if (state in ('finished', 'failed','merging')):
-                                nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ state] = 0
+                            if (state in ('finished', 'failed', 'merging')):
+                                nucleus[jobs['nucleus']][jobs['computingsite']]['events' + state] = 0
 
                         nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
                         if (state in ('finished', 'failed', 'merging')):
-                            nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ state] = jobs['counteventsinstate']
+                            nucleus[jobs['nucleus']][jobs['computingsite']]['events' + state] = jobs[
+                                'counteventsinstate']
 
                 else:
                     nucleus[jobs['nucleus']] = {}
@@ -6959,12 +7754,12 @@ def dashboard(request, view='production'):
                     for state in statelist1:
                         nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
                         if (state in ('finished', 'failed', 'merging')):
-                            nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ state] = 0
+                            nucleus[jobs['nucleus']][jobs['computingsite']]['events' + state] = 0
 
                     nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
                     if (state in ('finished', 'failed', 'merging')):
-                        nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ jobs['jobstatus']] = jobs['counteventsinstate']
-
+                        nucleus[jobs['nucleus']][jobs['computingsite']]['events' + jobs['jobstatus']] = jobs[
+                            'counteventsinstate']
 
         nucleusSummary = {}
         for nucleusInfo in nucleus:
@@ -6977,7 +7772,7 @@ def dashboard(request, view='production'):
                         nucleusSummary[nucleusInfo][state] = nucleus[nucleusInfo][site][state]
 
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-                    'json' not in request.session['requestParams'])):
+                'json' not in request.session['requestParams'])):
             xurl = extensibleURL(request)
             nosorturl = removeParam(xurl, 'sortby', mode='extensible')
             if 'TFIRST' in request.session: del request.session['TFIRST']
@@ -6991,7 +7786,7 @@ def dashboard(request, view='production'):
                 'nucleussummary': nucleusSummary,
                 'statelist': statelist1,
                 'xurl': xurl,
-                'estailtojobslinks':estailtojobslinks,
+                'estailtojobslinks': estailtojobslinks,
                 'nosorturl': nosorturl,
                 'user': None,
                 'hours': hours,
@@ -7029,7 +7824,7 @@ def dashboard(request, view='production'):
         cur = connection.cursor()
         cur.execute(sqlRequest)
         rawsummary = fixLob(cur)
-        #rawsummary = cur.fetchall()
+        # rawsummary = cur.fetchall()
         mObjectStores = {}
         mObjectStoresTk = {}
         if len(rawsummary) > 0:
@@ -7048,7 +7843,7 @@ def dashboard(request, view='production'):
                 status = row[0]
                 count = row[1]
 
-                tk = setCacheData(request, pandaid = row[4],compsite = row[2])
+                tk = setCacheData(request, pandaid=row[4], compsite=row[2])
                 if osName in mObjectStores:
                     if not compsite in mObjectStores[osName]:
                         mObjectStores[osName][compsite] = {}
@@ -7061,8 +7856,8 @@ def dashboard(request, view='production'):
                 else:
                     mObjectStores[osName] = {}
                     mObjectStores[osName][compsite] = {}
-                    mObjectStoresTk[osName]={}
-                    mObjectStoresTk[osName][status]=[]
+                    mObjectStoresTk[osName] = {}
+                    mObjectStoresTk[osName][status] = []
                     for state in sitestatelist + ["closed"]:
                         mObjectStores[osName][compsite][state] = {'count': 0, 'tk': 0}
                     mObjectStores[osName][compsite][status] = {'count': count, 'tk': tk}
@@ -7074,7 +7869,7 @@ def dashboard(request, view='production'):
 
         mObjectStoresSummary = {}
         for osName in mObjectStores:
-            mObjectStoresSummary[osName] ={}
+            mObjectStoresSummary[osName] = {}
             for site in mObjectStores[osName]:
                 for state in mObjectStores[osName][site]:
                     if state in mObjectStoresSummary[osName]:
@@ -7121,7 +7916,7 @@ def dashboard(request, view='production'):
 
         request.session['max_age_minutes'] = 6
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-            'json' not in request.session['requestParams'])) or ('keephtml' in request.session['requestParams']):
+                'json' not in request.session['requestParams'])) or ('keephtml' in request.session['requestParams']):
             xurl = extensibleURL(request)
             nosorturl = removeParam(xurl, 'sortby', mode='extensible')
             del request.session['TFIRST']
@@ -7144,7 +7939,7 @@ def dashboard(request, view='production'):
                 'cloudTaskSummary': cloudTaskSummary,
                 'taskstates': taskstatedict,
                 'taskdays': taskdays,
-                'estailtojobslinks':estailtojobslinks,
+                'estailtojobslinks': estailtojobslinks,
                 'noldtransjobs': noldtransjobs,
                 'transclouds': transclouds,
                 'transrclouds': transrclouds,
@@ -7188,17 +7983,21 @@ def dashboard(request, view='production'):
 
             return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
+
 @login_customrequired
 def dashAnalysis(request):
     return dashboard(request, view='analysis')
+
 
 @login_customrequired
 def dashProduction(request):
     return dashboard(request, view='production')
 
+
 @login_customrequired
 def dashObjectStore(request):
     return dashboard(request, view='objectstore')
+
 
 def dashTasks(request, hours, view='production'):
     valid, response = initRequest(request)
@@ -7250,7 +8049,7 @@ def dashTasks(request, hours, view='production'):
             rw[cloud['name']] = rwData[cloud['name']]
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         del request.session['TFIRST']
@@ -7306,7 +8105,7 @@ def taskESExtendedInfo(request):
     else:
         return HttpResponse("Not jeditaskid supplied", content_type='text/html')
 
-    eventsdict=[]
+    eventsdict = []
     equery = {'jeditaskid': jeditaskid}
     eventsdict.extend(
         JediEvents.objects.filter(**equery).values('status').annotate(count=Count('status')).order_by('status'))
@@ -7319,7 +8118,6 @@ def taskESExtendedInfo(request):
 
 
 def removeDublicates(inlist, key):
-
     ids = set([item[key] for item in inlist])
     outlist = []
     for item in inlist:
@@ -7327,8 +8125,6 @@ def removeDublicates(inlist, key):
             outlist.append(item)
             ids.remove(item[key])
     return outlist
-
-
 
 
 @login_customrequired
@@ -7341,7 +8137,7 @@ def taskList(request):
     dkey = digkey(request)
     # Here we try to get cached data
     data = getCacheEntry(request, "taskList")
-    #data = None
+    # data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -7381,12 +8177,14 @@ def taskList(request):
         else:
             hashtaglistquery = "'" + request.session['requestParams']['hashtag'] + "'"
         hashtaglistquery = hashtaglistquery[:-1] if hashtaglistquery[-1] == ',' else hashtaglistquery
-        extraquery = """JEDITASKID IN ( SELECT HTT.TASKID FROM ATLAS_DEFT.T_HASHTAG H, ATLAS_DEFT.T_HT_TO_TASK HTT WHERE JEDITASKID = HTT.TASKID AND H.HT_ID = HTT.HT_ID AND H.HASHTAG IN ( %s ))""" % (hashtaglistquery)
+        extraquery = """JEDITASKID IN ( SELECT HTT.TASKID FROM ATLAS_DEFT.T_HASHTAG H, ATLAS_DEFT.T_HT_TO_TASK HTT WHERE JEDITASKID = HTT.TASKID AND H.HT_ID = HTT.HT_ID AND H.HASHTAG IN ( %s ))""" % (
+            hashtaglistquery)
 
-    if 'tape' in  request.session['requestParams']:
-        extraquery = """JEDITASKID IN (SELECT TASKID FROM ATLAS_DEFT.t_production_task where PRIMARY_INPUT in (select DATASET FROM ATLAS_DEFT.T_DATASET_STAGING) )"""
+    if 'tape' in request.session['requestParams']:
+        extraquery = """JEDITASKID IN (SELECT TASKID FROM ATLAS_DEFT.t_production_task where PRIMARY_INPUT in (select DATASET FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH) )"""
 
-    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task',
+                                                           wildCardExt=True)
     if len(extraquery) > 0:
         if len(wildCardExtension) > 0:
             wildCardExtension += ' AND ( ' + extraquery + ' )'
@@ -7396,11 +8194,11 @@ def taskList(request):
     if 'statenotupdated' in request.session['requestParams']:
         tasks = taskNotUpdated(request, query, wildCardExtension)
     else:
-        #wildCardExtension = "(((UPPER(taskname)  LIKE UPPER('%%.%%')) AND (UPPER(taskname)  LIKE UPPER('%%mc%%')) AND (UPPER(taskname)  LIKE UPPER('%%.CAOD_HIGG5D1.%%')) AND (UPPER(taskname)  LIKE UPPER('%%.32-07-8/'))))"
+        # wildCardExtension = "(((UPPER(taskname)  LIKE UPPER('%%.%%')) AND (UPPER(taskname)  LIKE UPPER('%%mc%%')) AND (UPPER(taskname)  LIKE UPPER('%%.CAOD_HIGG5D1.%%')) AND (UPPER(taskname)  LIKE UPPER('%%.32-07-8/'))))"
         tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values()
         listTasks.append(JediTasksOrdered)
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-                    'json' not in request.session['requestParams'])):
+                'json' not in request.session['requestParams'])):
             pass
             thread = Thread(target=totalCount, args=(listTasks, query, wildCardExtension, dkey))
             thread.start()
@@ -7416,7 +8214,7 @@ def taskList(request):
     else:
         tmpTableName = "TMP_IDS1"
     transactionKey = random.randrange(1000000)
-    print (transactionKey)
+    print(transactionKey)
     executionData = []
     for id in taskl:
         executionData.append((id, transactionKey))
@@ -7437,19 +8235,20 @@ def taskList(request):
     taskhashtags = dictfetchall(new_cur)
 
     datasetstage = []
-    if 'tape' in  request.session['requestParams']:
+    if 'tape' in request.session['requestParams']:
         stagesource = ''
-        if 'stagesource' in request.session['requestParams'] and request.session['requestParams']['stagesource']!='Unknown':
-            stagesource = " and t1.SOURCE_RSE='" + request.session['requestParams']['stagesource'].strip().replace("'","''")+"\'"
-        elif 'stagesource' in request.session['requestParams'] and request.session['requestParams']['stagesource']=='Unknown':
+        if 'stagesource' in request.session['requestParams'] and request.session['requestParams'][
+            'stagesource'] != 'Unknown':
+            stagesource = ' and t1.SOURCE_RSE=\'' + request.session['requestParams']['stagesource'].strip() + "\'"
+        elif 'stagesource' in request.session['requestParams'] and request.session['requestParams'][
+            'stagesource'] == 'Unknown':
             stagesource = ' and t1.SOURCE_RSE is null'
-            
 
         new_cur.execute(
             """
             SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE, t1.TOTAL_FILES, 
-                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID FROM ATLAS_DEFT.T_DATASET_STAGING t1
-                INNER join ATLAS_DEFT.T_ACTION_STAGING t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID %s and taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)
+                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID FROM ATLAS_DEFT.T_DATASET_STAGING@INTR.CERN.CH t1
+                INNER join ATLAS_DEFT.T_ACTION_STAGING@INTR.CERN.CH t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID %s and taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)
             """ % (stagesource, tmpTableName, transactionKey)
         )
         datasetstage = dictfetchall(new_cur)
@@ -7469,7 +8268,6 @@ def taskList(request):
             if not datasetstageitem['SOURCE_RSE']:
                 datasetstageitem['SOURCE_RSE'] = 'Unknown'
 
-
             if datasetstageitem['UPDATE_TIME']:
                 datasetstageitem['UPDATE_TIME'] = datasetstageitem['UPDATE_TIME'].strftime(defaultDatetimeFormat)
             else:
@@ -7483,25 +8281,25 @@ def taskList(request):
                 if task['jeditaskid'] in taskslistfiltered:
                     newtaskl.append(task['jeditaskid'])
                     newtasks.append(task)
-            tasks =  newtasks
+            tasks = newtasks
             taskl = newtaskl
-
 
     eventInfoDict = {}
     if eventservice:
-        #we get here events data
+        # we get here events data
         tquery = {}
         tasksEventInfo = GetEventsForTask.objects.filter(**tquery).extra(
-            where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid', 'totevrem', 'totev')
+            where=[
+                "JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values(
+            'jeditaskid', 'totevrem', 'totev')
 
-        #We do it because we intermix raw and queryset queries. With next new_cur.execute tasksEventInfo cleares
+        # We do it because we intermix raw and queryset queries. With next new_cur.execute tasksEventInfo cleares
         for tasksEventInfoItem in tasksEventInfo:
             listItem = {}
             listItem["jeditaskid"] = tasksEventInfoItem["jeditaskid"]
             listItem["totevrem"] = tasksEventInfoItem["totevrem"]
             listItem["totev"] = tasksEventInfoItem["totev"]
             eventInfoDict[tasksEventInfoItem["jeditaskid"]] = listItem
-
 
     # clean temporary table
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
@@ -7510,14 +8308,13 @@ def taskList(request):
     for taskid in taskhashtags:
         taskids[taskid['TASKID']] = taskid['HASHTAGS']
 
-
     # Filtering tasks if there are a few hashtahgs with 'AND' operand in query
     if 'hashtagsrt' in locals() and ',' in hashtagsrt:
         thashtags = hashtagsrt.split(',')
         newtasks = []
         for task in tasks:
             if task['jeditaskid'] in taskids.keys():
-                if all(ht+',' in taskids[task['jeditaskid']]+',' for ht in thashtags):
+                if all(ht + ',' in taskids[task['jeditaskid']] + ',' for ht in thashtags):
                     newtasks.append(task)
         tasks = newtasks
 
@@ -7552,7 +8349,6 @@ def taskList(request):
     #        nmax = display_limit
     #        url_nolimit = request.get_full_path()
 
-
     if 'display_limit' not in request.session['requestParams']:
         display_limit = 100
         nmax = display_limit
@@ -7567,15 +8363,13 @@ def taskList(request):
 
     tasks = getTaskScoutingInfo(tasks, nmax)
 
-    if 'tape' in  request.session['requestParams'] and len(datasetstage)>0:
+    if 'tape' in request.session['requestParams'] and len(datasetstage) > 0:
         datasetRSEsHash = {}
         for dataset in datasetstage:
             datasetRSEsHash[dataset['TASKID']] = dataset['SOURCE_RSE']
 
         for task in tasks:
             task['stagesource'] = datasetRSEsHash.get(task['jeditaskid'], 'Unknown')
-
-
 
     ## For event service, pull the jobs and event ranges
 
@@ -7606,7 +8400,7 @@ def taskList(request):
             tmpTableName = "TMP_IDS1"
 
         transactionKey = random.randrange(1000000)
-#        connection.enter_transaction_management()
+        #        connection.enter_transaction_management()
         new_cur = connection.cursor()
         executionData = []
         for id in esjobs:
@@ -7614,7 +8408,7 @@ def taskList(request):
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
 
-#        connection.commit()
+        #        connection.commit()
         new_cur.execute(
             """
             SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID
@@ -7627,8 +8421,8 @@ def taskList(request):
         #        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
 
         new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
- #       connection.commit()
- #       connection.leave_transaction_management()
+        #       connection.commit()
+        #       connection.leave_transaction_management()
 
         for ev in evtable:
             taskid = taskdict[ev['PANDAID']]
@@ -7652,18 +8446,19 @@ def taskList(request):
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     nohashtagurl = removeParam(xurl, 'hashtag', mode='extensible')
-    if thread!=None:
+    if thread != None:
         try:
             thread.join()
             tasksTotalCount = sum(tcount[dkey])
-            print (dkey)
-            print (tcount[dkey])
+            print(dkey)
+            print(tcount[dkey])
             del tcount[dkey]
-            print (tcount)
-            print (tasksTotalCount)
+            print(tcount)
+            print(tasksTotalCount)
         except:
             tasksTotalCount = -1
-    else: tasksTotalCount = -1
+    else:
+        tasksTotalCount = -1
 
     listPar = []
     for key, val in request.session['requestParams'].items():
@@ -7673,7 +8468,7 @@ def taskList(request):
         urlParametrs = '&'.join(listPar) + '&'
     else:
         urlParametrs = None
-    print (listPar)
+    print(listPar)
     del listPar
     if (math.fabs(ntasks - tasksTotalCount) < 1000 or tasksTotalCount == -1):
         tasksTotalCount = None
@@ -7692,10 +8487,8 @@ def taskList(request):
         if task['ttcrequested']:
             task['ttcrequested'] = task['ttcrequested'].strftime(defaultDatetimeFormat)
 
-
-
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+            'json' in request.session['requestParams']):
         ## Add info to the json dump if the request is for a single task
         if len(tasks) == 1:
             id = tasks[0]['jeditaskid']
@@ -7718,15 +8511,18 @@ def taskList(request):
         # getting jobs metadata if it is requested in URL [ATLASPANDA-492]
         if 'extra' in request.session['requestParams'] and 'metastruct' in request.session['requestParams']['extra']:
             jeditaskids = list(set([task['jeditaskid'] for task in tasks]))
-            MAX_N_TASKS = 100 #protection against DB overloading
+            MAX_N_TASKS = 100  # protection against DB overloading
             if len(jeditaskids) <= MAX_N_TASKS:
                 job_pids = []
                 jobQuery = {
-                    'jobstatus__in': ['finished', 'failed', 'transferring', 'merging', 'cancelled', 'closed', 'holding'],
+                    'jobstatus__in': ['finished', 'failed', 'transferring', 'merging', 'cancelled', 'closed',
+                                      'holding'],
                     'jeditaskid__in': jeditaskids
                 }
-                job_pids.extend(Jobsarchived4.objects.filter(**jobQuery).values('pandaid', 'jeditaskid', 'jobstatus', 'creationtime'))
-                job_pids.extend(Jobsarchived.objects.filter(**jobQuery).values('pandaid', 'jeditaskid', 'jobstatus', 'creationtime'))
+                job_pids.extend(Jobsarchived4.objects.filter(**jobQuery).values('pandaid', 'jeditaskid', 'jobstatus',
+                                                                                'creationtime'))
+                job_pids.extend(Jobsarchived.objects.filter(**jobQuery).values('pandaid', 'jeditaskid', 'jobstatus',
+                                                                               'creationtime'))
                 if len(job_pids) > 0:
                     jobs = addJobMetadata(job_pids, require=True)
                     taskMetadata = {}
@@ -7748,9 +8544,10 @@ def taskList(request):
         del request.session['TLAST']
         return HttpResponse(dump, content_type='application/json')
     else:
-        #tasks = removeDublicates(tasks, "jeditaskid")
+        # tasks = removeDublicates(tasks, "jeditaskid")
         sumd = taskSummaryDict(request, tasks, copy.deepcopy(standard_taskfields) +
-                                               ['stagesource'] if 'tape' in  request.session['requestParams'] else copy.deepcopy(standard_taskfields))
+                                               ['stagesource'] if 'tape' in request.session[
+            'requestParams'] else copy.deepcopy(standard_taskfields))
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
@@ -7783,6 +8580,7 @@ def taskList(request):
             response = render_to_response('taskList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
 
 @never_cache
 def killtasks(request):
@@ -7817,8 +8615,10 @@ def killtasks(request):
         return response
 
     user = request.user
-    if user.is_authenticated and (not user.social_auth is None) and (not user.social_auth.get(provider='cernauth2') is None) \
-            and (not user.social_auth.get(provider='cernauth2').extra_data is None) and ('username' in user.social_auth.get(provider='cernauth2').extra_data):
+    if user.is_authenticated and (not user.social_auth is None) and (
+    not user.social_auth.get(provider='cernauth2') is None) \
+            and (not user.social_auth.get(provider='cernauth2').extra_data is None) and (
+            'username' in user.social_auth.get(provider='cernauth2').extra_data):
         username = user.social_auth.get(provider='cernauth2').extra_data['username']
         fullname = user.social_auth.get(provider='cernauth2').extra_data['name']
 
@@ -7829,24 +8629,23 @@ def killtasks(request):
         return response
 
     if action == 1:
-        postdata = {"username": username, "task": taskid, "userfullname":fullname}
+        postdata = {"username": username, "task": taskid, "userfullname": fullname}
     else:
-        postdata = {"username": username, "task": taskid, "parameters":[1], "userfullname":fullname}
+        postdata = {"username": username, "task": taskid, "parameters": [1], "userfullname": fullname}
 
-
-    headers = {'Accept': 'application/json', 'Authorization': 'Token '+prodsysToken}
+    headers = {'Accept': 'application/json', 'Authorization': 'Token ' + prodsysToken}
 
     conn = urllib3.HTTPSConnectionPool(prodsysHost, timeout=100)
     resp = None
 
-#    if request.session['IS_TESTER']:
-    resp = conn.urlopen('POST', prodsysUrl, body=json.dumps(postdata, cls=DateEncoder), headers=headers, retries=1, assert_same_host=False)
-#    else:
-#        resp = {"detail": "You are not allowed to test. Sorry"}
-#        dump = json.dumps(resp, cls=DateEncoder)
-#        response = HttpResponse(dump, mimetype='text/plain')
-#        return response
-
+    #    if request.session['IS_TESTER']:
+    resp = conn.urlopen('POST', prodsysUrl, body=json.dumps(postdata, cls=DateEncoder), headers=headers, retries=1,
+                        assert_same_host=False)
+    #    else:
+    #        resp = {"detail": "You are not allowed to test. Sorry"}
+    #        dump = json.dumps(resp, cls=DateEncoder)
+    #        response = HttpResponse(dump, mimetype='text/plain')
+    #        return response
 
     if resp and len(resp.data) > 0:
         try:
@@ -7856,7 +8655,7 @@ def killtasks(request):
             elif resp['result'] == "OK":
                 resp['detail'] = 'Action peformed successfully, details: ' + resp['details']
         except:
-            resp = {"detail":"prodsys responce could not be parced"}
+            resp = {"detail": "prodsys responce could not be parced"}
     else:
         resp = {"detail": "Error with sending request to prodsys"}
     dump = json.dumps(resp, cls=DateEncoder)
@@ -7883,9 +8682,10 @@ def getTaskScoutingInfo(tasks, nmax):
     new_cur.executemany(query, executionData)
 
     tasksEventInfo = GetEventsForTask.objects.filter(**tquery).extra(
-        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid', 'totevrem', 'totev')
+        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values(
+        'jeditaskid', 'totevrem', 'totev')
 
-    #We do it because we intermix raw and queryset queries. With next new_cur.execute tasksEventInfo cleares
+    # We do it because we intermix raw and queryset queries. With next new_cur.execute tasksEventInfo cleares
     tasksEventInfoList = []
     for tasksEventInfoItem in tasksEventInfo:
         listItem = {}
@@ -7896,7 +8696,9 @@ def getTaskScoutingInfo(tasks, nmax):
 
     tasksEventInfoList.reverse()
 
-    failedInScouting = JediDatasets.objects.filter(**tquery).extra(where=["NFILESFAILED > NFILESTOBEUSED AND JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey) ]).values('jeditaskid')
+    failedInScouting = JediDatasets.objects.filter(**tquery).extra(where=[
+        "NFILESFAILED > NFILESTOBEUSED AND JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
+        tmpTableName, transactionKey)]).values('jeditaskid')
 
     taskStatuses = dict((task['jeditaskid'], task['status']) for task in tasks)
 
@@ -7906,7 +8708,8 @@ def getTaskScoutingInfo(tasks, nmax):
     # scoutingHasCritFailures
     tquery['nfilesfailed__gt'] = 0
     scoutingHasCritFailures = JediDatasets.objects.filter(**tquery).extra(
-        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid')
+        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values(
+        'jeditaskid')
     scoutingHasCritFailures = [item['jeditaskid'] for item in scoutingHasCritFailures if
                                (taskStatuses[item['jeditaskid']] in ('scouting'))]
 
@@ -7921,10 +8724,10 @@ def getTaskScoutingInfo(tasks, nmax):
     tquery = {}
     tquery['nfilesfailed'] = 0
     scoutingHasNonCritFailures = JediDatasets.objects.filter(**tquery).extra(
-        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid')
+        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values(
+        'jeditaskid')
     scoutingHasNonCritFailures = [item['jeditaskid'] for item in scoutingHasNonCritFailures if (
-    taskStatuses[item['jeditaskid']] == 'scouting' and item['jeditaskid'] not in scoutingHasCritFailures)]
-
+            taskStatuses[item['jeditaskid']] == 'scouting' and item['jeditaskid'] not in scoutingHasCritFailures)]
 
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
     transactionKey = random.randrange(1000000)
@@ -7937,7 +8740,8 @@ def getTaskScoutingInfo(tasks, nmax):
     tquery = {}
     tquery['relationtype'] = 'retry'
     scoutingHasNonCritFailures = JediJobRetryHistory.objects.filter(**tquery).extra(
-        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid')
+        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values(
+        'jeditaskid')
     scoutingHasNonCritFailures = [item['jeditaskid'] for item in scoutingHasNonCritFailures]
 
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
@@ -7945,7 +8749,8 @@ def getTaskScoutingInfo(tasks, nmax):
     for task in taskslToBeDisplayed:
         correspondendEventInfo = []
         if tasksEventInfoList and len(tasksEventInfoList) > 0:
-            correspondendEventInfo = [item for item in tasksEventInfoList if item["jeditaskid"]==task['jeditaskid']] #filter(lambda n: n.get('jeditaskid') == task['jeditaskid'], tasksEventInfo)
+            correspondendEventInfo = [item for item in tasksEventInfoList if item["jeditaskid"] == task[
+                'jeditaskid']]  # filter(lambda n: n.get('jeditaskid') == task['jeditaskid'], tasksEventInfo)
         if len(correspondendEventInfo) > 0:
             task['totevrem'] = int(correspondendEventInfo[0]['totevrem'])
             task['totev'] = correspondendEventInfo[0]['totev']
@@ -7961,12 +8766,13 @@ def getTaskScoutingInfo(tasks, nmax):
 
     return tasks
 
+
 def getErrorSummaryForEvents(request):
     valid, response = initRequest(request)
     if not valid: return response
     data = {}
     eventsErrors = []
-    print ('getting error summary for events')
+    print('getting error summary for events')
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
     else:
@@ -7985,7 +8791,7 @@ def getErrorSummaryForEvents(request):
     else:
         transactionKeyDJ = None
     equery = {}
-    equery['jeditaskid']=jeditaskid
+    equery['jeditaskid'] = jeditaskid
     equery['error_code__isnull'] = False
 
     if mode == 'drop':
@@ -8064,7 +8870,6 @@ def getErrorSummaryForEvents(request):
         data = {"error": "wrong mode specified"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
-
     for error in eventsErrorsUP:
         line = dict()
         for key, value in error.items():
@@ -8073,7 +8878,7 @@ def getErrorSummaryForEvents(request):
 
     for eventserror in eventsErrors:
         try:
-            eventserror['error_code']=int(eventserror['error_code'])
+            eventserror['error_code'] = int(eventserror['error_code'])
             if eventserror['error_code'] in errorCodes['piloterrorcode'].keys():
                 eventserror['error_description'] = errorCodes['piloterrorcode'][eventserror['error_code']]
             else:
@@ -8083,9 +8888,7 @@ def getErrorSummaryForEvents(request):
         if eventserror['pandaidlist'] and len(eventserror['pandaidlist']) > 0:
             eventserror['pandaidlist'] = eventserror['pandaidlist'].split(',')
 
-
-
-    data = {'errors' : eventsErrors}
+    data = {'errors': eventsErrors}
 
     response = render_to_response('eventsErrorSummary.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -8110,8 +8913,8 @@ def getSummaryForTaskList(request):
         hours = 7 * 24
     eventservice = False
     if 'eventservice' in request.session['requestParams'] and (
-                    request.session['requestParams']['eventservice'] == 'eventservice' or
-                    request.session['requestParams']['eventservice'] == '1'): eventservice = True
+            request.session['requestParams']['eventservice'] == 'eventservice' or
+            request.session['requestParams']['eventservice'] == '1'): eventservice = True
     if eventservice: hours = 7 * 24
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task',
                                                            wildCardExt=True)
@@ -8133,19 +8936,19 @@ def getSummaryForTaskList(request):
     taskEvents = []
     random.seed()
     transactionKey = random.randrange(1000000)
-#    connection.enter_transaction_management()
+    #    connection.enter_transaction_management()
     new_cur = connection.cursor()
     for id in taskl:
         new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
-        tmpTableName, id, transactionKey))  # Backend dependable
-#    connection.commit()
+            tmpTableName, id, transactionKey))  # Backend dependable
+    #    connection.commit()
     taske = GetEventsForTask.objects.extra(
         where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values()
     for task in taske:
         taskEvents.append(task)
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-#    connection.commit()
-#    connection.leave_transaction_management()
+    #    connection.commit()
+    #    connection.leave_transaction_management()
 
     nevents = {'neventstot': 0, 'neventsrem': 0}
     for task in taskEvents:
@@ -8161,31 +8964,34 @@ def getSummaryForTaskList(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
+
 @never_cache
 def report(request):
     initRequest(request)
     step = 0
     response = None
 
-    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16':
+    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and \
+            request.session['requestParams']['campaign'].upper() == 'MC16':
         reportGen = MC16aCPReport.MC16aCPReport()
         response = reportGen.prepareReportJEDI(request)
         endSelfMonitor(request)
         return response
 
-    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16C':
+    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and \
+            request.session['requestParams']['campaign'].upper() == 'MC16C':
         reportGen = MC16aCPReport.MC16aCPReport()
         response = reportGen.prepareReportJEDIMC16c(request)
         endSelfMonitor(request)
         return response
 
-
-    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16A' and 'type' in request.session['requestParams'] and request.session['requestParams']['type'].upper() == 'DCC':
+    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and \
+            request.session['requestParams']['campaign'].upper() == 'MC16A' and 'type' in request.session[
+        'requestParams'] and request.session['requestParams']['type'].upper() == 'DCC':
         reportGen = MC16aCPReport.MC16aCPReport()
         resp = reportGen.getDKBEventsSummaryRequestedBreakDownHashTag(request)
         dump = json.dumps(resp, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
-
 
     if 'requestParams' in request.session and 'obstasks' in request.session['requestParams']:
         reportGen = ObsoletedTasksReport.ObsoletedTasksReport()
@@ -8204,7 +9010,8 @@ def report(request):
     if step == 0:
         response = render_to_response('reportWizard.html', {'nevents': 0}, content_type='text/html')
     else:
-        if 'reporttype' in request.session['requestParams'] and request.session['requestParams']['reporttype'] == 'rep0':
+        if 'reporttype' in request.session['requestParams'] and request.session['requestParams'][
+            'reporttype'] == 'rep0':
             reportGen = MC16aCPReport.MC16aCPReport()
             response = reportGen.prepareReport()
     endSelfMonitor(request)
@@ -8231,7 +9038,7 @@ def getBrokerageLog(request):
     sites = {}
     for record in records:
         message = records['message']
-        print (message)
+        print(message)
 
 
 def taskprofileplot(request):
@@ -8265,16 +9072,17 @@ def taskESprofileplot(request):
         # red.save(response, "JPEG")
         # return response
 
+
 @login_customrequired
 def taskInfo(request, jeditaskid=0):
     try:
         jeditaskid = int(jeditaskid)
     except:
         jeditaskid = re.findall("\d+", jeditaskid)
-        jdtstr =""
+        jdtstr = ""
         for jdt in jeditaskid:
-            jdtstr = jdtstr+str(jdt)
-        return redirect('/task/'+jdtstr)
+            jdtstr = jdtstr + str(jdt)
+        return redirect('/task/' + jdtstr)
     valid, response = initRequest(request)
     furl = request.get_full_path()
     nomodeurl = removeParam(furl, 'mode')
@@ -8295,7 +9103,8 @@ def taskInfo(request, jeditaskid=0):
                     datasets = commondata['datasets'] if 'datasets' in commondata else None
                     datasets = json.dumps(datasets)
         if datasets is None:
-            _logger.error('No datasets data found for task in cache!!! Request: {}'.format(str(request.get_full_path())))
+            _logger.error(
+                'No datasets data found for task in cache!!! Request: {}'.format(str(request.get_full_path())))
         return HttpResponse(datasets, content_type='application/json')
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
 
@@ -8306,20 +9115,22 @@ def taskInfo(request, jeditaskid=0):
         if data is not None:
 
             if 'built' in data and data['built'] is not None:
-                builtDate = datetime.strptime('2019-'+data['built'], defaultDatetimeFormat)
+                builtDate = datetime.strptime('2019-' + data['built'], defaultDatetimeFormat)
                 if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
                     data = None
                     setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 1)
 
             if 'eventservice' in data and data['eventservice'] is not None:
                 if data['eventservice'] == True and (
-                    'version' not in request.session['requestParams'] or (
-                        'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old' )):
-                    return redirect('/tasknew/'+str(jeditaskid))
+                        'version' not in request.session['requestParams'] or (
+                        'version' in request.session['requestParams'] and request.session['requestParams'][
+                    'version'] != 'old')):
+                    return redirect('/tasknew/' + str(jeditaskid))
 
             try:
                 data = deleteCacheTestData(request, data)
-            except: pass
+            except:
+                pass
             doRefresh = False
 
         plotDict = {}
@@ -8328,7 +9139,8 @@ def taskInfo(request, jeditaskid=0):
             if isinstance(oldPlotDict, dict):
                 for plotName, plotData in oldPlotDict.items():
                     if 'sites' in plotData and 'ranges' in plotData:
-                        plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
+                        plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'],
+                                                   'stats': plotData['stats']}
                         for dictSiteName, listValues in plotData['sites'].items():
                             try:
                                 plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
@@ -8337,7 +9149,7 @@ def taskInfo(request, jeditaskid=0):
                                 pass
                 data['plotsDict'] = plotDict
 
-            #We still want to refresh tasks if request came from central crawler and task not in the frozen state
+            # We still want to refresh tasks if request came from central crawler and task not in the frozen state
             if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
                     data['task'] and data['task']['status'] not in ['broken', 'aborted']):
                 doRefresh = True
@@ -8348,12 +9160,14 @@ def taskInfo(request, jeditaskid=0):
                     request.session['requestParams']['jeditaskid'])
                 if jeditaskid != 0:
                     query = {'jeditaskid': jeditaskid}
-                    values = ['status','superstatus','modificationtime']
+                    values = ['status', 'superstatus', 'modificationtime']
                     tasks = JediTasks.objects.filter(**query).values(*values)[:1]
                     if len(tasks) > 0:
                         task = tasks[0]
-                        if (task['status'] == data['task']['status'] and task['superstatus'] == data['task']['superstatus'] and
-                                    task['modificationtime'].strftime(defaultDatetimeFormat) == data['task']['modificationtime']):
+                        if (task['status'] == data['task']['status'] and task['superstatus'] == data['task'][
+                            'superstatus'] and
+                                task['modificationtime'].strftime(defaultDatetimeFormat) == data['task'][
+                                    'modificationtime']):
                             doRefresh = False
                         else:
                             doRefresh = True
@@ -8391,16 +9205,16 @@ def taskInfo(request, jeditaskid=0):
     walltime = []
     jobsummaryESMerge = []
     jobsummaryPMERGE = []
-    eventsdict=[]
-    objectStoreDict=[]
+    eventsdict = []
+    objectStoreDict = []
     eventsChains = []
     currentlyRunningDataSets = []
     warning = {}
 
-    newjobsummary =[]
+    newjobsummary = []
     newjobsummaryESMerge = []
     newjobsummaryPMERGE = []
-    neweventsdict =[]
+    neweventsdict = []
 
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
         request.session['requestParams']['jeditaskid'])
@@ -8414,7 +9228,8 @@ def taskInfo(request, jeditaskid=0):
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
         if eventservice:
             if 'version' not in request.session['requestParams'] or (
-                    'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old'):
+                    'version' in request.session['requestParams'] and request.session['requestParams'][
+                'version'] != 'old'):
                 return redirect('/tasknew/' + str(jeditaskid))
 
             mode = 'drop'
@@ -8428,15 +9243,19 @@ def taskInfo(request, jeditaskid=0):
             auxiliaryDict = {}
 
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                request, query, exclude={},  mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
+                request, query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge',
+                algorithm='isOld')
             plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary2(
-                request, query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isOld')
+                request, query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge',
+                algorithm='isOld')
             if request.user.is_authenticated and request.user.is_tester:
                 tk, droppedList, extra = dropalgorithm.dropRetrielsJobs(jeditaskid, extra, eventservice)
                 newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
-                    request, query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isNew')
+                    request, query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True,
+                    substatusfilter='non_es_merge', algorithm='isNew')
                 newplotsDictESMerge, newjobsummaryESMerge, neweventssummaryESM, newtransactionKeyESM, newjobScoutIDsESM, newhs06sSumESM = jobSummary2(
-                    request, query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isNew')
+                    request, query, exclude={}, extra=extra, mode=mode, isEventServiceFlag=True,
+                    substatusfilter='es_merge', algorithm='isNew')
                 for state in eventservicestatelist:
                     eventstatus = {}
                     eventstatus['statusname'] = state
@@ -8449,7 +9268,7 @@ def taskInfo(request, jeditaskid=0):
                 eventstatus['count'] = eventssummary[state]
                 eventsdict.append(eventstatus)
 
-            if mode=='nodrop':
+            if mode == 'nodrop':
                 sqlRequest = """
                 WITH jedi_ev AS 
                 (
@@ -8489,11 +9308,11 @@ def taskInfo(request, jeditaskid=0):
 
 
 
-#SELECT * FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS WHERE JEDITASKID=12380658 and pandaid=3665826228
+        # SELECT * FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS WHERE JEDITASKID=12380658 and pandaid=3665826228
 
-#SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV FROM (
-#SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=12380658 and RELATIONTYPE='jobset_retry'
-#)t1 CONNECT BY NOCYCLE OLDPANDAID=PRIOR NEWPANDAID ;
+        # SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV FROM (
+        # SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=12380658 and RELATIONTYPE='jobset_retry'
+        # )t1 CONNECT BY NOCYCLE OLDPANDAID=PRIOR NEWPANDAID ;
 
         else:
             extra = '(1=1)'
@@ -8503,15 +9322,17 @@ def taskInfo(request, jeditaskid=0):
             if 'mode' in request.session['requestParams']:
                 mode = request.session['requestParams']['mode']
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                request, query, exclude=exclude,extra=extra, mode=mode,algorithm='isOld')
+                request, query, exclude=exclude, extra=extra, mode=mode, algorithm='isOld')
             plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary2(
-                request, query, exclude={},extra=extra,  mode=mode, processingtype='pmerge',algorithm='isOld')
+                request, query, exclude={}, extra=extra, mode=mode, processingtype='pmerge', algorithm='isOld')
             if request.user.is_authenticated and request.user.is_tester:
                 if mode == 'drop':
                     tk, droppedList, extra = dropalgorithm.dropRetrielsJobs(jeditaskid, extra=None, isEventTask=False)
                 newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
-                    request, query, exclude=exclude,extra=extra , mode=mode, algorithm='isNew')
-                newplotsDictPMERGE, newjobsummaryPMERGE, neweventssummaryPM, newtransactionKeyPM, newjobScoutIDsPMERGE, newhs06sSumPMERGE = jobSummary2(request, query=query, exclude={},extra=extra , mode=mode, processingtype='pmerge', algorithm='isNew')
+                    request, query, exclude=exclude, extra=extra, mode=mode, algorithm='isNew')
+                newplotsDictPMERGE, newjobsummaryPMERGE, neweventssummaryPM, newtransactionKeyPM, newjobScoutIDsPMERGE, newhs06sSumPMERGE = jobSummary2(
+                    request, query=query, exclude={}, extra=extra, mode=mode, processingtype='pmerge',
+                    algorithm='isNew')
 
 
     elif 'taskname' in request.session['requestParams']:
@@ -8636,7 +9457,7 @@ def taskInfo(request, jeditaskid=0):
     newdslist = []
     if len(dsets) > 0:
         for ds in dsets:
-            if len (ds['datasetname']) > 0:
+            if len(ds['datasetname']) > 0:
                 if not str(ds['datasetname']).startswith('user'):
                     scope = str(ds['datasetname']).split('.')[0]
                 else:
@@ -8667,7 +9488,8 @@ def taskInfo(request, jeditaskid=0):
             dsinfo['nfilesfailed'] = nfailed
             dsinfo['pctfinished'] = int(100. * nfinished / nfiles)
             dsinfo['pctfailed'] = int(100. * nfailed / nfiles)
-    else: ds = []
+    else:
+        ds = []
     if taskrec: taskrec['dsinfo'] = dsinfo
 
     ## get dataset types
@@ -8697,7 +9519,7 @@ def taskInfo(request, jeditaskid=0):
     if len(outctrs) == 0 or outctrs[0] == '':
         outctrs = None
     if isinstance(outctrs, str):
-       outctrs = [outctrs]
+        outctrs = [outctrs]
 
     # getBrokerageLog(request)
 
@@ -8709,7 +9531,7 @@ def taskInfo(request, jeditaskid=0):
         taskrec['totevproc'] = neventsUsedTot
         taskrec['pctfinished'] = (100 * taskrec['totevproc'] / taskrec['totev']) if (taskrec['totev'] > 0) else ''
         taskrec['totevhs06'] = (neventsTot) * taskrec['cputime'] if (
-        taskrec['cputime'] is not None and neventsTot > 0) else None
+                taskrec['cputime'] is not None and neventsTot > 0) else None
         # if taskrec['pctfinished']<=20 or hs06sSum['total']==0:
         #     taskrec['totevhs06'] = (neventsTot)*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsTot > 0) else None
         # else:
@@ -8747,7 +9569,6 @@ def taskInfo(request, jeditaskid=0):
     if len(countfailed) > 0 and countfailed[0] > 0:
         showtaskprof = True
 
-
     if taskrec:
 
         if 'tasktype' in taskrec and taskrec['tasktype'] == 'anal':
@@ -8760,7 +9581,8 @@ def taskInfo(request, jeditaskid=0):
 
         if taskrec['creationdate']:
             if taskrec['creationdate'] < datetime.strptime('2018-02-07', '%Y-%m-%d'):
-                warning['dropmode'] = 'The drop mode is unavailable since the data of job retries was cleaned up. The data shown on the page is in nodrop mode.'
+                warning[
+                    'dropmode'] = 'The drop mode is unavailable since the data of job retries was cleaned up. The data shown on the page is in nodrop mode.'
             taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
         if taskrec['modificationtime']:
             taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
@@ -8782,7 +9604,7 @@ def taskInfo(request, jeditaskid=0):
     setCacheEntry(request, transKey, json.dumps(dsets, cls=DateEncoder), 60 * 30, isData=True)
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+            'json' in request.session['requestParams']):
 
         del tasks
         del columns
@@ -8826,7 +9648,7 @@ def taskInfo(request, jeditaskid=0):
             'jobsummaryPMERGE': jobsummaryPMERGE,
             'plotsDict': plotsDict,
             'taskbrokerage': taskbrokerage,
-            'jobscoutids' : jobScoutIDs,
+            'jobscoutids': jobScoutIDs,
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
@@ -8852,19 +9674,19 @@ def taskInfo(request, jeditaskid=0):
             'transkey': transKey,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
             'newjobsummary_test': newjobsummary,
-            'newjobsummaryPMERGE_test':newjobsummaryPMERGE,
+            'newjobsummaryPMERGE_test': newjobsummaryPMERGE,
             'newjobsummaryESMerge_test': newjobsummaryESMerge,
             'neweventssummary_test': neweventsdict,
             'warning': warning,
         }
         data.update(getContextVariables(request))
-        cacheexpiration = 60*20 #second/minute * minutes
+        cacheexpiration = 60 * 20  # second/minute * minutes
         if taskrec and 'status' in taskrec:
             totaljobs = 0
             for state in jobsummary:
                 totaljobs += state['count']
-            if taskrec['status'] in ['broken','aborted','done','finished','failed'] and totaljobs > 5000:
-                cacheexpiration = 3600*24*31 # we store such data a month
+            if taskrec['status'] in ['broken', 'aborted', 'done', 'finished', 'failed'] and totaljobs > 5000:
+                cacheexpiration = 3600 * 24 * 31  # we store such data a month
         setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
         ##self monitor
         endSelfMonitor(request)
@@ -8882,10 +9704,10 @@ def taskInfoNew(request, jeditaskid=0):
         jeditaskid = int(jeditaskid)
     except:
         jeditaskid = re.findall("\d+", jeditaskid)
-        jdtstr =""
+        jdtstr = ""
         for jdt in jeditaskid:
-            jdtstr = jdtstr+str(jdt)
-        return redirect('/task/'+jdtstr)
+            jdtstr = jdtstr + str(jdt)
+        return redirect('/task/' + jdtstr)
     valid, response = initRequest(request)
     furl = request.get_full_path()
     nomodeurl = removeParam(furl, 'mode')
@@ -8899,7 +9721,6 @@ def taskInfoNew(request, jeditaskid=0):
         data = getCacheEntry(request, tkiec, isData=True)
         return HttpResponse(data, content_type='application/json')
 
-
     data = getCacheEntry(request, "taskInfoNew", skipCentralRefresh=True)
     # data = None
     # Temporary protection
@@ -8907,7 +9728,7 @@ def taskInfoNew(request, jeditaskid=0):
         data = json.loads(data)
 
         if 'built' in data:
-            builtDate = datetime.strptime('2018-'+data['built'], defaultDatetimeFormat)
+            builtDate = datetime.strptime('2018-' + data['built'], defaultDatetimeFormat)
             if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
                 data = None
                 setCacheEntry(request, "taskInfoNew", json.dumps(data, cls=DateEncoder), 1)
@@ -8915,7 +9736,7 @@ def taskInfoNew(request, jeditaskid=0):
     if data is not None:
         doRefresh = False
 
-        #We still want to refresh tasks if request came from central crawler and task not in the frozen state
+        # We still want to refresh tasks if request came from central crawler and task not in the frozen state
         if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
                 data['task'] and data['task']['status'] not in ['broken', 'aborted']):
             doRefresh = True
@@ -8926,12 +9747,14 @@ def taskInfoNew(request, jeditaskid=0):
                 request.session['requestParams']['jeditaskid'])
             if jeditaskid != 0:
                 query = {'jeditaskid': jeditaskid}
-                values = ['status','superstatus','modificationtime']
+                values = ['status', 'superstatus', 'modificationtime']
                 tasks = JediTasks.objects.filter(**query).values(*values)[:1]
                 if len(tasks) > 0:
                     task = tasks[0]
-                    if (task['status'] == data['task']['status'] and task['superstatus'] == data['task']['superstatus'] and
-                                task['modificationtime'].strftime(defaultDatetimeFormat) == data['task']['modificationtime']):
+                    if (task['status'] == data['task']['status'] and task['superstatus'] == data['task'][
+                        'superstatus'] and
+                            task['modificationtime'].strftime(defaultDatetimeFormat) == data['task'][
+                                'modificationtime']):
                         doRefresh = False
                     else:
                         doRefresh = True
@@ -8966,12 +9789,11 @@ def taskInfoNew(request, jeditaskid=0):
     jobsummaryESMerge = []
     jobsummaryPMERGE = []
     eventsdict = []
-    objectStoreDict=[]
+    objectStoreDict = []
     eventsChains = []
     currentlyRunningDataSets = []
     warning = {}
     neventsProcTot = 0
-
 
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
@@ -9011,9 +9833,8 @@ def taskInfoNew(request, jeditaskid=0):
             print("Events states summary: {} sec".format(end - start))
             for entry in eventsdict:
                 status = entry.get("statusname", "-")
-                if status in ['finished','done','merged']:
+                if status in ['finished', 'done', 'merged']:
                     neventsProcTot += entry.get("count", 0)
-
 
     start = time.time()
 
@@ -9122,11 +9943,11 @@ def taskInfoNew(request, jeditaskid=0):
     newdslist = []
     if len(dsets) > 0:
         for ds in dsets:
-            if len (ds['datasetname']) > 0:
-               scope = str(ds['datasetname']).split('.')[0]
-               if ':' in scope:
-                   scope = str(scope).split(':')[0]
-               ds['scope']=scope
+            if len(ds['datasetname']) > 0:
+                scope = str(ds['datasetname']).split('.')[0]
+                if ':' in scope:
+                    scope = str(scope).split(':')[0]
+                ds['scope'] = scope
             newdslist.append(ds)
             if ds['type'] not in ['input', 'pseudo_input']: continue
             if ds['masterid']: continue
@@ -9147,7 +9968,8 @@ def taskInfoNew(request, jeditaskid=0):
             dsinfo['nfilesfailed'] = nfailed
             dsinfo['pctfinished'] = int(100. * nfinished / nfiles)
             dsinfo['pctfailed'] = int(100. * nfailed / nfiles)
-    else: ds = []
+    else:
+        ds = []
     if taskrec: taskrec['dsinfo'] = dsinfo
 
     ## get dataset types
@@ -9177,7 +9999,7 @@ def taskInfoNew(request, jeditaskid=0):
     if len(outctrs) == 0 or outctrs[0] == '':
         outctrs = None
     if isinstance(outctrs, str):
-       outctrs = [outctrs]
+        outctrs = [outctrs]
 
     # getBrokerageLog(request)
 
@@ -9191,7 +10013,7 @@ def taskInfoNew(request, jeditaskid=0):
         taskrec['pcttotevproc_evst'] = (100 * neventsProcTot / neventsTot) if (taskrec['totev'] > 0) else ''
         taskrec['pctfinished'] = (100 * taskrec['totevproc'] / taskrec['totev']) if (taskrec['totev'] > 0) else ''
         taskrec['totevhs06'] = (neventsTot) * taskrec['cputime'] if (
-        taskrec['cputime'] is not None and neventsTot > 0) else None
+                taskrec['cputime'] is not None and neventsTot > 0) else None
         taskrec['maxpssave'] = maxpssave
         if 'creationdate' in taskrec:
             taskrec['kibanatimefrom'] = taskrec['creationdate'].strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -9235,7 +10057,6 @@ def taskInfoNew(request, jeditaskid=0):
         for tk, ids_list in ifs_tk.items():
             tk = insert_to_temp_table(ids_list, tk)
 
-
         # Putting list of inputs to cache separately for dataTables plugin
         transactionKeyIEC = random.randrange(100000000)
         setCacheEntry(request, transactionKeyIEC, json.dumps(inputfiles_list, cls=DateEncoder), 60 * 30, isData=True)
@@ -9266,7 +10087,8 @@ def taskInfoNew(request, jeditaskid=0):
     ccquery['jeditaskid'] = jeditaskid
     ccquery['jobstatus'] = 'running'
     accsum = Jobsactive4.objects.filter(**ccquery).aggregate(accsum=Sum('actualcorecount'))
-    naccsum = Jobsactive4.objects.filter(**ccquery).aggregate(naccsum=Sum(F('actualcorecount')*F('hs06')/F('corecount')/Value(10), output_field=FloatField()))
+    naccsum = Jobsactive4.objects.filter(**ccquery).aggregate(
+        naccsum=Sum(F('actualcorecount') * F('hs06') / F('corecount') / Value(10), output_field=FloatField()))
 
     # get lighted job summary
     jobsummarylight, jobsummarylightsplitted = job_summary_for_task_light(taskrec)
@@ -9292,9 +10114,8 @@ def taskInfoNew(request, jeditaskid=0):
             if dset[dtp]:
                 dset[dtp] = dset[dtp].strftime(defaultDatetimeFormat)
 
-
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+            'json' in request.session['requestParams']):
 
         del tasks
         del columns
@@ -9365,13 +10186,13 @@ def taskInfoNew(request, jeditaskid=0):
             'warning': warning,
         }
         data.update(getContextVariables(request))
-        cacheexpiration = 60*20 #second/minute * minutes
+        cacheexpiration = 60 * 20  # second/minute * minutes
         if taskrec and 'status' in taskrec:
             totaljobs = 0
             for state in jobsummary:
                 totaljobs += state['count']
-            if taskrec['status'] in ['broken','aborted','done','finished','failed'] and totaljobs > 5000:
-                cacheexpiration = 3600*24*31 # we store such data a month
+            if taskrec['status'] in ['broken', 'aborted', 'done', 'finished', 'failed'] and totaljobs > 5000:
+                cacheexpiration = 3600 * 24 * 31  # we store such data a month
         setCacheEntry(request, "taskInfoNew", json.dumps(data, cls=DateEncoder), cacheexpiration)
         ##self monitor
         endSelfMonitor(request)
@@ -9393,7 +10214,7 @@ def getEventsDetails(request, mode='drop', jeditaskid=0):
 
     tmpTableName = 'ATLAS_PANDABIGMON.TMP_IDS1DEBUG'
 
-    if 'jeditaskid' in  request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
+    if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
         jeditaskid = request.session['requestParams']['jeditaskid']
         try:
             jeditaskid = int(jeditaskid)
@@ -9405,7 +10226,7 @@ def getEventsDetails(request, mode='drop', jeditaskid=0):
         if 'tkd' in request.session['requestParams'] and request.session['requestParams']['tkd']:
             transactionKey = request.session['requestParams']['tkd']
             extrastr += " AND pandaid not in ( select id from {0} where TRANSACTIONKEY = {1})".format(tmpTableName,
-                                                                                               transactionKey)
+                                                                                                      transactionKey)
         else:
             return HttpResponse(status=404)
     sqlRequest = """
@@ -9418,7 +10239,9 @@ def getEventsDetails(request, mode='drop', jeditaskid=0):
                 select computingsite, computingelement,pandaid from ATLAS_PANDAARCH.JOBSARCHIVED where jeditaskid={} {}
                 ) j
             on (e.jeditaskid={} and e.pandaid=j.pandaid)
-        group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""".format(jeditaskid, extrastr, jeditaskid, extrastr, jeditaskid)
+        group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""".format(jeditaskid, extrastr,
+                                                                                        jeditaskid, extrastr,
+                                                                                        jeditaskid)
     cur = connection.cursor()
     cur.execute(sqlRequest)
     ossummary = cur.fetchall()
@@ -9457,6 +10280,7 @@ def taskchain(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
+
 def ganttTaskChain(request):
     from django.db import connections
     valid, response = initRequest(request)
@@ -9477,7 +10301,7 @@ def ganttTaskChain(request):
 
     data = {
         'viewParams': request.session['viewParams'],
-        'ganttTaskChain': results_str[substr_end+1:],
+        'ganttTaskChain': results_str[substr_end + 1:],
         'jeditaskid': jeditaskid,
         'request': request,
     }
@@ -9485,7 +10309,9 @@ def ganttTaskChain(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None, algorithm = 'isOld'):
+
+def jobSummary2(request, query, exclude={}, extra="(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='',
+                processingtype='', auxiliaryDict=None, algorithm='isOld'):
     jobs = []
     jobScoutIDs = {}
     jobScoutIDs['cputimescoutjob'] = []
@@ -9501,16 +10327,16 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
             isESMerge = True
         else:
             exclude['eventservice'] = 2
-    isReturnDroppedPMerge=False
+    isReturnDroppedPMerge = False
     if processingtype != '':
         newquery['processingtype'] = 'pmerge'
-        isReturnDroppedPMerge=True
+        isReturnDroppedPMerge = True
 
-    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid','attemptnr'
+    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid', 'attemptnr'
     # newquery['jobstatus'] = 'finished'
 
     # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
-    print (algorithm)
+    print(algorithm)
     start = time.time()
     jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
 
@@ -9536,7 +10362,6 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
             newjobs.append(job)
     jobs = newjobs
 
-
     jobsSet = {}
     newjobs = []
 
@@ -9557,10 +10382,12 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
                 'scout=' in job['jobmetrics'] and 'cpuTime' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
             jobScoutIDs['cputimescoutjob'].append(job['pandaid'])
         if 'scout=ioIntensity' in job['jobmetrics'] or (
-                'scout=' in job['jobmetrics'] and 'ioIntensity' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
+                'scout=' in job['jobmetrics'] and 'ioIntensity' in job['jobmetrics'][
+                                                                   job['jobmetrics'].index('scout='):]):
             jobScoutIDs['iointensityscoutjob'].append(job['pandaid'])
         if 'scout=outDiskCount' in job['jobmetrics'] or (
-                'scout=' in job['jobmetrics'] and 'outDiskCount' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
+                'scout=' in job['jobmetrics'] and 'outDiskCount' in job['jobmetrics'][
+                                                                    job['jobmetrics'].index('scout='):]):
             jobScoutIDs['outdiskcountscoutjob'].append(job['pandaid'])
         if 'scout=ramCount' in job['jobmetrics'] or (
                 'scout=' in job['jobmetrics'] and 'ramCount' in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
@@ -9577,12 +10404,12 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
             if job['hs06sec'] is None:
                 if job['computingsite'] in pandaSites:
                     job['hs06sec'] = (job['duration']) * float(pandaSites[job['computingsite']]['corepower']) * job[
-                    'actualcorecount']
+                        'actualcorecount']
                 else:
                     job['hs06sec'] = 0
             if job['nevents'] and job['nevents'] > 0:
                 cpuTimeCurrent.append(job['hs06sec'] / job['nevents'])
-                job['walltimeperevent'] = round(job['duration'] * job['actualcorecount'] / (job['nevents']*1.0), 2)
+                job['walltimeperevent'] = round(job['duration'] * job['actualcorecount'] / (job['nevents'] * 1.0), 2)
             hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
             hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
             hs06sSum['total'] += job['hs06sec']
@@ -9590,12 +10417,14 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
     jobs = newjobs
 
     if mode == 'drop' and len(jobs) < 400000:
-        print ('filtering retries')
+        print('filtering retries')
         if algorithm == 'isNew':
             print('new algorithm!')
             start = time.time()
-            #jobs, cntStatus, droplist, droppedPMerge = dropRetrielsJobsV2(newjobs, newquery['jeditaskid'], isReturnDroppedPMerge, isEventTask=True)
-            jobs, droppedPMerge,droplist = dropalgorithm.clearDropRetrielsJobs(tk=0, jobs=newjobs, isEventTask=isEventServiceFlag, isReturnDroppedPMerge=isReturnDroppedPMerge)
+            # jobs, cntStatus, droplist, droppedPMerge = dropRetrielsJobsV2(newjobs, newquery['jeditaskid'], isReturnDroppedPMerge, isEventTask=True)
+            jobs, droppedPMerge, droplist = dropalgorithm.clearDropRetrielsJobs(tk=0, jobs=newjobs,
+                                                                                isEventTask=isEventServiceFlag,
+                                                                                isReturnDroppedPMerge=isReturnDroppedPMerge)
             end = time.time()
             print(end - start)
 
@@ -9605,9 +10434,11 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
             end = time.time()
             print(end - start)
     elif len(jobs) >= 400000:
-        request.session['requestParams']['warning'] = 'Task has more than 400 000 jobs. Dropping was not done to avoid timeout error!'
+        request.session['requestParams'][
+            'warning'] = 'Task has more than 400 000 jobs. Dropping was not done to avoid timeout error!'
 
-    plotsNames = ['maxpss', 'maxpsspercore', 'nevents', 'walltime', 'walltimeperevent', 'hs06s', 'cputime', 'cputimeperevent', 'maxpssf', 'maxpsspercoref', 'walltimef', 'hs06sf', 'cputimef', 'cputimepereventf']
+    plotsNames = ['maxpss', 'maxpsspercore', 'nevents', 'walltime', 'walltimeperevent', 'hs06s', 'cputime',
+                  'cputimeperevent', 'maxpssf', 'maxpsspercoref', 'walltimef', 'hs06sf', 'cputimef', 'cputimepereventf']
     plotsDict = {}
 
     for pname in plotsNames:
@@ -9626,7 +10457,8 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
                     plotsDict['maxpss']['sites'][job['computingsite']] = []
 
                 if job['actualcorecount'] and job['actualcorecount'] > 0:
-                    plotsDict['maxpsspercore']['sites'][job['computingsite']].append(job['maxpss'] / 1024 / job['actualcorecount'])
+                    plotsDict['maxpsspercore']['sites'][job['computingsite']].append(
+                        job['maxpss'] / 1024 / job['actualcorecount'])
                 plotsDict['maxpss']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
                 plotsDict['nevents']['sites'][job['computingsite']].append(job['nevents'])
             elif job['jobstatus'] == 'failed':
@@ -9635,7 +10467,8 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
                 if job['computingsite'] not in plotsDict['maxpssf']['sites']:
                     plotsDict['maxpssf']['sites'][job['computingsite']] = []
                 if job['actualcorecount'] and job['actualcorecount'] > 0:
-                    plotsDict['maxpsspercoref']['sites'][job['computingsite']].append(job['maxpss'] / 1024 / job['actualcorecount'])
+                    plotsDict['maxpsspercoref']['sites'][job['computingsite']].append(
+                        job['maxpss'] / 1024 / job['actualcorecount'])
                 plotsDict['maxpssf']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
         if 'duration' in job and job['duration']:
             if job['jobstatus'] == 'finished':
@@ -9664,7 +10497,8 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
                 if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
                     if job['computingsite'] not in plotsDict['cputimeperevent']['sites']:
                         plotsDict['cputimeperevent']['sites'][job['computingsite']] = []
-                    plotsDict['cputimeperevent']['sites'][job['computingsite']].append(round(job['cpuconsumptiontime']/(job['nevents']*1.0), 2))
+                    plotsDict['cputimeperevent']['sites'][job['computingsite']].append(
+                        round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
             if job['jobstatus'] == 'failed':
                 if job['computingsite'] not in plotsDict['cputimef']['sites']:
                     plotsDict['cputimef']['sites'][job['computingsite']] = []
@@ -9672,12 +10506,13 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
                 if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
                     if job['computingsite'] not in plotsDict['cputimepereventf']['sites']:
                         plotsDict['cputimepereventf']['sites'][job['computingsite']] = []
-                    plotsDict['cputimepereventf']['sites'][job['computingsite']].append(round(job['cpuconsumptiontime']/(job['nevents']*1.0), 2))
+                    plotsDict['cputimepereventf']['sites'][job['computingsite']].append(
+                        round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
 
     nbinsmax = 100
     for pname in plotsNames:
         rawdata = []
-        for k,d in plotsDict[pname]['sites'].items():
+        for k, d in plotsDict[pname]['sites'].items():
             rawdata.extend(d)
         if len(rawdata) > 0:
             plotsDict[pname]['stats'] = []
@@ -9692,7 +10527,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
                 plotsDict[pname]['sites'][site] = list(np.histogram(sitedata, ranges)[0])
         else:
             try:
-                del(plotsDict[pname])
+                del (plotsDict[pname])
             except:
                 pass
 
@@ -9712,7 +10547,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
     essummary = dict((key, 0) for key in eventservicestatelist)
     transactionKey = -1
     if isEventServiceFlag and not isESMerge:
-        print ('getting events states summary')
+        print('getting events states summary')
         if mode == 'drop' and len(jobs) < 400000:
             esjobs = []
             for job in jobs:
@@ -9726,14 +10561,14 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
                 tmpTableName = "TMP_IDS1DEBUG"
 
             transactionKey = random.randrange(1000000)
-#            connection.enter_transaction_management()
+            #            connection.enter_transaction_management()
             new_cur = connection.cursor()
             executionData = []
             for id in esjobs:
-                executionData.append((id, transactionKey, timezone.now().strftime(defaultDatetimeFormat) ))
+                executionData.append((id, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
             query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
             new_cur.executemany(query, executionData)
-#            connection.commit()
+            #            connection.commit()
             jeditaskidstr = str(newquery['jeditaskid'])
             new_cur.execute(
                 """
@@ -9747,17 +10582,17 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
 
             evtable = dictfetchall(new_cur)
             # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-#            connection.commit()
-#            connection.leave_transaction_management()
+            #            connection.commit()
+            #            connection.leave_transaction_management()
             for ev in evtable:
                 essummary[eventservicestatelist[ev['STATUS']]] += ev['EVCOUNT']
-        eventsdict=[]
+        eventsdict = []
         if mode == 'nodrop':
             equery = {'jeditaskid': newquery['jeditaskid']}
             eventsdict.extend(
                 JediEvents.objects.filter(**equery).values('status').annotate(count=Count('status')).order_by('status'))
             for state in eventsdict:
-                essummary[eventservicestatelist[state['status']]]=state['count']
+                essummary[eventservicestatelist[state['status']]] = state['count']
 
     return plotsDict, jobstates, essummary, transactionKey, jobScoutIDs, hs06sSum
 
@@ -9790,7 +10625,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
     else:
         mode = 'nodrop'
 
-    data = getCacheEntry(request, "jobSummaryForTask"+str(jeditaskid)+mode, isData=True)
+    data = getCacheEntry(request, "jobSummaryForTask" + str(jeditaskid) + mode, isData=True)
     # data = None
 
     if data is not None:
@@ -9826,7 +10661,6 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         endSelfMonitor(request)
         return response
 
-
     extra = '(1=1)'
     query = {}
     query['jeditaskid'] = jeditaskid
@@ -9840,7 +10674,6 @@ def getJobSummaryForTask(request, jeditaskid=-1):
 
     plotsDict, jobsummary, jobsummaryMerge, jobScoutIDs = job_summary_for_task(
         request, query, pandaSites, statelist, extra=extra, isEventServiceFlag=es)
-
 
     nonzeroMERGE = 0
     for status in jobsummaryMerge:
@@ -9859,7 +10692,8 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         'jobScoutIDs': jobScoutIDs,
         'plotsDict': plotsDict,
     }
-    setCacheEntry(request, 'jobSummaryForTask'+str(jeditaskid)+mode, json.dumps(alldata, cls=DateEncoder), 60 * 10, isData=True)
+    setCacheEntry(request, 'jobSummaryForTask' + str(jeditaskid) + mode, json.dumps(alldata, cls=DateEncoder), 60 * 10,
+                  isData=True)
 
     if infotype == 'jobsummary':
         data = {
@@ -9886,8 +10720,6 @@ def getJobSummaryForTask(request, jeditaskid=-1):
     return response
 
 
-
-
 def jobStateSummary(jobs):
     global statelist
     statecount = {}
@@ -9910,7 +10742,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     errHist = {}
 
     flist = standard_errorfields
-    print (len(jobs))
+    print(len(jobs))
     for job in jobs:
         if not testjobs:
             if job['jobstatus'] not in ['failed', 'holding']: continue
@@ -9934,7 +10766,8 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
             tm = job['modificationtime']
             if tm is not None:
                 tm = tm - timedelta(minutes=tm.minute % 30, seconds=tm.second, microseconds=tm.microsecond)
-                if not tm in errHist: errHist[tm] = 1
+                if not tm in errHist:
+                    errHist[tm] = 1
                 else:
                     errHist[tm] += 1
 
@@ -9954,7 +10787,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
                 if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
                 sumd['specialhandling'][v] += 1
         errsByList = {}
-        #errsByCount[errcode]['list'] = {}
+        # errsByCount[errcode]['list'] = {}
         for err in errorcodelist:
             if job[err['error']] != 0 and job[err['error']] != '' and job[err['error']] != None:
                 errval = job[err['error']]
@@ -9970,7 +10803,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
                 errcode = "%s:%s" % (err['name'], errnum)
                 if err['diag']:
                     errdiag = job[err['diag']]
-                errsByList[job['pandaid']]=errdiag
+                errsByList[job['pandaid']] = errdiag
 
                 if errcode not in errsByCount:
                     errsByCount[errcode] = {}
@@ -10013,7 +10846,8 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
                 errsBySite[site]['errors'][errcode]['count'] += 1
                 errsBySite[site]['toterrors'] += 1
 
-                if tasktype == 'jeditaskid' or (taskid is not None and taskid > 1000000) or 'produsername' in request.session['requestParams']:
+                if tasktype == 'jeditaskid' or (taskid is not None and taskid > 1000000) or 'produsername' in \
+                        request.session['requestParams']:
                     if taskid not in errsByTask:
                         errsByTask[taskid] = {}
                         errsByTask[taskid]['name'] = taskid
@@ -10050,36 +10884,34 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
             if value == '':
                 value = 'None'
             esjobs.append(key)
-           # if err == 'jobdispatcher:100':
-           #     value = re.sub("(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})", "*", value)
-           # elif err == 'exe:68':
-           #     #value = re.sub("","*",value)
-           #     value = value
-          #  elif err == 'pilot:1099':
-          #      if ('STAGEIN FAILED: Get error: Staging input file failed' in value):
-         #           value = 'STAGEIN FAILED: Get error: Staging input file failed'
-          #  v.setdefault(value, []).append(key)
-        #errsByCount[err]['pandalist'] = v
+        # if err == 'jobdispatcher:100':
+        #     value = re.sub("(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})", "*", value)
+        # elif err == 'exe:68':
+        #     #value = re.sub("","*",value)
+        #     value = value
+        #  elif err == 'pilot:1099':
+        #      if ('STAGEIN FAILED: Get error: Staging input file failed' in value):
+        #           value = 'STAGEIN FAILED: Get error: Staging input file failed'
+        #  v.setdefault(value, []).append(key)
+        # errsByCount[err]['pandalist'] = v
         errsByCountL.append(errsByCount[err])
 
+    # random.seed()
 
+    # if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+    #    tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+    # else:
+    #    tmpTableName = "TMP_IDS1DEBUG"
 
-       # random.seed()
-
-        #if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        #    tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-        #else:
-        #    tmpTableName = "TMP_IDS1DEBUG"
-
-        #transactionKey = random.randrange(1000000)
-        #            connection.enter_transaction_management()
-        #new_cur = connection.cursor()
-        #executionData = []
-        #for id in esjobs:
-        #    executionData.append((id, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
-        #query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
-        #new_cur.executemany(query, executionData)
-        #            connection.commit()
+    # transactionKey = random.randrange(1000000)
+    #            connection.enter_transaction_management()
+    # new_cur = connection.cursor()
+    # executionData = []
+    # for id in esjobs:
+    #    executionData.append((id, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
+    # query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
+    # new_cur.executemany(query, executionData)
+    #            connection.commit()
 
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByCountL = sorted(errsByCountL, key=lambda x: -x['count'])
@@ -10097,7 +10929,6 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
         errsByUserL.append(errsByUser[user])
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByUserL = sorted(errsByUserL, key=lambda x: -x['toterrors'])
-
 
     kys = list(errsBySite.keys())
     kys = sorted(kys)
@@ -10163,14 +10994,16 @@ def getTaskName(tasktype, taskid):
             taskname = tasks[0]['taskname']
     return taskname
 
+
 tcount = {}
 lock = Lock()
 
+
 def totalCount(panJobList, query, wildCardExtension, dkey):
-    print ('Thread started')
+    print('Thread started')
     lock.acquire()
     try:
-        tcount.setdefault(dkey,[])
+        tcount.setdefault(dkey, [])
         for panJob in panJobList:
             wildCardExtension = wildCardExtension.replace('%20', ' ')
             wildCardExtension = wildCardExtension.replace('%2520', ' ')
@@ -10181,9 +11014,10 @@ def totalCount(panJobList, query, wildCardExtension, dkey):
             tcount[dkey].append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
     finally:
         lock.release()
-    print ('Thread finished')
+    print('Thread finished')
 
-def digkey (rq):
+
+def digkey(rq):
     sk = rq.session.session_key
     qt = rq.session['qtime']
     if sk is None:
@@ -10212,7 +11046,7 @@ def errorSummary(request):
         if data['errHist']:
             for list in data['errHist']:
                 try:
-                    list[0] = datetime.strptime(list[0],"%Y-%m-%dT%H:%M:%S")
+                    list[0] = datetime.strptime(list[0], "%Y-%m-%dT%H:%M:%S")
                 except:
                     pass
         response = render_to_response('errorSummary.html', data, content_type='text/html')
@@ -10222,10 +11056,8 @@ def errorSummary(request):
 
     # if 'jobattr' in request.session['requestParams'] or 'tables' in request.session['requestParams']:
     #     saveUserSettings(request,'errors')
-        # if request.GET:
-        #     addGetRequestParams(request)
-
-
+    # if request.GET:
+    #     addGetRequestParams(request)
 
     testjobs = False
     if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams'][
@@ -10261,14 +11093,13 @@ def errorSummary(request):
     if 'limit' in request.session['requestParams']:
         limit = int(request.session['requestParams']['limit'])
 
-
     xurlsubst = extensibleURL(request)
     xurlsubstNoSite = xurlsubst
 
     # Preprocess request to cover all sites for cloud to view jobs assigned to the World
     if ('cloud' in request.session['requestParams']) and ('computingsite' not in request.session['requestParams']) and (
-        request.session['requestParams']['cloud'] != 'WORLD') and (
-        '|' not in request.session['requestParams']['cloud']):
+            request.session['requestParams']['cloud'] != 'WORLD') and (
+            '|' not in request.session['requestParams']['cloud']):
         cloud = request.session['requestParams']['cloud']
         del request.session['requestParams']['cloud']
         sites = set([site['site'] for site in pandaSites.values() if site['cloud'] == cloud])
@@ -10296,15 +11127,15 @@ def errorSummary(request):
 
     if not testjobs: query['jobstatus__in'] = ['failed', 'holding']
     jobs = []
-    values = 'eventservice', 'produsername','produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime',\
+    values = 'eventservice', 'produsername', 'produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime', \
              'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', \
-             'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid','taskid', 'starttime', \
+             'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'starttime', \
              'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', \
-             'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',\
-             'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',\
-             'destinationse', 'currentpriority', 'computingelement','gshare','reqid'
-    print ("step3-1")
-    print (str(datetime.now()))
+             'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', \
+             'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', \
+             'destinationse', 'currentpriority', 'computingelement', 'gshare', 'reqid'
+    print("step3-1")
+    print(str(datetime.now()))
 
     if testjobs:
         jobs.extend(
@@ -10322,31 +11153,31 @@ def errorSummary(request):
         Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
             *values))
 
-    if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0], "%Y-%m-%d %H:%M:%S")).days > 1) or \
-                ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
-                                                     "%Y-%m-%d %H:%M:%S")).days > 1)):
+    if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
+                                             "%Y-%m-%d %H:%M:%S")).days > 1) or \
+            ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
+                                                 "%Y-%m-%d %H:%M:%S")).days > 1)):
         jobs.extend(
             Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
                 *values))
         listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4, Jobsarchived
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
-        thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
+            'json' not in request.session['requestParams'])):
+        thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension, dkey))
         thread.start()
     else:
         thread = None
 
-
-    print ("step3-1-0")
-    print (str(datetime.now()))
+    print("step3-1-0")
+    print(str(datetime.now()))
 
     jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta=False)
 
     njobs = len(jobs)
     tasknamedict = taskNameDict(jobs)
 
-    print ("step3-1-1")
-    print (str(datetime.now()))
+    print("step3-1-1")
+    print(str(datetime.now()))
 
     ## Build the error summary.
     errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
@@ -10376,11 +11207,11 @@ def errorSummary(request):
     taskname = ''
     if not testjobs:
         ## Build the task state summary and add task state info to task error summary
-        print ("step3-1-2")
-        print (str(datetime.now()))
+        print("step3-1-2")
+        print(str(datetime.now()))
         taskstatesummary = dashTaskSummary(request, hours, limit=limit, view=jobtype)
-        print ("step3-2")
-        print (str(datetime.now()))
+        print("step3-2")
+        print(str(datetime.now()))
 
         taskstates = {}
         for task in taskstatesummary:
@@ -10404,38 +11235,40 @@ def errorSummary(request):
         sortby = 'alpha'
     flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
 
-    print ("step3-3")
-    print (str(datetime.now()))
-    if thread!=None:
+    print("step3-3")
+    print(str(datetime.now()))
+    if thread != None:
         try:
             thread.join()
             jobsErrorsTotalCount = sum(tcount[dkey])
-            print (dkey)
-            print (tcount[dkey])
+            print(dkey)
+            print(tcount[dkey])
             del tcount[dkey]
-            print (tcount)
-            print (jobsErrorsTotalCount)
-        except: jobsErrorsTotalCount = -1
-    else: jobsErrorsTotalCount = -1
+            print(tcount)
+            print(jobsErrorsTotalCount)
+        except:
+            jobsErrorsTotalCount = -1
+    else:
+        jobsErrorsTotalCount = -1
 
-    listPar =[]
+    listPar = []
     for key, val in request.session['requestParams'].items():
-        if (key!='limit' and key!='display_limit'):
+        if (key != 'limit' and key != 'display_limit'):
             listPar.append(key + '=' + str(val))
-    if len(listPar)>0:
-        urlParametrs = '&'.join(listPar)+'&'
+    if len(listPar) > 0:
+        urlParametrs = '&'.join(listPar) + '&'
     else:
         urlParametrs = None
-    print (listPar)
+    print(listPar)
     del listPar
-    if (math.fabs(njobs-jobsErrorsTotalCount)<1000):
+    if (math.fabs(njobs - jobsErrorsTotalCount) < 1000):
         jobsErrorsTotalCount = None
     else:
-        jobsErrorsTotalCount = int(math.ceil((jobsErrorsTotalCount+10000)/10000)*10000)
+        jobsErrorsTotalCount = int(math.ceil((jobsErrorsTotalCount + 10000) / 10000) * 10000)
     request.session['max_age_minutes'] = 6
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         nosorturl = removeParam(request.get_full_path(), 'sortby')
         xurl = extensibleURL(request)
         time_locked_url = removeParam(removeParam(xurl, 'date_from', mode='extensible'), 'date_to', mode='extensible') + \
@@ -10444,7 +11277,7 @@ def errorSummary(request):
         jobsurl = xurlsubst.replace('/errors/', '/jobs/')
         jobsurlNoSite = xurlsubstNoSite.replace('/errors/', '')
 
-        errsByCount = importToken(request,errsByCount=errsByCount)
+        errsByCount = importToken(request, errsByCount=errsByCount)
         TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
@@ -10486,8 +11319,8 @@ def errorSummary(request):
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
         # Filtering data due to user settings
         if request.user.is_authenticated and request.user.is_tester:
-        # if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and \
-        #         request.session['IS_TESTER']:
+            # if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and \
+            #         request.session['IS_TESTER']:
             data = filterErrorData(request, data)
         ##self monitor
         endSelfMonitor(request)
@@ -10517,22 +11350,24 @@ def errorSummary(request):
         del request.session['TLAST']
         resp = []
         for job in jobs:
-            resp.append({'pandaid': job['pandaid'], 'status': job['jobstatus'], 'prodsourcelabel': job['prodsourcelabel'],
-                         'produserid': job['produserid']})
+            resp.append(
+                {'pandaid': job['pandaid'], 'status': job['jobstatus'], 'prodsourcelabel': job['prodsourcelabel'],
+                 'produserid': job['produserid']})
         ##self monitor
         endSelfMonitor(request)
         return HttpResponse(json.dumps(resp), content_type='application/json')
+
 
 def filterErrorData(request, data):
     defaultErrorsPreferences = {}
     defaultErrorsPreferences['jobattr'] = standard_errorfields
 
     defaultErrorsPreferences['tables'] = {
-        'jobattrsummary' : 'Job attribute summary',
+        'jobattrsummary': 'Job attribute summary',
         'errorsummary': 'Overall error summary',
-        'siteerrorsummary' : 'Site error summary',
-        'usererrorsummary' : 'User error summary',
-        'taskerrorsummary' : 'Task error summary'
+        'siteerrorsummary': 'Site error summary',
+        'usererrorsummary': 'User error summary',
+        'taskerrorsummary': 'Task error summary'
     }
     userids = BPUser.objects.filter(email=request.user.email).values('id')
     userid = userids[0]['id']
@@ -10546,7 +11381,7 @@ def filterErrorData(request, data):
         # userPreferences = defaultErrorsPreferences
     userPreferences['defaulttables'] = defaultErrorsPreferences['tables']
     userPreferences['defaultjobattr'] = defaultErrorsPreferences['jobattr']
-   ###TODO Temporary fix. Need to redesign
+    ###TODO Temporary fix. Need to redesign
     userPreferences['jobattr'].append('reqid')
 
     data['userPreferences'] = userPreferences
@@ -10604,6 +11439,7 @@ def removeParam(urlquery, parname, mode='complete'):
         if mode != 'extensible':
             if urlquery.endswith('?') or urlquery.endswith('&'): urlquery = urlquery[:len(urlquery) - 1]
     return urlquery
+
 
 @login_customrequired
 def incidentList(request):
@@ -10664,7 +11500,7 @@ def incidentList(request):
             pars['site'] = parsmat.group(2)
             pars['notifier'] = parsmat.group(3)
             pars['type'] = inc['typekey']
-            if pars['site'] in  homeCloud:
+            if pars['site'] in homeCloud:
                 pars['cloud'] = homeCloud[pars['site']]
             if parsmat.group(4): pars['comment'] = parsmat.group(4)
         else:
@@ -10686,7 +11522,7 @@ def incidentList(request):
         ## convert incident components to URLs. Easier here than in the template.
         if 'site' in pars:
             inc['description'] = re.sub('queue=[^\s]+', 'queue=<a href="%ssite=%s">%s</a>' % (
-            extensibleURL(request), pars['site'], pars['site']), inc['description'])
+                extensibleURL(request), pars['site'], pars['site']), inc['description'])
         inc['at_time'] = inc['at_time'].strftime(defaultDatetimeFormat)
 
     ## convert to ordered lists
@@ -10712,7 +11548,7 @@ def incidentList(request):
     del request.session['TLAST']
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -10767,7 +11603,7 @@ def esatlasPandaLoggerJson(request):
 
     es = Elasticsearch(
         [{'host': esHost, 'port': int(esPort)}],
-        http_auth=(esUser,esPassword),
+        http_auth=(esUser, esPassword),
         use_ssl=True,
         verify_certs=False,
         timeout=30,
@@ -10834,7 +11670,7 @@ def esatlasPandaLogger(request):
 
     es = Elasticsearch(
         [{'host': esHost, 'port': int(esPort)}],
-        http_auth=(esUser,esPassword),
+        http_auth=(esUser, esPassword),
         use_ssl=True,
         verify_certs=False,
         timeout=30,
@@ -10843,16 +11679,14 @@ def esatlasPandaLogger(request):
     )
     today = time.strftime("%Y.%m.%d")
     pandaDesc = {
-        "panda.log.RetrialModule":["cat1","Retry module to apply rules on failed jobs"],
+        "panda.log.RetrialModule": ["cat1", "Retry module to apply rules on failed jobs"],
 
-        "panda.log.Serveraccess":["cat2","Apache request log"],
-        "panda.log.Servererror":["cat2","Apache errors"],
+        "panda.log.Serveraccess": ["cat2", "Apache request log"],
+        "panda.log.Servererror": ["cat2", "Apache errors"],
         "panda.log.PilotRequests": ["cat2", "Pilot requests"],
-        "panda.log.Entry":["cat2","Entry point to the PanDA server"],
+        "panda.log.Entry": ["cat2", "Entry point to the PanDA server"],
         "panda.log.UserIF": ["cat2", "User interface"],
         "panda.log.DBProxy": ["cat2", "Filtered messages of DB interactions"],
-
-
 
         "panda.log.Adder": ["cat3", "Add output files to datasets and trigger output aggregation"],
         "panda.log.Finisher": ["cat3", "Finalization procedures for jobs"],
@@ -10878,15 +11712,14 @@ def esatlasPandaLogger(request):
 
         "panda.log.Panda": ["cat8", "Some messages are redirected here"],
     }
-    pandaCat = ['cat1','cat2','cat3','cat4','cat5','cat6','cat7','cat8']
+    pandaCat = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6', 'cat7', 'cat8']
 
     jediDesc = {
-        "panda.log.AtlasProdTaskBroker":["cat1","Production task brokerage"],
-        "panda.log.TaskBroker":["cat7","Task brokerage factory"],
-        "panda.log.AtlasProdJobBroker":["cat1","Production job brokerage"],
+        "panda.log.AtlasProdTaskBroker": ["cat1", "Production task brokerage"],
+        "panda.log.TaskBroker": ["cat7", "Task brokerage factory"],
+        "panda.log.AtlasProdJobBroker": ["cat1", "Production job brokerage"],
         "panda.log.AtlasAnalJobBroker": ["cat1", "Analysis job brokerage"],
-        "panda.log.JobBroker":["cat7","Job brokerage factory"],
-
+        "panda.log.JobBroker": ["cat7", "Job brokerage factory"],
 
         "panda.log.AtlasProdJobThrottler": ["cat2", "Throttles generation of production jobs based on defined limits"],
         "panda.log.JobThrottler": ["cat7", "Job throttler factory"],
@@ -10913,12 +11746,12 @@ def esatlasPandaLogger(request):
         "panda.log.JediTaskBuffer": ["cat7", "JEDI task buffer"],
         "panda.log.DBProxyPool": ["cat7", "DB connection pool interactions"],
     }
-    jediCat = ['cat1','cat2','cat3','cat4','cat5','cat6','cat7']
+    jediCat = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6', 'cat7']
 
     logindexpanda = 'atlas_pandalogs-'
     logindexjedi = 'atlas_jedilogs-'
 
-    indices = [logindexpanda,logindexjedi]
+    indices = [logindexpanda, logindexjedi]
 
     panda = {}
     jedi = {}
@@ -10926,33 +11759,33 @@ def esatlasPandaLogger(request):
         res = es.search(index=index + str(today), stored_fields=['logName', 'type', 'logLevel'], body={
             "aggs": {
                 "logName": {
-                    "terms": {"field": "logName.keyword","size": 100},
+                    "terms": {"field": "logName.keyword", "size": 100},
                     "aggs": {
                         "type": {
-                            "terms": {"field": "fields.type.keyword","size": 100},
+                            "terms": {"field": "fields.type.keyword", "size": 100},
                             "aggs": {
                                 "logLevel": {
                                     "terms": {"field": "logLevel.keyword"}
                                 }
                             }
                         }
-                 }
+                    }
                 }
             }
         }
-        )
+                        )
 
         if index == "atlas_pandalogs-":
             for cat in pandaCat:
-                panda[cat]={}
+                panda[cat] = {}
             for agg in res['aggregations']['logName']['buckets']:
                 if agg['key'] not in pandaDesc:
                     pandaDesc[agg['key']] = [panda.keys()[-1], "New log type. No description"]
                 cat = pandaDesc[agg['key']][0]
-                    #desc = pandaDesc[agg['key']][1]
+                # desc = pandaDesc[agg['key']][1]
                 name = agg['key']
                 panda[cat][name] = {}
-                #panda[cat][name]['desc'] = pandaDesc[agg['key']][1]
+                # panda[cat][name]['desc'] = pandaDesc[agg['key']][1]
                 for types in agg['type']['buckets']:
                     type = types['key']
                     panda[cat][name][type] = {}
@@ -10963,7 +11796,7 @@ def esatlasPandaLogger(request):
                         panda[cat][name][type][levelname]['lcount'] = str(levelnames['doc_count'])
         elif index == "atlas_jedilogs-":
             for cat in jediCat:
-                jedi[cat]={}
+                jedi[cat] = {}
             for agg in res['aggregations']['logName']['buckets']:
                 if agg['key'] not in jediDesc:
                     jediDesc[agg['key']] = [jedi.keys()[-1], "New log type. No description"]
@@ -10984,16 +11817,17 @@ def esatlasPandaLogger(request):
         'requestParams': request.session['requestParams'],
         'user': None,
         'panda': panda,
-        'pandadesc':pandaDesc,
+        'pandadesc': pandaDesc,
         'jedi': jedi,
-        'jedidesc':jediDesc,
+        'jedidesc': jediDesc,
         'time': time.strftime("%Y-%m-%d"),
     }
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         response = render_to_response('esatlasPandaLogger.html', data, content_type='text/html')
         return response
+
 
 def esPandaLogger(request):
     valid, response = initRequest(request)
@@ -11059,7 +11893,7 @@ def esPandaLogger(request):
     }
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         response = render_to_response('esPandaLogger.html', data, content_type='text/html')
         return response
 
@@ -11110,7 +11944,7 @@ def pandaLogger(request):
         enddate = request.session['requestParams']['enddate']
 
     iquery['bintime__range'] = [startdate, enddate]
-    print (iquery)
+    print(iquery)
     counts = Pandalog.objects.filter(**iquery).values('name', 'type', 'levelname').annotate(
         Count('levelname')).order_by('name', 'type', 'levelname')
     if getrecs:
@@ -11195,14 +12029,14 @@ def pandaLogger(request):
         'built': datetime.now().strftime("%H:%M:%S"),
     }
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         ##self monitor
         endSelfMonitor(request)
         response = render_to_response('pandaLogger.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+            'json' in request.session['requestParams']):
         resp = data
         return HttpResponse(json.dumps(resp, cls=DateEncoder), content_type='application/json')
 
@@ -11274,7 +12108,7 @@ def ttc(request):
     neventsSum = 0
     for job in taskprofile:
         job['ttccoldline'] = 100. - ((job['endtime'] - taskrec['starttime']).days * 3600 * 24 + (
-        job['endtime'] - taskrec['starttime']).seconds) * 100 / float(maxt)
+                job['endtime'] - taskrec['starttime']).seconds) * 100 / float(maxt)
         job['endtime'] = job['endtime'].strftime("%Y-%m-%d %H:%M:%S")
         job['ttctime'] = job['endtime']
         job['starttime'] = job['starttime'].strftime("%Y-%m-%d %H:%M:%S")
@@ -11292,17 +12126,20 @@ def ttc(request):
     progressForBar = []
     if taskev['totev'] > 0:
         taskrec['percentage'] = ((neventsSum) * 100 / taskev['totev'])
-    else:  taskrec['percentage'] = None
+    else:
+        taskrec['percentage'] = None
     if taskrec['percentage'] != None:
-     taskrec['percentageok'] = taskrec['percentage'] - 5
-    else:  taskrec['percentageok'] = None
+        taskrec['percentageok'] = taskrec['percentage'] - 5
+    else:
+        taskrec['percentageok'] = None
     if taskrec['status'] == 'running':
         taskrec['ttcbasedpercentage'] = ((datetime.now() - taskrec['starttime']).days * 24 * 3600 + (
-        datetime.now() - taskrec['starttime']).seconds) * 100 / (
-                                        (taskrec['ttcrequested'] - taskrec['creationdate']).days * 24 * 3600 + (
-                                        taskrec['ttcrequested'] - taskrec['creationdate']).seconds) if datetime.now() < \
-                                                                                                       taskrec[
-                                                                                                           'ttc'] else 100
+                datetime.now() - taskrec['starttime']).seconds) * 100 / (
+                                                (taskrec['ttcrequested'] - taskrec['creationdate']).days * 24 * 3600 + (
+                                                taskrec['ttcrequested'] - taskrec[
+                                            'creationdate']).seconds) if datetime.now() < \
+                                                                         taskrec[
+                                                                             'ttc'] else 100
         progressForBar = [100, taskrec['percentage'], taskrec['ttcbasedpercentage']]
 
     if taskrec['ttc']:
@@ -11326,7 +12163,7 @@ def ttc(request):
     return response
 
 
-#@cache_page(60 * 20)
+# @cache_page(60 * 20)
 @login_customrequired
 def workingGroups(request):
     valid, response = initRequest(request)
@@ -11341,7 +12178,6 @@ def workingGroups(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
         return response
-
 
     taskdays = 3
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
@@ -11392,13 +12228,13 @@ def workingGroups(request):
             wgs[wg]['statelist'].append(wgs[wg]['states'][state])
             if int(wgs[wg]['states']['finished']['count']) + int(wgs[wg]['states']['failed']['count']) > 0:
                 wgs[wg]['pctfail'] = int(100. * float(wgs[wg]['states']['failed']['count']) / (
-                wgs[wg]['states']['finished']['count'] + wgs[wg]['states']['failed']['count']))
+                        wgs[wg]['states']['finished']['count'] + wgs[wg]['states']['failed']['count']))
 
         wgsummary.append(wgs[wg])
     if len(wgsummary) == 0: wgsummary = None
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         xurl = extensibleURL(request)
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -11497,7 +12333,7 @@ def datasetInfo(request):
     ##self monitor
     endSelfMonitor(request)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -11513,6 +12349,7 @@ def datasetInfo(request):
         return response
     else:
         return HttpResponse(json.dumps(dsrec, cls=DateEncoder), content_type='application/json')
+
 
 @login_customrequired
 def datasetList(request):
@@ -11535,7 +12372,7 @@ def datasetList(request):
         ds['creationtime'] = ds['creationtime'].strftime(defaultDatetimeFormat)
         ds['modificationtime'] = ds['modificationtime'].strftime(defaultDatetimeFormat)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         data = {
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
@@ -11552,6 +12389,7 @@ def datasetList(request):
         ##self monitor
         endSelfMonitor(request)
         return HttpResponse(json.dumps(dsets), content_type='application/json')
+
 
 @login_customrequired
 def fileInfo(request):
@@ -11613,12 +12451,13 @@ def fileInfo(request):
     if 'datasetid' in request.session['requestParams']:
         query['datasetid'] = request.session['requestParams']['datasetid']
 
-    if file or ('pandaid' in query and query['pandaid'] is not None) or ('jeditaskid' in query and query['jeditaskid'] is not None):
+    if file or ('pandaid' in query and query['pandaid'] is not None) or (
+            'jeditaskid' in query and query['jeditaskid'] is not None):
         files = JediDatasetContents.objects.filter(**query).values()
         if len(files) == 0:
             del query['creationdate__range']
             query['modificationtime__castdate__range'] = [startdate.strftime(defaultDatetimeFormat),
-                                                enddate.strftime(defaultDatetimeFormat)]
+                                                          enddate.strftime(defaultDatetimeFormat)]
             morefiles = Filestable4.objects.filter(**query).values()
             if len(morefiles) == 0:
                 morefiles = FilestableArch.objects.filter(**query).values()
@@ -11630,15 +12469,14 @@ def fileInfo(request):
                     f['datasetname'] = f['dataset']
                     f['oldfiletable'] = 1
 
-#        connection.enter_transaction_management()
+        #        connection.enter_transaction_management()
         new_cur = connection.cursor()
         executionData = []
         for id in files:
             executionData.append((id['datasetid'], transactionKey))
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
-#        connection.commit()
-
+        #        connection.commit()
 
         new_cur.execute(
             "SELECT DATASETNAME,DATASETID FROM %s WHERE DATASETID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
@@ -11685,14 +12523,14 @@ def fileInfo(request):
                 file_['endevent'] += 1
 
     if ((len(files) > 0) and ('jeditaskid' in files[0]) and ('startevent' in files[0]) and (
-        files[0]['jeditaskid'] != None)):
+            files[0]['jeditaskid'] != None)):
         files = sorted(files, key=lambda k: (-k['jeditaskid'], k['startevent']))
     if frec and 'creationdate' in frec and frec['creationdate'] is None:
         frec['creationdate'] = frec['creationdate'].strftime(defaultDatetimeFormat)
     ##self monitor
     endSelfMonitor(request)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-                'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -11715,6 +12553,7 @@ def fileInfo(request):
             'columns': columns,
         }
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+
 
 @login_customrequired
 def fileList(request):
@@ -11757,7 +12596,7 @@ def fileList(request):
     ##self monitor
     endSelfMonitor(request)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         xurl = extensibleURL(request)
         data = {
             'request': request,
@@ -11790,7 +12629,6 @@ def loadFileList(request, datasetid=-1):
 
     if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
         query['procstatus'] = request.session['requestParams']['procstatus']
-
 
     sortOrder = 'lfn'
 
@@ -11825,7 +12663,7 @@ def loadFileList(request, datasetid=-1):
         if f['fileid'] in filesFromFileTableDict:
             if len(filesFromFileTableDict[f['fileid']]['dispatchdblock']) > 0:
                 ruciolink = 'https://rucio-ui.cern.ch/did?scope=' + filesFromFileTableDict[f['fileid']][
-                        'scope'] + '&name=' + filesFromFileTableDict[f['fileid']]['dispatchdblock']
+                    'scope'] + '&name=' + filesFromFileTableDict[f['fileid']]['dispatchdblock']
             else:
                 if len(filesFromFileTableDict[f['fileid']]['destinationdblock']) > 0:
                     ruciolink = 'https://rucio-ui.cern.ch/did?scope=' + filesFromFileTableDict[f['fileid']][
@@ -11838,6 +12676,7 @@ def loadFileList(request, datasetid=-1):
     endSelfMonitor(request)
     dump = json.dumps(files, cls=DateEncoder)
     return HttpResponse(dump, content_type='application/json')
+
 
 @login_customrequired
 def workQueues(request):
@@ -11865,7 +12704,7 @@ def workQueues(request):
     ##self monitor
     endSelfMonitor(request)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+            'json' not in request.session['requestParams'])):
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -11985,7 +12824,7 @@ def taskNotUpdated(request, query, state='submitted', hoursSinceUpdate=36, value
         return tasks
 
 
-def getErrorDescription(job, mode='html', provideProcessedCodes = False):
+def getErrorDescription(job, mode='html', provideProcessedCodes=False):
     txt = ''
     codesDescribed = []
 
@@ -11994,7 +12833,7 @@ def getErrorDescription(job, mode='html', provideProcessedCodes = False):
             try:
                 meta = json.loads(job['metastruct'])
             except:
-                print ('Meta type: '+str(type(job['metastruct'])))
+                print('Meta type: ' + str(type(job['metastruct'])))
                 meta = job['metastruct']
             if 'exitCode' in meta and meta['exitCode'] != 0:
                 txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])
@@ -12149,11 +12988,11 @@ def getFilePathForObjectStore(objectstore, filetype="logs"):
                     basepath = url + basepath
 
         if basepath == "":
-            print ("Object store path could not be extracted using file type \'%s\' from objectstore=\'%s\'" % (
-            filetype, objectstore))
+            print("Object store path could not be extracted using file type \'%s\' from objectstore=\'%s\'" % (
+                filetype, objectstore))
 
     else:
-        print ("Object store not defined in queuedata")
+        print("Object store not defined in queuedata")
 
     return basepath
 
@@ -12420,11 +13259,10 @@ def buildGoogleTaskFlow(request, tasks):
     return flowrows
 
 
-
 # This function created backend dependable for avoiding numerous arguments in metadata query.
 # Transaction and cursors used due to possible issues with django connection pooling
 def addJobMetadata(jobs, require=False):
-    print ('adding metadata')
+    print('adding metadata')
     pids = []
 
     useMetaArch = False
@@ -12463,18 +13301,18 @@ def addJobMetadata(jobs, require=False):
     new_cur = connection.cursor()
     for id in pids:
         new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
-        tmpTableName, id, transactionKey))  # Backend dependable
+            tmpTableName, id, transactionKey))  # Backend dependable
 
     mrecs = []
     if useMeta:
         new_cur.execute(
             "SELECT METADATA,MODIFICATIONTIME,PANDAID FROM %s WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
-            metaTableName, tmpTableName, transactionKey))
+                metaTableName, tmpTableName, transactionKey))
         mrecs = dictfetchall(new_cur)
     if useMetaArch:
         new_cur.execute(
             "SELECT METADATA,MODIFICATIONTIME,PANDAID FROM %s WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
-            metaTableNameArch, tmpTableName, transactionKey))
+                metaTableNameArch, tmpTableName, transactionKey))
 
         mrecs.extend(dictfetchall(new_cur))
 
@@ -12491,10 +13329,10 @@ def addJobMetadata(jobs, require=False):
             except:
                 pass
                 # job['metadata'] = mdict[job['pandaid']]
-    print ('added metadata')
+    print('added metadata')
     new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
- #   connection.commit()
- #   connection.leave_transaction_management()
+    #   connection.commit()
+    #   connection.leave_transaction_management()
     return jobs
 
 
@@ -12521,9 +13359,10 @@ def g4exceptions(request):
     jobs.extend(
         Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
             *values))
-    if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0], "%Y-%m-%d %H:%M:%S")).days > 1) or \
-                ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
-                                                     "%Y-%m-%d %H:%M:%S")).days > 1)):
+    if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
+                                             "%Y-%m-%d %H:%M:%S")).days > 1) or \
+            ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
+                                                 "%Y-%m-%d %H:%M:%S")).days > 1)):
         jobs.extend(
             Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
                 *values))
@@ -12536,18 +13375,18 @@ def g4exceptions(request):
             tmpTableName = "TMP_IDS1"
 
         transactionKey = random.randrange(1000000)
-#        connection.enter_transaction_management()
+        #        connection.enter_transaction_management()
         new_cur = connection.cursor()
         for job in jobs:
             new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
-            tmpTableName, job['pandaid'], transactionKey))  # Backend dependable
- #       connection.commit()
+                tmpTableName, job['pandaid'], transactionKey))  # Backend dependable
+        #       connection.commit()
         new_cur.execute(
             "SELECT JOBPARAMETERS, PANDAID FROM ATLAS_PANDA.JOBPARAMSTABLE WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
-            tmpTableName, transactionKey))
+                tmpTableName, transactionKey))
         mrecs = dictfetchall(new_cur)
-#        connection.commit()
-#        connection.leave_transaction_management()
+        #        connection.commit()
+        #        connection.leave_transaction_management()
         jobsToRemove = set()
         for rec in mrecs:
             acceptJob = True
@@ -12595,7 +13434,8 @@ def initSelfMonitor(request):
     import psutil
     if 'hostname' in request.session:
         server = request.session['hostname']
-    else: server = '-'
+    else:
+        server = '-'
 
     if 'HTTP_X_FORWARDED_FOR' in request.META:
         remote = request.META['HTTP_X_FORWARDED_FOR']
@@ -12611,16 +13451,19 @@ def initSelfMonitor(request):
         urls = urlProto + request.META['SERVER_NAME'] + request.META['REQUEST_URI']
     except:
         if 'SERVER_PORT' in request.META:
-            port =':' + request.META['SERVER_PORT']
-        else: port = ''
+            port = ':' + request.META['SERVER_PORT']
+        else:
+            port = ''
         if 'PATH_INFO' in request.META:
             path = request.META['PATH_INFO']
-        else: path=''
-        if 'QUERY_STRING' in request.META and request.META['QUERY_STRING']!="":
-            qstring= '?'+request.META['QUERY_STRING']
-        else: qstring =''
+        else:
+            path = ''
+        if 'QUERY_STRING' in request.META and request.META['QUERY_STRING'] != "":
+            qstring = '?' + request.META['QUERY_STRING']
+        else:
+            qstring = ''
         urls = urlProto + request.META['SERVER_NAME'] + port + path + qstring
-    print (urls)
+    print(urls)
     qtime = str(timezone.now())
     load = psutil.cpu_percent(interval=1)
     mem = psutil.virtual_memory().percent
@@ -12640,6 +13483,7 @@ def initSelfMonitor(request):
     request.session["refferer"] = refferer
     request.session["useragent"] = useragent
 
+
 def endSelfMonitor(request):
     qduration = str(timezone.now())
     request.session['qduration'] = qduration
@@ -12656,13 +13500,15 @@ def endSelfMonitor(request):
             mem=request.session['mem'] if 'mem' in request.session else None,
             qduration=request.session['qduration'] if 'qduration' in request.session else None,
             duration=duration,
-            remote=request.session['remote'] if 'remote' in request.session and request.session['remote'] is not None else '',
+            remote=request.session['remote'] if 'remote' in request.session and request.session[
+                'remote'] is not None else '',
             urls=request.session['urls'] if 'urls' in request.session else '',
             description=' ',
             referrer=request.session['refferer'],
             useragent=request.session["useragent"]
         )
         reqs.save()
+
 
 @never_cache
 def statpixel(request):
@@ -12682,16 +13528,17 @@ def statpixel(request):
             userid = userids[0]['id']
         Visits.objects.create(url=url, service=service, remote=ip, time=str(timezone.now()), userid=userid)
 
-    #user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'],
+    # user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'],
     #                                  first_name=request.session['ADFS_FIRSTNAME'],
     #                                  last_name=request.session['ADFS_LASTNAME'])
 
-    #this is a transparent gif pixel
-    pixel_= "\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b"
+    # this is a transparent gif pixel
+    pixel_ = "\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b"
     response = HttpResponse(pixel_, content_type='image/gif')
     return response
 
-#@cache_page(60 * 20)
+
+# @cache_page(60 * 20)
 
 # taken from https://raw.githubusercontent.com/PanDAWMS/panda-server/master/pandaserver/taskbuffer/OraDBProxy.py
 # retrieve global shares
@@ -12701,16 +13548,18 @@ import urllib.request
 import io
 
 whitelist = ["triumf.ca", "cern.ch"]
+
+
 def image(request):
     if ('url' in request.GET):
         param = request.build_absolute_uri()
-        url = param[param.index("=")+1:len(param)]
+        url = param[param.index("=") + 1:len(param)]
         for urlw in whitelist:
-            pattern = "^((http[s]?):\/)?\/?([^:\/\s]+"+urlw+")"
-            urlConfim = re.findall(pattern,url)
-            if (len(urlConfim)>0):
+            pattern = "^((http[s]?):\/)?\/?([^:\/\s]+" + urlw + ")"
+            urlConfim = re.findall(pattern, url)
+            if (len(urlConfim) > 0):
                 break
-        if (len(urlConfim)==0):
+        if (len(urlConfim) == 0):
             return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
         try:
             data = getCacheEntry(request, "imagewrap")
@@ -12739,56 +13588,51 @@ def image(request):
     else:
         return redirect('/static/images/error_z0my4n.png')
 
+
 def grafana_image(request):
     if ('url' in request.GET):
         param = request.build_absolute_uri()
-        url = param[param.index("=")+1:len(param)]
+        url = param[param.index("=") + 1:len(param)]
         for urlw in whitelist:
-            pattern = "^((http[s]?):\/)?\/?([^:\/\s]+"+urlw+")"
-            urlConfim = re.findall(pattern,url)
-            if (len(urlConfim)>0):
+            pattern = "^((http[s]?):\/)?\/?([^:\/\s]+" + urlw + ")"
+            urlConfim = re.findall(pattern, url)
+            if (len(urlConfim) > 0):
                 break
-        if (len(urlConfim)==0):
+        if (len(urlConfim) == 0):
             return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
         try:
-            data = getCacheEntry(request, "grafanaimagewrap")
-            if data is not None:
-                data = base64.b64decode(data)
-                response = HttpResponse(data, content_type='image/jpg')
-                patch_response_headers(response, cache_timeout=10 * 60)
-                return response
             if 'Authorization' in GRAFANA:
                 grafana_token = GRAFANA['Authorization']
             import requests
             headers = {"Authorization": grafana_token}
-            r = requests.get(url, headers = headers)
+            r = requests.get(url, headers=headers)
             r.raise_for_status()
             with io.BytesIO(r.content) as f:
                 with Image.open(f) as img:
                     rgb_im = img.convert('RGB')
                     response = HttpResponse(content_type='image/jpg')
                     rgb_im.save(response, "JPEG")
-                    byte_io = BytesIO()
-                    rgb_im.save(byte_io, 'JPEG')
-                    data = base64.b64encode(byte_io.getvalue())
-                    setCacheEntry(request, "grafanaimagewrap", data, 60 * 60)
                     return response
         except Exception as ex:
             return redirect('/static/images/404-not-found-site.gif')
     else:
         return redirect('/static/images/error_z0my4n.png')
 
+
 def handler500(request):
     response = render_to_response('500.html', {},
                                   context_instance=RequestContext(request))
     response.status_code = 500
     return response
+
+
 #### URL Section ####
 import uuid
 from collections import defaultdict
 
-def setCacheData(request,lifetime=60*120,**parametrlist):
-    #transactionKey = random.getrandbits(128)
+
+def setCacheData(request, lifetime=60 * 120, **parametrlist):
+    # transactionKey = random.getrandbits(128)
     transactionKey = uuid.uuid4().hex
     dictinoary = {}
     dictinoary[transactionKey] = {}
@@ -12796,32 +13640,35 @@ def setCacheData(request,lifetime=60*120,**parametrlist):
     for key in keys:
         dictinoary[transactionKey][key] = str(parametrlist[key])
     data = json.dumps(dictinoary, cls=DateEncoder)
-    setCacheEntry(request, str(transactionKey), data, lifetime,isData=True)
+    setCacheEntry(request, str(transactionKey), data, lifetime, isData=True)
 
     return transactionKey
 
-def getCacheData(request,requestid):
-    data = getCacheEntry(request,str(requestid),isData=True)
+
+def getCacheData(request, requestid):
+    data = getCacheEntry(request, str(requestid), isData=True)
     if data is not None:
         data = json.loads(data)
-        if 'childtk'in data[requestid]:
+        if 'childtk' in data[requestid]:
             tklist = defaultdict(list)
             data = str(data[requestid]['childtk']).split(',')
             if data is not None:
                 for child in data:
-                    ch = getCacheEntry(request,str(child),isData=True)
+                    ch = getCacheEntry(request, str(child), isData=True)
                     if ch is not None:
                         ch = json.loads(ch)
                         ### merge data
                         for k, v in ch[child].items():
                             tklist[k].append(v)
                 data = {}
-                for k,v in tklist.items():
-                    data[k] =','.join(v)
-        else: data = data[requestid]
+                for k, v in tklist.items():
+                    data[k] = ','.join(v)
+        else:
+            data = data[requestid]
         return data
     else:
         return None
+
 
 def fixLob(cur):
     fixRowsList = []
@@ -12834,12 +13681,13 @@ def fixLob(cur):
                 newRow.append(col)
         fixRowsList.append(tuple(newRow))
     return fixRowsList
+
+
 ############################
 
 
-#@never_cache
+# @never_cache
 def getBadEventsForTask(request):
-
     if 'jeditaskid' in request.GET:
         jeditaskid = int(request.GET['jeditaskid'])
     else:
@@ -12878,9 +13726,12 @@ def getBadEventsForTask(request):
     for row in evtable:
         dataitem = {}
         dataitem['DATASETID'] = row[0]
-        dataitem['ERROR_CODE'] = (errorCodes['piloterrorcode'][row[1]] + " (" +str(row[1])+ ")") if row[1] in errorCodes['piloterrorcode'] else row[1]
-        dataitem['EVENTS'] = list(set(  str(row[2].read()).split(',')   )) if not row[2] is None else None
-        dataitem['PANDAIDS'] = list(set(  str(row[3].read()).split(',')   )) if not row[3] is None else None
+        dataitem['ERROR_CODE'] = (errorCodes['piloterrorcode'][row[1]] + " (" + str(row[1]) + ")") if row[1] in \
+                                                                                                      errorCodes[
+                                                                                                          'piloterrorcode'] else \
+        row[1]
+        dataitem['EVENTS'] = list(set(str(row[2].read()).split(','))) if not row[2] is None else None
+        dataitem['PANDAIDS'] = list(set(str(row[3].read()).split(','))) if not row[3] is None else None
         if dataitem['EVENTS']: dataitem['EVENTS'] = sorted(dataitem['EVENTS'])
         dataitem['COUNT'] = row[4]
         data.append(dataitem)
@@ -12928,7 +13779,7 @@ def getEventsChunks(request):
     return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='application/json')
 
 
-def getJobStatusLog(request, pandaid = None):
+def getJobStatusLog(request, pandaid=None):
     """
     A view to asynchronously load job states changes history
     :param request:
@@ -12955,9 +13806,9 @@ def getJobStatusLog(request, pandaid = None):
 
     if len(statusLog) > 0:
         for c, item in enumerate(statusLog):
-            if c < len(statusLog)-1:
-                if statusLog[c+1][mtimeparam] is not None and statusLog[c][mtimeparam] is not None:
-                    duration = statusLog[c+1][mtimeparam] - statusLog[c][mtimeparam]
+            if c < len(statusLog) - 1:
+                if statusLog[c + 1][mtimeparam] is not None and statusLog[c][mtimeparam] is not None:
+                    duration = statusLog[c + 1][mtimeparam] - statusLog[c][mtimeparam]
                     ndays = duration.days
                     strduration = str(timedelta(seconds=duration.seconds))
                     statusLog[c]['duration'] = "%s:%s" % (ndays, strduration)
@@ -12973,6 +13824,8 @@ def getJobStatusLog(request, pandaid = None):
     response = render_to_response('jobStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
+
+
 ### API ###
 def getSites(request):
     if request.is_ajax():
@@ -12989,6 +13842,7 @@ def getSites(request):
         data = 'fail'
     mimetype = 'application/json'
     return HttpResponse(data, mimetype)
+
 
 def serverStatusHealth(request):
     """
@@ -13016,7 +13870,7 @@ def serverStatusHealth(request):
     """
 
     initRequest(request)
-    periodOfAllServWorkRestart = 15 #minutes.
+    periodOfAllServWorkRestart = 15  # minutes.
     restartTimeWindow = 5
 
     debug = True
@@ -13026,7 +13880,7 @@ def serverStatusHealth(request):
 
     data = getCacheEntry(request, "StatusHealth")
 
-    print ("serverStatusHealth ", datetime.now(), " runninghost:", request.session["hostname"], " ", data)
+    print("serverStatusHealth ", datetime.now(), " runninghost:", request.session["hostname"], " ", data)
 
     if data is None:
         q = collections.deque()
@@ -13053,18 +13907,16 @@ def serverStatusHealth(request):
 
     if (currenthost == runninghost):
         if (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart)) and \
-                        (datetime.now() - lastupdate) < timedelta(minutes=(periodOfAllServWorkRestart+restartTimeWindow)):
+                (datetime.now() - lastupdate) < timedelta(minutes=(periodOfAllServWorkRestart + restartTimeWindow)):
             return HttpResponse("Awaiting restart", content_type='text/html')
         elif (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart)) and \
-                        (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart+restartTimeWindow)):
+                (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart + restartTimeWindow)):
             data = {}
             q.append(currenthost)
             data['q'] = pickle.dumps(q)
             data['lastupdate'] = datetime.now().strftime(defaultDatetimeFormat)
             setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
             return HttpResponse("Normal operation", content_type='text/html')
-
-
 
     # rows = subprocess.check_output('ps -eo cmd,lstart --sort=start_time | grep httpd', shell=True).split('\n')[:-2]
     # print "serverStatusHealth ", datetime.now(), " rows:", rows
@@ -13114,8 +13966,8 @@ def getHarversterWorkersForTask(request):
     return HttpResponse(status=400)
 
 
-#import logging
-#logging.basicConfig()
+# import logging
+# logging.basicConfig()
 @never_cache
 def loginauth2(request):
     if 'next' in request.GET:
@@ -13124,28 +13976,31 @@ def loginauth2(request):
         next = extensibleURL(request, request.META['HTTP_REFERER'])
     else:
         next = '/'
-    response = render_to_response('login.html', {'request': request, 'next':next,}, content_type='text/html')
+    response = render_to_response('login.html', {'request': request, 'next': next, }, content_type='text/html')
     response.delete_cookie('sessionid')
     return response
+
 
 def loginerror(request):
     warning = """The login to BigPanDA monitor is failed. Cleaning of your browser cookies might help. 
                  If the error is persistent, please write to """
     response = render_to_response('login.html', {'request': request, 'warning': warning}, content_type='text/html')
-    #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    # patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
 
 @login_customrequired
 def testauth(request):
-    response = render_to_response('testauth.html', {'request': request,}, content_type='text/html')
+    response = render_to_response('testauth.html', {'request': request, }, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
+
 
 def logout(request):
     """Logs out user"""
     auth_logout(request)
     return redirect('/')
+
 
 def testip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
