@@ -16,7 +16,7 @@
         "use strict";
 
         var config = {
-            showChars: 3000,
+            showChars: 1000,
             minHideChars: 10,
             ellipsesText: "...",
             moreText: "more",
