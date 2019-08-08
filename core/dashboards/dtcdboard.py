@@ -24,10 +24,12 @@ from django.utils import timezone
 def dataCarouselleDashBoard(request):
     initRequest(request)
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=4, limit=9999999, querytype='task', wildCardExt=True)
+    request.session['viewParams']['selection'] = ''
     data = {
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }
+
     response = render_to_response('DataTapeCarouselle.html', data, content_type='text/html')
     #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
     return response

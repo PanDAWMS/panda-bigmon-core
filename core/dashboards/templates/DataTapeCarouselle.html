@@ -67,13 +67,16 @@
                 Service.get(request).then($scope.processResponce);
             };
 
+            $scope.getTimeHours = function(){
+               if ($scope.selectedTime == "hours720") return 'hours=720';
+               if ($scope.selectedTime == "hours168") return 'hours=168';
+               if ($scope.selectedTime == "hours24") return 'hours=24';
+               if ($scope.selectedTime == "hours12") return 'hours=12';
+               if ($scope.selectedTime == "hours1") return 'hours=1';
+            }
 
             $scope.updateByTime = function(){
-               if ($scope.selectedTime == "hours720") Service.get('?hours=720').then($scope.processResponce);
-               if ($scope.selectedTime == "hours168") Service.get('?hours=168').then($scope.processResponce);
-               if ($scope.selectedTime == "hours24") Service.get('?hours=24').then($scope.processResponce);
-               if ($scope.selectedTime == "hours12") Service.get('?hours=12').then($scope.processResponce);
-               if ($scope.selectedTime == "hours1") Service.get('?hours=1').then($scope.processResponce);
+                Service.get('?'+getTimeHours()).then($scope.processResponce)
             };
 
 
@@ -176,7 +179,8 @@
                     ]
                 });
             }
-            Service.get('?hours=720').then($scope.processResponce);
+            $scope.selectedTime = 24;
+            Service.get('?hours='+$scope.selectedTime).then($scope.processResponce);
         }
     </script>
 
@@ -229,7 +233,7 @@
               </thead>
               <tbody>
                 <tr ng-repeat="x in progresstablearr" class="low-stat">
-                    <th class="sm_ok_fill"> <a href="{% url 'taskList' %}?tape=true&source={$ x.source $}">{$ x.source $}</a></th>
+                    <th class="sm_ok_fill"> <a href="{% url 'taskList' %}?tape=true&stagesource={$ x.source $}&{$ getTimeHours(selectedTime) $}">{$ x.source $}</a></th>
                     <td class="sm_ok_light_fill">
                         {$ x.ds_active $}
                     </td>
