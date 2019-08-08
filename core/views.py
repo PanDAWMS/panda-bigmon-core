@@ -118,7 +118,7 @@ from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, pa
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.bpuser import get_relevant_links
-from core.libs.query_threading import QueryThread
+from core.libs.query_threading import QueryThread, extract_results_list, run_query_in_thread
 
 
 @register.filter(takes_context=True)
@@ -3038,10 +3038,6 @@ def job_list(request, mode=None):
     if not valid:
         return response
 
-    dkey = digkey(request)
-    thread = None
-    isEventTask = False
-
     # Here we try to get data from cache
     data = getCacheEntry(request, "jobList")
     if data is not None:
@@ -3058,6 +3054,9 @@ def job_list(request, mode=None):
         endSelfMonitor(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
+    dkey = digkey(request)
+    isEventTask = False
 
     # if 'instance' in request.session['requestParams']:
     #     request.session['requestParams']['schedulerid'] =  'harvester-'+request.session['requestParams']['instance']
@@ -3148,40 +3147,87 @@ def job_list(request, mode=None):
         return render_to_response('message.html', {
             'desc': 'Request token is not found or data is outdated. Please reload the original page.'},
                                   content_type='text/html')
-    ####
-    #    if 'batchid' in request.session['requestParams']:
-    #        query['batchid'] = request.session['requestParams']['batchid']
-    jobs = []
 
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-            'json' in request.session['requestParams']):
-        values = [f.name for f in Jobsactive4._meta.get_fields()]
-    elif eventservice:
-        values = 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt', 'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice', 'nevents', 'gshare', 'noutputdatafiles', 'parentid', 'attemptnr', 'actualcorecount', 'resourcetype', 'schedulerid', 'pilotid'
-    else:
-        values = 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents', 'gshare', 'noutputdatafiles', 'parentid', 'attemptnr', 'actualcorecount', 'resourcetype', 'schedulerid', 'pilotid'
 
-    # simpleresult = Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).values('gshare').annotate(total=Count('gshare')).order_by('total')
+    job_attr_values = (
+        'actualcorecount',
+        'atlasrelease',
+        'attemptnr',
+        'cloud',
+        'computingsite',
+        'corecount',
+        'eventservice',
+        'gshare',
+        'homepackage',
+        'inputfileproject',
+        'inputfiletype',
+        'jeditaskid',
+        'jobstatus',
+        'jobsubstatus',
+        'noutputdatafiles',
+        'nucleus',
+        'currentpriority',
+        'processingtype',
+        'prodsourcelabel',
+        'produsername',
+        'reqid',
+        'resourcetype',
+        'transformation',
+        'workinggroup',
+    )
+
+    job_error_attr_values = (
+        'brokerageerrorcode',
+        'brokerageerrordiag',
+        'ddmerrorcode',
+        'ddmerrordiag',
+        'exeerrorcode',
+        'exeerrordiag',
+        'jobdispatchererrorcode',
+        'jobdispatchererrordiag',
+        'piloterrorcode',
+        'piloterrordiag',
+        'superrorcode',
+        'superrordiag',
+        'taskbuffererrorcode',
+        'taskbuffererrordiag',
+        'transexitcode'
+    )
+
+    job_extra_attr_values = (
+        'durationmin',
+        'eventservicestatus',
+        'harvesterinstance',
+        'minramcount',
+        'outputfiletype',
+        'pilotversion',
+    )
+
+    try:
+        from concurrent.futures import ThreadPoolExecutor
+    except ImportError:
+        _logger.error('[job_list] failed to import library')
 
     attributes_summary_raw = {}
-    threads = {}
-    for value in values:
+    inputs_list = []
+    for value in job_attr_values:
         attributes_summary_raw[value] = QueryThread(
-            model_name=Jobsarchived4,
+            model_name=[Jobsarchived4, Jobsactive4, Jobswaiting4, Jobsdefined4],
             query=query,
             wild_card_extension=wildCardExtension,
             tkey=dkey,
             param_name=value)
-        threads[value] = Thread(target=attributes_summary_raw[value].run_query_in_thread(aggregation_type='count_distinct'), name=str(dkey) + '_' + value)
-        threads[value].setDaemon(True)
-        threads[value].start()
+    for value in attributes_summary_raw.keys():
+        inputs_list.append({'QueryThread_instances_dict': attributes_summary_raw,
+                            'param_name': value,
+                            'aggregation_type': 'count_distinct'})
 
-    if len(threads) > 0:
-        try:
-            for value in values:
-                threads[value].join()
-        except:
-            pass
+
+    N_MAX_CONCURRENT_QUERIES = 10
+    with ThreadPoolExecutor(max_workers=N_MAX_CONCURRENT_QUERIES) as executor:
+        executor.map(run_query_in_thread, inputs_list)
+
+    attributes_summary = extract_results_list(attributes_summary_raw, dkey)
 
 
     JOB_LIMITS = request.session['JOB_LIMIT']
