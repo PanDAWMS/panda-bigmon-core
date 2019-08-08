@@ -7442,7 +7442,7 @@ def taskList(request):
     if 'tape' in  request.session['requestParams']:
         stagesource = ''
         if 'stagesource' in request.session['requestParams'] and request.session['requestParams']['stagesource']!='Unknown':
-            stagesource = ' and t1.SOURCE_RSE=\'' + request.session['requestParams']['stagesource'].strip()+"\'"
+            stagesource = " and t1.SOURCE_RSE='" + request.session['requestParams']['stagesource'].strip().replace("'","''")+"\'"
         elif 'stagesource' in request.session['requestParams'] and request.session['requestParams']['stagesource']=='Unknown':
             stagesource = ' and t1.SOURCE_RSE is null'
             
