@@ -159,7 +159,9 @@
                         { data: 'pr_id' },
                         { data: 'taskid',
                           "render": function(data, type, full, meta) {
-                                return '<a href='+{% url 'taskInfo' %}+full['taskid']+'">'+full['taskid']+'</a>';
+                                var entry =  '<a href="'+{% url 'taskInfo' %}+full['taskid']+'">'+full['taskid']+'</a>';
+                                entry += '<a target="_blank" href="'+{% url 'staginprogressplot' %}+'?jeditaskid='+full['taskid']+'"><img src=\'/static/images/tinychart.png\' width=14 height=14 border=0/></a>';
+                                return entry;
                           },
                         },
                         { data: 'status' },
@@ -231,7 +233,9 @@
               </thead>
               <tbody>
                 <tr ng-repeat="x in progresstablearr" class="low-stat">
-                    <th class="sm_ok_fill"> <a href="{% url 'taskList' %}?tape=true&stagesource={$ x.source $}&{$ getTimeHours(selectedTime) $}">{$ x.source $}</a></th>
+                    <th class="sm_ok_fill"> <a href="{% url 'taskList' %}?tape=true&stagesource={$ x.source $}&{$ getTimeHours(selectedTime) $}">{$ x.source $}</a>
+                    <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source $}&{$ getTimeHours(selectedTime) $}"><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>
+                    </th>
                     <td class="sm_ok_light_fill">
                         {$ x.ds_active $}
                     </td>

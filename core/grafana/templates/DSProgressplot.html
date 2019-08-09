@@ -10,24 +10,29 @@
             function drawChart() {
             //$(document).ready(function () {
                 $.getJSON({% url 'staginprogress' %} + '?' + '{{ reqparams|safe }}', function(data) {
-                    //console.log(data);
-                    var dataGVISFormat = new google.visualization.arrayToDataTable(data);
-                    var chartProgress = new google.visualization.LineChart(document.getElementById('chart_div'));;
-                    var options = {};
+                    console.log(data);
+                    if (data.length > 0) {
+                        var dataGVISFormat = new google.visualization.arrayToDataTable(data);
+                        var chartProgress = new google.visualization.LineChart(document.getElementById('chart_div'));
+                        ;
+                        var options = {};
 
-                    var options = {
-                      title: 'Staging Progress (%)',
-                      width: 900,
-                      height: 500,
-                      hAxis: {
-                        format: 'dd/MM/yy HH:MM',
-                      },
-                      vAxis: {
-                        gridlines: {color: 'none'},
-                        minValue: 0
-                      }
-                    };
-                    chartProgress.draw(dataGVISFormat, options);
+                        var options = {
+                            title: 'Staging Progress (%)',
+                            width: 900,
+                            height: 500,
+                            hAxis: {
+                                format: 'dd/MM/yy HH:MM',
+                            },
+                            vAxis: {
+                                gridlines: {color: 'none'},
+                                minValue: 0
+                            }
+                        };
+                        chartProgress.draw(dataGVISFormat, options);
+                    } else {
+                        document.write("<h1>No Progress Data Found</h1>");
+                    }
                 });
             };
     </script>

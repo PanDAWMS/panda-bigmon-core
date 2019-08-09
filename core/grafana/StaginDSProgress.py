@@ -52,7 +52,7 @@ def __getRucioRuleByTaskID(taskid):
 def __getRucioRulesBySourceSEAndTimeWindow(source, hours):
     new_cur = connection.cursor()
     new_cur.execute(""" SELECT RSE FROM ATLAS_DEFT.T_DATASET_STAGING where SOURCE_RSE='%s' 
-    and START_TIME>TO_DATE('%s','YYYY-mm-dd HH24:MI:SS')""" % (source, (timezone.now() - timedelta(hours=hours)).strftime(defaultDatetimeFormat)))
+    and (START_TIME>TO_DATE('%s','YYYY-mm-dd HH24:MI:SS') or END_TIME is NULL)""" % (source, (timezone.now() - timedelta(hours=hours)).strftime(defaultDatetimeFormat)))
 
     """
     SELECT t1.RSE, t2.taskid FROM ATLAS_DEFT.T_DATASET_STAGING t1 LEFT JOIN ATLAS_DEFT.t_production_task t2 ON t2.PRIMARY_INPUT=t1.DATASET
@@ -80,9 +80,9 @@ def getStageProfileData(request):
         if rucioRule:
             RRules.append(rucioRule)
             #RuleToTasks[rucioRule] = int(request.session['requestParams']['jeditaskid'])
-    elif ('source' in request.session['requestParams'] and 'hours' in request.session['requestParams']):
+    elif ('stagesource' in request.session['requestParams'] and 'hours' in request.session['requestParams']):
         RRules = __getRucioRulesBySourceSEAndTimeWindow(
-            request.session['requestParams']['source'].strip().replace("'","''"),
+            request.session['requestParams']['stagesource'].strip().replace("'","''"),
             int(request.session['requestParams']['hours']))
     chunksize = 50
     chunks = [RRules[i:i + chunksize] for i in range(0, len(RRules), chunksize)]
@@ -99,22 +99,22 @@ def getStageProfileData(request):
     """
     pandaDFs = {}
     RRuleNames = []
+    result = []
     for RRule, progEvents in resDict.items():
         timesList = list(progEvents.keys())
         progList = list(progEvents.values())
         pandasDF = pd.Series(progList, index=timesList)
         pandaDFs[RRule] = pandasDF
         RRuleNames.append(RRule)
-    result = pd.concat(pandaDFs.values(), join='outer', axis=1, sort=True)
-    result.index = pd.to_datetime(result.index)
-    result = result.resample('15min').last().reset_index().fillna(method='ffill').fillna(0)
-    result['index'] = result['index'].dt.strftime('%Y-%m-%d %H:%M:%S')
-    result = [['TimeStamp',] + RRuleNames] + result.values.tolist()
-    #result = result.values.astype(str).tolist()
-    #result = result.values.tolist()
+    if pandaDFs:
+        result = pd.concat(pandaDFs.values(), join='outer', axis=1, sort=True)
+        result.index = pd.to_datetime(result.index)
+        result = result.resample('15min').last().reset_index().fillna(method='ffill').fillna(0)
+        result['index'] = result['index'].dt.strftime('%Y-%m-%d %H:%M:%S')
+        result = [['TimeStamp',] + RRuleNames] + result.values.tolist()
     return JsonResponse(result, safe=False)
 
-#@login_customrequired
+@login_customrequired
 def getDATASetsProgressPlot(request):
     initRequest(request)
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=4, limit=9999999, querytype='task', wildCardExt=True)
@@ -122,8 +122,8 @@ def getDATASetsProgressPlot(request):
     reqparams = ''
     if 'jeditaskid' in request.session['requestParams']:
         reqparams = 'jeditaskid='+str(int(request.session['requestParams']['jeditaskid']))
-    elif ('source' in request.session['requestParams'] and 'hours' in request.session['requestParams']):
-        reqparams = 'source='+request.session['requestParams']['source'] + \
+    elif ('stagesource' in request.session['requestParams'] and 'hours' in request.session['requestParams']):
+        reqparams = 'stagesource='+request.session['requestParams']['stagesource'] + \
                     '&hours=' + request.session['requestParams']['hours']
     data = {
         'request': request,
