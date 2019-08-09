@@ -1,0 +1,35 @@
+{% load humanize %}
+{% load static %}
+{% block body %}
+    <script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js"%}"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+        <script type="text/javascript">
+            google.charts.load('current', {'packages':['corechart']});
+            google.charts.setOnLoadCallback(drawChart);
+            function drawChart() {
+            //$(document).ready(function () {
+                $.getJSON({% url 'staginprogress' %} + '?' + '{{ reqparams|safe }}', function(data) {
+                    //console.log(data);
+                    var dataGVISFormat = new google.visualization.arrayToDataTable(data);
+                    var chartProgress = new google.visualization.LineChart(document.getElementById('chart_div'));;
+                    var options = {};
+
+                    var options = {
+                      title: 'Staging Progress (%)',
+                      width: 900,
+                      height: 500,
+                      hAxis: {
+                        format: 'dd/MM/yy HH:MM',
+                      },
+                      vAxis: {
+                        gridlines: {color: 'none'},
+                        minValue: 0
+                      }
+                    };
+                    chartProgress.draw(dataGVISFormat, options);
+                });
+            };
+    </script>
+    <div id="chart_div"></div>
+{% endblock %}
