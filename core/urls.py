@@ -207,7 +207,7 @@ urlpatterns = [
     re_path(r'^api/grafana', grafana.grafana_api, name='grafana_api'),
     # re_path(r'^grafanaplots', grafana.index, name='grafana_plots'),
     re_path(r'^grafanaplots', grafana.chartjs, name='grafana_chartjsplots'),
-    re_path(r'^staginprogress/', dsProgressView.getStageProfile, name='staginprogress'),
+    re_path(r'^staginprogress/', dsProgressView.getStageProfileData, name='staginprogress'),
 
                   ###Compare###
     re_path(r'^compare/jobs/$', compare_views.compareJobs, name='compareJobs'),
