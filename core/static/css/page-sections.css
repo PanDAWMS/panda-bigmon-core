@@ -450,3 +450,49 @@ a.close-x-sign:hover {
 .card-tabs .tabs-content .card-section {
     padding: 0;
 }
+
+
+.accordion.light {
+  margin-left: 0;
+  background: #fefefe;
+  list-style-type: none; }
+
+.accordion-item.light:first-child > :first-child {
+  border-radius: 0 0 0 0; }
+
+.accordion-item.light:last-child > :last-child {
+  border-radius: 0 0 0 0; }
+
+.accordion-title.light {
+  position: relative;
+  display: block;
+  padding: 1.25rem 1rem;
+  border: 0px solid #e6e6e6;
+  border-bottom: 0;
+  font-size: 1rem;
+  font-weight: bold;
+  line-height: 1;
+  color: #333333; }
+  :last-child:not(.is-active) > .accordion-title {
+    border-bottom: 0px solid #e6e6e6;
+    border-radius: 0 0 0 0; }
+  .accordion-title:hover, .accordion-title:focus {
+    background-color: #e6e6e6; }
+  .accordion-title::before {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    margin-top: -0.5rem;
+    content: '+'; }
+  .is-active > .accordion-title::before {
+    content: '\2013'; }
+
+.accordion-content.light {
+  display: none;
+  padding: 1rem;
+  border: 0px solid #e6e6e6;
+  border-bottom: 0;
+  background-color: #fefefe;
+  color: #333333; }
+  :last-child > .accordion-content:last-child {
+    border-bottom: 0px solid #e6e6e6; }
