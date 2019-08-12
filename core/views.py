@@ -114,7 +114,8 @@ from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 # from libs import exlib
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, preparePlotData
-from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime
+from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, is_eventservice_request, \
+    insert_jobs_to_tmp_table
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.bpuser import get_relevant_links
@@ -665,6 +666,66 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         excludeWGFromWildCard and field.name == 'workinggroup') or (
                                 excludeSiteFromWildCard and field.name == 'site')):
                     wildSearchFields.append(field.name)
+
+
+    if querytype == 'job':
+        try:
+            extraQueryString += ' AND '
+        except NameError:
+            extraQueryString = ''
+        if 'fileid' in request.session['requestParams'] or 'ecstate' in request.session['requestParams']:
+            if 'fileid' in request.session['requestParams'] and request.session['requestParams']['fileid']:
+                fileid = request.session['requestParams']['fileid']
+            else:
+                fileid = None
+            if 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
+                datasetid = request.session['requestParams']['datasetid']
+            else:
+                datasetid = None
+            if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
+                jeditaskid = request.session['requestParams']['jeditaskid']
+            else:
+                jeditaskid = None
+            if 'tk' in request.session['requestParams'] and request.session['requestParams']['tk']:
+                tk = request.session['requestParams']['tk']
+                del request.session['requestParams']['tk']
+            else:
+                tk = None
+
+            if jeditaskid and datasetid and fileid:
+                extraQueryString += """
+                    pandaid in (
+                    (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
+                    union all
+                    (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
+                    ) """.format(jeditaskid, datasetid, fileid, jeditaskid, datasetid, fileid)
+
+            if 'ecstate' in request.session['requestParams'] and tk and datasetid:
+                extraQueryString += """
+                    pandaid in (
+                        (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
+                        union all 
+                        (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
+                        ) """.format(jeditaskid, datasetid, tk, jeditaskid, datasetid, tk)
+        elif 'jeditaskid' in request.session['requestParams'] and 'datasetid' in request.session['requestParams']:
+            fileid = None
+            if 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
+                datasetid = request.session['requestParams']['datasetid']
+            else:
+                datasetid = None
+            if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
+                jeditaskid = request.session['requestParams']['jeditaskid']
+            else:
+                jeditaskid = None
+            if datasetid and jeditaskid:
+                extraQueryString += """
+                    pandaid in (
+                    (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid = {} )
+                    union all
+                    (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid = {})
+                    ) """.format(jeditaskid, datasetid, jeditaskid, datasetid)
+        else:
+            fileid = None
 
     deepquery = False
     fields = standard_fields
@@ -3055,98 +3116,41 @@ def job_list(request, mode=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    dkey = digkey(request)
+    tkey = digkey(request)
     isEventTask = False
+    eventservice = is_eventservice_request(request)
 
-    # if 'instance' in request.session['requestParams']:
-    #     request.session['requestParams']['schedulerid'] =  'harvester-'+request.session['requestParams']['instance']
-    #     del request.session['requestParams']['instance']
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
         return jobParamList(request)
-    eventservice = False
-    if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
-        eventservice = True
-    if 'eventservice' in request.session['requestParams'] and (
-            request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
-        'eventservice'] == '1' or request.session['requestParams']['eventservice'] == '4' or
-            request.session['requestParams']['eventservice'] == 'jumbo'):
-        eventservice = True
-    elif 'eventservice' in request.session['requestParams'] and (
-            '1' in request.session['requestParams']['eventservice'] or '2' in request.session['requestParams'][
-        'eventservice'] or
-            '4' in request.session['requestParams']['eventservice'] or '5' in request.session['requestParams'][
-                'eventservice']):
-        eventservice = True
 
     noarchjobs = False
     if ('noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs'] == '1'):
         noarchjobs = True
+
     warning = {}
-    extraquery_files = ' '
-    if 'fileid' in request.session['requestParams'] or 'ecstate' in request.session['requestParams']:
-        if 'fileid' in request.session['requestParams'] and request.session['requestParams']['fileid']:
-            fileid = request.session['requestParams']['fileid']
-        else:
-            fileid = None
-        if 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
-            datasetid = request.session['requestParams']['datasetid']
-        else:
-            datasetid = None
-        if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
-            jeditaskid = request.session['requestParams']['jeditaskid']
-        else:
-            jeditaskid = None
-        if 'tk' in request.session['requestParams'] and request.session['requestParams']['tk']:
-            tk = request.session['requestParams']['tk']
-            del request.session['requestParams']['tk']
-        else:
-            tk = None
-
-        if jeditaskid and datasetid and fileid:
-            extraquery_files += """
-                pandaid in (
-                (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
-                union all
-                (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
-                ) """.format(jeditaskid, datasetid, fileid, jeditaskid, datasetid, fileid)
-
-        if 'ecstate' in request.session['requestParams'] and tk and datasetid:
-            extraquery_files += """
-                pandaid in (
-                    (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
-                    union all 
-                    (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
-                    ) """.format(jeditaskid, datasetid, tk, jeditaskid, datasetid, tk)
-        # warning['jobsforfiles'] = 'Only jobs for last 4 days are shown. Support of filtering older jobs associated with files will be implemented soon.'
-    elif 'jeditaskid' in request.session['requestParams'] and 'datasetid' in request.session['requestParams']:
-        fileid = None
-        if 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
-            datasetid = request.session['requestParams']['datasetid']
-        else:
-            datasetid = None
-        if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
-            jeditaskid = request.session['requestParams']['jeditaskid']
-        else:
-            jeditaskid = None
-        if datasetid and jeditaskid:
-            extraquery_files += """
-                pandaid in (
-                (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid = {} )
-                union all
-                (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid = {})
-                ) """.format(jeditaskid, datasetid, jeditaskid, datasetid)
-    else:
-        fileid = None
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
 
-    if len(extraquery_files) > 1:
-        wildCardExtension += ' AND ' + extraquery_files
     ###TODO Rework it?
     if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
         return render_to_response('message.html', {
             'desc': 'Request token is not found or data is outdated. Please reload the original page.'},
                                   content_type='text/html')
+
+    # insert dropped jobs im tmp table  if dropping is needed
+    dropmode = False
+    if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+        'mode'] == 'drop': dropmode = True
+    if 'mode' in request.session['requestParams'] and request.session['requestParams'][
+        'mode'] == 'nodrop': dropmode = False
+
+    if dropmode:
+        wildCardExtension, dtkey = insert_dropped_jobs_to_tmp_table(query, wildCardExtension)
+
+    # insert suitable pandaids to temporary table for further use
+
+    wildCardExtension, jkey = insert_jobs_to_tmp_table(query, wildCardExtension)
+
 
 
     job_attr_values = (
@@ -3248,23 +3252,20 @@ def job_list(request, mode=None):
             isEventTask = False
         if 'jeditaskid' in request.session['requestParams']:
             taskids[request.session['requestParams']['jeditaskid']] = 1
-        dropmode = True
-        if 'mode' in request.session['requestParams'] and request.session['requestParams'][
-            'mode'] == 'drop': dropmode = True
-        if 'mode' in request.session['requestParams'] and request.session['requestParams'][
-            'mode'] == 'nodrop': dropmode = False
-        isReturnDroppedPMerge = False
-        if 'processingtype' in request.session['requestParams'] and \
-                request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge = True
-        isJumbo = False
-        if dropmode and (len(taskids) == 1) and 'eventservice' in request.session['requestParams']:
-            if request.session['requestParams']['eventservice'] != '4' and request.session['requestParams'][
-                'eventservice'] != 'jumbo':
-                tk, droppedList, wildCardExtension = dropalgorithm.dropRetrielsJobs(list(taskids.keys())[0],
-                                                                                    wildCardExtension, isEventTask)
-            else:
-                isJumbo = True
 
+        # isReturnDroppedPMerge = False
+        # if 'processingtype' in request.session['requestParams'] and \
+        #         request.session['requestParams']['processingtype'] == 'pmerge': isReturnDroppedPMerge = True
+        # isJumbo = False
+        # if dropmode and (len(taskids) == 1) and 'eventservice' in request.session['requestParams']:
+        #     if request.session['requestParams']['eventservice'] != '4' and request.session['requestParams'][
+        #         'eventservice'] != 'jumbo':
+        #         tk, droppedList, wildCardExtension = dropalgorithm.dropRetrielsJobs(list(taskids.keys())[0],
+        #                                                                             wildCardExtension, isEventTask)
+        #     else:
+        #         isJumbo = True
+    jobs = []
+    values = job_attr_values
     harvesterjobstatus = ''
 
     from core.harvester.views import getHarvesterJobs

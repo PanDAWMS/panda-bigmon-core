@@ -1,8 +1,9 @@
 from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch
-import math, random, datetime
+from core.pandajob.models import Jobsdefined4
+import math, random, datetime, copy
 from django.db import connection
 from dateutil.parser import parse
-from datetime import datetime
+from datetime import datetime, timezone
 from core.settings.local import dbaccess
 
 
@@ -143,3 +144,61 @@ def parse_datetime(datetime_str):
     except ValueError:
         datetime_val = datetime.utcfromtimestamp(datetime_str)
     return datetime_val
+
+
+def is_eventservice_request(request):
+    """
+    :param request:
+    :return: True or False
+    """
+    eventservice = False
+    if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
+        eventservice = True
+    if 'eventservice' in request.session['requestParams'] and (
+            request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
+        'eventservice'] == '1' or request.session['requestParams']['eventservice'] == '4' or
+            request.session['requestParams']['eventservice'] == 'jumbo'):
+        eventservice = True
+    elif 'eventservice' in request.session['requestParams'] and (
+            '1' in request.session['requestParams']['eventservice'] or '2' in request.session['requestParams'][
+        'eventservice'] or
+            '4' in request.session['requestParams']['eventservice'] or '5' in request.session['requestParams'][
+                'eventservice']):
+        eventservice = True
+    return eventservice
+
+
+def insert_jobs_to_tmp_table(query, extra):
+    """
+    Insert all suitable jobs pandaids to temporary table for further usage and data consistency
+    :param query: dict with django ORM where conditions
+    :param extra: str containing pure where conditions
+    :return: transaction key (hex) and a where condition for further queries
+    """
+
+    newquery = copy.deepcopy(query)
+
+
+    pandaids = 20
+    jquery = Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).query
+
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+    else:
+        tmpTableName = "TMP_IDS1DEBUG"
+
+    transactionKey = random.randrange(1000000)
+    new_cur = connection.cursor()
+
+    ins_query = """
+        INSERT INTO {0} 
+        (ID,TRANSACTIONKEY,INS_TIME) 
+        select pandaid, {1}, TO_DATE('{2}', 'YYYY-MM-DD') from ()                   
+        """.format(tmpTableName, transactionKey, timezone.now().strftime("%Y-%m-%d"))
+
+    new_cur.execute(ins_query)
+    # form an extra query condition to exclude retried pandaids from selection
+    extra += " AND pandaid not in ( select id from {0} where TRANSACTIONKEY = {1})".format(tmpTableName, transactionKey)
+
+    return True
+
