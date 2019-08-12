@@ -3117,9 +3117,6 @@ def jobList(request, mode=None, param=None):
     else:
         fileid = None
 
-
-
-
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
 
     if len(extraquery_files) > 1:
@@ -3193,7 +3190,8 @@ def jobList(request, mode=None, param=None):
         jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
     else:
         excludedTimeQuery = copy.deepcopy(query)
-        if ('modificationtime__castdate__range' in excludedTimeQuery and not 'date_to' in request.session['requestParams']):
+        if ('modificationtime__castdate__range' in excludedTimeQuery and
+                set(['date_to', 'hours']).intersection(request.session['requestParams'].keys()) == 0):
             del excludedTimeQuery['modificationtime__castdate__range']
         jobs.extend(Jobsdefined4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
                     :request.session['JOB_LIMIT']].values(*values))
