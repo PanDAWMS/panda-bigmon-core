@@ -66,15 +66,15 @@
             };
 
             $scope.getTimeHours = function(){
-               if ($scope.selectedTime == "hours720") return 'hours=720';
-               if ($scope.selectedTime == "hours168") return 'hours=168';
-               if ($scope.selectedTime == "hours24") return 'hours=24';
-               if ($scope.selectedTime == "hours12") return 'hours=12';
-               if ($scope.selectedTime == "hours1") return 'hours=1';
+               if ($scope.selectedTime == "hours720") return '720';
+               if ($scope.selectedTime == "hours168") return '168';
+               if ($scope.selectedTime == "hours24") return '24';
+               if ($scope.selectedTime == "hours12") return '12';
+               if ($scope.selectedTime == "hours1") return '1';
             }
 
             $scope.updateByTime = function(){
-                Service.get('?'+getTimeHours()).then($scope.processResponce)
+                Service.get('?hours='+getTimeHours()).then($scope.processResponce)
             };
 
 
@@ -225,6 +225,8 @@
               <thead>
                 <tr>
                     <th>Source</th>
+                    <th>Progress plot</th>
+                    <th>DDM Dash</th>
                     <th>Datasets Active</th>
                     <th>Datasets Done <br>(+ 90% readiness)</th>
                     <th>Files Remaining</th>
@@ -233,9 +235,14 @@
               </thead>
               <tbody>
                 <tr ng-repeat="x in progresstablearr" class="low-stat">
-                    <th class="sm_ok_fill"> <a href="{% url 'taskList' %}?tape=true&stagesource={$ x.source $}&{$ getTimeHours(selectedTime) $}">{$ x.source $}</a>
-                    <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source $}&{$ getTimeHours(selectedTime) $}"><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>
+                    <th class="sm_ok_fill"> <a href="{% url 'taskList' %}?tape=true&stagesource={$ x.source $}&hours={$ getTimeHours(selectedTime) $}">{$ x.source $}</a>
                     </th>
+                    <td class="sm_ok_light_fill">
+                        <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source $}&hours={$ getTimeHours(selectedTime) $}"><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>
+                    </td>
+                    <td class="sm_ok_light_fill">
+                        <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All&var-src_endpoint={$ x.source $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&from=now-{$ getTimeHours(selectedTime) $}h&to=now">--></a>
+                    </td>
                     <td class="sm_ok_light_fill">
                         {$ x.ds_active $}
                     </td>
