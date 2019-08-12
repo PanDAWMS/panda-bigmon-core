@@ -12751,6 +12751,12 @@ def grafana_image(request):
         if (len(urlConfim)==0):
             return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
         try:
+            data = getCacheEntry(request, "grafanaimagewrap")
+            if data is not None:
+                data = base64.b64decode(data)
+                response = HttpResponse(data, content_type='image/jpg')
+                patch_response_headers(response, cache_timeout=10 * 60)
+                return response
             if 'Authorization' in GRAFANA:
                 grafana_token = GRAFANA['Authorization']
             import requests
@@ -12762,6 +12768,10 @@ def grafana_image(request):
                     rgb_im = img.convert('RGB')
                     response = HttpResponse(content_type='image/jpg')
                     rgb_im.save(response, "JPEG")
+                    byte_io = BytesIO()
+                    rgb_im.save(byte_io, 'JPEG')
+                    data = base64.b64encode(byte_io.getvalue())
+                    setCacheEntry(request, "grafanaimagewrap", data, 60 * 60)
                     return response
         except Exception as ex:
             return redirect('/static/images/404-not-found-site.gif')
