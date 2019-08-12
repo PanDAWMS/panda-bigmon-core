@@ -19,7 +19,7 @@ class DDOSMiddleware(object):
 
     sleepInterval = 5 #sec
     maxAllowedJSONRequstesPerHour = 400
-    notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '137.138.76.96']
+    notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86']
     blacklist = ['130.132.21.90','192.170.227.149']
 
 
