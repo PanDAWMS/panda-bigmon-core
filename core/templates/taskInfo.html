@@ -428,7 +428,7 @@
             </tr>
 
             <tr>
-                 <th>Staged / Total files</th>
+                 <th>Staged / Total files <a target="_blank" href="{% url 'staginprogressplot' %}?jeditaskid={{ jeditaskid }}"><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a></th>
                  <td>{$ json['staged_files'] $} / {$ json['total_files'] $}</td>
             </tr>
 
