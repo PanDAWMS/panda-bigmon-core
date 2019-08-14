@@ -40,7 +40,7 @@ MIDDLEWARE = (
     'htmlmin.middleware.HtmlMinifyMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    #'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
+    'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',  # for AJAX POST protection with csrf
 
@@ -49,7 +49,7 @@ MIDDLEWARE = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',
-    'htmlmin.middleware.MarkRequestMiddleware',
+    #'htmlmin.middleware.MarkRequestMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
     'core.auth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
 )

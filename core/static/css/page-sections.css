@@ -493,16 +493,6 @@ a.close-x-sign:hover {
   border: 0px solid #e6e6e6;
   border-bottom: 0;
   background-color: #fefefe;
-  height: 30rem;
-  overflow-y: scroll;
   color: #333333; }
   :last-child > .accordion-content:last-child {
     border-bottom: 0px solid #e6e6e6; }
-
-.accordion-content.light.large {
-    height: 40rem;
-}
-
-.accordion-content.light.small {
-    height: 20rem;
-}
