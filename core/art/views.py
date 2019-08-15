@@ -728,7 +728,7 @@ def updateARTJobList(request):
                           and pandaid not in (select pandaid from atlas_pandabigmon.art_results_queue)"""
                 % (query['ntag_from'], query['ntag_to'], query['strcondition']))
 
-    nrows = 5
+    nrows = 2
 
     is_queue_empty = False
     while not is_queue_empty:
