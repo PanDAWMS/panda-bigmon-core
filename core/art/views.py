@@ -1,6 +1,5 @@
 """
     art.views
-
 """
 import logging
 import json
