@@ -6,7 +6,7 @@ from django.shortcuts import render_to_response
 from django.db import connection
 from core.views import initRequest, setupView
 from django.views.decorators.cache import never_cache
-import libs.CampaignPredictionHelper as cph
+import core.libs.CampaignPredictionHelper as cph
 from django.core.cache import cache
 import operator
 from django.utils.six.moves import cPickle as pickle
