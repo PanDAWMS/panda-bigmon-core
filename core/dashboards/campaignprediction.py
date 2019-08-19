@@ -11,7 +11,8 @@ from django.core.cache import cache
 import operator
 from django.utils.six.moves import cPickle as pickle
 from django.http import JsonResponse
-
+import numpy as np
+import humanize
 
 taskFinalStates = ['cancelled', 'failed', 'broken', 'aborted', 'finished', 'done']
 
@@ -23,14 +24,14 @@ def campaignPredictionInfo(request):
     else:
         campaign = None
 
-    if 'subcampaign' in request.GET:
+    if 'subcampaign' in request.GET and len(request.GET['subcampaign']) > 1:
         subcampaign = request.GET['subcampaign']
     else:
-        subcampaign = None
+        subcampaign = 'None'
 
     campaignInfo = {}
     if (campaign):
-        data = cache.get("concatenate_ev_" + str(campaign['campaign']) + "_" + str(campaign['subcampaign']), None)
+        data = cache.get("concatenate_ev_" + str(campaign) + "_" + str(subcampaign), None)
         if data:
             data = pickle.loads(data)
             campaign_df = data['campaign_df']
@@ -60,24 +61,33 @@ def campaignPredictionInfo(request):
 
             remainingForSubmitting = {}
             remainingForMaxPossible = {}
-            for step in campaign_df.STEP_NAME.unique().tolist():
-                if concatenate_ev[step].rolling(12, win_type='triang').mean()[-1] > 0:
-                    remainingForSubmitting[step] = numberOfRemainingEventsPerStep[step] / \
-                                                   concatenate_ev[step].rolling(12, win_type='triang').mean()[-1]
-                    remainingForMaxPossible[step] = (maxEvents - numberOfDoneEventsPerStep[step]) / \
-                                                    concatenate_ev[step].rolling(12, win_type='triang').mean()[-1]
+            for step in concatenate_ev:
+                rollingRes = concatenate_ev[step].rolling(12, win_type='triang').mean()
+                if len(rollingRes) > 2 and rollingRes[-1] > 0 and step in numberOfRemainingEventsPerStep:
+                    remainingForSubmitting[step] = str( round(numberOfRemainingEventsPerStep[step] / \
+                                                   concatenate_ev[step].rolling(12, win_type='triang').mean()[-1], 2)) + " d"
+                    remainingForMaxPossible[step] = str(round((maxEvents - numberOfDoneEventsPerStep[step]) / \
+                                                    concatenate_ev[step].rolling(12, win_type='triang').mean()[-1], 2)) + " d"
 
-            campaignInfo['remainingForSubmitting'] = remainingForSubmitting
-            campaignInfo['remainingForMaxPossible'] = remainingForMaxPossible
-            campaignInfo['numberOfDoneEventsPerStep'] = numberOfDoneEventsPerStep
-            campaignInfo['numberOfSubmittedEventsPerStep'] = numberOfSubmittedEventsPerStep
-            campaignInfo['numberOfRemainingEventsPerStep'] = numberOfRemainingEventsPerStep
-            campaignInfo['numberOfTotalEventsPerStep'] = numberOfTotalEventsPerStep
+            campaignInfo['remainingForSubmitting'] = convertTypes(remainingForSubmitting)
+            campaignInfo['remainingForMaxPossible'] = convertTypes(remainingForMaxPossible)
+            campaignInfo['numberOfDoneEventsPerStep'] = convertTypes(numberOfDoneEventsPerStep)
+            campaignInfo['numberOfSubmittedEventsPerStep'] = convertTypes(numberOfSubmittedEventsPerStep)
+            campaignInfo['numberOfRemainingEventsPerStep'] = convertTypes(numberOfRemainingEventsPerStep)
+            campaignInfo['numberOfTotalEventsPerStep'] = convertTypes(numberOfTotalEventsPerStep)
             campaignInfo['steps'] = campaign_df.STEP_NAME.unique().tolist()
             campaignInfo['subcampaign'] = subcampaign
             campaignInfo['campaign'] = campaign
 
     return JsonResponse(campaignInfo, safe=False)
+
+def convertTypes(object):
+    for k, v in object.items():
+        if type(v) == np.int64:
+            object.update({k: humanize.intcomma(int(v))})
+        elif type(v) == np.float64:
+            object.update({k: float(v)})
+    return object
 
 
 @never_cache

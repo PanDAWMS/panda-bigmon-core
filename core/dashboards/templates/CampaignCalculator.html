@@ -1,6 +1,7 @@
 {% extends "_base_core.html" %}
 {% load humanize %}
 {% load static %}
+{% load humanize %}
 
 {% block page_title %}Campaing duration calculator{% endblock %}
 {% block subtitle %}Campaing duration calculator <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
@@ -30,7 +31,7 @@
             .config(['$compileProvider', function ($compileProvider) {
         $compileProvider.debugInfoEnabled(false);
         }]) .service('Service', ['$http', service])
-            .controller('dataviewctrl', ['$scope', controller]);
+            .controller('dataviewctrl', ['$scope', 'Service',controller]);
 
         function service($http, $scope){
             var get = function(requestparams) {
@@ -57,6 +58,7 @@
             };
 
             $scope.processResponceInfo = function(response){
+                response = response.data;
                 $scope.remainingForSubmitting = response['remainingForSubmitting'];
                 $scope.remainingForMaxPossible = response['remainingForMaxPossible'];
                 $scope.numberOfDoneEventsPerStep = response['numberOfDoneEventsPerStep'];
@@ -72,6 +74,18 @@
                 if ($scope.camp[$scope.selectedCampaign].length > 0)
                     $scope.subcamp = $scope.camp[$scope.selectedCampaign];
                 else $scope.subcamp = new Array(0);
+            };
+
+            $scope.doshowrem = function(step){
+                if ($scope.numberOfRemainingEventsPerStep[step] == "0")
+                    return false;
+                return true;
+            };
+
+            $scope.doshowsub = function(step){
+                if (step in $scope.remainingForSubmitting)
+                    return true;
+                return false;
             };
 
         }
@@ -90,6 +104,18 @@
              <a ng-click="loadInfoCampaign();" class="button primary">Load information</a>
          </div>
      </div>
+
+     <div class="row" ng-repeat="step in steps">
+        <div class="panel callout radius" >
+              <h5>{$ step $}</h5>
+              <p>Processed events: {$ numberOfDoneEventsPerStep[step] $}</p>
+              <p>Currently processing events: {$ numberOfSubmittedEventsPerStep[step] $}</p>
+              <p ng-show="doshowrem(step)">Remaining events: {$ numberOfRemainingEventsPerStep[step] $}</p>
+              <p ng-show="doshowsub(step)">Estimation for submitted events: {$ remainingForSubmitting[step] $}</p>
+         </div>
+    </div>
+
+
     </div>
 
 
