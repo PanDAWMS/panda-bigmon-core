@@ -17,6 +17,8 @@ from core.grafana import StaginDSProgress as dsProgressView
 
 from core.globalshares import views as globalshares
 from core.dashboards import dtcdboard as dtcdboard
+from core.dashboards import campaignprediction as campaignprediction
+
 
 from core.runningprod import views as runningprod_views
 from core.errorsscattering import views as errorsscat_views
@@ -86,7 +88,8 @@ urlpatterns = [
     re_path(r'^getdtcsubmissionhist/$', dtcdboard.getDTCSubmissionHist, name='getDTCSubmissionHist'),
 
     re_path(r'^datacardash/$', dtcdboard.dataCarouselleDashBoard, name='dataCarouselleDashBoard'),
-
+    re_path(r'^campaignpredictiondash/$', campaignprediction.campaignPredictionDash, name='campaignPredictionDash'),
+    re_path(r'^campaignpredictioninfo/$', campaignprediction.campaignPredictionInfo, name='campaignPredictionInfo'),
     re_path(r'^globalpage/$', globalpage.globaldemo, name='SITGlobalPage'),
     re_path(r'^globalpagedata/$', globalpage.globaldata, name='SITGlobalData'),
 
