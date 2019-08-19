@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from django.core.cache import cache
 from django.utils.six.moves import cPickle as pickle
-import libs.CampaignPredictionHelper as cph
+import core.libs.CampaignPredictionHelper as cph
 import sys
 
 class SQLAggregatorCampaign(BaseTasksProvider):
