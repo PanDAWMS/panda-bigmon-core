@@ -13,10 +13,12 @@ from django.utils.six.moves import cPickle as pickle
 from django.http import JsonResponse
 import numpy as np
 import humanize
+from core.views import login_customrequired
 
 taskFinalStates = ['cancelled', 'failed', 'broken', 'aborted', 'finished', 'done']
 stepsOrder = ['Evgen', 'Evgen Merge', 'Simul', 'Merge', 'Digi', 'Reco', 'Rec Merge', 'Deriv', 'Deriv Merge', 'Rec TAG', 'Atlfast', 'Atlf Merge']
 
+@never_cache
 def campaignPredictionInfo(request):
     initRequest(request)
 
@@ -107,7 +109,7 @@ def convertTypes(object):
     return object
 
 
-@never_cache
+@login_customrequired
 def campaignPredictionDash(request):
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=4, limit=9999999, querytype='task', wildCardExt=True)
     request.session['viewParams']['selection'] = ''
