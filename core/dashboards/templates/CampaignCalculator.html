@@ -95,6 +95,12 @@
                 return false;
             };
 
+            $scope.doshowsubmax = function(step){
+                if ((step in $scope.remainingForSubmitting) && (step != $scope.stepWithMaxEvents))
+                    return true;
+                return false;
+            };
+
         }
     </script>
 
@@ -114,7 +120,7 @@
 
      <div class="row" ng-repeat="step in steps">
         <div class="panel callout radius" >
-              <h5>{$ step $}</h5>
+              <h4>{$ step $}</h4>
               <p>Processed events: {$ numberOfDoneEventsPerStep[step] $}</p>
               <p>Currently processing events <sup>(<a href="#submtev">1</a>)</sup>: {$ numberOfSubmittedEventsPerStep[step] $}</p>
               <p ng-show="doshowrem(step)">Remaining event <sup>(<a href="#remevt">2</a>)</sup>: {$ numberOfRemainingEventsPerStep[step] $}</p>
@@ -124,23 +130,21 @@
                     <p class="progress-meter-text">{$ progressForSubmitted[step] $}%</p>
                   </span>
                 </div>
-              <p ng-show="doshowsub(step)">Estimation of completion time if all events from {$ stepWithMaxEvents $} used: {$ remainingForMaxPossible[step] $}</p>
-                 <div ng-show="doshowsub(step)" class="secondary progress" role="progressbar" tabindex="0" aria-valuenow="{$ progressForMax[step] $}" aria-valuemin="0" aria-valuetext="{$ progressForMax[step] $} percent" aria-valuemax="100">
+              <p ng-show="doshowsubmax(step)">Estimation of completion time if all events from {$ stepWithMaxEvents $} used: {$ remainingForMaxPossible[step] $}</p>
+                 <div ng-show="doshowsubmax(step)" class="secondary progress" role="progressbar" tabindex="0" aria-valuenow="{$ progressForMax[step] $}" aria-valuemin="0" aria-valuetext="{$ progressForMax[step] $} percent" aria-valuemax="100">
                   <span class="progress-meter" style="width: {$ progressForMax[step] $}%">
                     <p class="progress-meter-text">{$ progressForMax[step] $}%</p>
                   </span>
                 </div>
-            <p ng-show="doshowsub(step)">Current processing rate: {$ eventsPerDay[step] $} ev/day</p>
+            <p ng-show="doshowsub(step)">Current production performance<sup>(<a href="#remevt">3</a>)</sup>: {$ eventsPerDay[step] $} ev/day</p>
          </div>
     </div>
 
-
-    <h5 id="submtev"><sup>1</sup>Total Number of Events in currently active tasks</h5>
-    <h5 id="remevt"><sup>2</sup>Number of Unprocessed Events in currently active tasks</h5>
+    <h6 ng-show="steps" id="submtev"><sup>1</sup>Total Number of Events in currently active tasks</h6>
+    <h6 ng-show="steps" id="remevt"><sup>2</sup>Number of Unprocessed Events in currently active tasks</h6>
+    <h6 ng-show="steps" id="remevt"><sup>3</sup>Value of averaging last 12 days of daily production</h6>
 
     </div>
-
-
 
 
 {% endblock %}
