@@ -68,6 +68,7 @@
                 $scope.steps = response['steps'];
                 $scope.subcampaign = response['subcampaign'];
                 $scope.campaign = response['campaign'];
+                $scope.progressForSubmitted = response['progressForSubmitted'];
             };
 
             $scope.updateSubCampaign = function(){
@@ -112,8 +113,14 @@
               <p>Currently processing events <sup>(<a href="#submtev">1</a>)</sup>: {$ numberOfSubmittedEventsPerStep[step] $}</p>
               <p ng-show="doshowrem(step)">Remaining event <sup>(<a href="#remevt">2</a>)</sup>: {$ numberOfRemainingEventsPerStep[step] $}</p>
               <p ng-show="doshowsub(step)">Estimation of completion time for remaining events: {$ remainingForSubmitting[step] $}</p>
+                <div class="success progress" role="progressbar" tabindex="0" aria-valuenow="{$ progressForSubmitted[step] $}" aria-valuemin="0" aria-valuetext="{$ progressForSubmitted[step] $} percent" aria-valuemax="100">
+                  <span class="progress-meter" style="width: {$ progressForSubmitted[step] $}%">
+                    <p class="progress-meter-text">{$ progressForSubmitted[step] $}%</p>
+                  </span>
+                </div>
          </div>
     </div>
+
 
     <h5 id="submtev"><sup>1</sup>Total Number of Events in currently active tasks</h5>
     <h5 id="remevt"><sup>2</sup>Number of Unprocessed Events in currently active tasks</h5>

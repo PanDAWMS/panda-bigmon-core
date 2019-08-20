@@ -62,6 +62,7 @@ def campaignPredictionInfo(request):
 
             remainingForSubmitting = {}
             remainingForMaxPossible = {}
+            progressForSubmitted = {}
             for step in concatenate_ev:
                 rollingRes = concatenate_ev[step].rolling(12, win_type='triang').mean()
                 if len(rollingRes) > 2 and rollingRes[-1] > 0 and step in numberOfRemainingEventsPerStep:
@@ -69,6 +70,7 @@ def campaignPredictionInfo(request):
                                                    concatenate_ev[step].rolling(12, win_type='triang').mean()[-1], 2)) + " d"
                     remainingForMaxPossible[step] = str(round((maxEvents - numberOfDoneEventsPerStep[step]) / \
                                                     concatenate_ev[step].rolling(12, win_type='triang').mean()[-1], 2)) + " d"
+                    progressForSubmitted[step] = round(numberOfDoneEventsPerStep[step]*100.0/(numberOfDoneEventsPerStep[step] + numberOfRemainingEventsPerStep[step]),1)
 
             #Here we ordering steps
             uniqueStepsInCampaig = campaign_df.STEP_NAME.unique().tolist()
@@ -86,6 +88,9 @@ def campaignPredictionInfo(request):
             campaignInfo['steps'] = orderedSteps
             campaignInfo['subcampaign'] = subcampaign
             campaignInfo['campaign'] = campaign
+            campaignInfo['progressForSubmitted'] = progressForSubmitted
+
+
 
     return JsonResponse(campaignInfo, safe=False)
 
