@@ -69,6 +69,8 @@
                 $scope.subcampaign = response['subcampaign'];
                 $scope.campaign = response['campaign'];
                 $scope.progressForSubmitted = response['progressForSubmitted'];
+                $scope.stepWithMaxEvents = response['stepWithMaxEvents'];
+                $scope.eventsPerDay = response['eventsPerDay'];
             };
 
             $scope.updateSubCampaign = function(){
@@ -118,6 +120,8 @@
                     <p class="progress-meter-text">{$ progressForSubmitted[step] $}%</p>
                   </span>
                 </div>
+              <p ng-show="doshowsub(step)">Estimation of completion time if all events from {$ stepWithMaxEvents $} used: {$ remainingForMaxPossible[step] $}</p>
+              <p ng-show="doshowsub(step)">Current processing rate: {$ eventsPerDay[step] $} ev/day</p>
          </div>
     </div>
 
