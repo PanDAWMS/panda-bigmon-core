@@ -123,7 +123,7 @@
               <h4>{$ step $}</h4>
               <p>Processed events: {$ numberOfDoneEventsPerStep[step] $}</p>
               <p>Currently processing events <sup>(<a href="#submtev">1</a>)</sup>: {$ numberOfSubmittedEventsPerStep[step] $}</p>
-              <p ng-show="doshowrem(step)">Remaining event <sup>(<a href="#remevt">2</a>)</sup>: {$ numberOfRemainingEventsPerStep[step] $}</p>
+              <p ng-show="doshowrem(step)">Remaining events <sup>(<a href="#remevt">2</a>)</sup>: {$ numberOfRemainingEventsPerStep[step] $}</p>
               <p ng-show="doshowsub(step)">Estimation of completion time for remaining events: {$ remainingForSubmitting[step] $}</p>
                 <div ng-show="doshowsub(step)" class="success progress" role="progressbar" tabindex="0" aria-valuenow="{$ progressForSubmitted[step] $}" aria-valuemin="0" aria-valuetext="{$ progressForSubmitted[step] $} percent" aria-valuemax="100">
                   <span class="progress-meter" style="width: {$ progressForSubmitted[step] $}%">
