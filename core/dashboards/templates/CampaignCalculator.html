@@ -51,9 +51,11 @@
             $scope.subcamp = new Array(0);
             $scope.selectedCampaign = '';
             $scope.selectedSubCampaign = '';
+            $scope.showload = false;
 
             $scope.loadInfoCampaign = function(){
                 var request = "?campaign=" +$scope.selectedCampaign+ "&subcampaign="+$scope.selectedSubCampaign;
+                $scope.showload = true;
                 Service.get(request).then($scope.processResponceInfo);
             };
 
@@ -71,7 +73,8 @@
                 $scope.progressForSubmitted = response['progressForSubmitted'];
                 $scope.stepWithMaxEvents = response['stepWithMaxEvents'];
                 $scope.eventsPerDay = response['eventsPerDay'];
-                $scope.progressForMax = response['progressForMax']
+                $scope.progressForMax = response['progressForMax'];
+                $scope.showload = false;
             };
 
             $scope.updateSubCampaign = function(){
@@ -105,7 +108,7 @@
               <select id="subcampaigns" ng-model="selectedSubCampaign" ng-options="o as o for o in subcamp">
                  <option value="" disabled>Select SubCampaign</option>
              </select>
-             <a ng-click="loadInfoCampaign();" class="button primary">Load information</a>
+             <a ng-click="loadInfoCampaign();" class="button primary"><img ng-show="showload" src="{% static "images/load.gif" %}" alt=""> Load information</a>
          </div>
      </div>
 
