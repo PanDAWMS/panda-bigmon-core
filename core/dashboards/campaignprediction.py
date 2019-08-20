@@ -15,6 +15,7 @@ import numpy as np
 import humanize
 
 taskFinalStates = ['cancelled', 'failed', 'broken', 'aborted', 'finished', 'done']
+stepsOrder = ['Evgen', 'Evgen Merge', 'Simul', 'Merge', 'Digi', 'Reco', 'Rec Merge', 'Deriv', 'Deriv Merge', 'Rec TAG', 'Atlfast', 'Atlf Merge']
 
 def campaignPredictionInfo(request):
     initRequest(request)
@@ -69,13 +70,20 @@ def campaignPredictionInfo(request):
                     remainingForMaxPossible[step] = str(round((maxEvents - numberOfDoneEventsPerStep[step]) / \
                                                     concatenate_ev[step].rolling(12, win_type='triang').mean()[-1], 2)) + " d"
 
+            #Here we ordering steps
+            uniqueStepsInCampaig = campaign_df.STEP_NAME.unique().tolist()
+            orderedSteps = [step for step in stepsOrder if step in uniqueStepsInCampaig]
+            missingSteps = [step for step in uniqueStepsInCampaig if step not in orderedSteps]
+            orderedSteps = orderedSteps + missingSteps
+
+            #Fill out the output dictionary
             campaignInfo['remainingForSubmitting'] = convertTypes(remainingForSubmitting)
             campaignInfo['remainingForMaxPossible'] = convertTypes(remainingForMaxPossible)
             campaignInfo['numberOfDoneEventsPerStep'] = convertTypes(numberOfDoneEventsPerStep)
             campaignInfo['numberOfSubmittedEventsPerStep'] = convertTypes(numberOfSubmittedEventsPerStep)
             campaignInfo['numberOfRemainingEventsPerStep'] = convertTypes(numberOfRemainingEventsPerStep)
             campaignInfo['numberOfTotalEventsPerStep'] = convertTypes(numberOfTotalEventsPerStep)
-            campaignInfo['steps'] = campaign_df.STEP_NAME.unique().tolist()
+            campaignInfo['steps'] = orderedSteps
             campaignInfo['subcampaign'] = subcampaign
             campaignInfo['campaign'] = campaign
 
