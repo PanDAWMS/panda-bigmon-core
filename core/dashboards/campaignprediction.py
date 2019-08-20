@@ -64,6 +64,7 @@ def campaignPredictionInfo(request):
             remainingForMaxPossible = {}
             progressForSubmitted = {}
             eventsPerDay = {}
+            progressForMax = {}
             for step in concatenate_ev:
                 rollingRes = concatenate_ev[step].rolling(12, win_type='triang').mean()
                 if len(rollingRes) > 2 and rollingRes[-1] > 0 and step in numberOfRemainingEventsPerStep:
@@ -72,6 +73,7 @@ def campaignPredictionInfo(request):
                     remainingForMaxPossible[step] = str(round((maxEvents - numberOfDoneEventsPerStep[step]) / \
                                                     rollingRes[-1], 2)) + " d"
                     progressForSubmitted[step] = round(numberOfDoneEventsPerStep[step]*100.0/(numberOfDoneEventsPerStep[step] + numberOfRemainingEventsPerStep[step]),1)
+                    progressForMax[step] = int(numberOfDoneEventsPerStep[step]*100.0/maxEvents)
                     eventsPerDay[step] = humanize.intcomma(int(rollingRes[-1]))
 
             #Here we ordering steps
@@ -91,6 +93,7 @@ def campaignPredictionInfo(request):
             campaignInfo['subcampaign'] = subcampaign
             campaignInfo['campaign'] = campaign
             campaignInfo['progressForSubmitted'] = progressForSubmitted
+            campaignInfo['progressForMax'] = progressForMax
             campaignInfo['stepWithMaxEvents'] = stepWithMaxEvents
             campaignInfo['eventsPerDay'] = eventsPerDay
     return JsonResponse(campaignInfo, safe=False)

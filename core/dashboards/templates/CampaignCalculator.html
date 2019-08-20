@@ -71,6 +71,7 @@
                 $scope.progressForSubmitted = response['progressForSubmitted'];
                 $scope.stepWithMaxEvents = response['stepWithMaxEvents'];
                 $scope.eventsPerDay = response['eventsPerDay'];
+                $scope.progressForMax = response['progressForMax']
             };
 
             $scope.updateSubCampaign = function(){
@@ -115,13 +116,18 @@
               <p>Currently processing events <sup>(<a href="#submtev">1</a>)</sup>: {$ numberOfSubmittedEventsPerStep[step] $}</p>
               <p ng-show="doshowrem(step)">Remaining event <sup>(<a href="#remevt">2</a>)</sup>: {$ numberOfRemainingEventsPerStep[step] $}</p>
               <p ng-show="doshowsub(step)">Estimation of completion time for remaining events: {$ remainingForSubmitting[step] $}</p>
-                <div class="success progress" role="progressbar" tabindex="0" aria-valuenow="{$ progressForSubmitted[step] $}" aria-valuemin="0" aria-valuetext="{$ progressForSubmitted[step] $} percent" aria-valuemax="100">
+                <div ng-show="doshowsub(step)" class="success progress" role="progressbar" tabindex="0" aria-valuenow="{$ progressForSubmitted[step] $}" aria-valuemin="0" aria-valuetext="{$ progressForSubmitted[step] $} percent" aria-valuemax="100">
                   <span class="progress-meter" style="width: {$ progressForSubmitted[step] $}%">
                     <p class="progress-meter-text">{$ progressForSubmitted[step] $}%</p>
                   </span>
                 </div>
               <p ng-show="doshowsub(step)">Estimation of completion time if all events from {$ stepWithMaxEvents $} used: {$ remainingForMaxPossible[step] $}</p>
-              <p ng-show="doshowsub(step)">Current processing rate: {$ eventsPerDay[step] $} ev/day</p>
+                 <div ng-show="doshowsub(step)" class="secondary progress" role="progressbar" tabindex="0" aria-valuenow="{$ progressForMax[step] $}" aria-valuemin="0" aria-valuetext="{$ progressForMax[step] $} percent" aria-valuemax="100">
+                  <span class="progress-meter" style="width: {$ progressForMax[step] $}%">
+                    <p class="progress-meter-text">{$ progressForMax[step] $}%</p>
+                  </span>
+                </div>
+            <p ng-show="doshowsub(step)">Current processing rate: {$ eventsPerDay[step] $} ev/day</p>
          </div>
     </div>
 
