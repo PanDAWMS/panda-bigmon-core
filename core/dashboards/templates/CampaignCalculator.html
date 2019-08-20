@@ -109,14 +109,18 @@
         <div class="panel callout radius" >
               <h5>{$ step $}</h5>
               <p>Processed events: {$ numberOfDoneEventsPerStep[step] $}</p>
-              <p>Currently processing events: {$ numberOfSubmittedEventsPerStep[step] $}</p>
-              <p ng-show="doshowrem(step)">Remaining events: {$ numberOfRemainingEventsPerStep[step] $}</p>
+              <p>Currently processing events <sup>(<a href="#submtev">1</a>)</sup>: {$ numberOfSubmittedEventsPerStep[step] $}</p>
+              <p ng-show="doshowrem(step)">Remaining event <sup>(<a href="#remevt">2</a>)</sup>: {$ numberOfRemainingEventsPerStep[step] $}</p>
               <p ng-show="doshowsub(step)">Estimation of completion time for remaining events: {$ remainingForSubmitting[step] $}</p>
          </div>
     </div>
 
+    <h5 id="submtev"><sup>1</sup>Total Number of Events in currently active tasks</h5>
+    <h5 id="remevt"><sup>2</sup>Number of Unprocessed Events in currently active tasks</h5>
 
     </div>
+
+
 
 
 {% endblock %}
