@@ -121,7 +121,6 @@ class SQLAggregatorCampaign(BaseTasksProvider):
 
         self.logger.debug("SQLAggregatorCampaign data prepared")
 
-
         data = {
                 "numberOfRemainingEventsPerStep":numberOfRemainingEventsPerStep,
                 "numberOfRunningEventsPerStep":numberOfRunningEventsPerStep,
@@ -137,10 +136,9 @@ class SQLAggregatorCampaign(BaseTasksProvider):
                 "eventsPerDay":eventsPerDay
                 }
 
+        self.logger.info("concatenate_ev_" + str(campaign['campaign']) + "_" + "  pushed into the cache")
         cache.set("concatenate_ev_" + str(campaign['campaign']) + "_" + str(None) + "_v1",
                   pickle.dumps(data, pickle.HIGHEST_PROTOCOL), 60 * 60 * 72)
-        self.logger.info("concatenate_ev_" + str(campaign['campaign']) + "_" + "  pushed into the cache")
-
         self.logger.info("SQLAggregatorCampaign finished")
         cursor.close()
         return 0
