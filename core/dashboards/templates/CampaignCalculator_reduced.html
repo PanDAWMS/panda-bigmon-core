@@ -127,21 +127,19 @@
         <div class="panel callout radius" >
               <h4>{$ step $}</h4>
               <p>Processed events: {$ numberOfDoneEventsPerStep[step] $}</p>
-              <p>Currently processing events <sup>(<a href="#submtev">1</a>)</sup>: {$ numberOfSubmittedEventsPerStep[step] $}</p>
-              <p ng-show="doshowrem(step)">Remaining events <sup>(<a href="#remevt">2</a>)</sup>: {$ numberOfRemainingEventsPerStep[step] $}</p>
+              <p>Currently running events: {$ numberOfSubmittedEventsPerStep[step] $}</p>
+              <p ng-show="doshowrem(step)">Remaining events: {$ numberOfRemainingEventsPerStep[step] $}</p>
               <p ng-show="doshowsub(step)">Estimation of completion time for remaining events: {$ remainingForSubmitting[step] $}</p>
                 <div ng-show="doshowsub(step)" class="success progress" role="progressbar" tabindex="0" aria-valuenow="{$ progressForSubmitted[step] $}" aria-valuemin="0" aria-valuetext="{$ progressForSubmitted[step] $} percent" aria-valuemax="100">
                   <span class="progress-meter" style="width: {$ progressForSubmitted[step] $}%">
                     <p class="progress-meter-text">{$ progressForSubmitted[step] $}%</p>
                   </span>
                 </div>
-            <p ng-show="doshowsub(step)">Current production performance<sup>(<a href="#remevt">3</a>)</sup>: {$ eventsPerDay[step] $} ev/day</p>
+            <p ng-show="doshowsub(step)">Current production rate<sup>(<a href="#remevt">1</a>)</sup>: {$ eventsPerDay[step] $} ev/day</p>
          </div>
     </div>
 
-    <h6 ng-show="steps" id="submtev"><sup>1</sup>Total Number of Events in currently active tasks</h6>
-    <h6 ng-show="steps" id="remevt"><sup>2</sup>Number of Unprocessed Events in currently active tasks</h6>
-    <h6 ng-show="steps" id="remevt"><sup>3</sup>Value of daily production rolling mean with 5 days window</h6>
+    <h6 ng-show="steps" id="remevt"><sup>1</sup>Value of daily production rolling mean with 5 days window</h6>
 
     </div>
 
