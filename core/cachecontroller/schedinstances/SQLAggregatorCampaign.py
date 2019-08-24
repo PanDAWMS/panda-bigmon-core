@@ -54,6 +54,7 @@ class SQLAggregatorCampaign(BaseTasksProvider):
             )td on tr.jeditaskid=td.jeditaskid) order by endtime ASC
         """
 
+        self.logger.debug("SQLAggregatorCampaign starting filling pandas df")
         campaign_df = pd.read_sql(query, con=connection)
         index = pd.date_range(start=campaign_df.START_TIME.min(), end=campaign_df.ENDTIME.max())
         stepsname = campaign_df.STEP_NAME.unique().tolist()
@@ -66,6 +67,8 @@ class SQLAggregatorCampaign(BaseTasksProvider):
         reindexedbyDay_ev = pd.concat(
             [new_df_Reco_ev], axis=1, keys=['Reco'])
 
+        self.logger.debug("SQLAggregatorCampaign filled pandas df")
+
         # At this step we have number of events processed per each day of a campaign
 
         query = "select sum(neventstobeused) as sumtouse, sum(nevents) as sumtot, sum(NEVENTSUSED) as sumused, sum(NRUNNINGEVENTS) as sumrun from ATLAS_PANDABIGMON.RUNNINGPRODTASKS where campaign='data18_13TeV' and processingtype='reprocessing'"
@@ -73,6 +76,8 @@ class SQLAggregatorCampaign(BaseTasksProvider):
         eventstotals = self.__dictfetchall(cursor)
         if eventstotals and len(eventstotals) > 0:
             eventstotals = eventstotals[0]
+
+        self.logger.debug("SQLAggregatorCampaign tasks filled")
 
 
         numberOfRemainingEventsPerStep = {
@@ -110,6 +115,8 @@ class SQLAggregatorCampaign(BaseTasksProvider):
                         numberOfDoneEventsPerStep['Reco'] + numberOfRemainingEventsPerStep['Reco']), 1)
             progressForMax['Reco'] = int(numberOfDoneEventsPerStep['Reco'] * 100.0 / maxEvents)
             eventsPerDay['Reco'] = humanize.intcomma(int(rollingRes[-1]))
+
+        self.logger.debug("SQLAggregatorCampaign data prepared")
 
 
         data = {
