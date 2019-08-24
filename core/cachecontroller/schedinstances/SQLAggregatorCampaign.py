@@ -36,7 +36,10 @@ class SQLAggregatorCampaign(BaseTasksProvider):
 
         while (self.getNumberOfActiveDBSessions() > MAX_NUMBER_OF_ACTIVE_DB_SESSIONS):
             threading.sleep(TIMEOUT_WHEN_DB_LOADED)
+
+        self.logger.debug("SQLAggregatorCampaign has DB slots")
         connection = self.pool.acquire()
+        self.logger.debug("SQLAggregatorCampaign took connection from pool")
         cursor = connection.cursor()
         cursor.execute("alter session set NLS_DATE_FORMAT = 'mm-dd-yyyy HH24:mi:ss'")
         cursor.execute("alter session set NLS_TIMESTAMP_FORMAT = 'mm-dd-yyyy HH24:mi:ss'")
