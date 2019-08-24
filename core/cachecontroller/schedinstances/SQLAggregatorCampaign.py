@@ -8,14 +8,137 @@ import numpy as np
 from django.core.cache import cache
 from django.utils.six.moves import cPickle as pickle
 import core.libs.CampaignPredictionHelper as cph
-import sys
+import humanize
 
 class SQLAggregatorCampaign(BaseTasksProvider):
 
     lock = threading.RLock()
     logger = logging.getLogger(__name__ + ' SQLAggregatorCampaign')
 
+
+    def __dictfetchall(self, cursor):
+        "Returns all rows from a cursor as a dict"
+        desc = cursor.description
+        return [
+            dict(zip([col[0] for col in desc], row))
+            for row in cursor.fetchall()
+        ]
+
+
     def processPayload(self):
+
+        # Here we do preprocessing for the prediction module restricted to the data18_13TeV reprocessing campaign
+
+        self.logger.info("SQLAggregatorCampaign started")
+        campaign = {
+            'campaign': 'data18_13TeV'
+        }
+
+        while (self.getNumberOfActiveDBSessions() > MAX_NUMBER_OF_ACTIVE_DB_SESSIONS):
+            threading.sleep(TIMEOUT_WHEN_DB_LOADED)
+        connection = self.pool.acquire()
+        cursor = connection.cursor()
+        cursor.execute("alter session set NLS_DATE_FORMAT = 'mm-dd-yyyy HH24:mi:ss'")
+        cursor.execute("alter session set NLS_TIMESTAMP_FORMAT = 'mm-dd-yyyy HH24:mi:ss'")
+
+        #Columns names are specific due to DEFT compartibility
+        query = """
+            select STARTTIME as START_TIME, ENDTIME, STEP_NAME, round((NEVENTSUSED) / (count(*) over (partition by tr.jeditaskid))) as DONEEV  from (
+            (SELECT DISTINCT STARTTIME, endtime, pandaid, jeditaskid FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JOBSTATUS='finished' UNION ALL 
+            SELECT DISTINCT STARTTIME, endtime, pandaid, jeditaskid FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JOBSTATUS='finished')tr 
+             join (
+                select t1.JEDITASKID, t5.STEP_NAME, t1.CREATIONDATE, t1.STATUS, t2.CAMPAIGN,t2.SUBCAMPAIGN, t1.neventstobeused, t1.nevents, t1.NEVENTSUSED from ATLAS_PANDABIGMON.RUNNINGPRODTASKS t1
+                join ATLAS_DEFT.T_PRODUCTION_TASK t2 on t2.TASKID=t1.JEDITASKID
+                JOIN ATLAS_DEFT.T_PRODUCTION_STEP t4 ON t2.STEP_ID=t4.STEP_ID JOIN ATLAS_DEFT.T_STEP_TEMPLATE t5 ON t4.STEP_T_ID=t5.STEP_T_ID
+                where t2.campaign='data18_13TeV' and t1.processingtype='reprocessing'
+            )td on tr.jeditaskid=td.jeditaskid) order by endtime ASC
+        """
+
+        campaign_df = pd.read_sql(query, con=connection)
+        index = pd.date_range(start=campaign_df.START_TIME.min(), end=campaign_df.ENDTIME.max())
+        stepsname = campaign_df.STEP_NAME.unique().tolist()
+        new_df = pd.DataFrame(index=index, columns=stepsname)
+
+        new_df_Reco_ev = new_df.apply(lambda x: campaign_df[
+            (campaign_df.ENDTIME >= x.name) & (campaign_df.ENDTIME <= x.name + np.timedelta64(1, 'D')) & (
+                    campaign_df.STEP_NAME == 'Reco')]['DONEEV'].sum(), axis=1)
+
+        reindexedbyDay_ev = pd.concat(
+            [new_df_Reco_ev], axis=1, keys=['Reco'])
+
+        # At this step we have number of events processed per each day of a campaign
+
+        query = "select sum(neventstobeused) as sumtouse, sum(nevents) as sumtot, sum(NEVENTSUSED) as sumused, sum(NRUNNINGEVENTS) as sumrun from ATLAS_PANDABIGMON.RUNNINGPRODTASKS where campaign='data18_13TeV' and processingtype='reprocessing'"
+        cursor.execute(query)
+        eventstotals = self.__dictfetchall(cursor)
+        if eventstotals and len(eventstotals) > 0:
+            eventstotals = eventstotals[0]
+
+
+        numberOfRemainingEventsPerStep = {
+            'Reco': eventstotals['SUMTOUSE']
+        }
+        numberOfRunningEventsPerStep = {
+            'Reco': eventstotals['SUMRUN']
+        }
+        numberOfTotalEventsPerStep = {
+            'Reco': eventstotals['SUMTOT']
+        }
+
+        progressOfEventsPerStep = {
+            'Reco': round(eventstotals['SUMUSED']/eventstotals['SUMTOT'],1)
+        }
+        numberOfDoneEventsPerStep = {
+            'Reco': eventstotals['SUMUSED']
+        }
+
+        remainingForSubmitting = {}
+        remainingForMaxPossible = {}
+        progressForSubmitted = {}
+        progressForMax = {}
+        stepWithMaxEvents = 'Reco'
+        maxEvents = numberOfTotalEventsPerStep[stepWithMaxEvents]
+        eventsPerDay = {}
+
+        rollingRes = reindexedbyDay_ev['Reco'].rolling(5, win_type='triang').mean()
+        if len(rollingRes) > 2 and rollingRes[-1] > 0 and 'Reco' in numberOfRemainingEventsPerStep:
+            remainingForSubmitting['Reco'] = str(round(numberOfRemainingEventsPerStep['Reco'] / \
+                                                     rollingRes[-1], 2)) + " d"
+            remainingForMaxPossible['Reco'] = str(round((maxEvents - numberOfDoneEventsPerStep['Reco']) / \
+                                                      rollingRes[-1], 2)) + " d"
+            progressForSubmitted['Reco'] = round(numberOfDoneEventsPerStep['Reco'] * 100.0 / (
+                        numberOfDoneEventsPerStep['Reco'] + numberOfRemainingEventsPerStep['Reco']), 1)
+            progressForMax['Reco'] = int(numberOfDoneEventsPerStep['Reco'] * 100.0 / maxEvents)
+            eventsPerDay['Reco'] = humanize.intcomma(int(rollingRes[-1]))
+
+
+        data = {
+                "numberOfRemainingEventsPerStep":numberOfRemainingEventsPerStep,
+                "numberOfRunningEventsPerStep":numberOfRunningEventsPerStep,
+                "numberOfTotalEventsPerStep": numberOfTotalEventsPerStep,
+                "progressOfEventsPerStep":progressOfEventsPerStep,
+                "numberOfDoneEventsPerStep":numberOfDoneEventsPerStep,
+                "remainingForSubmitting":remainingForSubmitting,
+                "remainingForMaxPossible": remainingForMaxPossible,
+                "progressForSubmitted":progressForSubmitted,
+                "progressForMax":progressForMax,
+                "stepWithMaxEvents":stepWithMaxEvents,
+                "maxEvents":maxEvents,
+                "eventsPerDay":eventsPerDay
+                }
+
+        cache.set("concatenate_ev_" + str(campaign['campaign']) + "_" + str(None) + "_v1",
+                  pickle.dumps(data, pickle.HIGHEST_PROTOCOL), 60 * 60 * 72)
+        self.logger.info("concatenate_ev_" + str(campaign['campaign']) + "_" + "  pushed into the cache")
+
+        self.logger.info("SQLAggregatorCampaign finished")
+        cursor.close()
+        return 0
+
+
+
+
+    def processPayload_wider_selection_backlog(self):
 
         self.logger.info("SQLAggregatorCampaign started")
 

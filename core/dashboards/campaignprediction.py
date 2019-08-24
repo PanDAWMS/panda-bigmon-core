@@ -18,8 +18,62 @@ from core.views import login_customrequired
 taskFinalStates = ['cancelled', 'failed', 'broken', 'aborted', 'finished', 'done']
 stepsOrder = ['Evgen', 'Evgen Merge', 'Simul', 'Merge', 'Digi', 'Reco', 'Rec Merge', 'Deriv', 'Deriv Merge', 'Rec TAG', 'Atlfast', 'Atlf Merge']
 
+
 @never_cache
 def campaignPredictionInfo(request):
+    initRequest(request)
+
+    if 'campaign' in request.GET:
+        campaign = request.GET['campaign']
+    else:
+        campaign = None
+
+    subcampaign = 'None'
+
+    campaignInfo = {}
+    if (campaign):
+        data = cache.get("concatenate_ev_" + str(campaign) + "_" + str(None) + "_v1", None)
+        if data:
+            data = pickle.loads(data)
+            numberOfDoneEventsPerStep = data['numberOfDoneEventsPerStep']
+            numberOfRunningEventsPerStep = data['numberOfRunningEventsPerStep']
+            numberOfTotalEventsPerStep = data['numberOfTotalEventsPerStep']
+            progressOfEventsPerStep = data['progressOfEventsPerStep']
+            numberOfRemainingEventsPerStep = data['numberOfRemainingEventsPerStep']
+            remainingForSubmitting = data['remainingForSubmitting']
+            remainingForMaxPossible = data['remainingForMaxPossible']
+            progressForSubmitted = data['progressForSubmitted']
+            progressForMax = data['progressForMax']
+            stepWithMaxEvents = data['progressForMax']
+            maxEvents = data['maxEvents']
+            eventsPerDay = data['eventsPerDay']
+
+            #Here we ordering steps
+            uniqueStepsInCampaig = ['Reco']
+            orderedSteps = [step for step in stepsOrder if step in uniqueStepsInCampaig]
+            missingSteps = [step for step in uniqueStepsInCampaig if step not in orderedSteps]
+            orderedSteps = orderedSteps + missingSteps
+
+            #Fill out the output dictionary
+            campaignInfo['remainingForSubmitting'] = convertTypes(remainingForSubmitting)
+            campaignInfo['remainingForMaxPossible'] = convertTypes(remainingForMaxPossible)
+            campaignInfo['numberOfDoneEventsPerStep'] = convertTypes(numberOfDoneEventsPerStep)
+            campaignInfo['numberOfSubmittedEventsPerStep'] = convertTypes(numberOfRunningEventsPerStep)
+            campaignInfo['numberOfRemainingEventsPerStep'] = convertTypes(numberOfRemainingEventsPerStep)
+            campaignInfo['numberOfTotalEventsPerStep'] = convertTypes(numberOfTotalEventsPerStep)
+            campaignInfo['steps'] = orderedSteps
+            campaignInfo['subcampaign'] = subcampaign
+            campaignInfo['campaign'] = campaign
+            campaignInfo['progressForSubmitted'] = progressForSubmitted
+            campaignInfo['progressForMax'] = progressForMax
+            campaignInfo['stepWithMaxEvents'] = stepWithMaxEvents
+            campaignInfo['eventsPerDay'] = eventsPerDay
+    return JsonResponse(campaignInfo, safe=False)
+
+
+
+@never_cache
+def campaignPredictionInfo_v1(request):
     initRequest(request)
 
     if 'campaign' in request.GET:
@@ -102,7 +156,7 @@ def campaignPredictionInfo(request):
 
 def convertTypes(object):
     for k, v in object.items():
-        if type(v) == np.int64:
+        if type(v) in [np.int64, int]:
             object.update({k: humanize.intcomma(int(v))})
         elif type(v) == np.float64:
             object.update({k: float(v)})
@@ -131,6 +185,6 @@ def campaignPredictionDash(request):
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }
 
-    response = render_to_response('CampaignCalculator.html', data, content_type='text/html')
+    response = render_to_response('CampaignCalculator_reduced.html', data, content_type='text/html')
     return response
 
