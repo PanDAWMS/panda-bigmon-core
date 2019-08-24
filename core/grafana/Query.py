@@ -21,6 +21,7 @@ class Query(object):
                  dst_tier  = ".*",
                  processingtype  = ".*",
                  nucleus  = ".*",
+                 error_category = ".*",
                  starttime = "",
                  endtime = "",
                  grouping = ['adcactivity'],
@@ -50,6 +51,7 @@ class Query(object):
         self.dst_tier = dst_tier
         self.processingtype = processingtype
         self.nucleus = nucleus
+        self.error_category = error_category
         self.starttime = starttime
         self.endtime = endtime
         if ',' in grouping:
@@ -171,6 +173,10 @@ class Query(object):
             self.nucleus = request.session['requestParams']['nucleus']
         else:
             self.nucleus = ".*"
+        if 'errorcategory' in request.session['requestParams']:
+            self.error_category = request.session['requestParams']['errorcategory']
+        else:
+            self.error_category = ".*"
         if 'date_from' in request.session['requestParams']:
             self.starttime = request.session['requestParams']['date_from']
         else:
@@ -179,6 +185,7 @@ class Query(object):
             self.endtime = request.session['requestParams']['date_to']
         else:
             self.endtime = str(_round_to_hour(datetime.utcnow() - timedelta(hours=1)))
+
         if 'groupby' in request.session['requestParams']:
             if 'time' in str(request.session['requestParams']['groupby']):
                 newgroups = """time({0}), """.format(self.bin)
