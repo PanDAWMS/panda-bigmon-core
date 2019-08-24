@@ -40,7 +40,7 @@ schedule.every(10).minutes.do(run_threaded, bigTasks.execute)
 schedule.every().day.at("09:00").do(run_threaded, artMails.execute)
 schedule.every(10).minutes.do(run_threaded, harvester.execute)
 schedule.every(1).hours.do(run_threaded, sQLAggregator.execute)
-schedule.every(10).minutes.do(run_threaded, sQLAggregatorCampaign.execute)
+schedule.every(1).hours.do(run_threaded, sQLAggregatorCampaign.execute)
 
 while 1:
     schedule.run_pending()
