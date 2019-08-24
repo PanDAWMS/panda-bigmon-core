@@ -141,6 +141,7 @@ class SQLAggregatorCampaign(BaseTasksProvider):
                   pickle.dumps(data, pickle.HIGHEST_PROTOCOL), 60 * 60 * 72)
         self.logger.info("SQLAggregatorCampaign finished")
         cursor.close()
+        self.pool.release(connection)
         return 0
 
 
