@@ -38,19 +38,19 @@ class Grafana(object):
             startD = datetime.strptime(query_object.starttime, '%d.%m.%Y %H:%M:%S')
             endD = datetime.strptime(query_object.endtime, '%d.%m.%Y %H:%M:%S')
 
-            localtime = pytz.timezone('Europe/Zurich')
-            a = localtime.localize(startD)
-            dst = bool(a.dst())
-            if dst:
-                tdelta = timedelta(hours=2)
-                startD = startD + tdelta
-                endD = endD + tdelta
-            else:
-                tdelta = timedelta(hours=1)
-                startD = startD + tdelta
-                endD = endD + tdelta
+            # localtime = pytz.timezone('Europe/Zurich')
+            # a = localtime.localize(startD)
+            # dst = bool(a.dst())
+            # if dst:
+            #     tdelta = timedelta(hours=2)
+            #     startD = startD + tdelta
+            #     endD = endD + tdelta
+            # else:
+            #     tdelta = timedelta(hours=1)
+            #     startD = startD + tdelta
+            #     endD = endD + tdelta
 
-            startMillisec =  int(startD.strftime("%s")) * 1000
+            startMillisec = int(startD.strftime("%s")) * 1000
 
             endMillisec = int(endD.strftime("%s")) * 1000
         if query_object.table == "pledges":
@@ -148,6 +148,10 @@ class Grafana(object):
                 nucleus = '('+query_object.nucleus+')'
             else:
                 nucleus = query_object.nucleus
+            if '.*' not in query_object.error_category:
+                error_category = '('+query_object.error_category+')'
+            else:
+                error_category = query_object.error_category
             if query_object.table == 'pending':
                 pquery = """"jobstatus" = 'pending' AND """
             else: pquery = ''
@@ -155,19 +159,19 @@ class Grafana(object):
             query =  \
             '''
             SELECT {0}("{1}") FROM "long_{3}"."{2}_{3}" 
-            WHERE ({26}"dst_experiment_site" =~ /^{4}$/ AND "dst_cloud" =~ /^{5}$/ 
+            WHERE ({27}"dst_experiment_site" =~ /^{4}$/ AND "dst_cloud" =~ /^{5}$/ 
             AND "dst_country" =~ /^{6}$/ AND "dst_federation" =~ /^{7}$/ 
             AND "adcactivity" =~ /^{8}$/ AND "resourcesreporting" =~ /^{9}$/ AND "actualcorecount" =~ /^{10}$/ 
             AND "resource_type" =~ /^{11}$/ AND "workinggroup" =~ /^{12}$/ 
             AND "inputfiletype" =~ /^{13}$/ AND "eventservice" =~ /^{14}$/ 
             AND "inputfileproject" =~ /^{15}$/ AND "outputproject" =~ /^{16}$/ 
             AND "jobstatus" =~ /^{17}$/ AND "computingsite" =~ /^{18}$/ AND "gshare" =~ /^{19}$/ 
-            AND "dst_tier" =~ /^{20}$/ AND "processingtype" =~ /^{21}$/ AND "nucleus" =~ /^{22}$/ )  
-            AND  time >= {23}ms and time <= {24}ms GROUP BY {25} fill(0)&epoch=ms
+            AND "dst_tier" =~ /^{20}$/ AND "processingtype" =~ /^{21}$/ AND "nucleus" =~ /^{22}$/ AND "error_category" =~ /^{23}$/ )  
+            AND  time >= {24}ms and time <= {25}ms GROUP BY {26} fill(0)&epoch=ms
             '''.format(query_object.agg_func, query_object.field, query_object._get_table(query_object.table), query_object.bin, dst_experiment_site, dst_cloud, dst_country,
                     dst_federation, adcactivity, resourcesreporting, actualcorecount, resource_type, workinggroup,
                     inputfiletype, eventservice, inputfileproject, outputproject, jobstatus, computingsite, gshare,
-                    dst_tier, processingtype, nucleus, startMillisec, endMillisec, query_object.grouping, pquery)
+                    dst_tier, processingtype, nucleus, error_category, startMillisec, endMillisec, query_object.grouping, pquery)
             query = re.sub(r"([\n ])\1*", r"\1", query).replace('\n', ' ').lstrip().strip()
             query = re.sub(' +', ' ', query)
             return query
@@ -193,6 +197,6 @@ class Grafana(object):
         for s in res['results'][0]['series']:
             tg = ''
             for tag in s['tags']:
-                tg =  s['tags'][tag]
+                tg = s['tags'][tag]
                 for value in s['values']:
                     print (tg+' '+ str(value[0]) + ' ' + str(datetime.utcfromtimestamp(value[0] / 1000.0).strftime('%d-%b-%y %H:%M:%S'))+ ' ' + str(value[1]))

@@ -170,7 +170,7 @@ def grafana_api(request):
 
     q = Query()
     q = q.request_to_query(request)
-    sum_pledges  = Query(agg_func='last', table='pledges', field='atlas', grouping='real_federation')
+    sum_pledges = Query(agg_func='last', table='pledges', field='atlas', grouping='real_federation')
 
     #sum_pledges = Query(agg_func='sum', table='pledges', field='atlas', grouping='time(1m),real_federation')
     try:
