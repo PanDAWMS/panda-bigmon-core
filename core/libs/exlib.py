@@ -1,11 +1,11 @@
-from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch
-from core.pandajob.models import Jobsdefined4
-import math, random, datetime, copy
+from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch, TemporaryData
+from core.pandajob.models import Jobsdefined4, Jobswaiting4, Jobsactive4, Jobsarchived4, Jobsarchived
+import math, random, datetime, copy, logging
 from django.db import connection
 from dateutil.parser import parse
-from datetime import datetime, timezone
-from core.settings.local import dbaccess
-
+from datetime import datetime, timezone, timedelta
+from core.settings.local import dbaccess, defaultDatetimeFormat
+_logger_error = logging.getLogger('bigpandamon-error')
 
 def fileList(jobs):
     newjobs = []
@@ -93,7 +93,7 @@ def fileList(jobs):
     return newjobs
 
 
-def insert_to_temp_table(list_of_items, transactionKey = -1):
+def insert_to_temp_table(list_of_items, transaction_key = -1):
     """Inserting to temp table
     :param list_of_items
     :return transactionKey and timestamp of instering
@@ -104,18 +104,19 @@ def insert_to_temp_table(list_of_items, transactionKey = -1):
     # else:
     #     tmpTableName = "TMP_IDS1"
 
-    if transactionKey == -1:
+    if transaction_key == -1:
         random.seed()
-        transactionKey = random.randrange(1000000)
-
+        transaction_key = random.randrange(99999999)
     new_cur = connection.cursor()
-    executionData = []
-    for item in list_of_items:
-        executionData.append((item, transactionKey))
-    query = """INSERT INTO ATLAS_PANDABIGMON.TMP_IDS1Debug(ID,TRANSACTIONKEY) VALUES (%s,%s)"""
-    new_cur.executemany(query, executionData)
 
-    return transactionKey
+    execution_data = []
+    for item in list_of_items:
+        execution_data.append((item, transaction_key))
+        # execution_data.append((item, transaction_key, insert_time))
+    query = """INSERT INTO ATLAS_PANDABIGMON.TMP_IDS1Debug(ID,TRANSACTIONKEY) VALUES (%s,%s)"""
+    new_cur.executemany(query, execution_data)
+
+    return transaction_key
 
 
 def dictfetchall(cursor):
@@ -168,37 +169,56 @@ def is_eventservice_request(request):
     return eventservice
 
 
-def insert_jobs_to_tmp_table(query, extra):
+def produce_objects_sample(objecttype, query, extra):
     """
-    Insert all suitable jobs pandaids to temporary table for further usage and data consistency
-    :param query: dict with django ORM where conditions
-    :param extra: str containing pure where conditions
-    :return: transaction key (hex) and a where condition for further queries
+    Create a sample of objects, storing all suitable objects ids in tmp table for further usage
+    :param objecttype: str identifier of object type (job, task, etc)
+    :param query: query dict for .filter method of ORM
+    :param extra: str of extra where clause for .extra method of ORM
+    :return: list of timestamps for histogram, transaction key for sample identifying, updated extra where clause
     """
-
-    newquery = copy.deepcopy(query)
-
-
-    pandaids = 20
-    jquery = Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).query
+    objects = []
+    timestamps = []
+    if objecttype == 'job':
+        objects, timestamps = get_jobs_ids(query, extra)
 
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
     else:
         tmpTableName = "TMP_IDS1DEBUG"
 
-    transactionKey = random.randrange(1000000)
-    new_cur = connection.cursor()
+    transaction_key = insert_to_temp_table(objects)
 
-    ins_query = """
-        INSERT INTO {0} 
-        (ID,TRANSACTIONKEY,INS_TIME) 
-        select pandaid, {1}, TO_DATE('{2}', 'YYYY-MM-DD') from ()                   
-        """.format(tmpTableName, transactionKey, timezone.now().strftime("%Y-%m-%d"))
-
-    new_cur.execute(ins_query)
     # form an extra query condition to exclude retried pandaids from selection
-    extra += " AND pandaid not in ( select id from {0} where TRANSACTIONKEY = {1})".format(tmpTableName, transactionKey)
+    if objecttype == 'job':
+        extra += " AND pandaid not in ( select id from {0} where TRANSACTIONKEY = {1})".format(tmpTableName,
+                                                                                               transaction_key)
 
-    return True
+    return timestamps, transaction_key, extra
+
+
+def get_jobs_ids(query, extra):
+    """
+    Getting list of pandaids and modification times for job sample
+    :param query: query dict for .filter method of ORM
+    :param extra: str of extra where clause for .extra method of ORM
+    :return: list of ids and list of modification timestamps
+    """
+    newquery = copy.deepcopy(query)
+
+    pandaids = []
+    pandaids.extend(Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).values('pandaid', 'modificationtime'))
+    pandaids.extend(Jobswaiting4.objects.filter(**newquery).extra(where=[extra]).values('pandaid', 'modificationtime'))
+    pandaids.extend(Jobsactive4.objects.filter(**newquery).extra(where=[extra]).values('pandaid', 'modificationtime'))
+    pandaids.extend(Jobsarchived4.objects.filter(**newquery).extra(where=[extra]).values('pandaid', 'modificationtime'))
+    if parse_datetime(query['modificationtime__castdate__range'][0]) < datetime.now() - timedelta(days=3):
+        pandaids.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).values('pandaid', 'modificationtime'))
+
+    ids_list = []
+    modtimes_list = []
+    for pid in pandaids:
+        ids_list.append(pid['pandaid'])
+        modtimes_list.append(pid['modificationtime'])
+
+    return ids_list, modtimes_list
 

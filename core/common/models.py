@@ -29,6 +29,17 @@ models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
                                  'primaryColumns', 'secondaryColumns', \
                                  'columnTitles', 'filterFields',)
 
+
+class TemporaryData(models.Model):
+    id = models.IntegerField(db_column='ID', null=False)
+    transactionkey = models.IntegerField(db_column='TRANSACTIONKEY', null=False, primary_key=True)
+    instime = models.DateTimeField(db_column='INS_TIME')
+
+    class Meta:
+        app_label = 'pandamon'
+        db_table = u'"ATLAS_PANDABIGMON"."TMP_IDS1DEBUG"'
+
+
 class Cache(models.Model):
     type = models.CharField(db_column='TYPE', max_length=250) 
     value = models.CharField(db_column='VALUE', max_length=250) 

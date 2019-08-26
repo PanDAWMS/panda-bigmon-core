@@ -115,7 +115,7 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 # from libs import exlib
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, preparePlotData
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, is_eventservice_request, \
-    insert_jobs_to_tmp_table
+    produce_objects_sample
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.bpuser import get_relevant_links
@@ -3103,10 +3103,6 @@ def job_list(request, mode=None):
     data = getCacheEntry(request, "jobList")
     if data is not None:
         data = json.loads(data)
-        try:
-            data = deleteCacheTestData(request, data)
-        except:
-            pass
         data['request'] = request
         if data['eventservice'] == True:
             response = render_to_response('jobListES.html', data, content_type='text/html')
@@ -3116,8 +3112,6 @@ def job_list(request, mode=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    tkey = digkey(request)
-    isEventTask = False
     eventservice = is_eventservice_request(request)
 
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
@@ -3129,10 +3123,10 @@ def job_list(request, mode=None):
 
     warning = {}
 
-    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
+    query, wild_card_extension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
 
     ###TODO Rework it?
-    if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
+    if query == 'reqtoken' and wild_card_extension is None and LAST_N_HOURS_MAX is None:
         return render_to_response('message.html', {
             'desc': 'Request token is not found or data is outdated. Please reload the original page.'},
                                   content_type='text/html')
@@ -3145,11 +3139,85 @@ def job_list(request, mode=None):
         'mode'] == 'nodrop': dropmode = False
 
     if dropmode:
-        wildCardExtension, dtkey = insert_dropped_jobs_to_tmp_table(query, wildCardExtension)
+        wild_card_extension, dtkey = insert_dropped_jobs_to_tmp_table(query, wild_card_extension)
 
     # insert suitable pandaids to temporary table for further use
 
-    wildCardExtension, jkey = insert_jobs_to_tmp_table(query, wildCardExtension)
+    timestamps, jkey, wild_card_extension = produce_objects_sample('job', query, wild_card_extension)
+
+    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+            'json' not in request.session['requestParams'])):
+        xurl = extensibleURL(request)
+        time_locked_url = removeParam(removeParam(xurl, 'date_from', mode='extensible'), 'date_to', mode='extensible') + \
+                          'date_from=' + request.session['TFIRST'].strftime('%Y-%m-%dT%H:%M') + \
+                          '&date_to=' + request.session['TLAST'].strftime('%Y-%m-%dT%H:%M')
+        nodurminurl = removeParam(xurl, 'durationmin', mode='extensible')
+        xurl = removeParam(xurl, 'mode', mode='extensible')
+
+        TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
+        TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
+        del request.session['TFIRST']
+        del request.session['TLAST']
+
+        data = {
+            'request': request,
+            'requestParams': request.session['requestParams'],
+            'viewParams': request.session['viewParams'],
+            'timestamps': timestamps,
+            'timerange': [TFIRST, TLAST],
+            'eventservice': eventservice,
+            'njobs': len(timestamps),
+            'xurl': xurl,
+            'time_locked_url': time_locked_url,
+        }
+
+        setCacheEntry(request, "job_list_init", json.dumps(data, cls=DateEncoder), 60 * 20)
+        ##self monitor
+        endSelfMonitor(request)
+        if eventservice:
+            response = render_to_response('job_list_ES.html', data, content_type='text/html')
+        else:
+            response = render_to_response('job_list.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+    else:
+        del request.session['TFIRST']
+        del request.session['TLAST']
+
+        # TODO loading the all necessary data that is being asynchroniously dilivered to the page
+        jobs = []
+        sumd = {}
+        errsByCount = []
+        if (('fields' in request.session['requestParams']) and (len(jobs) > 0)):
+            fields = request.session['requestParams']['fields'].split(',')
+            fields = (set(fields) & set(jobs[0].keys()))
+            if 'pandaid' not in fields:
+                list(fields).append('pandaid')
+            for job in jobs:
+                for field in list(job.keys()):
+                    if field in fields:
+                        pass
+                    else:
+                        del job[field]
+
+        data = {
+            "selectionsummary": sumd,
+            "jobs": jobs,
+            "errsByCount": errsByCount,
+        }
+        ##self monitor
+        endSelfMonitor(request)
+        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+
+
+
+
+def get_arrtibute_summary():
+    data = {}
+
 
 
 
@@ -3218,8 +3286,8 @@ def job_list(request, mode=None):
         attributes_summary_raw[value] = QueryThread(
             model_name=[Jobsarchived4, Jobsactive4, Jobswaiting4, Jobsdefined4],
             query=query,
-            wild_card_extension=wildCardExtension,
-            tkey=dkey,
+            wild_card_extension=wild_card_extension,
+            tkey=jkey,
             param_name=value)
     for value in attributes_summary_raw.keys():
         inputs_list.append({'QueryThread_instances_dict': attributes_summary_raw,
@@ -3231,7 +3299,7 @@ def job_list(request, mode=None):
     with ThreadPoolExecutor(max_workers=N_MAX_CONCURRENT_QUERIES) as executor:
         executor.map(run_query_in_thread, inputs_list)
 
-    attributes_summary = extract_results_list(attributes_summary_raw, dkey)
+    attributes_summary = extract_results_list(attributes_summary_raw, jkey)
 
 
     JOB_LIMITS = request.session['JOB_LIMIT']
