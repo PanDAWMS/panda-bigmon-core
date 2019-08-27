@@ -5,6 +5,7 @@ from django.db import connection
 from dateutil.parser import parse
 from datetime import datetime, timezone, timedelta
 from core.settings.local import dbaccess, defaultDatetimeFormat
+import pandas as pd
 _logger_error = logging.getLogger('bigpandamon-error')
 
 def fileList(jobs):
@@ -222,3 +223,26 @@ def get_jobs_ids(query, extra):
 
     return ids_list, modtimes_list
 
+
+def make_timestamp_hist(timestamps_list):
+    """
+    A function for rule based binning the timestamps data.
+    < 12 hours - 10min bins, < 3 days - 1hour bins, >=3 days = 1 day bins
+    :param timestamps_list:
+    :return: dict {timestamp:number of appearences }
+    """
+    tm_hist = {}
+    binning_rule = '1D'
+    bin_ranges = {'10min': [0, 60*12], '1H': [60*12, 3*24*60], '1D': [3*24*60, math.inf]}
+    tm_df = pd.DataFrame(timestamps_list, columns=['timestamp'])
+    tm_df['timestamp'] = pd.to_datetime(tm_df['timestamp'])
+    tm_df.index = tm_df['timestamp']
+
+    tm_diff_minutes = int((tm_df.idxmax() - tm_df.idxmin()).dt.total_seconds()/60)
+    for key, values in bin_ranges.items():
+        if values[0] <= tm_diff_minutes <= values[1]:
+            binning_rule = key
+
+    tm_hist = tm_df.resample(binning_rule).count().to_dict()['timestamp']
+
+    return tm_hist

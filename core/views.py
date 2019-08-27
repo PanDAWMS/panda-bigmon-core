@@ -115,7 +115,7 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 # from libs import exlib
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, preparePlotData
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, is_eventservice_request, \
-    produce_objects_sample
+    produce_objects_sample, make_timestamp_hist
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.bpuser import get_relevant_links
@@ -3145,6 +3145,10 @@ def job_list(request, mode=None):
 
     timestamps, jkey, wild_card_extension = produce_objects_sample('job', query, wild_card_extension)
 
+    njobs = len(timestamps)
+
+    timestamp_hist = make_timestamp_hist(timestamps)
+
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
             'json' not in request.session['requestParams'])):
         xurl = extensibleURL(request)
@@ -3166,7 +3170,8 @@ def job_list(request, mode=None):
             'timestamps': timestamps,
             'timerange': [TFIRST, TLAST],
             'eventservice': eventservice,
-            'njobs': len(timestamps),
+            'njobs': njobs,
+            'timestamphist': timestamp_hist,
             'xurl': xurl,
             'time_locked_url': time_locked_url,
         }
@@ -3215,7 +3220,7 @@ def job_list(request, mode=None):
 
 
 
-def get_arrtibute_summary():
+def get_arrtibute_summary(request):
     data = {}
 
 
