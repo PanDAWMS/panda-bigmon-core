@@ -31,6 +31,7 @@ import core.pandajob.views_support as core_coremon_support_views
 #import core.pandajob.views as core_coremon_views
 #import core.api.reprocessing.views as core_coremon_api_reprocessing_views
 
+
 app_name = "bigpandamon"
 
 urlpatterns = [
@@ -40,9 +41,6 @@ urlpatterns = [
     re_path(r'^jobs/$', coremon_views.jobList, name='jobList'),
     re_path(r'^jobs/(.*)/$', coremon_views.jobList, name='jobList'),
     re_path(r'^jobs/(.*)/(.*)/$', coremon_views.jobList, name='jobList'),
-
-    re_path(r'^new/jobs/$', coremon_views.job_list, name='job_list'),
-
     re_path(r'^jobsss/$', coremon_views.jobListP, name='jobListP'),
     re_path(r'^jobsss/(.*)/$', coremon_views.jobListP, name='jobListP'),
     re_path(r'^jobsss/(.*)/(.*)/$', coremon_views.jobListP, name='jobListP'),
@@ -127,7 +125,7 @@ urlpatterns = [
     re_path(r'^report/$', coremon_views.report, name='report'),
     re_path(r'^serverstatushealth/$', coremon_views.serverStatusHealth, name='serverStatusHealth'),
 
-                  ### ART nightly tests
+    ### ART nightly tests
     re_path(r'^art/$', art_views.art, name='art-mainPage'),
     re_path(r'^art/overview/$', art_views.artOverview, name='artOverview'),
     re_path(r'^art/tasks/$', art_views.artTasks, name='artTasks'),
@@ -223,6 +221,9 @@ urlpatterns = [
 
     ###API###
     re_path(r'^api/get_sites/', coremon_views.getSites, name='getsites'),
+
+    ### upd
+    re_path(r'^upd/', include('core.upd.urls'))
 
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

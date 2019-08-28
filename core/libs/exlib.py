@@ -1,12 +1,21 @@
 from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch, TemporaryData
 from core.pandajob.models import Jobsdefined4, Jobswaiting4, Jobsactive4, Jobsarchived4, Jobsarchived
-import math, random, datetime, copy, logging
+import math, random, datetime, copy, logging, json
 from django.db import connection
 from dateutil.parser import parse
 from datetime import datetime, timezone, timedelta
 from core.settings.local import dbaccess, defaultDatetimeFormat
 import pandas as pd
 _logger_error = logging.getLogger('bigpandamon-error')
+
+
+class DateEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, 'isoformat'):
+            return obj.isoformat()
+        else:
+            return str(obj)
+        return json.JSONEncoder.default(self, obj)
 
 def fileList(jobs):
     newjobs = []
