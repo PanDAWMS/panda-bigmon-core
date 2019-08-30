@@ -1,4 +1,4 @@
-{% extends "_base_core.html" %}
+{% extends "__base_core.html" %}
 {% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
 {% block subtitle %}PanDA jobs {{ viewParams.selection|safe }}
@@ -45,8 +45,9 @@
 <div id="timeWindowChart" style="height: 300px; width: 100%;"></div>
 
 
-{##}
-{##}
+
+{% if njobs > 0 %}
+
 {#{% if ndrops > 0 %}#}
 {#<table width=900><tr><td class='highlightcell'>#}
 {#<b>{{ ndrops }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>#}
@@ -233,8 +234,8 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 {% endblock %}
 
 
-{% block helptext %}
-{% include "jobListHelp.html" with helptitle="Job list help" %}
-{% include "jobInfoHelp.html" with helptitle="Job information" show="all" %}
-{% endblock %}
+{#{% block helptext %}#}
+{#{% include "jobListHelp.html" with helptitle="Job list help" %}#}
+{#{% include "jobInfoHelp.html" with helptitle="Job information" show="all" %}#}
+{#{% endblock %}#}
 

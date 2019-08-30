@@ -3,7 +3,7 @@ The self monitor to register requests and their duration in DB
 """
 import psutil
 import datetime
-from datetime import timezone
+from django.utils import timezone
 from core.common.models import RequestStat
 
 

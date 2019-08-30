@@ -1,5 +1,28 @@
-@import "settings";
+//@import "../bower_components/foundation-sites/scss/settings/settings";
 @import "../bower_components/foundation-sites/scss/foundation";
+@import "settings";
+@import "main-nav";
+@import "../bower_components/foundation-icon-fonts/foundation-icons";
+
+
+@include foundation-global-styles;
+@include foundation-typography;
+@include foundation-top-bar;
+@include foundation-title-bar;
+@include foundation-menu;
+@include menu-icons;
+@include foundation-dropdown;
+@include foundation-dropdown-menu;
+@include foundation-accordion;
+@include foundation-accordion-menu;
+@include foundation-xy-grid-classes;
+@include foundation-off-canvas;
+@include foundation-forms;
+@include foundation-button;
+@include foundation-button-group;
+@include foundation-visibility-classes;
+
+
 
 // Or selectively include components
 // @import

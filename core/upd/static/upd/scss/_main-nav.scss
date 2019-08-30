@@ -1,0 +1,118 @@
+// BigPanDAmon specific style for main menu bar
+@import "settings";
+
+.no-js {
+  @include breakpoint(small only) {
+    .top-bar {
+      display: none;
+    }
+  }
+
+  @include breakpoint(medium) {
+    .title-bar {
+      display: none;
+    }
+  }
+}
+
+.title-bar a {
+    text-decoration: none;
+}
+
+.top-bar {
+  font-size: $header-font-size;
+  a {
+    color: $topbar-link-color;
+    text-decoration: none;
+    font-size: $header-font-size;
+    &:hover {
+      color: $topbar-link-color;
+      background-color: $light-hover-black;
+    }
+  }
+  i {
+  padding: $i-icon-padding;
+  }
+  .menu-text {
+    padding: 0 !important;
+  }
+  .loggeduser {
+    color: $green;
+    padding: $dropdownmenu-submenu-padding;
+    font-size: $header-font-size;
+  }
+}
+
+$searchbox-top-align: 0.6rem;
+.searchbox {
+  width: 16rem;
+  font-size: $header-font-size;
+  margin: 0 1rem 0 1rem !important;
+  .searchselect {
+    background-color: $topbar-background;
+    color: $white;
+    border: none;
+    height: 1.6rem;
+    margin-top: $searchbox-top-align;
+    padding: 0 1rem 0 0.2rem;
+    text-align: right;
+    font-size: $header-font-size;
+    background-size: 6px 3px;
+    background-position: right -$searchbox-top-align center;
+    &:focus {
+      outline: none;
+      border: 1px solid #8a8a8a;
+      background-color: #272727;
+      box-shadow: none;
+    }
+    &:disabled {
+      background-color: $topbar-background;
+      cursor: not-allowed;
+    }
+  }
+  .searchoption {
+    background-color: $topbar-background;
+    color: $white;
+    text-align: right;
+    font-size: $header-font-size;
+    &:hover {
+      background-color: #272727;
+    }
+  }
+  .searchinput {
+    background-color: #444444;
+    color: $white;
+    border: 1px solid #444444;
+    border-radius: 0.2rem;
+    height: 1.6rem;
+    margin-top: $searchbox-top-align;
+    font-size: $header-font-size;
+    &:focus {
+      outline: none;
+      border: 1px solid #8a8a8a;
+      background-color: $topbar-background;
+      box-shadow: none;
+    }
+  }
+
+  .searchbutton {
+    background-color: $topbar-background;
+    color: $white;
+    i {
+      padding-left: 0.4rem;
+    }
+  }
+}
+
+.bp-footer {
+  padding: 1rem;
+  background: $topbar-background;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: $header-font-size;
+  color: $light-gray;
+  img {
+    height: 3rem;
+  }
+}

@@ -1,11 +1,42 @@
 """
 A set of common functions for initializing and setup views
 """
+import base64, re, urllib, subprocess
 
+from datetime import timedelta
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
 
-from core.libs.self_monitor import init_self_monitor
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render_to_response
+from django.core.cache import cache
+from django.conf import settings as djangosettings
+from django.utils import timezone, encoding
 
+from core.libs.self_monitor import init_self_monitor
+from core.libs.exlib import parse_datetime
+from core.views import getCacheData, setupSiteInfo
+
+from core.common.models import BPUser, Users, Jobparamstable, JediTasks
+from core.pandajob.models import Jobsactive4
+
+from core.settings.local import dbaccess, defaultDatetimeFormat
+
+notcachedRemoteAddress = ['188.184.185.129', '188.184.116.46']
+
+standard_fields = ['processingtype', 'computingsite', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid',
+                   'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype',
+                   'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount', 'eventservice',
+                   'jobsubstatus', 'nucleus', 'gshare', 'resourcetype']
+
+VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
+VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
+VOMODE = ' '
+
+try:
+    hostname = subprocess.getoutput('hostname')
+    if hostname.find('.') > 0: hostname = hostname[:hostname.find('.')]
+except:
+    hostname = ''
 
 def login_customrequired(function):
     def wrap(request, *args, **kwargs):
@@ -205,12 +236,13 @@ def init_request(request, callselfmon=True):
                 }
                 return False, render_to_response('errorPage.html', data, content_type='text/html')
             request.session['requestParams'][p.lower()] = pval
-    setupSiteInfo(request)
+    # TODO global errors and site data
+    # setupSiteInfo(request)
 
-    with inilock:
-        if len(errorFields) == 0:
-            codes = ErrorCodes()
-            errorFields, errorCodes, errorStages = codes.getErrorCodes()
+    # with inilock:
+    #     if len(errorFields) == 0:
+    #         codes = ErrorCodes()
+    #         errorFields, errorCodes, errorStages = codes.getErrorCodes()
     return True, None
 
 
@@ -925,3 +957,11 @@ def setup_view(request, opmode='', hours=0, limit=-99, querytype='job', wildCard
         extraQueryString = '1=1'
 
     return (query, extraQueryString, LAST_N_HOURS_MAX)
+
+def escapeInput(strToEscape):
+    charsToEscape = '$%^&()[]{};<>?\`~+%\'\"'
+    charsToReplace = '_' * len(charsToEscape)
+    tbl = str.maketrans(charsToEscape, charsToReplace)
+    strToEscape = encoding.smart_str(strToEscape, encoding='ascii', errors='ignore')
+    strToEscape = strToEscape.translate(tbl)
+    return strToEscape

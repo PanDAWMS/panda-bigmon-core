@@ -1,23 +1,28 @@
-{% load staticfiles %}<!DOCTYPE html>
+{% load staticfiles %}
+<!DOCTYPE html>
 <!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
 <!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
 <head profile="http://www.w3.org/2005/10/profile">
 <link rel="icon" type="image/png" href='{% static "images/favicon.png" %}' />
 
-	<!-- Set the viewport width to device width for mobile -->
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Set the viewport width to device width for mobile -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-	<title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
+<title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
 
-<script src="{% static 'js/vendor/modernizr.js' %}"></script>
-<script src="{% static 'js/jquery/jquery-3.3.1.min.js' %}"></script>
-<script src="{% static 'js/vendor/what-input.js' %}"></script>
-<script src="{% static 'js/vendor/foundation.min.js' %}"></script>
-<script src="{% static 'js/d3.v3.min.js' %}"></script>
-<script src="{% static 'js/user-settings.js' %}"></script>
-<script src="{% static "/js/clipboardjs/clipboard.min.js" %}"></script>
-<script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>
+<script src="{% static 'upd/bower_components/jquery/dist/jquery.min.js' %}"></script>
+<script src="{% static 'upd/bower_components/what-input/dist/what-input.min.js' %}"></script>
+<script src="{% static 'upd/bower_components/foundation-sites/dist/js/foundation.min.js' %}"></script>
+{#<script src="{% static 'upd/bower_components/foundation-sites/js/foundation.js' %}"></script>#}
+{#<script src="{% static 'js/vendor/modernizr.js' %}"></script>#}
+{#<script src="{% static 'js/jquery/jquery-3.3.1.min.js' %}"></script>#}
+{#<script src="{% static 'js/vendor/what-input.js' %}"></script>#}
+{#<script src="{% static 'js/vendor/foundation.min.js' %}"></script>#}
+{#<script src="{% static 'js/d3.v3.min.js' %}"></script>#}
+{#<script src="{% static 'js/user-settings.js' %}"></script>#}
+{#<script src="{% static "/js/clipboardjs/clipboard.min.js" %}"></script>#}
+{#<script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>#}
 
 {% block extra_js_hepsw %}
 
@@ -26,83 +31,69 @@
 
 
 
-	<!-- Included CSS Files -->
+<!-- Included CSS Files -->
 
+<link rel="stylesheet" href="{% static "upd/css/app.css" %}">
 
-{% comment %}
-	<link rel="stylesheet" href="http://hepsoftware.org/static/css/normalize.css">
-	<link rel="stylesheet" href="http://hepsoftware.org/static/css/foundation.css">
-{% endcomment %}
-
-{#  <link rel="stylesheet" href="{% static "css/foundation/normalize.css" %}">#}
-
-<link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}">
-<link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}">
-<link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
-<link rel="stylesheet" href="{% static "css/main-nav.css" %}?version=1">
-<link rel="stylesheet" href="{% static "css/state-colors.css" %}?version=1">
-<link rel="stylesheet" href="{% static "css/table.css" %}?version=4">
-<link rel="stylesheet" href="{% static "css/d3js-plots.css" %}">
-<link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}">
-<link rel="stylesheet" href="{% static "css/page-sections.css" %}?version=3">
-
-
-	{% comment %} <link rel="stylesheet" href="{% static "css/bigpandamon.css" %}"> {% endcomment %}
+{#<link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}">#}
+{#<link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}">#}
+{#<link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">#}
+{#<link rel="stylesheet" href="{% static "css/main-nav.css" %}?version=1">#}
+{#<link rel="stylesheet" href="{% static "css/state-colors.css" %}?version=1">#}
+{#<link rel="stylesheet" href="{% static "css/table.css" %}?version=4">#}
+{#<link rel="stylesheet" href="{% static "css/d3js-plots.css" %}">#}
+{#<link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}">#}
+{#<link rel="stylesheet" href="{% static "css/page-sections.css" %}?version=3">#}
 
 
 
-	<script>
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-    ga('create', '{% block gacode %}UA-44940804-1{% endblock %}', '{% block gaweb %}pandawms.org{% endblock %}');
-    ga('send', 'pageview');
-	</script>
-
-
-<div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="large" id="main-menu-small">
-  <button class="menu-icon" type="button" data-toggle="main-menu"></button>
+<div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="medium" id="main-menu-small">
+  <button class="menu-icon" type="button" data-toggle="main-menu"><i class="fi-list"></i></button>
   <div class="title-bar-title">Menu</div>
 </div>
 
 <div class="canvas-settings off-canvas position-right" id="offCanvasRight" data-off-canvas>
-{% block settings-offcanvas %}
-
-{% endblock %}
-  <button type="button" class="save button" onclick="saveSettings()">Save & Reload</button>
+    {% block settings-offcanvas %}{% endblock %}
+    <button type="button" class="save button" onclick="saveSettings()">Save & Reload</button>
 </div>
 
-<div class="top-bar stacked-for-large" id="main-menu">
-  <div class="top-bar-title">
-    <span data-responsive-toggle="responsive-menu" data-hide-for="medium">
-      <button class="menu-icon" type="button" data-toggle></button>
-    </span>
-    <strong><a href="{% url 'index' %}" style="color: #fefefe !important; font-weight: normal">{% block title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}  PanDA {% endblock %}</a></strong>
-  </div>
+<div class="top-bar stacked-for-medium" id="main-menu">
     <div class="top-bar-left">
-      <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
+      <ul class="vertical medium-horizontal menu" data-responsive-menu="accordion medium-dropdown">
+        <li class="menu-text"><a href="{% url 'index' %}">{% block title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}  PanDA {% endblock %}</a></li>
         <li class="has-submenu">
         <a href="#">Dash</a>
         <ul class="submenu menu vertical">
             {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a href="{% url 'dashAnalysis' %}">Analysis jobs - Region view</a></li>
-                <li><a href="{% url 'dashProduction' %}?cloudview=world">Production jobs - World view</a></li>
-                <li><a href="{% url 'dashProduction' %}?cloudview=world&es=true">Event Service world view</a></li>
-                <li><a href="{% url 'dashProduction' %}?cloudview=region&es=true">Event Service region view</a></li>
-                <li><a href="{% url 'dashProduction' %}?cloudview=region">Production jobs - Region view</a></li>
+                <li>
+                    <a href="#">Analysis</a>
+                    <ul class="vertical menu">
+                        <li><a href="{% url 'dashAnalysis' %}">Jobs - Region view</a></li>
+                        <li><a href="{% url 'dashAnalysis' %}?mode=task">Tasks</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">Production</a>
+                    <ul class="vertical menu">
+                        <li><a href="{% url 'dashProduction' %}?cloudview=world">Jobs - World view</a></li>
+                        <li><a href="{% url 'dashProduction' %}?cloudview=region">Jobs - Region view</a></li>
+                        <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">Event Service</a>
+                    <ul class="vertical menu">
+                        <li><a href="{% url 'dashProduction' %}?cloudview=world&es=true">Jobs - World view</a></li>
+                        <li><a href="{% url 'dashProduction' %}?cloudview=region&es=true">Jobs - Region view</a></li>
+                    </ul>
+                </li>
                 <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
-                <li><a href="{% url 'dashAnalysis' %}?mode=task">Analysis tasks</a></li>
-                <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
                 <li><a href="{% url 'worldHS06s' %}">World HS06s</a></li>
                 <li><a href="{% url 'globalshares' %}">Global Shares</a></li>
                 <li><a href="{% url 'dashObjectStore' %}">Objectstore view</a></li>
                 <li><a href="{% url 'art-mainPage' %}">ART tests</a></li>
                 <li><a href="{% url 'dataCarouselleDashBoard' %}">Data Carousel</a></li>
                 <li><a href="{% url 'SITGlobalPage' %}">Nightlies and CI</a></li>
-
-
             {% else %}
                 <li><a href="{% url 'dashboard' %}">VOs, sites</a></li>
                 <li><a href="{% url 'workingGroups' %}">Working groups</a></li>
@@ -128,15 +119,15 @@
         <li class="has-submenu">
         <a href="#">Jobs</a>
         <ul class="submenu menu vertical">
-            <li><a href="{% url 'jobList' %}?display_limit=100">All</a></li>
+            <li><a href="{% url 'job_list' %}?display_limit=100">All</a></li>
             {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a href="{% url 'jobList' %}?jobtype=analysis&display_limit=100">Analysis</a></li>
-                <li><a href="{% url 'jobList' %}?jobtype=production&display_limit=100">Production</a></li>
-                <li><a href="{% url 'jobList' %}?jobtype=groupproduction&display_limit=100">Group production</a></li>
-                <li><a href="{% url 'jobList' %}?jobtype=eventservice&display_limit=100">Event service</a></li>
+                <li><a href="{% url 'job_list' %}?jobtype=analysis&display_limit=100">Analysis</a></li>
+                <li><a href="{% url 'job_list' %}?jobtype=production&display_limit=100">Production</a></li>
+                <li><a href="{% url 'job_list' %}?jobtype=groupproduction&display_limit=100">Group production</a></li>
+                <li><a href="{% url 'job_list' %}?jobtype=eventservice&display_limit=100">Event service</a></li>
                 <li><a href="{% url 'status_summary-index' %}">Status Summary</a></li>
             {% endif %}
-            <li><a href="{% url 'jobList' %}?jobtype=test&display_limit=100">Test</a></li>
+            <li><a href="{% url 'job_list' %}?jobtype=test&display_limit=100">Test</a></li>
         </ul>
         </li>
 
@@ -215,7 +206,7 @@
 
 
     <div class="top-bar-right">
-        <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
+        <ul class="dropdown medium-horizontal menu" data-responsive-menu="accordion medium-dropdown">
             {% if viewParams.MON_VO == 'ATLAS' %}
               {% if request.user and request.user.is_authenticated %}
               <script>
@@ -240,8 +231,8 @@
                }
                </script>
                 <li>
-                <div class="row collapse searchbox show-for-large">
-                  <div class="large-7 medium-7 columns">
+                <div class="grid-x collapse searchbox show-for-large">
+                  <div class="cell large-6">
                     <select id="searchselectid" name="objectstosearch" class="searchselect" onchange="getSelectValue();">
                         <option class="searchoption" value="pandaid">Job by ID</option>
                         <option class="searchoption" value="batchid">Jobs for batch ID</option>
@@ -258,12 +249,12 @@
                         <option class="searchoption" value="filename">File by name</option>
                       </select>
                   </div>
-                  <div class="large-4 medium-4 columns">
+                  <div class="cell large-5">
 
                   <input id="searchinputid" name="searchinputid" class="searchinput" type="text" placeholder="Enter...">
                   </div>
 
-                  <div class="large-1 medium-1 columns">
+                  <div class="cell large-1 medium-1">
                     <a onclick="bpsearch('searchselectid', 'searchinputid')" class="button prefix expand searchbutton"><i class="fi-magnifying-glass"></i></a>
                   </div>
                 </div>
@@ -336,10 +327,9 @@
 
             {% if request.user and request.user.is_authenticated %}
               <li class="has-submenu">
-                <a style="padding-bottom: 0.4rem; padding-top: 0.4rem" href="#"><i style="font-size: 2rem; vertical-align: middle" class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
+                <a href="#"><i class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
                 <ul class="submenu menu vertical">
-                    <li><span class="li-text loggeduser">{{ request.user.first_name }} {{ request.user.last_name }},</span>
-                    <li><span class="li-text loggeduser">{{ request.user.email }}</span>
+                    <li class="loggeduser">{{ request.user.first_name }} {{ request.user.last_name }}, {{ request.user.email }}
                     {% if request.user.is_tester %}
                         <li><a href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}">Go to jobs comparison</a>
                         <li><a onclick="clearComparisonList('job')">Clear jobs comparison list</a>
@@ -368,11 +358,11 @@
     </div>
 </div>
   <!-- End Header and Nav -->
-  <script>
-          $('#main-menu-small').foundation();
-          $('#offCanvasRight').foundation();
-          $('#main-menu').foundation();
-  </script>
+{#  <script>#}
+{#          $('#main-menu-small').foundation();#}
+{#          $('#offCanvasRight').foundation();#}
+{#          $('#main-menu').foundation();#}
+{#  </script>#}
 </head>
 <body>
   <!-- sub-title and bread-crumbs -->
@@ -541,21 +531,14 @@
 </script>
 
 
-{#  <script src="{% static 'js/app.js' %}"></script>#}
-  <script>
-    $(document).foundation();
-  </script>
+  <script src="{% static 'upd/js/app.js' %}"></script>
+
 
 </body>
 
  <!-- Footer -->
 
 <footer>
-    <div class="large-12 columns">
-        {% block bottom_copy %}
-
-<table width=1000 class="hide-for-small">
-<a name="doc"></a>
 
 {% block helptext %}
 
@@ -563,34 +546,29 @@
 
 <img src="{% url 'statpixel' %}?uid=" style="width:1px;height:1px;">
 
-{% if debuginfo %}
-<p>********** DEBUG:<br>
-<font size=-2>
-{{ debuginfo|safe }}
-<br><br>********** Request:<br>{{ request }}
-<br><br>********** Session:<br>
-{% for key, val in request.session.items %}
-{{ key }} = {{ val }} <br>
-{% endfor %}
-</font></p>
-{% endif %}
+{#{% if debuginfo %}#}
+{#<p>********** DEBUG:<br>#}
+{#{{ debuginfo|safe }}#}
+{#<br><br>********** Request:<br>{{ request }}#}
+{#<br><br>********** Session:<br>#}
+{#{% for key, val in request.session.items %}#}
+{#{{ key }} = {{ val }} <br>#}
+{#{% endfor %}#}
+{#</p>#}
+{#{% endif %}#}
 
-</td></tr>
-
-</table>
-<div class="row left-aligned">
-     <div class="small-4 left-aligned column">
-            <table borderwidth=0>
-            <tr><td valign="bottom">
-          <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PanDA"><img src="{% static "images/panda-verysmall-notext.png" %}"></a></td>
-          <td valign="bottom"><font size=-1>Brought to you by the PanDA team. <br> All times are in UTC. Page may be cached; check the build time above.
-          <br><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a></font></td>
-          </tr></table>
-     </div>
-    <div class="column small-8"></div>
-</div>
-        {% endblock %}
-      </div>
+<div class="grid-x bp-footer">
+    <div class="cell small-6">
+        <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PanDA"><img src="{% static "images/panda-logo-reversed.png" %}"></a>
     </div>
+    <div class="cell small-6">
+        Brought to you by the PanDA team.
+        <br> All times are in UTC. Page may be cached; check the build time above.
+        <br><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a>
+    </div>
+
+
+</div>
+
 </footer>
 </html>

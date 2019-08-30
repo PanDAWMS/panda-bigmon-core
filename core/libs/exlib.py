@@ -254,4 +254,9 @@ def make_timestamp_hist(timestamps_list):
 
     tm_hist = tm_df.resample(binning_rule).count().to_dict()['timestamp']
 
-    return tm_hist
+    # timestamps to str
+    tm_str_hist = {}
+    for key, value in tm_hist.items():
+        tm_str_hist[key.strftime(defaultDatetimeFormat)] = value
+
+    return tm_str_hist

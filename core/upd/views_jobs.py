@@ -14,7 +14,7 @@ from django.utils.cache import patch_response_headers
 from core.upd.init_view import login_customrequired, init_request, setup_view
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.self_monitor import end_self_monitor
-from core.libs.exlib import DateEncoder
+# from core.libs.exlib import DateEncoder
 from core.libs.exlib import produce_objects_sample, make_timestamp_hist, is_eventservice_request
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 from core.libs.url import remove_param, extensible_url
@@ -25,6 +25,15 @@ from core.settings.local import dbaccess, defaultDatetimeFormat
 
 _logger_error = logging.getLogger('bigpandamon-error')
 _logger_info = logging.getLogger('bigpandamon')
+
+
+class DateEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, 'isoformat'):
+            return obj.isoformat()
+        else:
+            return str(obj)
+        return json.JSONEncoder.default(self, obj)
 
 @login_customrequired
 def job_list(request, mode=None):
