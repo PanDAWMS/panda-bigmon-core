@@ -1,0 +1,39 @@
+{
+  "name": "motion-ui",
+  "version": "2.0.3",
+  "authors": [
+    "ZURB <foundation@zurb.com>"
+  ],
+  "description": "Sass library for creating transitions and animations.",
+  "main": [
+    "dist/motion-ui.css",
+    "dist/motion-ui.js"
+  ],
+  "keywords": [
+    "Sass",
+    "motion"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "_build",
+    "node_modules",
+    "bower_components",
+    "docs/src",
+    "test"
+  ],
+  "dependencies": {
+    "jquery": ">=2.2.0"
+  },
+  "homepage": "https://github.com/zurb/motion-ui",
+  "_release": "2.0.3",
+  "_resolution": {
+    "type": "version",
+    "tag": "v2.0.3",
+    "commit": "4c5708f70679a79d24dc3fea2adf745d6f3f230b"
+  },
+  "_source": "https://github.com/zurb/motion-ui.git",
+  "_target": "^2.0.3",
+  "_originalSource": "motion-ui",
+  "_direct": true
+}

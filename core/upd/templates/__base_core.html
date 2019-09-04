@@ -365,44 +365,54 @@
 {#  </script>#}
 </head>
 <body>
-  <!-- sub-title and bread-crumbs -->
 
-<div class="top-subbar">
-
-    <!-- sub-title -->
-    <div class="left" id="div-subtitle">
+<!-- sub-title and bread-crumbs -->
+<!-- sub-title -->
+<div class="grid-x align-middle top-subbar">
+    <div class="cell small-3 medium-2 large-1" id="">
         {% block subtitle %}Subtitle goes here{% endblock %}
-        {% block subtitle_params %} {% endblock %}
     </div>
-    <!-- End sub-title -->
 
-    <!-- bread-crumbs -->
-    <div class="right">
-    {#      {% block header-nav-chain %}#}
-          <span class="hide-for-small">
-              {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
-              {% if built != None %} {{ built }}, {% endif %}
-               <a id="reloadlink" href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a>
-          </span>
-    {#      {% endblock %}#}
+    <div class="cell auto">
+        {% block time_window %}{% endblock %}
+        <a class="button time-window" data-toggle="time-window-change-panel">Change</a>
     </div>
-    <!-- End bread-crumbs -->
 
-
+    <div class="cell medium-3 large-2 show-for-medium right">
+        {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
+        {% if built != None %} {{ built }}, {% endif %} <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}"><i class="fi-refresh"></i></a>
+    </div>
 </div>
-  <!-- End sub-title and bread-crumbs -->
+<!-- End sub-title -->
+<!-- End sub-title and bread-crumbs -->
+
+
+<div id="time-window-change-panel" class="time-window-change is-hidden" data-toggler="is-hidden">
+    <p>Here I am!!!</p>
+</div>
+
+
+<div class="grid-x tag-cloud-section">
+    <div class="cell small-3 medium-2 large-1 align-self-middle tag-cloud-title">
+        Filters:
+    </div>
+    <div class="cell auto tag-cloud">
+        {% block filter_cloud %}{% endblock %}
+    </div>
+</div>
+
+
 
 {% block left_menu %}{% endblock %}
 
-	{% block base_css %}{% endblock %}
-	{% block extra_css %}{% endblock %}
+{% block base_css %}{% endblock %}
+{% block extra_css %}{% endblock %}
 
-{#	<script src="{% static "js/vendor/custom.modernizr.js" %}"></script>#}
-	{% block base_js %}{% endblock %}
-	{% block extra_js %}{% endblock %}
+{% block base_js %}{% endblock %}
+{% block extra_js %}{% endblock %}
 
 
-<div class="large-12 columns" id="content">
+<div class="grid-container" id="content">
 {% block body %}
 
 {% endblock %}

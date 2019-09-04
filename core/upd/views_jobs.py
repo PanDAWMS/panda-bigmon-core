@@ -6,6 +6,7 @@ The main change is portioned delivery of information.
 """
 
 import json, logging
+from datetime import datetime
 
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
@@ -116,7 +117,8 @@ def job_list(request, mode=None):
             'timestamp_hist': timestamp_hist,
             'xurl': xurl,
             'time_locked_url': time_locked_url,
-            'warning': warning
+            'warning': warning,
+            'built': datetime.now().strftime("%H:%M:%S"),
         }
 
         setCacheEntry(request, "job_list_init", json.dumps(data, cls=DateEncoder), 60 * 20)

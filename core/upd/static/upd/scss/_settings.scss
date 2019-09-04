@@ -66,18 +66,21 @@
 //  54. Tooltip
 //  55. Top Bar
 //  56. Xy Grid
+//  57. Tag Cloud
 
 @import '../bower_components/foundation-sites/scss/util/util';
 
 // 1. Global
 // ---------
 
-$global-font-size: 14;
+$global-font-size: 14px;
 $global-width: 100%;
 $global-lineheight: 1.5;
 $dark-blue: #355681;
 $light-blue: #b0c4de;
 $green: #4ba173;
+$dark-green: #3b7f5b;
+$light-green: #bee0ce;
 $primary-color: $dark-blue;
 $foundation-palette: (
   primary: $dark-blue,
@@ -87,7 +90,7 @@ $foundation-palette: (
   alert: #cc4b37,
 );
 $light-gray: #e6e6e6;
-$medium-gray: #cacaca;
+$medium-gray: #dddddd;
 $dark-gray: #8a8a8a;
 $black: #0a0a0a;
 $white: #fefefe;
@@ -152,7 +155,7 @@ $block-grid-max: 8;
 $header-font-family: $body-font-family;
 $header-font-weight: $global-weight-normal;
 $header-font-style: normal;
-$header-font-size: 90%;
+$header-font-size: 100%;
 $font-family-monospace: Consolas, 'Liberation Mono', Courier, monospace;
 $header-color: inherit;
 $header-lineheight: 1.4;
@@ -303,7 +306,7 @@ $button-padding: 0.85em 1em;
 $button-margin: 0 0 $global-margin 0;
 $button-fill: solid;
 $button-background: $primary-color;
-$button-background-hover: scale-color($button-background, $lightness: -15%);
+$button-background-hover: $light-hover-black;
 $button-color: $white;
 $button-color-alt: $black;
 $button-radius: $global-radius;
@@ -494,7 +497,7 @@ $menu-nested-margin: $global-menu-nested-margin;
 $menu-items-padding: $global-button-padding;
 $menu-simple-margin: 1rem;
 $menu-item-color-active: $white;
-$menu-item-background-active: get-color(primary);
+$menu-item-background-active: $light-hover-black;
 $menu-icon-spacing: 0.25rem;
 $menu-state-back-compat: true;
 $menu-centered-back-compat: true;
@@ -879,8 +882,8 @@ $xy-grid: true;
 $grid-container: $global-width;
 $grid-columns: 12;
 $grid-margin-gutters: (
-  small: 20px,
-  medium: 30px
+  small: 10px,
+  medium: 20px
 );
 $grid-padding-gutters: $grid-margin-gutters;
 $grid-container-padding: $grid-padding-gutters;
@@ -888,3 +891,11 @@ $grid-container-max: $global-width;
 $xy-block-grid-max: 8;
 
 
+// 57. Tag Cloud
+// ------------
+
+$tag-cloud-tag-color: $dark-blue;
+$tag-cloud-type-color: $white;
+$tag-cloud-separator-color: $medium-gray;
+$tag-cloud-section-bg: $light-blue;
+$tag-cloud-section-width: 100%;

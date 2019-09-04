@@ -1,45 +1,60 @@
 {% extends "__base_core.html" %}
 {% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
-{% block subtitle %}PanDA jobs {{ viewParams.selection|safe }}
+{% block subtitle %}PanDA jobs
+{#    {{ viewParams.selection|safe }}#}
 {#{% if showwarn and njobs%}#}
 {#    <span style="color:#FF8040;"><b>Warning: limit {{joblimit}} per job table</b></span>#}
 {#{% endif %}#}
 {% endblock %}
 {#{% block subtitle_params %}{% endblock %}#}
-{% block body %}
 
-{{ viewParams.header }}
+
+{#{{ viewParams.header }}#}
+
+{% block time_window %}
+    Modification time window: <span class="time-window-range">{{ timerange.0 }}</span>
+    - <span class="time-window-range">{{ timerange.1 }}</span> UTC
+{% endblock %}
+
+{% if requestParams.length > 1 %}
+  {% block filter_cloud %}
+    {% for param, value in requestParams.items %}
+      <a class="tag-cloud-individual-tag" href="#">{{ param }} : {{ value }} <i class="fi fi-x-circle" aria-hidden="true"></i></a>
+    {% endfor %}
+    <a class="tag-cloud-individual-tag add" href="#">add <i class="fi fi-plus"></i></a>
+  {% endblock %}
+{% endif %}
 
 <b>{{ njobs }} jobs in this selection</b>
-{% if requestParams.transferringnotupdated %}<br><b>Jobs in transferring state for more than {{ requestParams.transferringnotupdated }} hours</b> {% endif %}
-{% if requestParams.statenotupdated %}<br><b>Jobs in <span class="{{ requestParams.jobstatus }}">{{ requestParams.jobstatus }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}
-{% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
-{% if requestParams.jobtype %}<br><b>Job type: {{ requestParams.jobtype }}</b> {% endif %}
-{% if requestParams.jobstatus %}<br><b>Job status: <span class={{requestParams.jobstatus}}>{{ requestParams.jobstatus }}</span></b> {% endif %}
-{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a> <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a></b> {% endif %}
-{% if user %}<br><b>User: <a href="{% url 'userInfo' user %}?display_limit=100">{{ user }}</a> <a href="{% url 'userInfo' user %}?display_limit=100"> Show user page</a></b> {% endif %}
-{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}      {{ taskname }}</a> </b> {% endif %}
-{% if requestParams.taskid and requestParams.taskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.taskid  %}">{{ requestParams.taskid }}      {{ taskname }}</a></b> {% endif %}
-{% if requestParams.jobsetid %}<br><b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}
-{% if requestParams.parentid %}<br><b>Parent ID: {{ requestParams.parentid }}</b> {% endif %}
-
-{% if requestParams.reqid %}<br><b>Request ID: {{ requestParams.reqid }}</b> {% endif %}
-{% if requestParams.reqid_from %}<br><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
-{% if requestParams.reqid_to %}<br><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
-
-{% if requestParams.jobname %}<br><b>Job name: {{ requestParams.jobname }}</b> {% endif %}
-{% if requestParams.priorityrange %}<br><b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}
-{% if requestParams.processingtype %}<br><b>Processing type: {{ requestParams.processingtype }}</b> {% endif %}
-{% if requestParams.transformation %}<br><b>Transformation: {{ requestParams.transformation }}</b> {% endif %}
-{% if requestParams.fileid and requestParams.jeditaskid and requestParams.datasetid %}
-<br><b>File ID: <a href="{% url 'fileInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}&fileid={{ requestParams.fileid }}">{{ requestParams.fileid }}</a></b>
-<br><b>Dataset ID: <a href="{% url 'datasetInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}">{{ requestParams.datasetid }}</a> </b>
-{% endif %}
+{#{% if requestParams.transferringnotupdated %}<br><b>Jobs in transferring state for more than {{ requestParams.transferringnotupdated }} hours</b> {% endif %}#}
+{#{% if requestParams.statenotupdated %}<br><b>Jobs in <span class="{{ requestParams.jobstatus }}">{{ requestParams.jobstatus }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}#}
+{#{% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}#}
+{#{% if requestParams.jobtype %}<br><b>Job type: {{ requestParams.jobtype }}</b> {% endif %}#}
+{#{% if requestParams.jobstatus %}<br><b>Job status: <span class={{requestParams.jobstatus}}>{{ requestParams.jobstatus }}</span></b> {% endif %}#}
+{#{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}#}
+{#{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a> <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a></b> {% endif %}#}
+{#{% if user %}<br><b>User: <a href="{% url 'userInfo' user %}?display_limit=100">{{ user }}</a> <a href="{% url 'userInfo' user %}?display_limit=100"> Show user page</a></b> {% endif %}#}
+{#{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}      {{ taskname }}</a> </b> {% endif %}#}
+{#{% if requestParams.taskid and requestParams.taskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.taskid  %}">{{ requestParams.taskid }}      {{ taskname }}</a></b> {% endif %}#}
+{#{% if requestParams.jobsetid %}<br><b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}#}
+{#{% if requestParams.parentid %}<br><b>Parent ID: {{ requestParams.parentid }}</b> {% endif %}#}
+{##}
+{#{% if requestParams.reqid %}<br><b>Request ID: {{ requestParams.reqid }}</b> {% endif %}#}
+{#{% if requestParams.reqid_from %}<br><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}#}
+{#{% if requestParams.reqid_to %}<br><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}#}
+{##}
+{#{% if requestParams.jobname %}<br><b>Job name: {{ requestParams.jobname }}</b> {% endif %}#}
+{#{% if requestParams.priorityrange %}<br><b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}#}
+{#{% if requestParams.processingtype %}<br><b>Processing type: {{ requestParams.processingtype }}</b> {% endif %}#}
+{#{% if requestParams.transformation %}<br><b>Transformation: {{ requestParams.transformation }}</b> {% endif %}#}
+{#{% if requestParams.fileid and requestParams.jeditaskid and requestParams.datasetid %}#}
+{#<br><b>File ID: <a href="{% url 'fileInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}&fileid={{ requestParams.fileid }}">{{ requestParams.fileid }}</a></b>#}
+{#<br><b>Dataset ID: <a href="{% url 'datasetInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}">{{ requestParams.datasetid }}</a> </b>#}
+{#{% endif %}#}
 <p>
 
-
+{% block body %}
 <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
 
 <div id="timeWindowChart" style="height: 300px; width: 100%;"></div>

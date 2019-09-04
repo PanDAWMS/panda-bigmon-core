@@ -1,6 +1,8 @@
-// BigPanDAmon specific style for main menu bar
+// BigPanDAmon specific style for main menu bar and top sub-bar
 @import "settings";
 
+// Prevent unstyled html blinking
+// ------------------------------
 .no-js {
   @include breakpoint(small only) {
     .top-bar {
@@ -15,10 +17,15 @@
   }
 }
 
+// Title bar for small screens
+// ------------------------------
 .title-bar a {
     text-decoration: none;
 }
 
+
+// Main menu
+// ------------------------------
 .top-bar {
   font-size: $header-font-size;
   a {
@@ -43,10 +50,13 @@
   }
 }
 
+
+// Search box in main menu
+// ------------------------------
 $searchbox-top-align: 0.6rem;
 .searchbox {
   width: 16rem;
-  font-size: $header-font-size;
+  font-size: 90%;
   margin: 0 1rem 0 1rem !important;
   .searchselect {
     background-color: $topbar-background;
@@ -104,6 +114,95 @@ $searchbox-top-align: 0.6rem;
   }
 }
 
+
+// Top sub bar
+// ------------------------------
+.top-subbar {
+  background-color: $medium-gray;
+  padding: 0.3rem 1rem;
+  font-size: 90%;
+
+  .cell {
+    display: flex;
+    flex-wrap: nowrap;
+    &.right {
+    text-align: right;
+    }
+  }
+
+  .time-window-range {
+    font-weight: bold;
+    padding: 0 0.3rem;
+  }
+
+  a.button.time-window {
+    margin: 0 0.7rem;
+    padding: 0.1rem 0.7rem;
+    text-decoration: none;
+    font-weight: bold;
+  }
+}
+
+// Time window change panel
+// ------------------------------
+
+.time-window-change {
+  //display: none;
+}
+
+// Filters in tag cloud style
+// ------------------------------
+.tag-cloud-section {
+  background: $tag-cloud-section-bg;
+  padding: 0.7rem 0.7rem;
+  margin: 0;
+  max-width: $tag-cloud-section-width;
+  font-size: 90%;
+}
+
+.tag-cloud-title {
+  text-transform: uppercase;
+  font-weight: bold;
+  color: $black;
+  padding: 0;
+}
+
+.tag-cloud {
+  margin: 0 0.7rem;
+  text-align: left;
+  list-style: none;
+
+  .tag-cloud-individual-tag {
+    border-radius: 5000px;
+    background: $tag-cloud-tag-color;
+    display: inline-block;
+    color: $tag-cloud-type-color;
+    margin: 0.3rem 0;
+    padding: 0 0.3rem;
+    text-transform: uppercase;
+    font-weight: bold;
+    text-decoration: none;
+
+    &.add {
+      background: $dark-green;
+    }
+
+    .fi {
+      margin-left: 7px;
+      color: $tag-cloud-type-color;
+    }
+
+    &:hover {
+      background: $light-hover-black;
+      transition: background-color .25s ease-in, color .25s ease-out;
+    }
+  }
+}
+
+
+
+// Footer
+// ------------------------------
 .bp-footer {
   padding: 1rem;
   background: $topbar-background;

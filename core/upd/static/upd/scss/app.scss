@@ -1,5 +1,6 @@
 //@import "../bower_components/foundation-sites/scss/settings/settings";
 @import "../bower_components/foundation-sites/scss/foundation";
+@import "../bower_components/motion-ui/src/motion-ui";
 @import "settings";
 @import "main-nav";
 @import "../bower_components/foundation-icon-fonts/foundation-icons";
@@ -16,11 +17,17 @@
 @include foundation-accordion;
 @include foundation-accordion-menu;
 @include foundation-xy-grid-classes;
+@include foundation-flex-classes;
 @include foundation-off-canvas;
 @include foundation-forms;
 @include foundation-button;
 @include foundation-button-group;
 @include foundation-visibility-classes;
+@include foundation-label;
+
+@include motion-ui-animations;
+@include motion-ui-transitions;
+
 
 
 
