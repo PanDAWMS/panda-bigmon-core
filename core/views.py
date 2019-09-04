@@ -808,7 +808,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 phi = int(mat.group(2))
                 query['jobsetid__gte'] = plo
                 query['jobsetid__lte'] = phi
-        elif param == 'user' or param == 'username':
+        elif param == 'user' or param == 'username' or param == 'produsername':
             if querytype == 'job':
                 query['produsername__icontains'] = request.session['requestParams'][param].strip()
         elif param in ('project',) and querytype == 'task':
