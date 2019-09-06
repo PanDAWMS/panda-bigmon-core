@@ -1,13 +1,14 @@
 import json, random
-
+from datetime import datetime, timedelta
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render_to_response
+from django.template import loader
 
 from core.views import login_customrequired, initRequest,  DateTimeEncoder
 
 from core.grafana.Grafana import Grafana
 from core.grafana.Query import Query
-from core.grafana.data_tranformation import stacked_hist
+from core.grafana.data_tranformation import stacked_hist, pledges_merging
 from core.grafana.Headers import Headers
 
 colours_codes = {
@@ -149,7 +150,6 @@ def chartjs(request):
     response = render_to_response('grafana-chartjs-plots.html', data, content_type='text/html')
     return response
 
-
 def grafana_api(request):
 
     valid, response = initRequest(request)
@@ -170,22 +170,26 @@ def grafana_api(request):
 
     q = Query()
     q = q.request_to_query(request)
-    sum_pledges = Query(agg_func='last', table='pledges', field='atlas', grouping='real_federation')
-
+    last_pledges = Query(agg_func='last', table='pledges_last', field='value', grouping='real_federation')
+    #/ api / datasources / proxy / 9267 / query?db = monit_production_rebus
     #sum_pledges = Query(agg_func='sum', table='pledges', field='atlas', grouping='time(1m),real_federation')
     try:
-        result = Grafana().get_data(q)
+        if q.table == 'pledges_last' or q.table == 'pledges_sum' or q.table == 'pledges_hs06sec':
+            result = Grafana(database='monit_production_rebus').get_data(q)
+        else:
+            result = Grafana().get_data(q)
         #last_pledges = Grafana().get_data(last_pledges)
-        sum_pledges = Grafana().get_data(sum_pledges)
+
         if 'type' in request.session['requestParams'] and request.session['requestParams']['type'] == 'd3js':
             data = stacked_hist(result['results'][0]['series'], group_by, split_series)
             return JsonResponse(data)
         if 'type' in request.session['requestParams'] and request.session['requestParams']['type'] == 'chartjs':
+            last_pledges = Grafana(database='monit_production_rebus').get_data(last_pledges)
             data = {}
             data = stacked_hist(result['results'][0]['series'], group_by, split_series)
-            sum_pledges = stacked_hist(sum_pledges['results'][0]['series'], 'real_federation')
+            last_pledges = stacked_hist(last_pledges['results'][0]['series'], 'real_federation')
             lables = list(data.keys())
-            pledges_keys = list(sum_pledges.keys())
+            pledges_keys = list(last_pledges.keys())
             datasets = []
             elements = {}
 
@@ -193,7 +197,7 @@ def grafana_api(request):
                 for element in data[object]:
                     elements.setdefault(element,[]).append(data[object][element])
                 if object in pledges_keys:
-                    elements.setdefault('pledges',[]).append(sum_pledges[object]['all']*7*24*60*60)
+                    elements.setdefault('pledges',[]).append(last_pledges[object]['all']*7*24*60*60)
                 else:
                     elements.setdefault('pledges', []).append(0)
 
@@ -212,8 +216,9 @@ def grafana_api(request):
             data = {'labels': lables, 'datasets': datasets}
             return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
         if 'export' in request.session['requestParams']:
-            if request.session['requestParams']['export'] =='csv':
+            if request.session['requestParams']['export'] == 'csv':
                 data = stacked_hist(result['results'][0]['series'], group_by, split_series)
+
                 import csv
                 import copy
                 response = HttpResponse(content_type='text/csv')
@@ -235,6 +240,7 @@ def grafana_api(request):
 
                 return response
 
+
     except Exception as ex:
         result.append(ex)
     return JsonResponse(result)
@@ -248,3 +254,45 @@ def grab_children(data,parent=None,child=None):
         else:
             child.append([parent,key,value])
     return child
+
+def pledges(request):
+    valid, response = initRequest(request)
+    if 'date_from' in request.session['requestParams'] and 'date_to' in request.session['requestParams']:
+        starttime = request.session['requestParams']['date_from']
+        endtime = request.session['requestParams']['date_to']
+        date_to = datetime.strptime(endtime,"%d.%m.%Y %H:%M:%S")
+        date_from = datetime.strptime(starttime, "%d.%m.%Y %H:%M:%S")
+        total_seconds = (date_to-date_from).total_seconds()
+    else:
+        timebefore = timedelta(days=7)
+        endtime = (datetime.utcnow()).replace(minute=00, hour=00, second=00, microsecond=000)
+        starttime = (endtime - timebefore).replace(minute=00, hour=00, second=00, microsecond=000)
+        endtime = endtime.strftime("%d.%m.%Y %H:%M:%S")
+        starttime = starttime.strftime("%d.%m.%Y %H:%M:%S")
+        total_seconds = (starttime-endtime).total_seconds()
+
+    if 'type' in request.session['requestParams'] and request.session['requestParams']\
+        ['type'] == 'federation':
+        hs06sec = Query(agg_func='sum', table='completed', field='sum_hs06sec',
+                            grouping='time,dst_federation', starttime=starttime, endtime=endtime)
+        hs06sec = Grafana().get_data(hs06sec)
+
+        pledges_sum = Query(agg_func='sum', table='pledges_hs06sec', field='value',
+                            grouping='time,real_federation', starttime=starttime, endtime=endtime)
+        pledges_sum = Grafana(database='monit_production_rebus').get_data(pledges_sum)
+        pledges_dict, pledges_list = pledges_merging(hs06sec, pledges_sum, total_seconds)
+        return HttpResponse(json.dumps(pledges_list), content_type='text/json')
+    elif 'type' in request.session['requestParams'] and request.session['requestParams']\
+        ['type'] == 'country':
+        hs06sec = Query(agg_func='sum', table='completed', field='sum_hs06sec',
+                            grouping='time,dst_federation,dst_country', starttime=starttime, endtime=endtime)
+        hs06sec = Grafana().get_data(hs06sec)
+
+        pledges_sum = Query(agg_func='sum', table='pledges_hs06sec', field='value',
+                            grouping='time,real_federation,country', starttime=starttime, endtime=endtime)
+        pledges_sum = Grafana(database='monit_production_rebus').get_data(pledges_sum)
+        pledges_dict, pledges_list = pledges_merging(hs06sec, pledges_sum, total_seconds, type='dst_country')
+        return HttpResponse(json.dumps(pledges_list), content_type='text/json')
+    else:
+        t = loader.get_template('grafana-pledges.html')
+        return HttpResponse(t.render({"date_from":starttime, "date_to":endtime, "seconds":total_seconds}, request), content_type='text/html')

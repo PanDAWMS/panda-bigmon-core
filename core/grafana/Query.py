@@ -1,31 +1,32 @@
 from datetime import datetime, timedelta
 
+
 class Query(object):
-    def __init__(self, agg_func = 'sum', field = 'sum_count', table = 'submitted', bin ='1h',
-                 dst_experiment_site = ".*",
-                 dst_cloud  = ".*",
-                 dst_country  = ".*",
-                 dst_federation  = ".*",
-                 adcactivity  = ".*",
-                 resourcesreporting  = ".*",
-                 actualcorecount  = ".*",
-                 resource_type  = ".*",
-                 workinggroup  = ".*",
-                 inputfiletype  = ".*",
-                 eventservice  = ".*",
-                 inputfileproject  = ".*",
-                 outputproject  = ".*",
-                 jobstatus  = ".*",
-                 computingsite  = ".*",
-                 gshare  = ".*",
-                 dst_tier  = ".*",
-                 processingtype  = ".*",
-                 nucleus  = ".*",
-                 error_category = ".*",
-                 starttime = "",
-                 endtime = "",
-                 grouping = ['adcactivity'],
-                 days = 7
+    def __init__(self, agg_func='sum', field='sum_count', table='submitted', bin='1h',
+                 dst_experiment_site=".*",
+                 dst_cloud=".*",
+                 dst_country=".*",
+                 dst_federation=".*",
+                 adcactivity=".*",
+                 resourcesreporting=".*",
+                 actualcorecount=".*",
+                 resource_type=".*",
+                 workinggroup=".*",
+                 inputfiletype=".*",
+                 eventservice=".*",
+                 inputfileproject=".*",
+                 outputproject=".*",
+                 jobstatus=".*",
+                 computingsite=".*",
+                 gshare=".*",
+                 dst_tier=".*",
+                 processingtype=".*",
+                 nucleus=".*",
+                 error_category=".*",
+                 starttime="",
+                 endtime="",
+                 grouping=['adcactivity'],
+                 days=7
                  ):
 
         self.agg_func = agg_func
@@ -57,11 +58,16 @@ class Query(object):
         if ',' in grouping:
             newgroups = ''
             groups = grouping.split(',')
-            for group in groups:
-                if group != 'time':
-                    newgroups += '"' + group + '"' + ','
-            newgroups = newgroups[:-1]
-            self.grouping = newgroups
+            if ('time' in groups and 'real_federation' in groups) or ('time' in groups and 'dst_federation') \
+                    or ('time' in groups and 'dst_country')  or ('time' in groups and 'country'):
+                self.grouping = str(grouping).replace('time','time({0})'.format(self.bin))
+            else:
+                for group in groups:
+                    if group != 'time':
+                        newgroups += '"' + group + '"' + ','
+
+                newgroups = newgroups[:-1]
+                self.grouping = newgroups
         else:
             self.grouping = '"' + str(grouping) + '"'
         self.days = days
@@ -77,8 +83,12 @@ class Query(object):
             return "atlasjm_current"
         if table == "finalising":
             return "atlasjm_finalising"
-        if table == "pledges":
-            return "pledges"
+        if table == "pledges_last":
+            return "pledges_last"
+        if table == "pledges_sum":
+            return "pledges_sum"
+        if table == "pledges_hs06sec":
+            return "pledges_hs06sec"
 
     def request_to_query(self, request):
         if 'agg_func' in request.session['requestParams']:
@@ -199,10 +209,10 @@ class Query(object):
                         newgroups += '"' + group + '"' + ','
                 newgroups = newgroups[:-1]
             else:
-                newgroups = '"' + str(request.session['requestParams']['groupby']) +'"'
+                newgroups = '"' + str(request.session['requestParams']['groupby']) + '"'
             self.grouping = newgroups
         else:
-            self.grouping ='time(1h), "adcactivity"'
+            self.grouping = 'time(1h), "adcactivity"'
         return self
 
 

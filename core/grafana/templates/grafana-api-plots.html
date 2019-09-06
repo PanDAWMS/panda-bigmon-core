@@ -57,11 +57,9 @@
 <div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
 <p>
 
-
 <div class="d3splot" id="plots" style="float:left"></div>
 
 <script>
-
 function onSubElementChoice() {
     var warning = document.getElementById ("warning");
     warning.style.display = '';
@@ -95,13 +93,5 @@ function go() {
         }
     });
 }
-
-
 </script>
-
-
-
-
-
-
 {% endblock %}
