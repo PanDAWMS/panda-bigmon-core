@@ -62,7 +62,7 @@ def pledges_merging(data, pledges, coeff, type='dst_federation'):
                 #     {type: pledges, "hs06sec": pledges_dict[pledges]['hs06sec'],
                 #                    'pledges': pledges_dict[pledges]['pledges']})
                 pledges_list.append({type:pledges, "hs06sec":int(round(float(pledges_dict[pledges]['hs06sec'])/86400, 2)),
-                                      'pledges': round(float(pledges_dict[pledges]['pledges'])/86400, 2)})
+                                      'pledges': int(round(float(pledges_dict[pledges]['pledges'])/86400, 2))})
     if type == 'dst_country':
         pl_type = 'country'
         for fed in data['results'][0]['series']:
@@ -112,5 +112,5 @@ def pledges_merging(data, pledges, coeff, type='dst_federation'):
                 #     {type: pledges, "hs06sec": pledges_dict[pledges]['hs06sec'],
                 #                    'pledges': pledges_dict[pledges]['pledges']})
                 pledges_list.append({type:pledges, "hs06sec":int(round(float(pledges_dict[pledges]['hs06sec'])/86400, 2)),
-                                      'pledges': round(float(pledges_dict[pledges]['pledges'])/86400, 2)})
+                                      'pledges': int(round(float(pledges_dict[pledges]['pledges'])/86400, 2))})
     return pledges_dict, pledges_list
