@@ -34,18 +34,19 @@ def stacked_hist(series, group_by=None, split_series=None):
     return plot_data
 
 
-def pledges_merging(data, pledges, coeff, type='dst_federation'):
-    pledges_dict = {}
-    pledges_list = []
+def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
+
     if type == 'dst_federation':
         pl_type = 'real_federation'
         for fed in data['results'][0]['series']:
             fed['values'][-1][1] = 0
-            pledges_dict[fed['tags'][type]] = {}
-            pledges_dict[fed['tags'][type]]["hs06sec"] = 0
-            pledges_dict[fed['tags'][type]]["pledges"] = 0
+            if fed['tags'][type] not in pledges_dict:
+                pledges_dict[fed['tags'][type]] = {}
+                pledges_dict[fed['tags'][type]]["hs06sec"] = 0
+                pledges_dict[fed['tags'][type]]["pledges"] = 0
             for value in fed['values']:
                 pledges_dict[fed['tags'][type]]['hs06sec'] += value[1]
+
         for fed in pledges['results'][0]['series']:
             fed['values'][-1][1] = 0
             if fed['tags'][pl_type] not in pledges_dict:
@@ -54,20 +55,12 @@ def pledges_merging(data, pledges, coeff, type='dst_federation'):
                 pledges_dict[fed['tags'][pl_type]]["pledges"] = 0
             for value in fed['values']:
                 pledges_dict[fed['tags'][pl_type]]['pledges'] += value[1]
-        for pledges in pledges_dict:
-            if pledges == 'NULL':
-                continue
-            else:
-                # pledges_list.append(
-                #     {type: pledges, "hs06sec": pledges_dict[pledges]['hs06sec'],
-                #                    'pledges': pledges_dict[pledges]['pledges']})
-                pledges_list.append({type:pledges, "hs06sec":int(round(float(pledges_dict[pledges]['hs06sec'])/86400, 2)),
-                                      'pledges': int(round(float(pledges_dict[pledges]['pledges'])/86400, 2))})
+
     if type == 'dst_country':
         pl_type = 'country'
         for fed in data['results'][0]['series']:
+            fed['values'][-1][1] = 0
             if fed['tags'][type] not in pledges_dict:
-                fed['values'][-1][1] = 0
                 if fed['tags']['dst_federation'] in ('CH-CERN'):
                     fed['tags'][type] = 'CERN'
                 pledges_dict[fed['tags'][type]] = {}
@@ -76,13 +69,12 @@ def pledges_merging(data, pledges, coeff, type='dst_federation'):
                 for value in fed['values']:
                     pledges_dict[fed['tags'][type]]['hs06sec'] += value[1]
             else:
-                fed['values'][-1][1] = 0
                 for value in fed['values']:
                     pledges_dict[fed['tags'][type]]['hs06sec'] += value[1]
 
         for fed in pledges['results'][0]['series']:
+            fed['values'][-1][1] = 0
             if fed['tags'][pl_type] not in pledges_dict:
-                fed['values'][-1][1] = 0
                 # fed['values'][1] = fed['values'][2]
                 # pledges_dict[fed['tags'][pl_type]]['pledges'] = 0
                 if fed['tags'][pl_type] == 'Latin America':
@@ -93,24 +85,13 @@ def pledges_merging(data, pledges, coeff, type='dst_federation'):
                     pledges_dict[fed['tags'][pl_type]] = {}
                     pledges_dict[fed['tags'][pl_type]]["hs06sec"] = 0
                     pledges_dict[fed['tags'][pl_type]]["pledges"] = 0
-
                 for value in fed['values']:
                     pledges_dict[fed['tags'][pl_type]]['pledges'] += value[1]
             else:
-                fed['values'][-1][1] = 0
                 if fed['tags'][pl_type] == 'Latin America':
                     fed['tags'][pl_type] = 'Chile'
                 if fed['tags']['real_federation'] in ('CH-CERN'):
                     fed['tags'][pl_type] = 'CERN'
                 for value in fed['values']:
                     pledges_dict[fed['tags'][pl_type]]['pledges'] += value[1]
-        for pledges in pledges_dict:
-            if pledges == 'NULL':
-                continue
-            else:
-                # pledges_list.append(
-                #     {type: pledges, "hs06sec": pledges_dict[pledges]['hs06sec'],
-                #                    'pledges': pledges_dict[pledges]['pledges']})
-                pledges_list.append({type:pledges, "hs06sec":int(round(float(pledges_dict[pledges]['hs06sec'])/86400, 2)),
-                                      'pledges': int(round(float(pledges_dict[pledges]['pledges'])/86400, 2))})
-    return pledges_dict, pledges_list
+    return pledges_dict

@@ -26,7 +26,7 @@ class Grafana(object):
     def get_query(self, object):
         query_object = object
         if query_object.endtime == "" and query_object.starttime == "":
-            oneday = timedelta(days=1)
+            delta = timedelta(minute=1)
             timebefore = timedelta(days=query_object.days)
 
             endtime = (datetime.utcnow()).replace(minute=00, hour=00, second=00, microsecond=000)
@@ -36,6 +36,10 @@ class Grafana(object):
             endMillisec = int(endtime.strftime("%s")) * 1000
         else:
             startD = datetime.strptime(query_object.starttime, '%d.%m.%Y %H:%M:%S')
+            # if '00:00:00' in query_object.endtime:
+            #     delta = timedelta(minutes=1)
+            # else:
+            #     delta = timedelta(minutes=0)
             endD = datetime.strptime(query_object.endtime, '%d.%m.%Y %H:%M:%S')
 
             # localtime = pytz.timezone('Europe/Zurich')
@@ -102,7 +106,7 @@ class Grafana(object):
             query = re.sub(' +', ' ', query)
             return query
         elif query_object.table == "pledges_hs06sec":
-            query_object.agg_func = 'sum'
+            query_object.agg_func = 'mean'
             coefficient = 3600
             if '.*' not in query_object.dst_country:
                 dst_country = '(' + query_object.dst_country + ')'
@@ -120,7 +124,6 @@ class Grafana(object):
                 coefficient = 3600*24*7
             elif query_object.bin == '30d':
                 coefficient = 3600*24*30
-
             # if 'time' in query_object.grouping:
             #     query_object.grouping = re.sub('\d+',str(6),query_object.grouping)
             query = \

@@ -263,6 +263,23 @@ def pledges(request):
         date_to = datetime.strptime(endtime,"%d.%m.%Y %H:%M:%S")
         date_from = datetime.strptime(starttime, "%d.%m.%Y %H:%M:%S")
         total_seconds = (date_to-date_from).total_seconds()
+        date_list = []
+        if (date_to-date_from).days > 30:
+            n = 20
+            while True:
+                start_date = date_from
+                end_date = (start_date + timedelta(days=n))
+                #end_date = end_date - timedelta(minutes=1)
+                if end_date >= date_to:
+                    end_date = date_to #- timedelta(minutes=1)
+                    date_list.append([start_date.strftime("%d.%m.%Y %H:%M:%S"),end_date.strftime("%d.%m.%Y %H:%M:%S")])
+                    break
+                else:
+                    date_list.append([start_date.strftime("%d.%m.%Y %H:%M:%S"), end_date.strftime("%d.%m.%Y %H:%M:%S")])
+                    date_from = end_date #+ timedelta(minutes=1)
+        else:
+            date_list.append([starttime,endtime])
+
     else:
         timebefore = timedelta(days=7)
         endtime = (datetime.utcnow()).replace(minute=00, hour=00, second=00, microsecond=000)
@@ -273,25 +290,73 @@ def pledges(request):
 
     if 'type' in request.session['requestParams'] and request.session['requestParams']\
         ['type'] == 'federation':
-        hs06sec = Query(agg_func='sum', table='completed', field='sum_hs06sec',
-                            grouping='time,dst_federation', starttime=starttime, endtime=endtime)
-        hs06sec = Grafana().get_data(hs06sec)
+        pledges_dict = {}
+        pledges_list = []
+        if len(date_list)>1:
+            for date in date_list:
+                hs06sec = Query(agg_func='sum', table='completed', field='sum_hs06sec',
+                                grouping='time,dst_federation', starttime=date[0], endtime=date[1])
 
-        pledges_sum = Query(agg_func='sum', table='pledges_hs06sec', field='value',
-                            grouping='time,real_federation', starttime=starttime, endtime=endtime)
-        pledges_sum = Grafana(database='monit_production_rebus').get_data(pledges_sum)
-        pledges_dict, pledges_list = pledges_merging(hs06sec, pledges_sum, total_seconds)
+                hs06sec = Grafana().get_data(hs06sec)
+
+                pledges_sum = Query(agg_func='mean', table='pledges_hs06sec', field='value',
+                                grouping='time,real_federation', starttime=date[0], endtime=date[1])
+                pledges_sum = Grafana(database='monit_production_rebus').get_data(pledges_sum)
+                pledges_dict = pledges_merging(hs06sec, pledges_sum, total_seconds,
+                                                             pledges_dict)
+        else:
+            hs06sec = Query(agg_func='sum', table='completed', field='sum_hs06sec',
+                            grouping='time,dst_federation', starttime=date_list[0][0], endtime=date_list[0][1])
+
+            hs06sec = Grafana().get_data(hs06sec)
+
+            pledges_sum = Query(agg_func='mean', table='pledges_hs06sec', field='value',
+                                grouping='time,real_federation', starttime=date_list[0][0], endtime=date_list[0][1])
+            pledges_sum = Grafana(database='monit_production_rebus').get_data(pledges_sum)
+            pledges_dict = pledges_merging(hs06sec, pledges_sum, total_seconds,
+                                                         pledges_dict)
+        for pledges in pledges_dict:
+            if pledges == 'NULL':
+                continue
+            else:
+                # pledges_list.append(
+                #     {type: pledges, "hs06sec": pledges_dict[pledges]['hs06sec'],
+                #                    'pledges': pledges_dict[pledges]['pledges']})
+                pledges_list.append({"dst_federation":pledges, "hs06sec":int(round(float(pledges_dict[pledges]['hs06sec'])/86400, 2)),
+                                      'pledges': int(round(float(pledges_dict[pledges]['pledges'])/86400, 2))})
         return HttpResponse(json.dumps(pledges_list), content_type='text/json')
     elif 'type' in request.session['requestParams'] and request.session['requestParams']\
         ['type'] == 'country':
-        hs06sec = Query(agg_func='sum', table='completed', field='sum_hs06sec',
-                            grouping='time,dst_federation,dst_country', starttime=starttime, endtime=endtime)
-        hs06sec = Grafana().get_data(hs06sec)
+        pledges_dict = {}
+        pledges_list = []
+        if len(date_list)>1:
+            for date in date_list:
+                hs06sec = Query(agg_func='sum', table='completed', field='sum_hs06sec',
+                                    grouping='time,dst_federation,dst_country', starttime=date[0], endtime=date[1])
+                hs06sec = Grafana().get_data(hs06sec)
 
-        pledges_sum = Query(agg_func='sum', table='pledges_hs06sec', field='value',
-                            grouping='time,real_federation,country', starttime=starttime, endtime=endtime)
-        pledges_sum = Grafana(database='monit_production_rebus').get_data(pledges_sum)
-        pledges_dict, pledges_list = pledges_merging(hs06sec, pledges_sum, total_seconds, type='dst_country')
+                pledges_sum = Query(agg_func='mean', table='pledges_hs06sec', field='value',
+                                    grouping='time,real_federation,country', starttime=date[0], endtime=date[1])
+                pledges_sum = Grafana(database='monit_production_rebus').get_data(pledges_sum)
+                pledges_dict = pledges_merging(hs06sec, pledges_sum, total_seconds, pledges_dict,
+                                                              type='dst_country')
+        else:
+            hs06sec = Query(agg_func='sum', table='completed', field='sum_hs06sec',
+                            grouping='time,dst_federation,dst_country', starttime=date_list[0][0], endtime=date_list[0][1])
+
+            hs06sec = Grafana().get_data(hs06sec)
+
+            pledges_sum = Query(agg_func='mean', table='pledges_hs06sec', field='value',
+                                grouping='time,real_federation,country', starttime=date_list[0][0], endtime=date_list[0][1])
+            pledges_sum = Grafana(database='monit_production_rebus').get_data(pledges_sum)
+            pledges_dict = pledges_merging(hs06sec, pledges_sum, total_seconds,
+                                                         pledges_dict, type='dst_country')
+        for pledges in pledges_dict:
+            if pledges == 'NULL':
+                continue
+            else:
+                pledges_list.append({"dst_country":pledges, "hs06sec":int(round(float(pledges_dict[pledges]['hs06sec'])/86400, 2)),
+                                      'pledges': int(round(float(pledges_dict[pledges]['pledges'])/86400, 2))})
         return HttpResponse(json.dumps(pledges_list), content_type='text/json')
     else:
         t = loader.get_template('grafana-pledges.html')
