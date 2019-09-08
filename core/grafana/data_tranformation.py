@@ -39,7 +39,7 @@ def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
     if type == 'dst_federation':
         pl_type = 'real_federation'
         for fed in data['results'][0]['series']:
-            fed['values'][-1][1] = 0
+            #fed['values'][-1][1] = 0
             if fed['tags'][type] not in pledges_dict:
                 pledges_dict[fed['tags'][type]] = {}
                 pledges_dict[fed['tags'][type]]["hs06sec"] = 0
@@ -48,7 +48,7 @@ def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
                 pledges_dict[fed['tags'][type]]['hs06sec'] += value[1]
 
         for fed in pledges['results'][0]['series']:
-            fed['values'][-1][1] = 0
+            #fed['values'][-1][1] = 0
             if fed['tags'][pl_type] not in pledges_dict:
                 pledges_dict[fed['tags'][pl_type]] = {}
                 pledges_dict[fed['tags'][pl_type]]["hs06sec"] = 0
@@ -58,8 +58,11 @@ def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
 
     if type == 'dst_country':
         pl_type = 'country'
+
         for fed in data['results'][0]['series']:
-            fed['values'][-1][1] = 0
+            #fed['values'][-1][1] = 0
+            if fed['tags'][type] == "United States of America":
+                fed['tags'][type] = "USA"
             if fed['tags'][type] not in pledges_dict:
                 if fed['tags']['dst_federation'] in ('CH-CERN'):
                     fed['tags'][type] = 'CERN'
@@ -69,11 +72,13 @@ def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
                 for value in fed['values']:
                     pledges_dict[fed['tags'][type]]['hs06sec'] += value[1]
             else:
+                if fed['tags']['dst_federation'] in ('CH-CERN'):
+                    fed['tags'][type] = 'CERN'
                 for value in fed['values']:
                     pledges_dict[fed['tags'][type]]['hs06sec'] += value[1]
 
         for fed in pledges['results'][0]['series']:
-            fed['values'][-1][1] = 0
+            #fed['values'][-1][1] = 0
             if fed['tags'][pl_type] not in pledges_dict:
                 # fed['values'][1] = fed['values'][2]
                 # pledges_dict[fed['tags'][pl_type]]['pledges'] = 0
@@ -85,8 +90,8 @@ def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
                     pledges_dict[fed['tags'][pl_type]] = {}
                     pledges_dict[fed['tags'][pl_type]]["hs06sec"] = 0
                     pledges_dict[fed['tags'][pl_type]]["pledges"] = 0
-                for value in fed['values']:
-                    pledges_dict[fed['tags'][pl_type]]['pledges'] += value[1]
+                    for value in fed['values']:
+                        pledges_dict[fed['tags'][pl_type]]['pledges'] += value[1]
             else:
                 if fed['tags'][pl_type] == 'Latin America':
                     fed['tags'][pl_type] = 'Chile'

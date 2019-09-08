@@ -269,15 +269,16 @@ def pledges(request):
             while True:
                 start_date = date_from
                 end_date = (start_date + timedelta(days=n))
-                #end_date = end_date - timedelta(minutes=1)
+                end_date = end_date - timedelta(minutes=1)
                 if end_date >= date_to:
-                    end_date = date_to #- timedelta(minutes=1)
+                    end_date = date_to - timedelta(minutes=1)
                     date_list.append([start_date.strftime("%d.%m.%Y %H:%M:%S"),end_date.strftime("%d.%m.%Y %H:%M:%S")])
                     break
                 else:
                     date_list.append([start_date.strftime("%d.%m.%Y %H:%M:%S"), end_date.strftime("%d.%m.%Y %H:%M:%S")])
-                    date_from = end_date #+ timedelta(minutes=1)
+                    date_from = end_date + timedelta(minutes=1)
         else:
+            endtime = (date_to - timedelta(minutes=1)).strftime("%d.%m.%Y %H:%M:%S")
             date_list.append([starttime,endtime])
 
     else:
@@ -285,6 +286,7 @@ def pledges(request):
         endtime = (datetime.utcnow()).replace(minute=00, hour=00, second=00, microsecond=000)
         starttime = (endtime - timebefore).replace(minute=00, hour=00, second=00, microsecond=000)
         total_seconds = (starttime - endtime).total_seconds()
+        endtime = endtime - timedelta(minutes=1)
         endtime = endtime.strftime("%d.%m.%Y %H:%M:%S")
         starttime = starttime.strftime("%d.%m.%Y %H:%M:%S")
 
