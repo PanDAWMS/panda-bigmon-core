@@ -147,8 +147,93 @@ $searchbox-top-align: 0.6rem;
 // ------------------------------
 
 .time-window-change {
-  //display: none;
+  background-color: $light-hover-black;
+  border: none;
+
+  > a {
+    text-decoration: none;
+    font-weight: bold;
+    margin: 0.7rem 0.7rem;
+    padding: 0.3rem 0.7rem;
+  }
 }
+
+.tabbed-time-window-change.tabs {
+  background-color: $light-black;
+  border: none;
+
+  .tabs-title > a {
+    color: $white;
+    padding: 0.7rem 1rem;
+    background: $light-black;
+    text-decoration: none;
+    font-size: inherit;
+
+    &:focus, &[aria-selected='true'] {
+      color: $white;
+      background: $light-hover-black;
+      text-decoration: underline;
+    }
+
+    &:hover {
+      color: $white;
+      background: $light-hover-black;
+    }
+  }
+}
+
+
+
+.tabbed-time-window-change-content.tabs-content {
+  background-color: $light-black;
+  border: none;
+
+  .tabs-panel {
+    background-color: $light-black;
+    border: none;
+    color: $white;
+    padding: 0.7rem 0.3rem;
+
+    &.is-active {
+      background-color: $light-hover-black;
+    }
+
+    ul.no-bullet {
+      margin: 0;
+    }
+
+    label {
+      font-size: inherit;
+      color: $white;
+      background: $light-hover-black;
+      padding-left: 0.3rem;
+      margin: 0;
+    }
+
+    input[type=radio] {
+      margin: 0.3rem;
+    }
+
+    input[type=number], input[type=text] {
+      background-color: #444444;
+      color: $white;
+      border: 1px solid #444444;
+      border-radius: 0.2rem;
+      height: 1.6rem;
+      margin: 0;
+      font-size: $header-font-size;
+
+      &:focus {
+        outline: none;
+        border: 1px solid #8a8a8a;
+        background-color: $topbar-background;
+        box-shadow: none;
+      }
+    }
+  }
+}
+
+
 
 // Filters in tag cloud style
 // ------------------------------

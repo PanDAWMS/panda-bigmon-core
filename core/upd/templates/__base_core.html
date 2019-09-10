@@ -14,6 +14,7 @@
 <script src="{% static 'upd/bower_components/jquery/dist/jquery.min.js' %}"></script>
 <script src="{% static 'upd/bower_components/what-input/dist/what-input.min.js' %}"></script>
 <script src="{% static 'upd/bower_components/foundation-sites/dist/js/foundation.min.js' %}"></script>
+<script src="{% static 'upd/bower_components/foundation-datepicker/js/foundation-datepicker.min.js' %}"></script>
 {#<script src="{% static 'upd/bower_components/foundation-sites/js/foundation.js' %}"></script>#}
 {#<script src="{% static 'js/vendor/modernizr.js' %}"></script>#}
 {#<script src="{% static 'js/jquery/jquery-3.3.1.min.js' %}"></script>#}
@@ -195,9 +196,10 @@
             <a href="{% url 'userInfo' %}">My BigPanDA</a>
         </li>
         <li>
-{#        <a href="{% url 'index' %}?mode=quicksearch">Search</a>#}
-
-        {% comment %}<a href="{% url 'admin:adMain' %}">Admin</a>{% endcomment %}
+        {% comment %}
+            <a href="{% url 'index' %}?mode=quicksearch">Search</a>
+            <a href="{% url 'admin:adMain' %}">Admin</a>
+        {% endcomment %}
         </li>
 
       </ul>
@@ -357,16 +359,60 @@
         </ul>
     </div>
 </div>
-  <!-- End Header and Nav -->
-{#  <script>#}
-{#          $('#main-menu-small').foundation();#}
-{#          $('#offCanvasRight').foundation();#}
-{#          $('#main-menu').foundation();#}
-{#  </script>#}
 </head>
 <body>
 
-<!-- sub-title and bread-crumbs -->
+
+<div id="time-window-change-panel" class="time-window-change is-hidden" data-toggler="is-hidden">
+    <div class="grid-x">
+        <div class="cell">
+            <ul class="tabbed-time-window-change tabs" data-tabs id="time-window-change-tabs">
+              <li class="tabs-title is-active"><a href="#tab-quick" aria-selected="true">Quick</a></li>
+              <li class="tabs-title"><a href="#tab-custom">Custom</a></li>
+            </ul>
+            <div class="tabbed-time-window-change-content tabs-content" data-tabs-content="time-window-change-tabs">
+              <div class="tabs-panel is-active" id="tab-quick">
+                <ul class="no-bullet">
+                    <li>
+                        <input type="radio" name="time-window-radio" value="today" id="time-window-radio-today">
+                        <label for="time-window-radio-today">Today</label>
+                    </li>
+                    <li class="grid-x">
+                      <div class="cell large-1 medium-1">
+                        <input type="radio" name="time-window-radio" value="hours" id="time-window-radio-hours">
+                        <label for="time-window-radio-hours">Last hours:</label>
+                      </div>
+                      <input type="number" class="cell large-2 medium-4 time-window-input" id="time-window-input-hours" value="12">
+                    </li>
+                    <li class="grid-x">
+                      <div class="cell large-1 medium-2">
+                        <input type="radio" name="time-window-radio" value="days" id="time-window-radio-days">
+                        <label for="time-window-radio-days">Last days:</label>
+                      </div>
+                      <input type="number" class="cell large-2 medium-4 time-window-input" id="time-window-input-days" value="1">
+                    </li>
+                </ul>
+              </div>
+              <div class="tabs-panel" id="tab-custom">
+                <ul class="no-bullet">
+                  <li class="grid-x">
+                      <div class="cell large-1 medium-2"><label for="time-window-input-date-from" class="text-right">From:</label></div>
+                      <div class="cell large-2 medium-4">
+                          <input type="text" class="fdatetimepicker time-window-input-date" id="time-window-input-date-from" min="2017-01-01" value="{{ timerange.0 }}">
+                      </div>
+                      <div class="cell large-1 medium-2"><label for="time-window-input-date-to" class="text-right">To:</label></div>
+                      <div class="cell large-2 medium-4">
+                        <input type="text" class="fdatetimepicker time-window-input-date" id="time-window-input-date-to" value="{{ timerange.1 }}">
+                      </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+        </div>
+    </div>
+    <a class="button">Apply</a>
+</div>
+
 <!-- sub-title -->
 <div class="grid-x align-middle top-subbar">
     <div class="cell small-3 medium-2 large-1" id="">
@@ -378,18 +424,12 @@
         <a class="button time-window" data-toggle="time-window-change-panel">Change</a>
     </div>
 
-    <div class="cell medium-3 large-2 show-for-medium right">
+    <div class="cell medium-3 large-2 show-for-medium text-right">
         {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
         {% if built != None %} {{ built }}, {% endif %} <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}"><i class="fi-refresh"></i></a>
     </div>
 </div>
 <!-- End sub-title -->
-<!-- End sub-title and bread-crumbs -->
-
-
-<div id="time-window-change-panel" class="time-window-change is-hidden" data-toggler="is-hidden">
-    <p>Here I am!!!</p>
-</div>
 
 
 <div class="grid-x tag-cloud-section">
