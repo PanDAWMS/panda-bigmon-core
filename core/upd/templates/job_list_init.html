@@ -55,9 +55,47 @@
 <p>
 
 {% block body %}
-<script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
 
-<div id="timeWindowChart" style="height: 300px; width: 100%;"></div>
+<canvas id="time-window-chart_chartjs" style="height: 300px; width: 100%;"></canvas>
+
+<script src="{% static 'upd/bower_components/moment/min/moment.min.js' %}"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.js"></script>
+<script type="text/javascript">
+    let timestamps_hist = {{ timestamp_hist|safe }};
+    let timestamps_data = [];
+    for (let timestamp in timestamps_hist) {
+        timestamps_data.push({x: new Date(moment(timestamp, 'YYYY-MM-DD hh:mm:ss')), y:timestamps_hist[timestamp]});
+    }
+    var ctx = $('#time-window-chart_chartjs');
+    let options = {
+        scales: {
+            xAxes: [{
+                offset: true,
+                type: 'time',
+                time: {
+                    displayFormats: {
+                        minute: 'YYYY MMM D h:mm a'
+                    }
+                }
+            }]
+        }
+    };
+    var myBarChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            datasets: [{
+                label: 'number of entries',
+                backgroundColor: "#3e95cd",
+                data: timestamps_data
+            }]
+        },
+        options: options
+    });
+</script>
+
+
+
+
 
 
 
