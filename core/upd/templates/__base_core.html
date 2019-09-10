@@ -15,6 +15,7 @@
 <script src="{% static 'upd/bower_components/what-input/dist/what-input.min.js' %}"></script>
 <script src="{% static 'upd/bower_components/foundation-sites/dist/js/foundation.min.js' %}"></script>
 <script src="{% static 'upd/bower_components/foundation-datepicker/js/foundation-datepicker.min.js' %}"></script>
+<script src="{% static 'upd/bower_components/angular/angular.min.js' %}"></script>
 {#<script src="{% static 'upd/bower_components/foundation-sites/js/foundation.js' %}"></script>#}
 {#<script src="{% static 'js/vendor/modernizr.js' %}"></script>#}
 {#<script src="{% static 'js/jquery/jquery-3.3.1.min.js' %}"></script>#}
@@ -24,12 +25,6 @@
 {#<script src="{% static 'js/user-settings.js' %}"></script>#}
 {#<script src="{% static "/js/clipboardjs/clipboard.min.js" %}"></script>#}
 {#<script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>#}
-
-{% block extra_js_hepsw %}
-
-{% endblock %}
-
-
 
 
 <!-- Included CSS Files -->
@@ -442,8 +437,6 @@
 </div>
 
 
-
-{% block left_menu %}{% endblock %}
 
 {% block base_css %}{% endblock %}
 {% block extra_css %}{% endblock %}
