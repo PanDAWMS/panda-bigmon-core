@@ -95,7 +95,11 @@ def job_list(request, mode=None):
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
             'json' not in request.session['requestParams'])):
         xurl = extensible_url(request)
-        time_locked_url = remove_param(remove_param(xurl, 'date_from', mode='extensible'), 'date_to', mode='extensible') + \
+        timewindow_params = ['date_from', 'date_to', 'days', 'hours']
+        notime_url = xurl
+        for twp in timewindow_params:
+            notime_url = remove_param(notime_url, twp, mode='extensible')
+        time_locked_url = notime_url + \
                           'date_from=' + request.session['TFIRST'].strftime('%Y-%m-%dT%H:%M') + \
                           '&date_to=' + request.session['TLAST'].strftime('%Y-%m-%dT%H:%M')
         nodurminurl = remove_param(xurl, 'durationmin', mode='extensible')
@@ -117,6 +121,7 @@ def job_list(request, mode=None):
             'timestamp_hist': timestamp_hist,
             'xurl': xurl,
             'time_locked_url': time_locked_url,
+            'notime_url': notime_url,
             'warning': warning,
             'built': datetime.now().strftime("%H:%M:%S"),
         }

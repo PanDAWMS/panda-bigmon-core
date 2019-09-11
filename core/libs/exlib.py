@@ -236,13 +236,16 @@ def get_jobs_ids(query, extra):
 def make_timestamp_hist(timestamps_list):
     """
     A function for rule based binning the timestamps data.
-    < 12 hours - 10min bins, < 3 days - 1hour bins, >=3 days = 1 day bins
+    < 1hour - 30sec
+    < 12 hours - 5min bins,
+    < 3 days - 30min bins,
+    >=3 days = 12hour bins
     :param timestamps_list:
     :return: dict {timestamp:number of appearences }
     """
     tm_hist = {}
     binning_rule = '1D'
-    bin_ranges = {'10min': [0, 60*12], '1H': [60*12, 3*24*60], '1D': [3*24*60, math.inf]}
+    bin_ranges = {'30s': [0, 60], '5min': [60, 60*12], '30min': [60*12, 3*24*60], '12H': [3*24*60, math.inf]}
     tm_df = pd.DataFrame(timestamps_list, columns=['timestamp'])
     tm_df['timestamp'] = pd.to_datetime(tm_df['timestamp'])
     tm_df.index = tm_df['timestamp']

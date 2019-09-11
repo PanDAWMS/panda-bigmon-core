@@ -57,6 +57,7 @@
 {% block body %}
 
 {#  time window charts #}
+<script src="{% static 'upd/bower_components/moment/min/moment.min.js' %}"></script>
 <script>
     let timestamps_hist = {{ timestamp_hist|safe }};
 </script>
@@ -65,7 +66,6 @@
 
 <canvas id="time-window-chart_chartjs" style="height: 300px; width: 100%;"></canvas>
 
-<script src="{% static 'upd/bower_components/moment/min/moment.min.js' %}"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.js"></script>
 <script type="text/javascript">
     let chartjs_data = [];
@@ -142,16 +142,34 @@ var tw_c3js = c3.generate({
     },
     color: {
         pattern: ['#355681']
+    },
+    subchart: {
+        show: true
     }
 });
 
+function update_timewindow_from_chart(tw_chart) {
+    let selected_timewindow = tw_chart.zoom();
+    let base_url = '{{ notime_url|safe }}';
+    base_url += 'date_from=' + moment(selected_timewindow[0]).format('YYYY-MM-DDTHH:mm:ss');
+    base_url += '&date_to=' + moment(selected_timewindow[1]).format('YYYY-MM-DDTHH:mm:ss');
+    window.location.replace(base_url)
+}
+
 </script>
+
+<a class="button primary" onclick="update_timewindow_from_chart(tw_c3js)">Apply selected time window</a>
+
 
 {% endif %}
 
 
 
 {% if njobs > 0 %}
+
+
+
+
 
 {#{% if ndrops > 0 %}#}
 {#<table width=900><tr><td class='highlightcell'>#}
