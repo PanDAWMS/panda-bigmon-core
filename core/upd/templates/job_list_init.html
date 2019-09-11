@@ -56,15 +56,21 @@
 
 {% block body %}
 
+{#  time window charts #}
+<script>
+    let timestamps_hist = {{ timestamp_hist|safe }};
+</script>
+
+{% if 'chartlib' in requestParams and requestParams.chartlib in 'allchartjs' %}
+
 <canvas id="time-window-chart_chartjs" style="height: 300px; width: 100%;"></canvas>
 
 <script src="{% static 'upd/bower_components/moment/min/moment.min.js' %}"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.js"></script>
 <script type="text/javascript">
-    let timestamps_hist = {{ timestamp_hist|safe }};
-    let timestamps_data = [];
+    let chartjs_data = [];
     for (let timestamp in timestamps_hist) {
-        timestamps_data.push({x: new Date(moment(timestamp, 'YYYY-MM-DD hh:mm:ss')), y:timestamps_hist[timestamp]});
+        chartjs_data.push({x: new Date(moment(timestamp, 'YYYY-MM-DD hh:mm:ss')), y:timestamps_hist[timestamp]});
     }
     var ctx = $('#time-window-chart_chartjs');
     let options = {
@@ -80,22 +86,68 @@
             }]
         }
     };
-    var myBarChart = new Chart(ctx, {
+    var tw_chartjs = new Chart(ctx, {
         type: 'bar',
         data: {
             datasets: [{
                 label: 'number of entries',
-                backgroundColor: "#3e95cd",
-                data: timestamps_data
+                backgroundColor: "#355681",
+                data: chartjs_data
             }]
         },
         options: options
     });
 </script>
 
+{% endif %}
+{% if 'chartlib' in requestParams and requestParams.chartlib in 'allc3js' %}
 
 
+<!-- Load c3.css -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
 
+<!-- Load d3.js and c3.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
+
+
+<div id="time-window-chart_c3js" style="height: 300px; width: 100%;"></div>
+
+<script>
+{#let timestamps_hist = {{ timestamp_hist|safe }};#}
+let c3js_data = [['x', 'number of entries']];
+for (let timestamp in timestamps_hist) {
+    c3js_data.push([timestamp, timestamps_hist[timestamp]]);
+}
+var tw_c3js = c3.generate({
+    bindto: '#time-window-chart_c3js',
+    data: {
+        x: 'x',
+        xFormat: '%Y-%m-%d %H:%M:%S',
+        rows: c3js_data,
+        type: 'bar'
+    },
+    bar: {
+        width: {
+            ratio: 0.5
+        }
+    },
+    axis: {
+        x: {
+            type: 'timeseries',
+            tick: {
+                format: '%Y-%m-%d %H:%M:%S'
+            }
+        }
+    },
+    color: {
+        pattern: ['#355681']
+    }
+});
+
+</script>
+
+{% endif %}
 
 
 
