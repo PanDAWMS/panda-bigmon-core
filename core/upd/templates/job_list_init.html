@@ -26,7 +26,7 @@
   {% endblock %}
 {% endif %}
 
-<b>{{ njobs }} jobs in this selection</b>
+{#<b>{{ njobs }} jobs in this selection</b>#}
 {#{% if requestParams.transferringnotupdated %}<br><b>Jobs in transferring state for more than {{ requestParams.transferringnotupdated }} hours</b> {% endif %}#}
 {#{% if requestParams.statenotupdated %}<br><b>Jobs in <span class="{{ requestParams.jobstatus }}">{{ requestParams.jobstatus }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}#}
 {#{% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}#}
@@ -56,10 +56,13 @@
 
 {% block body %}
 
+{% if njobs > 0 %}
+
 {#  time window charts #}
 <script src="{% static 'upd/bower_components/moment/min/moment.min.js' %}"></script>
 <script>
     let timestamps_hist = {{ timestamp_hist|safe }};
+    let nentries = {{ njobs }};
 </script>
 
 {% if 'chartlib' in requestParams and requestParams.chartlib in 'allchartjs' %}
@@ -148,6 +151,12 @@ var tw_c3js = c3.generate({
     }
 });
 
+d3.select('#time-window-chart_c3js').select("svg").append("text")
+    .attr("x", 500 )
+    .attr("y", 10)
+    .style("text-anchor", "middle")
+    .text("Total number of found jobs: " + nentries);
+
 function update_timewindow_from_chart(tw_chart) {
     let selected_timewindow = tw_chart.zoom();
     let base_url = '{{ notime_url|safe }}';
@@ -165,8 +174,44 @@ function update_timewindow_from_chart(tw_chart) {
 
 
 
-{% if njobs > 0 %}
+<!-- Attributes summary -->
 
+<div class="card bp-container">
+    <div class="card-divider">
+        <span>Jobs attributes summary</span>
+        <ul class="tabs" data-active-collapse="true" data-tabs id="collapsing-tabs">
+            <li class="tabs-title align-middle is-active"><a href="#oas_panel_table" aria-selected="true">Table</a></li>
+            <li class="tabs-title"><a href="#oas_panel_plots">Plots</a></li>
+        </ul>
+    </div>
+    <div class="tabs-content" data-tabs-content="collapsing-tabs">
+      <div class="tabs-panel" id="oas_panel_table">
+        <div class="card-section">
+            Here is table
+        </div>
+      </div>
+      <div class="tabs-panel is-active" id="oas_panel_plots">
+        <div class="card-section">
+            Here is plots
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- End of Attributes summary -->
+
+<!-- Objects list -->
+
+<div class="card bp-container">
+    <div class="card-divider">
+        List of jobs:
+    </div>
+    <div class="card-section">
+
+    </div>
+</div>
+
+<!-- End of objects list -->
 
 
 

@@ -3,6 +3,7 @@
 @import "../bower_components/motion-ui/src/motion-ui";
 @import "settings";
 @import "main-nav";
+@import "body-common";
 @import "../bower_components/foundation-icon-fonts/foundation-icons";
 @import "foundation-datepicker";
 
@@ -17,6 +18,7 @@
 @include foundation-accordion;
 @include foundation-accordion-menu;
 @include foundation-xy-grid-classes;
+@include foundation-flex-classes;
 @include foundation-float-classes;
 @include foundation-off-canvas;
 @include foundation-tabs;
@@ -25,10 +27,10 @@
 @include foundation-button-group;
 @include foundation-visibility-classes;
 @include foundation-label;
+@include foundation-card;
 
 @include motion-ui-animations;
 @include motion-ui-transitions;
-
 
 
 // Or selectively include components

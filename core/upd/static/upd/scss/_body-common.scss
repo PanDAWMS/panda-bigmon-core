@@ -1,0 +1,57 @@
+// BigPanDAmon specific style for body elements
+@import "settings";
+
+.card.bp-container {
+  width: 100%;
+
+  .card-divider {
+    color: $white;
+    font-weight: bold;
+    font-size: 90%;
+    justify-content: space-between;
+
+    ul.tabs {
+      padding: 0;
+      margin: 0;
+      border: none;
+      background-color: $primary-color;
+      color: $white;
+
+      li {
+        padding-left: 0.7rem;
+        padding-top: 0.3rem;
+      }
+
+      .tabs-title > a {
+        color: $white;
+        background-color: $primary-color;
+        padding: 0;
+
+        &:hover {
+          background-color: $primary-color;
+        }
+
+        &:focus, &[aria-selected='true'] {
+          color: $light-blue;
+          background-color: $primary-color;
+        }
+      }
+    }
+  }
+
+  .tabs-content {
+    padding: 0;
+    margin: 0;
+
+    .tabs-panel {
+      padding: 0;
+      margin: 0;
+
+      .card-section {
+        padding: 0;
+        margin: 0;
+
+      }
+    }
+  }
+}

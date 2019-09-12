@@ -121,12 +121,16 @@ $searchbox-top-align: 0.6rem;
   background-color: $medium-gray;
   padding: 0.3rem 1rem;
   font-size: 90%;
+  justify-content: space-between;
 
   .cell {
     display: flex;
     flex-wrap: nowrap;
     &.right {
-    text-align: right;
+      justify-content: flex-end;
+    }
+    &.center {
+      justify-content: center;
     }
   }
 
@@ -239,7 +243,7 @@ $searchbox-top-align: 0.6rem;
 // ------------------------------
 .tag-cloud-section {
   background: $tag-cloud-section-bg;
-  padding: 0.7rem 0.7rem;
+  padding: 0.3rem 0.7rem;
   margin: 0;
   max-width: $tag-cloud-section-width;
   font-size: 90%;
@@ -249,7 +253,6 @@ $searchbox-top-align: 0.6rem;
   text-transform: uppercase;
   font-weight: bold;
   color: $black;
-  padding: 0;
 }
 
 .tag-cloud {

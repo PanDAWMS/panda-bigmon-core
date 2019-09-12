@@ -85,12 +85,15 @@
 .top-subbar {
   background-color: #dddddd;
   padding: 0.3rem 1rem;
-  font-size: 90%; }
+  font-size: 90%;
+  justify-content: space-between; }
   .top-subbar .cell {
     display: flex;
     flex-wrap: nowrap; }
     .top-subbar .cell.right {
-      text-align: right; }
+      justify-content: flex-end; }
+    .top-subbar .cell.center {
+      justify-content: center; }
   .top-subbar .time-window-range {
     font-weight: bold;
     padding: 0 0.3rem; }
@@ -162,7 +165,7 @@
 
 .tag-cloud-section {
   background: #b0c4de;
-  padding: 0.7rem 0.7rem;
+  padding: 0.3rem 0.7rem;
   margin: 0;
   max-width: 100%;
   font-size: 90%; }
@@ -170,8 +173,7 @@
 .tag-cloud-title {
   text-transform: uppercase;
   font-weight: bold;
-  color: #0a0a0a;
-  padding: 0; }
+  color: #0a0a0a; }
 
 .tag-cloud {
   margin: 0 0.7rem;
@@ -210,6 +212,41 @@
 a.button {
   text-decoration: none;
   font-weight: bold; }
+
+.card.bp-container {
+  width: 100%; }
+  .card.bp-container .card-divider {
+    color: #fefefe;
+    font-weight: bold;
+    font-size: 90%;
+    justify-content: space-between; }
+    .card.bp-container .card-divider ul.tabs {
+      padding: 0;
+      margin: 0;
+      border: none;
+      background-color: #355681;
+      color: #fefefe; }
+      .card.bp-container .card-divider ul.tabs li {
+        padding-left: 0.7rem;
+        padding-top: 0.3rem; }
+      .card.bp-container .card-divider ul.tabs .tabs-title > a {
+        color: #fefefe;
+        background-color: #355681;
+        padding: 0; }
+        .card.bp-container .card-divider ul.tabs .tabs-title > a:hover {
+          background-color: #355681; }
+        .card.bp-container .card-divider ul.tabs .tabs-title > a:focus, .card.bp-container .card-divider ul.tabs .tabs-title > a[aria-selected='true'] {
+          color: #b0c4de;
+          background-color: #355681; }
+  .card.bp-container .tabs-content {
+    padding: 0;
+    margin: 0; }
+    .card.bp-container .tabs-content .tabs-panel {
+      padding: 0;
+      margin: 0; }
+      .card.bp-container .tabs-content .tabs-panel .card-section {
+        padding: 0;
+        margin: 0; }
 
 /* 
  * Foundation Icons v 3.0
@@ -4208,6 +4245,185 @@ a {
 @media print, screen and (min-width: 64em) {
   .grid-margin-y.large-grid-frame {
     height: calc(100vh + 1.4285714286rem); } }
+.align-left {
+  justify-content: flex-start; }
+
+.align-right {
+  justify-content: flex-end; }
+
+.align-center {
+  justify-content: center; }
+
+.align-justify {
+  justify-content: space-between; }
+
+.align-spaced {
+  justify-content: space-around; }
+
+.align-left.vertical.menu > li > a {
+  justify-content: flex-start; }
+
+.align-right.vertical.menu > li > a {
+  justify-content: flex-end; }
+
+.align-center.vertical.menu > li > a {
+  justify-content: center; }
+
+.align-top {
+  align-items: flex-start; }
+
+.align-self-top {
+  align-self: flex-start; }
+
+.align-bottom {
+  align-items: flex-end; }
+
+.align-self-bottom {
+  align-self: flex-end; }
+
+.align-middle {
+  align-items: center; }
+
+.align-self-middle {
+  align-self: center; }
+
+.align-stretch {
+  align-items: stretch; }
+
+.align-self-stretch {
+  align-self: stretch; }
+
+.align-center-middle {
+  justify-content: center;
+  align-items: center;
+  align-content: center; }
+
+.small-order-1 {
+  order: 1; }
+
+.small-order-2 {
+  order: 2; }
+
+.small-order-3 {
+  order: 3; }
+
+.small-order-4 {
+  order: 4; }
+
+.small-order-5 {
+  order: 5; }
+
+.small-order-6 {
+  order: 6; }
+
+@media print, screen and (min-width: 40em) {
+  .medium-order-1 {
+    order: 1; }
+
+  .medium-order-2 {
+    order: 2; }
+
+  .medium-order-3 {
+    order: 3; }
+
+  .medium-order-4 {
+    order: 4; }
+
+  .medium-order-5 {
+    order: 5; }
+
+  .medium-order-6 {
+    order: 6; } }
+@media print, screen and (min-width: 64em) {
+  .large-order-1 {
+    order: 1; }
+
+  .large-order-2 {
+    order: 2; }
+
+  .large-order-3 {
+    order: 3; }
+
+  .large-order-4 {
+    order: 4; }
+
+  .large-order-5 {
+    order: 5; }
+
+  .large-order-6 {
+    order: 6; } }
+.flex-container {
+  display: flex; }
+
+.flex-child-auto {
+  flex: 1 1 auto; }
+
+.flex-child-grow {
+  flex: 1 0 auto; }
+
+.flex-child-shrink {
+  flex: 0 1 auto; }
+
+.flex-dir-row {
+  flex-direction: row; }
+
+.flex-dir-row-reverse {
+  flex-direction: row-reverse; }
+
+.flex-dir-column {
+  flex-direction: column; }
+
+.flex-dir-column-reverse {
+  flex-direction: column-reverse; }
+
+@media print, screen and (min-width: 40em) {
+  .medium-flex-container {
+    display: flex; }
+
+  .medium-flex-child-auto {
+    flex: 1 1 auto; }
+
+  .medium-flex-child-grow {
+    flex: 1 0 auto; }
+
+  .medium-flex-child-shrink {
+    flex: 0 1 auto; }
+
+  .medium-flex-dir-row {
+    flex-direction: row; }
+
+  .medium-flex-dir-row-reverse {
+    flex-direction: row-reverse; }
+
+  .medium-flex-dir-column {
+    flex-direction: column; }
+
+  .medium-flex-dir-column-reverse {
+    flex-direction: column-reverse; } }
+@media print, screen and (min-width: 64em) {
+  .large-flex-container {
+    display: flex; }
+
+  .large-flex-child-auto {
+    flex: 1 1 auto; }
+
+  .large-flex-child-grow {
+    flex: 1 0 auto; }
+
+  .large-flex-child-shrink {
+    flex: 0 1 auto; }
+
+  .large-flex-dir-row {
+    flex-direction: row; }
+
+  .large-flex-dir-row-reverse {
+    flex-direction: row-reverse; }
+
+  .large-flex-dir-column {
+    flex-direction: column; }
+
+  .large-flex-dir-column-reverse {
+    flex-direction: column-reverse; } }
 .float-left {
   float: left !important; }
 
@@ -4541,7 +4757,7 @@ a {
   float: left; }
   .tabs-title > a {
     display: block;
-    padding: 1.25rem 1.5rem;
+    padding: 0.7rem;
     font-size: 0.8571428571rem;
     line-height: 1;
     color: #355681; }
@@ -5267,14 +5483,14 @@ a.button:hover, a.button:focus {
 .card-divider {
   display: flex;
   flex: 0 1 auto;
-  padding: 1rem;
+  padding: 0.7rem;
   background: #355681; }
   .card-divider > :last-child {
     margin-bottom: 0; }
 
 .card-section {
   flex: 1 0 auto;
-  padding: 1rem; }
+  padding: 0.7rem; }
   .card-section > :last-child {
     margin-bottom: 0; }
 

@@ -414,12 +414,12 @@
         {% block subtitle %}Subtitle goes here{% endblock %}
     </div>
 
-    <div class="cell auto">
+    <div class="cell auto center">
         {% block time_window %}{% endblock %}
         <a class="button time-window" data-toggle="time-window-change-panel">Change</a>
     </div>
 
-    <div class="cell medium-3 large-2 show-for-medium text-right">
+    <div class="cell medium-3 large-2 right show-for-medium">
         {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
         {% if built != None %} {{ built }}, {% endif %} <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}"><i class="fi-refresh"></i></a>
     </div>
@@ -427,8 +427,8 @@
 <!-- End sub-title -->
 
 
-<div class="grid-x tag-cloud-section">
-    <div class="cell small-3 medium-2 large-1 align-self-middle tag-cloud-title">
+<div class="grid-x tag-cloud-section align-middle">
+    <div class="cell small-3 medium-2 large-1 tag-cloud-title">
         Filters:
     </div>
     <div class="cell auto tag-cloud">
