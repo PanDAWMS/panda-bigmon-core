@@ -314,23 +314,23 @@ def pledges(request):
         if len(date_list)>1:
             for date in date_list:
                 hs06sec = Query(agg_func='sum', table='completed', field='sum_hs06sec',
-                                grouping='time,dst_federation', starttime=date[0], endtime=date[1])
+                                grouping='time,dst_federation,dst_tier', starttime=date[0], endtime=date[1])
 
                 hs06sec = Grafana().get_data(hs06sec)
 
                 pledges_sum = Query(agg_func='mean', table='pledges_hs06sec', field='value',
-                                grouping='time,real_federation', starttime=date[0], endtime=date[1])
+                                grouping='time,real_federation,tier', starttime=date[0], endtime=date[1])
                 pledges_sum = Grafana(database='monit_production_rebus').get_data(pledges_sum)
                 pledges_dict = pledges_merging(hs06sec, pledges_sum, total_seconds,
                                                              pledges_dict)
         else:
             hs06sec = Query(agg_func='sum', table='completed', field='sum_hs06sec',
-                            grouping='time,dst_federation', starttime=date_list[0][0], endtime=date_list[0][1])
+                            grouping='time,dst_federation,dst_tier', starttime=date_list[0][0], endtime=date_list[0][1])
 
             hs06sec = Grafana().get_data(hs06sec)
 
             pledges_sum = Query(agg_func='mean', table='pledges_hs06sec', field='value',
-                                grouping='time,real_federation', starttime=date_list[0][0], endtime=date_list[0][1])
+                                grouping='time,real_federation,tier', starttime=date_list[0][0], endtime=date_list[0][1])
             pledges_sum = Grafana(database='monit_production_rebus').get_data(pledges_sum)
             pledges_dict = pledges_merging(hs06sec, pledges_sum, total_seconds,
                                                          pledges_dict)
@@ -342,7 +342,7 @@ def pledges(request):
                 #     {type: pledges, "hs06sec": pledges_dict[pledges]['hs06sec'],
                 #                    'pledges': pledges_dict[pledges]['pledges']})
                 pledges_list.append({"dst_federation":pledges, "hs06sec":int(round(float(pledges_dict[pledges]['hs06sec'])/86400, 2)),
-                                      'pledges': int(round(float(pledges_dict[pledges]['pledges'])/86400, 2))})
+                                      'pledges': int(round(float(pledges_dict[pledges]['pledges'])/86400, 2)),'tier':pledges_dict[pledges]['tier']})
         setCacheEntry(request, key, json.dumps(pledges_list), 60 * 60 * 24 * 30, isData=True)
         return HttpResponse(json.dumps(pledges_list), content_type='text/json')
     elif 'type' in request.session['requestParams'] and request.session['requestParams']\
@@ -357,7 +357,7 @@ def pledges(request):
 
         pledges_dict = {}
         pledges_list = []
-        if len(date_list)>1:
+        if len(date_list) > 1:
             for date in date_list:
                 hs06sec = Query(agg_func='sum', table='completed', field='sum_hs06sec',
                                     grouping='time,dst_federation,dst_country', starttime=date[0], endtime=date[1])

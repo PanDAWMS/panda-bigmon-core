@@ -42,6 +42,7 @@ def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
             #fed['values'][-1][1] = 0
             if fed['tags'][type] not in pledges_dict:
                 pledges_dict[fed['tags'][type]] = {}
+                pledges_dict[fed['tags'][type]]['tier'] = fed['tags']['dst_tier']
                 pledges_dict[fed['tags'][type]]["hs06sec"] = 0
                 pledges_dict[fed['tags'][type]]["pledges"] = 0
             for value in fed['values']:
@@ -51,6 +52,14 @@ def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
             #fed['values'][-1][1] = 0
             if fed['tags'][pl_type] not in pledges_dict:
                 pledges_dict[fed['tags'][pl_type]] = {}
+                if fed['tags']['tier'] == 'Tier 0':
+                    pledges_dict[fed['tags'][pl_type]]['tier'] = 0
+                elif fed['tags']['tier'] == 'Tier 1':
+                    pledges_dict[fed['tags'][pl_type]]['tier'] = 1
+                elif fed['tags']['tier'] == 'Tier 2':
+                    pledges_dict[fed['tags'][pl_type]]['tier'] = 2
+                elif fed['tags']['tier'] == 'Tier 3':
+                    pledges_dict[fed['tags'][pl_type]]['tier'] = 3
                 pledges_dict[fed['tags'][pl_type]]["hs06sec"] = 0
                 pledges_dict[fed['tags'][pl_type]]["pledges"] = 0
             for value in fed['values']:
