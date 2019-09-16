@@ -20,22 +20,26 @@ class Grafana(object):
             return "9023"
         if datasource == "pending":
             return "9024"
-        if datasource == "pledges":
-            return "8261"
+        if datasource == "pledges_last" or datasource == "pledges_sum" or datasource == "pledges_hs06sec":
+            return "9267"
 
     def get_query(self, object):
         query_object = object
         if query_object.endtime == "" and query_object.starttime == "":
-            oneday = timedelta(days=1)
+            delta = timedelta(minute=1)
             timebefore = timedelta(days=query_object.days)
 
-            endtime = (datetime.now()).replace(minute=00, hour=00, second=00, microsecond=000)
-            starttime = ((endtime - timebefore) - oneday).replace(minute=00, hour=00, second=00, microsecond=000)
+            endtime = (datetime.utcnow()).replace(minute=00, hour=00, second=00, microsecond=000)
+            starttime = ((endtime - timebefore)).replace(minute=00, hour=00, second=00, microsecond=000)
 
             startMillisec = int(starttime.strftime("%s")) * 1000
             endMillisec = int(endtime.strftime("%s")) * 1000
         else:
             startD = datetime.strptime(query_object.starttime, '%d.%m.%Y %H:%M:%S')
+            # if '00:00:00' in query_object.endtime:
+            #     delta = timedelta(minutes=1)
+            # else:
+            #     delta = timedelta(minutes=0)
             endD = datetime.strptime(query_object.endtime, '%d.%m.%Y %H:%M:%S')
 
             # localtime = pytz.timezone('Europe/Zurich')
@@ -51,9 +55,9 @@ class Grafana(object):
             #     endD = endD + tdelta
 
             startMillisec = int(startD.strftime("%s")) * 1000
-
             endMillisec = int(endD.strftime("%s")) * 1000
-        if query_object.table == "pledges":
+        if query_object.table == "pledges_last":
+            query_object.agg_func = 'last'
             if '.*' not in query_object.dst_country:
                 dst_country = '(' + query_object.dst_country + ')'
             else:
@@ -63,12 +67,73 @@ class Grafana(object):
             else:
                 dst_federation = query_object.dst_federation
             query = \
+            '''
+           SELECT {0}(value) FROM "pledges" WHERE  ("pledge_type" = 'CPU' AND "real_federation" =~ /^{1}$/ AND "country" =~ /^{2}$/) 
+           AND vo = 'atlas' AND time >= {3}ms and time <= {4}ms GROUP BY {5}
+               '''.format(query_object.agg_func, dst_federation, dst_country,
+                           startMillisec, endMillisec, query_object.grouping)
+            # query = \
+            #     '''
+            #     SELECT {0}("atlas") FROM "long_1d"."pledges"
+            #     WHERE ("pledge_type" = 'CPU' AND "real_federation" =~ /^{1}/ AND "country" =~ /^{2}/)
+            #     AND time >= {3}ms and time <= {4}ms GROUP BY {5}
+            #     '''.format(query_object.agg_func, dst_federation, dst_country,
+            #                startMillisec, endMillisec, query_object.grouping)
+            query = re.sub(r"([\n ])\1*", r"\1", query).replace('\n', ' ').lstrip().strip()
+            query = re.sub(' +', ' ', query)
+            return query
+        elif query_object.table == "pledges_sum":
+            query_object.agg_func = 'sum'
+            if '.*' not in query_object.dst_country:
+                dst_country = '(' + query_object.dst_country + ')'
+            else:
+                dst_country = query_object.dst_country
+            if '.*' not in query_object.dst_federation:
+                dst_federation = '(' + query_object.dst_federation + ')'
+            else:
+                dst_federation = query_object.dst_federation
+            # if 'time' in query_object.grouping:
+            #     query_object.grouping = re.sub('\d+',str(6),query_object.grouping)
+            query = \
                 '''
-                SELECT {0}("atlas") FROM "long_1d"."pledges" 
-                WHERE ("pledge_type" = 'CPU' AND "real_federation" =~ /^{1}/ AND "country" =~ /^{2}/)  
-                AND time >= {3}ms and time <= {4}ms GROUP BY {5}
+                SELECT sum("mean_value") FROM (SELECT {0}("value") as mean_value FROM "pledges" 
+                WHERE ("pledge_type" = 'CPU' AND "real_federation" =~ /^{1}$/ AND "country" =~ /^{2}$/) 
+                AND vo = 'atlas' AND time >= {3}ms and time <= {4}ms GROUP BY {5} fill(null)) WHERE time >= {3}ms 
+                and time <= {4}ms GROUP BY {5} fill(null)
                 '''.format(query_object.agg_func, dst_federation, dst_country,
                            startMillisec, endMillisec, query_object.grouping)
+            query = re.sub(r"([\n ])\1*", r"\1", query).replace('\n', ' ').lstrip().strip()
+            query = re.sub(' +', ' ', query)
+            return query
+        elif query_object.table == "pledges_hs06sec":
+            query_object.agg_func = 'mean'
+            coefficient = 3600
+            if '.*' not in query_object.dst_country:
+                dst_country = '(' + query_object.dst_country + ')'
+            else:
+                dst_country = query_object.dst_country
+            if '.*' not in query_object.dst_federation:
+                dst_federation = '(' + query_object.dst_federation + ')'
+            else:
+                dst_federation = query_object.dst_federation
+            if query_object.bin == '1h':
+                coefficient = 3600
+            elif query_object.bin == '1d':
+                coefficient = 3600*24
+            elif query_object.bin == '7d':
+                coefficient = 3600*24*7
+            elif query_object.bin == '30d':
+                coefficient = 3600*24*30
+            # if 'time' in query_object.grouping:
+            #     query_object.grouping = re.sub('\d+',str(6),query_object.grouping)
+            query = \
+                '''
+                SELECT sum("mean_value")*{0} FROM (SELECT {1}("value") as mean_value FROM "pledges" 
+                WHERE ("pledge_type" = 'CPU' AND "real_federation" =~ /^{2}$/ AND "country" =~ /^{3}$/) 
+                AND vo = 'atlas' AND time >= {4}ms and time <= {5}ms GROUP BY time(6h),{7} fill(null)) WHERE time >= {4}ms
+                and time <= {5}ms GROUP BY {6} fill(previous)
+                '''.format(coefficient, query_object.agg_func, dst_federation, dst_country,
+                           startMillisec, endMillisec, query_object.grouping, str(query_object.grouping).split(',')[-1])
             query = re.sub(r"([\n ])\1*", r"\1", query).replace('\n', ' ').lstrip().strip()
             query = re.sub(' +', ' ', query)
             return query
@@ -182,10 +247,10 @@ class Grafana(object):
         return url
 
     def get_data(self, query):
-        url = self.grafana_proxy + self._get_datsource(query.table)+'/query?db='+self.grafana_database+'_'+ query.table+'&q='+ self.get_query(query)
-        if query.table == 'pledges':
+        #url = self.grafana_proxy + self._get_datsource(query.table)+'/query?db='+self.grafana_database+'_'+ query.table+'&q='+ self.get_query(query)
+        if query.table == 'pledges_last' or query.table == 'pledges_sum' or query.table == 'pledges_hs06sec':
             url = self.grafana_proxy + self._get_datsource(
-                query.table) + '/query?db=' + self.grafana_database + '_completed'  + '&q=' + self.get_query(query)
+                query.table) + '/query?db=' + self.grafana_database + '&q=' + self.get_query(query)
         else:
             url = self.grafana_proxy + self._get_datsource(
                 query.table) + '/query?db=' + self.grafana_database + '_' + query.table + '&q=' + self.get_query(query)

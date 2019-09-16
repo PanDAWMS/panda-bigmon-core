@@ -916,8 +916,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         query['jeditaskid__in'] = values
                     elif param == 'status':
                         val = escapeInput(request.session['requestParams'][param])
-                        values = val.split(',')
-                        query['status__in'] = values
+                        if '*' not in val and '|' not in val and '!' not in val:
+                            values = val.split(',')
+                            query['status__in'] = values
                     elif param == 'superstatus':
                         val = escapeInput(request.session['requestParams'][param])
                         values = val.split('|')
