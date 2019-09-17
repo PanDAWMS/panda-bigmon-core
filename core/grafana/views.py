@@ -261,6 +261,7 @@ def grab_children(data,parent=None,child=None):
             child.append([parent,key,value])
     return child
 
+@login_customrequired
 def pledges(request):
     valid, response = initRequest(request)
 
