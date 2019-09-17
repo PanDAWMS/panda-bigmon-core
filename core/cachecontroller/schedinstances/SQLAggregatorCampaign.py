@@ -50,7 +50,10 @@ class SQLAggregatorCampaign(BaseTasksProvider):
             (SELECT DISTINCT STARTTIME, endtime, pandaid, jeditaskid FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JOBSTATUS='finished' UNION ALL 
             SELECT DISTINCT STARTTIME, endtime, pandaid, jeditaskid FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JOBSTATUS='finished')tr 
              join (
-                select t1.JEDITASKID, t5.STEP_NAME, t1.CREATIONDATE, t1.STATUS, t2.CAMPAIGN,t2.SUBCAMPAIGN, t1.neventstobeused, t1.nevents, t1.NEVENTSUSED from ATLAS_PANDABIGMON.RUNNINGPRODTASKS t1
+                select t1.JEDITASKID, t5.STEP_NAME, t1.CREATIONDATE, t1.STATUS, t2.CAMPAIGN,t2.SUBCAMPAIGN, t1.neventstobeused, t1.nevents, t1.NEVENTSUSED from (
+                select JEDITASKID, CREATIONDATE, STATUS, CAMPAIGN, neventstobeused, nevents, NEVENTSUSED, processingtype from ATLAS_PANDABIGMON.frozenprodtasks union all
+                select JEDITASKID, CREATIONDATE, STATUS, CAMPAIGN, neventstobeused, nevents, NEVENTSUSED, processingtype from ATLAS_PANDABIGMON.runningprodtasks
+                ) t1
                 join ATLAS_DEFT.T_PRODUCTION_TASK t2 on t2.TASKID=t1.JEDITASKID
                 JOIN ATLAS_DEFT.T_PRODUCTION_STEP t4 ON t2.STEP_ID=t4.STEP_ID JOIN ATLAS_DEFT.T_STEP_TEMPLATE t5 ON t4.STEP_T_ID=t5.STEP_T_ID
                 where t2.campaign='data18_13TeV' and t1.processingtype='reprocessing'
@@ -74,7 +77,11 @@ class SQLAggregatorCampaign(BaseTasksProvider):
 
         # At this step we have number of events processed per each day of a campaign
 
-        query = "select sum(neventstobeused) as sumtouse, sum(nevents) as sumtot, sum(NEVENTSUSED) as sumused, sum(NRUNNINGEVENTS) as sumrun from ATLAS_PANDABIGMON.RUNNINGPRODTASKS where campaign='data18_13TeV' and processingtype='reprocessing'"
+        query = """
+                select sum(neventstobeused) as sumtouse, sum(nevents) as sumtot, sum(NEVENTSUSED) as sumused, sum(NRUNNINGEVENTS) as sumrun from (
+                SELECT neventstobeused, nevents, NEVENTSUSED, NRUNNINGEVENTS, processingtype, campaign from ATLAS_PANDABIGMON.RUNNINGPRODTASKS union all
+                SELECT neventstobeused, nevents, NEVENTSUSED, 0 as NRUNNINGEVENTS, processingtype, campaign from ATLAS_PANDABIGMON.frozenprodtasks) where campaign='data18_13TeV' and processingtype='reprocessing'
+        """
         cursor.execute(query)
         eventstotals = self.__dictfetchall(cursor)
         if eventstotals and len(eventstotals) > 0:
