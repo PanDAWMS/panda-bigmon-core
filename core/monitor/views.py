@@ -9,7 +9,7 @@ from core.views import DateEncoder, initRequest
 
 @never_cache
 def monitorJson(request):
-    notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72','188.185.165.248']
+    notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.185.165.248', '188.184.116.46']
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
         ip = x_forwarded_for.split(',')[0]
@@ -27,7 +27,7 @@ def monitorJson(request):
         for session in sessions:
             totalSessionCount += session['num_sess']
             totalActiveSessionCount += session['num_active_sess']
-        if totalSessionCount>=50 or test:
+        if totalSessionCount >= 50 or test:
             logger = logging.getLogger('bigpandamon-error')
             message = 'Internal Server Error: ' + 'Attention!!! Total session count: ' + str(totalSessionCount) + ' Total active session count: ' + str (totalActiveSessionCount)
             logger.error(message)
