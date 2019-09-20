@@ -11,6 +11,8 @@ from schedinstances.Harvester import Harvester
 from schedinstances.SQLAggregator import SQLAggregator
 from schedinstances.SQLAggregatorCampaign import SQLAggregatorCampaign
 from schedinstances.PandaLogsStorageCleanUp import PandaLogsStorageCleanUp
+from schedinstances.GrafanaPlots import GrafanaPlots
+
 from settingscron import EXECUTION_CAP_FOR_MAINMENUURLS
 from settingscron import LOG_PATH
 
@@ -22,6 +24,7 @@ artPackages = ArtPackages(EXECUTION_CAP_FOR_MAINMENUURLS)
 artMails = ArtMails(EXECUTION_CAP_FOR_MAINMENUURLS)
 bigTasks = BigTasks(EXECUTION_CAP_FOR_MAINMENUURLS)
 harvester = Harvester(EXECUTION_CAP_FOR_MAINMENUURLS)
+grafanaPlots = GrafanaPlots()
 cephCleanUp = PandaLogsStorageCleanUp()
 sQLAggregator = SQLAggregator()
 sQLAggregatorCampaign = SQLAggregatorCampaign()
@@ -41,6 +44,7 @@ schedule.every().day.at("09:00").do(run_threaded, artMails.execute)
 schedule.every(10).minutes.do(run_threaded, harvester.execute)
 schedule.every(1).hours.do(run_threaded, sQLAggregator.execute)
 schedule.every(1).hours.do(run_threaded, sQLAggregatorCampaign.execute)
+schedule.every(1).hours.do(run_threaded,GrafanaPlots)
 
 while 1:
     schedule.run_pending()
