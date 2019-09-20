@@ -97,7 +97,16 @@ urlpatterns = [
     re_path(r'^campaignpredictioninfo/$', campaignprediction.campaignPredictionInfo, name='campaignPredictionInfo'),
     re_path(r'^globalpage/$', globalpage.globaldemo, name='SITGlobalPage'),
     re_path(r'^globalpagedata/$', globalpage.globaldata, name='SITGlobalData'),
-
+    re_path(r'^globalview/$', globalview.globalviewDemo, name='BuildGlobal'),
+    re_path(r'^globalviewdata/$', globalview.globalviewData, name='BuildGlobalData'),
+    re_path(r'^ciview/$', ciview.civiewDemo, name='BuildCI'),
+    re_path(r'^civiewdata/$', ciview.civiewData, name='BuildCIData'),
+    re_path(r'^nview/$', nview.nviewDemo, name='BuildN'),
+    re_path(r'^nviewdata/$', nview.nviewData, name='BuildNData'),
+    re_path(r'^testsview/$', testsview.testviewDemo, name='TestsRes'),
+    re_path(r'^testsviewdata/$', testsview.testviewData, name='TestsResData'),
+    re_path(r'^compsview/$', compsview.compviewDemo, name='CompsRes'),
+    re_path(r'^compsviewdata/$', compsview.compviewData, name='CompsResData'),
                   #    re_path(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
 #    re_path(r'^worldjobs/production/$', coremon_views.dashWorldProduction, name='dashWorldProduction'),
 
