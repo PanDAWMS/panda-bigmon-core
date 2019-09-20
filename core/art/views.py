@@ -197,17 +197,21 @@ def art(request):
 
     tquery = {}
     tquery['platform__endswith'] = 'opt'
-    packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
-    branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
-    ntags = ARTTests.objects.values('nightly_tag').annotate(nightly_tag_date=Substr('nightly_tag', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
 
+    # limit results by N days
+    N_DAYS_LIMIT = 90
+    extrastr = " (TO_DATE(SUBSTR(NIGHTLY_TAG, 0, INSTR(NIGHTLY_TAG, 'T')-1), 'YYYY-MM-DD') > sysdate - {}) ".format(N_DAYS_LIMIT)
+
+    packages = ARTTests.objects.filter(**tquery).extra(where=[extrastr]).values('package').distinct().order_by('package')
+    branches = ARTTests.objects.filter(**tquery).extra(where=[extrastr]).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
+    ntags = ARTTests.objects.values('nightly_tag').annotate(nightly_tag_date=Substr('nightly_tag', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
 
     data = {
             'request': request,
             'viewParams': request.session['viewParams'],
-            'packages':[p['package'] for p in packages],
-            'branches':[b['branch'] for b in branches],
-            'ntags':[t['nightly_tag_date'] for t in ntags]
+            'packages': [p['package'] for p in packages],
+            'branches': [b['branch'] for b in branches],
+            'ntags': [t['nightly_tag_date'] for t in ntags]
     }
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
