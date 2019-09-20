@@ -25,6 +25,11 @@ from core.errorsscattering import views as errorsscat_views
 from core.compare import views as compare_views
 
 from core.globalpage import views as globalpage
+from core.buildmonitor import viewsglobal as globalview
+from core.buildmonitor import viewsci as ciview
+from core.buildmonitor import viewsn as nview
+from core.buildmonitor import viewstests as testsview
+from core.buildmonitor import viewscomps as compsview
 
 #import core.views as coremon_views
 import core.pandajob.views_support as core_coremon_support_views
