@@ -1,0 +1,81 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}ATLAS CI Builds Summary{% endblock %}
+{% block title %}PanDA monitor{% endblock %}
+{% block subtitle %}Monitoring for ASCIG on BigPanDA{% endblock %}
+
+{% block body %}
+
+<div>
+<P>
+<link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
+  <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
+  <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
+
+<div id="hjk">
+    <P><H3>ATLAS CI Builds Summary</H3>
+
+</div>
+
+<div id="linkslist"><P><a href="{% url 'BuildGlobal' %}">Link to global system page</a></div>
+
+<table id="CISummary" class="stripe">
+     <thead>
+                <th>Release</th>
+                <th>Platform</th>
+                <th>Project</th>
+                <th>git branch<BR>(link to MR)</th>
+                <th>Job time stamp</th>
+                <th>git clone</th>
+                <th>Externals<BR>build</th>
+                <th>CMake<BR>config</th>
+                <th>Build time</th>
+                <th>Comp. Errors<BR>(w/warnings)</th>
+                <th>Test time</th>
+                <th>Pct. of Successful<BR>CTest tests<BR>(no warnings)</th>
+     </thead>
+     <tbody></tbody>
+    </table>
+<script type="text/javascript">
+
+var cidisplayTable = $('#CISummary').dataTable({
+"order": [[4, 'desc']],
+"pageLength": 100,
+"lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
+"ajax": {
+                 "processing": true,
+                 "url": "{% url 'BuildCIData' %}",
+                 "dataSrc" : ''},
+
+"rowCallback": function( row, data, displayIndex ) {
+                 var v0=($('td:eq(0)',row).text().split("-"))[1];
+                 var v0I = parseInt(v0, 10);
+                 var v0F = 0.5;
+                 if ( v0I > 20000 && v0I < 30000 ) { v0F = (v0I - 20000)/11000;}
+                 else if ( v0I >= 30000 && v0I < 40000 ) { v0F = (v0I - 30000)/11000;}
+                 var hexV0 = '#F'+Math.floor(v0F*1048575).toString(16);
+                 $('td:eq(0)', row).css("background-color", hexV0).css("border", "1px solid rgb(197, 219, 236)");
+                 var v9=($('td:eq(9)',row).text().split(" "))[0];
+                 var v11=($('td:eq(11)',row).text().split(" "))[0]; 
+                 if ( v9 > 6 ) { $('td:eq(9)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v9 > 0 ) { $('td:eq(9)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");} 
+                 else if ( /\s/.test(v9) )  { $('td:eq(9)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+                 else { $('td:eq(9)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 if ( v11 < 95 ) { $('td:eq(11)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v11 < 32 ) { $('td:eq(11)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v11 != 'N/A' )  { $('td:eq(11)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 else { $('td:eq(11)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+
+/*
+                 if (v9 >= 0) { 
+                 $('td:eq(9)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");
+                 };
+*/
+},
+});
+
+</script>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Test Summary{% endblock %}
+{% block title %}PanDA monitor{% endblock %}
+{% block subtitle %}Monitoring for ASCIG on BigPanDA{% endblock %}
+
+{% block body %}
+
+<div>
+<P>
+<link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
+  <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
+  <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
+
+<div id="hjk">
+    <P><H3><B>Compilation Results</B></H3>
+       <H3>branch {{ nightly }}, release {{ rel }}, platform={{ ar }}</H3>
+</div>
+<div id="linkslist"><P><a href="{% url 'BuildGlobal' %}">Link to global system page</a></div>
+
+<table id="CompsResults" class="stripe">
+     <thead>
+                <th>Result</th>
+                <th>Project</th>
+                <th>Package</th>
+                <th>Container</th>
+     </thead>
+     <tbody></tbody>
+    </table>
+<script type="text/javascript">
+
+var compdisplayTable = $('#CompsResults').dataTable({
+"order": [[0, 'desc'],[1, 'asc']],
+"pageLength": 100,
+"lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
+"ajax": {
+                 "processing": true,
+                 "url": "{% url 'CompsResData' %}?nightly={{ nightly }}&rel={{ rel }}&ar={{ ar }}",
+                 "dataSrc" : ''},
+"rowCallback": function( row, data, displayIndex ) {
+               var v0v = $('td:eq(0)',row).html();
+               var indvv = 1;
+               if (/ERROR/.test(v0v)) {
+                   if (row.className == 'even' ){
+                      $('td:eq('+indvv+')', row).css("background-color", "#F99E88") /* .css('opacity', '0.7');  */
+                   } else { $('td:eq('+indvv+')', row).css("background-color", "#F5623D"); }
+                   }
+               else if (/MINOR/.test(v0v)) {
+                   if (row.className == 'even' ){
+                      $('td:eq('+indvv+')', row).css("background-color", "#FFE9BB");
+                   } else { $('td:eq('+indvv+')', row).css("background-color", "#FFD780"); }
+                   }
+               else if (/WARNING/i.test(v0v)) {
+                   if ( row.className == 'even' ){
+                      $('td:eq('+indvv+')', row).css("background-color", "#EAA032");
+                   } else { $('td:eq('+indvv+')', row).css("background-color", "#E58900"); } /* #F0A675 */
+               };
+},
+});
+
+</script>
+</div>
+{% endblock %}
