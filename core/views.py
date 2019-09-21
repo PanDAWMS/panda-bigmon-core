@@ -9690,7 +9690,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
             if pname not in ('walltimeperevent', 'cputimeperevent'):
                 plotsDict[pname]['ranges'] = list(np.ceil(ranges))
             else:
-                plotsDict[pname]['ranges'] = ranges
+                plotsDict[pname]['ranges'] = list(ranges)
             for site in plotsDict[pname]['sites'].keys():
                 sitedata = [x for x in plotsDict[pname]['sites'][site]]
                 plotsDict[pname]['sites'][site] = list(np.histogram(sitedata, ranges)[0])
