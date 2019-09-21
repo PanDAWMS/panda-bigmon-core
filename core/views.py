@@ -9687,7 +9687,10 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
             bins, ranges = np.histogram(rawdata, bins='auto')
             if len(ranges) > nbinsmax + 1:
                 bins, ranges = np.histogram(rawdata, bins=nbinsmax)
-            plotsDict[pname]['ranges'] = list(np.ceil(ranges))
+            if pname not in ('walltimeperevent', 'cputimeperevent'):
+                plotsDict[pname]['ranges'] = list(np.ceil(ranges))
+            else:
+                plotsDict[pname]['ranges'] = ranges
             for site in plotsDict[pname]['sites'].keys():
                 sitedata = [x for x in plotsDict[pname]['sites'][site]]
                 plotsDict[pname]['sites'][site] = list(np.histogram(sitedata, ranges)[0])
