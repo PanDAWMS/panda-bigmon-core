@@ -19,7 +19,7 @@
        <H4>for branch {{ nightly }}</H4>
 </div>
 
-<div id="linkslist"><P><a href="{% url 'BuildGlobal' %}">Link to global system page</a></div>
+<div id="notes"><P><UL><LI><a href="{% url 'BuildGlobal' %}">Link to global system page</a><LI><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/NightliesCIInfo">Nightly and CI systems features and policies</a></UL></div>
 
 <table id="NSummary" class="stripe">
      <thead>
@@ -46,7 +46,7 @@ var ndisplayTable = $('#NSummary').dataTable({
 "lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
 "ajax": {
                  "processing": true,
-                 "url": "{% url 'BuildNData' %}?nightly={{ nightly }}",
+                 "url": "{% url 'BuildNData' %}?nightly={{ nightly }}&rel={{ rel }}",
                  "dataSrc" : ''},
 
 "rowCallback": function( row, data, displayIndex ) {
