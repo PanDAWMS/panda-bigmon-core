@@ -5,7 +5,7 @@ from django.db import connection, transaction
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-import json, re
+import json, re, os
 from collections import defaultdict
 from operator import itemgetter, attrgetter
 
@@ -24,8 +24,12 @@ def civiewDemo(request):
         nname = request.session['requestParams']['nightly']
     else:
         nname = 'MR-CI-builds'
+    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 50:
+        rname = request.session['requestParams']['rel']
+    else:
+        rname = '*'
 #    nname = 'MR-CI-builds'
-    data={"nightly": nname}
+    data={"nightly": nname, "rel": rname}
     return render_to_response('civiewDemo.html', data, content_type='text/html') 
 
 def civiewData(request):
@@ -35,7 +39,10 @@ def civiewData(request):
         nname = request.session['requestParams']['nightly']
     else:
         nname = 'MR-CI-builds'
-
+    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 50:
+        rname = request.session['requestParams']['rel']
+    else:
+        rname = '*'
     check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span s\
 tyle="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-ico\
 n-circle-check">ICON33</span></div>'
@@ -67,6 +74,9 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
 
     query="select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and tstamp between sysdate-4+1/24 and sysdate order by tstamp desc" % nname
+    if rname != '*':
+      query="select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and name ='%s' and tstamp between sysdate-4+1/24 and sysdate order by tstamp desc" % (nname,rname)
+
 ####HEADERS      <th>Release</th>
 #                <th>Platform</th>
 #                <th># Projects</th>
@@ -90,6 +100,9 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       jid_sel = row[0]
       ar_sel = row[1]
       rname = row[4]
+      rname_trun = re.sub(r'\([^)]*\)', '', rname)
+      webarea_cur = row[5]
+      if webarea_cur == None: webarea_cur = "";
       job_start = row[8]
       mrlink = row[7]
       gitbr = row[13]
@@ -133,6 +146,8 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           nc_pb=row01[15]
           cpcer=row01[18]
           cpcpb=row01[17]
+          area_suffix=row01[19]
+          if area_suffix == None: area_suffix = "";
           pjname=row01[1]  
           ntcompl='0';tpccompl='0';nt_er='0';nt_pb='0';tpcer='0';tpcpb='0'
           if pjname in dict_jid02 :
@@ -165,11 +180,18 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           if i_checkout == None or i_checkout == "None" : i_checkout=radiooff_icon; 
           if i_inst == None or i_inst == "None" : i_inst=radiooff_icon;
           if i_config == None or i_config == "None" : i_config=radiooff_icon;
+          ii_checkout,ii_inst,ii_config=i_checkout,i_inst,i_config
+          if ii_checkout == check_icon or ii_checkout == error_icon or ii_checkout == majorwarn_icon or ii_checkout == minorwarn_icon:
+              ii_checkout = "<a href=\""+webarea_cur+os.sep+'nicos_web_area'+area_suffix+os.sep+'NICOS_Log_'+rname_trun+os.sep+'nicos_checkout.html'+"\">"+i_checkout+"</a>"
+          if ii_inst == check_icon or ii_inst == error_icon or ii_inst == majorwarn_icon or ii_inst == minorwarn_icon:
+              ii_inst = "<a href=\""+webarea_cur+os.sep+'nicos_web_area'+area_suffix+os.sep+'NICOS_Log_'+rname_trun+os.sep+'nicos_instbuild.html'+"\">"+i_inst+"</a>"
+          if ii_config == check_icon or ii_config == error_icon or ii_config == majorwarn_icon or ii_config == minorwarn_icon:
+              ii_config = "<a href=\""+webarea_cur+os.sep+'nicos_web_area'+area_suffix+os.sep+'NICOS_Log_'+rname_trun+os.sep+'nicos_confbuild.html'+"\">"+i_config+"</a>"
           link_to_testsRes=reverse('TestsRes')
           link_to_compsRes=reverse('CompsRes')
           i_combo_t="<a href=\""+link_to_testsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_t+"</a>"
           i_combo_c="<a href=\""+link_to_compsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_c+"</a>"
-          row_cand=[rname,ar_sel,pjname,mrlink_a,t_start,i_checkout,i_inst,i_config,t_bstart,i_combo_c,t_test,i_combo_t]
+          row_cand=[rname,ar_sel,pjname,mrlink_a,t_start,ii_checkout,ii_inst,ii_config,t_bstart,i_combo_c,t_test,i_combo_t]
           rows_s.append(row_cand)
 
     return HttpResponse(json.dumps(rows_s, cls=DateEncoder), content_type='application/json')

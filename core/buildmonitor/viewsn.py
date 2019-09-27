@@ -24,7 +24,11 @@ def nviewDemo(request):
         nname = request.session['requestParams']['nightly']
     else:
         nname = 'master_Athena_x86_64-centos7-gcc8-opt'
-    data={"nightly": nname}
+    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 50:
+        rname = request.session['requestParams']['rel']
+    else:
+        rname = '*'
+    data={"nightly": nname, "rel": rname}
     return render_to_response('nviewDemo.html', data, content_type='text/html') 
 
 def nviewData(request):
@@ -34,6 +38,10 @@ def nviewData(request):
         nname = request.session['requestParams']['nightly']
     else:
         nname = 'master_Athena_x86_64-centos7-gcc8-opt'
+    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 50:
+        rname = request.session['requestParams']['rel']
+    else:
+        rname = '*'
 
     check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span s\
 tyle="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-ico\
@@ -66,6 +74,8 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
 
     query="select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and tstamp between sysdate-7+1/24 and sysdate order by tstamp desc" % nname
+    if rname != '*':
+      query="select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and name ='%s' and tstamp between sysdate-7+1/24 and sysdate order by tstamp desc" % (nname,rname)
 ####HEADERS      <th>Release</th>
 #                <th>Platform</th>
 #                <th>Project</th>
