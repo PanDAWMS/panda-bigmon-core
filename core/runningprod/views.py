@@ -780,7 +780,7 @@ def prodNeventsTrend(request):
     plot_data = []
 
     if view == 'joint':
-        ev_states = ['running', 'used', 'waiting']
+        ev_states = ['running', 'waiting']
 
         data = {}
         for es in ev_states:

@@ -194,7 +194,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           row_cand=[rname,ar_sel,pjname,mrlink_a,t_start,ii_checkout,ii_inst,ii_config,t_bstart,i_combo_c,t_test,i_combo_t]
           rows_s.append(row_cand)
 
-    return HttpResponse(json.dumps(rows_s, cls=DateEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(rows_s, cls=DateEncoder), content_type='application/json')
 ####HEADERS  0    <th>Release</th>
 #            1    <th>Platform</th>
 #            2    <th># Projects</th>

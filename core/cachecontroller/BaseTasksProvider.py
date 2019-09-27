@@ -31,6 +31,9 @@ class BaseTasksProvider(object):
         except:
             pass
         self.logger.debug("Number of DB sessions:" + str(totalSessionCount))
+        if totalActiveSessionCount is None:
+            totalActiveSessionCount = 0
+            self.logger.debug("Reset number of active sessions to: " + str(totalActiveSessionCount))
         return totalActiveSessionCount
 
     def logActivity(self):
