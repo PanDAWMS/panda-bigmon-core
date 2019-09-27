@@ -19,9 +19,6 @@ from core.globalshares import views as globalshares
 from core.dashboards import dtcdboard as dtcdboard
 from core.dashboards import campaignprediction as campaignprediction
 
-
-from core.runningprod import views as runningprod_views
-from core.errorsscattering import views as errorsscat_views
 from core.compare import views as compare_views
 
 from core.globalpage import views as globalpage
@@ -183,9 +180,9 @@ urlpatterns = [
     re_path(r'^testip/$', coremon_views.testip, name='testip'),
     re_path(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
 
-    re_path(r'^taskserrorsscat/$', errorsscat_views.tasksErrorsScattering, name='tasksErrorsScattering'),
-    re_path(r'^errorsscat/$', errorsscat_views.errorsScattering, name='errorsScattering'),
-    re_path(r'^errorsscat/(?P<cloud>.*)/(?P<reqid>.*)/$', errorsscat_views.errorsScatteringDetailed, name='errorsScatteringDetailed'),
+    ### ErrorsScattering matrix
+    re_path('', include('core.errorsscattering.urls_errorsscattering')),
+
     ###Monitor###
     re_path(r'^bigpandamonitor/$', monitor_views.monitorJson, name='bigpandamonitor'),
 
