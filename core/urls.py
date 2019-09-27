@@ -7,7 +7,7 @@ from django.urls import re_path, include
 from core import views as coremon_views
 from core import dpviews as dpviews
 from core import MemoryMonitorPlots as memmon
-from core.art import views as art_views
+
 
 from core.monitor import views as monitor_views
 from core.harvester import views as harvester
@@ -140,14 +140,7 @@ urlpatterns = [
     re_path(r'^serverstatushealth/$', coremon_views.serverStatusHealth, name='serverStatusHealth'),
 
                   ### ART nightly tests
-    re_path(r'^art/$', art_views.art, name='art-mainPage'),
-    re_path(r'^art/overview/$', art_views.artOverview, name='artOverview'),
-    re_path(r'^art/tasks/$', art_views.artTasks, name='artTasks'),
-    re_path(r'^art/jobs/$', art_views.artJobs, name='artJobs'),
-    re_path(r'^art/getjobsubresults/$', art_views.getJobSubResults, name='artJobSubResults'),
-    re_path(r'^art/updatejoblist/$', art_views.updateARTJobList),
-    re_path(r'^art/registerarttest/$', art_views.registerARTTest),
-    re_path(r'^art/sendartreport/$', art_views.sendArtReport),
+    re_path(r'^art/', include('core.art.urls_art')),
 
 
 
