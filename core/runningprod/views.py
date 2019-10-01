@@ -1,7 +1,6 @@
 import random
 import json
 import copy
-from collections import OrderedDict
 
 from datetime import datetime, timedelta
 
@@ -9,63 +8,14 @@ from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
-from django.db import connection, transaction, DatabaseError
+from django.utils.cache import patch_response_headers
 
-from django.utils.cache import patch_cache_control, patch_response_headers
+from core.settings import defaultDatetimeFormat
+from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
+from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, DateEncoder, removeParam, taskSummaryDict, preprocessWildCardString
 
-
-from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
-from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, preparePlotData
-from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder, \
-    extensibleURL, DateTimeEncoder, removeParam, taskSummaryDict, preprocessWildCardString
-
-from core.runningprod.models import RunningDPDProductionTasks, RunningProdTasksModel , RunningMCProductionTasks,  RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
-
-
-def prepareNeventsByProcessingType(task_list):
-    """
-    Prepare data to save
-    :param task_list:
-    :return:
-    """
-
-    event_states = ['total', 'used', 'running', 'waiting']
-    neventsByProcessingType = {}
-    for task in task_list:
-        if task['processingtype'] not in neventsByProcessingType:
-            neventsByProcessingType[task['processingtype']] = {}
-            for ev in event_states:
-                neventsByProcessingType[task['processingtype']][ev] = 0
-        neventsByProcessingType[task['processingtype']]['total'] += task['nevents'] if 'nevents' in task and task['nevents'] is not None else 0
-        neventsByProcessingType[task['processingtype']]['used'] += task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
-        neventsByProcessingType[task['processingtype']]['running'] += task['neventsrunning'] if 'neventsrunning' in task and task['neventsrunning'] is not None else 0
-        neventsByProcessingType[task['processingtype']]['waiting'] += (task['neventstobeused'] - task['neventsrunning']) if 'neventstobeused' in task and 'neventsrunning' in task and task['neventstobeused'] is not None and task['neventsrunning'] is not None else 0
-
-    return neventsByProcessingType
-
-
-def saveNeventsByProcessingType(neventsByProcessingType, qtime):
-    """
-    Save a snapshot of production state expressed in nevents in different states for various processingtype
-    :param neventsByProcessingType:
-    :param qtime:
-    :return: True in case of successful save but False in case of an exception error
-    """
-
-    try:
-        with transaction.atomic():
-            for pt, data in neventsByProcessingType.items():
-                row = ProdNeventsHistory(processingtype=pt,
-                                         neventstotal=data['total'],
-                                         neventsused=data['used'],
-                                         neventswaiting=data['waiting'],
-                                         neventsrunning=data['running'],
-                                         timestamp=qtime)
-                row.save()
-    except DatabaseError as e:
-        print (e.message)
-        return False
-    return True
+from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType
+from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
 
 
 @login_customrequired
