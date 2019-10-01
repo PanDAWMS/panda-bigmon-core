@@ -860,6 +860,8 @@ def registerARTTest(request):
     curl -X POST -d "pandaid=XXX" -d "testname=test_XXXXX.sh" http://bigpanda.cern.ch/art/registerarttest/?json
     """
     valid,response = initRequest(request)
+    if not valid:
+        return HttpResponse(status=401)
     pandaid = -1
     testname = ''
     nightly_release_short = None
