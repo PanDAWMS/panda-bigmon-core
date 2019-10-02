@@ -68,7 +68,7 @@
 //  56. Xy Grid
 //  57. Tag Cloud
 
-@import '../bower_components/foundation-sites/scss/util/util';
+@import '../../node_modules/foundation-sites/scss/util/util';
 
 // 1. Global
 // ---------
@@ -116,7 +116,7 @@ $global-color-pick-contrast-tolerance: 0;
 $print-transparent-backgrounds: true;
 
 
-$fi-path: "../bower_components/foundation-icon-fonts";
+$fi-path: "../../node_modules/foundation-icons";
 $i-icon-padding: 0 .4rem 0 0;
 $global-button-padding: 1rem 0;
 
