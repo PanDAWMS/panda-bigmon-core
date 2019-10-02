@@ -36,23 +36,8 @@ class Grafana(object):
             endMillisec = int(endtime.strftime("%s")) * 1000
         else:
             startD = datetime.strptime(query_object.starttime, '%d.%m.%Y %H:%M:%S')
-            # if '00:00:00' in query_object.endtime:
-            #     delta = timedelta(minutes=1)
-            # else:
-            #     delta = timedelta(minutes=0)
-            endD = datetime.strptime(query_object.endtime, '%d.%m.%Y %H:%M:%S')
 
-            # localtime = pytz.timezone('Europe/Zurich')
-            # a = localtime.localize(startD)
-            # dst = bool(a.dst())
-            # if dst:
-            #     tdelta = timedelta(hours=2)
-            #     startD = startD + tdelta
-            #     endD = endD + tdelta
-            # else:
-            #     tdelta = timedelta(hours=1)
-            #     startD = startD + tdelta
-            #     endD = endD + tdelta
+            endD = datetime.strptime(query_object.endtime, '%d.%m.%Y %H:%M:%S')
 
             startMillisec = int(startD.strftime("%s")) * 1000
             endMillisec = int(endD.strftime("%s")) * 1000
@@ -72,13 +57,7 @@ class Grafana(object):
            AND vo = 'atlas' AND time >= {3}ms and time <= {4}ms GROUP BY {5}
                '''.format(query_object.agg_func, dst_federation, dst_country,
                            startMillisec, endMillisec, query_object.grouping)
-            # query = \
-            #     '''
-            #     SELECT {0}("atlas") FROM "long_1d"."pledges"
-            #     WHERE ("pledge_type" = 'CPU' AND "real_federation" =~ /^{1}/ AND "country" =~ /^{2}/)
-            #     AND time >= {3}ms and time <= {4}ms GROUP BY {5}
-            #     '''.format(query_object.agg_func, dst_federation, dst_country,
-            #                startMillisec, endMillisec, query_object.grouping)
+
             query = re.sub(r"([\n ])\1*", r"\1", query).replace('\n', ' ').lstrip().strip()
             query = re.sub(' +', ' ', query)
             return query
@@ -220,20 +199,20 @@ class Grafana(object):
             if query_object.table == 'pending':
                 pquery = """"jobstatus" = 'pending' AND """
             else: pquery = ''
-
+            select_con = self.select_con(query_object.agg_func, query_object.field)
             query =  \
             '''
-            SELECT {0}("{1}") FROM "long_{3}"."{2}_{3}" 
-            WHERE ({27}"dst_experiment_site" =~ /^{4}$/ AND "dst_cloud" =~ /^{5}$/ 
-            AND "dst_country" =~ /^{6}$/ AND "dst_federation" =~ /^{7}$/ 
-            AND "adcactivity" =~ /^{8}$/ AND "resourcesreporting" =~ /^{9}$/ AND "actualcorecount" =~ /^{10}$/ 
-            AND "resource_type" =~ /^{11}$/ AND "workinggroup" =~ /^{12}$/ 
-            AND "inputfiletype" =~ /^{13}$/ AND "eventservice" =~ /^{14}$/ 
-            AND "inputfileproject" =~ /^{15}$/ AND "outputproject" =~ /^{16}$/ 
-            AND "jobstatus" =~ /^{17}$/ AND "computingsite" =~ /^{18}$/ AND "gshare" =~ /^{19}$/ 
-            AND "dst_tier" =~ /^{20}$/ AND "processingtype" =~ /^{21}$/ AND "nucleus" =~ /^{22}$/ AND "error_category" =~ /^{23}$/ )  
-            AND  time >= {24}ms and time <= {25}ms GROUP BY {26} fill(0)&epoch=ms
-            '''.format(query_object.agg_func, query_object.field, query_object._get_table(query_object.table), query_object.bin, dst_experiment_site, dst_cloud, dst_country,
+            SELECT {0} FROM "long_{2}"."{1}_{2}" 
+            WHERE ({26}"dst_experiment_site" =~ /^{3}$/ AND "dst_cloud" =~ /^{4}$/ 
+            AND "dst_country" =~ /^{5}$/ AND "dst_federation" =~ /^{6}$/ 
+            AND "adcactivity" =~ /^{7}$/ AND "resourcesreporting" =~ /^{8}$/ AND "actualcorecount" =~ /^{9}$/ 
+            AND "resource_type" =~ /^{10}$/ AND "workinggroup" =~ /^{11}$/ 
+            AND "inputfiletype" =~ /^{12}$/ AND "eventservice" =~ /^{13}$/ 
+            AND "inputfileproject" =~ /^{14}$/ AND "outputproject" =~ /^{15}$/ 
+            AND "jobstatus" =~ /^{16}$/ AND "computingsite" =~ /^{17}$/ AND "gshare" =~ /^{18}$/ 
+            AND "dst_tier" =~ /^{19}$/ AND "processingtype" =~ /^{20}$/ AND "nucleus" =~ /^{21}$/ AND "error_category" =~ /^{22}$/ )  
+            AND  time >= {23}ms and time <= {24}ms GROUP BY {25} fill(0)&epoch=ms
+            '''.format(select_con, query_object._get_table(query_object.table), query_object.bin, dst_experiment_site, dst_cloud, dst_country,
                     dst_federation, adcactivity, resourcesreporting, actualcorecount, resource_type, workinggroup,
                     inputfiletype, eventservice, inputfileproject, outputproject, jobstatus, computingsite, gshare,
                     dst_tier, processingtype, nucleus, error_category, startMillisec, endMillisec, query_object.grouping, pquery)
@@ -242,7 +221,7 @@ class Grafana(object):
             return query
 
     def get_url(self, query):
-        
+
         url = self.grafana_proxy + self._get_datsource(query.table) + '/query?db=' + self.grafana_database+'_'+ query.table + '&q=' + self.get_query(query)
         return url
 
@@ -265,3 +244,17 @@ class Grafana(object):
                 tg = s['tags'][tag]
                 for value in s['values']:
                     print (tg+' '+ str(value[0]) + ' ' + str(datetime.utcfromtimestamp(value[0] / 1000.0).strftime('%d-%b-%y %H:%M:%S'))+ ' ' + str(value[1]))
+
+    def select_con(self, agg_func, agg_field):
+        final_func = ''
+        start_func = ''
+        end_func = '"'+agg_field+'"'
+        if '|' in agg_func:
+            aggr_functions = str(agg_func).split("|")
+            for func in aggr_functions:
+                start_func += func + '('
+                end_func += ')'
+            final_func = start_func + end_func
+        else:
+            final_func = agg_func+"("+end_func+")"
+        return final_func
