@@ -1,0 +1,311 @@
+// BigPanDAmon specific style for main menu bar and top sub-bar
+@import "settings";
+
+// Prevent unstyled html blinking
+// ------------------------------
+.no-js {
+  @include breakpoint(small only) {
+    .top-bar {
+      display: none;
+    }
+  }
+
+  @include breakpoint(medium) {
+    .title-bar {
+      display: none;
+    }
+  }
+}
+
+// Title bar for small screens
+// ------------------------------
+.title-bar a {
+    text-decoration: none;
+}
+
+
+// Main menu
+// ------------------------------
+.top-bar {
+  font-size: $header-font-size;
+  a {
+    color: $topbar-link-color;
+    text-decoration: none;
+    font-size: $header-font-size;
+    &:hover {
+      color: $topbar-link-color;
+      background-color: $light-hover-black;
+    }
+  }
+  i {
+  padding: $i-icon-padding;
+  }
+  .menu-text {
+    padding: 0 !important;
+  }
+  .loggeduser {
+    color: $green;
+    padding: $dropdownmenu-submenu-padding;
+    font-size: $header-font-size;
+  }
+}
+
+
+// Search box in main menu
+// ------------------------------
+$searchbox-top-align: 0.6rem;
+.searchbox {
+  width: 16rem;
+  font-size: 90%;
+  margin: 0 1rem 0 1rem !important;
+  .searchselect {
+    background-color: $topbar-background;
+    color: $white;
+    border: none;
+    height: 1.6rem;
+    margin-top: $searchbox-top-align;
+    padding: 0 1rem 0 0.2rem;
+    text-align: right;
+    font-size: $header-font-size;
+    background-size: 6px 3px;
+    background-position: right -$searchbox-top-align center;
+    &:focus {
+      outline: none;
+      border: 1px solid #8a8a8a;
+      background-color: #272727;
+      box-shadow: none;
+    }
+    &:disabled {
+      background-color: $topbar-background;
+      cursor: not-allowed;
+    }
+  }
+  .searchoption {
+    background-color: $topbar-background;
+    color: $white;
+    text-align: right;
+    font-size: $header-font-size;
+    &:hover {
+      background-color: #272727;
+    }
+  }
+  .searchinput {
+    background-color: #444444;
+    color: $white;
+    border: 1px solid #444444;
+    border-radius: 0.2rem;
+    height: 1.6rem;
+    margin-top: $searchbox-top-align;
+    font-size: $header-font-size;
+    &:focus {
+      outline: none;
+      border: 1px solid #8a8a8a;
+      background-color: $topbar-background;
+      box-shadow: none;
+    }
+  }
+
+  .searchbutton {
+    background-color: $topbar-background;
+    color: $white;
+    i {
+      padding-left: 0.4rem;
+    }
+  }
+}
+
+
+// Top sub bar
+// ------------------------------
+.top-subbar {
+  background-color: $medium-gray;
+  padding: 0.3rem 0.7rem;
+  font-size: 90%;
+  justify-content: space-between;
+
+  .cell {
+    display: flex;
+    flex-wrap: nowrap;
+    &.right {
+      justify-content: flex-end;
+    }
+    &.center {
+      justify-content: center;
+    }
+  }
+
+  .time-window-range {
+    font-weight: bold;
+    padding: 0 0.3rem;
+  }
+
+  a.button.time-window {
+    margin: 0 0.7rem;
+    padding: 0.1rem 0.7rem;
+    text-decoration: none;
+    font-weight: bold;
+  }
+}
+
+// Time window change panel
+// ------------------------------
+
+.time-window-change {
+  background-color: $light-hover-black;
+  border: none;
+
+  > a {
+    text-decoration: none;
+    font-weight: bold;
+    margin: 0.7rem 0.7rem;
+    padding: 0.3rem 0.7rem;
+  }
+}
+
+.tabbed-time-window-change.tabs {
+  background-color: $light-black;
+  border: none;
+
+  .tabs-title > a {
+    color: $white;
+    padding: 0.7rem 1rem;
+    background: $light-black;
+    text-decoration: none;
+    font-size: inherit;
+
+    &:focus, &[aria-selected='true'] {
+      color: $white;
+      background: $light-hover-black;
+      text-decoration: underline;
+    }
+
+    &:hover {
+      color: $white;
+      background: $light-hover-black;
+    }
+  }
+}
+
+
+
+.tabbed-time-window-change-content.tabs-content {
+  background-color: $light-black;
+  border: none;
+
+  .tabs-panel {
+    background-color: $light-black;
+    border: none;
+    color: $white;
+    padding: 0.7rem 0.3rem;
+
+    &.is-active {
+      background-color: $light-hover-black;
+    }
+
+    ul.no-bullet {
+      margin: 0;
+    }
+
+    label {
+      font-size: inherit;
+      color: $white;
+      background: $light-hover-black;
+      padding-left: 0.3rem;
+      margin: 0;
+    }
+
+    input[type=radio] {
+      margin: 0.3rem;
+    }
+
+    input[type=number], input[type=text] {
+      background-color: #444444;
+      color: $white;
+      border: 1px solid #444444;
+      border-radius: 0.2rem;
+      height: 1.6rem;
+      margin: 0;
+      padding: 0 0 0 0.3rem;
+      font-size: $header-font-size;
+
+      &:focus {
+        outline: none;
+        border: 1px solid #8a8a8a;
+        background-color: $topbar-background;
+        box-shadow: none;
+      }
+    }
+  }
+}
+
+
+
+// Filters in tag cloud style
+// ------------------------------
+.tag-cloud-section {
+  background: $tag-cloud-section-bg;
+  padding: 0.3rem 0.7rem;
+  margin: 0 0 0.7rem 0;
+  max-width: $tag-cloud-section-width;
+  font-size: 90%;
+}
+
+.tag-cloud-title {
+  text-transform: uppercase;
+  font-weight: bold;
+  color: $black;
+}
+
+.tag-cloud {
+  margin: 0 0.7rem;
+  text-align: left;
+  list-style: none;
+
+  .tag-cloud-individual-tag {
+    border-radius: 5000px;
+    background: $tag-cloud-tag-color;
+    display: inline-block;
+    color: $tag-cloud-type-color;
+    margin: 0.3rem 0;
+    padding: 0 0.3rem;
+    text-transform: uppercase;
+    font-weight: bold;
+    text-decoration: none;
+
+    &.add {
+      background: $dark-green;
+    }
+
+    .fi {
+      margin-left: 7px;
+      color: $tag-cloud-type-color;
+    }
+
+    &:hover {
+      background: $light-hover-black;
+      transition: background-color .25s ease-in, color .25s ease-out;
+    }
+  }
+}
+
+
+
+// Footer
+// ------------------------------
+.bp-footer {
+  padding: 1rem;
+  background: $topbar-background;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: $header-font-size;
+  color: $light-gray;
+  img {
+    height: 3rem;
+  }
+}
+
+a.button {
+  text-decoration: none;
+  font-weight: bold;
+}
