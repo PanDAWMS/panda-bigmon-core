@@ -398,6 +398,49 @@ span.alert {
   .bp-datatable .num {
     text-align: right; }
 
+.accordion.secondary {
+  margin-left: 0;
+  background: #fefefe;
+  list-style-type: none; }
+  .accordion.secondary .accordion-item:first-child > :first-child {
+    border-radius: 0 0 0 0; }
+  .accordion.secondary .accordion-item:last-child > :last-child {
+    border-radius: 0 0 0 0; }
+  .accordion.secondary .accordion-title {
+    position: relative;
+    display: block;
+    padding: 1.25rem 1rem;
+    background-color: #b0c4de;
+    border: 0px solid #b0c4de;
+    border-bottom: 0;
+    font-size: 1rem;
+    font-weight: bold;
+    line-height: 1;
+    color: #0a0a0a; }
+  .accordion.secondary :last-child:not(.is-active) > .accordion-title {
+    border-bottom: 0px solid #b0c4de;
+    border-radius: 0 0 0 0; }
+  .accordion.secondary .accordion-title:hover, .accordion.secondary .accordion-title:focus {
+    background-color: #b0c4de;
+    color: #0a0a0a; }
+  .accordion.secondary .accordion-title::before {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    margin-top: -0.5rem;
+    content: '+'; }
+  .accordion.secondary .is-active > .accordion-title::before {
+    content: '\2013'; }
+  .accordion.secondary .accordion-content {
+    display: none;
+    padding: 1rem;
+    border: 0px solid #b0c4de;
+    border-bottom: 0;
+    background-color: #fefefe;
+    color: #0a0a0a; }
+  .accordion.secondary :last-child > .accordion-content:last-child {
+    border-bottom: 0px solid #b0c4de; }
+
 @font-face {
   font-family: "foundation-icons";
   src: url("../../node_modules/foundation-icons/foundation-icons.eot");

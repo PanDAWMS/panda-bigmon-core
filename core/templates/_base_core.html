@@ -10,15 +10,6 @@
 
 <title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
 
-
-{% block extra_js_hepsw %}
-
-{% endblock %}
-
-
-
-
-	<!-- Included CSS Files -->
 <!-- Included CSS Files -->
 
 {#<link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}">#}
@@ -32,36 +23,7 @@
 {#<link rel="stylesheet" href="{% static "css/page-sections.css" %}?version=3">#}
 
 <link rel="stylesheet" href="{% static "core/css/app.css" %}">
-{% block extra_css %}{% endblock %}
 
-{#<link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}">#}
-{#<link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}">#}
-{#<link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">#}
-{#<link rel="stylesheet" href="{% static "css/main-nav.css" %}?version=1">#}
-{#<link rel="stylesheet" href="{% static "css/state-colors.css" %}?version=1">#}
-{#<link rel="stylesheet" href="{% static "css/table.css" %}?version=4">#}
-{#<link rel="stylesheet" href="{% static "css/d3js-plots.css" %}">#}
-{#<link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}">#}
-{#<link rel="stylesheet" href="{% static "css/page-sections.css" %}?version=3">#}
-
-
-<link rel="stylesheet" href="{% static "core/css/app.css" %}">
-
-
-
-<script>
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-ga('create', '{% block gacode %}UA-44940804-1{% endblock %}', '{% block gaweb %}pandawms.org{% endblock %}');
-ga('send', 'pageview');
-</script>
-
-
-<div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="medium" id="main-menu-small">
-  <button class="menu-icon" type="button" data-toggle="main-menu"><i class="fi-list"></i></button>
 <div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="medium" id="main-menu-small">
   <button class="menu-icon" type="button" data-toggle="main-menu"><i class="fi-list"></i></button>
   <div class="title-bar-title">Menu</div>
@@ -345,15 +307,11 @@ ga('send', 'pageview');
 <!-- End Header and Nav -->
 </head>
 
-
-
-
-
 <body>
 
 <!-- sub-title -->
 <div class="grid-x align-middle top-subbar">
-    <div class="cell small-12 medium-9 large-10" id="">
+    <div class="cell small-3 medium-2 large-2" id="">
         {% block subtitle %}Subtitle goes here{% endblock %}
     </div>
 
@@ -372,7 +330,7 @@ ga('send', 'pageview');
 <!-- End sub-title -->
 
 <!-- body content -->
-<div class="grid-x full" id="content">
+<div class="large-12 columns" id="content">
 {% block body %}
 
 {% endblock %}
@@ -573,50 +531,60 @@ ga('send', 'pageview');
                         break;
                     }
     }
+
     function AutoCompleteSelectHandler(event, ui)
     {
        var selectedObj = ui.item;
     }
 </script>
 
-{% block extra_js_bottombody %}{% endblock %}
-{#  <script src="{% static 'js/app.js' %}"></script>#}
-  <script>
-    $(document).foundation();
-  </script>
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
+ga('create', '{% block gacode %}UA-44940804-1{% endblock %}', '{% block gaweb %}pandawms.org{% endblock %}');
+ga('send', 'pageview');
+</script>
 
+{% block extra_js %}{% endblock %}
 
 <!-- Footer -->
 <footer>
-{% block helptext %}{% endblock %}
+<div class="large-12 columns">
+    {% block bottom_copy %}
+    <table width=1000 class="hide-for-small">
+    <a name="doc"></a>
 
-<img src="{% url 'statpixel' %}?uid=" style="width:1px;height:1px;">
+    {% block helptext %}{% endblock %}
 
-{#{% if debuginfo %}#}
-{#<p>********** DEBUG:<br>#}
-{#{{ debuginfo|safe }}#}
-{#<br><br>********** Request:<br>{{ request }}#}
-{#<br><br>********** Session:<br>#}
-{#{% for key, val in request.session.items %}#}
-{#{{ key }} = {{ val }} <br>#}
-{#{% endfor %}#}
-{#</p>#}
-{#{% endif %}#}
-
-<div class="grid-x bp-footer">
-    <div class="cell small-4 medium-2 large-1">
-        <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PanDA"><img src="{% static "images/panda-logo-reversed.png" %}"></a>
+    <img src="{% url 'statpixel' %}?uid=" style="width:1px;height:1px;">
+    {% if debuginfo %}
+    <p>********** DEBUG:<br>
+    {{ debuginfo|safe }}
+    <br><br>********** Request:<br>{{ request }}
+    <br><br>********** Session:<br>
+    {% for key, val in request.session.items %}
+    {{ key }} = {{ val }} <br>
+    {% endfor %}
+    </p>
+    {% endif %}
+    </td></tr>
+    </table>
+    <div class="row left-aligned">
+         <div class="small-4 left-aligned column">
+                <table borderwidth=0>
+                <tr><td valign="bottom">
+              <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PanDA"><img src="{% static "images/panda-verysmall-notext.png" %}"></a></td>
+              <td valign="bottom"><font size=-1>Brought to you by the PanDA team. <br> All times are in UTC. Page may be cached; check the build time above.
+              <br><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a></font></td>
+              </tr></table>
+         </div>
+        <div class="column small-8"></div>
     </div>
-    <div class="cell small-4 medium-5 large-5">
-        Brought to you by the PanDA team.
-    </div>
-    <div class="cell small-4 medium-5 large-6">
-        <br> All times are in UTC. Page may be cached; check the build time above.
-        <br><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a>
-    </div>
+    {% endblock %}
 </div>
-
 </footer>
 <!-- End Footer -->
 </html>
