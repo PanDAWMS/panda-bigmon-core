@@ -10,13 +10,6 @@
 
 	<title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
 
-<script src="{% static 'js/vendor/modernizr.js' %}"></script>
-<script src="{% static 'js/jquery/jquery-3.3.1.min.js' %}"></script>
-<script src="{% static 'js/vendor/what-input.js' %}"></script>
-<script src="{% static 'js/vendor/foundation.min.js' %}"></script>
-<script src="{% static 'js/d3.v3.min.js' %}"></script>
-<script src="{% static "/js/clipboardjs/clipboard.min.js" %}"></script>
-<script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>
 
 {% block extra_js_hepsw %}
 
@@ -35,65 +28,73 @@
 
 {#  <link rel="stylesheet" href="{% static "css/foundation/normalize.css" %}">#}
 
-<link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}?{% cache_bust "css/foundation/foundation.css" %}">
-<link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}?{% cache_bust "css/foundation/foundation-icons/foundation-icons.css" %}">
-<link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}?{% cache_bust 'js/jquery-ui/jquery-ui.css' %}">
-<link rel="stylesheet" href="{% static "css/main-nav.css" %}?{% cache_bust "css/main-nav.css" %}">
-<link rel="stylesheet" href="{% static "css/state-colors.css" %}?{% cache_bust "css/state-colors.css" %}">
-<link rel="stylesheet" href="{% static "css/table.css" %}?{% cache_bust "css/table.css" %}">
-<link rel="stylesheet" href="{% static "css/d3js-plots.css" %}?{% cache_bust "css/d3js-plots.css" %}">
-<link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}?{% cache_bust "css/taskstatestooltip.css" %}">
-<link rel="stylesheet" href="{% static "css/page-sections.css" %}?{% cache_bust "css/page-sections.css" %}">
+{#<link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}">#}
+{#<link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}">#}
+{#<link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">#}
+{#<link rel="stylesheet" href="{% static "css/main-nav.css" %}?version=1">#}
+{#<link rel="stylesheet" href="{% static "css/state-colors.css" %}?version=1">#}
+{#<link rel="stylesheet" href="{% static "css/table.css" %}?version=4">#}
+{#<link rel="stylesheet" href="{% static "css/d3js-plots.css" %}">#}
+{#<link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}">#}
+{#<link rel="stylesheet" href="{% static "css/page-sections.css" %}?version=3">#}
 
 
-	{% comment %} <link rel="stylesheet" href="{% static "css/bigpandamon.css" %}"> {% endcomment %}
+<link rel="stylesheet" href="{% static "core/css/app.css" %}">
 
 
 
-	<script>
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-    ga('create', '{% block gacode %}UA-44940804-1{% endblock %}', '{% block gaweb %}pandawms.org{% endblock %}');
-    ga('send', 'pageview');
-	</script>
+ga('create', '{% block gacode %}UA-44940804-1{% endblock %}', '{% block gaweb %}pandawms.org{% endblock %}');
+ga('send', 'pageview');
+</script>
 
 
-<div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="large" id="main-menu-small">
-  <button class="menu-icon" type="button" data-toggle="main-menu"></button>
+<div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="medium" id="main-menu-small">
+  <button class="menu-icon" type="button" data-toggle="main-menu"><i class="fi-list"></i></button>
   <div class="title-bar-title">Menu</div>
 </div>
 
 <div class="canvas-settings off-canvas position-right" id="offCanvasRight" data-off-canvas>
-{% block settings-offcanvas %}
-
-{% endblock %}
-  <button type="button" class="save button" onclick="saveSettings()">Save & Reload</button>
+    {% block settings-offcanvas %}{% endblock %}
+    <button type="button" class="save button" onclick="saveSettings()">Save & Reload</button>
 </div>
 
-<div class="top-bar stacked-for-large" id="main-menu">
-  <div class="top-bar-title">
-    <span data-responsive-toggle="responsive-menu" data-hide-for="medium">
-      <button class="menu-icon" type="button" data-toggle></button>
-    </span>
-    <strong><a href="{% url 'index' %}" style="color: #fefefe !important; font-weight: normal">{% block title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}  PanDA {% endblock %}</a></strong>
-  </div>
+<div class="top-bar stacked-for-medium" id="main-menu">
     <div class="top-bar-left">
-      <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
+      <ul class="vertical medium-horizontal menu" data-responsive-menu="accordion medium-dropdown">
+        <li class="menu-text"><a href="{% url 'index' %}">{% block title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}  PanDA {% endblock %}</a></li>
         <li class="has-submenu">
         <a href="#">Dash</a>
         <ul class="submenu menu vertical">
             {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a href="{% url 'dashAnalysis' %}">Analysis jobs - Region view</a></li>
-                <li><a href="{% url 'dashProduction' %}?cloudview=world">Production jobs - World view</a></li>
-                <li><a href="{% url 'dashProduction' %}?cloudview=world&es=true">Event Service world view</a></li>
-                <li><a href="{% url 'dashProduction' %}?cloudview=region&es=true">Event Service region view</a></li>
-                <li><a href="{% url 'dashProduction' %}?cloudview=region">Production jobs - Region view</a></li>
+                <li>
+                    <a href="#">Analysis</a>
+                    <ul class="vertical menu">
+                        <li><a href="{% url 'dashAnalysis' %}">Jobs - Region view</a></li>
+                        <li><a href="{% url 'dashAnalysis' %}?mode=task">Tasks</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">Production</a>
+                    <ul class="vertical menu">
+                        <li><a href="{% url 'dashProduction' %}?cloudview=world">Jobs - World view</a></li>
+                        <li><a href="{% url 'dashProduction' %}?cloudview=region">Jobs - Region view</a></li>
+                        <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">Event Service</a>
+                    <ul class="vertical menu">
+                        <li><a href="{% url 'dashProduction' %}?cloudview=world&es=true">Jobs - World view</a></li>
+                        <li><a href="{% url 'dashProduction' %}?cloudview=region&es=true">Jobs - Region view</a></li>
+                    </ul>
+                </li>
                 <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
-                <li><a href="{% url 'dashAnalysis' %}?mode=task">Analysis tasks</a></li>
-                <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
                 <li><a href="{% url 'worldHS06s' %}">World HS06s</a></li>
                 <li><a href="{% url 'globalshares' %}">Global Shares</a></li>
                 <li><a href="{% url 'dashObjectStore' %}">Objectstore view</a></li>
@@ -205,9 +206,10 @@
             <a href="{% url 'userInfo' %}">My BigPanDA</a>
         </li>
         <li>
-{#        <a href="{% url 'index' %}?mode=quicksearch">Search</a>#}
-
-        {% comment %}<a href="{% url 'admin:adMain' %}">Admin</a>{% endcomment %}
+        {% comment %}
+            <a href="{% url 'index' %}?mode=quicksearch">Search</a>
+            <a href="{% url 'admin:adMain' %}">Admin</a>
+        {% endcomment %}
         </li>
 
       </ul>
@@ -216,33 +218,12 @@
 
 
     <div class="top-bar-right">
-        <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
+        <ul class="dropdown medium-horizontal menu" data-responsive-menu="accordion medium-dropdown">
             {% if viewParams.MON_VO == 'ATLAS' %}
               {% if request.user and request.user.is_authenticated %}
-              <script>
-               function getSelectValue()
-               {
-                   var selectedValue = document.getElementById("searchselectid").value;
-                   switch (selectedValue) {
-                       case 'site':
-                           $("#searchinputid").autocomplete({
-                                    source: "{% url 'getsites' %}",
-                                    select: function (event, ui) { //item selected
-                                    AutoCompleteSelectHandler(event, ui)
-                                    },
-                                    minLength: 1,
-                                    });
-                                    break;
-                                }
-               }
-               function AutoCompleteSelectHandler(event, ui)
-               {
-                   var selectedObj = ui.item;
-               }
-               </script>
                 <li>
-                <div class="row collapse searchbox show-for-large">
-                  <div class="large-7 medium-7 columns">
+                <div class="grid-x collapse searchbox show-for-large">
+                  <div class="cell large-6">
                     <select id="searchselectid" name="objectstosearch" class="searchselect" onchange="getSelectValue();">
                         <option class="searchoption" value="pandaid">Job by ID</option>
                         <option class="searchoption" value="batchid">Jobs for batch ID</option>
@@ -259,12 +240,12 @@
                         <option class="searchoption" value="filename">File by name</option>
                       </select>
                   </div>
-                  <div class="large-4 medium-4 columns">
+                  <div class="cell large-5">
 
                   <input id="searchinputid" name="searchinputid" class="searchinput" type="text" placeholder="Enter...">
                   </div>
 
-                  <div class="large-1 medium-1 columns">
+                  <div class="cell large-1 medium-1">
                     <a onclick="bpsearch('searchselectid', 'searchinputid')" class="button prefix expand searchbutton"><i class="fi-magnifying-glass"></i></a>
                   </div>
                 </div>
@@ -337,10 +318,9 @@
 
             {% if request.user and request.user.is_authenticated %}
               <li class="has-submenu">
-                <a style="padding-bottom: 0.4rem; padding-top: 0.4rem" href="#"><i style="font-size: 2rem; vertical-align: middle" class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
+                <a href="#"><i class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
                 <ul class="submenu menu vertical">
-                    <li><span class="li-text loggeduser">{{ request.user.first_name }} {{ request.user.last_name }},</span>
-                    <li><span class="li-text loggeduser">{{ request.user.email }}</span>
+                    <li class="loggeduser">{{ request.user.first_name }} {{ request.user.last_name }}, {{ request.user.email }}
                     {% if request.user.is_tester %}
                         <li><a href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}">Go to jobs comparison</a>
                         <li><a onclick="clearComparisonList('job')">Clear jobs comparison list</a>
@@ -368,13 +348,12 @@
         </ul>
     </div>
 </div>
-  <!-- End Header and Nav -->
-  <script>
-          $('#main-menu-small').foundation();
-          $('#offCanvasRight').foundation();
-          $('#main-menu').foundation();
-  </script>
+<!-- End Header and Nav -->
 </head>
+
+
+
+
 <body>
   <!-- sub-title and bread-crumbs -->
 
@@ -419,7 +398,7 @@
 {% endblock %}
 </div>
 
-{% block extra_js_bottombody %}{% endblock %}
+
 
 	<br>
 
@@ -430,6 +409,19 @@
       {% endblock %}
 <br>
   <!-- End Main Grid Section -->
+</body>
+
+
+<script src="{% static 'node_modules/jquery/dist/jquery.min.js' %}"></script>
+<script src="{% static 'node_modules/what-input/dist/what-input.min.js' %}"></script>
+<script src="{% static 'node_modules/foundation-sites/dist/js/foundation.min.js' %}"></script>
+
+{#<script src="{% static 'core/js/modernizr.js' %}"></script>#}
+{#<script src="{% static 'js/d3.v3.min.js' %}"></script>#}
+{#<script src="{% static 'js/user-settings.js' %}"></script>#}
+{#<script src="{% static "/js/clipboardjs/clipboard.min.js" %}"></script>#}
+{#<script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>#}
+
 
 
 
@@ -562,14 +554,35 @@
     }
 </script>
 
+<script>
+    function getSelectValue()
+    {
+       var selectedValue = document.getElementById("searchselectid").value;
+       switch (selectedValue) {
+           case 'site':
+               $("#searchinputid").autocomplete({
+                        source: "{% url 'getsites' %}",
+                        select: function (event, ui) { //item selected
+                        AutoCompleteSelectHandler(event, ui)
+                        },
+                        minLength: 1,
+                        });
+                        break;
+                    }
+    }
+    function AutoCompleteSelectHandler(event, ui)
+    {
+       var selectedObj = ui.item;
+    }
+</script>
 
-
+{% block extra_js_bottombody %}{% endblock %}
 {#  <script src="{% static 'js/app.js' %}"></script>#}
   <script>
     $(document).foundation();
   </script>
-<script src="{% static 'js/user-settings.js' %}?{% cache_bust "js/user-settings.js" %}"></script>
-</body>
+
+
 
  <!-- Footer -->
 
