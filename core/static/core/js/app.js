@@ -3,13 +3,15 @@
 
 $(document).foundation();
 
-$(function(){
-    $('.fdatetimepicker').fdatepicker({
-        format: 'yyyy-mm-dd hh:ii:ss',
-        disableDblClickSelection: true,
-        language: 'vi',
-        pickTime: true
-    });
-});
+// Need to foundation-datepicker library works correctly
+// $(function(){
+//     $('.fdatetimepicker').fdatepicker({
+//         format: 'yyyy-mm-dd hh:ii:ss',
+//         disableDblClickSelection: true,
+//         language: 'vi',
+//         pickTime: true
+//     });
+// });
+
 
 
