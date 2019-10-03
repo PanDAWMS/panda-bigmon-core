@@ -127,7 +127,28 @@ Select what you'd like to have a look at in the top menu bar: dashboard overview
 <p>
 
 
+
 {% endblock %}
+{% endblock %}
+
+{#{% block extra_js_bottombody %}#}
+{#<script>#}
+{#  $(function() {#}
+{#    $("#site").autocomplete({#}
+{#      source: "{% url 'getsites' %}",#}
+{#      select: function (event, ui) { //item selected#}
+{#        AutoCompleteSelectHandler(event, ui)#}
+{#      },#}
+{#      minLength: 1,#}
+{#    });#}
+{#  });#}
+{##}
+{#  function AutoCompleteSelectHandler(event, ui)#}
+{#  {#}
+{#    var selectedObj = ui.item;#}
+{#  }#}
+{#</script>#}
+{#{% endblock %}#}
 
 {% block helptext %}
 
