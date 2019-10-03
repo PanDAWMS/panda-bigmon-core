@@ -6,16 +6,6 @@
 {% if startdate %}     startdate={{ startdate }} {% endif %}
 {% if enddate %}     enddate={{ enddate }}{% endif %}
 {% endblock %}
-{% block extra_js %}
-	<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js" %}"/>
-	<script type="text/javascript" src="{% static "/js/highcharts/highcharts.js"%}"/>
-	<script type="text/javascript" src="{% static "/js/highcharts/modules/exporting.js"%}"/>
-{% endblock %}
-{% block extra_js_hepsw %}
-	<script src="http://hepsoftware.org/static/js/vendor/modernizr.js"></script>
-	<script src="http://hepsoftware.org/static/js/foundation/foundation.js"></script>
-	<script src="http://hepsoftware.org/static/js/foundation/foundation.topbar.js"></script>
-{% endblock %}
 
 {% block body %}
 <a name="sec.toc"></a>
@@ -259,6 +249,12 @@ Submitted by Country (from UserDN)
 {% pbm_plot_pie data27 title27 'plot27' startdate enddate colors27|safe '27' %}
 
 
+{% endblock %}
+
+{% block extra_js %}
+	<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js" %}"/>
+	<script type="text/javascript" src="{% static "/js/highcharts/highcharts.js"%}"/>
+	<script type="text/javascript" src="{% static "/js/highcharts/modules/exporting.js"%}"/>
 {% endblock %}
 
 
