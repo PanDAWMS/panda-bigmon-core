@@ -78,6 +78,11 @@ $global-width: 100%;
 $global-lineheight: 1.5;
 $dark-blue: #355681;
 $light-blue: #b0c4de;
+$green: #4ba173;
+$dark-green: #3b7f5b;
+$light-green: #bee0ce;
+$primary-color: $dark-blue;
+$secondary-color: $light-blue;
 $foundation-palette: (
   primary: $dark-blue,
   secondary: $light-blue,
@@ -85,23 +90,6 @@ $foundation-palette: (
   warning: #ffae00,
   alert: #cc4b37,
 );
-$primary-color: $dark-blue;
-$secondary-color: $light-blue;
-$secondary-color-bg: smart-scale($secondary-color, 10%, 80%);
-$green: #4ba173;
-$green-dark: smart-scale($green, 20%, 20%);
-$green-light: smart-scale($green, 40%, 80%);
-$green-bg: smart-scale($green, 80%, 80%);
-$warning-color: #ffae00;
-$warning-color-dark: smart-scale($warning-color, 20%, 20%);
-$warning-color-light: smart-scale($warning-color, 40%, 80%);
-$warning-color-bg: smart-scale($warning-color, 80%, 80%);
-$alert-color: #cc4b37;
-$alert-color-dark: smart-scale($alert-color, 20%, 20%);
-$alert-color-light: smart-scale($alert-color, 40%, 80%);
-$alert-color-bg: smart-scale($alert-color, 80%, 80%);
-
-$gray-light: #e6e6e6;
 $light-gray: #e6e6e6;
 $medium-gray: #dddddd;
 $dark-gray: #8a8a8a;
@@ -113,7 +101,7 @@ $body-background: $white;
 $body-font-color: $black;
 $body-font-family: 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;
 $body-antialiased: true;
-$global-margin: 0 0.7rem 0.3rem 0.7rem;
+$global-margin: 1rem;
 $global-padding: 0.7rem;
 $global-position: 1rem;
 $global-weight-normal: normal;
@@ -195,7 +183,7 @@ $header-text-rendering: optimizeLegibility;
 $small-font-size: 80%;
 $header-small-font-color: $medium-gray;
 $paragraph-lineheight: 1.6;
-$paragraph-margin-bottom: 0.3rem;
+$paragraph-margin-bottom: 1rem;
 $paragraph-text-rendering: optimizeLegibility;
 $code-color: $black;
 $code-font-family: $font-family-monospace;
@@ -351,9 +339,9 @@ $buttongroup-radius-on-each: true;
 
 $callout-background: $white;
 $callout-background-fade: 85%;
-$callout-border: 1px solid $gray-light;
-$callout-margin: 0 0.7rem 0.3rem 0.7rem;
-$callout-padding: 0.7rem;
+$callout-border: 1px solid rgba($black, 0.25);
+$callout-margin: 0 0 1rem 0;
+$callout-padding: 1rem;
 $callout-font-color: $body-font-color;
 $callout-font-color-alt: $body-background;
 $callout-radius: $global-radius;
@@ -808,7 +796,7 @@ $switch-paddle-transition: all 0.25s ease-out;
 
 $table-background: $white;
 $table-color-scale: 5%;
-$table-border: none;
+$table-border: 1px solid smart-scale($table-background, $table-color-scale);
 $table-padding: rem-calc(8 10 10);
 $table-hover-scale: 2%;
 $table-row-hover: darken($table-background, $table-hover-scale);
