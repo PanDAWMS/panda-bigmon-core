@@ -159,15 +159,20 @@ def find_last_n_nightlies(request, limit=7):
     :return: list of ntags
     """
     nquery = {}
+    querystr = ''
     if 'package' in request.session['requestParams'] and not ',' in request.session['requestParams']['package']:
         nquery['package'] = request.session['requestParams']['package']
     elif 'package' in request.session['requestParams'] and ',' in request.session['requestParams']['package']:
         nquery['package__in'] = [p for p in request.session['requestParams']['package'].split(',')]
-    if 'branch' in request.session['requestParams'] and not ',' in request.session['requestParams']['branch']:
-        nquery['branch'] = request.session['requestParams']['branch']
-    elif 'branch' in request.session['requestParams'] and ',' in request.session['requestParams']['branch']:
-        nquery['branch__in'] = [b for b in request.session['requestParams']['branch'].split(',')]
-    ndates = ARTTests.objects.filter(**nquery).annotate(ndate=Substr('nightly_tag', 1, 10)).values('ndate').order_by('-ndate').distinct()[:limit]
+    if 'branch' in request.session['requestParams']:
+        branches = request.session['requestParams']['branch'].split(',')
+        querystr += '(NIGHTLY_RELEASE_SHORT || \'/\' || PROJECT || \'/\' || PLATFORM)  IN ( '
+        for b in branches:
+            querystr += '(\'' + b + '\'), '
+        if querystr.endswith(', '):
+            querystr = querystr[:len(querystr) - 2]
+        querystr += ')'
+    ndates = ARTTests.objects.filter(**nquery).extra(where=[querystr]).annotate(ndate=Substr('nightly_tag', 1, 10)).values('ndate').order_by('-ndate').distinct()[:limit]
 
     datelist = []
     for datestr in ndates:
