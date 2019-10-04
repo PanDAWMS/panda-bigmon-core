@@ -12,19 +12,21 @@ from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.db import connection
 from django.views.decorators.csrf import csrf_exempt
-from core.art.modelsART import ARTResults, ARTTests, ReportEmails, ARTResultsQueue
-from core.common.models import Filestable4, FilestableArch
+from django.template.defaulttags import register
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V
+
+
 from core.views import login_customrequired, initRequest, extensibleURL, removeParam
 from core.views import DateEncoder, endSelfMonitor
+from core.art.artMail import send_mail_art
+from core.art.modelsART import ARTResults, ARTTests, ReportEmails, ARTResultsQueue
 from core.art.jobSubResults import getJobReport, getARTjobSubResults, subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
-from django.db.models import Q
+from core.common.models import Filestable4, FilestableArch
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
-from core.art.artMail import send_mail_art
-from django.template.defaulttags import register
-from htmlmin.decorators import minified_response
+
+from core.art.utils import setupView
 
 _logger = logging.getLogger('bigpandamon-error')
 
@@ -41,148 +43,11 @@ humandateformat = '%d %b %Y'
 cache_timeout = 15
 
 
-def setupView(request, querytype='task'):
-    if not 'view' in request.session['requestParams']:
-        request.session['requestParams']['view'] = 'packages'
-    query = {}
-
-    if 'ntag_from' in request.session['requestParams']:
-        startdatestr = request.session['requestParams']['ntag_from']
-        try:
-            startdate = datetime.strptime(startdatestr, '%Y-%m-%d')
-        except:
-            del request.session['requestParams']['ntag_from']
-
-    if 'ntag_to' in request.session['requestParams']:
-        enddatestr = request.session['requestParams']['ntag_to']
-        try:
-            enddate = datetime.strptime(enddatestr, artdateformat)
-        except:
-            del request.session['requestParams']['ntag_to']
-
-    if 'ntag' in request.session['requestParams']:
-        startdatestr = request.session['requestParams']['ntag']
-        try:
-            startdate = datetime.strptime(startdatestr, artdateformat)
-        except:
-            del request.session['requestParams']['ntag']
-    if 'ntags' in request.session['requestParams']:
-        dateliststr = request.session['requestParams']['ntags']
-        datelist = []
-        for datestr in dateliststr.split(','):
-            try:
-                datei = datetime.strptime(datestr, artdateformat)
-                datelist.append(datei)
-            except:
-                pass
-    if 'ntag_full' in request.session['requestParams']:
-        startdatestr = request.session['requestParams']['ntag_full'][:10]
-        try:
-            startdate = datetime.strptime(startdatestr, artdateformat)
-        except:
-            del request.session['requestParams']['ntag_full']
-
-    ndaysmax = 6
-    if 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
-        enddate = startdate + timedelta(days=ndaysmax)
-    elif not 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams']:
-        startdate = enddate - timedelta(days=ndaysmax)
-    elif not 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
-        if 'ntag' in request.session['requestParams']:
-            enddate = startdate
-        elif 'ntag_full' in request.session['requestParams']:
-            enddate = startdate
-        else:
-            enddate = datetime.now()
-            startdate = enddate - timedelta(days=ndaysmax)
-    elif 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams'] and (enddate-startdate).days > 7:
-        enddate = startdate + timedelta(days=ndaysmax)
-
-    if 'days' in request.session['requestParams']:
-        try:
-            ndays = int(request.session['requestParams']['days'])
-        except:
-            ndays = ndaysmax
-        enddate = datetime.now()
-        if ndays <= ndaysmax:
-            startdate = enddate - timedelta(days=ndays)
-        else:
-            startdate = enddate - timedelta(days=ndaysmax)
-
-
-
-    if not 'ntag' in request.session['requestParams']:
-        request.session['requestParams']['ntag_from'] = startdate
-        request.session['requestParams']['ntag_to'] = enddate
-    elif 'ntags' in request.session['requestParams']:
-        request.session['requestParams']['ntags'] = datelist
-        request.session['requestParams']['ntag_from'] = min(datelist)
-        request.session['requestParams']['ntag_to'] = max(datelist)
-
-    else:
-        request.session['requestParams']['ntag'] = startdate
-
-
-
-
-    querystr = ''
-    if querytype == 'job':
-        if 'package' in request.session['requestParams']:
-            packages = request.session['requestParams']['package'].split(',')
-            querystr += '(UPPER(PACKAGE) IN ( '
-            for p in packages:
-                querystr += 'UPPER(\'\'' + p + '\'\'), '
-            if querystr.endswith(', '):
-                querystr = querystr[:len(querystr) - 2]
-            querystr += ')) AND '
-        if 'branch' in request.session['requestParams']:
-            branches = request.session['requestParams']['branch'].split(',')
-            querystr += '(UPPER(NIGHTLY_RELEASE_SHORT || \'\'/\'\' || PROJECT || \'\'/\'\' || PLATFORM)  IN ( '
-            for b in branches:
-                querystr += 'UPPER(\'\'' + b + '\'\'), '
-            if querystr.endswith(', '):
-                querystr = querystr[:len(querystr) - 2]
-            querystr += ')) AND '
-        if 'taskid' in request.session['requestParams']:
-            querystr += '(a.TASK_ID = ' + request.session['requestParams']['taskid'] + ' ) AND '
-        if 'ntags' in request.session['requestParams']:
-            querystr += '((SUBSTR(NIGHTLY_TAG, 0, INSTR(NIGHTLY_TAG, \'\'T\'\')-1)) IN ('
-            for datei in datelist:
-                querystr+= '\'\'' + datei.strftime(artdateformat) + '\'\', '
-            if querystr.endswith(', '):
-                querystr = querystr[:len(querystr) - 2]
-            querystr += ')) AND '
-        if 'ntag_full' in request.session['requestParams']:
-            querystr += '(UPPER(NIGHTLY_TAG) = \'\'' + request.session['requestParams']['ntag_full'] + '\'\') AND'
-        if querystr.endswith('AND '):
-            querystr = querystr[:len(querystr)-4]
-        else:
-            querystr += '(1=1)'
-        query['strcondition'] = querystr
-        query['ntag_from'] = startdate.strftime(artdateformat)
-        query['ntag_to'] = enddate.strftime(artdateformat)
-    elif querytype == 'task':
-        if 'package' in request.session['requestParams'] and not ',' in request.session['requestParams']['package']:
-            query['package'] = request.session['requestParams']['package']
-        elif 'package' in request.session['requestParams'] and ',' in request.session['requestParams']['package']:
-            query['package__in'] = [p for p in request.session['requestParams']['package'].split(',')]
-        if 'branch' in request.session['requestParams'] and not ',' in request.session['requestParams']['branch']:
-            query['branch'] = request.session['requestParams']['branch']
-        elif 'branch' in request.session['requestParams'] and ',' in request.session['requestParams']['branch']:
-            query['branch__in'] = [b for b in request.session['requestParams']['branch'].split(',')]
-        if not 'ntags' in request.session['requestParams']:
-            query['ntag__range'] = [startdate.strftime(artdateformat), enddate.strftime(artdateformat)]
-        else:
-            query['ntag__in'] = [ntag.strftime(artdateformat) for ntag in datelist]
-
-
-
-    return query
-
-# @minified_response
 @login_customrequired
 def art(request):
     valid, response = initRequest(request)
+    if not valid:
+        return HttpResponse(status=401)
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artMain")
@@ -223,9 +88,12 @@ def art(request):
     endSelfMonitor(request)
     return response
 
+
 @login_customrequired
 def artOverview(request):
     valid, response = initRequest(request)
+    if not valid:
+        return HttpResponse(status=401)
     query = setupView(request, 'job')
 
     # Here we try to get cached data
@@ -324,9 +192,12 @@ def artOverview(request):
         endSelfMonitor(request)
         return response
 
+
 @login_customrequired
 def artTasks(request):
     valid, response = initRequest(request)
+    if not valid:
+        return HttpResponse(status=401)
     query = setupView(request, 'job')
 
     # Here we try to get cached data
@@ -451,7 +322,8 @@ def artTasks(request):
 @login_customrequired
 def artJobs(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return HttpResponse(status=401)
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artJobs")
@@ -714,7 +586,8 @@ def artJobs(request):
 
 def updateARTJobList(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return HttpResponse(status=401)
 
     query = setupView(request, 'job')
     starttime = datetime.now()
@@ -811,7 +684,8 @@ def updateARTJobList(request):
 
 def getJobSubResults(request):
     valid, response = initRequest(request)
-
+    if not valid:
+        return HttpResponse(status=401)
 
     guid = request.session['requestParams']['guid'] if 'guid' in request.session['requestParams'] else ''
     lfn = request.session['requestParams']['lfn'] if 'lfn' in request.session['requestParams'] else ''
@@ -859,7 +733,7 @@ def registerARTTest(request):
     Example of curl command:
     curl -X POST -d "pandaid=XXX" -d "testname=test_XXXXX.sh" http://bigpanda.cern.ch/art/registerarttest/?json
     """
-    valid,response = initRequest(request)
+    valid, response = initRequest(request)
     if not valid:
         return HttpResponse(status=401)
     pandaid = -1
