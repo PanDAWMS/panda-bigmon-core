@@ -100,7 +100,13 @@
     border: 0px solid $secondary-color;
     border-bottom: 0;
     background-color: $white;
-    color: $black; }
-    :last-child > .accordion-content:last-child {
+    color: $black;
+    &:last-child > &:last-child {
       border-bottom: 0px solid $secondary-color; }
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    }
 }
