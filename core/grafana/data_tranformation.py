@@ -34,30 +34,38 @@ def stacked_hist(series, group_by=None, split_series=None):
     return plot_data
 
 
-def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
+def pledges_merging(data, pledges, coeff, pledges_dict, federations_info, type='dst_federation'):
     if type == 'dst_federation':
         pl_type = 'real_federation'
-        federations_info = {}
         for fed in data['results'][0]['series']:
             # fed['values'][-1][1] = 0
             if fed['tags'][type] not in federations_info:
-                federations_info[fed['tags'][type]] = [{'site': fed['tags']['dst_experiment_site'],
-                                                       'computingsite': fed['tags']['computingsite'],
-                                                       'tier': fed['tags']['dst_tier'],
-                                                       'sum_hs06sec': int(round(float(sum_calculate(fed['values'], 1) / 86400))),
-                                                       'sum_count': sum_calculate(fed['values'], 2),
-                                                       'sum_cpuconsumptiontime': int(round(float(sum_calculate(fed['values'], 3) / 86400))),
-                                                       'sum_walltime': int(round(float(sum_calculate(fed['values'], 4) / 86400)))
-                                                       }]
+                federations_info[fed['tags'][type]] = {}
+            if fed['tags']['computingsite'] not in federations_info[fed['tags'][type]]:
+               federations_info[fed['tags'][type]][fed['tags']['computingsite']] = \
+                   {'site': fed['tags']['dst_experiment_site'],
+                    'computingsite': fed['tags']['computingsite'],
+                    'tier': fed['tags']['dst_tier'],
+                    'sum_hs06sec': int(round(float(sum_calculate(fed['values'], 1) / 86400))),
+                    'sum_count': sum_calculate(fed['values'], 2),
+                    'sum_cpuconsumptiontime': int(round(float(sum_calculate(fed['values'], 3) / 86400))),
+                    'sum_walltime': int(round(float(sum_calculate(fed['values'], 4) / 86400)))
+                   }
             else:
-                federations_info[fed['tags'][type]].append({'site': fed['tags']['dst_experiment_site'],
-                                                       'computingsite': fed['tags']['computingsite'],
-                                                       'tier': fed['tags']['dst_tier'],
-                                                       'sum_hs06sec': int(round(float(sum_calculate(fed['values'], 1) / 86400))),
-                                                       'sum_count': sum_calculate(fed['values'], 2),
-                                                       'sum_cpuconsumptiontime': int(round(float(sum_calculate(fed['values'], 3) / 86400))),
-                                                       'sum_walltime': int(round(float(sum_calculate(fed['values'], 4) / 86400)))
-                                                       })
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['site'] \
+                    = fed['tags']['dst_experiment_site']
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['computingsite'] \
+                    = fed['tags']['computingsite']
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['tier'] \
+                    = fed['tags']['dst_tier']
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['sum_hs06sec'] \
+                    += int(round(float(sum_calculate(fed['values'], 1) / 86400)))
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['sum_count'] \
+                    = sum_calculate(fed['values'], 2)
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['sum_cpuconsumptiontime'] \
+                    += int(round(float(sum_calculate(fed['values'], 3) / 86400)))
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['sum_walltime'] \
+                    += int(round(float(sum_calculate(fed['values'], 4) / 86400)))
             if fed['tags'][type] not in pledges_dict:
                 pledges_dict[fed['tags'][type]] = {}
                 pledges_dict[fed['tags'][type]]['tier'] = fed['tags']['dst_tier']

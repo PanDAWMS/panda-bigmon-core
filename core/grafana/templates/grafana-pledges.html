@@ -62,11 +62,11 @@
                 '<th>Wall time (days)</th>' +
                 '</thead>';
             if (federation_Array != null) {
-                for (var i = 0; i < federation_Array.length; i++) {
+                for(var computingsite in federation_Array) {
                     result += "<tr>";
-                    var ks = Object.keys(federation_Array[i]);
+                    var ks = Object.keys(federation_Array[computingsite]);
                     for (var j = 0; j < ks.length; j++) {
-                        result += "<td>" + federation_Array[i][ks[j]] + "</td>";
+                        result += "<td>" + federation_Array[computingsite][ks[j]] + "</td>";
                     }
                     result += "</tr>";
                 }
