@@ -120,11 +120,12 @@ def artOverview(request):
         endSelfMonitor(request)
         return response
 
-    if datetime.strptime(query['ntag_from'], '%Y-%m-%d') < datetime.strptime('2018-03-20', '%Y-%m-%d'):
-        query_raw = """SELECT package, branch, ntag, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
-    else:
-        query_raw = """SELECT package, branch, ntag, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s')) WHERE attemptmark = 0""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
-
+    # quering data from dedicated SQL function
+    query_raw = """
+        SELECT package, branch, ntag, status, result 
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('{}','{}','{}')) 
+        WHERE attemptmark = 0
+        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur = connection.cursor()
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
@@ -224,12 +225,13 @@ def artTasks(request):
         endSelfMonitor(request)
         return response
 
+    # quering data from dedicated SQL function
     cur = connection.cursor()
-    if datetime.strptime(query['ntag_from'], '%Y-%m-%d') < datetime.strptime('2018-03-20', '%Y-%m-%d'):
-        query_raw = """SELECT package, branch, ntag, nightly_tag, taskid, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
-    else:
-        query_raw = """SELECT package, branch, ntag, nightly_tag, taskid, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s')) WHERE attemptmark = 0""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
-
+    query_raw = """
+        SELECT package, branch, ntag, nightly_tag, taskid, status, result 
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('{}','{}','{}')) 
+        WHERE attemptmark = 0
+        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
     cur.close()
@@ -350,18 +352,53 @@ def artJobs(request):
         endSelfMonitor(request)
         return response
 
-
+    # process URL params to query params
     query = setupView(request, 'job')
 
+    # querying data from dedicated SQL function
     cur = connection.cursor()
-    if datetime.strptime(query['ntag_from'], '%Y-%m-%d') < datetime.strptime('2018-03-20', '%Y-%m-%d'):
-        cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
-    else:
-        cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
+    query_raw = """
+        SELECT 
+            c.taskid, 
+            c.package, 
+            c.branch, 
+            c.ntag, 
+            c.nightly_tag, 
+            c.testname, 
+            c.status, 
+            c.pandaid, 
+            c.computingsite, 
+            c.endtime,
+            c.starttime,
+            c.maxvmem, 
+            c.cpuconsumptiontime, 
+            c.guid, 
+            c.scope, 
+            c.lfn,
+            c.taskstatus, 
+            c.taskmodificationtime, 
+            c.jobmodificationtime, 
+            c.cpuconsumptionunit, 
+            c.result, 
+            c.gitlabid, 
+            c.outputcontainer, 
+            c.maxrss, 
+            c.attemptnr, 
+            c.maxattempt,  
+            c.parentid, 
+            c.attemptmark, 
+            c.inputfileid 
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('{}','{}','{}')) c
+        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
+    cur.execute(query_raw)
     jobs = cur.fetchall()
     cur.close()
 
-    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'computingsite', 'endtime', 'starttime' , 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn', 'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'result', 'gitlabid', 'outputcontainer', 'maxrss', 'attemptnr', 'maxattempt', 'parentid', 'attemptmark', 'inputfileid']
+    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid',
+                    'computingsite', 'endtime', 'starttime' , 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn',
+                    'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'cpuconsumptionunit', 'result',
+                    'gitlabid', 'outputcontainer', 'maxrss', 'attemptnr', 'maxattempt', 'parentid', 'attemptmark',
+                    'inputfileid']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
     # i=0
@@ -601,13 +638,13 @@ def updateARTJobList(request):
     cur.autocommit = True
     cur.execute("""INSERT INTO atlas_pandabigmon.art_results_queue
                     (pandaid, IS_LOCKED, LOCK_TIME)
-                    SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s'))
+                    SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('{}','{}','{}'))
                     WHERE pandaid is not NULL
                           and attemptmark = 0  
                           and result is NULL
                           and status in ('finished', 'failed')
-                          and pandaid not in (select pandaid from atlas_pandabigmon.art_results_queue)"""
-                % (query['ntag_from'], query['ntag_to'], query['strcondition']))
+                          and pandaid not in (select pandaid from atlas_pandabigmon.art_results_queue)
+                """.format(query['ntag_from'], query['ntag_to'], query['strcondition']))
 
     nrows = 2
 
@@ -880,14 +917,16 @@ def sendArtReport(request):
     query = setupView(request, 'job')
 
     cur = connection.cursor()
-    cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s')) WHERE attemptmark = 0" % (
-        query['ntag_from'], query['ntag_to'], query['strcondition']))
+    query_raw = """
+        SELECT taskid, package, branch, ntag, nightly_tag, testname, status, result
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('{}','{}','{}')) 
+        WHERE attemptmark = 0
+        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
+    cur.execute(query_raw)
     jobs = cur.fetchall()
     cur.close()
 
-    artJobsNames = ['taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid',
-                    'computingsite', 'endtime', 'starttime', 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn',
-                    'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'result']
+    artJobsNames = ['taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'result']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
     ### prepare data for report
