@@ -1566,13 +1566,18 @@ class AllRequests(models.Model):
     server = models.CharField(max_length=40, db_column='server')
     remote = models.CharField(max_length=40, db_column='remote')
     qtime = models.DateTimeField(db_column='qtime')
+    rtime = models.DateTimeField(db_column='rtime')
     url = models.CharField(max_length=2500, db_column='url')
     referrer = models.CharField(max_length=4000, db_column='referrer')
     useragent = models.CharField(max_length=250, db_column='useragent')
     is_rejected = models.IntegerField(db_column='is_rejected')
     urlview = models.CharField(max_length=40, db_column='urlview')
+    load = models.FloatField(db_column='LOAD')
+    mem = models.FloatField(db_column='MEM')
+    dbactivesess = models.IntegerField(db_column='DBACTIVESESS')
+    dbtotalsess = models.IntegerField(db_column='DBTOTALSESS')
     class Meta:
-        db_table = u'all_requests'
+        db_table = u'"ATLAS_PANDABIGMON"."ALL_REQUESTS_DAILY"'
 
 
 class Savedpages(models.Model):
