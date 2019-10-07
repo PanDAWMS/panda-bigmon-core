@@ -225,7 +225,7 @@ def artTasks(request):
         return response
 
     cur = connection.cursor()
-    if datetime.strptime(query['ntag_from'], '%Y-%m-%d') <  datetime.strptime('2018-03-20', '%Y-%m-%d'):
+    if datetime.strptime(query['ntag_from'], '%Y-%m-%d') < datetime.strptime('2018-03-20', '%Y-%m-%d'):
         query_raw = """SELECT package, branch, ntag, nightly_tag, taskid, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
     else:
         query_raw = """SELECT package, branch, ntag, nightly_tag, taskid, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s')) WHERE attemptmark = 0""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
@@ -318,6 +318,7 @@ def artTasks(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
         return response
+
 
 @login_customrequired
 def artJobs(request):
@@ -424,7 +425,10 @@ def artJobs(request):
                     jobdict['cpuconsumptiontime'] = job['cpuconsumptiontime'] if job['jobstatus'] in ('finished', 'failed') else '---'
                     jobdict['inputfileid'] = job['inputfileid']
                     if job['jobstatus'] in ('finished', 'failed'):
-                        jobdict['duration'] = job['endtime'] - job['starttime']
+                        try:
+                            jobdict['duration'] = job['endtime'] - job['starttime']
+                        except:
+                            jobdict['duration'] = '---'
                     else:
                         jobdict['duration'] = str(datetime.now() - job['starttime']).split('.')[0] if job['starttime'] is not None else "---"
                     try:

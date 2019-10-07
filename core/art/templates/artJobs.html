@@ -6,61 +6,21 @@
 {% endblock %}
 {% block extra_js %}
 <script type="text/javascript">
-function loadJobSubResult(testname, urltail) {
-    var id = "div-subresults-" + testname;
-    var div = document.getElementById(id);
-{#    $("#div-subresults-" + testname).html("<img src='{% static "images/load.gif" %}'>  ");#}
-    div.innerHTML = "<img src='{% static "images/load.gif" %}'>  ";
-    $.ajax({
-        url: '{% url 'artJobSubResults' %}',
-        data: urltail,
-        async: true
-    })
-    .done(function (response) {
-{#       $("#div-subresults-" + testname).html(response);#}
-        div.innerHTML = response;
-   })
-    ;
-
-}
-function toggleByID(id, idplus) {
-    if ($("#" + id).is(':visible')){
-        $("#" + id).hide();
-        $("#" + idplus).removeClass('fi-minus');
-        $("#" + idplus).addClass('fi-plus');
+function toggleShowHide(divID, linkID) {
+    if ($("#" + divID).is(':visible')){
+        $("#" + divID).hide();
+        document.getElementById(linkID).innerHTML = 'Show output container';
     }
     else {
-        $("#" + id).show();
-        $("#" + idplus).removeClass('fi-plus');
-        $("#" + idplus).addClass('fi-minus');
+        $('#'+divID).show();
+        document.getElementById(linkID).innerHTML = 'Hide output container';
     }
-
 }
-
-function toggleShowHide(divID, linkID) {
-        if ($("#" + divID).is(':visible')){
-            $("#" + divID).hide();
-            document.getElementById(linkID).innerHTML = 'Show output container';
-        }
-        else {
-            $('#'+divID).show();
-            document.getElementById(linkID).innerHTML = 'Hide output container';
-        }
-}
-
 </script>
 {% endblock %}
 
 {% block subtitle %}ART nightly tests {{ viewParams.selection|safe }}{% endblock %}
 {% block body %}
-
-<div class="callout success small" data-closable>
-  <h5>The color coding of test results has been updated! </h5>
-    <p>You can read a description in <a href="#help">help section</a> in the bottom of this page.</p>
-    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-        <span aria-hidden="true">&times;</span>
-  </button>
-</div>
 
 <a href="{% url 'art-mainPage' %}" class="button back-to-home"><i class="fi-home"></i> Back to main page</a>
 {% if requestParams.view and requestParams.view == 'branches' %}
