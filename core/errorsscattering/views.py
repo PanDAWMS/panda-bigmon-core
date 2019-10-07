@@ -12,7 +12,7 @@ from django.db import connection
 from django.utils.cache import patch_response_headers
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.exlib import dictfetchall
-from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, DateEncoder, setCacheData
+from core.views import login_customrequired, initRequest, setupView, DateEncoder, setCacheData
 from core.common.models import JediTasksOrdered
 from core.schedresource.models import Schedconfig
 from core.settings.local import dbaccess
@@ -126,7 +126,6 @@ def errorsScattering(request):
         data['request'] = request
         response = render_to_response('errorsScattering.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
         return response
 
     limit = 100000
@@ -346,8 +345,6 @@ def errorsScattering(request):
         'scouts': 'exclude' if isExcludeScouts else 'include',
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-    ##self monitor
-    endSelfMonitor(request)
     setCacheEntry(request, "errorsScattering", json.dumps(data, cls=DateEncoder), 60 * 20)
     response = render_to_response('errorsScattering.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -366,7 +363,6 @@ def errorsScatteringDetailed(request, cloud, reqid):
         data['request'] = request
         response = render_to_response('errorsScatteringDetailed.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
         return response
 
     grouping = []
@@ -859,8 +855,6 @@ def errorsScatteringDetailed(request, cloud, reqid):
         'built': datetime.now().strftime("%H:%M:%S"),
     }
     print ('%s starting rendering of the page' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-    ##self monitor
-    endSelfMonitor(request)
     setCacheEntry(request, "errorsScatteringDetailed", json.dumps(data, cls=DateEncoder), 60 * 20)
     response = render_to_response('errorsScatteringDetailed.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)

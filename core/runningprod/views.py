@@ -12,7 +12,7 @@ from django.utils.cache import patch_response_headers
 
 from core.settings import defaultDatetimeFormat
 from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
-from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, DateEncoder, removeParam, taskSummaryDict, preprocessWildCardString
+from core.views import login_customrequired, initRequest, setupView, DateEncoder, removeParam, taskSummaryDict, preprocessWildCardString
 
 from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType
 from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
@@ -52,7 +52,6 @@ def runningProdTasks(request):
             data['neventsByStatus'] = preparePlotData(data['neventsByStatus'])
         response = render_to_response('runningProdTasks.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
         return response
 
     xurl = request.get_full_path()
@@ -266,8 +265,6 @@ def runningProdTasks(request):
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
-        ##self monitor
-        endSelfMonitor(request)
         if 'snap' in request.session['requestParams'] and len(request.session['requestParams']) == 2:
             snapdata = prepareNeventsByProcessingType(task_list)
             if saveNeventsByProcessingType(snapdata, qtime):
@@ -312,8 +309,6 @@ def runningProdTasks(request):
             'transKey': transactionKey,
             'qtime': qtime,
         }
-        ##self monitor
-        endSelfMonitor(request)
         response = render_to_response('runningProdTasks.html', data, content_type='text/html')
         setCacheEntry(request, "runningProdTasks", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -407,8 +402,6 @@ def prodNeventsTrend(request):
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
-        ##self monitor
-        endSelfMonitor(request)
 
         dump = json.dumps(plot_data, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
@@ -420,8 +413,6 @@ def prodNeventsTrend(request):
             'built': datetime.now().strftime("%H:%M:%S"),
             'plotData': json.dumps(plot_data)
         }
-
-        endSelfMonitor(request)
         response = render_to_response('prodNeventsTrend.html', data, content_type='text/html')
         setCacheEntry(request, "prodNeventsTrend", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -455,7 +446,6 @@ def runningProdRequests(request):
         #     data['aslotsByType'] = preparePlotData(data['aslotsByType'])
         response = render_to_response('runningProdRequests.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
         return response
 
     xurl = request.get_full_path()
@@ -517,8 +507,6 @@ def runningProdRequests(request):
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
-        ##self monitor
-        endSelfMonitor(request)
         dump = json.dumps(request_list, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
     else:
@@ -540,8 +528,6 @@ def runningProdRequests(request):
             'built': datetime.now().strftime("%H:%M:%S"),
             'transKey': transactionKey,
         }
-        ##self monitor
-        endSelfMonitor(request)
         response = render_to_response('runningProdRequests.html', data, content_type='text/html')
         setCacheEntry(request, "runningProdRequests", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)

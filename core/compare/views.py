@@ -20,7 +20,7 @@ from django.utils.cache import patch_cache_control, patch_response_headers
 
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, preparePlotData
-from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder, \
+from core.views import login_customrequired, initRequest, setupView, escapeInput, DateEncoder, \
     extensibleURL, DateTimeEncoder, removeParam, taskSummaryDict, preprocessWildCardString
 
 from core.pandajob.models import Jobsactive4, Jobsarchived4, Jobswaiting4, Jobsdefined4, Jobsarchived
@@ -48,8 +48,6 @@ def addToComparison(request):
 
     data = {'newList': newList}
     dump = json.dumps(data, cls=DateEncoder)
-    ##self monitor
-    endSelfMonitor(request)
     return HttpResponse(dump, content_type='application/json')
 
 @login_customrequired
@@ -72,8 +70,6 @@ def deleteFromComparison(request):
 
     data = {'newList': newList}
     dump = json.dumps(data, cls=DateEncoder)
-    ##self monitor
-    endSelfMonitor(request)
     return HttpResponse(dump, content_type='application/json')
 
 
@@ -95,8 +91,6 @@ def clearComparison(request):
 
     data = {'result': result}
     dump = json.dumps(data, cls=DateEncoder)
-    ##self monitor
-    endSelfMonitor(request)
     return HttpResponse(dump, content_type='application/json')
 
 @login_customrequired
@@ -219,8 +213,6 @@ def compareJobs(request):
         'built': datetime.now().strftime("%H:%M:%S"),
     }
 
-    ##self monitor
-    endSelfMonitor(request)
     response = render_to_response('compareJobs.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response

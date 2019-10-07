@@ -17,7 +17,7 @@ from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_fi
 get_filebrowser_hostname, remove_folder
 
 from core.common.models import Filestable4, FilestableArch
-from core.views import DateEncoder, DateTimeEncoder, initSelfMonitor, endSelfMonitor
+from core.views import DateEncoder, DateTimeEncoder, initSelfMonitor
 from core.libs.cache import setCacheEntry, getCacheEntry
 from datetime import datetime
 
@@ -195,10 +195,6 @@ def index(request):
     }
 
     _logger.error("index step3 - " + datetime.now().strftime("%H:%M:%S") + "  ")
-    try:
-        endSelfMonitor(request)
-    except:
-        _logger.exception('Failed to end self monitor')
     if 'json' not in request.GET:
         return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
     else:

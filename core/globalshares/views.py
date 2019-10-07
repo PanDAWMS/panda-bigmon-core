@@ -13,7 +13,7 @@ from django.db import connection
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.CustomJSONSerializer import DecimalEncoder
-from core.views import initRequest, setupView, login_customrequired, endSelfMonitor, extensibleURL, DateEncoder
+from core.views import initRequest, setupView, login_customrequired, extensibleURL, DateEncoder
 import json
 
 from core.globalshares import GlobalShares
@@ -121,8 +121,6 @@ def globalshares(request):
 
     del request.session['TFIRST']
     del request.session['TLAST']
-    ##self monitor
-    endSelfMonitor(request)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
         data = {

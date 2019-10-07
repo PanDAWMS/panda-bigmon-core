@@ -18,7 +18,7 @@ from django.db.models import Value as V
 
 
 from core.views import login_customrequired, initRequest, extensibleURL, removeParam
-from core.views import DateEncoder, endSelfMonitor
+from core.views import DateEncoder
 from core.art.artMail import send_mail_art
 from core.art.modelsART import ARTResults, ARTTests, ReportEmails, ARTResultsQueue
 from core.art.jobSubResults import getJobReport, getARTjobSubResults, subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
@@ -57,7 +57,6 @@ def art(request):
         data['request'] = request
         response = render_to_response('artMainPage.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
         return response
 
     tquery = {}
@@ -85,7 +84,6 @@ def art(request):
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     setCacheEntry(request, "artMain", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    endSelfMonitor(request)
     return response
 
 
@@ -125,7 +123,6 @@ def artOverview(request):
                     data['requestParams']['ntag'] = ntags[0]
         response = render_to_response('artOverview.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
         return response
 
     # process URL params to query params
@@ -185,7 +182,6 @@ def artOverview(request):
         setCacheEntry(request, "artOverview", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artOverview.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
         return response
 
 
@@ -225,7 +221,6 @@ def artTasks(request):
                     data['requestParams']['ntag'] = ntags[0]
         response = render_to_response('artTasks.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
         return response
 
     # process URL params to query params
@@ -299,7 +294,6 @@ def artTasks(request):
         setCacheEntry(request, "artTasks", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artTasks.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
         return response
 
 
@@ -339,7 +333,6 @@ def artJobs(request):
                     data['requestParams']['ntag'] = ntags[0]
         response = render_to_response('artJobs.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
         return response
 
     # process URL params to query params
@@ -542,7 +535,6 @@ def artJobs(request):
         setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artJobs.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
         return response
 
 
@@ -639,7 +631,6 @@ def updateARTJobList(request):
         'strt': starttime,
         'endt': datetime.now()
     }
-    endSelfMonitor(request)
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
@@ -666,7 +657,6 @@ def getJobSubResults(request):
     }
     response = render_to_response('artJobSubResults.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    endSelfMonitor(request)
     return response
 
 
@@ -810,8 +800,6 @@ def registerARTTest(request):
     else:
         data = {'exit_code': 0, 'message': "Provided pandaid is already registered"}
 
-
-    endSelfMonitor(request)
     return HttpResponse(json.dumps(data), content_type='application/json')
 
 
@@ -929,8 +917,6 @@ def sendArtReport(request):
             if i >= maxTries:
                 break
 
-
-    endSelfMonitor(request)
     return HttpResponse(json.dumps({'isSent': isSent, 'nTries': i}), content_type='application/json')
 
 

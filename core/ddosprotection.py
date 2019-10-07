@@ -3,7 +3,7 @@ import time
 import django.core.exceptions
 import subprocess
 import random
-from core.common.models import RequestStat, AllRequests
+from core.common.models import AllRequests
 
 from django.utils import timezone
 from datetime import timedelta

@@ -16,7 +16,7 @@ from django.utils import timezone
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import is_timestamp
 
-from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder, extensibleURL, DateTimeEncoder
+from core.views import login_customrequired, initRequest, setupView, escapeInput, DateEncoder, extensibleURL, DateTimeEncoder
 from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots
 
 
@@ -72,7 +72,6 @@ def harvesterWorkersDash(request):
         'requestParams': request.session['requestParams'],
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-    endSelfMonitor(request)
     response = render_to_response('harvworksummarydash.html', data, content_type='text/html')
     return response
 
@@ -113,7 +112,6 @@ def harvesterWorkList(request):
         'requestParams': request.session['requestParams'],
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-    endSelfMonitor(request)
     response = render_to_response('harvworkerslist.html', data, content_type='text/html')
     return response
 
@@ -187,10 +185,8 @@ def harvesterWorkerInfo(request):
     }
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
             'json' in request.session['requestParams']):
-        endSelfMonitor(request)
         return HttpResponse(json.dumps(data['workerinfo'], cls=DateEncoder), content_type='application/json')
     else:
-        endSelfMonitor(request)
         response = render_to_response('harvworkerinfo.html', data, content_type='text/html')
         return response
 
@@ -208,7 +204,6 @@ def harvesters(request):
         data['request'] = request
         response = render_to_response('harvesters.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
         return response
 
     extra = '1=1'
@@ -484,7 +479,6 @@ def harvesters(request):
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
-        endSelfMonitor(request)
 
         return render_to_response('harvesters.html', data, content_type='text/html')
 
@@ -688,7 +682,6 @@ def harvesters(request):
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
-        endSelfMonitor(request)
         return render_to_response('harvesters.html', data, content_type='text/html')
     elif 'pandaid' in request.session['requestParams'] and 'computingsite' not in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
         pandaid = request.session['requestParams']['pandaid']
@@ -829,7 +822,6 @@ def harvesters(request):
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
-        endSelfMonitor(request)
         return render_to_response('harvesters.html', data, content_type='text/html')
     else:
         sqlquery = """
@@ -987,8 +979,6 @@ def workersJSON(request):
 
     if data is not None:
         data = json.loads(data)
-        endSelfMonitor(request)
-
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     status = ''
@@ -1160,7 +1150,6 @@ def harvesterslots(request):
         'built': datetime.now().strftime("%H:%M:%S"),
 
     }
-    endSelfMonitor(request)
     return render_to_response('harvesterslots.html', data, content_type='text/html')
 
 def getWorkersList(sqlWorkersList):
