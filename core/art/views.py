@@ -123,7 +123,7 @@ def artOverview(request):
     # quering data from dedicated SQL function
     query_raw = """
         SELECT package, branch, ntag, status, result 
-        FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('{}','{}','{}')) 
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
         WHERE attemptmark = 0
         """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur = connection.cursor()
@@ -229,7 +229,7 @@ def artTasks(request):
     cur = connection.cursor()
     query_raw = """
         SELECT package, branch, ntag, nightly_tag, taskid, status, result 
-        FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('{}','{}','{}')) 
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
         WHERE attemptmark = 0
         """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
@@ -919,7 +919,7 @@ def sendArtReport(request):
     cur = connection.cursor()
     query_raw = """
         SELECT taskid, package, branch, ntag, nightly_tag, testname, status, result
-        FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('{}','{}','{}')) 
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
         WHERE attemptmark = 0
         """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
