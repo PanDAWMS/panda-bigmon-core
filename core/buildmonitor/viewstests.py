@@ -32,7 +32,7 @@ def testviewDemo(request):
     else:
         arname = 'x86_64-slc6-gcc62-opt'
 
-    data={"nightly": nname, "rel": relname, "ar": arname, "ab123": 'abcd'}
+    data={"nightly": nname, "rel": relname, "ar": arname, "ab123": 'abcd', 'viewParams': request.session['viewParams']}
     return render_to_response('testviewDemo.html', data, content_type='text/html') 
 
 def testviewData(request):
@@ -139,6 +139,6 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       row_cand=[i_result,proj,nameln,category,container,ttime]
       rows_s.append(row_cand)
     rows_s.append(row_cand)
-    return HttpResponse(json.dumps(rows_s, cls=DateEncoder), content_type='application/json')
+    return HttpResponse(json.dumps(rows_s, cls=DateEncoder), content_type='text/html')
 
 
