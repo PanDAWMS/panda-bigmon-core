@@ -388,7 +388,7 @@ def artJobs(request):
             c.parentid, 
             c.attemptmark, 
             c.inputfileid 
-        FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('{}','{}','{}')) c
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS('{}','{}','{}')) c
         """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
     jobs = cur.fetchall()
