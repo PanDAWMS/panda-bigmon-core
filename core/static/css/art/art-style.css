@@ -278,6 +278,7 @@ li.artmenu-item > label {
 .no-border .cell {
     border: none;
     text-align: center;
+    white-space: nowrap;
 }
 
 .no-border .cell-left {

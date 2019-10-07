@@ -81,8 +81,8 @@ function toggleShowHide(divID, linkID) {
                                                     <th class="header center-aligned">Computing site</th>
                                                     <th class="header center-aligned">Duration, h:m:s</th>
                                                     <th class="header center-aligned">CPU time, s</th>
-                                                    <th class="header center-aligned">MaxVMEM, MB</th>
                                                     <th class="header center-aligned">MaxRSS, MB</th>
+                                                    <th class="header center-aligned">CPU type</th>
                                                 {% endif %}
                                               {% endif %}
                                           {% endfor %}
@@ -190,12 +190,12 @@ function toggleShowHide(divID, linkID) {
                                           </td>
                                           <td class="cell" style="line-height:1.8rem;">
                                             {% for job in jobs.jobs %}
-                                              {{ job.maxvmem }}<br>
+                                              {{ job.maxrss }}<br>
                                             {% endfor %}
                                           </td>
                                           <td class="cell" style="line-height:1.8rem;">
                                             {% for job in jobs.jobs %}
-                                              {{ job.maxrss }}<br>
+                                              {{ job.cpuconsumptionunit }}<br>
                                             {% endfor %}
                                           </td>
                                       {% endif %}
