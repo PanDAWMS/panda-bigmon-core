@@ -21,7 +21,7 @@ class DateEncoder(json.JSONEncoder):
 def globalviewDemo(request):
     valid, response = initRequest(request)
     nname = '20.20.X-VAL'
-    data={"nightly": nname}
+    data={"nightly": nname, 'viewParams': request.session['viewParams']}
     return render_to_response('globalviewDemo.html', data, content_type='text/html') 
 
 def globalviewData(request):
@@ -120,5 +120,5 @@ j.jid BETWEEN to_number(to_char(SYSDATE-6, 'YYYYMMDD'))*10000000
             link_brname="<a href=\""+link_to_nInfo+"?nightly="+brname+"\">"+brname+"</a>"
         list9.append(row[1]);list9.append(link_brname);list9.append(row[14]);list9.append(row[9]);list9.append(a0001);list9.append(a0002);list9.append(row[29]); 
         reslt3.append(list9) 
-    return HttpResponse(json.dumps(reslt3, cls=DateEncoder), content_type='application/json')
+    return HttpResponse(json.dumps(reslt3, cls=DateEncoder), content_type='text/html')
     #return render_to_response('demonstrator.html', data, content_type='text/html')
