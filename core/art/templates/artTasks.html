@@ -7,14 +7,6 @@
 {% block subtitle %}ART nightly tasks {{ viewParams.selection|safe }}{% endblock %}
 {% block body %}
 
-<div class="callout success small" data-closable>
-  <h5>The color coding of test results has been updated! </h5>
-    <p>You can read a description in <a href="#help">help section</a> in the bottom of this page.</p>
-    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-        <span aria-hidden="true">&times;</span>
-  </button>
-</div>
-
 <a href="{% url 'art-mainPage' %}" class="button back-to-home"><i class="fi-home"></i> Back to main page</a>
 {% if requestParams.view and requestParams.view == 'branches' %}
     <a href="{{ noviewurl }}view=packages" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to packages view</a>
@@ -29,7 +21,7 @@
 {% if requestParams.ntag_from %}<b>Listed tests are for builds done from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
 {% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 
-<div class="row">
+<div class="row collapse">
   <div class="columns">
     <ul class="accordion-art" data-accordion data-allow-all-closed="true" data-multi-expand="true">
       {% for pname,pack in arttasks.items %}

@@ -27,6 +27,7 @@ li.artmenu-item > label {
     background-color: transparent;
     max-width: 500px; /*250 px for status box with tar index and link to logs, +250px for sub results  */
     display: inline-flex;
+    white-space: normal;
 }
 
 .with-ntagfull {
@@ -278,6 +279,7 @@ li.artmenu-item > label {
 .no-border .cell {
     border: none;
     text-align: center;
+    white-space: nowrap;
 }
 
 .no-border .cell-left {

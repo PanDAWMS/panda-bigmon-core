@@ -12,19 +12,21 @@ from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.db import connection
 from django.views.decorators.csrf import csrf_exempt
-from core.art.modelsART import ARTResults, ARTTests, ReportEmails, ARTResultsQueue
-from core.common.models import Filestable4, FilestableArch
+from django.template.defaulttags import register
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V
+
+
 from core.views import login_customrequired, initRequest, extensibleURL, removeParam
 from core.views import DateEncoder, endSelfMonitor
+from core.art.artMail import send_mail_art
+from core.art.modelsART import ARTResults, ARTTests, ReportEmails, ARTResultsQueue
 from core.art.jobSubResults import getJobReport, getARTjobSubResults, subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
-from django.db.models import Q
+from core.common.models import Filestable4, FilestableArch
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
-from core.art.artMail import send_mail_art
-from django.template.defaulttags import register
-from htmlmin.decorators import minified_response
+
+from core.art.utils import setupView
 
 _logger = logging.getLogger('bigpandamon-error')
 
@@ -41,148 +43,11 @@ humandateformat = '%d %b %Y'
 cache_timeout = 15
 
 
-def setupView(request, querytype='task'):
-    if not 'view' in request.session['requestParams']:
-        request.session['requestParams']['view'] = 'packages'
-    query = {}
-
-    if 'ntag_from' in request.session['requestParams']:
-        startdatestr = request.session['requestParams']['ntag_from']
-        try:
-            startdate = datetime.strptime(startdatestr, '%Y-%m-%d')
-        except:
-            del request.session['requestParams']['ntag_from']
-
-    if 'ntag_to' in request.session['requestParams']:
-        enddatestr = request.session['requestParams']['ntag_to']
-        try:
-            enddate = datetime.strptime(enddatestr, artdateformat)
-        except:
-            del request.session['requestParams']['ntag_to']
-
-    if 'ntag' in request.session['requestParams']:
-        startdatestr = request.session['requestParams']['ntag']
-        try:
-            startdate = datetime.strptime(startdatestr, artdateformat)
-        except:
-            del request.session['requestParams']['ntag']
-    if 'ntags' in request.session['requestParams']:
-        dateliststr = request.session['requestParams']['ntags']
-        datelist = []
-        for datestr in dateliststr.split(','):
-            try:
-                datei = datetime.strptime(datestr, artdateformat)
-                datelist.append(datei)
-            except:
-                pass
-    if 'ntag_full' in request.session['requestParams']:
-        startdatestr = request.session['requestParams']['ntag_full'][:10]
-        try:
-            startdate = datetime.strptime(startdatestr, artdateformat)
-        except:
-            del request.session['requestParams']['ntag_full']
-
-    ndaysmax = 6
-    if 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
-        enddate = startdate + timedelta(days=ndaysmax)
-    elif not 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams']:
-        startdate = enddate - timedelta(days=ndaysmax)
-    elif not 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
-        if 'ntag' in request.session['requestParams']:
-            enddate = startdate
-        elif 'ntag_full' in request.session['requestParams']:
-            enddate = startdate
-        else:
-            enddate = datetime.now()
-            startdate = enddate - timedelta(days=ndaysmax)
-    elif 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams'] and (enddate-startdate).days > 7:
-        enddate = startdate + timedelta(days=ndaysmax)
-
-    if 'days' in request.session['requestParams']:
-        try:
-            ndays = int(request.session['requestParams']['days'])
-        except:
-            ndays = ndaysmax
-        enddate = datetime.now()
-        if ndays <= ndaysmax:
-            startdate = enddate - timedelta(days=ndays)
-        else:
-            startdate = enddate - timedelta(days=ndaysmax)
-
-
-
-    if not 'ntag' in request.session['requestParams']:
-        request.session['requestParams']['ntag_from'] = startdate
-        request.session['requestParams']['ntag_to'] = enddate
-    elif 'ntags' in request.session['requestParams']:
-        request.session['requestParams']['ntags'] = datelist
-        request.session['requestParams']['ntag_from'] = min(datelist)
-        request.session['requestParams']['ntag_to'] = max(datelist)
-
-    else:
-        request.session['requestParams']['ntag'] = startdate
-
-
-
-
-    querystr = ''
-    if querytype == 'job':
-        if 'package' in request.session['requestParams']:
-            packages = request.session['requestParams']['package'].split(',')
-            querystr += '(UPPER(PACKAGE) IN ( '
-            for p in packages:
-                querystr += 'UPPER(\'\'' + p + '\'\'), '
-            if querystr.endswith(', '):
-                querystr = querystr[:len(querystr) - 2]
-            querystr += ')) AND '
-        if 'branch' in request.session['requestParams']:
-            branches = request.session['requestParams']['branch'].split(',')
-            querystr += '(UPPER(NIGHTLY_RELEASE_SHORT || \'\'/\'\' || PROJECT || \'\'/\'\' || PLATFORM)  IN ( '
-            for b in branches:
-                querystr += 'UPPER(\'\'' + b + '\'\'), '
-            if querystr.endswith(', '):
-                querystr = querystr[:len(querystr) - 2]
-            querystr += ')) AND '
-        if 'taskid' in request.session['requestParams']:
-            querystr += '(a.TASK_ID = ' + request.session['requestParams']['taskid'] + ' ) AND '
-        if 'ntags' in request.session['requestParams']:
-            querystr += '((SUBSTR(NIGHTLY_TAG, 0, INSTR(NIGHTLY_TAG, \'\'T\'\')-1)) IN ('
-            for datei in datelist:
-                querystr+= '\'\'' + datei.strftime(artdateformat) + '\'\', '
-            if querystr.endswith(', '):
-                querystr = querystr[:len(querystr) - 2]
-            querystr += ')) AND '
-        if 'ntag_full' in request.session['requestParams']:
-            querystr += '(UPPER(NIGHTLY_TAG) = \'\'' + request.session['requestParams']['ntag_full'] + '\'\') AND'
-        if querystr.endswith('AND '):
-            querystr = querystr[:len(querystr)-4]
-        else:
-            querystr += '(1=1)'
-        query['strcondition'] = querystr
-        query['ntag_from'] = startdate.strftime(artdateformat)
-        query['ntag_to'] = enddate.strftime(artdateformat)
-    elif querytype == 'task':
-        if 'package' in request.session['requestParams'] and not ',' in request.session['requestParams']['package']:
-            query['package'] = request.session['requestParams']['package']
-        elif 'package' in request.session['requestParams'] and ',' in request.session['requestParams']['package']:
-            query['package__in'] = [p for p in request.session['requestParams']['package'].split(',')]
-        if 'branch' in request.session['requestParams'] and not ',' in request.session['requestParams']['branch']:
-            query['branch'] = request.session['requestParams']['branch']
-        elif 'branch' in request.session['requestParams'] and ',' in request.session['requestParams']['branch']:
-            query['branch__in'] = [b for b in request.session['requestParams']['branch'].split(',')]
-        if not 'ntags' in request.session['requestParams']:
-            query['ntag__range'] = [startdate.strftime(artdateformat), enddate.strftime(artdateformat)]
-        else:
-            query['ntag__in'] = [ntag.strftime(artdateformat) for ntag in datelist]
-
-
-
-    return query
-
-# @minified_response
 @login_customrequired
 def art(request):
     valid, response = initRequest(request)
+    if not valid:
+        return HttpResponse(status=401)
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artMain")
@@ -223,10 +88,21 @@ def art(request):
     endSelfMonitor(request)
     return response
 
+
 @login_customrequired
 def artOverview(request):
     valid, response = initRequest(request)
-    query = setupView(request, 'job')
+    if not valid:
+        return HttpResponse(status=401)
+    
+    # getting aggregation order
+    if not 'view' in request.session['requestParams'] or (
+            'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
+        art_aggr_order = ['package', 'branch']
+    elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
+        art_aggr_order = ['branch', 'package']
+    else:
+        return HttpResponse(status=401)
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artOverview")
@@ -252,11 +128,15 @@ def artOverview(request):
         endSelfMonitor(request)
         return response
 
-    if datetime.strptime(query['ntag_from'], '%Y-%m-%d') < datetime.strptime('2018-03-20', '%Y-%m-%d'):
-        query_raw = """SELECT package, branch, ntag, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
-    else:
-        query_raw = """SELECT package, branch, ntag, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s')) WHERE attemptmark = 0""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
-
+    # process URL params to query params
+    query = setupView(request, 'job')
+    
+    # quering data from dedicated SQL function
+    query_raw = """
+        SELECT package, branch, ntag, status, result 
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
+        WHERE attemptmark = 0
+        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur = connection.cursor()
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
@@ -268,34 +148,18 @@ def artOverview(request):
     statestocount = ['finished', 'failed', 'active', 'done']
     
     artpackagesdict = {}
-    if not 'view' in request.session['requestParams'] or (
-            'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
-        for j in jobs:
-            if j['package'] not in artpackagesdict.keys():
-                artpackagesdict[j['package']] = {}
-                for n in ntagslist:
-                    artpackagesdict[j['package']][n.strftime(artdateformat)] = {}
-                    artpackagesdict[j['package']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
-                    for state in statestocount:
-                        artpackagesdict[j['package']][n.strftime(artdateformat)][state] = 0
-    
-            if j['ntag'].strftime(artdateformat) in artpackagesdict[j['package']]:
-                finalresult, extraparams = get_final_result(j)
-                artpackagesdict[j['package']][j['ntag'].strftime(artdateformat)][finalresult] +=1
+    for j in jobs:
+        if j[art_aggr_order[0]] not in artpackagesdict.keys():
+            artpackagesdict[j[art_aggr_order[0]]] = {}
+            for n in ntagslist:
+                artpackagesdict[j[art_aggr_order[0]]][n.strftime(artdateformat)] = {}
+                artpackagesdict[j[art_aggr_order[0]]][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
+                for state in statestocount:
+                    artpackagesdict[j[art_aggr_order[0]]][n.strftime(artdateformat)][state] = 0
 
-    elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
-        for j in jobs:
-            if j['branch'] not in artpackagesdict.keys():
-                artpackagesdict[j['branch']] = {}
-                for n in ntagslist:
-                    artpackagesdict[j['branch']][n.strftime(artdateformat)] = {}
-                    artpackagesdict[j['branch']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
-                    for state in statestocount:
-                        artpackagesdict[j['branch']][n.strftime(artdateformat)][state] = 0
-
-            if j['ntag'].strftime(artdateformat) in artpackagesdict[j['branch']]:
-                finalresult, extraparams = get_final_result(j)
-                artpackagesdict[j['branch']][j['ntag'].strftime(artdateformat)][finalresult] += 1
+        if j['ntag'].strftime(artdateformat) in artpackagesdict[j[art_aggr_order[0]]]:
+            finalresult, extraparams = get_final_result(j)
+            artpackagesdict[j[art_aggr_order[0]]][j['ntag'].strftime(artdateformat)][finalresult] += 1
         
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
@@ -324,10 +188,21 @@ def artOverview(request):
         endSelfMonitor(request)
         return response
 
+
 @login_customrequired
 def artTasks(request):
     valid, response = initRequest(request)
-    query = setupView(request, 'job')
+    if not valid:
+        return HttpResponse(status=401)
+
+    # getting aggregation order
+    if not 'view' in request.session['requestParams'] or (
+            'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
+        art_aggr_order = ['package', 'branch']
+    elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
+        art_aggr_order = ['branch', 'package']
+    else:
+        return HttpResponse(status=401)
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artTasks")
@@ -353,12 +228,16 @@ def artTasks(request):
         endSelfMonitor(request)
         return response
 
-    cur = connection.cursor()
-    if datetime.strptime(query['ntag_from'], '%Y-%m-%d') <  datetime.strptime('2018-03-20', '%Y-%m-%d'):
-        query_raw = """SELECT package, branch, ntag, nightly_tag, taskid, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
-    else:
-        query_raw = """SELECT package, branch, ntag, nightly_tag, taskid, status, result FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s')) WHERE attemptmark = 0""" % (query['ntag_from'], query['ntag_to'], query['strcondition'])
+    # process URL params to query params
+    query = setupView(request, 'job')
 
+    # quering data from dedicated SQL function
+    cur = connection.cursor()
+    query_raw = """
+        SELECT package, branch, ntag, nightly_tag, taskid, status, result 
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
+        WHERE attemptmark = 0
+        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
     cur.close()
@@ -371,53 +250,28 @@ def artTasks(request):
     statestocount = ['finished', 'failed', 'active', 'done']
     arttasksdict = {}
     jeditaskids = {}
-    if not 'view' in request.session['requestParams'] or ('view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
-        for job in jobs:
-            if job['package'] not in arttasksdict.keys():
-                arttasksdict[job['package']] = {}
-            if job['branch'] not in arttasksdict[job['package']].keys():
-                arttasksdict[job['package']][job['branch']] = {}
-                for n in ntagslist:
-                    arttasksdict[job['package']][job['branch']][n.strftime(artdateformat)] = {}
-                    arttasksdict[job['package']][job['branch']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
-            if job['nightly_tag'] not in arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)]:
-                arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)][job['nightly_tag']] = {}
-                for state in statestocount:
-                    arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)][job['nightly_tag']][state] = 0
-            if job['nightly_tag'] in arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)]:
-                finalresult, extraparams = get_final_result(job)
-                arttasksdict[job['package']][job['branch']][job['ntag'].strftime(artdateformat)][job['nightly_tag']][finalresult] += 1
+    for job in jobs:
+        if job[art_aggr_order[0]] not in arttasksdict.keys():
+            arttasksdict[job[art_aggr_order[0]]] = {}
+        if job[art_aggr_order[1]] not in arttasksdict[job[art_aggr_order[0]]].keys():
+            arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]] = {}
+            for n in ntagslist:
+                arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][n.strftime(artdateformat)] = {}
+                arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
+        if job['nightly_tag'] not in arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)]:
+            arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)][job['nightly_tag']] = {}
+            for state in statestocount:
+                arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)][job['nightly_tag']][state] = 0
+        if job['nightly_tag'] in arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)]:
+            finalresult, extraparams = get_final_result(job)
+            arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)][job['nightly_tag']][finalresult] += 1
 
-            if job['package'] not in jeditaskids.keys():
-                jeditaskids[job['package']] = {}
-            if job['branch'] not in jeditaskids[job['package']].keys():
-                jeditaskids[job['package']][job['branch']] = []
-            if job['task_id'] not in jeditaskids[job['package']][job['branch']]:
-                jeditaskids[job['package']][job['branch']].append(job['task_id'])
-
-    elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
-        for job in jobs:
-            if job['branch'] not in arttasksdict.keys():
-                arttasksdict[job['branch']] = {}
-            if job['package'] not in arttasksdict[job['branch']].keys():
-                arttasksdict[job['branch']][job['package']] = {}
-                for n in ntagslist:
-                    arttasksdict[job['branch']][job['package']][n.strftime(artdateformat)] = {}
-                    arttasksdict[job['branch']][job['package']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
-            if job['nightly_tag'] not in arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)]:
-                arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)][job['nightly_tag']] = {}
-                for state in statestocount:
-                    arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)][job['nightly_tag']][state] = 0
-            if job['nightly_tag'] in arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)]:
-                finalresult, extraparams = get_final_result(job)
-                arttasksdict[job['branch']][job['package']][job['ntag'].strftime(artdateformat)][job['nightly_tag']][finalresult] += 1
-
-            if job['branch'] not in jeditaskids.keys():
-                jeditaskids[job['branch']] = {}
-            if job['package'] not in jeditaskids[job['branch']].keys():
-                jeditaskids[job['branch']][job['package']] = []
-            if job['task_id'] not in jeditaskids[job['branch']][job['package']]:
-                jeditaskids[job['branch']][job['package']].append(job['task_id'])
+        if job[art_aggr_order[0]] not in jeditaskids.keys():
+            jeditaskids[job[art_aggr_order[0]]] = {}
+        if job[art_aggr_order[1]] not in jeditaskids[job[art_aggr_order[0]]].keys():
+            jeditaskids[job[art_aggr_order[0]]][job[art_aggr_order[1]]] = []
+        if job['task_id'] not in jeditaskids[job[art_aggr_order[0]]][job[art_aggr_order[1]]]:
+            jeditaskids[job[art_aggr_order[0]]][job[art_aggr_order[1]]].append(job['task_id'])
 
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
@@ -448,10 +302,21 @@ def artTasks(request):
         endSelfMonitor(request)
         return response
 
+
 @login_customrequired
 def artJobs(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return HttpResponse(status=401)
+
+    # getting aggregation order
+    if not 'view' in request.session['requestParams'] or (
+            'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
+        art_aggr_order = ['package', 'branch']
+    elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
+        art_aggr_order = ['branch', 'package']
+    else:
+        return HttpResponse(status=401)
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artJobs")
@@ -477,18 +342,53 @@ def artJobs(request):
         endSelfMonitor(request)
         return response
 
-
+    # process URL params to query params
     query = setupView(request, 'job')
 
+    # querying data from dedicated SQL function
     cur = connection.cursor()
-    if datetime.strptime(query['ntag_from'], '%Y-%m-%d') < datetime.strptime('2018-03-20', '%Y-%m-%d'):
-        cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
-    else:
-        cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s'))" % (query['ntag_from'], query['ntag_to'], query['strcondition']))
+    query_raw = """
+        SELECT 
+            c.taskid, 
+            c.package, 
+            c.branch, 
+            c.ntag, 
+            c.nightly_tag, 
+            c.testname, 
+            c.status, 
+            c.pandaid, 
+            c.computingsite, 
+            c.endtime,
+            c.starttime,
+            c.maxvmem, 
+            c.cpuconsumptiontime, 
+            c.guid, 
+            c.scope, 
+            c.lfn,
+            c.taskstatus, 
+            c.taskmodificationtime, 
+            c.jobmodificationtime, 
+            c.cpuconsumptionunit, 
+            c.result, 
+            c.gitlabid, 
+            c.outputcontainer, 
+            c.maxrss, 
+            c.attemptnr, 
+            c.maxattempt,  
+            c.parentid, 
+            c.attemptmark, 
+            c.inputfileid 
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS('{}','{}','{}')) c
+        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
+    cur.execute(query_raw)
     jobs = cur.fetchall()
     cur.close()
 
-    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'computingsite', 'endtime', 'starttime' , 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn', 'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'result', 'gitlabid', 'outputcontainer', 'maxrss', 'attemptnr', 'maxattempt', 'parentid', 'attemptmark', 'inputfileid']
+    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid',
+                    'computingsite', 'endtime', 'starttime' , 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn',
+                    'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'cpuconsumptionunit', 'result',
+                    'gitlabid', 'outputcontainer', 'maxrss', 'attemptnr', 'maxattempt', 'parentid', 'attemptmark',
+                    'inputfileid']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
     # i=0
@@ -505,158 +405,92 @@ def artJobs(request):
     testdirectories = {}
     outputcontainers = {}
     reportTo = {'mail': [], 'jira': {}}
-    gitlabids = []
     gitlabids = list(sorted(set([x['gitlabid'] for x in jobs])))
 
     artjobsdict={}
-    if not 'view' in request.session['requestParams'] or (
-            'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
-        for job in jobs:
-            if 'attemptmark' in job and job['attemptmark'] == 0:
-                if job['package'] not in artjobsdict.keys():
-                    artjobsdict[job['package']] = {}
-                if job['branch'] not in artjobsdict[job['package']].keys():
-                    artjobsdict[job['package']][job['branch']] = {}
 
-                if job['package'] not in testdirectories.keys():
-                    testdirectories[job['package']] = {}
-                if job['branch'] not in testdirectories[job['package']].keys():
-                    testdirectories[job['package']][job['branch']] = []
+    for job in jobs:
+        if 'attemptmark' in job and job['attemptmark'] == 0:
+            if job[art_aggr_order[0]] not in artjobsdict.keys():
+                artjobsdict[job[art_aggr_order[0]]] = {}
+            if job[art_aggr_order[1]] not in artjobsdict[job[art_aggr_order[0]]].keys():
+                artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]] = {}
 
-                if job['package'] not in outputcontainers.keys():
-                    outputcontainers[job['package']] = {}
-                if job['branch'] not in outputcontainers[job['package']].keys():
-                    outputcontainers[job['package']][job['branch']] = []
+            if job[art_aggr_order[0]] not in testdirectories.keys():
+                testdirectories[job[art_aggr_order[0]]] = {}
+            if job[art_aggr_order[1]] not in testdirectories[job[art_aggr_order[0]]].keys():
+                testdirectories[job[art_aggr_order[0]]][job[art_aggr_order[1]]] = []
 
-                if job['testname'] not in artjobsdict[job['package']][job['branch']].keys():
-                    artjobsdict[job['package']][job['branch']][job['testname']] = {}
-                    for n in ntagslist:
-                        artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)] = {}
-                        artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
-                        artjobsdict[job['package']][job['branch']][job['testname']][n.strftime(artdateformat)]['jobs'] = []
-                if job['ntag'].strftime(artdateformat) in artjobsdict[job['package']][job['branch']][job['testname']]:
-                    jobdict = {}
-                    jobdict['jobstatus'] = job['jobstatus']
-                    jobdict['origpandaid'] = job['origpandaid']
-                    jobdict['linktext'] = job['branch'] + '/' + job['nightly_tag'] + '/' + job['package'] + '/' + job['testname'][:-3]
-                    jobdict['ntagtime'] = job['nightly_tag'][-5:]
-                    jobdict['computingsite'] = job['computingsite']
-                    jobdict['guid'] = job['guid']
-                    jobdict['scope'] = job['scope']
-                    jobdict['lfn'] = job['lfn']
-                    jobdict['jeditaskid'] = job['taskid']
-                    jobdict['maxvmem'] = round(job['maxvmem']*1.0/1000,1) if job['maxvmem'] is not None else '---'
-                    jobdict['maxrss'] = round(job['maxrss']*1.0/1000,1) if job['maxrss'] is not None else '---'
-                    jobdict['attemptnr'] = job['attemptnr']
-                    jobdict['maxattempt'] = job['maxattempt']
-                    jobdict['cpuconsumptiontime'] = job['cpuconsumptiontime'] if job['jobstatus'] in ('finished', 'failed') else '---'
-                    jobdict['inputfileid'] = job['inputfileid']
-                    if job['jobstatus'] in ('finished', 'failed'):
-                        jobdict['duration'] = job['endtime'] - job['starttime']
-                    else:
-                        jobdict['duration'] = str(datetime.now() - job['starttime']).split('.')[0] if job['starttime'] is not None else "---"
+            if job[art_aggr_order[0]] not in outputcontainers.keys():
+                outputcontainers[job[art_aggr_order[0]]] = {}
+            if job[art_aggr_order[1]] not in outputcontainers[job[art_aggr_order[0]]].keys():
+                outputcontainers[job[art_aggr_order[0]]][job[art_aggr_order[1]]] = []
+
+            if job['testname'] not in artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]].keys():
+                artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']] = {}
+                for n in ntagslist:
+                    artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][n.strftime(artdateformat)] = {}
+                    artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
+                    artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][n.strftime(artdateformat)]['jobs'] = []
+            if job['ntag'].strftime(artdateformat) in artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']]:
+                jobdict = {}
+                jobdict['jobstatus'] = job['jobstatus']
+                jobdict['origpandaid'] = job['origpandaid']
+                jobdict['linktext'] = job[art_aggr_order[1]] + '/' + job['nightly_tag'] + '/' + job['package'] + '/' + job['testname'][:-3]
+                jobdict['ntagtime'] = job['nightly_tag'][-5:]
+                jobdict['computingsite'] = job['computingsite']
+                jobdict['guid'] = job['guid']
+                jobdict['scope'] = job['scope']
+                jobdict['lfn'] = job['lfn']
+                jobdict['jeditaskid'] = job['taskid']
+                jobdict['maxrss'] = round(job['maxrss'] * 1.0 / 1000, 1) if job['maxrss'] is not None else '---'
+                jobdict['attemptnr'] = job['attemptnr']
+                jobdict['maxattempt'] = job['maxattempt']
+                jobdict['cpuconsumptiontime'] = job['cpuconsumptiontime'] if job['jobstatus'] in ('finished', 'failed') else '---'
+                jobdict['cpuconsumptionunit'] = job['cpuconsumptionunit'] if job['cpuconsumptionunit'] is not None else '---'
+                jobdict['inputfileid'] = job['inputfileid']
+                if job['jobstatus'] in ('finished', 'failed'):
                     try:
-                        jobdict['tarindex'] = int(re.search('.([0-9]{6}).log.', job['lfn']).group(1))
-                    except:
-                        jobdict['tarindex'] = ''
-
-                    finalresult, extraparams = get_final_result(job)
-
-                    jobdict['finalresult'] = finalresult
-                    jobdict.update(extraparams)
-
-                    if not extraparams['testdirectory'] in testdirectories[job['package']][job['branch']] and extraparams['testdirectory'] is not None and isinstance(extraparams['testdirectory'], str):
-                        testdirectories[job['package']][job['branch']].append(extraparams['testdirectory'])
-
-                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
-
-                    if job['outputcontainer'] is not None and len(job['outputcontainer']) > 0:
-                        for oc in job['outputcontainer'].split(','):
-                            if not oc in outputcontainers[job['package']][job['branch']] and oc is not None and isinstance(oc, str):
-                                outputcontainers[job['package']][job['branch']].append(oc)
-
-                    if jobdict['reportjira'] is not None:
-                        for jira, link in jobdict['reportjira'].items():
-                            if jira not in reportTo['jira'].keys():
-                                reportTo['jira'][jira] = link
-                    if jobdict['reportmail'] is not None and jobdict['reportmail'] not in reportTo['mail']:
-                            reportTo['mail'].append(jobdict['reportmail'])
-
-
-
-    elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
-        for job in jobs:
-            if 'attemptmark' in job and job['attemptmark'] == 0:
-                if job['branch'] not in artjobsdict.keys():
-                    artjobsdict[job['branch']] = {}
-                if job['package'] not in artjobsdict[job['branch']].keys():
-                    artjobsdict[job['branch']][job['package']] = {}
-
-                if job['branch'] not in testdirectories.keys():
-                    testdirectories[job['branch']] = {}
-                if job['package'] not in testdirectories[job['branch']].keys():
-                    testdirectories[job['branch']][job['package']] = []
-
-                if job['testname'] not in artjobsdict[job['branch']][job['package']].keys():
-                    artjobsdict[job['branch']][job['package']][job['testname']] = {}
-                    for n in ntagslist:
-                        artjobsdict[job['branch']][job['package']][job['testname']][n.strftime(artdateformat)] = {}
-                        artjobsdict[job['branch']][job['package']][job['testname']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
-                        artjobsdict[job['branch']][job['package']][job['testname']][n.strftime(artdateformat)]['jobs'] = []
-                if job['ntag'].strftime(artdateformat) in artjobsdict[job['branch']][job['package']][job['testname']]:
-                    jobdict = {}
-                    jobdict['jobstatus'] = job['jobstatus']
-                    jobdict['origpandaid'] = job['origpandaid']
-                    jobdict['linktext'] = job['branch'] + '/' + job['nightly_tag'] + '/' + job['package'] + '/' + job['testname'][:-3]
-                    jobdict['ntagtime'] = job['nightly_tag'][-5:]
-                    jobdict['computingsite'] = job['computingsite']
-                    jobdict['guid'] = job['guid']
-                    jobdict['scope'] = job['scope']
-                    jobdict['lfn'] = job['lfn']
-                    jobdict['jeditaskid'] = job['taskid']
-                    jobdict['maxvmem'] = round(job['maxvmem'] * 1.0 / 1000, 1) if job['maxvmem'] is not None else '---'
-                    jobdict['maxrss'] = round(job['maxrss']*1.0/1000,1) if job['maxrss'] is not None else '---'
-                    jobdict['attemptnr'] = job['attemptnr']
-                    jobdict['maxattempt'] = job['maxattempt']
-                    jobdict['cpuconsumptiontime'] = job['cpuconsumptiontime'] if job['jobstatus'] in ('finished', 'failed') else '---'
-                    jobdict['inputfileid'] = job['inputfileid']
-                    if job['jobstatus'] in ('finished', 'failed'):
                         jobdict['duration'] = job['endtime'] - job['starttime']
-                    else:
-                        jobdict['duration'] = str(datetime.now() - job['starttime']).split('.')[0] if job['starttime'] is not None else "---"
-                    try:
-                        jobdict['tarindex'] = int(re.search('.([0-9]{6}).log.', job['lfn']).group(1))
                     except:
-                        jobdict['tarindex'] = ''
+                        jobdict['duration'] = '---'
+                else:
+                    jobdict['duration'] = str(datetime.now() - job['starttime']).split('.')[0] if job['starttime'] is not None else "---"
+                try:
+                    jobdict['tarindex'] = int(re.search('.([0-9]{6}).log.', job['lfn']).group(1))
+                except:
+                    jobdict['tarindex'] = ''
 
-                    finalresult, extraparams = get_final_result(job)
+                finalresult, extraparams = get_final_result(job)
 
-                    jobdict['finalresult'] = finalresult
-                    jobdict.update(extraparams)
+                jobdict['finalresult'] = finalresult
+                jobdict.update(extraparams)
 
-                    if not extraparams['testdirectory'] in testdirectories[job['branch']][job['package']] and extraparams['testdirectory'] is not None and isinstance(extraparams['testdirectory'], str):
-                        testdirectories[job['branch']][job['package']].append(extraparams['testdirectory'])
+                if not extraparams['testdirectory'] in testdirectories[job[art_aggr_order[0]]][job[art_aggr_order[1]]] and extraparams[
+                    'testdirectory'] is not None and isinstance(extraparams['testdirectory'], str):
+                    testdirectories[job[art_aggr_order[0]]][job[art_aggr_order[1]]].append(extraparams['testdirectory'])
 
-                    artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
+                artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
+
+                if job['outputcontainer'] is not None and len(job['outputcontainer']) > 0:
+                    for oc in job['outputcontainer'].split(','):
+                        if not oc in outputcontainers[job[art_aggr_order[0]]][job[art_aggr_order[1]]] and oc is not None and isinstance(oc, str):
+                            outputcontainers[job[art_aggr_order[0]]][job[art_aggr_order[1]]].append(oc)
+
+                if jobdict['reportjira'] is not None:
+                    for jira, link in jobdict['reportjira'].items():
+                        if jira not in reportTo['jira'].keys():
+                            reportTo['jira'][jira] = link
+                if jobdict['reportmail'] is not None and jobdict['reportmail'] not in reportTo['mail']:
+                    reportTo['mail'].append(jobdict['reportmail'])
 
     # add links to logs of previous attempt if there is one
-    if not 'view' in request.session['requestParams'] or (
-            'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
-        for job in jobs:
-            if 'attemptmark' in job and job['attemptmark'] == 1:
-                jobindex = next((index for (index, d) in enumerate(
-                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)][
-                        'jobs']) if d['inputfileid'] == job['inputfileid']), None)
-                if jobindex is not None:
-                    artjobsdict[job['package']][job['branch']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][jobindex]['linktopreviousattemptlogs'] = '?scope={}&guid={}&lfn={}&site={}'.format(job['scope'], job['guid'], job['lfn'], job['computingsite'])
-    elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
-        for job in jobs:
-            if 'attemptmark' in job and job['attemptmark'] == 1:
-                jobindex = next((index for (index, d) in enumerate(
-                    artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)][
-                        'jobs']) if d['inputfileid'] == job['inputfileid']), None)
-                if jobindex is not None:
-                    artjobsdict[job['branch']][job['package']][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][jobindex]['linktopreviousattemptlogs'] = '?scope={}&guid={}&lfn={}&site={}'.format(job['scope'], job['guid'], job['lfn'], job['computingsite'])
+    for job in jobs:
+        if 'attemptmark' in job and job['attemptmark'] == 1:
+            jobindex = next((index for (index, d) in enumerate(
+                artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][job['ntag'].strftime(artdateformat)]['jobs']) if d['inputfileid'] == job['inputfileid']), None)
+            if jobindex is not None:
+                artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][jobindex]['linktopreviousattemptlogs'] = '?scope={}&guid={}&lfn={}&site={}'.format(job['scope'], job['guid'], job['lfn'], job['computingsite'])
 
     # transform dict of tests to list of test and sort alphabetically
     artjobslist = {}
@@ -714,7 +548,8 @@ def artJobs(request):
 
 def updateARTJobList(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return HttpResponse(status=401)
 
     query = setupView(request, 'job')
     starttime = datetime.now()
@@ -724,13 +559,13 @@ def updateARTJobList(request):
     cur.autocommit = True
     cur.execute("""INSERT INTO atlas_pandabigmon.art_results_queue
                     (pandaid, IS_LOCKED, LOCK_TIME)
-                    SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s'))
+                    SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('{}','{}','{}'))
                     WHERE pandaid is not NULL
                           and attemptmark = 0  
                           and result is NULL
                           and status in ('finished', 'failed')
-                          and pandaid not in (select pandaid from atlas_pandabigmon.art_results_queue)"""
-                % (query['ntag_from'], query['ntag_to'], query['strcondition']))
+                          and pandaid not in (select pandaid from atlas_pandabigmon.art_results_queue)
+                """.format(query['ntag_from'], query['ntag_to'], query['strcondition']))
 
     nrows = 2
 
@@ -811,7 +646,8 @@ def updateARTJobList(request):
 
 def getJobSubResults(request):
     valid, response = initRequest(request)
-
+    if not valid:
+        return HttpResponse(status=401)
 
     guid = request.session['requestParams']['guid'] if 'guid' in request.session['requestParams'] else ''
     lfn = request.session['requestParams']['lfn'] if 'lfn' in request.session['requestParams'] else ''
@@ -859,7 +695,9 @@ def registerARTTest(request):
     Example of curl command:
     curl -X POST -d "pandaid=XXX" -d "testname=test_XXXXX.sh" http://bigpanda.cern.ch/art/registerarttest/?json
     """
-    valid,response = initRequest(request)
+    valid, response = initRequest(request)
+    if not valid:
+        return HttpResponse(status=401)
     pandaid = -1
     testname = ''
     nightly_release_short = None
@@ -1000,14 +838,16 @@ def sendArtReport(request):
     query = setupView(request, 'job')
 
     cur = connection.cursor()
-    cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.ARTTESTS_1('%s','%s','%s')) WHERE attemptmark = 0" % (
-        query['ntag_from'], query['ntag_to'], query['strcondition']))
+    query_raw = """
+        SELECT taskid, package, branch, ntag, nightly_tag, testname, status, result
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
+        WHERE attemptmark = 0
+        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
+    cur.execute(query_raw)
     jobs = cur.fetchall()
     cur.close()
 
-    artJobsNames = ['taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid',
-                    'computingsite', 'endtime', 'starttime', 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn',
-                    'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'result']
+    artJobsNames = ['taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'result']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
     ### prepare data for report

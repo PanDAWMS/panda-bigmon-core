@@ -19,9 +19,6 @@ from core.globalshares import views as globalshares
 from core.dashboards import dtcdboard as dtcdboard
 from core.dashboards import campaignprediction as campaignprediction
 
-
-from core.runningprod import views as runningprod_views
-from core.errorsscattering import views as errorsscat_views
 from core.compare import views as compare_views
 
 from core.globalpage import views as globalpage
@@ -110,11 +107,6 @@ urlpatterns = [
                   #    re_path(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
 #    re_path(r'^worldjobs/production/$', coremon_views.dashWorldProduction, name='dashWorldProduction'),
 
-    re_path(r'^runningmcprodtasks/$', runningprod_views.runningMCProdTasks, name='runningMCProdTasks'),
-    re_path(r'^runningprodtasks/$', runningprod_views.runningProdTasks, name='runningProdTasks'),
-    re_path(r'^runningdpdprodtasks/$', runningprod_views.runningDPDProdTasks, name='runningDPDProdTasks'),
-    re_path(r'^prodeventstrend/$', runningprod_views.prodNeventsTrend, name='prodNeventsTrend'),
-    re_path(r'^runningprodrequests/$', runningprod_views.runningProdRequests, name='runningProdRequests'),
     re_path(r'^worldhs06s/$', coremon_views.worldhs06s, name='worldHS06s'),
     re_path(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),
     re_path(r'^descendentjoberrsinfo/$', coremon_views.descendentjoberrsinfo, name='descendentjoberrsinfo'),
@@ -139,11 +131,11 @@ urlpatterns = [
     re_path(r'^report/$', coremon_views.report, name='report'),
     re_path(r'^serverstatushealth/$', coremon_views.serverStatusHealth, name='serverStatusHealth'),
 
-                  ### ART nightly tests
+    ### ART nightly tests
     re_path(r'^art/', include('core.art.urls_art')),
 
-
-
+    ### Running Prod tasks
+    re_path('', include('core.runningprod.urls_runningprod')),
 
     ### filebrowser
     re_path(r'^filebrowser/', include('core.filebrowser.urls'), name='filebrowser'),
@@ -188,11 +180,12 @@ urlpatterns = [
     re_path(r'^testip/$', coremon_views.testip, name='testip'),
     re_path(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
 
-    re_path(r'^taskserrorsscat/$', errorsscat_views.tasksErrorsScattering, name='tasksErrorsScattering'),
-    re_path(r'^errorsscat/$', errorsscat_views.errorsScattering, name='errorsScattering'),
-    re_path(r'^errorsscat/(?P<cloud>.*)/(?P<reqid>.*)/$', errorsscat_views.errorsScatteringDetailed, name='errorsScatteringDetailed'),
+    ### ErrorsScattering matrix
+    re_path('', include('core.errorsscattering.urls_errorsscattering')),
+
     ###Monitor###
     re_path(r'^bigpandamonitor/$', monitor_views.monitorJson, name='bigpandamonitor'),
+
     ####HARVESTER####
     re_path(r'^harvesterworkersdash/$', harvester.harvesterWorkersDash, name='harvesterworkersdash'),
     re_path(r'^harvesterworkerslist/$', harvester.harvesterWorkList, name='harvesterworkerslist'),

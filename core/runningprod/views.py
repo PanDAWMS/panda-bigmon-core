@@ -1,7 +1,6 @@
 import random
 import json
 import copy
-from collections import OrderedDict
 
 from datetime import datetime, timedelta
 
@@ -9,248 +8,21 @@ from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
-from django.db import connection, transaction, DatabaseError
+from django.utils.cache import patch_response_headers
 
-from django.utils.cache import patch_cache_control, patch_response_headers
+from core.settings import defaultDatetimeFormat
+from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
+from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, DateEncoder, removeParam, taskSummaryDict, preprocessWildCardString
 
-
-from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
-from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, preparePlotData
-from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder, \
-    extensibleURL, DateTimeEncoder, removeParam, taskSummaryDict, preprocessWildCardString
-
-from core.runningprod.models import RunningDPDProductionTasks, RunningProdTasksModel , RunningMCProductionTasks,  RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
-
-def prepareNeventsByProcessingType(task_list):
-    """
-    Prepare data to save
-    :param task_list:
-    :return:
-    """
-
-    event_states = ['total', 'used', 'running', 'waiting']
-    neventsByProcessingType = {}
-    for task in task_list:
-        if task['processingtype'] not in neventsByProcessingType:
-            neventsByProcessingType[task['processingtype']] = {}
-            for ev in event_states:
-                neventsByProcessingType[task['processingtype']][ev] = 0
-        neventsByProcessingType[task['processingtype']]['total'] += task['nevents'] if 'nevents' in task and task['nevents'] is not None else 0
-        neventsByProcessingType[task['processingtype']]['used'] += task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
-        neventsByProcessingType[task['processingtype']]['running'] += task['neventsrunning'] if 'neventsrunning' in task and task['neventsrunning'] is not None else 0
-        neventsByProcessingType[task['processingtype']]['waiting'] += (task['neventstobeused'] - task['neventsrunning']) if 'neventstobeused' in task and 'neventsrunning' in task and task['neventstobeused'] is not None and task['neventsrunning'] is not None else 0
-
-    return neventsByProcessingType
-
-def saveNeventsByProcessingType(neventsByProcessingType, qtime):
-    """
-    Save a snapshot of production state expressed in nevents in different states for various processingtype
-    :param neventsByProcessingType:
-    :param qtime:
-    :return: True in case of successful save but False in case of an exception error
-    """
-
-    try:
-        with transaction.atomic():
-            for pt, data in neventsByProcessingType.items():
-                row = ProdNeventsHistory(processingtype=pt,
-                                         neventstotal=data['total'],
-                                         neventsused=data['used'],
-                                         neventswaiting=data['waiting'],
-                                         neventsrunning=data['running'],
-                                         timestamp=qtime)
-                row.save()
-    except DatabaseError as e:
-        print (e.message)
-        return False
-
-    return True
-
-@login_customrequired
-def runningMCProdTasks(request):
-    # redirect to united runningProdTasks page
-    return redirect('/runningprodtasks/?preset=MC')
-    valid, response = initRequest(request)
-
-    # Here we try to get cached data
-    data = getCacheEntry(request, "runningMCProdTasks")
-    if data is not None:
-        data = json.loads(data)
-        data['request'] = request
-        response = render_to_response('runningMCProdTasks.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
-        return response
-
-
-    # xurl = extensibleURL(request)
-    xurl = request.get_full_path()
-    if xurl.find('?') > 0:
-        xurl += '&'
-    else:
-        xurl += '?'
-    nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=0, limit=9999999, querytype='task',
-                                                           wildCardExt=True)
-
-    tasks = RunningMCProductionTasks.objects.filter(**tquery).extra(where=[wildCardExtension]).values()
-    ntasks = len(tasks)
-    slots = 0
-    ages = []
-    neventsAFIItasksSum = {'evgen': 0, 'pile': 0, 'simul': 0, 'recon': 0}
-    neventsFStasksSum = {'evgen': 0, 'pile': 0, 'simul': 0, 'recon': 0}
-
-    neventsTotSum = 0
-    neventsUsedTotSum = 0
-    rjobs1coreTot = 0
-    rjobs8coreTot = 0
-    for task in tasks:
-        if task['rjobs'] is None:
-            task['rjobs'] = 0
-        task['neventsused'] = task['totev'] - task['totevrem'] if task['totev'] is not None else 0
-        task['percentage'] = round(100. * task['neventsused'] / task['totev'], 1) if task['totev'] > 0 else 0.
-        neventsTotSum += task['totev'] if task['totev'] is not None else 0
-        neventsUsedTotSum += task['neventsused']
-        slots += task['rjobs'] * task['corecount']
-        if task['corecount'] == 1:
-            rjobs1coreTot += task['rjobs']
-        if task['corecount'] == 8:
-            rjobs8coreTot += task['rjobs']
-        task['age'] = (datetime.now() - task['creationdate']).days
-        ages.append(task['age'])
-        if len(task['campaign'].split(':')) > 1:
-            task['cutcampaign'] = task['campaign'].split(':')[1]
-        else:
-            task['cutcampaign'] = task['campaign'].split(':')[0]
-        task['datasetname'] = task['taskname'].split('.')[1]
-        ltag = len(task['taskname'].split("_"))
-        rtag = task['taskname'].split("_")[ltag - 1]
-        if "." in rtag:
-            rtag = rtag.split(".")[len(rtag.split(".")) - 1]
-        if 'a' in rtag:
-            task['simtype'] = 'AFII'
-            neventsAFIItasksSum[task['processingtype']] += task['totev'] if task['totev'] is not None else 0
-        else:
-            task['simtype'] = 'FS'
-            neventsFStasksSum[task['processingtype']] += task['totev'] if task['totev'] is not None else 0
-    plotageshistogram = 1
-    if sum(ages) == 0: plotageshistogram = 0
-    sumd = taskSummaryDict(request, tasks, ['status', 'processingtype', 'simtype'])
-
-    if 'sortby' in request.session['requestParams']:
-        sortby = request.session['requestParams']['sortby']
-        if sortby == 'campaign-asc':
-            tasks = sorted(tasks, key=lambda x: x['campaign'])
-        elif sortby == 'campaign-desc':
-            tasks = sorted(tasks, key=lambda x: x['campaign'], reverse=True)
-        elif sortby == 'reqid-asc':
-            tasks = sorted(tasks, key=lambda x: x['reqid'])
-        elif sortby == 'reqid-desc':
-            tasks = sorted(tasks, key=lambda x: x['reqid'], reverse=True)
-        elif sortby == 'jeditaskid-asc':
-            tasks = sorted(tasks, key=lambda x: x['jeditaskid'])
-        elif sortby == 'jeditaskid-desc':
-            tasks = sorted(tasks, key=lambda x: x['jeditaskid'], reverse=True)
-        elif sortby == 'rjobs-asc':
-            tasks = sorted(tasks, key=lambda x: x['rjobs'])
-        elif sortby == 'rjobs-desc':
-            tasks = sorted(tasks, key=lambda x: x['rjobs'], reverse=True)
-        elif sortby == 'status-asc':
-            tasks = sorted(tasks, key=lambda x: x['status'])
-        elif sortby == 'status-desc':
-            tasks = sorted(tasks, key=lambda x: x['status'], reverse=True)
-        elif sortby == 'processingtype-asc':
-            tasks = sorted(tasks, key=lambda x: x['processingtype'])
-        elif sortby == 'processingtype-desc':
-            tasks = sorted(tasks, key=lambda x: x['processingtype'], reverse=True)
-        elif sortby == 'nevents-asc':
-            tasks = sorted(tasks, key=lambda x: x['totev'])
-        elif sortby == 'nevents-desc':
-            tasks = sorted(tasks, key=lambda x: x['totev'], reverse=True)
-        elif sortby == 'neventsused-asc':
-            tasks = sorted(tasks, key=lambda x: x['neventsused'])
-        elif sortby == 'neventsused-desc':
-            tasks = sorted(tasks, key=lambda x: x['neventsused'], reverse=True)
-        elif sortby == 'neventstobeused-asc':
-            tasks = sorted(tasks, key=lambda x: x['totevrem'])
-        elif sortby == 'neventstobeused-desc':
-            tasks = sorted(tasks, key=lambda x: x['totevrem'], reverse=True)
-        elif sortby == 'percentage-asc':
-            tasks = sorted(tasks, key=lambda x: x['percentage'])
-        elif sortby == 'percentage-desc':
-            tasks = sorted(tasks, key=lambda x: x['percentage'], reverse=True)
-        elif sortby == 'nfilesfailed-asc':
-            tasks = sorted(tasks, key=lambda x: x['nfilesfailed'])
-        elif sortby == 'nfilesfailed-desc':
-            tasks = sorted(tasks, key=lambda x: x['nfilesfailed'], reverse=True)
-        elif sortby == 'priority-asc':
-            tasks = sorted(tasks, key=lambda x: x['currentpriority'])
-        elif sortby == 'priority-desc':
-            tasks = sorted(tasks, key=lambda x: x['currentpriority'], reverse=True)
-        elif sortby == 'simtype-asc':
-            tasks = sorted(tasks, key=lambda x: x['simtype'])
-        elif sortby == 'simtype-desc':
-            tasks = sorted(tasks, key=lambda x: x['simtype'], reverse=True)
-        elif sortby == 'age-asc':
-            tasks = sorted(tasks, key=lambda x: x['age'])
-        elif sortby == 'age-desc':
-            tasks = sorted(tasks, key=lambda x: x['age'], reverse=True)
-        elif sortby == 'corecount-asc':
-            tasks = sorted(tasks, key=lambda x: x['corecount'])
-        elif sortby == 'corecount-desc':
-            tasks = sorted(tasks, key=lambda x: x['corecount'], reverse=True)
-        elif sortby == 'username-asc':
-            tasks = sorted(tasks, key=lambda x: x['username'])
-        elif sortby == 'username-desc':
-            tasks = sorted(tasks, key=lambda x: x['username'], reverse=True)
-        elif sortby == 'datasetname-asc':
-            tasks = sorted(tasks, key=lambda x: x['datasetname'])
-        elif sortby == 'datasetname-desc':
-            tasks = sorted(tasks, key=lambda x: x['datasetname'], reverse=True)
-    else:
-        sortby = 'age-asc'
-        tasks = sorted(tasks, key=lambda x: x['age'])
-
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
-
-        dump = json.dumps(tasks, cls=DateEncoder)
-        ##self monitor
-        endSelfMonitor(request)
-        return HttpResponse(dump, content_type='application/json')
-    else:
-        data = {
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            'xurl': xurl,
-            'nosorturl': nosorturl,
-            'tasks': tasks,
-            'ntasks': ntasks,
-            'sortby': sortby,
-            'ages': ages,
-            'slots': slots,
-            'sumd': sumd,
-            'neventsUsedTotSum': round(neventsUsedTotSum / 1000000., 1),
-            'neventsTotSum': round(neventsTotSum / 1000000., 1),
-            'rjobs1coreTot': rjobs1coreTot,
-            'rjobs8coreTot': rjobs8coreTot,
-            'neventsAFIItasksSum': neventsAFIItasksSum,
-            'neventsFStasksSum': neventsFStasksSum,
-            'plotageshistogram': plotageshistogram,
-            'built': datetime.now().strftime("%H:%M:%S"),
-        }
-        ##self monitor
-        endSelfMonitor(request)
-        setCacheEntry(request, "runningMCProdTasks", json.dumps(data, cls=DateEncoder), 60 * 20)
-        response = render_to_response('runningMCProdTasks.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
+from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType
+from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
 
 
 @login_customrequired
 def runningProdTasks(request):
     valid, response = initRequest(request)
+    if not valid:
+        return HttpResponse(status=401)
 
     if ('dt' in request.session['requestParams'] and 'tk' in request.session['requestParams']):
         tk = request.session['requestParams']['tk']
@@ -283,8 +55,6 @@ def runningProdTasks(request):
         endSelfMonitor(request)
         return response
 
-
-    # xurl = extensibleURL(request)
     xurl = request.get_full_path()
     if xurl.find('?') > 0:
         xurl += '&'
@@ -551,191 +321,6 @@ def runningProdTasks(request):
 
 
 @login_customrequired
-def runningDPDProdTasks(request):
-    return redirect('/runningprodtasks/?preset=DPD')
-    valid, response = initRequest(request)
-
-    data = getCacheEntry(request, "runningDPDProdTasks")
-    if data is not None:
-        data = json.loads(data)
-        data['request'] = request
-        response = render_to_response('runningDPDProdTasks.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        endSelfMonitor(request)
-        return response
-
-
-    # xurl = extensibleURL(request)
-    xurl = request.get_full_path()
-    if xurl.find('?') > 0:
-        xurl += '&'
-    else:
-        xurl += '?'
-    nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-    tquery = {}
-    if 'campaign' in request.session['requestParams']:
-        tquery['campaign__contains'] = request.session['requestParams']['campaign']
-    if 'corecount' in request.session['requestParams']:
-        tquery['corecount'] = request.session['requestParams']['corecount']
-    if 'status' in request.session['requestParams']:
-        tquery['status'] = request.session['requestParams']['status']
-    if 'reqid' in request.session['requestParams']:
-        tquery['reqid'] = request.session['requestParams']['reqid']
-    if 'inputdataset' in request.session['requestParams']:
-        tquery['taskname__contains'] = request.session['requestParams']['inputdataset']
-    tasks = RunningDPDProductionTasks.objects.filter(**tquery).values()
-    ntasks = len(tasks)
-    slots = 0
-    ages = []
-
-    neventsTotSum = 0
-    neventsUsedTotSum = 0
-    rjobs1coreTot = 0
-    rjobs8coreTot = 0
-    for task in tasks:
-        if task['rjobs'] is None:
-            task['rjobs'] = 0
-        task['neventsused'] = task['totev'] - task['totevrem'] if task['totev'] is not None else 0
-        task['percentage'] = round(100. * task['neventsused'] / task['totev'], 1) if task['totev'] > 0 else 0.
-        neventsTotSum += task['totev'] if task['totev'] is not None else 0
-        neventsUsedTotSum += task['neventsused']
-        slots += task['rjobs'] * task['corecount']
-        if task['corecount'] == 1:
-            rjobs1coreTot += task['rjobs']
-        if task['corecount'] == 8:
-            rjobs8coreTot += task['rjobs']
-        task['age'] = round(
-            (datetime.now() - task['creationdate']).days + (datetime.now() - task['creationdate']).seconds / 3600. / 24,
-            1)
-        ages.append(task['age'])
-        if len(task['campaign'].split(':')) > 1:
-            task['cutcampaign'] = task['campaign'].split(':')[1]
-        else:
-            task['cutcampaign'] = task['campaign'].split(':')[0]
-        task['inputdataset'] = task['taskname'].split('.')[1]
-        if task['inputdataset'].startswith('00'):
-            task['inputdataset'] = task['inputdataset'][2:]
-        task['tid'] = task['outputtype'].split('_tid')[1].split('_')[0] if '_tid' in task['outputtype'] else None
-        task['outputtypes'] = ''
-        outputtypes = []
-        outputtypes = task['outputtype'].split(',')
-        if len(outputtypes) > 0:
-            for outputtype in outputtypes:
-                task['outputtypes'] += outputtype.split('_')[1].split('_p')[0] + ' ' if '_' in outputtype else ''
-        task['ptag'] = task['outputtype'].split('_')[2] if '_' in task['outputtype'] else ''
-    plotageshistogram = 1
-    if sum(ages) == 0: plotageshistogram = 0
-    sumd = taskSummaryDict(request, tasks, ['status'])
-
-    if 'sortby' in request.session['requestParams']:
-        sortby = request.session['requestParams']['sortby']
-        if sortby == 'campaign-asc':
-            tasks = sorted(tasks, key=lambda x: x['campaign'])
-        elif sortby == 'campaign-desc':
-            tasks = sorted(tasks, key=lambda x: x['campaign'], reverse=True)
-        elif sortby == 'reqid-asc':
-            tasks = sorted(tasks, key=lambda x: x['reqid'])
-        elif sortby == 'reqid-desc':
-            tasks = sorted(tasks, key=lambda x: x['reqid'], reverse=True)
-        elif sortby == 'jeditaskid-asc':
-            tasks = sorted(tasks, key=lambda x: x['jeditaskid'])
-        elif sortby == 'jeditaskid-desc':
-            tasks = sorted(tasks, key=lambda x: x['jeditaskid'], reverse=True)
-        elif sortby == 'rjobs-asc':
-            tasks = sorted(tasks, key=lambda x: x['rjobs'])
-        elif sortby == 'rjobs-desc':
-            tasks = sorted(tasks, key=lambda x: x['rjobs'], reverse=True)
-        elif sortby == 'status-asc':
-            tasks = sorted(tasks, key=lambda x: x['status'])
-        elif sortby == 'status-desc':
-            tasks = sorted(tasks, key=lambda x: x['status'], reverse=True)
-        elif sortby == 'nevents-asc':
-            tasks = sorted(tasks, key=lambda x: x['totev'])
-        elif sortby == 'nevents-desc':
-            tasks = sorted(tasks, key=lambda x: x['totev'], reverse=True)
-        elif sortby == 'neventsused-asc':
-            tasks = sorted(tasks, key=lambda x: x['neventsused'])
-        elif sortby == 'neventsused-desc':
-            tasks = sorted(tasks, key=lambda x: x['neventsused'], reverse=True)
-        elif sortby == 'neventstobeused-asc':
-            tasks = sorted(tasks, key=lambda x: x['totevrem'])
-        elif sortby == 'neventstobeused-desc':
-            tasks = sorted(tasks, key=lambda x: x['totevrem'], reverse=True)
-        elif sortby == 'percentage-asc':
-            tasks = sorted(tasks, key=lambda x: x['percentage'])
-        elif sortby == 'percentage-desc':
-            tasks = sorted(tasks, key=lambda x: x['percentage'], reverse=True)
-        elif sortby == 'nfilesfailed-asc':
-            tasks = sorted(tasks, key=lambda x: x['nfilesfailed'])
-        elif sortby == 'nfilesfailed-desc':
-            tasks = sorted(tasks, key=lambda x: x['nfilesfailed'], reverse=True)
-        elif sortby == 'priority-asc':
-            tasks = sorted(tasks, key=lambda x: x['currentpriority'])
-        elif sortby == 'priority-desc':
-            tasks = sorted(tasks, key=lambda x: x['currentpriority'], reverse=True)
-        elif sortby == 'ptag-asc':
-            tasks = sorted(tasks, key=lambda x: x['ptag'])
-        elif sortby == 'ptag-desc':
-            tasks = sorted(tasks, key=lambda x: x['ptag'], reverse=True)
-        elif sortby == 'outputtype-asc':
-            tasks = sorted(tasks, key=lambda x: x['outputtypes'])
-        elif sortby == 'output-desc':
-            tasks = sorted(tasks, key=lambda x: x['outputtypes'], reverse=True)
-        elif sortby == 'age-asc':
-            tasks = sorted(tasks, key=lambda x: x['age'])
-        elif sortby == 'age-desc':
-            tasks = sorted(tasks, key=lambda x: x['age'], reverse=True)
-        elif sortby == 'corecount-asc':
-            tasks = sorted(tasks, key=lambda x: x['corecount'])
-        elif sortby == 'corecount-desc':
-            tasks = sorted(tasks, key=lambda x: x['corecount'], reverse=True)
-        elif sortby == 'username-asc':
-            tasks = sorted(tasks, key=lambda x: x['username'])
-        elif sortby == 'username-desc':
-            tasks = sorted(tasks, key=lambda x: x['username'], reverse=True)
-        elif sortby == 'inputdataset-asc':
-            tasks = sorted(tasks, key=lambda x: x['inputdataset'])
-        elif sortby == 'inputdataset-desc':
-            tasks = sorted(tasks, key=lambda x: x['inputdataset'], reverse=True)
-    else:
-        sortby = 'age-asc'
-        tasks = sorted(tasks, key=lambda x: x['age'])
-
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
-        ##self monitor
-        endSelfMonitor(request)
-
-        dump = json.dumps(tasks, cls=DateEncoder)
-        return HttpResponse(dump, content_type='application/json')
-    else:
-        data = {
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            'xurl': xurl,
-            'nosorturl': nosorturl,
-            'tasks': tasks,
-            'ntasks': ntasks,
-            'sortby': sortby,
-            'ages': ages,
-            'slots': slots,
-            'sumd': sumd,
-            'neventsUsedTotSum': round(neventsUsedTotSum / 1000000., 1),
-            'neventsTotSum': round(neventsTotSum / 1000000., 1),
-            'rjobs1coreTot': rjobs1coreTot,
-            'rjobs8coreTot': rjobs8coreTot,
-            'plotageshistogram': plotageshistogram,
-            'built': datetime.now().strftime("%H:%M:%S"),
-        }
-        ##self monitor
-        endSelfMonitor(request)
-        response = render_to_response('runningDPDProdTasks.html', data, content_type='text/html')
-        setCacheEntry(request, "runningDPDProdTasks", json.dumps(data, cls=DateEncoder), 60 * 20)
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-
-@login_customrequired
 def prodNeventsTrend(request):
     """
     The view presents historical trend of nevents in different states for various processing types
@@ -790,7 +375,6 @@ def prodNeventsTrend(request):
         for ev in events:
             for es in ev_states:
                 data[es][datetime.strftime(ev['timestamp'], defaultDatetimeFormat)] += ev['nevents' + str(es)]
-
     else:
         processingtypes = set([ev['processingtype'] for ev in events])
         ev_states = ['running', 'waiting']
@@ -813,8 +397,6 @@ def prodNeventsTrend(request):
                     data[l][datetime.strftime(ev['timestamp'], defaultDatetimeFormat)] += ev['nevents' + str(l.split('_')[1])]
                 if l.startswith('total'):
                     data[l][datetime.strftime(ev['timestamp'], defaultDatetimeFormat)] += ev['nevents' + str(l.split('_')[1])]
-
-
 
     for key, value in data.items():
         newDict = {'state': key, 'values':[]}
@@ -875,8 +457,6 @@ def runningProdRequests(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         endSelfMonitor(request)
         return response
-
-
 
     xurl = request.get_full_path()
     if xurl.find('?') > 0:
@@ -966,3 +546,15 @@ def runningProdRequests(request):
         setCacheEntry(request, "runningProdRequests", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
+
+@login_customrequired
+def runningDPDProdTasks(request):
+    # redirect to united runningProdTasks page
+    return redirect('/runningprodtasks/?preset=DPD')
+
+
+@login_customrequired
+def runningMCProdTasks(request):
+    # redirect to united runningProdTasks page
+    return redirect('/runningprodtasks/?preset=MC')
