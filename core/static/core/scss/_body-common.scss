@@ -1,14 +1,26 @@
 // BigPanDAmon specific style for body elements
 @import "settings";
 
+// Container with tabs inside for page parts like tables
+// ------------------------------
 .card.bp-container {
   width: 100%;
+  margin: 0 0 0.7rem 0;
 
   .card-divider {
     color: $white;
     font-weight: bold;
-    font-size: 90%;
+    font-size: inherit;
     justify-content: space-between;
+
+    a {
+      color: $white;
+      padding: 0;
+
+      &:hover, &:focus {
+        color: $secondary-color-bg;
+      }
+    }
 
     ul.tabs {
       padding: 0;
@@ -54,6 +66,11 @@
       }
     }
   }
+
+  .card-section {
+    padding: 0;
+    margin: 0;
+  }
 }
 
 // Help
@@ -65,7 +82,7 @@
     display: inline-flex;
     font-weight: bold;
     &:focus, &:hover {
-      color: $dark-green;
+      color: $green-dark;
     }
   }
   .card-divider {
@@ -74,7 +91,7 @@
     font-weight: bold;
   }
   .card-section {
-    background-color: $bg-green;
+    background-color: $green-bg;
     color: $black;
   }
 }
@@ -135,3 +152,112 @@
     }
     }
 }
+
+
+// Container for text
+// ------------------------------
+.bp-container-simple {
+  padding: $global-padding;
+}
+
+
+// Callout
+// ------------------------------
+
+.callout {
+  width: 100%;
+  &.secondary {
+    background-color: $secondary-color-bg;
+  }
+  &.success {
+    background-color: $green-bg;
+  }
+  &.warning {
+    background-color: $warning-color-bg;
+  }
+  &.alert {
+    background-color: $alert-color-bg;
+  }
+}
+
+// Span text coloring
+// ------------------------------
+
+span {
+  &.success {
+    color: $green-dark;
+  }
+  &.warning {
+    color: $warning-color-dark;
+  }
+  &.alert {
+    color: $alert-color-dark;
+  }
+}
+
+// Table [attribute summary, params list]
+// ------------------------------
+.bp-table {
+  text-align: left;
+
+  a {
+    font-weight: bold;
+    &:hover, &:focus {
+      color: $black;
+    }
+  }
+
+  thead {
+    th {
+      background-color: $secondary-color-bg;
+    }
+  }
+
+  tbody {
+    th {
+      padding: 0.7rem;
+    }
+    td {
+      padding: 0.3rem 0.7rem;
+      &.alarm {
+        color: $alert-color-dark;
+      }
+    }
+  }
+
+  .num {
+    text-align: right;
+  }
+}
+
+
+// Table [attribute summary, params list]
+// ------------------------------
+.bp-datatable {
+  text-align: left;
+  font-size: 90%;
+
+  a {
+    font-weight: bold;
+    &:hover, &:focus {
+      color: $black;
+    }
+  }
+
+  tbody {
+    th {
+      padding: 0.7rem;
+    }
+    td {
+      padding: 0.3rem 0.7rem;
+      &.alarm {
+        color: $alert-color-dark;
+      }
+    }
+  }
+
+  .num {
+    text-align: right;
+  }
+}
+
