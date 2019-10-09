@@ -3,7 +3,7 @@
 {% block page_title %} {{ viewParams.MON_VO }} PanDA{% endblock %}
 {% block subtitle %}{{ viewParams.MON_VO }} PanDA monitor home{% endblock %}
 
-{% block bottom_info %}
+{% block body %}
 {% if requestParams|length < 2 %}
 
 {% if viewParams.MON_VO == 'ATLAS' %}
@@ -131,9 +131,9 @@ Select what you'd like to have a look at in the top menu bar: dashboard overview
 
 {% block helptext %}
 
-{% if requestParams|length == 0 %}
+
 {% include "mainHelp.html" with helptitle="Help" %}
-{% endif %}
+
 
 {#{% include "searchHelp.html" with helptitle="Searches" %}#}
 

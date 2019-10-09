@@ -302,9 +302,13 @@ $searchbox-top-align: 0.6rem;
   font-size: $header-font-size;
   color: $light-gray;
   img {
-    height: 3rem;
+    height: 5rem;
+  }
+  a {
+    color: $white;
   }
 }
+
 
 a.button {
   text-decoration: none;

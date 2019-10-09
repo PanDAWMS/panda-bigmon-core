@@ -330,7 +330,7 @@
 <!-- End sub-title -->
 
 <!-- body content -->
-<div class="large-12 columns" id="content">
+<div class="grid-x full" id="content">
 {% block body %}
 
 {% endblock %}
@@ -524,39 +524,34 @@ ga('send', 'pageview');
 
 <!-- Footer -->
 <footer>
-<div class="large-12 columns">
-    {% block bottom_copy %}
-    <table width=1000 class="hide-for-small">
-    <a name="doc"></a>
+{% block helptext %}{% endblock %}
 
-    {% block helptext %}{% endblock %}
+<img src="{% url 'statpixel' %}?uid=" style="width:1px;height:1px;">
 
-    <img src="{% url 'statpixel' %}?uid=" style="width:1px;height:1px;">
-    {% if debuginfo %}
-    <p>********** DEBUG:<br>
-    {{ debuginfo|safe }}
-    <br><br>********** Request:<br>{{ request }}
-    <br><br>********** Session:<br>
-    {% for key, val in request.session.items %}
-    {{ key }} = {{ val }} <br>
-    {% endfor %}
-    </p>
-    {% endif %}
-    </td></tr>
-    </table>
-    <div class="row left-aligned">
-         <div class="small-4 left-aligned column">
-                <table borderwidth=0>
-                <tr><td valign="bottom">
-              <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PanDA"><img src="{% static "images/panda-verysmall-notext.png" %}"></a></td>
-              <td valign="bottom"><font size=-1>Brought to you by the PanDA team. <br> All times are in UTC. Page may be cached; check the build time above.
-              <br><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a></font></td>
-              </tr></table>
-         </div>
-        <div class="column small-8"></div>
+{#{% if debuginfo %}#}
+{#<p>********** DEBUG:<br>#}
+{#{{ debuginfo|safe }}#}
+{#<br><br>********** Request:<br>{{ request }}#}
+{#<br><br>********** Session:<br>#}
+{#{% for key, val in request.session.items %}#}
+{#{{ key }} = {{ val }} <br>#}
+{#{% endfor %}#}
+{#</p>#}
+{#{% endif %}#}
+
+<div class="grid-x bp-footer">
+    <div class="cell small-4 medium-2 large-1">
+        <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PanDA"><img src="{% static "images/panda-logo-reversed.png" %}"></a>
     </div>
-    {% endblock %}
+    <div class="cell small-4 medium-5 large-5">
+        Brought to you by the PanDA team.
+    </div>
+    <div class="cell small-4 medium-5 large-6">
+        <br> All times are in UTC. Page may be cached; check the build time above.
+        <br><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a>
+    </div>
 </div>
+
 </footer>
 <!-- End Footer -->
 </html>
