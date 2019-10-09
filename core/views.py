@@ -750,6 +750,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
     # startdate = startdate.strftime(defaultDatetimeFormat)
     enddate = None
+
+    endtime__castdate__range = None
+    if 'endtimerange' in request.session['requestParams']:
+        endtimerange = request.session['requestParams']['endtimerange'].split('|')
+        endtime__castdate__range = [parse_datetime(endtimerange[0]).strftime(defaultDatetimeFormat),
+                                    parse_datetime(endtimerange[1]).strftime(defaultDatetimeFormat)]
+
     if 'date_to' in request.session['requestParams']:
         enddate = parse_datetime(request.session['requestParams']['date_to'])
     if 'earlierthan' in request.session['requestParams']:
@@ -767,8 +774,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     if request.path.startswith('/running'):
         query = {}
     else:
-        query = {
-            'modificationtime__castdate__range': [startdate.strftime(defaultDatetimeFormat), enddate.strftime(defaultDatetimeFormat)]}
+        if not endtime__castdate__range:
+            query = {
+                'modificationtime__castdate__range': [startdate.strftime(defaultDatetimeFormat), enddate.strftime(defaultDatetimeFormat)]}
+        else:
+            query = {
+                'endtime__castdate__range': [endtime__castdate__range[0], endtime__castdate__range[1]]}
+
 
     request.session['TFIRST'] = startdate  # startdate[:18]
     request.session['TLAST'] = enddate  # enddate[:18]
@@ -3210,7 +3222,7 @@ def jobList(request, mode=None, param=None):
                 else:
                     request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
                     JOB_LIMITS = int(request.session['requestParams']['limit'])
-                if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
+                if 'modificationtime__castdate__range' in query and (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
                                                          "%Y-%m-%d %H:%M:%S")).days > 1) or \
                             ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
                                                                  "%Y-%m-%d %H:%M:%S")).days > 1)):
