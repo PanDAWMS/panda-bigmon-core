@@ -6,8 +6,8 @@
 @import "body-common";
 @import "../../node_modules/foundation-icons/foundation-icons";
 @import "../../node_modules/c3/src/scss/main";
+@import "../../node_modules/jquery-shorten/src/scss/shorten";
 @import "foundation-datepicker";
-
 
 // Global styles
 @include foundation-global-styles;

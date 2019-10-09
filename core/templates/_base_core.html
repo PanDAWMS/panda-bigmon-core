@@ -23,6 +23,7 @@
 {#<link rel="stylesheet" href="{% static "css/page-sections.css" %}?version=3">#}
 
 <link rel="stylesheet" href="{% static "core/css/app.css" %}">
+{% block extra_css %}{% endblock %}
 
 <div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="medium" id="main-menu-small">
   <button class="menu-icon" type="button" data-toggle="main-menu"><i class="fi-list"></i></button>
@@ -311,7 +312,7 @@
 
 <!-- sub-title -->
 <div class="grid-x align-middle top-subbar">
-    <div class="cell small-3 medium-2 large-2" id="">
+    <div class="cell small-12 medium-9 large-10" id="">
         {% block subtitle %}Subtitle goes here{% endblock %}
     </div>
 

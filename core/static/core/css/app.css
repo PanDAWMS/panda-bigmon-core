@@ -197,7 +197,7 @@
     font-weight: bold;
     text-decoration: none; }
     .tag-cloud .tag-cloud-individual-tag.add {
-      background: #3b7f5b; }
+      background: #3c815c; }
     .tag-cloud .tag-cloud-individual-tag .fi {
       margin-left: 7px;
       color: #fefefe; }
@@ -223,12 +223,18 @@ a.button {
   font-weight: bold; }
 
 .card.bp-container {
-  width: 100%; }
+  width: 100%;
+  margin: 0 0 0.7rem 0; }
   .card.bp-container .card-divider {
     color: #fefefe;
     font-weight: bold;
-    font-size: 90%;
+    font-size: inherit;
     justify-content: space-between; }
+    .card.bp-container .card-divider a {
+      color: #fefefe;
+      padding: 0; }
+      .card.bp-container .card-divider a:hover, .card.bp-container .card-divider a:focus {
+        color: #b8cae1; }
     .card.bp-container .card-divider ul.tabs {
       padding: 0;
       margin: 0;
@@ -256,6 +262,9 @@ a.button {
       .card.bp-container .tabs-content .tabs-panel .card-section {
         padding: 0;
         margin: 0; }
+  .card.bp-container .card-section {
+    padding: 0;
+    margin: 0; }
 
 .card.help {
   border: 1px solid #4ba173; }
@@ -263,13 +272,13 @@ a.button {
     display: inline-flex;
     font-weight: bold; }
     .card.help a:focus, .card.help a:hover {
-      color: #3b7f5b; }
+      color: #3c815c; }
   .card.help .card-divider {
     background-color: #4ba173;
     color: #fefefe;
     font-weight: bold; }
   .card.help .card-section {
-    background-color: #e0f0e8;
+    background-color: #daeee3;
     color: #0a0a0a; }
 
 .accordion.secondary {
@@ -318,6 +327,60 @@ a.button {
       width: 100%;
       height: 100%;
       object-fit: contain; }
+
+.bp-container-simple {
+  padding: 0.7rem; }
+
+.callout {
+  width: 100%; }
+  .callout.secondary {
+    background-color: #b8cae1; }
+  .callout.success {
+    background-color: #daeee3; }
+  .callout.warning {
+    background-color: #ffefcc; }
+  .callout.alert {
+    background-color: #f5dbd7; }
+
+span.success {
+  color: #3c815c; }
+span.warning {
+  color: #cc8b00; }
+span.alert {
+  color: #a53b2a; }
+
+.bp-table {
+  text-align: left; }
+  .bp-table a {
+    font-weight: bold; }
+    .bp-table a:hover, .bp-table a:focus {
+      color: #0a0a0a; }
+  .bp-table thead th {
+    background-color: #b8cae1; }
+  .bp-table tbody th {
+    padding: 0.7rem; }
+  .bp-table tbody td {
+    padding: 0.3rem 0.7rem; }
+    .bp-table tbody td.alarm {
+      color: #a53b2a; }
+  .bp-table .num {
+    text-align: right; }
+
+.bp-datatable {
+  text-align: left;
+  font-size: 90%; }
+  .bp-datatable a {
+    font-weight: bold; }
+    .bp-datatable a:hover, .bp-datatable a:focus {
+      color: #0a0a0a; }
+  .bp-datatable tbody th {
+    padding: 0.7rem; }
+  .bp-datatable tbody td {
+    padding: 0.3rem 0.7rem; }
+    .bp-datatable tbody td.alarm {
+      color: #a53b2a; }
+  .bp-datatable .num {
+    text-align: right; }
 
 @font-face {
   font-family: "foundation-icons";
@@ -1662,6 +1725,14 @@ a.button {
 
 .c3-drag-zoom .extent {
   fill-opacity: .1; }
+
+.shorten-detail {
+  display: none; }
+
+.shorten_expand .shorten-ellipses {
+  display: none; }
+.shorten_expand .shorten-detail {
+  display: inline; }
 
 /*
 This is a local copy of official installed style with "_" in the beginning of the filename.
@@ -4119,7 +4190,7 @@ ul.no-bullet, ol.no-bullet {
 .button {
   display: inline-block;
   vertical-align: middle;
-  margin: 0 0 1rem 0;
+  margin: 0 0 0 0 0.3rem 0 0;
   padding: 0.85em 1em;
   border: 1px solid transparent;
   border-radius: 0;
@@ -4510,7 +4581,7 @@ a.button:hover, a.button:focus {
 
 .progress {
   height: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0 0 0.3rem 0;
   border-radius: 0;
   background-color: #dddddd; }
   .progress.primary .progress-meter {
@@ -4610,7 +4681,7 @@ a.button:hover, a.button:focus {
 .switch {
   height: 2rem;
   position: relative;
-  margin-bottom: 1rem;
+  margin-bottom: 0 0 0.3rem 0;
   outline: 0;
   font-size: 1rem;
   font-weight: bold;
@@ -4715,12 +4786,12 @@ a.button:hover, a.button:focus {
 table {
   border-collapse: collapse;
   width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: 0 0 0.3rem 0;
   border-radius: 0; }
   thead,
   tbody,
   tfoot {
-    border: 1px solid #f1f1f1;
+    border: none;
     background-color: #fefefe; }
 
   caption {
@@ -4758,7 +4829,7 @@ table {
     background-color: #fefefe; }
     table.unstriped tbody tr {
       border-bottom: 0;
-      border-bottom: 1px solid #f1f1f1;
+      border-bottom: none;
       background-color: #fefefe; }
 
 @media screen and (max-width: 63.99875em) {
@@ -4816,7 +4887,7 @@ table.hover:not(.unstriped) tr:nth-of-type(even):hover {
     color: #fefefe; }
 
 .breadcrumbs {
-  margin: 0 0 1rem 0;
+  margin: 0 0 0 0 0.3rem 0 0;
   list-style: none; }
   .breadcrumbs::before, .breadcrumbs::after {
     display: table;
@@ -4847,9 +4918,9 @@ table.hover:not(.unstriped) tr:nth-of-type(even):hover {
 
 .callout {
   position: relative;
-  margin: 0 0 1rem 0;
-  padding: 1rem;
-  border: 1px solid rgba(10, 10, 10, 0.25);
+  margin: 0 0 0.3rem 0;
+  padding: 0.7rem;
+  border: none;
   border-radius: 0;
   background-color: white;
   color: #0a0a0a; }
@@ -4887,7 +4958,7 @@ table.hover:not(.unstriped) tr:nth-of-type(even):hover {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  margin-bottom: 1rem;
+  margin-bottom: 0 0 0.3rem 0;
   border: 1px solid #355681;
   border-radius: 0;
   background: #fefefe;
@@ -4942,7 +5013,7 @@ table.hover:not(.unstriped) tr:nth-of-type(even):hover {
 
 .pagination {
   margin-left: 0;
-  margin-bottom: 1rem; }
+  margin-bottom: 0 0 0.3rem 0; }
   .pagination::before, .pagination::after {
     display: table;
     content: ' ';
@@ -5132,7 +5203,7 @@ table.hover:not(.unstriped) tr:nth-of-type(even):hover {
 
 .media-object {
   display: flex;
-  margin-bottom: 1rem;
+  margin-bottom: 0 0 0.3rem 0;
   flex-wrap: nowrap; }
   .media-object img {
     max-width: none; }
@@ -5321,7 +5392,7 @@ table.hover:not(.unstriped) tr:nth-of-type(even):hover {
 .thumbnail {
   display: inline-block;
   max-width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: 0 0 0.3rem 0;
   border: 4px solid #fefefe;
   border-radius: 0;
   box-shadow: 0 0 0 1px rgba(10, 10, 10, 0.2);
