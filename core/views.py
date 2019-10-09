@@ -563,7 +563,7 @@ def preprocessWildCardString(strToProcess, fieldToLookAt):
                 #                if len(cardParametersRaw[currentParCount+1]) == 0:
                 trailStar = True
 
-            if fieldToLookAt.lower() == 'PRODUSERID':
+            if fieldToLookAt.lower() == 'produserid':
                 leadStar = True
                 trailStar = True
 
@@ -571,7 +571,7 @@ def preprocessWildCardString(strToProcess, fieldToLookAt):
                 fieldToLookAt = 'resource_type'
 
             isEscape = False
-            if '_' in parameter:
+            if '_' in parameter and fieldToLookAt.lower() != 'nucleus':
                 parameter = parameter.replace('_', '!_')
                 isEscape = True
 
