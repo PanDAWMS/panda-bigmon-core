@@ -56,7 +56,32 @@
   }
 }
 
+// Help
+// ------------------------------
 
+.card.help {
+  border: 1px solid $green;
+  a {
+    display: inline-flex;
+    font-weight: bold;
+    &:focus, &:hover {
+      color: $dark-green;
+    }
+  }
+  .card-divider {
+    background-color: $green;
+    color: $white;
+    font-weight: bold;
+  }
+  .card-section {
+    background-color: $bg-green;
+    color: $black;
+  }
+}
+
+
+// Accordion secondary color
+// ------------------------------
 .accordion.secondary {
   margin-left: 0;
   background: $white;
@@ -71,13 +96,13 @@
   .accordion-title {
     position: relative;
     display: block;
-    padding: 1.25rem 1rem;
+    padding: 0.7rem;
     background-color: $secondary-color;
     border: 0px solid $secondary-color;
     border-bottom: 0;
     font-size: 1rem;
     font-weight: bold;
-    line-height: 1;
+    line-height: 1.5;
     color: $black; }
     :last-child:not(.is-active) > .accordion-title {
       border-bottom: 0px solid $secondary-color;
