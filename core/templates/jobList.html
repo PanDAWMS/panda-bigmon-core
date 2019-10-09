@@ -171,7 +171,7 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
 <thead>
 <tr>
     <th>Category:code</th>
-    <th>Nerrors</th>
+    <th class="num">Nerrors</th>
     <th>Sample error description</th>
 </tr>
 </thead>
@@ -179,7 +179,7 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
 {% for errval in errsByCount %}
 <tr>
     <th> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </th>
-    <td> {{ errval.count }} </td>
+    <td class="num"> {{ errval.count }} </td>
     <td> <div class="comment more">{{ errval.diag }}<br/>{% if errval.count > 1 and not 'transformation' in errval.error %} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %}</div>
 
     </td>
@@ -225,9 +225,9 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
     {% if requestParams.jeditaskid  %}
         <th class="num">Maximum <br>PSS</th>
     {% endif %}
-    <th class="limitedwidth">Job name</th>
-    <th class="limitedwidth">Input dataset</th>
-    <th class="limitedwidth">Output dataset</th>
+    <th>Job name</th>
+    <th>Input dataset</th>
+    <th>Output dataset</th>
 	<th>Job info</th>
 </tr>
 </thead>
@@ -264,9 +264,9 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
         {% if requestParams.jeditaskid  %}
             <td class="num">{% if job.maxpss and job.maxpss != 'None' and job.maxpss != -1 %}{{ job.maxpss }}{% endif %}</td>
         {% endif %}
-        <td class="limitedwidth"><a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></td>
-        <td class="limitedwidth">{% if job.proddblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}">{{ job.proddblock }}</a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a>{% endif %}</td>
-        <td class="limitedwidth">{% if job.destinationdblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}">{{ job.destinationdblock }}</a>{% endif %}</td>
+        <td>Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></td>
+        <td>{% if job.proddblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}">{{ job.proddblock }}</a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a>{% endif %}</td>
+        <td>{% if job.destinationdblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}">{{ job.destinationdblock }}</a>{% endif %}</td>
 		<td class="alarm">{% if job.jobinfo != '' %}{{job.jobinfo|safe}}<br>{% endif %}{% if job.errorinfo != '' %}{{job.errorinfo|safe}}{% endif %}</td>
 {% endfor %}
 </tbody>
@@ -285,14 +285,12 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 {% endblock %}
 
 {% block extra_js %}
-<script type="text/javascript" src="{% static "node_modules/jquery.shorten/src/jquery.shorten.min.js" %}"></script>
+<script type="text/javascript" src="{% static "node_modules/jquery-shorten/dist/jquery-shorten.min.js" %}"></script>
 <script type="text/javascript" src="{% static "node_modules/clipboard/dist/clipboard.min.js" %}"></script>
 <script type="text/javascript" src="{% static "node_modules/datatables.net/js/jquery.dataTables.min.js" %}"></script>
 <script type="text/javascript">
 $(document).ready(function() {
-    $(".comment").shorten({
-        showChars: 800,
-    });
+    $(".comment").shorten();
 
     $('#joblist').DataTable({
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
