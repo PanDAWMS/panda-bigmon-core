@@ -496,3 +496,44 @@ a.close-x-sign:hover {
   color: #333333; }
   :last-child > .accordion-content:last-child {
     border-bottom: 0px solid #e6e6e6; }
+
+
+.tiles {
+  max-width: 100%;
+  width: 100%;
+}
+
+.card.tile {
+    margin: 0.7rem 0.3rem;
+    padding: 0;
+}
+
+.card.tile .card-divider {
+    padding: 0.3rem;
+    color: #0a0a0a;
+    background-color: inherit;
+}
+
+.card.tile .card-section {
+    padding: 0.3rem;
+    color: #0a0a0a;
+    background-color: inherit;
+}
+
+.card.tile .card-section p {
+    margin-bottom: 0.3rem;
+}
+
+.card.tile a {
+    font-weight: bold;
+    color: #0a0a0a;
+    text-decoration: underline;
+}
+
+.card.tile.alert {
+    background-color: #ffcccc;
+}
+
+.card.tile.warning {
+    background-color: #fff0b3;
+}

@@ -272,6 +272,15 @@ th.vertical {
     border: none;
 }
 
+.minimalistic-table tbody th {
+    border: none;
+    padding-left: 0.3rem;
+    padding-right: 0.3rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+    background-color: #e6e6e6;
+}
+
 .minimalistic-table tbody td {
     border: none;
     padding-left: 0.3rem;

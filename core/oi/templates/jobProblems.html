@@ -1,0 +1,97 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Job problems{% endblock %}
+{% block subtitle %}Job problems{{ viewParams.selection|safe }}{% endblock %}
+
+
+{% block extra_css %}{% endblock %}
+
+{% block body %}
+
+<table class="minimalistic-table">
+  <thead>
+    <tr>
+        <th>Time range, last hours</th>
+        <th>Jobtype</th>
+        <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+        <td>
+            <input type="number" min="1" max="12" id="timerange_hours"
+                    {% if requestParams.hours %} value="{{ requestParams.hours }}" {% else %} value="12" {% endif %}>
+        </td>
+        <td>
+            <select id="jobtype">
+                <option value="all" selected="selected" {% if requestParams.jobtype == 'all' %} disabled="disabled" {% endif %}>All</option>
+                <option value="prod" {% if requestParams.jobtype == 'prod' %} selected="selected" {% endif %}>Production</option>
+                <option value="analy" {% if requestParams.jobtype == 'analy' %} selected="selected" {% endif %}>Analysis</option>
+            </select>
+        </td>
+        <td>
+            <a onclick="go()" class="button secondary">Go!</a>
+        </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="minimalistic-table unstriped">
+<tbody>
+{% for spot in spots %}
+<tr><th>{{ spot.timerange }}</th></tr>
+<tr><td>
+<div class="tiles row small-up-1 medium-up-4 large-up-6">
+{% for problem in spot.problems %}
+    <div class="column">
+    <div class="card tile {% if problem.size >= 100 %}alert{% elif problem.size > 50 %}warning{% endif %}">
+      <div class="card-divider">
+        <a href="{{ problem.link }}">{{ problem.size }}</a>
+      </div>
+      <div class="card-section">
+        {% for iparam, ivalue in problem.impact_params.items %}
+            <p>{{ iparam }}:{{ ivalue }}</p>
+        {% endfor %}
+      </div>
+    </div>
+    </div>
+{% endfor %}
+</div>
+</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function go() {
+
+var query = '{% url 'jobProblems' %}';
+let timerange_hours_Q = "";
+let jobtype_Q = "";
+let timerange_hours = document.getElementById("timerange_hours");
+let jobtype = document.getElementById("jobtype");
+
+if (timerange_hours.value.length > 0) timerange_hours_Q = "hours="+timerange_hours.value;
+if (jobtype.value.length > 0) jobtype_Q = "jobtype="+jobtype.value;
+
+if ((timerange_hours_Q.length>1) || (jobtype_Q.length>1)) {
+    query += "?";
+    if (timerange_hours_Q.length > 1) {
+        query += timerange_hours_Q+"&";
+    }
+    if (jobtype_Q.length > 1) {
+        query += jobtype_Q+"&";
+    }
+    query = query.substring(0, query.length - 1);
+}
+window.location = query;
+}
+</script>
+
+{% endblock %}
