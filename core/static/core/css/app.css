@@ -1726,14 +1726,6 @@ span.alert {
 .c3-drag-zoom .extent {
   fill-opacity: .1; }
 
-.shorten-detail {
-  display: none; }
-
-.shorten_expand .shorten-ellipses {
-  display: none; }
-.shorten_expand .shorten-detail {
-  display: inline; }
-
 /*
 This is a local copy of official installed style with "_" in the beginning of the filename.
 See the next link for details about sass version set up:

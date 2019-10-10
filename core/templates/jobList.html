@@ -264,7 +264,7 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
         {% if requestParams.jeditaskid  %}
             <td class="num">{% if job.maxpss and job.maxpss != 'None' and job.maxpss != -1 %}{{ job.maxpss }}{% endif %}</td>
         {% endif %}
-        <td>Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></td>
+        <td><a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></td>
         <td>{% if job.proddblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}">{{ job.proddblock }}</a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a>{% endif %}</td>
         <td>{% if job.destinationdblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}">{{ job.destinationdblock }}</a>{% endif %}</td>
 		<td class="alarm">{% if job.jobinfo != '' %}{{job.jobinfo|safe}}<br>{% endif %}{% if job.errorinfo != '' %}{{job.errorinfo|safe}}{% endif %}</td>
@@ -285,12 +285,14 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 {% endblock %}
 
 {% block extra_js %}
-<script type="text/javascript" src="{% static "node_modules/jquery-shorten/dist/jquery-shorten.min.js" %}"></script>
+<script type="text/javascript" src="{% static "node_modules/jquery.shorten/src/jquery.shorten.min.js" %}"></script>
 <script type="text/javascript" src="{% static "node_modules/clipboard/dist/clipboard.min.js" %}"></script>
 <script type="text/javascript" src="{% static "node_modules/datatables.net/js/jquery.dataTables.min.js" %}"></script>
 <script type="text/javascript">
 $(document).ready(function() {
-    $(".comment").shorten();
+    $(".comment").shorten({
+        showChars: 800,
+    });
 
     $('#joblist').DataTable({
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
