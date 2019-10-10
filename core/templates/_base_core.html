@@ -124,7 +124,9 @@
                 <li><a href="{% url 'incidentList' %}">Recent incidents</a></li>
                 {% endif %}
                 <li><a href="{% url 'esatlasPandaLogger' %}">PanDA logger</a> </li>
+                {% comment %}
                 <li><a href="{% url 'jobProblems' %}">Problem report</a></li>
+                {% endcomment %}
             {% endif %}
         </ul>
         </li>
