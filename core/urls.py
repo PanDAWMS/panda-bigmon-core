@@ -134,6 +134,9 @@ urlpatterns = [
     ### ART nightly tests
     re_path(r'^art/', include('core.art.urls_art')),
 
+    ### OI related views
+    re_path(r'^oi/', include('core.oi.urls')),
+
     ### Running Prod tasks
     re_path('', include('core.runningprod.urls_runningprod')),
 
