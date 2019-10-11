@@ -225,9 +225,9 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
     {% if requestParams.jeditaskid  %}
         <th class="num">Maximum <br>PSS</th>
     {% endif %}
-    <th>Job name</th>
-    <th>Input dataset</th>
-    <th>Output dataset</th>
+    <th class="limitedwidth">Job name</th>
+    <th class="limitedwidth">Input dataset</th>
+    <th class="limitedwidth">Output dataset</th>
 	<th>Job info</th>
 </tr>
 </thead>
@@ -264,9 +264,9 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
         {% if requestParams.jeditaskid  %}
             <td class="num">{% if job.maxpss and job.maxpss != 'None' and job.maxpss != -1 %}{{ job.maxpss }}{% endif %}</td>
         {% endif %}
-        <td><a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></td>
-        <td>{% if job.proddblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}">{{ job.proddblock }}</a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a>{% endif %}</td>
-        <td>{% if job.destinationdblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}">{{ job.destinationdblock }}</a>{% endif %}</td>
+        <td class="limitedwidth"><a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></td>
+        <td class="limitedwidth">{% if job.proddblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}">{{ job.proddblock }}</a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a>{% endif %}</td>
+        <td class="limitedwidth">{% if job.destinationdblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}">{{ job.destinationdblock }}</a>{% endif %}</td>
 		<td class="alarm">{% if job.jobinfo != '' %}{{job.jobinfo|safe}}<br>{% endif %}{% if job.errorinfo != '' %}{{job.errorinfo|safe}}{% endif %}</td>
 {% endfor %}
 </tbody>
