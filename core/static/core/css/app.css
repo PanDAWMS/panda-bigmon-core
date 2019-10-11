@@ -17,6 +17,11 @@
   .no-js .title-bar {
     display: none; } }
 
+select {
+  -moz-appearance: none;
+  text-indent: 0.01px;
+  text-overflow: ''; }
+
 .title-bar a {
   text-decoration: none; }
 
@@ -376,9 +381,20 @@ span.alert {
   .bp-datatable tbody th {
     padding: 0.7rem; }
   .bp-datatable tbody td {
-    padding: 0.3rem 0.7rem; }
+    padding: 0.3rem 0.7rem;
+    line-height: 1; }
     .bp-datatable tbody td.alarm {
       color: #a53b2a; }
+    .bp-datatable tbody td.limitedwidth {
+      width: 15rem;
+      max-width: 15rem;
+      min-width: 15rem;
+      -ms-word-break: break-all;
+      word-break: break-all;
+      /* Non standard for WebKit */
+      -webkit-hyphens: auto;
+      -moz-hyphens: auto;
+      hyphens: auto; }
   .bp-datatable .num {
     text-align: right; }
 
@@ -2339,7 +2355,7 @@ td {
   padding: 0; }
 
 p {
-  margin-bottom: 1rem;
+  margin-bottom: 0.3rem;
   font-size: inherit;
   line-height: 1.6;
   text-rendering: optimizeLegibility; }
@@ -2456,7 +2472,7 @@ hr {
 ul,
 ol,
 dl {
-  margin-bottom: 1rem;
+  margin-bottom: 0.3rem;
   list-style-position: outside;
   line-height: 1.6; }
 
@@ -2481,7 +2497,7 @@ dl {
     font-weight: bold; }
 
 blockquote {
-  margin: 0 0 1rem;
+  margin: 0 0 0.3rem;
   padding: 0.6428571429rem 1.4285714286rem 0 1.3571428571rem;
   border-left: 1px solid #dddddd; }
   blockquote, blockquote p {
@@ -4182,7 +4198,7 @@ ul.no-bullet, ol.no-bullet {
 .button {
   display: inline-block;
   vertical-align: middle;
-  margin: 0 0 0 0 0.3rem 0 0;
+  margin: 0 0 0 0.7rem 0.3rem 0.7rem 0;
   padding: 0.85em 1em;
   border: 1px solid transparent;
   border-radius: 0;
@@ -4573,7 +4589,7 @@ a.button:hover, a.button:focus {
 
 .progress {
   height: 1rem;
-  margin-bottom: 0 0 0.3rem 0;
+  margin-bottom: 0 0.7rem 0.3rem 0.7rem;
   border-radius: 0;
   background-color: #dddddd; }
   .progress.primary .progress-meter {
@@ -4673,7 +4689,7 @@ a.button:hover, a.button:focus {
 .switch {
   height: 2rem;
   position: relative;
-  margin-bottom: 0 0 0.3rem 0;
+  margin-bottom: 0 0.7rem 0.3rem 0.7rem;
   outline: 0;
   font-size: 1rem;
   font-weight: bold;
@@ -4778,7 +4794,7 @@ a.button:hover, a.button:focus {
 table {
   border-collapse: collapse;
   width: 100%;
-  margin-bottom: 0 0 0.3rem 0;
+  margin-bottom: 0 0.7rem 0.3rem 0.7rem;
   border-radius: 0; }
   thead,
   tbody,
@@ -4879,7 +4895,7 @@ table.hover:not(.unstriped) tr:nth-of-type(even):hover {
     color: #fefefe; }
 
 .breadcrumbs {
-  margin: 0 0 0 0 0.3rem 0 0;
+  margin: 0 0 0 0.7rem 0.3rem 0.7rem 0;
   list-style: none; }
   .breadcrumbs::before, .breadcrumbs::after {
     display: table;
@@ -4910,9 +4926,9 @@ table.hover:not(.unstriped) tr:nth-of-type(even):hover {
 
 .callout {
   position: relative;
-  margin: 0 0 0.3rem 0;
+  margin: 0 0.7rem 0.3rem 0.7rem;
   padding: 0.7rem;
-  border: none;
+  border: 1px solid #e6e6e6;
   border-radius: 0;
   background-color: white;
   color: #0a0a0a; }
@@ -4950,7 +4966,7 @@ table.hover:not(.unstriped) tr:nth-of-type(even):hover {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  margin-bottom: 0 0 0.3rem 0;
+  margin-bottom: 0 0.7rem 0.3rem 0.7rem;
   border: 1px solid #355681;
   border-radius: 0;
   background: #fefefe;
@@ -5005,7 +5021,7 @@ table.hover:not(.unstriped) tr:nth-of-type(even):hover {
 
 .pagination {
   margin-left: 0;
-  margin-bottom: 0 0 0.3rem 0; }
+  margin-bottom: 0 0.7rem 0.3rem 0.7rem; }
   .pagination::before, .pagination::after {
     display: table;
     content: ' ';
@@ -5195,7 +5211,7 @@ table.hover:not(.unstriped) tr:nth-of-type(even):hover {
 
 .media-object {
   display: flex;
-  margin-bottom: 0 0 0.3rem 0;
+  margin-bottom: 0 0.7rem 0.3rem 0.7rem;
   flex-wrap: nowrap; }
   .media-object img {
     max-width: none; }
@@ -5384,7 +5400,7 @@ table.hover:not(.unstriped) tr:nth-of-type(even):hover {
 .thumbnail {
   display: inline-block;
   max-width: 100%;
-  margin-bottom: 0 0 0.3rem 0;
+  margin-bottom: 0 0.7rem 0.3rem 0.7rem;
   border: 4px solid #fefefe;
   border-radius: 0;
   box-shadow: 0 0 0 1px rgba(10, 10, 10, 0.2);
