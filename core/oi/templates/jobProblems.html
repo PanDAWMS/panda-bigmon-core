@@ -6,7 +6,10 @@
 {% block subtitle %}Job problems{{ viewParams.selection|safe }}{% endblock %}
 
 
-{% block extra_css %}{% endblock %}
+{% block extra_css %}
+<!-- Load c3.css -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
+{% endblock %}
 
 {% block body %}
 
@@ -38,20 +41,22 @@
   </tbody>
 </table>
 
+<div id="time-window-chart_c3js" style="height: 300px; width: 100%;"></div>
+
 <table class="minimalistic-table unstriped">
 <tbody>
 {% for spot in spots %}
-<tr><th>{{ spot.timerange }}</th></tr>
+<tr><th>{{ spot.period }}</th></tr>
 <tr><td>
 <div class="tiles row small-up-1 medium-up-4 large-up-6">
-{% for problem in spot.problems %}
+{% for problem in spot.spot %}
     <div class="column">
-    <div class="card tile {% if problem.size >= 100 %}alert{% elif problem.size > 50 %}warning{% endif %}">
+    <div class="card tile {% if problem.impact >= 100 %}alert{% elif problem.impact > 50 %}warning{% else %}warning-light{% endif %}">
       <div class="card-divider">
-        <a href="{{ problem.link }}">{{ problem.size }}</a>
+        <a href="{{ problem.url }}">{{ problem.impact }}</a>
       </div>
       <div class="card-section">
-        {% for iparam, ivalue in problem.impact_params.items %}
+        {% for iparam, ivalue in problem.params.items %}
             <p>{{ iparam }}:{{ ivalue }}</p>
         {% endfor %}
       </div>
@@ -67,7 +72,7 @@
 
 {% endblock %}
 
-{% block extra_js %}
+{% block extra_js_bottombody %}
 <script>
 function go() {
 
@@ -92,6 +97,62 @@ if ((timerange_hours_Q.length>1) || (jobtype_Q.length>1)) {
 }
 window.location = query;
 }
+</script>
+
+<!-- Load d3.js and c3.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
+
+<script>
+$(document).ready(function () {
+    let timestamps_hist = {{ plots.hist|safe }};
+    let c3js_data = [['x', 'number of failed jobs']];
+    for (let timestamp in timestamps_hist) {
+        c3js_data.push([timestamp, timestamps_hist[timestamp]]);
+    }
+    var tw_c3js = c3.generate({
+        bindto: '#time-window-chart_c3js',
+        data: {
+            x: 'x',
+            xFormat: '%Y-%m-%d %H:%M:%S',
+            rows: c3js_data,
+            type: 'bar'
+        },
+        bar: {
+            width: {
+                ratio: 0.5
+            }
+        },
+        axis: {
+            x: {
+                type: 'timeseries',
+                tick: {
+                    format: '%Y-%m-%d %H:%M:%S'
+                }
+            }
+        },
+        color: {
+            pattern: ['#355681']
+        },
+        subchart: {
+            show: true
+        }
+    });
+    {#d3.select('#time-window-chart_c3js').select("svg").append("text")#}
+    {#    .attr("x", 500 )#}
+    {#    .attr("y", 10)#}
+    {#    .style("text-anchor", "middle")#}
+    {#    .text("Total number of found jobs: " + nentries);#}
+
+});
+
+{#function update_timewindow_from_chart(tw_chart) {#}
+{#    let selected_timewindow = tw_chart.zoom();#}
+{#    let base_url = '{{ notime_url|safe }}';#}
+{#    base_url += 'date_from=' + moment(selected_timewindow[0]).format('YYYY-MM-DDTHH:mm:ss');#}
+{#    base_url += '&date_to=' + moment(selected_timewindow[1]).format('YYYY-MM-DDTHH:mm:ss');#}
+{#    window.location.replace(base_url)#}
+{# } #}
 </script>
 
 {% endblock %}
