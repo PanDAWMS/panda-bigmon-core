@@ -41,6 +41,17 @@
   </tbody>
 </table>
 
+{% if 'warning' in message %}
+    <p>
+    <div class="callout warning" data-closable>
+      <h5>Warning!</h5>
+      <p>{{ message.warning }}</p>
+      <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+            <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+{% endif %}
+
 <div id="time-window-chart_c3js" style="height: 300px; width: 100%;"></div>
 
 <table class="minimalistic-table unstriped">
@@ -51,16 +62,18 @@
 <div class="tiles row small-up-1 medium-up-4 large-up-6">
 {% for problem in spot.spot %}
     <div class="column">
+    <a href="{{ problem.url }}">
     <div class="card tile {% if problem.impact >= 100 %}alert{% elif problem.impact > 50 %}warning{% else %}warning-light{% endif %}">
-      <div class="card-divider">
-        <a href="{{ problem.url }}">{{ problem.impact }}</a>
-      </div>
-      <div class="card-section">
+        <div class="card-divider">
+            <b>{{ problem.impact }}</b>
+        </div>
+        <div class="card-section">
         {% for iparam, ivalue in problem.params.items %}
-            <p>{{ iparam }}:{{ ivalue }}</p>
+            <p>{{ iparam }}: <b>{{ ivalue }}</b></p>
         {% endfor %}
-      </div>
+        </div>
     </div>
+    </a>
     </div>
 {% endfor %}
 </div>
@@ -132,7 +145,7 @@ $(document).ready(function () {
             }
         },
         color: {
-            pattern: ['#355681']
+            pattern: ['#801919']
         },
         subchart: {
             show: true

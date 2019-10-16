@@ -60,6 +60,7 @@ def job_problems(request):
 
     http = urllib3.PoolManager()
     resp = http.request('GET', url)
+    resp_data = None
     if resp and len(resp.data) > 0:
         try:
             resp_data = json.loads(resp.data)
@@ -67,15 +68,16 @@ def job_problems(request):
             message['warning'] = "No data was received"
     else:
         message['warning'] = "No data was received"
+    http.clear()
 
     # processing data
     plots = {}
-    plots['hist'] = resp_data['hist'] if 'hist' in resp_data else {}
-
     spots = []
-    spots_raw = resp_data['spots'] if 'spots' in resp_data else {}
-    spots = [v for k, v in sorted(spots_raw.items())]
 
+    if resp_data:
+        plots['hist'] = resp_data['hist'] if 'hist' in resp_data else {}
+        spots_raw = resp_data['spots'] if 'spots' in resp_data else {}
+        spots = [v for k, v in sorted(spots_raw.items())]
 
     data = {
         'request': request,
