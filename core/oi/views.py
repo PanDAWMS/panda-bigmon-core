@@ -24,8 +24,8 @@ def job_problems(request):
         return response
 
     # Here we try to get cached data
-    # data = getCacheEntry(request, "jobProblems")
-    data = None
+    data = getCacheEntry(request, "jobProblem")
+    # data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -54,33 +54,35 @@ def job_problems(request):
         jobtype = 'prod'
 
     # getting data from ...
-    base_url = 'http://somehost.cern.ch/..someview../?'
+    base_url = 'http://aipanda030.cern.ch:8001/process/?'
     url = base_url + 'endtimerange=' + starttime.strftime(OI_DATETIME_FORMAT) + '|' + endtime.strftime(OI_DATETIME_FORMAT)
     url += '&jobtype=' + jobtype
 
-    # http = urllib3.PoolManager()
-    # resp = http.request('GET', url)
-    # if resp and len(resp.data) > 0:
-    #     try:
-    #         data = json.loads(resp.data)
-    #     except:
-    #         message['warning'] = "No data was received"
-    # else:
-    #     message['warning'] = "No data was received"
+    http = urllib3.PoolManager()
+    resp = http.request('GET', url)
+    if resp and len(resp.data) > 0:
+        try:
+            resp_data = json.loads(resp.data)
+        except:
+            message['warning'] = "No data was received"
+    else:
+        message['warning'] = "No data was received"
 
     # processing data
-    spots = [
-        {'problems': [{'impact_params': {'param1': 'value1', 'param2': 'value2'}, 'size': 100, 'link': '...'},
-                      {'impact_params': {'param1': 'value1', 'param2': 'value2'}, 'size': 90, 'link': '...'}], 'timerange': '1-1'},
-        {'problems': [{'impact_params': {'param1': 'value1', 'param2': 'value2'}, 'size': 200, 'link': '...'},
-                      {'impact_params': {'param1': 'value1', 'param2': 'value2'}, 'size': 190, 'link': '...'}], 'timerange': '2-2'}
-        ]
+    plots = {}
+    plots['hist'] = resp_data['hist'] if 'hist' in resp_data else {}
+
+    spots = []
+    spots_raw = resp_data['spots'] if 'spots' in resp_data else {}
+    spots = [v for k, v in sorted(spots_raw.items())]
+
 
     data = {
         'request': request,
         'requestParams': request.session['requestParams'],
         'viewParams': request.session['viewParams'],
         'message': message,
+        'plots': plots,
         'spots': spots,
     }
 
@@ -89,6 +91,6 @@ def job_problems(request):
         response = render_to_response('jobProblems.html', data, content_type='text/html')
     else:
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
-    # setCacheEntry(request, "jobProblem", json.dumps(data, cls=DateEncoder), 60 * CACHE_TIMEOUT)
+    setCacheEntry(request, "jobProblem", json.dumps(data, cls=DateEncoder), 60 * CACHE_TIMEOUT)
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response

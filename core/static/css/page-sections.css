@@ -506,6 +506,7 @@ a.close-x-sign:hover {
 .card.tile {
     margin: 0.7rem 0.3rem;
     padding: 0;
+    height: 10rem;
 }
 
 .card.tile .card-divider {
@@ -535,5 +536,9 @@ a.close-x-sign:hover {
 }
 
 .card.tile.warning {
+    background-color: #ffddba ;
+}
+
+.card.tile.warning-light {
     background-color: #fff0b3;
 }
