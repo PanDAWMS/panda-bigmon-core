@@ -53,13 +53,18 @@ def job_problems(request):
     else:
         jobtype = 'prod'
 
-    # getting data from ...
+    # getting data from jobbuster API
     base_url = 'http://aipanda030.cern.ch:8001/process/?'
     url = base_url + 'endtimerange=' + starttime.strftime(OI_DATETIME_FORMAT) + '|' + endtime.strftime(OI_DATETIME_FORMAT)
     url += '&jobtype=' + jobtype
 
     http = urllib3.PoolManager()
-    resp = http.request('GET', url)
+    try:
+        resp = http.request('GET', url)
+    except:
+        resp = None
+        message['warning'] = "Can not connect to jobbuster API, please try later"
+
     resp_data = None
     if resp and len(resp.data) > 0:
         try:
