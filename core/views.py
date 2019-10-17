@@ -1406,7 +1406,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
         fields = fieldsStr.split("|")
         if 'metastruct' in fields:
             doAddMetaStill = True
-    if doAddMeta:
+    if doAddMeta or doAddMetaStill:
         jobs = addJobMetadata(jobl, doAddMetaStill)
     else:
         jobs = jobl
@@ -3016,6 +3016,7 @@ def cache_filter(timeout):
 
 @login_customrequired
 def jobList(request, mode=None, param=None):
+    start_time = time.time()
     valid, response = initRequest(request)
     if not valid: return response
     dkey = digkey(request)
@@ -3113,7 +3114,11 @@ def jobList(request, mode=None, param=None):
     else:
         fileid = None
 
+    _logger.debug('Specific params processing: {}'.format(time.time()-start_time))
+
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
+
+    _logger.debug('Setup view: {}'.format(time.time() - start_time))
 
     if len(extraquery_files) > 1:
         wildCardExtension += ' AND ' + extraquery_files
@@ -3165,6 +3170,8 @@ def jobList(request, mode=None, param=None):
                 tk,droppedList,wildCardExtension = dropalgorithm.dropRetrielsJobs(list(taskids.keys())[0],wildCardExtension,isEventTask)
             else:
                 isJumbo = True
+
+    _logger.debug('Prepare list of retriels if dropmode [Aleksandr method]: {}'.format(time.time() - start_time))
 
     harvesterjobstatus = ''
 
@@ -3242,6 +3249,8 @@ def jobList(request, mode=None, param=None):
         else:
             thread = None
 
+    _logger.debug('Got jobs: {}'.format(time.time() - start_time))
+
     ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
     taskids = {}
 
@@ -3260,13 +3269,17 @@ def jobList(request, mode=None, param=None):
     droppedPmerge = set()
     newdroppedPmerge = set()
     cntStatus = []
-    newjobs = copy.deepcopy(jobs)
     if dropmode and (len(taskids) == 1):
         start = time.time()
         jobs, droplist, droppedPmerge = dropRetrielsJobs(jobs,list(taskids.keys())[0],isReturnDroppedPMerge)
         end = time.time()
         print(end - start)
         if request.user.is_authenticated and request.user.is_tester:
+            _logger.debug('Started deepcopy: {}'.format(time.time() - start_time))
+
+            newjobs = copy.deepcopy(jobs)
+
+            _logger.debug('Finished deep copy: {}'.format(time.time() - start_time))
             if 'eventservice' in request.session['requestParams']:
                 isEventTask = True
                 print ('Event Service!')
@@ -3277,6 +3290,8 @@ def jobList(request, mode=None, param=None):
                 newjobs,newdroppedPmerge,newdroplist = dropalgorithm.clearDropRetrielsJobs(tk=tk,droplist=droppedList,jobs=newjobs,isEventTask=isEventTask,isReturnDroppedPMerge=isReturnDroppedPMerge)
             end = time.time()
             print(end - start)
+
+    _logger.debug('Done droppping if was requested: {}'.format(time.time() - start_time))
 
     #get attemps of file if fileid in request params
     files_attempts_dict = {}
@@ -3304,8 +3319,15 @@ def jobList(request, mode=None, param=None):
                     if jedi_file and 'maxattempt' in jedi_file:
                         job['filemaxattempts'] = jedi_file['maxattempt']
 
-    jobs = cleanJobList(request, jobs)
+    _logger.debug('Got file attempts: {}'.format(time.time() - start_time))
+
+    jobs = cleanJobList(request, jobs, doAddMeta=False)
+
+    _logger.debug('Cleaned job list: {}'.format(time.time() - start_time))
+
     jobs = reconstructJobsConsumers(jobs)
+
+    _logger.debug('Reconstructed consumers: {}'.format(time.time() - start_time))
 
     njobs = len(jobs)
     jobtype = ''
@@ -3355,6 +3377,8 @@ def jobList(request, mode=None, param=None):
         sortby = "attemptnr-descending,pandaid-descending"
         jobs = sorted(jobs, key=lambda x: [-x['attemptnr'],-x['pandaid']])
 
+    _logger.debug('Sorted joblist: {}'.format(time.time() - start_time))
+
     taskname = ''
     if 'jeditaskid' in request.session['requestParams']:
         taskname = getTaskName('jeditaskid', request.session['requestParams']['jeditaskid'])
@@ -3368,8 +3392,12 @@ def jobList(request, mode=None, param=None):
     else:
         user = None
 
+    _logger.debug('Got task names: {}'.format(time.time() - start_time))
+
     ## set up google flow diagram
     flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
+
+    _logger.debug('Built google flow diagram: {}'.format(time.time() - start_time))
 
     if ('datasets' in request.session['requestParams']) and (request.session['requestParams']['datasets'] == 'yes') and ((
         ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams'])):
@@ -3439,6 +3467,8 @@ def jobList(request, mode=None, param=None):
                 file['fsize'] = int(file['fsize'] / 1000000)
             job['datasets'] = files
 
+    _logger.debug('Got datasets info if requested: {}'.format(time.time() - start_time))
+
     # show warning or not
     if njobs <= request.session['JOB_LIMIT']:
         showwarn = 0
@@ -3452,6 +3482,7 @@ def jobList(request, mode=None, param=None):
             if item['field'] == 'jeditaskid':
                 item['list'] = sorted(item['list'], key=lambda k: k['kvalue'], reverse=True)
 
+    _logger.debug('Built standard params attributes summary: {}'.format(time.time() - start_time))
 
     if 'jeditaskid' in request.session['requestParams']:
         if len(jobs) > 0:
@@ -3472,6 +3503,8 @@ def jobList(request, mode=None, param=None):
     tasknamedict = taskNameDict(jobs)
     errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
                                                                                           testjobs)
+
+    _logger.debug('Built error summary: {}'.format(time.time() - start_time))
 
     # Here we getting extended data for site
     jobsToShow = jobs[:njobsmax]
@@ -3497,6 +3530,9 @@ def jobList(request, mode=None, param=None):
         if job['computingsite'] in siteHash.keys():
             job['computingsitestatus'] = siteHash[job['computingsite']][0]
             job['computingsitecomment'] = siteHash[job['computingsite']][1]
+
+    _logger.debug('Got extra params for sites: {}'.format(time.time() - start_time))
+
     if thread != None:
         try:
             thread.join()
@@ -3525,6 +3561,7 @@ def jobList(request, mode=None, param=None):
     else:
         jobsTotalCount = int(math.ceil((jobsTotalCount+10000)/10000)*10000)
 
+    _logger.debug('Total jobs count thread finished: {}'.format(time.time() - start_time))
 
     for job in jobsToShow:
         if job['creationtime']:
@@ -3560,7 +3597,7 @@ def jobList(request, mode=None, param=None):
             except:
                 clist = []
 
-
+    _logger.debug('Got comparison job list for user: {}'.format(time.time() - start_time))
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
@@ -3583,6 +3620,9 @@ def jobList(request, mode=None, param=None):
         errsByCount = importToken(request,errsByCount=errsByCount)
         nodropPartURL = cleanURLFromDropPart(xurl)
         difDropList = dropalgorithm.compareDropAlgorithm(droplist,newdroplist)
+
+        _logger.debug('Extra data preporation done: {}'.format(time.time() - start_time))
+
         data = {
             'prefix': getPrefix(request),
             'errsByCount': errsByCount,
@@ -3632,10 +3672,16 @@ def jobList(request, mode=None, param=None):
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
+
+        _logger.debug('Cache was set: {}'.format(time.time() - start_time))
+
         if eventservice:
             response = render_to_response('jobListES.html', data, content_type='text/html')
         else:
             response = render_to_response('jobList.html', data, content_type='text/html')
+
+        _logger.debug('Rendered template: {}'.format(time.time() - start_time))
+
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -4775,7 +4821,7 @@ def userList(request):
             Jobsarchived4.objects.filter(**query).order_by('-modificationtime')[:request.session['JOB_LIMIT']].values(
                 *values),
         )
-        jobs = cleanJobList(request, jobs)
+        jobs = cleanJobList(request, jobs, doAddMeta=False)
         sumd = userSummaryDict(jobs)
         for user in sumd:
             if user['dict']['latest']:
@@ -4953,7 +4999,7 @@ def userInfo(request, user=''):
     #             query['produsername'] = user
     #             jobsetids = Jobsarchived.objects.filter(**query).values('jobsetid').distinct()
 
-    jobs = cleanJobList(request, jobs)
+    jobs = cleanJobList(request, jobs, doAddMeta=False)
     if fullname != '':
         query = {'name': fullname}
     else:
