@@ -14,6 +14,8 @@ from core.views import initRequest, login_customrequired, DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import parse_datetime
 
+from core.oi.utils import round_time
+
 CACHE_TIMEOUT = 60
 OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
@@ -54,9 +56,11 @@ def job_problems(request):
         jobtype = 'prod'
 
     # getting data from jobbuster API
-    base_url = 'http://aipanda030.cern.ch:8001/process/?'
-    url = base_url + 'endtimerange=' + starttime.strftime(OI_DATETIME_FORMAT) + '|' + endtime.strftime(OI_DATETIME_FORMAT)
-    url += '&jobtype=' + jobtype
+    base_url = 'http://aipanda030.cern.ch:8010/process/?'
+    url = base_url + 'endtimerange={}|{}'.format(
+        round_time(starttime, timedelta(minutes=1)).strftime(OI_DATETIME_FORMAT),
+        round_time(endtime, timedelta(minutes=1)).strftime(OI_DATETIME_FORMAT))
+    # url += '&jobtype=' + jobtype
 
     http = urllib3.PoolManager()
     try:
