@@ -5897,10 +5897,15 @@ def getAGISSites():
         print (exc)
     return sitesUcore, sitesHarvester
 
+
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
+    start_time = time.time()
     pilots = getPilotCounts(view)
     query = setupView(request, hours=hours, limit=limit, opmode=view)
     ucoreComputingSites, harvesterComputingSites = getAGISSites()
+
+    _logger.debug('[dashSummary] Got AGIS json: {}'.format(time.time() - start_time))
+
     if VOMODE == 'atlas' and len(request.session['requestParams']) == 0:
         cloudinfol = Cloudconfig.objects.filter().exclude(name='CMS').exclude(name='OSG').values('name', 'status')
     else:
@@ -5913,6 +5918,8 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
     siteinfo = {}
     for s in siteinfol:
         siteinfo[s['siteid']] = s['status']
+
+    _logger.debug('[dashSummary] Got list of sites: {}'.format(time.time() - start_time))
 
     extra = "(1=1)"
     if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
@@ -5929,6 +5936,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
     for item in nojobabs:
         nojobabshash[item['site']] = item['dcount']
 
+    _logger.debug('[dashSummary] Got njobsabs for for sites: {}'.format(time.time() - start_time))
 
     mismatchedSites = []
     clouds = {}
@@ -6111,7 +6119,11 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
                         if res not in clouds[cloud]['sites'][site]['states'][jobstate]['resources'].keys():
                             clouds[cloud]['sites'][site]['states'][jobstate]['resources'][res] = {'jobstatus__count':0, 'corecount':0}
 
+    _logger.debug('[dashSummary] Precessed data for site summary: {}'.format(time.time() - start_time))
+
     updateCacheWithListOfMismatchedCloudSites(mismatchedSites)
+
+    _logger.debug('[dashSummary] Updated Cache with  mistmatched cloud|sites : {}'.format(time.time() - start_time))
 
     ## Go through the sites, add any that are missing (because they have no jobs in the interval)
     if cloudview != 'cloud':
@@ -6205,6 +6217,8 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
 
         fullsummary.append(clouds[cloud])
 
+    _logger.debug('[dashSummary] Finished cloud|sites summary: {}'.format(time.time() - start_time))
+
     if 'sortby' in request.session['requestParams']:
         if request.session['requestParams']['sortby'] in statelist:
             #fullsummary = sorted(fullsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']]['count'],
@@ -6220,6 +6234,9 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
             cloudsummary = sorted(cloudsummary, key=lambda x: x['pctfail'], reverse=True)
             for cloud in clouds:
                 clouds[cloud]['summary'] = sorted(clouds[cloud]['summary'], key=lambda x: x['pctfail'], reverse=True)
+
+    _logger.debug('[dashSummary] Sorted cloud|sites summary: {}'.format(time.time() - start_time))
+
     return fullsummary
 
 
@@ -10163,6 +10180,7 @@ def digkey (rq):
 
 @login_customrequired
 def errorSummary(request):
+    start_time = time.time()
     valid, response = initRequest(request)
     thread = None
     dkey = digkey(request)
@@ -10193,7 +10211,7 @@ def errorSummary(request):
         # if request.GET:
         #     addGetRequestParams(request)
 
-
+    _logger.debug('Initialized request: {}'.format(time.time() - start_time))
 
     testjobs = False
     if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams'][
@@ -10260,7 +10278,11 @@ def errorSummary(request):
         xurlsubst = '/errors/?' + updatedRequest + '&'
         xurlsubstNoSite = '/errors/?' + updatedRequestNoSite + '&'
 
+    _logger.debug('Processed specific params: {}'.format(time.time() - start_time))
+
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=limit, wildCardExt=True)
+
+    _logger.debug('Finished set up view: {}'.format(time.time() - start_time))
 
     if not testjobs: query['jobstatus__in'] = ['failed', 'holding']
     jobs = []
@@ -10271,8 +10293,6 @@ def errorSummary(request):
              'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',\
              'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',\
              'destinationse', 'currentpriority', 'computingelement','gshare','reqid'
-    print ("step3-1")
-    print (str(datetime.now()))
 
     if testjobs:
         jobs.extend(
@@ -10304,21 +10324,23 @@ def errorSummary(request):
     else:
         thread = None
 
-
-    print ("step3-1-0")
-    print (str(datetime.now()))
+    _logger.debug('Got jobs: {}'.format(time.time() - start_time))
 
     jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta=False)
+
+    _logger.debug('Cleaned jobs list: {}'.format(time.time() - start_time))
 
     njobs = len(jobs)
     tasknamedict = taskNameDict(jobs)
 
-    print ("step3-1-1")
-    print (str(datetime.now()))
+    _logger.debug('Got taskname for jobs: {}'.format(time.time() - start_time))
 
     ## Build the error summary.
     errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
                                                                                       testjobs)
+
+    _logger.debug('Error summary built: {}'.format(time.time() - start_time))
+
     ## Build the state summary and add state info to site error summary
     # notime = True
     # if testjobs: notime = False
@@ -10341,14 +10363,14 @@ def errorSummary(request):
                 if s in sitestates[sitename]: site[s] = sitestates[sitename][s]
             if 'pctfail' in sitestates[sitename]: site['pctfail'] = sitestates[sitename]['pctfail']
 
+    _logger.debug('Built errors by site summary: {}'.format(time.time() - start_time))
+
     taskname = ''
     if not testjobs:
         ## Build the task state summary and add task state info to task error summary
-        print ("step3-1-2")
-        print (str(datetime.now()))
         taskstatesummary = dashTaskSummary(request, hours, limit=limit, view=jobtype)
-        print ("step3-2")
-        print (str(datetime.now()))
+
+        _logger.debug('Prepared data for errors by task summary: {}'.format(time.time() - start_time))
 
         taskstates = {}
         for task in taskstatesummary:
@@ -10366,14 +10388,16 @@ def errorSummary(request):
         if 'jeditaskid' in request.session['requestParams']:
             taskname = getTaskName('jeditaskid', request.session['requestParams']['jeditaskid'])
 
+    _logger.debug('Built errors by task summary: {}'.format(time.time() - start_time))
+
     if 'sortby' in request.session['requestParams']:
         sortby = request.session['requestParams']['sortby']
     else:
         sortby = 'alpha'
     flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
 
-    print ("step3-3")
-    print (str(datetime.now()))
+    _logger.debug('Built google diagram: {}'.format(time.time() - start_time))
+
     if thread!=None:
         try:
             thread.join()
@@ -10385,6 +10409,8 @@ def errorSummary(request):
             print (jobsErrorsTotalCount)
         except: jobsErrorsTotalCount = -1
     else: jobsErrorsTotalCount = -1
+
+    _logger.debug('Finished thread counting total number of jobs: {}'.format(time.time() - start_time))
 
     listPar =[]
     for key, val in request.session['requestParams'].items():
@@ -10402,6 +10428,8 @@ def errorSummary(request):
         jobsErrorsTotalCount = int(math.ceil((jobsErrorsTotalCount+10000)/10000)*10000)
     request.session['max_age_minutes'] = 6
 
+    _logger.debug('Formed list of params: {}'.format(time.time() - start_time))
+
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
         nosorturl = removeParam(request.get_full_path(), 'sortby')
@@ -10417,6 +10445,8 @@ def errorSummary(request):
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
         del request.session['TLAST']
+
+        _logger.debug('Extra data preparation for template: {}'.format(time.time() - start_time))
 
         data = {
             'prefix': getPrefix(request),
@@ -10452,12 +10482,18 @@ def errorSummary(request):
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
+
+        _logger.debug('Set cache: {}'.format(time.time() - start_time))
+
         # Filtering data due to user settings
         if request.user.is_authenticated and request.user.is_tester:
         # if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and \
         #         request.session['IS_TESTER']:
             data = filterErrorData(request, data)
         response = render_to_response('errorSummary.html', data, content_type='text/html')
+
+        _logger.debug('Rendered template: {}'.format(time.time() - start_time))
+
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     elif 'fields' in request.session['requestParams'] and request.session['requestParams']['fields']:
