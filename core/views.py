@@ -700,7 +700,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     if 'computingsite' in request.session['requestParams'] and hours is None:
         LAST_N_HOURS_MAX = 12
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
-        LAST_N_HOURS_MAX = 3 * 24
+        LAST_N_HOURS_MAX = 2 * 24
     ## hours specified in the URL takes priority over the above
     if 'hours' in request.session['requestParams']:
         LAST_N_HOURS_MAX = int(request.session['requestParams']['hours'])
@@ -3230,9 +3230,9 @@ def jobList(request, mode=None, param=None):
                     request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
                     JOB_LIMITS = int(request.session['requestParams']['limit'])
                 if 'modificationtime__castdate__range' in query and (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
-                                                         "%Y-%m-%d %H:%M:%S")).days > 1) or \
+                                                         "%Y-%m-%d %H:%M:%S")).days > 2) or \
                             ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
-                                                                 "%Y-%m-%d %H:%M:%S")).days > 1)):
+                                                                 "%Y-%m-%d %H:%M:%S")).days > 2)):
                     if 'jeditaskid' in request.session['requestParams'] and 'json' in request.session['requestParams'] \
                             and ('fulllist' in request.session['requestParams'] and
                                               request.session['requestParams']['fulllist'] == 'true'):
