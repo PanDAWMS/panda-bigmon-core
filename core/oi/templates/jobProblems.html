@@ -30,8 +30,8 @@
         <td>
             <select id="jobtype">
                 <option value="all" selected="selected" {% if requestParams.jobtype == 'all' %} disabled="disabled" {% endif %}>All</option>
-                <option value="prod" {% if requestParams.jobtype == 'prod' %} selected="selected" {% endif %}>Production</option>
-                <option value="analy" {% if requestParams.jobtype == 'analy' %} selected="selected" {% endif %}>Analysis</option>
+                <option disabled value="prod" {% if requestParams.jobtype == 'prod' %} selected="selected" {% endif %}>Production</option>
+                <option disabled value="analy" {% if requestParams.jobtype == 'analy' %} selected="selected" {% endif %}>Analysis</option>
             </select>
         </td>
         <td>
@@ -47,7 +47,7 @@
       <h5>Warning!</h5>
       <p>{{ message.warning }}</p>
       <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-            <span aria-hidden="true">&times;</span>
+            <span aria-hidden="true"><i class="fi-x"></i></span>
       </button>
     </div>
 {% endif %}
