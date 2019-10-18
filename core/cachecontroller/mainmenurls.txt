@@ -1,3 +1,4 @@
+/oi/jobproblems/?hours=12&jobtype=prod
 /dash/
 /dash/analysis/
 /tasks/?eventservice=1&display_limit=301
