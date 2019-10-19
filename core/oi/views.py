@@ -27,7 +27,7 @@ def job_problems(request):
 
     # Here we try to get cached data
     data = getCacheEntry(request, "jobProblem")
-    data = None
+    #data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
