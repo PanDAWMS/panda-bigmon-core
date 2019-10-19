@@ -28,7 +28,7 @@ def job_problems(request):
     # Here we try to get cached data
     data = getCacheEntry(request, "jobProblem")
     #data = None
-    if data is not None:
+    if data is not None and len(data) > 10:
         data = json.loads(data)
         data['request'] = request
         response = render_to_response('jobProblems.html', data, content_type='text/html')
