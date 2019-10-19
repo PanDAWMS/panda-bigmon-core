@@ -64,13 +64,13 @@ def job_problems(request):
 
     http = urllib3.PoolManager()
     try:
-        resp = http.request('GET', url, timeout=300)
+        resp = http.request('GET', url, timeout=500)
     except:
         resp = None
         message['warning'] = "Can not connect to jobbuster API, please try later"
 
     resp_data = None
-    if resp and len(resp.data) > 0:
+    if resp and len(resp.data) > 10:
         try:
             resp_data = json.loads(resp.data)
         except:
@@ -102,6 +102,7 @@ def job_problems(request):
         response = render_to_response('jobProblems.html', data, content_type='text/html')
     else:
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
-    setCacheEntry(request, "jobProblem", json.dumps(data, cls=DateEncoder), 60 * CACHE_TIMEOUT)
+    if resp and len(resp.data) > 10:
+        setCacheEntry(request, "jobProblem", json.dumps(data, cls=DateEncoder), 60 * CACHE_TIMEOUT)
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
