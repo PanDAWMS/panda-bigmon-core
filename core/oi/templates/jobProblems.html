@@ -62,7 +62,7 @@
 <div class="tiles row small-up-1 medium-up-4 large-up-6">
 {% for problem in spot.spot %}
     <div class="column">
-    <a href="{{ problem.url }}">
+    <a href="{{ problem.url }}" target="_blank">
     <div class="card tile {% if problem.impact >= 100 %}alert{% elif problem.impact > 50 %}warning{% else %}warning-light{% endif %}">
         <div class="card-divider">
             <b>{{ problem.impact }}</b>
