@@ -30,10 +30,11 @@ def job_problems(request):
     #data = None
     if data is not None and len(data) > 10:
         data = json.loads(data)
-        data['request'] = request
-        response = render_to_response('jobProblems.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
+        if not ('message' in data and 'warning' in data['message'] and len(data['message']['warning']) > 1):
+            data['request'] = request
+            response = render_to_response('jobProblems.html', data, content_type='text/html')
+            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+            return response
 
     message = {}
 
