@@ -1,4 +1,4 @@
-{% load staticfiles %}<!DOCTYPE html>
+{% load staticfiles %}{% load common_tags %}<!DOCTYPE html>
 <!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
 <!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
@@ -36,15 +36,15 @@
 
 {#  <link rel="stylesheet" href="{% static "css/foundation/normalize.css" %}">#}
 
-<link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}">
-<link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}">
-<link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
-<link rel="stylesheet" href="{% static "css/main-nav.css" %}?version=1">
-<link rel="stylesheet" href="{% static "css/state-colors.css" %}?version=1">
-<link rel="stylesheet" href="{% static "css/table.css" %}?version=4">
-<link rel="stylesheet" href="{% static "css/d3js-plots.css" %}">
-<link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}">
-<link rel="stylesheet" href="{% static "css/page-sections.css" %}?version=3">
+<link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}?{% cache_bust "css/foundation/foundation.css" %}">
+<link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}?{% cache_bust "css/foundation/foundation-icons/foundation-icons.css" %}">
+<link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}?{% cache_bust 'js/jquery-ui/jquery-ui.css' %}">
+<link rel="stylesheet" href="{% static "css/main-nav.css" %}?{% cache_bust "css/main-nav.css" %}">
+<link rel="stylesheet" href="{% static "css/state-colors.css" %}?{% cache_bust "css/state-colors.css" %}">
+<link rel="stylesheet" href="{% static "css/table.css" %}?{% cache_bust "css/table.css" %}">
+<link rel="stylesheet" href="{% static "css/d3js-plots.css" %}?{% cache_bust "css/d3js-plots.css" %}">
+<link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}?{% cache_bust "css/taskstatestooltip.css" %}">
+<link rel="stylesheet" href="{% static "css/page-sections.css" %}?{% cache_bust "css/page-sections.css" %}">
 
 
 	{% comment %} <link rel="stylesheet" href="{% static "css/bigpandamon.css" %}"> {% endcomment %}
