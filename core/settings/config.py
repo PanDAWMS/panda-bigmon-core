@@ -65,7 +65,11 @@ TEMPLATES = [
             'loaders':[
                 'django.template.loaders.filesystem.Loader',
                 'django.template.loaders.app_directories.Loader',
-            ]
+            ],
+            'libraries':{
+                'common_tags': 'core.templatetags.common_tags',
+
+                },
         },
     },
 ]
