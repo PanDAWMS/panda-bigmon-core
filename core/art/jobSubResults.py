@@ -1,10 +1,10 @@
 
 
-import urllib, urllib3, json, math
+import urllib3, json, math
 import numpy as np
 from datetime import datetime
 from core.art.modelsART import ARTSubResult
-from django.db import connection, transaction, DatabaseError
+from django.db import transaction, DatabaseError
 from core.settings import defaultDatetimeFormat
 import logging
 
@@ -37,6 +37,7 @@ def getJobReport(guid, lfn, scope):
         data = json.loads(response.data)
 
     return data
+
 
 def getARTjobSubResults(data):
     jobSubResult = {}
@@ -112,18 +113,6 @@ def subresults_getter(url_params_str):
             subresults_dict['result'] = resultlist
 
     print('ART Results for {} is {}'.format(str(pandaid), str(subresults_dict)))
-
-
-    # clean up ART test logs from media/filebrowser/ where guid is folder name
-    # guid = None
-    # try:
-    #     guid = url_params_str.split('=')[1].split('&')[0]
-    # except:
-    #     _logger.exception('Exception was caught while getting GUID by parsing URL params str: {}'.format(url_params_str))
-    #     pass
-    # if guid is not None:
-    #     urlClean = "http://" + HOSTNAME + '/filebrowser/delete/?json=1&guid=' + guid
-    #     http.request('GET', urlClean)
 
     return {pandaid: subresults_dict}
 
