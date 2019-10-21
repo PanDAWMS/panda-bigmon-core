@@ -20,8 +20,8 @@ from django.db.models import Value as V
 from core.views import login_customrequired, initRequest, extensibleURL, removeParam
 from core.views import DateEncoder
 from core.art.artMail import send_mail_art
-from core.art.modelsART import ARTResults, ARTTests, ReportEmails, ARTResultsQueue
-from core.art.jobSubResults import getJobReport, getARTjobSubResults, subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
+from core.art.modelsART import ARTTests, ReportEmails, ARTResultsQueue
+from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
 from core.common.models import Filestable4, FilestableArch
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
@@ -539,9 +539,14 @@ def artJobs(request):
 
 
 def updateARTJobList(request):
+    """
+    Loading sub-step results for tests from PanDA job log files managed by Rucio
+    :param request: HTTP request
+    :return:
+    """
     valid, response = initRequest(request)
     if not valid:
-        return HttpResponse(status=401)
+        return response
 
     query = setupView(request, 'job')
     starttime = datetime.now()
@@ -551,7 +556,7 @@ def updateARTJobList(request):
     cur.autocommit = True
     cur.execute("""INSERT INTO atlas_pandabigmon.art_results_queue
                     (pandaid, IS_LOCKED, LOCK_TIME)
-                    SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_DEBUG('{}','{}','{}'))
+                    SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}'))
                     WHERE pandaid is not NULL
                           and attemptmark = 0  
                           and result is NULL
@@ -559,13 +564,14 @@ def updateARTJobList(request):
                           and pandaid not in (select pandaid from atlas_pandabigmon.art_results_queue)
                 """.format(query['ntag_from'], query['ntag_to'], query['strcondition']))
 
-    nrows = 2
+    # number of concurrent download requests to Rucio
+    N_ROWS = 1
 
     is_queue_empty = False
     while not is_queue_empty:
 
         # Locking first N rows
-        lock_time = lock_nqueuedjobs(cur, nrows)
+        lock_time = lock_nqueuedjobs(cur, N_ROWS)
 
         # Getting locked jobs from ART_RESULTS_QUEUE
         equery = {}
@@ -595,7 +601,7 @@ def updateARTJobList(request):
                 url_params = [('&guid=' + filei['guid'] + '&lfn=' + filei['lfn'] + '&scope=' + filei['scope'] + '&pandaid=' + str(filei['pandaid'])) for filei in file_properties]
 
             # Loading subresults in parallel and collecting to list of dictionaries
-            pool = multiprocessing.Pool(processes=nrows)
+            pool = multiprocessing.Pool(processes=N_ROWS)
             try:
                 sub_results = pool.map(subresults_getter, url_params)
             except:
@@ -633,50 +639,6 @@ def updateARTJobList(request):
     }
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
-
-
-def getJobSubResults(request):
-    valid, response = initRequest(request)
-    if not valid:
-        return HttpResponse(status=401)
-
-    guid = request.session['requestParams']['guid'] if 'guid' in request.session['requestParams'] else ''
-    lfn = request.session['requestParams']['lfn'] if 'lfn' in request.session['requestParams'] else ''
-    scope = request.session['requestParams']['scope'] if 'scope' in request.session['requestParams'] else ''
-    pandaid = request.session['requestParams']['pandaid'] if 'pandaid' in request.session['requestParams'] else None
-    jeditaskid = request.session['requestParams']['jeditaskid'] if 'jeditaskid' in request.session['requestParams'] else None
-    data = getJobReport(guid, lfn, scope)
-    results = getARTjobSubResults(data)
-    # if len(results) > 0:
-    #     saveJobSubResults(results,jeditaskid, pandaid)
-
-    data = {
-        'requestParams': request.session['requestParams'],
-        'viewParams': request.session['viewParams'],
-        'jobSubResults': results
-    }
-    response = render_to_response('artJobSubResults.html', data, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    return response
-
-
-def saveJobSubResults(results,jeditaskid,pandaid):
-    updateData = []
-    updateData.append((json.dumps(results),jeditaskid,pandaid))
-    tableName = 'ATLAS_PANDABIGMON.ART_RESULTS'
-    new_cur = connection.cursor()
-    update_query = """UPDATE """ + tableName + """ SET RESULT_JSON = %s WHERE JEDITASKID = %s AND PANDAID = %s """
-    new_cur.executemany(update_query, updateData)
-    print ('data updated (%s rows updated)' % (len(updateData)))
-    return True
-
-
-def gettflag(job):
-    return 1 if job['taskstatus'] in ('done', 'finished', 'failed', 'aborted') else 0
-
-
-def getjflag(job):
-    return 1 if job['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
 
 @csrf_exempt
 def registerARTTest(request):

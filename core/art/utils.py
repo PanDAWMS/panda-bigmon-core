@@ -183,3 +183,8 @@ def find_last_n_nightlies(request, limit=7):
             pass
 
     return datelist
+
+
+def getjflag(job):
+    """Returns flag if job in finished state"""
+    return 1 if job['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
