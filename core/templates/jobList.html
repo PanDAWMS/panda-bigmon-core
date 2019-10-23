@@ -180,7 +180,7 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
 <tr>
     <th> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </th>
     <td> {{ errval.count }} </td>
-    <td> <div class="comment more">{{ errval.diag }}<br/>{% if errval.count > 1%} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %}</div>
+    <td> <div class="comment more">{{ errval.diag }}<br/>{% if errval.count > 1 and not 'transformation' in errval.error %} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %}</div>
 
     </td>
 </tr>
