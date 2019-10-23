@@ -139,6 +139,6 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       row_cand=[i_result,proj,nameln,category,container,ttime]
       rows_s.append(row_cand)
     rows_s.append(row_cand)
-    return HttpResponse(json.dumps(rows_s, cls=DateEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(rows_s, cls=DateEncoder), content_type='application/json')
 
 
