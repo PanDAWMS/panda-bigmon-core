@@ -19,15 +19,15 @@ class DateEncoder(json.JSONEncoder):
 
 def testviewDemo(request):
     valid, response = initRequest(request)
-    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 50:
+    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
         nname = request.session['requestParams']['nightly']
     else:
         nname = 'MR-CI-builds'
-    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 50:
+    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 100:
         relname = request.session['requestParams']['rel']
     else:
         relname = 'unknown'
-    if 'ar' in request.session['requestParams'] and len(request.session['requestParams']['ar']) < 50:
+    if 'ar' in request.session['requestParams'] and len(request.session['requestParams']['ar']) < 100:
         arname = request.session['requestParams']['ar']
     else:
         arname = 'x86_64-slc6-gcc62-opt'
@@ -38,15 +38,15 @@ def testviewDemo(request):
 def testviewData(request):
     valid, response = initRequest(request)
     new_cur = connection.cursor()
-    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 50:
+    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
         nname = request.session['requestParams']['nightly']
     else:
         nname = 'MR-CI-builds'
-    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 50:
+    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 100:
         relname = request.session['requestParams']['rel']
     else:
         relname = 'unknown'
-    if 'ar' in request.session['requestParams'] and len(request.session['requestParams']['ar']) < 50:
+    if 'ar' in request.session['requestParams'] and len(request.session['requestParams']['ar']) < 100:
         arname = request.session['requestParams']['ar']
     else:
         arname = 'x86_64-slc6-gcc62-opt'
@@ -138,7 +138,6 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       if i_result == None or i_result == "None" : i_result=radiooff_icon; 
       row_cand=[i_result,proj,nameln,category,container,ttime]
       rows_s.append(row_cand)
-    rows_s.append(row_cand)
     return HttpResponse(json.dumps(rows_s, cls=DateEncoder), content_type='application/json')
 
 
