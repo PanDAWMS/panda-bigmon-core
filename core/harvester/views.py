@@ -415,7 +415,7 @@ def harvesters(request):
             hours = ''
             defaulthours = daysdelta * 24
 
-        harvesterworkersquery = """SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS where harvesterid like '{0}' {1} {2} {3} {4} {5} {6} {7}""".format(str(instance), status, computingsite, workerid, lastupdateCache, days, hours, resourcetype, computingelement)
+        harvesterworkersquery = """SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS where harvesterid = '{0}' {1} {2} {3} {4} {5} {6} {7}""".format(str(instance), status, computingsite, workerid, lastupdateCache, days, hours, resourcetype, computingelement)
         harvester_dicts = query_to_dicts(harvesterworkersquery)
 
         harvester_list = []
@@ -647,7 +647,7 @@ def harvesters(request):
             message ="""Computingsite is not found OR no workers for this computingsite or time period. Try using this <a href =/harvesters/?computingsite=%s&days=365>link (last 365 days)</a>""" % (computingsite)
             return HttpResponse(json.dumps({'message':  message}),
                             content_type='text/html')
-        harvesterworkersquery = """SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS where computingsite like '{0}' {1} {2} {3} {4} {5} """.format(str(computingsite), status, workerid, days, hours, resourcetype, computingelement)
+        harvesterworkersquery = """SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS where computingsite = '{0}' {1} {2} {3} {4} {5} """.format(str(computingsite), status, workerid, days, hours, resourcetype, computingelement)
         harvester_dicts = query_to_dicts(harvesterworkersquery)
 
         harvester_list = []
