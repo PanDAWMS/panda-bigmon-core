@@ -28,7 +28,7 @@ def nviewDemo(request):
         rname = request.session['requestParams']['rel']
     else:
         rname = '*'
-    data={"nightly": nname, "rel": rname}
+    data={"nightly": nname, "rel": rname, 'viewParams': request.session['viewParams']}
     return render_to_response('nviewDemo.html', data, content_type='text/html') 
 
 def nviewData(request):

@@ -21,7 +21,7 @@ class DateEncoder(json.JSONEncoder):
 def globalviewDemo(request):
     valid, response = initRequest(request)
     nname = '20.20.X-VAL'
-    data={"nightly": nname}
+    data={"nightly": nname, 'viewParams': request.session['viewParams']}
     return render_to_response('globalviewDemo.html', data, content_type='text/html') 
 
 def globalviewData(request):

@@ -32,7 +32,7 @@ def compviewDemo(request):
     else:
         arname = 'x86_64-slc6-gcc62-opt'
 
-    data={"nightly": nname, "rel": relname, "ar": arname, "ab123": 'abcd'}
+    data={"nightly": nname, "rel": relname, "ar": arname, "ab123": 'abcd', 'viewParams': request.session['viewParams']}
     return render_to_response('compviewDemo.html', data, content_type='text/html') 
 
 def compviewData(request):
