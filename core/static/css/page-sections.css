@@ -109,7 +109,8 @@ hr {
 .dropdownplots {
     position: relative;
     display: inline-block;
-    margin-bottom: 3px;
+    margin-bottom: 0.3rem;
+    margin-right: 0.3rem;
 }
 .dropdownbutton{
     background-color: rgba(53,86,129, 0.8);

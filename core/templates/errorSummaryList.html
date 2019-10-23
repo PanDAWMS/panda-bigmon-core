@@ -4,26 +4,51 @@
 {% block subtitle %}<font size=-1>{{ viewParams.selection|safe }}
 </font>
 {% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <style>
+        #errorsList_wrapper .row {
+            max-width: 99%;
+            margin-top: 1rem;
+        }
+    </style>
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+
+
 {% block body %}
 
-  <link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
-  <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
-  <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
+<b>Error type:</b> {{ codename }}<br/>
+<b>Error code:</b> {{ codeval }}<br/>
 
-    <b>Error type:</b> {{ codename }}<br/><br/>
-    <b>Error code:</b>  {{ codeval }} <br/><br/>
-    {% if notTkLive == '1'%}<span class="errspan"><b>The data is outdated or not found. You should close this page and refresh jobs page. </b></span><br/><br/>{%  endif %}<hr/>
-<table id="errorsList" >
-     <thead>
-                <th>jediTaskID</th>
-                <th>PandaID</th>
-                <th>Error message</th>
-     </thead>
-     <tbody></tbody>
-    </table>
- <script type="text/javascript">
+{% if 'warning' in message %}
+    <div class="callout warning" data-closable>
+      <h5>Warning! </h5>
+      <p>{{ message.warning }}</p>
+        <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+            <span aria-hidden="true"><i class="fi-x"></i></span>
+        </button>
+    </div>
+{% endif %}
 
+<table id="errorsList" class="data-table left-aligned">
+    <thead>
+      <tr>
+        <th>Number</th>
+        <th>Error message</th>
+        <th>Job samples, limited to 5</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
+<script type="text/javascript">
 
 var jediDataTable;
 $(document).ready(function () {
@@ -32,55 +57,40 @@ $(document).ready(function () {
     });
 function DisplayjediDataTableTableData() {
     jediDataTable = $('#errorsList').dataTable({
-        //"bRetrieve": true,
         "sPaginationType": "full_numbers",
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         paging: true,
-        //"bProcessing": true,
-        //"bAutoWidth": false,
-        //"bStateSave": true,
-        "aaSorting": [[0, 'asc']],
-                     "ajax": {
-                 "processing": true,
-                 "url": "{% url 'summaryErrorsListJSON' %}?codename={{codename}}&codeval={{codeval}}&tk={{tk}}",
+        "aaSorting": [[0, 'desc']],
+        "ajax": {
+             "processing": true,
+             "url": "{% url 'summaryErrorsListJSON' %}?codename={{codename}}&codeval={{codeval}}&tk={{tk}}",
 
-                 "dataSrc" : ''},
-         rowsGroup: [0],
+             "dataSrc" : ''},
         "aoColumns": [
             {
-                "data": "taskid",
-                "render": function(data, type, full, meta) {
-                    if (full['taskid']==null)
-                    {
-                        return 'None'
-                    }
-                    else {
-                        return '<a href="/task/' + full['taskid'] + '" target="_blank">' + full['taskid'] + '</a>'
-                    }
-                    //return '<a href="ab.aspx?emp_id=' + data + '">"' + full['Type'] + '"</a>';
-            },
+                "data": "count",
                 sDefaultContent: ""
-            },
-            {
-                "data": "pandaid",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                     return '<a href="/job/'+ full['pandaid'] +'" target="_blank">' + full['pandaid'] + '</a>'
-                }
             },
             {
                 "data": "desc",
                 sDefaultContent: "",
-            }
+            },
+            {
+                "data": "pandaids",
+                sDefaultContent: "",
+                "render": function(data) {
+                    let rendered_pandaids = '';
+                    for (let i=0; i<data.length; i++) {
+                        rendered_pandaids += '<a href="/job/'+ data[i] +'" target="_blank">' + data[i] + '</a>'
+                        if (i < data.length-1) {rendered_pandaids += ', '}
+                    }
+                     return rendered_pandaids
+                }
+            },
         ]
-
     });
 }
  </script>
 
 {% endblock %}
 
-{% block helptext %}
-{% include "jobListHelp.html" with helptitle="Job list help" %}
-{% include "jobInfoHelp.html" with helptitle="Job information" show="all" %}
-{% endblock %}

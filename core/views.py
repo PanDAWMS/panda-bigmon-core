@@ -1,4 +1,4 @@
-import logging, re, json, subprocess, os, copy
+import logging, re, subprocess, os
 import sys, traceback
 from datetime import datetime, timedelta
 import time
@@ -11,35 +11,31 @@ from io import BytesIO
 import math
 
 from core.pandajob.SQLLookups import CastDate
-from django.db.models import DateTimeField, CharField
+from django.db.models import DateTimeField
 
 
-from urllib.parse import urlencode, unquote, urlparse, urlunparse, parse_qs
+from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
 from django.utils.decorators import available_attrs
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response, render, redirect
-from django.template import RequestContext, loader
+from django.shortcuts import render_to_response, redirect
+from django.template import RequestContext
 from django.db.models import Count, Sum, F, Value, FloatField
-from django import forms
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.vary import vary_on_headers
-from django.utils.cache import patch_vary_headers
-from django.views.decorators.cache import never_cache
 import django.utils.cache as ucache
 from functools import wraps
 
 from django.utils import timezone
-from django.utils.cache import patch_cache_control, patch_response_headers
+from django.utils.cache import patch_response_headers
 from django.db.models import Q
 from django.core.cache import cache
 from django.utils import encoding
 from django.conf import settings as djangosettings
-from django.db import connection, transaction
+from django.db import connection
 
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
-from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
-from core.pandajob.models import PandaJob, Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
+from core.settings import defaultDatetimeFormat
+from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
     GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, JobsWorldViewTaskType, CombinedWaitActDefArch4
 from core.schedresource.models import Schedconfig
 from core.common.models import Filestable4
@@ -49,7 +45,6 @@ from core.common.models import FilestableArch
 from core.common.models import Users
 from core.common.models import Jobparamstable
 from core.common.models import JobsStatuslog
-from core.common.models import Metatable
 from core.common.models import Logstable
 from core.common.models import Jobsdebug
 from core.common.models import Cloudconfig
@@ -83,16 +78,10 @@ import core.Customrenderer as Customrenderer
 import collections, pickle
 
 from threading import Thread,Lock
-import decimal
 import base64
 import urllib3
 from django.views.decorators.cache import never_cache
 from core import chainsql
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-
-import datefinder
 
 errorFields = []
 errorCodes = {}
@@ -103,19 +92,15 @@ from django.template.defaulttags import register
 #from django import template
 #register = template.Library()
 
-
-from core.reports import RunningMCProdTasks
 from core.reports import MC16aCPReport, ObsoletedTasksReport, TitanProgressReport
 from decimal import *
-from collections import OrderedDict
 
 from django.contrib.auth import logout as auth_logout
 from core.auth.utils import grant_rights, deny_rights
 
 from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
-#from libs import exlib
-from core.libs.cache import deleteCacheTestData,getCacheEntry,setCacheEntry, preparePlotData
+from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
@@ -151,8 +136,6 @@ def get_renderedrow(context, **kwargs):
 
 inilock = Lock()
 DateTimeField.register_lookup(CastDate)
-
-
 
 try:
     hostname = subprocess.getoutput('hostname')
@@ -199,7 +182,7 @@ errorcodelist = [
 ]
 
 _logger = logging.getLogger('bigpandamon')
-# logging.basicConfig()
+
 
 notcachedRemoteAddress = ['188.184.185.129', '188.184.116.46']
 
@@ -228,25 +211,27 @@ VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
 VOMODE = ' '
 
+
 def login_customrequired(function):
-  def wrap(request, *args, **kwargs):
+    def wrap(request, *args, **kwargs):
 
-      #we check here if it is a crawler:
-      x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-      if x_forwarded_for and x_forwarded_for in notcachedRemoteAddress:
-          return function(request, *args, **kwargs)
+        #we check here if it is a crawler:
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for and x_forwarded_for in notcachedRemoteAddress:
+            return function(request, *args, **kwargs)
 
-      if request.user.is_authenticated or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
-          return function(request, *args, **kwargs)
-      else:
-          # if '/user/' in request.path:
-          #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
-          # else:
-          #return function(request, *args, **kwargs)
-          return HttpResponseRedirect('/login/?next='+request.get_full_path())
-  wrap.__doc__ = function.__doc__
-  wrap.__name__ = function.__name__
-  return wrap
+        if request.user.is_authenticated or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
+            return function(request, *args, **kwargs)
+        else:
+            # if '/user/' in request.path:
+            #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
+            # else:
+            #return function(request, *args, **kwargs)
+            return HttpResponseRedirect('/login/?next='+request.get_full_path())
+    wrap.__doc__ = function.__doc__
+    wrap.__name__ = function.__name__
+    return wrap
+
 
 @login_customrequired
 def grantRights(request):
@@ -277,6 +262,7 @@ def datetime_handler(x):
     if isinstance(x, datetime.datetime):
         return x.isoformat()
     raise TypeError("Unknown type")
+
 
 def jobSuppression(request):
 
@@ -3745,124 +3731,187 @@ def importToken(request,errsByCount):
 
 @login_customrequired
 def summaryErrorsList(request):
-    initRequest(request)
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    message = {}
+    isReloadData = False
     notTkLive = 0
-    if ('tk' in request.session['requestParams'] and 'codename' in request.session['requestParams'] and 'codeval' in request.session['requestParams']):
+    errorsList = []
+
+    if 'tk' in request.session['requestParams'] and request.session['requestParams']['tk']:
         transactionkey = request.session['requestParams']['tk']
-        codename = request.session['requestParams']['codename']
-        codeval = request.session['requestParams']['codeval']
-
-        if (transactionkey!='' and codename != '' and codeval!=''):
-            checkTKeyQuery = '''
-             SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}
-         '''
-            try:
-                sqlRequestFull = checkTKeyQuery.format(transactionkey)
-                cur = connection.cursor()
-                cur.execute(sqlRequestFull)
-                errorsList = cur.fetchall()
-            except:
-                return redirect('/jobs/?limit=100')
-            if (len(errorsList) == 0 or errorsList ==''):
-                data = getCacheEntry(request, transactionkey, isData=True)
-                if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-                    tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-                else:
-                    tmpTableName = "TMP_IDS1DEBUG"
-                new_cur = connection.cursor()
-                query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
-                if data is not None:
-                    new_cur.executemany(query, data)
-                else:
-                    notTkLive = 1
-            if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-            'json' not in request.session['requestParams'])):
-
-                xurl = extensibleURL(request)
-                print (xurl)
-                nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-                nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
-
-        #TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
-        #TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
-        #del request.session['TFIRST']
-        #del request.session['TLAST']
-
-                nodropPartURL = cleanURLFromDropPart(xurl)
-                data = {
-                    'prefix': getPrefix(request),
-                    'tk': transactionkey,
-                    'codename':codename,
-                    'codeval':codeval,
-                    'request': request,
-                    'notTkLive':str(notTkLive),
-                    'viewParams': request.session['viewParams'],
-                    'requestParams': request.session['requestParams'],
-                    'built': datetime.now().strftime("%H:%M:%S"),
-                }
-                data.update(getContextVariables(request))
-                response = render_to_response('errorSummaryList.html', data, content_type='text/html')
-                return response
-        else: return redirect('/jobs/?limit=100')
-
     else:
-        return redirect('/jobs/?limit=100')
-###JSON for Datatables errors###
-def summaryErrorsListJSON(request):
-    initRequest(request)
+        transactionkey = None
+    if 'codename' in request.session['requestParams'] and request.session['requestParams']['codename']:
+        codename = request.session['requestParams']['codename']
+    else:
+        codename = None
+    if 'codeval' in request.session['requestParams'] and request.session['requestParams']['codeval']:
+        codeval = request.session['requestParams']['codeval']
+    else:
+        codeval = None
 
-    codename = request.session['requestParams']['codename']
-    codeval = request.session['requestParams']['codeval']
+    if transactionkey and codename and codeval:
+        checkTKeyQuery = '''
+            SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}
+            '''
+        try:
+            sqlRequestFull = checkTKeyQuery.format(transactionkey)
+            cur = connection.cursor()
+            cur.execute(sqlRequestFull)
+            errorsList = cur.fetchall()
+        except:
+            message['warning'] = """The data is outdated or not found. 
+                You should close this page, refresh jobs page and try again."""
+
+        if len(errorsList) == 0 or errorsList == '':
+            data = getCacheEntry(request, transactionkey, isData=True)
+            if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+                tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
+            else:
+                tmpTableName = "TMP_IDS1DEBUG"
+            new_cur = connection.cursor()
+            query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
+            if data is not None:
+                new_cur.executemany(query, data)
+            else:
+                message['warning'] = """The data is outdated or not found. 
+                                You should close this page, refresh jobs page and try again."""
+
+
+    xurl = extensibleURL(request)
+    print(xurl)
+
+    data = {
+        'prefix': getPrefix(request),
+        'tk': transactionkey,
+        'codename':codename,
+        'codeval':codeval,
+        'request': request,
+        'message': message,
+        'viewParams': request.session['viewParams'],
+        'requestParams': request.session['requestParams'],
+        'built': datetime.now().strftime("%H:%M:%S"),
+    }
+    data.update(getContextVariables(request))
+    response = render_to_response('errorSummaryList.html', data, content_type='text/html')
+    return response
+
+
+def summaryErrorsListJSON(request):
+    """
+    JSON for Datatables errors
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    if 'codename' in request.session['requestParams'] and request.session['requestParams']['codename']:
+        codename = request.session['requestParams']['codename']
+    else:
+        codename = None
+    if 'codeval' in request.session['requestParams'] and request.session['requestParams']['codeval']:
+        codeval = request.session['requestParams']['codeval']
+    else:
+        codeval = None
+
     fullListErrors = []
-    #isJobsss = False
-    print (request.session['requestParams'])
+    errorcode2diag = {}
     for er in errorcodelist:
         if er['error'] == request.session['requestParams']['codename']:
             errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
         if er['name'] == str(request.session['requestParams']['codename']):
             codename = er['error']
             errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
-            #isJobsss=True
-    #d = dict((k, v) for k, v in errorcodelist if v >= request.session['requestParams']['codename'])
-
+        errorcode2diag[er['error']] = er['diag']
 
     condition = request.session['requestParams']['tk']
-    sqlRequest = '''
-SELECT DISTINCT PANDAID,JEDITASKID, COMMANDTOPILOT, concat('transformation:',TRANSEXITCODE) AS TRANSEXITCODE, concat('pilot:',PILOTERRORCODE) AS PILOTERRORCODE, PILOTERRORDIAG, concat('exe:',EXEERRORCODE) AS EXEERRORCODE, EXEERRORDIAG, concat('sup:',SUPERRORCODE) AS SUPERRORCODE,SUPERRORDIAG,concat('ddm:',DDMERRORCODE) AS DDMERRORCODE,DDMERRORDIAG,concat('brokerage:',BROKERAGEERRORCODE) AS BROKERAGEERRORCODE,BROKERAGEERRORDIAG,concat('jobdispatcher:',JOBDISPATCHERERRORCODE) AS JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,concat('taskbuffer:',TASKBUFFERERRORCODE) AS TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM
-(SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSARCHIVED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSARCHIVED4.PANDAID
-UNION ALL
-SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSACTIVE4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSACTIVE4.PANDAID
-UNION ALL 
-SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSDEFINED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSDEFINED4.PANDAID
-UNION ALL 
-SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSWAITING4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSWAITING4.PANDAID
-UNION ALL
-SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDAARCH.JOBSARCHIVED, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID)
-    '''
-    #if isJobsss:
-    sqlRequest += ' WHERE '+ codename + '='+codeval
-    # INPUT_EVENTS, TOTAL_EVENTS, STEP
-    shortListErrors = []
+    sqlRequest = """
+    SELECT DISTINCT PANDAID, JEDITASKID, COMMANDTOPILOT, 
+        concat('transformation:',TRANSEXITCODE) AS TRANSEXITCODE, 
+        concat('pilot:',PILOTERRORCODE) AS PILOTERRORCODE, 
+        PILOTERRORDIAG, 
+        concat('exe:',EXEERRORCODE) AS EXEERRORCODE, 
+        EXEERRORDIAG, 
+        concat('sup:',SUPERRORCODE) AS SUPERRORCODE, 
+        SUPERRORDIAG,
+        concat('ddm:',DDMERRORCODE) AS DDMERRORCODE,
+        DDMERRORDIAG,
+        concat('brokerage:',BROKERAGEERRORCODE) AS BROKERAGEERRORCODE,
+        BROKERAGEERRORDIAG,
+        concat('jobdispatcher:',JOBDISPATCHERERRORCODE) AS JOBDISPATCHERERRORCODE,
+        JOBDISPATCHERERRORDIAG,
+        concat('taskbuffer:',TASKBUFFERERRORCODE) AS TASKBUFFERERRORCODE,
+        TASKBUFFERERRORDIAG 
+    FROM (
+        SELECT PANDAID,JEDITASKID, 
+            COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,
+            SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,
+            JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
+        FROM ATLAS_PANDA.JOBSARCHIVED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
+        WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSARCHIVED4.PANDAID
+        UNION ALL
+        SELECT PANDAID,JEDITASKID, 
+            COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,
+            SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,
+            JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
+        FROM ATLAS_PANDA.JOBSACTIVE4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
+        WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSACTIVE4.PANDAID
+        UNION ALL 
+        SELECT PANDAID,JEDITASKID, 
+            COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,
+            SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,
+            JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
+        FROM ATLAS_PANDA.JOBSDEFINED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
+        WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSDEFINED4.PANDAID
+        UNION ALL 
+        SELECT PANDAID,JEDITASKID, 
+            COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,
+            SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,
+            JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
+        FROM ATLAS_PANDA.JOBSWAITING4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
+        WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSWAITING4.PANDAID
+        UNION ALL
+        SELECT PANDAID,JEDITASKID, 
+            COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,
+            SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,
+            BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
+        FROM ATLAS_PANDAARCH.JOBSARCHIVED, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
+        WHERE PIDACTIVE.ID=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID
+        )
+    """
+
+    sqlRequest += ' WHERE ' + codename + '=' + codeval
     sqlRequestFull = sqlRequest.format(condition)
     cur = connection.cursor()
     cur.execute(sqlRequestFull)
-    errorsList = cur.fetchall()
-    for error in errorsList:
-        if (errorcode in error):
-            try:
-                errnum = int(codeval)
-                if str(error[error.index(errorcode) + 1]) !='' and 'transformation' not in errorcode:
-                    descr = str(error[error.index(errorcode) + 1])
-                else:
-                    if codename in errorCodes and errnum in errorCodes[codename]:
-                        descr = errorCodes[codename][errnum]
-                    else:
-                        descr = 'None'
-            except:
-                pass
-            rowDict = {"taskid": error[1], "pandaid": error[0], "desc": descr}
-            fullListErrors.append(rowDict)
-    return HttpResponse(json.dumps(fullListErrors), content_type='application/json')
+    errors_tuple = cur.fetchall()
+    errors_header = [s.lower() for s in ['PANDAID', 'JEDITASKID', 'COMMANDTOPILOT', 'TRANSEXITCODE',
+             'PILOTERRORCODE', 'PILOTERRORDIAG', 'EXEERRORCODE', 'EXEERRORDIAG', 'SUPERRORCODE', 'SUPERRORDIAG',
+             'DDMERRORCODE', 'DDMERRORDIAG', 'BROKERAGEERRORCODE', 'BROKERAGEERRORDIAG',
+             'JOBDISPATCHERERRORCODE', 'JOBDISPATCHERERRORDIAG', 'TASKBUFFERERRORCODE', 'TASKBUFFERERRORDIAG']]
+    errors_list = [dict(zip(errors_header, row)) for row in errors_tuple]
+
+    # group by error diag message, counting unique messages and store top N pandaids
+    N_SAMPLEJOBS = 5
+    errorMessages = {}
+    for error in errors_list:
+        if errorcode in error.values():
+            if error[errorcode2diag[codename]] not in errorMessages:
+                errorMessages[error[errorcode2diag[codename]]] = {'count': 0, 'pandaids': []}
+            errorMessages[error[errorcode2diag[codename]]]['count'] += 1
+            if len(errorMessages[error[errorcode2diag[codename]]]['pandaids']) < N_SAMPLEJOBS:
+                errorMessages[error[errorcode2diag[codename]]]['pandaids'].append(error['pandaid'])
+
+    # transform dict -> list
+    error_messages = []
+    for key, value in errorMessages.items():
+        error_messages.append({'desc': key, 'count': value['count'], 'pandaids': value['pandaids']})
+
+    return HttpResponse(json.dumps(error_messages), content_type='application/json')
+
 
 def decimal_default(obj):
     if isinstance(obj, decimal.Decimal):
@@ -10184,12 +10233,15 @@ def errorSummary(request):
     valid, response = initRequest(request)
     thread = None
     dkey = digkey(request)
+    if not valid:
+        return response
 
-    if not valid: return response
+    _logger.debug('Initialized request: {}'.format(time.time() - start_time))
 
     # Here we try to get cached data
     data = getCacheEntry(request, "errorSummary")
     if data is not None:
+        _logger.debug('Got cached data: {}'.format(time.time() - start_time))
         data = json.loads(data)
         data['request'] = request
         # Filtering data due to user settings
@@ -10202,7 +10254,9 @@ def errorSummary(request):
                     list[0] = datetime.strptime(list[0],"%Y-%m-%dT%H:%M:%S")
                 except:
                     pass
+        _logger.debug('Processed cached data: {}'.format(time.time() - start_time))
         response = render_to_response('errorSummary.html', data, content_type='text/html')
+        _logger.debug('Rendered template from cached data: {}'.format(time.time() - start_time))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -10210,8 +10264,6 @@ def errorSummary(request):
     #     saveUserSettings(request,'errors')
         # if request.GET:
         #     addGetRequestParams(request)
-
-    _logger.debug('Initialized request: {}'.format(time.time() - start_time))
 
     testjobs = False
     if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams'][
@@ -10246,6 +10298,11 @@ def errorSummary(request):
 
     if 'limit' in request.session['requestParams']:
         limit = int(request.session['requestParams']['limit'])
+
+    if 'display_limit' in request.session['requestParams']:
+        display_limit = int(request.session['requestParams']['display_limit'])
+    else:
+        display_limit = 9999999
 
 
     xurlsubst = extensibleURL(request)
@@ -10466,10 +10523,10 @@ def errorSummary(request):
             'jobsurl': jobsurl,
             'nosorturl': nosorturl,
             'time_locked_url': time_locked_url,
-            'errsByCount': errsByCount,
-            'errsBySite': errsBySite,
-            'errsByUser': errsByUser,
-            'errsByTask': errsByTask,
+            'errsByCount': errsByCount[:display_limit] if len(errsByCount) > display_limit else errsByCount,
+            'errsBySite': errsBySite[:display_limit] if len(errsBySite) > display_limit else errsBySite,
+            'errsByUser': errsByUser[:display_limit] if len(errsByUser) > display_limit else errsByUser,
+            'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
             'sumd': sumd,
             'errHist': errHist,
             'tfirst': TFIRST,
@@ -10478,6 +10535,7 @@ def errorSummary(request):
             'taskname': taskname,
             'flowstruct': flowstruct,
             'jobsErrorsTotalCount': jobsErrorsTotalCount,
+            'display_limit': display_limit,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))

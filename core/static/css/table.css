@@ -377,6 +377,11 @@ th.vertical {
     font-weight: bold;
 }
 
+.dataTables_info {
+    color: #727C81 !important;
+    font-size: inherit;
+}
+
 .paginate_button.current {
     background-color: #727C81;
     color:white;
