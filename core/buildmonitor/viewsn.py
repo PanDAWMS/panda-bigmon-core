@@ -20,11 +20,11 @@ class DateEncoder(json.JSONEncoder):
 
 def nviewDemo(request):
     valid, response = initRequest(request)
-    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 70:
+    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
         nname = request.session['requestParams']['nightly']
     else:
         nname = 'master_Athena_x86_64-centos7-gcc8-opt'
-    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 50:
+    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 100:
         rname = request.session['requestParams']['rel']
     else:
         rname = '*'
@@ -34,11 +34,11 @@ def nviewDemo(request):
 def nviewData(request):
     valid, response = initRequest(request)
     new_cur = connection.cursor()
-    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 70:
+    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
         nname = request.session['requestParams']['nightly']
     else:
         nname = 'master_Athena_x86_64-centos7-gcc8-opt'
-    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 50:
+    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 100:
         rname = request.session['requestParams']['rel']
     else:
         rname = '*'
