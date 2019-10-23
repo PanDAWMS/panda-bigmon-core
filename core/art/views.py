@@ -664,32 +664,38 @@ def registerARTTest(request):
             testname = request.session['requestParams']['testname']
     else:
         data = {'exit_code': -1, 'message': "There were not recieved any pandaid and testname"}
+        _logger.error(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), content_type='application/json')
 
     if 'nightly_release_short' in request.session['requestParams']:
         nightly_release_short = request.session['requestParams']['nightly_release_short']
     else:
         data = {'exit_code': -1, 'message': "No nightly_release_short provided"}
+        _logger.error(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), content_type='application/json')
     if 'platform' in request.session['requestParams']:
         platform = request.session['requestParams']['platform']
     else:
         data = {'exit_code': -1, 'message': "No platform provided"}
+        _logger.error(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), content_type='application/json')
     if 'project' in request.session['requestParams']:
         project = request.session['requestParams']['project']
     else:
         data = {'exit_code': -1, 'message': "No project provided"}
+        _logger.error(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), content_type='application/json')
     if 'package' in request.session['requestParams']:
         package = request.session['requestParams']['package']
     else:
         data = {'exit_code': -1, 'message': "No package provided"}
+        _logger.error(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), content_type='application/json')
     if 'nightly_tag' in request.session['requestParams']:
         nightly_tag = request.session['requestParams']['nightly_tag']
     else:
         data = {'exit_code': -1, 'message': "No nightly_tag provided"}
+        _logger.error(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), content_type='application/json')
 
     ### Checking whether params is valid
@@ -697,14 +703,17 @@ def registerARTTest(request):
         pandaid = int(pandaid)
     except:
         data = {'exit_code': -1, 'message': "Illegal pandaid was recieved"}
+        _logger.error(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), content_type='application/json')
 
     if pandaid < 0:
         data = {'exit_code': -1, 'message': "Illegal pandaid was recieved"}
+        _logger.error(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), content_type='application/json')
 
     if not str(testname).startswith('test_'):
         data = {'exit_code': -1, 'message': "Illegal test name was recieved"}
+        _logger.error(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), content_type='application/json')
 
     ### Checking if provided pandaid exists in panda db
@@ -757,10 +766,13 @@ def registerARTTest(request):
                                                 )
             insertRow.save()
             data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}
+            _logger.error(data['message'] + str(request.session['requestParams']))
         except:
             data = {'exit_code': 0, 'message': "Provided pandaid is already registered (pk violated)"}
+            _logger.error(data['message'] + str(request.session['requestParams']))
     else:
         data = {'exit_code': 0, 'message': "Provided pandaid is already registered"}
+        _logger.error(data['message'] + str(request.session['requestParams']))
 
     return HttpResponse(json.dumps(data), content_type='application/json')
 
