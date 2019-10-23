@@ -214,7 +214,7 @@
     <td class="wrap-words"> <a href="{{xurlsubst}}{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> {{ errval.error }} </a> </td>
     <td> <a href="{{jobsurl}}{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> jobs </a> </td>
     <td> {{ errval.count }} </td>
-    <td class="wrap-words"> {{ errval.diag }} <br/> {% if errval.count > 1%} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %} </td>
+    <td class="wrap-words"> {{ errval.diag }} <br/> {% if errval.count > 1 and not 'transformation' in errval.error %} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %} </td>
 </tr>
 {% endfor %}
 </tbody>
