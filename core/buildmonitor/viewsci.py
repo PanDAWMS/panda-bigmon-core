@@ -20,11 +20,11 @@ class DateEncoder(json.JSONEncoder):
 
 def civiewDemo(request):
     valid, response = initRequest(request)
-    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 50:
+    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
         nname = request.session['requestParams']['nightly']
     else:
         nname = 'MR-CI-builds'
-    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 50:
+    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 100:
         rname = request.session['requestParams']['rel']
     else:
         rname = '*'
@@ -35,11 +35,11 @@ def civiewDemo(request):
 def civiewData(request):
     valid, response = initRequest(request)
     new_cur = connection.cursor()
-    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 50:
+    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
         nname = request.session['requestParams']['nightly']
     else:
         nname = 'MR-CI-builds'
-    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 50:
+    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 100:
         rname = request.session['requestParams']['rel']
     else:
         rname = '*'
