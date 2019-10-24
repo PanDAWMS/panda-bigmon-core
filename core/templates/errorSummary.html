@@ -19,8 +19,6 @@
             </div>
             <span>{{desc }}</span>
           </div>
-
-
   {% endfor %}
 
 
@@ -65,6 +63,25 @@
 {% block subtitle_params %}
 {% if jobsErrorsTotalCount != None%} <b> Total jobs found &#x7E; <a href="{% url 'errorSummary' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">{{ jobsErrorsTotalCount }}</a></b> {% endif %}
 {% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <link rel="stylesheet" href="{% static "js/datatables/RowGroup-1.1.1/css/rowGroup.foundation.css" %}">
+    <style>
+        #errorsList_wrapper .row {
+            max-width: 99%;
+            margin-top: 1rem;
+        }
+    </style>
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/rowGroup.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+
 {% block body %}
 {{ viewParams.header }}
 <script>
@@ -285,15 +302,81 @@
 
 {% endif %}
 
-{#<script>#}
-{##}
-{#    $("table#errsbycount > tbody > tr").hide().slice(0, 10).show();#}
-{##}
-{#function toggleTableByID(tableid, buttonid) {#}
-{#    $("#" + buttonid).hide();#}
-{#    $("table#" + tableid + " > tbody > tr").show();#}
-{#}#}
-{#</script>#}
+
+{% if errMessageSummary %}
+<table id="errorsList" class="data-table left-aligned">
+    <thead>
+      <tr>
+        <th>Error code</th>
+        <th class="num">Number of errors</th>
+        <th>Error message</th>
+        <th class="num">Number of error message</th>
+        <th>Job samples, limited to 5</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+
+<script type="text/javascript">
+var err_list_data = {{ errMessageSummary|safe }};
+var errorListDataTable;
+
+$(document).ready(function () {
+        DisplayErorListDataTable();
+    });
+
+function DisplayErorListDataTable() {
+    errorListDataTable = $('#errorsList').dataTable({
+        "sPaginationType": "full_numbers",
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "aaSorting": [[1, 'desc']],
+        "data": err_list_data,
+        "columns": [
+            {
+                "data": "errcode",
+                sDefaultContent: "",
+                "render": function(data, type, row, meta) {
+                    return '<a href="{{ xurlsubst }}'+ row['errcodename'] + '=' + row['errcodeval'] + '" target="_blank">' + data + '</a>'
+                }
+            },
+            {
+                "data": "errcodecount",
+                sDefaultContent: "",
+                className: "num",
+            },
+            {
+                "data": "errmessage",
+                sDefaultContent: "",
+            },
+            {
+                "data": "errmessagecount",
+                sDefaultContent: "",
+                className: "num",
+            },
+            {
+                "data": "pandaids",
+                sDefaultContent: "",
+                "render": function(data) {
+                    let rendered_pandaids = '';
+                    for (let i=0; i<data.length; i++) {
+                        rendered_pandaids += '<a href="/job/'+ data[i] +'" target="_blank">' + data[i] + '</a>';
+                        if (i < data.length-1) {rendered_pandaids += ', '}
+                    }
+                     return rendered_pandaids
+                }
+            },
+        ],
+        rowGroup: {
+            dataSrc: "errcode"
+        }
+    });
+}
+</script>
+{% endif %}
+
+
 
 {% endblock %}
 
