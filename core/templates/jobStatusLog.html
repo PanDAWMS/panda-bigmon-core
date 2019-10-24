@@ -17,4 +17,10 @@
         <td>{{ item.duration }}</td>
     {% endfor %}
 </tr>
+<tr>
+    <th class="tablesection">Modification host</th>
+    {% for item in statusLog %}
+        <td>{{ item.modificationhost }}</td>
+    {% endfor %}
+</tr>
 </table>
