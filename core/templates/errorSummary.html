@@ -78,7 +78,8 @@
     <script src="{% static 'js/humanize.min.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/rowGroup.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/dataTables.rowGroup.js' %}"></script>
+    <script src="{% static 'js/datatables/Select-1.2.0/js/dataTables.select.js' %}"></script>
     <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 {% endblock %}
 
@@ -314,6 +315,15 @@
         <th>Job samples, limited to 5</th>
       </tr>
     </thead>
+    <tfoot>
+      <tr>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+      </tr>
+    </tfoot>
     <tbody></tbody>
 </table>
 
@@ -331,14 +341,14 @@ function DisplayErorListDataTable() {
         "sPaginationType": "full_numbers",
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         "paging": true,
-        "aaSorting": [[1, 'desc']],
+        "aaSorting": [[1, 'desc'], [3, 'desc']],
         "data": err_list_data,
         "columns": [
             {
                 "data": "errcode",
                 sDefaultContent: "",
-                "render": function(data, type, row, meta) {
-                    return '<a href="{{ xurlsubst }}'+ row['errcodename'] + '=' + row['errcodeval'] + '" target="_blank">' + data + '</a>'
+                "render": function (data, type, row, meta) {
+                    return '<a href="{{ xurlsubst }}' + row['errcodename'] + '=' + row['errcodeval'] + '" target="_blank">' + data + '</a>'
                 }
             },
             {
@@ -358,18 +368,40 @@ function DisplayErorListDataTable() {
             {
                 "data": "pandaids",
                 sDefaultContent: "",
-                "render": function(data) {
+                "render": function (data) {
                     let rendered_pandaids = '';
-                    for (let i=0; i<data.length; i++) {
-                        rendered_pandaids += '<a href="/job/'+ data[i] +'" target="_blank">' + data[i] + '</a>';
-                        if (i < data.length-1) {rendered_pandaids += ', '}
+                    for (let i = 0; i < data.length; i++) {
+                        rendered_pandaids += '<a href="/job/' + data[i] + '" target="_blank">' + data[i] + '</a>';
+                        if (i < data.length - 1) {
+                            rendered_pandaids += ', '
+                        }
                     }
-                     return rendered_pandaids
+                    return rendered_pandaids
                 }
             },
         ],
         rowGroup: {
-            dataSrc: "errcode"
+            dataSrc: "errcode",
+        },
+        initComplete: function () {
+            this.api().columns([0,]).every(function () {
+                var column = this;
+                var select = $('<select><option value=""></option></select>')
+                    .appendTo( $(column.footer()).empty() )
+                    .on('change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+
+                        column
+                            .search(val ? '^' + val + '$' : '', true, false)
+                            .draw();
+                    });
+
+                column.data().unique().sort().each(function (d, j) {
+                    select.append('<option value="' + d + '">' + d + '</option>')
+                });
+            });
         }
     });
 }
