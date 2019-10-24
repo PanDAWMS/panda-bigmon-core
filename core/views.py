@@ -10198,6 +10198,60 @@ def getTaskName(tasktype, taskid):
             taskname = tasks[0]['taskname']
     return taskname
 
+
+def get_error_message_summary(jobs):
+    """
+    Aggregation of error messages for each error code
+    :param jobs: list of job dicts including error codees and error messages
+    :return: list of rows for datatable
+    """
+    error_message_summary_list = []
+    errorMessageSummary = {}
+    N_SAMPLE_JOBS = 5
+    for job in jobs:
+        for errortype in errorcodelist:
+            if errortype['error'] in job and job[errortype['error']] is not None and job[errortype['error']] != '' and int(job[errortype['error']]) > 0:
+                errorcodestr = errortype['name'] + ':' + str(job[errortype['error']])
+                if not errorcodestr in errorMessageSummary:
+                    errorMessageSummary[errorcodestr] = {'count': 0, 'messages': {}}
+                errorMessageSummary[errorcodestr]['count'] += 1
+                # transexitcode has no diag field in DB, so we get it from ErrorCodes class
+                if errortype['name'] != 'transformation':
+                    errordiag = job[errortype['diag']] if len(job[errortype['diag']]) > 0 else '---'
+                else:
+                    try:
+                        errordiag = errorCodes[errortype['error']][int(job[errortype['error']])]
+                    except:
+                        errordiag = '--'
+                if not errordiag in errorMessageSummary[errorcodestr]['messages']:
+                    errorMessageSummary[errorcodestr]['messages'][errordiag] = {'count': 0, 'pandaids': []}
+                errorMessageSummary[errorcodestr]['messages'][errordiag]['count'] += 1
+                if len(errorMessageSummary[errorcodestr]['messages'][errordiag]['pandaids']) < N_SAMPLE_JOBS:
+                    errorMessageSummary[errorcodestr]['messages'][errordiag]['pandaids'].append(job['pandaid'])
+
+    # form a dict for mapping error code name and field in panda db in order to prepare links to job selection
+    errname2dbfield = {}
+    for errortype in errorcodelist:
+        errname2dbfield[errortype['name']] = errortype['error']
+
+    # dict -> list
+    for errcode, errinfo in errorMessageSummary.items():
+        errcodename = errname2dbfield[errcode.split(':')[0]]
+        errcodeval = errcode.split(':')[1]
+        for errmessage, errmessageinfo in errinfo['messages'].items():
+            error_message_summary_list.append({
+                'errcode': errcode,
+                'errcodename': errcodename,
+                'errcodeval': errcodeval,
+                'errcodecount': errinfo['count'],
+                'errmessage': errmessage,
+                'errmessagecount': errmessageinfo['count'],
+                'pandaids': list(errmessageinfo['pandaids'])
+            })
+
+    return error_message_summary_list
+
+
 tcount = {}
 lock = Lock()
 
@@ -10387,6 +10441,10 @@ def errorSummary(request):
 
     _logger.debug('Cleaned jobs list: {}'.format(time.time() - start_time))
 
+    error_message_summary = get_error_message_summary(jobs)
+
+    _logger.debug('Prepared new error message summary: {}'.format(time.time() - start_time))
+
     njobs = len(jobs)
     tasknamedict = taskNameDict(jobs)
 
@@ -10529,6 +10587,7 @@ def errorSummary(request):
             'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
             'sumd': sumd,
             'errHist': errHist,
+            'errMessageSummary': json.dumps(error_message_summary),
             'tfirst': TFIRST,
             'tlast': TLAST,
             'sortby': sortby,
@@ -10578,6 +10637,7 @@ def errorSummary(request):
             resp.append({'pandaid': job['pandaid'], 'status': job['jobstatus'], 'prodsourcelabel': job['prodsourcelabel'],
                          'produserid': job['produserid']})
         return HttpResponse(json.dumps(resp), content_type='application/json')
+
 
 def filterErrorData(request, data):
     defaultErrorsPreferences = {}

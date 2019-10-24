@@ -397,6 +397,10 @@ th.vertical {
     text-align: right !important;
 }
 
+.num {
+    text-align: right !important;
+}
+
 /*Style for compare table*/
 
 .compare-table {
