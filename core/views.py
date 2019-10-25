@@ -226,8 +226,8 @@ def login_customrequired(function):
             # if '/user/' in request.path:
             #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
             # else:
-            #return function(request, *args, **kwargs)
-            return HttpResponseRedirect('/login/?next='+request.get_full_path())
+            return function(request, *args, **kwargs)
+            #return HttpResponseRedirect('/login/?next='+request.get_full_path())
     wrap.__doc__ = function.__doc__
     wrap.__name__ = function.__name__
     return wrap
@@ -3025,9 +3025,6 @@ def jobList(request, mode=None, param=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    # if 'instance' in request.session['requestParams']:
-    #     request.session['requestParams']['schedulerid'] =  'harvester-'+request.session['requestParams']['instance']
-    #     del request.session['requestParams']['instance']
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
         return jobParamList(request)
     eventservice = False
@@ -3110,12 +3107,10 @@ def jobList(request, mode=None, param=None):
 
     if len(extraquery_files) > 1:
         wildCardExtension += ' AND ' + extraquery_files
-    ###TODO Rework it?
+
     if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
         return render_to_response('message.html', {'desc':'Request token is not found or data is outdated. Please reload the original page.'}, content_type='text/html')
-    ####
-#    if 'batchid' in request.session['requestParams']:
-#        query['batchid'] = request.session['requestParams']['batchid']
+
     jobs = []
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
@@ -3163,7 +3158,7 @@ def jobList(request, mode=None, param=None):
 
     harvesterjobstatus = ''
 
-    from core.harvester.views import getHarvesterJobs
+    from core.harvester.views import getHarvesterJobs,getCeHarvesterJobs
 
     if 'jobstatus' in request.session['requestParams']:
         harvesterjobstatus = request.session['requestParams']['jobstatus']
@@ -3179,6 +3174,8 @@ def jobList(request, mode=None, param=None):
                                 workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
     elif ('harvesterinstance' not in request.session['requestParams'] and 'harvesterid' not in request.session['requestParams']) and 'workerid' in request.session['requestParams']:
         jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
+    elif 'harvesterce' in request.session['requestParams']:
+        jobs = getCeHarvesterJobs(request, computingelment=request.session['requestParams']['harvesterce'])
     else:
         excludedTimeQuery = copy.deepcopy(query)
         if ('modificationtime__castdate__range' in excludedTimeQuery and
@@ -3525,11 +3522,11 @@ def jobList(request, mode=None, param=None):
         try:
             thread.join()
             jobsTotalCount = sum(tcount[dkey])
-            print (dkey)
-            print (tcount[dkey])
+            print(dkey)
+            print(tcount[dkey])
             del tcount[dkey]
-            print (tcount)
-            print (jobsTotalCount)
+            print(tcount)
+            print(jobsTotalCount)
         except:
             jobsTotalCount = -1
     else: jobsTotalCount = -1
@@ -3542,7 +3539,7 @@ def jobList(request, mode=None, param=None):
         urlParametrs = '&'.join(listPar)+'&'
     else:
         urlParametrs = None
-    print (listPar)
+    print(listPar)
     del listPar
     if (math.fabs(njobs-jobsTotalCount)<1000 or jobsTotalCount == -1):
         jobsTotalCount=None
