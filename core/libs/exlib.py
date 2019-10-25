@@ -143,3 +143,33 @@ def parse_datetime(datetime_str):
     except ValueError:
         datetime_val = datetime.utcfromtimestamp(datetime_str)
     return datetime_val
+
+
+def get_job_walltime(job):
+    """
+    :param job: dict of job params, starttime and endtime is obligatory;
+                creationdate, statechangetime, and modificationtime are optional
+    :return: walltime in seconds or None if not enough data provided
+    """
+    walltime = None
+
+    if 'endtime' in job and job['endtime'] is not None:
+        endtime = parse_datetime(job['endtime']) if not isinstance(job['endtime'], datetime) else job['endtime']
+    elif 'statechangetime' in job and job['statechangetime'] is not None:
+        endtime = parse_datetime(job['statechangetime']) if not isinstance(job['statechangetime'], datetime) else job['statechangetime']
+    elif 'modificationtime' in job and job['modificationtime'] is not None:
+        endtime = parse_datetime(job['modificationtime']) if not isinstance(job['modificationtime'], datetime) else job['modificationtime']
+    else:
+        endtime = None
+
+    if 'starttime' in job and job['starttime'] is not None:
+        starttime = parse_datetime(job['starttime']) if not isinstance(job['starttime'], datetime) else job['starttime']
+    elif 'creationdate' in job and job['creationdate'] is not None:
+        starttime = parse_datetime(job['creationdate']) if not isinstance(job['creationdate'], datetime) else job['creationdate']
+    else:
+        starttime = 0
+
+    if starttime and endtime:
+        walltime = (endtime-starttime).total_seconds()
+
+    return walltime

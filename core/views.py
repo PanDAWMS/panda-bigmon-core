@@ -101,7 +101,7 @@ from core.auth.utils import grant_rights, deny_rights
 from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
-from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime
+from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.bpuser import get_relevant_links
@@ -1209,9 +1209,11 @@ def saveUserSettings(request, page):
                 userSetting = BPUserSettings(page=page, userid=userid, preferences=json.dumps(preferences))
                 userSetting.save()
 
+
 def saveSettings(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
     data = {}
     if 'page' in request.session['requestParams']:
         page = request.session['requestParams']['page']
@@ -10202,19 +10204,21 @@ def getTaskName(tasktype, taskid):
 def get_error_message_summary(jobs):
     """
     Aggregation of error messages for each error code
-    :param jobs: list of job dicts including error codees and error messages
+    :param jobs: list of job dicts including error codees, error messages and timestamps of job start and end
     :return: list of rows for datatable
     """
     error_message_summary_list = []
     errorMessageSummary = {}
-    N_SAMPLE_JOBS = 5
+    N_SAMPLE_JOBS = 3
     for job in jobs:
         for errortype in errorcodelist:
             if errortype['error'] in job and job[errortype['error']] is not None and job[errortype['error']] != '' and int(job[errortype['error']]) > 0:
                 errorcodestr = errortype['name'] + ':' + str(job[errortype['error']])
                 if not errorcodestr in errorMessageSummary:
-                    errorMessageSummary[errorcodestr] = {'count': 0, 'messages': {}}
+                    errorMessageSummary[errorcodestr] = {'count': 0, 'walltimeloss': 0, 'messages': {}}
                 errorMessageSummary[errorcodestr]['count'] += 1
+                walltime = get_job_walltime(job)
+                errorMessageSummary[errorcodestr]['walltimeloss'] += walltime if walltime else 0
                 # transexitcode has no diag field in DB, so we get it from ErrorCodes class
                 if errortype['name'] != 'transformation':
                     errordiag = job[errortype['diag']] if len(job[errortype['diag']]) > 0 else '---'
@@ -10244,6 +10248,7 @@ def get_error_message_summary(jobs):
                 'errcodename': errcodename,
                 'errcodeval': errcodeval,
                 'errcodecount': errinfo['count'],
+                'errcodewalltimeloss': round(errinfo['walltimeloss']/60.0/60.0/24.0, 1),
                 'errmessage': errmessage,
                 'errmessagecount': errmessageinfo['count'],
                 'pandaids': list(errmessageinfo['pandaids'])
@@ -10584,7 +10589,7 @@ def errorSummary(request):
             'errsByCount': errsByCount[:display_limit] if len(errsByCount) > display_limit else errsByCount,
             'errsBySite': errsBySite[:display_limit] if len(errsBySite) > display_limit else errsBySite,
             'errsByUser': errsByUser[:display_limit] if len(errsByUser) > display_limit else errsByUser,
-            'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
+            # 'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
             'sumd': sumd,
             'errHist': errHist,
             'errMessageSummary': json.dumps(error_message_summary),
@@ -10604,8 +10609,6 @@ def errorSummary(request):
 
         # Filtering data due to user settings
         if request.user.is_authenticated and request.user.is_tester:
-        # if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and \
-        #         request.session['IS_TESTER']:
             data = filterErrorData(request, data)
         response = render_to_response('errorSummary.html', data, content_type='text/html')
 

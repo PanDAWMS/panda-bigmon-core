@@ -465,39 +465,37 @@
             });
     }
 
-    function getSelectValue()
-    {
-       var selectedValue = document.getElementById("searchselectid").value;
-       switch (selectedValue) {
-           case 'site':
-               $("#searchinputid").autocomplete({
-                        source: "{% url 'getsites' %}",
-                        select: function (event, ui) { //item selected
-                        AutoCompleteSelectHandler(event, ui)
-                        },
-                        minLength: 1,
-                        });
-                        break;
-                    }
-    }
+    function saveSettings() {
+        var settingTables = getSettings('switch-table');
+        var settingJobAttr = getSettings('switch-jobsattr');
+{#        var url = window.location.href;#}
+        var url = '';
+        if (settingTables.length > 0) {
+            url += '&tables=' + settingTables;
+        }
+        url += '&jobattr=' + settingJobAttr;
+        url+='&page=' + 'errors';
+{#        window.location = url;#}
 
-    function AutoCompleteSelectHandler(event, ui)
-    {
-       var selectedObj = ui.item;
+        $.ajax({
+            url: {% url 'saveSettings' %},
+            data: url,
+            async: true,
+            success: function() {
+                window.location = '{{ request.session.notimestampurl|safe }}timestamp={% now "H:i:s" %}'
+            }
+        });
     }
 </script>
 
-<script>
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-ga('create', '{% block gacode %}UA-44940804-1{% endblock %}', '{% block gaweb %}pandawms.org{% endblock %}');
-ga('send', 'pageview');
-</script>
 
-{% block extra_js %}{% endblock %}
+{#  <script src="{% static 'js/app.js' %}"></script>#}
+  <script>
+    $(document).foundation();
+  </script>
+<script src="{% static 'js/user-settings.js' %}?{% cache_bust "js/user-settings.js" %}"></script>
+</body>
 
 <!-- Footer -->
 <footer>

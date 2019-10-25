@@ -86,10 +86,13 @@
   background: #333;
   color: #fefefe;
   padding: 20px;
+  z-index: 100000;
+  font-size: 90%;
 }
 
 .canvas-settings > .menu {
   margin-bottom: 1rem;
+  font-size: inherit;
 }
 
 .canvas-settings .menu a {
@@ -97,6 +100,7 @@
   padding-top: 7px;
   padding-bottom: 7px;
   transition: color 0.2s ease-in;
+  font-size: inherit;
 }
 
 .canvas-settings .menu a:hover {
@@ -109,10 +113,15 @@
 
 .offCanvasRight-columns {
   padding: 0;
-  margin: 0;
+  margin: 1rem 0 0 0;
   background: #333;
   color: #fefefe;
   border-width: 0;
+}
+
+.offCanvasRight-columns a {
+    font-size: inherit;
+    font-weight: bold;
 }
 
 .bp-off-canvas-acc {
@@ -178,7 +187,7 @@
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
-  margin-bottom: 1rem;
+  margin-bottom: 0.3rem;
   -webkit-justify-content: space-between;
       -ms-flex-pack: justify;
           justify-content: space-between;
@@ -188,7 +197,7 @@
 }
 
 .switch-toggle-wrapper .switch {
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .switch input:checked ~ .switch-paddle {
