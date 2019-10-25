@@ -15,7 +15,6 @@
 <script src="{% static 'js/vendor/what-input.js' %}"></script>
 <script src="{% static 'js/vendor/foundation.min.js' %}"></script>
 <script src="{% static 'js/d3.v3.min.js' %}"></script>
-<script src="{% static 'js/user-settings.js' %}"></script>
 <script src="{% static "/js/clipboardjs/clipboard.min.js" %}"></script>
 <script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>
 
@@ -541,14 +540,36 @@
             });
     }
 
+    function saveSettings() {
+        var settingTables = getSettings('switch-table');
+        var settingJobAttr = getSettings('switch-jobsattr');
+{#        var url = window.location.href;#}
+        var url = '';
+        if (settingTables.length > 0) {
+            url += '&tables=' + settingTables;
+        }
+        url += '&jobattr=' + settingJobAttr;
+        url+='&page=' + 'errors';
+{#        window.location = url;#}
+
+        $.ajax({
+            url: {% url 'saveSettings' %},
+            data: url,
+            async: true,
+            success: function() {
+                window.location = '{{ request.session.notimestampurl|safe }}timestamp={% now "H:i:s" %}'
+            }
+        });
+    }
 </script>
+
 
 
 {#  <script src="{% static 'js/app.js' %}"></script>#}
   <script>
     $(document).foundation();
   </script>
-
+<script src="{% static 'js/user-settings.js' %}?{% cache_bust "js/user-settings.js" %}"></script>
 </body>
 
  <!-- Footer -->

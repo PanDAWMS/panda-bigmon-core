@@ -25,7 +25,7 @@
 <div class="row">
   <div class="columns offCanvasRight-columns">
     <ul class="accordion " data-accordion data-allow-all-closed="true">
-    <li id="jobattr-menu" class="accordion-item is-active " data-accordion-item><a href="#" class="menu-link" id="jobattr-link" class="accordion-title">JOB ATTRIBUTE SUMMARY TABLE</a>
+    <li id="jobattr-menu" class="accordion-item is-active " data-accordion-item><a href="#" class="menu-link" id="jobattr-link" class="accordion-title">Job Attribute Summary Table</a>
      <div class="accordion-content" data-tab-content >
       <ul id="jobattr-menu-item" class="menu vertical nested">
 
@@ -41,16 +41,12 @@
             <span>{{ attr }}</span>
           </div>
         {% endfor %}
-
-
        </ul>
      </div>
     </li>
   </ul>
   </div>
 </div>
-
-
 
 {% endblock %}
 
@@ -86,28 +82,6 @@
 {% block body %}
 {{ viewParams.header }}
 <script>
-    function saveSettings() {
-        var settingTables = getSettings('switch-table');
-        var settingJobAttr = getSettings('switch-jobsattr');
-{#        var url = window.location.href;#}
-        var url = '';
-        if (settingTables.length > 0) {
-            url += '&tables=' + settingTables;
-        }
-        url += '&jobattr=' + settingJobAttr;
-        url+='&page=' + 'errors';
-{#        window.location = url;#}
-
-        $.ajax({
-            url: {% url 'saveSettings' %},
-            data: url,
-            async: true,
-            success: function() {
-                window.location = window.location.href
-            }
-        });
-    }
-
     $(document).ready(function() {
         let clipboard = new ClipboardJS('#copy-button'); //needed for copy to clipboard button
 
@@ -156,7 +130,7 @@
 <a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a>
 <p>
 
-<p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} summary
+<p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} {% if errMessageSummary %} <a href="#messages">messages</a> {% endif %} summary
 
 <script type="text/javascript"
            src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
@@ -305,14 +279,16 @@
 
 
 {% if errMessageSummary %}
+<a name="messages"></a>
 <table id="errorsList" class="data-table left-aligned">
     <thead>
       <tr>
         <th>Error code</th>
         <th class="num">Number of errors</th>
+        <th class="num">Walltime loss, days</th>
         <th>Error message</th>
         <th class="num">Number of error message</th>
-        <th>Job samples, limited to 5</th>
+        <th>Job samples</th>
       </tr>
     </thead>
     <tfoot>
@@ -322,11 +298,11 @@
         <th></th>
         <th></th>
         <th></th>
+        <th></th>
       </tr>
     </tfoot>
     <tbody></tbody>
 </table>
-
 
 <script type="text/javascript">
 var err_list_data = {{ errMessageSummary|safe }};
@@ -341,7 +317,7 @@ function DisplayErorListDataTable() {
         "sPaginationType": "full_numbers",
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         "paging": true,
-        "aaSorting": [[1, 'desc'], [3, 'desc']],
+        "aaSorting": [[1, 'desc'], [4, 'desc']],
         "data": err_list_data,
         "columns": [
             {
@@ -355,6 +331,13 @@ function DisplayErorListDataTable() {
                 "data": "errcodecount",
                 sDefaultContent: "",
                 className: "num",
+                render: $.fn.dataTable.render.number( ',', '.'),
+            },
+            {
+                "data": "errcodewalltimeloss",
+                sDefaultContent: "",
+                className: "num",
+                render: $.fn.dataTable.render.number( ',', '.'),
             },
             {
                 "data": "errmessage",
@@ -364,6 +347,7 @@ function DisplayErorListDataTable() {
                 "data": "errmessagecount",
                 sDefaultContent: "",
                 className: "num",
+                render: $.fn.dataTable.render.number( ',', '.'),
             },
             {
                 "data": "pandaids",
@@ -384,9 +368,9 @@ function DisplayErorListDataTable() {
             dataSrc: "errcode",
         },
         initComplete: function () {
-            this.api().columns([0,]).every(function () {
+            this.api().columns([0,1]).every(function (i) {
                 var column = this;
-                var select = $('<select><option value=""></option></select>')
+                var select = $('<select><option value="">All</option></select>')
                     .appendTo( $(column.footer()).empty() )
                     .on('change', function () {
                         var val = $.fn.dataTable.util.escapeRegex(
@@ -397,21 +381,28 @@ function DisplayErorListDataTable() {
                             .search(val ? '^' + val + '$' : '', true, false)
                             .draw();
                     });
-
-                column.data().unique().sort().each(function (d, j) {
-                    select.append('<option value="' + d + '">' + d + '</option>')
-                });
+                if (i === 0) {
+                    column.data().unique().sort().each(function (d, j) {
+                        select.append('<option value="' + d + '">' + d + '</option>')
+                    });
+                }
+                else {
+                    column.data().unique().sort((a,b) => b - a).each(function (d, j) {
+                        select.append('<option value="' + d + '">' + d + '</option>')
+                    });
+                }
             });
         }
     });
 }
 </script>
+
 {% endif %}
-
-
 
 {% endblock %}
 
 {% block helptext %}
 {% include "errorSummaryHelp.html" with helptitle="Error summary help" %}
 {% endblock %}
+
+
