@@ -10651,7 +10651,7 @@ def errorSummary(request):
             'errsByCount': errsByCount,
             'errsBySite': errsBySite[:display_limit] if len(errsBySite) > display_limit else errsBySite,
             'errsByUser': errsByUser[:display_limit] if len(errsByUser) > display_limit else errsByUser,
-            'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
+            # 'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
             'sumd': sumd,
             'errHist': errHist,
             'errMessageSummary': json.dumps(error_message_summary),
