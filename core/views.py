@@ -10397,7 +10397,8 @@ def errorSummary(request):
 
     _logger.debug('Finished set up view: {}'.format(time.time() - start_time))
 
-    if not testjobs: query['jobstatus__in'] = ['failed', 'holding']
+    if not testjobs and 'jobstatus' not in request.session['requestParams']:
+        query['jobstatus__in'] = ['failed', 'holding']
     jobs = []
     values = 'eventservice', 'produsername','produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime',\
              'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', \
@@ -10409,19 +10410,15 @@ def errorSummary(request):
 
     if testjobs:
         jobs.extend(
-            Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
-                *values))
+            Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
         jobs.extend(
-            Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
-                *values))
+            Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
     listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4
 
     jobs.extend(
-        Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
-            *values))
+        Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
     jobs.extend(
-        Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
-            *values))
+        Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
 
     if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0], "%Y-%m-%d %H:%M:%S")).days > 1) or \
                 ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
