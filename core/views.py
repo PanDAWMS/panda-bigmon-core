@@ -10201,7 +10201,7 @@ def getTaskName(tasktype, taskid):
 def get_error_message_summary(jobs):
     """
     Aggregation of error messages for each error code
-    :param jobs: list of job dicts including error codees, error messages and timestamps of job start and end
+    :param jobs: list of job dicts including error codees, error messages, timestamps of job start and end, corecount
     :return: list of rows for datatable
     """
     error_message_summary_list = []
@@ -10214,8 +10214,15 @@ def get_error_message_summary(jobs):
                 if not errorcodestr in errorMessageSummary:
                     errorMessageSummary[errorcodestr] = {'count': 0, 'walltimeloss': 0, 'messages': {}}
                 errorMessageSummary[errorcodestr]['count'] += 1
-                walltime = get_job_walltime(job)
-                errorMessageSummary[errorcodestr]['walltimeloss'] += walltime if walltime else 0
+                try:
+                    corecount = int(job['corecount'])
+                except:
+                    corecount = 1
+                try:
+                    walltime = int(get_job_walltime(job))
+                except:
+                    walltime = 0
+                errorMessageSummary[errorcodestr]['walltimeloss'] += walltime * corecount
                 # transexitcode has no diag field in DB, so we get it from ErrorCodes class
                 if errortype['name'] != 'transformation':
                     errordiag = job[errortype['diag']] if len(job[errortype['diag']]) > 0 else '---'
@@ -10245,7 +10252,7 @@ def get_error_message_summary(jobs):
                 'errcodename': errcodename,
                 'errcodeval': errcodeval,
                 'errcodecount': errinfo['count'],
-                'errcodewalltimeloss': round(errinfo['walltimeloss']/60.0/60.0/24.0, 1),
+                'errcodewalltimeloss': round(errinfo['walltimeloss']/60.0/60.0/24.0/360.0, 2),
                 'errmessage': errmessage,
                 'errmessagecount': errmessageinfo['count'],
                 'pandaids': list(errmessageinfo['pandaids'])
@@ -10400,13 +10407,15 @@ def errorSummary(request):
     if not testjobs and 'jobstatus' not in request.session['requestParams']:
         query['jobstatus__in'] = ['failed', 'holding']
     jobs = []
-    values = 'eventservice', 'produsername','produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime',\
-             'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', \
-             'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid','taskid', 'starttime', \
-             'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', \
-             'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',\
-             'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',\
-             'destinationse', 'currentpriority', 'computingelement','gshare','reqid'
+    values = (
+        'eventservice', 'produsername', 'produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime',
+        'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime',
+        'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'starttime',
+        'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode',
+        'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',
+        'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',
+        'destinationse', 'currentpriority', 'computingelement', 'gshare', 'reqid', 'corecount'
+    )
 
     if testjobs:
         jobs.extend(
@@ -10580,10 +10589,10 @@ def errorSummary(request):
             'jobsurl': jobsurl,
             'nosorturl': nosorturl,
             'time_locked_url': time_locked_url,
-            'errsByCount': errsByCount[:display_limit] if len(errsByCount) > display_limit else errsByCount,
+            'errsByCount': errsByCount,
             'errsBySite': errsBySite[:display_limit] if len(errsBySite) > display_limit else errsBySite,
             'errsByUser': errsByUser[:display_limit] if len(errsByUser) > display_limit else errsByUser,
-            # 'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
+            'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
             'sumd': sumd,
             'errHist': errHist,
             'errMessageSummary': json.dumps(error_message_summary),
