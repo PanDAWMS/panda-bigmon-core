@@ -222,7 +222,7 @@
     <col class="w5"/>
     <col class="w80"/>
 </colgroup>
-<tr class='tablesection'><th colspan=3> Site error summary </th></tr>
+<tr class='tablesection'><th colspan=3> Site error summary{% if requestParams.display_limit %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
 {% for site in errsBySite %}
 <tr><th class="wrap-words"> <a href="{{xurlsubstNoSite}}computingsite={{ site.name }}"> {{ site.name }} </a> </th>
 <th> {{ site.toterrors }} </th>
@@ -245,7 +245,7 @@
     <col class="w5"/>
     <col class="w80"/>
 </colgroup>
-<tr class='tablesection'><th colspan=3> User error summary </th></tr>
+<tr class='tablesection'><th colspan=3> User error summary{% if requestParams.display_limit %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
 {% for user in errsByUser %}
 <tr><th class="wrap-words"> <a href="{{xurl}}produsername={{ user.name }}"> {{ user.name }} </a> </th> <th> {{ user.toterrors }} </th> <th> Total errors </th>  </tr>
 {% for errval in user.errorlist %}
@@ -262,7 +262,7 @@
     <col class="w10"/>
     <col class="w90"/>
 </colgroup>
-<tr class='tablesection'><th colspan=2> Task error summary </th></tr>
+<tr class='tablesection'><th colspan=2> Task error summary{% if requestParams.display_limit %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
 {% for task in errsByTask %}
 <tr><th colspan=10> <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}"> {{ task.tasktype }}     {{ task.name }} </a>         {% if task.longname != '' %} <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}">{{ task.longname }}</a>{% endif %} </th></tr>
 <tr>
@@ -285,7 +285,7 @@
       <tr>
         <th>Error code</th>
         <th class="num">Number of errors</th>
-        <th class="num">Walltime loss, days</th>
+        <th class="num">Walltime * cores loss, years</th>
         <th>Error message</th>
         <th class="num">Number of error message</th>
         <th>Job samples</th>
@@ -337,7 +337,7 @@ function DisplayErorListDataTable() {
                 "data": "errcodewalltimeloss",
                 sDefaultContent: "",
                 className: "num",
-                render: $.fn.dataTable.render.number( ',', '.'),
+                render: $.fn.dataTable.render.number( ',', '.', 2),
             },
             {
                 "data": "errmessage",
