@@ -3799,7 +3799,7 @@ def summaryErrorsList(request):
     return response
 
 
-def summaryErrorsListJSON(request):
+def summaryErrorMessagesListJSON(request):
     """
     JSON for Datatables errors
     """
@@ -3893,7 +3893,7 @@ def summaryErrorsListJSON(request):
              'JOBDISPATCHERERRORCODE', 'JOBDISPATCHERERRORDIAG', 'TASKBUFFERERRORCODE', 'TASKBUFFERERRORDIAG']]
     errors_list = [dict(zip(errors_header, row)) for row in errors_tuple]
 
-    # group by error diag message, counting unique messages and store top N pandaids
+    # group by error diag message, counting unique messages and store top N pandaids and by errorcode for full list table
     N_SAMPLEJOBS = 5
     errorMessages = {}
     for error in errors_list:
@@ -3910,6 +3910,64 @@ def summaryErrorsListJSON(request):
         error_messages.append({'desc': key, 'count': value['count'], 'pandaids': value['pandaids']})
 
     return HttpResponse(json.dumps(error_messages), content_type='application/json')
+
+
+def summaryErrorsListJSON(request):
+    initRequest(request)
+
+    codename = request.session['requestParams']['codename']
+    codeval = request.session['requestParams']['codeval']
+    fullListErrors = []
+    #isJobsss = False
+    print (request.session['requestParams'])
+    for er in errorcodelist:
+        if er['error'] == request.session['requestParams']['codename']:
+            errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
+        if er['name'] == str(request.session['requestParams']['codename']):
+            codename = er['error']
+            errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
+            #isJobsss=True
+    #d = dict((k, v) for k, v in errorcodelist if v >= request.session['requestParams']['codename'])
+
+
+    condition = request.session['requestParams']['tk']
+    sqlRequest = '''
+SELECT DISTINCT PANDAID,JEDITASKID, COMMANDTOPILOT, concat('transformation:',TRANSEXITCODE) AS TRANSEXITCODE, concat('pilot:',PILOTERRORCODE) AS PILOTERRORCODE, PILOTERRORDIAG, concat('exe:',EXEERRORCODE) AS EXEERRORCODE, EXEERRORDIAG, concat('sup:',SUPERRORCODE) AS SUPERRORCODE,SUPERRORDIAG,concat('ddm:',DDMERRORCODE) AS DDMERRORCODE,DDMERRORDIAG,concat('brokerage:',BROKERAGEERRORCODE) AS BROKERAGEERRORCODE,BROKERAGEERRORDIAG,concat('jobdispatcher:',JOBDISPATCHERERRORCODE) AS JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,concat('taskbuffer:',TASKBUFFERERRORCODE) AS TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM
+(SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSARCHIVED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSARCHIVED4.PANDAID
+UNION ALL
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSACTIVE4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSACTIVE4.PANDAID
+UNION ALL 
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSDEFINED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSDEFINED4.PANDAID
+UNION ALL 
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSWAITING4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSWAITING4.PANDAID
+UNION ALL
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDAARCH.JOBSARCHIVED, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID)
+    '''
+    #if isJobsss:
+    sqlRequest += ' WHERE '+ codename + '='+codeval
+    # INPUT_EVENTS, TOTAL_EVENTS, STEP
+    shortListErrors = []
+    sqlRequestFull = sqlRequest.format(condition)
+    cur = connection.cursor()
+    cur.execute(sqlRequestFull)
+    errorsList = cur.fetchall()
+    for error in errorsList:
+        if (errorcode in error):
+            try:
+                errnum = int(codeval)
+                if str(error[error.index(errorcode) + 1]) !='' and 'transformation' not in errorcode:
+                    descr = str(error[error.index(errorcode) + 1])
+                else:
+                    if codename in errorCodes and errnum in errorCodes[codename]:
+                        descr = errorCodes[codename][errnum]
+                    else:
+                        descr = 'None'
+            except:
+                pass
+            rowDict = {"taskid": error[1], "pandaid": error[0], "desc": descr}
+            fullListErrors.append(rowDict)
+    return HttpResponse(json.dumps(fullListErrors), content_type='application/json')
+
 
 
 def decimal_default(obj):

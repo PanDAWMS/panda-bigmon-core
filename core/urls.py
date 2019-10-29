@@ -154,6 +154,7 @@ urlpatterns = [
     #### JSON for Datatables
     re_path(r'^datatable/data/jeditaskid',coremon_views.esatlasPandaLoggerJson, name='dataTableJediTaskId'),
     re_path(r'^datatable/data/errorSummaryList', coremon_views.summaryErrorsListJSON, name='summaryErrorsListJSON'),
+    re_path(r'^datatable/data/errorMessagesSummaryList', coremon_views.summaryErrorMessagesListJSON, name='summaryErrorMessagesListJSON'),
     ###self monitor
     #re_path(r'^admin/', include('core.admin.urls', namespace='admin')),
 

@@ -320,7 +320,7 @@ th.vertical {
 /* New style for dataTables */
 
 .data-table {
-    width: 99%;
+    width: 99% !important;
     border: none;
 }
 
