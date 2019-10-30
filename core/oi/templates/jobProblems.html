@@ -54,10 +54,11 @@
 
 <div id="time-window-chart_c3js" style="height: 300px; width: 100%;"></div>
 
+{% if spots|length > 0 %}
 <table class="minimalistic-table unstriped">
 <tbody>
 {% for spot in spots %}
-<tr><th>{{ spot.period }}</th></tr>
+<tr><th>Spotted peak in a period from {{ spot.period }}. Top-{{ spot.spot|length }} found clusters:</th></tr>
 <tr><td>
 <div class="tiles row small-up-1 medium-up-4 large-up-6">
 {% for problem in spot.spot %}
@@ -81,6 +82,9 @@
 {% endfor %}
 </tbody>
 </table>
+{% else %}
+    <p>No error peaks were spotted. Please extend time range.</p>
+{% endif %}
 
 
 {% endblock %}
@@ -168,4 +172,9 @@ $(document).ready(function () {
 {# } #}
 </script>
 
+{% endblock %}
+
+{% block helptext %}
+    <a name="help"></a>
+    {% include "jobProblemsHelp.html" with helptitle="Job problems help" %}
 {% endblock %}
