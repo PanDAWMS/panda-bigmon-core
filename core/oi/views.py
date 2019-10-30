@@ -16,7 +16,7 @@ from core.libs.exlib import parse_datetime
 
 from core.oi.utils import round_time
 
-CACHE_TIMEOUT = 60
+CACHE_TIMEOUT = 20
 OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 @login_customrequired
@@ -88,6 +88,14 @@ def job_problems(request):
         plots['hist'] = resp_data['hist'] if 'hist' in resp_data else {}
         spots_raw = resp_data['spots'] if 'spots' in resp_data else {}
         spots = [v for k, v in sorted(spots_raw.items(), reverse=True)]
+
+    # transform period str to list of time range to use for highlighting bars in histogram
+    for spot in spots:
+        try:
+            time_range = [spot['period'].split(' to')[0], spot['period'].split(' to')[1]]
+            spot['time_range'] = time_range
+        except:
+            pass
 
     data = {
         'request': request,
