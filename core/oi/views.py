@@ -87,7 +87,7 @@ def job_problems(request):
     if resp_data:
         plots['hist'] = resp_data['hist'] if 'hist' in resp_data else {}
         spots_raw = resp_data['spots'] if 'spots' in resp_data else {}
-        spots = [v for k, v in sorted(spots_raw.items())]
+        spots = [v for k, v in sorted(spots_raw.items(), reverse=True)]
 
     data = {
         'request': request,
