@@ -10273,7 +10273,7 @@ def get_error_message_summary(jobs):
                     errorMessageSummary[errorcodestr] = {'count': 0, 'walltimeloss': 0, 'messages': {}}
                 errorMessageSummary[errorcodestr]['count'] += 1
                 try:
-                    corecount = int(job['corecount'])
+                    corecount = int(job['actualcorecount'])
                 except:
                     corecount = 1
                 try:
@@ -10472,7 +10472,7 @@ def errorSummary(request):
         'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode',
         'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',
         'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',
-        'destinationse', 'currentpriority', 'computingelement', 'gshare', 'reqid', 'corecount'
+        'destinationse', 'currentpriority', 'computingelement', 'gshare', 'reqid', 'actualcorecount'
     )
 
     if testjobs:
