@@ -15,9 +15,18 @@ from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import parse_datetime
 
 from core.oi.utils import round_time
+from django import template
+
+from django.template.defaulttags import register
 
 CACHE_TIMEOUT = 20
 OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
+
+
+@register.filter(takes_context=True)
+def to_float(value):
+    return float(value)
+
 
 @login_customrequired
 def job_problems(request):

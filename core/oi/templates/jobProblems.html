@@ -64,7 +64,7 @@
 {% for problem in spot.spot %}
     <div class="column">
     <a href="{{ problem.url }}" target="_blank">
-    <div class="card tile {% if problem.impact_tot >= 1.0 %}alert{% elif problem.impact_tot > 0.5 %}warning{% else %}warning-light{% endif %}">
+    <div class="card tile {% if problem.impact_tot|to_float >= 1.0 %}alert{% elif problem.impact_tot|to_float > 0.5 %}warning{% else %}warning-light{% endif %}">
         <div class="card-divider">
             <b>Lost {{ problem.impact }} / {{ problem.impact_tot }}<sup>*</sup> years</b>
         </div>
