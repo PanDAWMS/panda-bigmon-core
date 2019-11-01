@@ -29,8 +29,8 @@
         </td>
         <td>
             <select id="jobtype">
-                <option value="all" selected="selected" {% if requestParams.jobtype == 'all' %} disabled="disabled" {% endif %}>All</option>
-                <option disabled value="prod" {% if requestParams.jobtype == 'prod' %} selected="selected" {% endif %}>Production</option>
+                <option disabled value="all" selected="selected" {% if requestParams.jobtype == 'all' %} disabled="disabled" {% endif %}>All</option>
+                <option value="prod" {% if requestParams.jobtype == 'prod' %} selected="selected" {% endif %}>Production</option>
                 <option disabled value="analy" {% if requestParams.jobtype == 'analy' %} selected="selected" {% endif %}>Analysis</option>
             </select>
         </td>
@@ -132,7 +132,7 @@ $(document).ready(function () {
     let c3js_data = [['x'], ['data1']];
     for (let timestamp in timestamps_hist) {
         c3js_data[0].push(timestamp);
-        c3js_data[1].push(timestamps_hist[timestamp]);
+        c3js_data[1].push(timestamps_hist[timestamp]/3600.0/24.0/360.0);
     }
     var tw_c3js = c3.generate({
         bindto: '#time-window-chart_c3js',
@@ -141,7 +141,7 @@ $(document).ready(function () {
             xFormat: '%Y-%m-%d %H:%M:%S',
             columns: c3js_data,
             names: {
-                data1: 'number of failed jobs'
+                data1: 'walltime * cores loss'
             },
             type: 'bar',
             colors: {
@@ -170,6 +170,15 @@ $(document).ready(function () {
                 type: 'timeseries',
                 tick: {
                     format: '%Y-%m-%d %H:%M:%S'
+                }
+            },
+            y: {
+                tick: {
+                    format: function (d) { return d; }
+                },
+                label: {
+                  text: 'walltime * cores loss [years]',
+                  position: 'outer-middle'
                 }
             }
         },
