@@ -66,7 +66,7 @@
     <a href="{{ problem.url }}" target="_blank">
     <div class="card tile {% if problem.impact >= 0.7 %}alert{% elif problem.impact > 0.5 %}warning{% else %}warning-light{% endif %}">
         <div class="card-divider">
-            <b>{{ problem.impact }} / {{ problem.impact_tot }}</b>
+            <b>Lost {{ problem.impact }} / {{ problem.impact_tot }}<sup>*</sup> years</b>
         </div>
         <div class="card-section">
         {% for iparam, ivalue in problem.params.items %}
