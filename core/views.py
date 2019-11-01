@@ -101,7 +101,7 @@ from core.auth.utils import grant_rights, deny_rights
 from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
-from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime
+from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.bpuser import get_relevant_links
@@ -226,8 +226,8 @@ def login_customrequired(function):
             # if '/user/' in request.path:
             #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
             # else:
-            #return function(request, *args, **kwargs)
-            return HttpResponseRedirect('/login/?next='+request.get_full_path())
+            return function(request, *args, **kwargs)
+            #return HttpResponseRedirect('/login/?next='+request.get_full_path())
     wrap.__doc__ = function.__doc__
     wrap.__name__ = function.__name__
     return wrap
@@ -1209,9 +1209,11 @@ def saveUserSettings(request, page):
                 userSetting = BPUserSettings(page=page, userid=userid, preferences=json.dumps(preferences))
                 userSetting.save()
 
+
 def saveSettings(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
     data = {}
     if 'page' in request.session['requestParams']:
         page = request.session['requestParams']['page']
@@ -3023,9 +3025,6 @@ def jobList(request, mode=None, param=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    # if 'instance' in request.session['requestParams']:
-    #     request.session['requestParams']['schedulerid'] =  'harvester-'+request.session['requestParams']['instance']
-    #     del request.session['requestParams']['instance']
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
         return jobParamList(request)
     eventservice = False
@@ -3108,12 +3107,10 @@ def jobList(request, mode=None, param=None):
 
     if len(extraquery_files) > 1:
         wildCardExtension += ' AND ' + extraquery_files
-    ###TODO Rework it?
+
     if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
         return render_to_response('message.html', {'desc':'Request token is not found or data is outdated. Please reload the original page.'}, content_type='text/html')
-    ####
-#    if 'batchid' in request.session['requestParams']:
-#        query['batchid'] = request.session['requestParams']['batchid']
+
     jobs = []
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
@@ -3161,7 +3158,7 @@ def jobList(request, mode=None, param=None):
 
     harvesterjobstatus = ''
 
-    from core.harvester.views import getHarvesterJobs
+    from core.harvester.views import getHarvesterJobs,getCeHarvesterJobs
 
     if 'jobstatus' in request.session['requestParams']:
         harvesterjobstatus = request.session['requestParams']['jobstatus']
@@ -3177,6 +3174,8 @@ def jobList(request, mode=None, param=None):
                                 workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
     elif ('harvesterinstance' not in request.session['requestParams'] and 'harvesterid' not in request.session['requestParams']) and 'workerid' in request.session['requestParams']:
         jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
+    elif 'harvesterce' in request.session['requestParams']:
+        jobs = getCeHarvesterJobs(request, computingelment=request.session['requestParams']['harvesterce'])
     else:
         excludedTimeQuery = copy.deepcopy(query)
         if ('modificationtime__castdate__range' in excludedTimeQuery and
@@ -3523,11 +3522,11 @@ def jobList(request, mode=None, param=None):
         try:
             thread.join()
             jobsTotalCount = sum(tcount[dkey])
-            print (dkey)
-            print (tcount[dkey])
+            print(dkey)
+            print(tcount[dkey])
             del tcount[dkey]
-            print (tcount)
-            print (jobsTotalCount)
+            print(tcount)
+            print(jobsTotalCount)
         except:
             jobsTotalCount = -1
     else: jobsTotalCount = -1
@@ -3540,7 +3539,7 @@ def jobList(request, mode=None, param=None):
         urlParametrs = '&'.join(listPar)+'&'
     else:
         urlParametrs = None
-    print (listPar)
+    print(listPar)
     del listPar
     if (math.fabs(njobs-jobsTotalCount)<1000 or jobsTotalCount == -1):
         jobsTotalCount=None
@@ -3800,7 +3799,7 @@ def summaryErrorsList(request):
     return response
 
 
-def summaryErrorsListJSON(request):
+def summaryErrorMessagesListJSON(request):
     """
     JSON for Datatables errors
     """
@@ -3894,7 +3893,7 @@ def summaryErrorsListJSON(request):
              'JOBDISPATCHERERRORCODE', 'JOBDISPATCHERERRORDIAG', 'TASKBUFFERERRORCODE', 'TASKBUFFERERRORDIAG']]
     errors_list = [dict(zip(errors_header, row)) for row in errors_tuple]
 
-    # group by error diag message, counting unique messages and store top N pandaids
+    # group by error diag message, counting unique messages and store top N pandaids and by errorcode for full list table
     N_SAMPLEJOBS = 5
     errorMessages = {}
     for error in errors_list:
@@ -3911,6 +3910,64 @@ def summaryErrorsListJSON(request):
         error_messages.append({'desc': key, 'count': value['count'], 'pandaids': value['pandaids']})
 
     return HttpResponse(json.dumps(error_messages), content_type='application/json')
+
+
+def summaryErrorsListJSON(request):
+    initRequest(request)
+
+    codename = request.session['requestParams']['codename']
+    codeval = request.session['requestParams']['codeval']
+    fullListErrors = []
+    #isJobsss = False
+    print (request.session['requestParams'])
+    for er in errorcodelist:
+        if er['error'] == request.session['requestParams']['codename']:
+            errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
+        if er['name'] == str(request.session['requestParams']['codename']):
+            codename = er['error']
+            errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
+            #isJobsss=True
+    #d = dict((k, v) for k, v in errorcodelist if v >= request.session['requestParams']['codename'])
+
+
+    condition = request.session['requestParams']['tk']
+    sqlRequest = '''
+SELECT DISTINCT PANDAID,JEDITASKID, COMMANDTOPILOT, concat('transformation:',TRANSEXITCODE) AS TRANSEXITCODE, concat('pilot:',PILOTERRORCODE) AS PILOTERRORCODE, PILOTERRORDIAG, concat('exe:',EXEERRORCODE) AS EXEERRORCODE, EXEERRORDIAG, concat('sup:',SUPERRORCODE) AS SUPERRORCODE,SUPERRORDIAG,concat('ddm:',DDMERRORCODE) AS DDMERRORCODE,DDMERRORDIAG,concat('brokerage:',BROKERAGEERRORCODE) AS BROKERAGEERRORCODE,BROKERAGEERRORDIAG,concat('jobdispatcher:',JOBDISPATCHERERRORCODE) AS JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,concat('taskbuffer:',TASKBUFFERERRORCODE) AS TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM
+(SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSARCHIVED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSARCHIVED4.PANDAID
+UNION ALL
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSACTIVE4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSACTIVE4.PANDAID
+UNION ALL 
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSDEFINED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSDEFINED4.PANDAID
+UNION ALL 
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSWAITING4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSWAITING4.PANDAID
+UNION ALL
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDAARCH.JOBSARCHIVED, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID)
+    '''
+    #if isJobsss:
+    sqlRequest += ' WHERE '+ codename + '='+codeval
+    # INPUT_EVENTS, TOTAL_EVENTS, STEP
+    shortListErrors = []
+    sqlRequestFull = sqlRequest.format(condition)
+    cur = connection.cursor()
+    cur.execute(sqlRequestFull)
+    errorsList = cur.fetchall()
+    for error in errorsList:
+        if (errorcode in error):
+            try:
+                errnum = int(codeval)
+                if str(error[error.index(errorcode) + 1]) !='' and 'transformation' not in errorcode:
+                    descr = str(error[error.index(errorcode) + 1])
+                else:
+                    if codename in errorCodes and errnum in errorCodes[codename]:
+                        descr = errorCodes[codename][errnum]
+                    else:
+                        descr = 'None'
+            except:
+                pass
+            rowDict = {"taskid": error[1], "pandaid": error[0], "desc": descr}
+            fullListErrors.append(rowDict)
+    return HttpResponse(json.dumps(fullListErrors), content_type='application/json')
+
 
 
 def decimal_default(obj):
@@ -10198,6 +10255,70 @@ def getTaskName(tasktype, taskid):
             taskname = tasks[0]['taskname']
     return taskname
 
+
+def get_error_message_summary(jobs):
+    """
+    Aggregation of error messages for each error code
+    :param jobs: list of job dicts including error codees, error messages, timestamps of job start and end, corecount
+    :return: list of rows for datatable
+    """
+    error_message_summary_list = []
+    errorMessageSummary = {}
+    N_SAMPLE_JOBS = 3
+    for job in jobs:
+        for errortype in errorcodelist:
+            if errortype['error'] in job and job[errortype['error']] is not None and job[errortype['error']] != '' and int(job[errortype['error']]) > 0:
+                errorcodestr = errortype['name'] + ':' + str(job[errortype['error']])
+                if not errorcodestr in errorMessageSummary:
+                    errorMessageSummary[errorcodestr] = {'count': 0, 'walltimeloss': 0, 'messages': {}}
+                errorMessageSummary[errorcodestr]['count'] += 1
+                try:
+                    corecount = int(job['actualcorecount'])
+                except:
+                    corecount = 1
+                try:
+                    walltime = int(get_job_walltime(job))
+                except:
+                    walltime = 0
+                errorMessageSummary[errorcodestr]['walltimeloss'] += walltime * corecount
+                # transexitcode has no diag field in DB, so we get it from ErrorCodes class
+                if errortype['name'] != 'transformation':
+                    errordiag = job[errortype['diag']] if len(job[errortype['diag']]) > 0 else '---'
+                else:
+                    try:
+                        errordiag = errorCodes[errortype['error']][int(job[errortype['error']])]
+                    except:
+                        errordiag = '--'
+                if not errordiag in errorMessageSummary[errorcodestr]['messages']:
+                    errorMessageSummary[errorcodestr]['messages'][errordiag] = {'count': 0, 'pandaids': []}
+                errorMessageSummary[errorcodestr]['messages'][errordiag]['count'] += 1
+                if len(errorMessageSummary[errorcodestr]['messages'][errordiag]['pandaids']) < N_SAMPLE_JOBS:
+                    errorMessageSummary[errorcodestr]['messages'][errordiag]['pandaids'].append(job['pandaid'])
+
+    # form a dict for mapping error code name and field in panda db in order to prepare links to job selection
+    errname2dbfield = {}
+    for errortype in errorcodelist:
+        errname2dbfield[errortype['name']] = errortype['error']
+
+    # dict -> list
+    for errcode, errinfo in errorMessageSummary.items():
+        errcodename = errname2dbfield[errcode.split(':')[0]]
+        errcodeval = errcode.split(':')[1]
+        for errmessage, errmessageinfo in errinfo['messages'].items():
+            error_message_summary_list.append({
+                'errcode': errcode,
+                'errcodename': errcodename,
+                'errcodeval': errcodeval,
+                'errcodecount': errinfo['count'],
+                'errcodewalltimeloss': round(errinfo['walltimeloss']/60.0/60.0/24.0/360.0, 2),
+                'errmessage': errmessage,
+                'errmessagecount': errmessageinfo['count'],
+                'pandaids': list(errmessageinfo['pandaids'])
+            })
+
+    return error_message_summary_list
+
+
 tcount = {}
 lock = Lock()
 
@@ -10341,31 +10462,30 @@ def errorSummary(request):
 
     _logger.debug('Finished set up view: {}'.format(time.time() - start_time))
 
-    if not testjobs: query['jobstatus__in'] = ['failed', 'holding']
+    if not testjobs and 'jobstatus' not in request.session['requestParams']:
+        query['jobstatus__in'] = ['failed', 'holding']
     jobs = []
-    values = 'eventservice', 'produsername','produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime',\
-             'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', \
-             'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid','taskid', 'starttime', \
-             'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', \
-             'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',\
-             'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',\
-             'destinationse', 'currentpriority', 'computingelement','gshare','reqid'
+    values = (
+        'eventservice', 'produsername', 'produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime',
+        'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime',
+        'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'starttime',
+        'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode',
+        'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',
+        'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',
+        'destinationse', 'currentpriority', 'computingelement', 'gshare', 'reqid', 'actualcorecount'
+    )
 
     if testjobs:
         jobs.extend(
-            Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
-                *values))
+            Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
         jobs.extend(
-            Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
-                *values))
+            Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
     listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4
 
     jobs.extend(
-        Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
-            *values))
+        Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
     jobs.extend(
-        Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
-            *values))
+        Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
 
     if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0], "%Y-%m-%d %H:%M:%S")).days > 1) or \
                 ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
@@ -10386,6 +10506,10 @@ def errorSummary(request):
     jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta=False)
 
     _logger.debug('Cleaned jobs list: {}'.format(time.time() - start_time))
+
+    error_message_summary = get_error_message_summary(jobs)
+
+    _logger.debug('Prepared new error message summary: {}'.format(time.time() - start_time))
 
     njobs = len(jobs)
     tasknamedict = taskNameDict(jobs)
@@ -10523,12 +10647,13 @@ def errorSummary(request):
             'jobsurl': jobsurl,
             'nosorturl': nosorturl,
             'time_locked_url': time_locked_url,
-            'errsByCount': errsByCount[:display_limit] if len(errsByCount) > display_limit else errsByCount,
+            'errsByCount': errsByCount,
             'errsBySite': errsBySite[:display_limit] if len(errsBySite) > display_limit else errsBySite,
             'errsByUser': errsByUser[:display_limit] if len(errsByUser) > display_limit else errsByUser,
             'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
             'sumd': sumd,
             'errHist': errHist,
+            'errMessageSummary': json.dumps(error_message_summary),
             'tfirst': TFIRST,
             'tlast': TLAST,
             'sortby': sortby,
@@ -10545,8 +10670,6 @@ def errorSummary(request):
 
         # Filtering data due to user settings
         if request.user.is_authenticated and request.user.is_tester:
-        # if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and \
-        #         request.session['IS_TESTER']:
             data = filterErrorData(request, data)
         response = render_to_response('errorSummary.html', data, content_type='text/html')
 
@@ -10578,6 +10701,7 @@ def errorSummary(request):
             resp.append({'pandaid': job['pandaid'], 'status': job['jobstatus'], 'prodsourcelabel': job['prodsourcelabel'],
                          'produserid': job['produserid']})
         return HttpResponse(json.dumps(resp), content_type='application/json')
+
 
 def filterErrorData(request, data):
     defaultErrorsPreferences = {}

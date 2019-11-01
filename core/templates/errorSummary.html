@@ -19,15 +19,13 @@
             </div>
             <span>{{desc }}</span>
           </div>
-
-
   {% endfor %}
 
 
 <div class="row">
   <div class="columns offCanvasRight-columns">
     <ul class="accordion " data-accordion data-allow-all-closed="true">
-    <li id="jobattr-menu" class="accordion-item is-active " data-accordion-item><a href="#" class="menu-link" id="jobattr-link" class="accordion-title">JOB ATTRIBUTE SUMMARY TABLE</a>
+    <li id="jobattr-menu" class="accordion-item is-active " data-accordion-item><a href="#" class="menu-link" id="jobattr-link" class="accordion-title">Job Attribute Summary Table</a>
      <div class="accordion-content" data-tab-content >
       <ul id="jobattr-menu-item" class="menu vertical nested">
 
@@ -43,16 +41,12 @@
             <span>{{ attr }}</span>
           </div>
         {% endfor %}
-
-
        </ul>
      </div>
     </li>
   </ul>
   </div>
 </div>
-
-
 
 {% endblock %}
 
@@ -65,31 +59,29 @@
 {% block subtitle_params %}
 {% if jobsErrorsTotalCount != None%} <b> Total jobs found &#x7E; <a href="{% url 'errorSummary' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">{{ jobsErrorsTotalCount }}</a></b> {% endif %}
 {% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <link rel="stylesheet" href="{% static "js/datatables/RowGroup-1.1.1/css/rowGroup.foundation.css" %}">
+    <style>
+        #errorsList_wrapper .row {
+            max-width: 99%;
+            margin-top: 1rem;
+        }
+    </style>
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/dataTables.rowGroup.js' %}"></script>
+    <script src="{% static 'js/datatables/Select-1.2.0/js/dataTables.select.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+
 {% block body %}
 {{ viewParams.header }}
 <script>
-    function saveSettings() {
-        var settingTables = getSettings('switch-table');
-        var settingJobAttr = getSettings('switch-jobsattr');
-{#        var url = window.location.href;#}
-        var url = '';
-        if (settingTables.length > 0) {
-            url += '&tables=' + settingTables;
-        }
-        url += '&jobattr=' + settingJobAttr;
-        url+='&page=' + 'errors';
-{#        window.location = url;#}
-
-        $.ajax({
-            url: {% url 'saveSettings' %},
-            data: url,
-            async: true,
-            success: function() {
-                window.location = window.location.href
-            }
-        });
-    }
-
     $(document).ready(function() {
         let clipboard = new ClipboardJS('#copy-button'); //needed for copy to clipboard button
 
@@ -138,7 +130,7 @@
 <a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a>
 <p>
 
-<p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} summary
+<p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} {% if errMessageSummary %} <a href="#messages">messages</a> {% endif %} summary
 
 <script type="text/javascript"
            src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
@@ -230,7 +222,7 @@
     <col class="w5"/>
     <col class="w80"/>
 </colgroup>
-<tr class='tablesection'><th colspan=3> Site error summary </th></tr>
+<tr class='tablesection'><th colspan=3> Site error summary{% if requestParams.display_limit %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
 {% for site in errsBySite %}
 <tr><th class="wrap-words"> <a href="{{xurlsubstNoSite}}computingsite={{ site.name }}"> {{ site.name }} </a> </th>
 <th> {{ site.toterrors }} </th>
@@ -253,7 +245,7 @@
     <col class="w5"/>
     <col class="w80"/>
 </colgroup>
-<tr class='tablesection'><th colspan=3> User error summary </th></tr>
+<tr class='tablesection'><th colspan=3> User error summary{% if requestParams.display_limit %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
 {% for user in errsByUser %}
 <tr><th class="wrap-words"> <a href="{{xurl}}produsername={{ user.name }}"> {{ user.name }} </a> </th> <th> {{ user.toterrors }} </th> <th> Total errors </th>  </tr>
 {% for errval in user.errorlist %}
@@ -270,7 +262,7 @@
     <col class="w10"/>
     <col class="w90"/>
 </colgroup>
-<tr class='tablesection'><th colspan=2> Task error summary </th></tr>
+<tr class='tablesection'><th colspan=2> Task error summary{% if requestParams.display_limit %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
 {% for task in errsByTask %}
 <tr><th colspan=10> <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}"> {{ task.tasktype }}     {{ task.name }} </a>         {% if task.longname != '' %} <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}">{{ task.longname }}</a>{% endif %} </th></tr>
 <tr>
@@ -285,18 +277,132 @@
 
 {% endif %}
 
-{#<script>#}
-{##}
-{#    $("table#errsbycount > tbody > tr").hide().slice(0, 10).show();#}
-{##}
-{#function toggleTableByID(tableid, buttonid) {#}
-{#    $("#" + buttonid).hide();#}
-{#    $("table#" + tableid + " > tbody > tr").show();#}
-{#}#}
-{#</script>#}
+
+{% if errMessageSummary %}
+<a name="messages"></a>
+<table id="errorsList" class="data-table left-aligned">
+    <thead>
+      <tr>
+        <th>Error code</th>
+        <th class="num">Number of errors</th>
+        <th class="num">Walltime * cores loss, years</th>
+        <th>Error message</th>
+        <th class="num">Number of error message</th>
+        <th>Job samples</th>
+      </tr>
+    </thead>
+    <tfoot>
+      <tr>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+      </tr>
+    </tfoot>
+    <tbody></tbody>
+</table>
+
+<script type="text/javascript">
+var err_list_data = {{ errMessageSummary|safe }};
+var errorListDataTable;
+
+$(document).ready(function () {
+        DisplayErorListDataTable();
+    });
+
+function DisplayErorListDataTable() {
+    errorListDataTable = $('#errorsList').dataTable({
+        "sPaginationType": "full_numbers",
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "aaSorting": [[1, 'desc'], [4, 'desc']],
+        "data": err_list_data,
+        "columns": [
+            {
+                "data": "errcode",
+                sDefaultContent: "",
+                "render": function (data, type, row, meta) {
+                    return '<a href="{{ xurlsubst }}' + row['errcodename'] + '=' + row['errcodeval'] + '" target="_blank">' + data + '</a>'
+                }
+            },
+            {
+                "data": "errcodecount",
+                sDefaultContent: "",
+                className: "num",
+                render: $.fn.dataTable.render.number( ',', '.'),
+            },
+            {
+                "data": "errcodewalltimeloss",
+                sDefaultContent: "",
+                className: "num",
+                render: $.fn.dataTable.render.number( ',', '.', 2),
+            },
+            {
+                "data": "errmessage",
+                sDefaultContent: "",
+            },
+            {
+                "data": "errmessagecount",
+                sDefaultContent: "",
+                className: "num",
+                render: $.fn.dataTable.render.number( ',', '.'),
+            },
+            {
+                "data": "pandaids",
+                sDefaultContent: "",
+                "render": function (data) {
+                    let rendered_pandaids = '';
+                    for (let i = 0; i < data.length; i++) {
+                        rendered_pandaids += '<a href="/job/' + data[i] + '" target="_blank">' + data[i] + '</a>';
+                        if (i < data.length - 1) {
+                            rendered_pandaids += ', '
+                        }
+                    }
+                    return rendered_pandaids
+                }
+            },
+        ],
+        rowGroup: {
+            dataSrc: "errcode",
+        },
+        initComplete: function () {
+            this.api().columns([0,1]).every(function (i) {
+                var column = this;
+                var select = $('<select><option value="">All</option></select>')
+                    .appendTo( $(column.footer()).empty() )
+                    .on('change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+
+                        column
+                            .search(val ? '^' + val + '$' : '', true, false)
+                            .draw();
+                    });
+                if (i === 0) {
+                    column.data().unique().sort().each(function (d, j) {
+                        select.append('<option value="' + d + '">' + d + '</option>')
+                    });
+                }
+                else {
+                    column.data().unique().sort((a,b) => b - a).each(function (d, j) {
+                        select.append('<option value="' + d + '">' + d + '</option>')
+                    });
+                }
+            });
+        }
+    });
+}
+</script>
+
+{% endif %}
 
 {% endblock %}
 
 {% block helptext %}
 {% include "errorSummaryHelp.html" with helptitle="Error summary help" %}
 {% endblock %}
+
+

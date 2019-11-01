@@ -54,10 +54,11 @@
 
 <div id="time-window-chart_c3js" style="height: 300px; width: 100%;"></div>
 
+{% if spots|length > 0 %}
 <table class="minimalistic-table unstriped">
 <tbody>
 {% for spot in spots %}
-<tr><th>{{ spot.period }}</th></tr>
+<tr><th>Spotted peak in a period from {{ spot.period }}. Top-{{ spot.spot|length }} found clusters:</th></tr>
 <tr><td>
 <div class="tiles row small-up-1 medium-up-4 large-up-6">
 {% for problem in spot.spot %}
@@ -81,6 +82,9 @@
 {% endfor %}
 </tbody>
 </table>
+{% else %}
+    <p>No error peaks were spotted. Please extend time range.</p>
+{% endif %}
 
 
 {% endblock %}
@@ -115,21 +119,46 @@ window.location = query;
 <!-- Load d3.js and c3.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
+<script src="{% static 'js/datatables/moment.min.js' %}"></script>
 
 <script>
 $(document).ready(function () {
     let timestamps_hist = {{ plots.hist|safe }};
-    let c3js_data = [['x', 'number of failed jobs']];
+    let spots = {{ spots|safe }};
+    let spotted_peak_timeranges = [];
+    for (let i=0; i<spots.length; i++) {
+        spotted_peak_timeranges.push(spots[i]['time_range']);
+    }
+    let c3js_data = [['x'], ['data1']];
     for (let timestamp in timestamps_hist) {
-        c3js_data.push([timestamp, timestamps_hist[timestamp]]);
+        c3js_data[0].push(timestamp);
+        c3js_data[1].push(timestamps_hist[timestamp]);
     }
     var tw_c3js = c3.generate({
         bindto: '#time-window-chart_c3js',
         data: {
             x: 'x',
             xFormat: '%Y-%m-%d %H:%M:%S',
-            rows: c3js_data,
-            type: 'bar'
+            columns: c3js_data,
+            names: {
+                data1: 'number of failed jobs'
+            },
+            type: 'bar',
+            colors: {
+                data1: function(d) {
+                    if (d.x) {
+                        let bar_date = moment(d.x);
+                        for (let i = 0; i < spotted_peak_timeranges.length; i++) {
+                            let start_time = moment(spotted_peak_timeranges[i][0]);
+                            let end_time = moment(spotted_peak_timeranges[i][1]);
+                            if (bar_date > start_time && bar_date < end_time) {
+                                return '#c02626'
+                            }
+                        }
+                    }
+                    return '#801919'
+                }
+            }
         },
         bar: {
             width: {
@@ -147,9 +176,6 @@ $(document).ready(function () {
         color: {
             pattern: ['#801919']
         },
-        subchart: {
-            show: true
-        }
     });
     {#d3.select('#time-window-chart_c3js').select("svg").append("text")#}
     {#    .attr("x", 500 )#}
@@ -168,4 +194,9 @@ $(document).ready(function () {
 {# } #}
 </script>
 
+{% endblock %}
+
+{% block helptext %}
+    <a name="help"></a>
+    {% include "jobProblemsHelp.html" with helptitle="Job problems help" %}
 {% endblock %}

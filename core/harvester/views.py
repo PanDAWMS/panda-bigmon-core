@@ -23,7 +23,7 @@ from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, Har
 from core.settings.local import dbaccess, defaultDatetimeFormat
 
 
-harvWorkStatuses = [
+harvWorkerStatuses = [
     'missed', 'submitted', 'ready', 'running', 'idle', 'finished', 'failed', 'cancelled'
 ]
 
@@ -57,7 +57,7 @@ def harvesterWorkersDash(request):
     for harvesterWorker in harvesterWorkers:
         if not harvesterWorker['computingsite'] in statusesSummary:
             statusesSummary[harvesterWorker['computingsite']] = OrderedDict()
-            for harwWorkStatus in harvWorkStatuses:
+            for harwWorkStatus in harvWorkerStatuses:
                 statusesSummary[harvesterWorker['computingsite']][harwWorkStatus] = 0
         statusesSummary[harvesterWorker['computingsite']][harvesterWorker['status']] = harvesterWorker['status__count']
 
@@ -65,7 +65,7 @@ def harvesterWorkersDash(request):
 
     data = {
         'statusesSummary': statusesSummary,
-        'harvWorkStatuses':harvWorkStatuses,
+        'harvWorkStatuses':harvWorkerStatuses,
         'request': request,
         'hours':hours,
         'viewParams': request.session['viewParams'],
@@ -430,32 +430,6 @@ def harvesters(request):
         for harvester in harvester_list:
             if harvester['njobs'] is not None:
                 jobscnt += harvester['njobs']
-
-
-        # fields = 'pandaid', 'jobstatus', 'jobsubstatus'
-        #
-        # if len(workersList) < 30 and len(workersList) > 0:
-        #     workersList = str(workersList).strip('[]')
-        # else:
-        #     tk, workersList = getWorkersList(sqlqueryworkerids)
-        #
-        # jobs = getHarvesterJobs(request, instance=instance, workerid=workersList, fields=fields)
-        #
-        # cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY={0}".format(tk))
-        #
-        # jobsStatusesDict = {}
-        # jobsSubStatusesDict = {}
-        #
-        # for job in jobs:
-        #     if job['jobstatus'] not in jobsStatusesDict:
-        #         jobsStatusesDict[job['jobstatus']] = 1
-        #     else:
-        #         jobsStatusesDict[job['jobstatus']] += 1
-        #     if job['jobsubstatus'] not in jobsSubStatusesDict:
-        #         jobsSubStatusesDict[job['jobsubstatus']] = 1
-        #     else:
-        #         jobsSubStatusesDict[job['jobsubstatus']] += 1
-
 
         generalInstanseInfo = {'HarvesterID': instanceinfo['harvester_id'], 'Description': instanceinfo['description'], 'Starttime': instanceinfo['starttime'],
                                'Owner': instanceinfo['owner'], 'Hostname': instanceinfo['hostname'], 'Lastupdate': instanceinfo['lastupdate'], 'Computingsites':computingsitesDict,
@@ -855,91 +829,6 @@ def harvesters(request):
         else:
             return HttpResponse(json.dumps(instanceDictionary, cls=DateTimeEncoder), content_type='application/json')
 
-def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields=''):
-
-    pandaidsList = []
-    qinstance = ''
-    qworkerid = ''
-    qjobstatus = ''
-
-    if instance != '':
-        if instance.islower() == 'all':
-           qinstance = 'is not null'
-           if jobstatus != '':
-              qjobstatus += " and jobstatus like '" + jobstatus + "'"
-           else: qjobstatus += " and jobstatus like 'running'"
-        else:
-            qinstance = "=" + "'"+instance+"'"
-            if jobstatus != '':
-                qjobstatus += " and jobstatus in ('" + jobstatus + "')"
-    else:
-        qinstance = 'is not null'
-
-    if workerid != '':
-            qworkerid = 'in (' + str(workerid) + ')'
-    else:
-        qworkerid = 'is not null'
-
-    if fields != '':
-        values = fields
-    else:
-        if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
-            values = []
-            from core.pandajob.models import Jobsactive4
-            for f in Jobsactive4._meta.get_fields():
-                if f.name =='resourcetype':
-                    values.append('resource_type')
-                elif f.name !='jobparameters' and f.name != 'metadata':
-                    values.append(f.name)
-        else:
-            values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','actualcorecount','schedulerid'
-
-    sqlRequest = '''
-    SELECT DISTINCT {2} FROM
-    (SELECT {2} FROM ATLAS_PANDA.JOBSARCHIVED4, 
-    (select
-    pandaid as pid
-    from atlas_panda.harvester_rel_jobs_workers where
-    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) 
-    PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSARCHIVED4.PANDAID {3}
-    UNION ALL
-    SELECT {2} FROM ATLAS_PANDA.JOBSACTIVE4, 
-    (select
-    pandaid as pid
-    from atlas_panda.harvester_rel_jobs_workers where
-    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSACTIVE4.PANDAID {3}
-    UNION ALL 
-    SELECT {2} FROM ATLAS_PANDA.JOBSDEFINED4, 
-    (select
-    pandaid as pid
-    from atlas_panda.harvester_rel_jobs_workers where
-    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSDEFINED4.PANDAID {3}
-    UNION ALL 
-    SELECT {2} FROM ATLAS_PANDA.JOBSWAITING4,
-    (select
-    pandaid as pid
-    from atlas_panda.harvester_rel_jobs_workers where
-    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSWAITING4.PANDAID {3}
-    UNION ALL
-    SELECT {2} FROM ATLAS_PANDAARCH.JOBSARCHIVED, 
-    (select
-    pandaid as pid
-    from atlas_panda.harvester_rel_jobs_workers where
-    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID {3})  
-        '''
-
-    sqlRequestFull = sqlRequest.format(qinstance, qworkerid, ', '.join(values), qjobstatus)
-
-    cur = connection.cursor()
-    cur.execute(sqlRequestFull)
-    pandaids = cur.fetchall()
-    columns = [str(column[0]).lower() for column in cur.description]
-    for pid in pandaids:
-        pandaidsList.append(dict(zip(columns, pid)))
-
-    return pandaidsList
-
 def isHarvesterJob(pandaid):
     jobHarvesterInfo = []
 
@@ -1235,3 +1124,175 @@ def query_to_dicts(query_string, *query_args):
         row_dict = dict(izip(col_names, row))
         yield row_dict
     return
+
+def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields=''):
+    '''
+    Get jobs list for the particular harvester instance and worker
+    :param request: request object
+    :param instance: harvester instance
+    :param workerid: harvester workerid
+    :param jobstatus: jobs statuses
+    :param fields: jobs fields
+    :return: harvester jobs list
+    '''
+
+    jobsList = []
+
+    qinstance = ''
+    qworkerid = ''
+    qjobstatus = ''
+
+    if workerid != '':
+            qworkerid = 'in (' + str(workerid) + ')'
+    else:
+        qworkerid = 'is not null'
+
+    if fields != '':
+        values = fields
+    else:
+        if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+        'json' in request.session['requestParams']):
+            values = []
+            from core.pandajob.models import Jobsactive4
+            for f in Jobsactive4._meta.get_fields():
+                if f.name =='resourcetype':
+                    values.append('resource_type')
+                elif f.name !='jobparameters' and f.name != 'metadata':
+                    values.append(f.name)
+        else:
+            values = 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','actualcorecount','schedulerid'
+
+    sqlRequest = """
+    SELECT DISTINCT {2} FROM
+    (SELECT {2} FROM ATLAS_PANDA.JOBSARCHIVED4, 
+    (select
+    pandaid as pid
+    from atlas_panda.harvester_rel_jobs_workers where
+    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) 
+    PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSARCHIVED4.PANDAID {3}
+    UNION ALL
+    SELECT {2} FROM ATLAS_PANDA.JOBSACTIVE4, 
+    (select
+    pandaid as pid
+    from atlas_panda.harvester_rel_jobs_workers where
+    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSACTIVE4.PANDAID {3}
+    UNION ALL 
+    SELECT {2} FROM ATLAS_PANDA.JOBSDEFINED4, 
+    (select
+    pandaid as pid
+    from atlas_panda.harvester_rel_jobs_workers where
+    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSDEFINED4.PANDAID {3}
+    UNION ALL 
+    SELECT {2} FROM ATLAS_PANDA.JOBSWAITING4,
+    (select
+    pandaid as pid
+    from atlas_panda.harvester_rel_jobs_workers where
+    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSWAITING4.PANDAID {3}
+    UNION ALL
+    SELECT {2} FROM ATLAS_PANDAARCH.JOBSARCHIVED, 
+    (select
+    pandaid as pid
+    from atlas_panda.harvester_rel_jobs_workers where
+    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID {3})  
+    """
+
+    sqlRequest = sqlRequest.format(qinstance, qworkerid, ', '.join(values), qjobstatus)
+
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+
+    jobs = cur.fetchall()
+
+    columns = [str(column[0]).lower() for column in cur.description]
+    for job in jobs:
+        jobsList.append(dict(zip(columns, job)))
+
+    return jobsList
+
+def getCeHarvesterJobs(request, computingelment, fields=''):
+    '''
+    Get jobs for the particular CE
+    
+    :param computingelment: harvester computingelement
+    :param fields: list of fields for jobs tables
+    :return: 
+    '''
+    jobList = []
+
+    if 'hours' in request.session['requestParams']:
+        lastupdated_time = "'{0}' hour".format(request.session['requestParams']['hours'])
+    elif 'days' in request.session['requestParams']:
+        lastupdated_time = "'{0}' day".format(request.session['requestParams']['days'])
+    else:
+        lastupdated_time = "'{0}' hour".format(str(int((request.session['TLAST'] - request.session['TFIRST']).seconds/3600)))
+
+    if fields != '':
+        values = fields
+    else:
+        if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
+        'json' in request.session['requestParams']):
+            values = []
+            from core.pandajob.models import Jobsactive4
+            for f in Jobsactive4._meta.get_fields():
+                if f.name =='resourcetype':
+                    values.append('resource_type')
+                elif f.name !='jobparameters' and f.name != 'metadata':
+                    values.append(f.name)
+        else:
+            values = 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','actualcorecount','schedulerid'
+
+    sqlRequest = """
+    SELECT DISTINCT {2} FROM
+    (SELECT {2} FROM ATLAS_PANDA.JOBSARCHIVED4, 
+    (SELECT jw.pandaid as pid FROM atlas_panda.harvester_rel_jobs_workers jw, atlas_panda.harvester_workers w
+    WHERE jw.harvesterid=w.harvesterid AND jw.workerid = w.workerid
+    AND w.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE)
+    AND jw.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE)
+    AND w.computingelement like '%{0}%') PIDACTIVE 
+    WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSARCHIVED4.PANDAID 
+    UNION ALL
+    SELECT {2} FROM ATLAS_PANDA.JOBSACTIVE4, 
+    (SELECT jw.pandaid as pid FROM atlas_panda.harvester_rel_jobs_workers jw, atlas_panda.harvester_workers w
+    WHERE jw.harvesterid=w.harvesterid AND jw.workerid = w.workerid
+    AND w.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE) 
+    AND jw.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE)
+    AND w.computingelement like '%{0}%') PIDACTIVE 
+    WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSACTIVE4.PANDAID 
+    UNION ALL 
+    SELECT {2} FROM ATLAS_PANDA.JOBSDEFINED4, 
+   (SELECT jw.pandaid as pid FROM atlas_panda.harvester_rel_jobs_workers jw, atlas_panda.harvester_workers w
+    WHERE jw.harvesterid=w.harvesterid AND jw.workerid = w.workerid
+    AND w.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE)
+    AND jw.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE)
+    AND w.computingelement like '%{0}%') PIDACTIVE 
+    WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSDEFINED4.PANDAID
+    UNION ALL 
+    SELECT {2} FROM ATLAS_PANDA.JOBSWAITING4,
+    (SELECT jw.pandaid as pid FROM atlas_panda.harvester_rel_jobs_workers jw, atlas_panda.harvester_workers w
+    WHERE jw.harvesterid=w.harvesterid AND jw.workerid = w.workerid
+    AND w.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE)
+    AND jw.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE)
+    AND w.computingelement like '%{0}%') PIDACTIVE 
+    WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSWAITING4.PANDAID 
+    UNION ALL
+    SELECT {2} FROM ATLAS_PANDAARCH.JOBSARCHIVED, 
+    (SELECT jw.pandaid as pid FROM atlas_panda.harvester_rel_jobs_workers jw, atlas_panda.harvester_workers w
+    WHERE jw.harvesterid=w.harvesterid AND jw.workerid = w.workerid
+    AND w.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE)
+    AND jw.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE)
+    AND w.computingelement like '%{0}%') PIDACTIVE 
+    WHERE PIDACTIVE.pid=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID)  
+    """
+
+    sqlRequest = sqlRequest.format(computingelment, lastupdated_time, ', '.join(values))
+
+    cur = connection.cursor()
+    cur.execute(sqlRequest)
+
+    jobs = cur.fetchall()
+
+    columns = [str(column[0]).lower() for column in cur.description]
+    for job in jobs:
+        jobList.append(dict(zip(columns, job)))
+
+    return jobList

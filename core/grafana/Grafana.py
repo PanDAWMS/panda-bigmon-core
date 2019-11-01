@@ -13,7 +13,7 @@ class Grafana(object):
         self.grafana_database = database
         self.grafana_headers = headers.get_headers_api()
 
-    def _get_datsource(self, datasource):
+    def _get_datasource(self, datasource):
         if datasource == "completed":
             return "8261"
         if datasource == "submitted":
@@ -73,8 +73,6 @@ class Grafana(object):
                 dst_federation = '(' + query_object.dst_federation + ')'
             else:
                 dst_federation = query_object.dst_federation
-            # if 'time' in query_object.grouping:
-            #     query_object.grouping = re.sub('\d+',str(6),query_object.grouping)
             query = \
                 '''
                 SELECT sum("mean_value") FROM (SELECT {0}("value") as mean_value FROM "pledges" 
@@ -228,17 +226,16 @@ class Grafana(object):
 
     def get_url(self, query):
 
-        url = self.grafana_proxy + self._get_datsource(
+        url = self.grafana_proxy + self._get_datasource(
             query.table) + '/query?db=' + self.grafana_database + '_' + query.table + '&q=' + self.get_query(query)
         return url
 
     def get_data(self, query):
-        # url = self.grafana_proxy + self._get_datsource(query.table)+'/query?db='+self.grafana_database+'_'+ query.table+'&q='+ self.get_query(query)
         if query.table == 'pledges_last' or query.table == 'pledges_sum' or query.table == 'pledges_hs06sec':
-            url = self.grafana_proxy + self._get_datsource(
+            url = self.grafana_proxy + self._get_datasource(
                 query.table) + '/query?db=' + self.grafana_database + '&q=' + self.get_query(query)
         else:
-            url = self.grafana_proxy + self._get_datsource(
+            url = self.grafana_proxy + self._get_datasource(
                 query.table) + '/query?db=' + self.grafana_database + '_' + query.table + '&q=' + self.get_query(query)
         r = get(url, headers=self.grafana_headers)
         res = loads(r.text)
