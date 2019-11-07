@@ -23,7 +23,7 @@ class DDOSMiddleware(object):
     maxAllowedJSONRequstesPerHour = 400
     notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86']
     blacklist = ['130.132.21.90','192.170.227.149']
-    maxAllowedJSONRequstesPerHourEI = 100
+    maxAllowedJSONRequstesPerMinuteEI = 5
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -70,15 +70,17 @@ class DDOSMiddleware(object):
             pass
         if useragent and useragent.startswith('EI-monitor'):
             countEIrequests = []
-            startdate = timezone.now() - timedelta(hours=2)
+            startdate = timezone.now() - timedelta(minute=1)
             enddate = timezone.now()
-            eiquery = {'qtime__range': [startdate, enddate]}
-            eiquery['useragent'] = useragent
+            eiquery = {
+                'qtime__range': [startdate, enddate],
+                'useragent': useragent
+            }
             countEIrequests.extend(
                 AllRequests.objects.filter(**eiquery).values('remote').exclude(urlview='/grafana/').annotate(
                     Count('remote')))
             if len(countEIrequests) > 0:
-                if countEIrequests[0]['remote__count'] > self.maxAllowedJSONRequstesPerHourEI:
+                if countEIrequests[0]['remote__count'] > self.maxAllowedJSONRequstesPerMinuteEI:
                     reqs.is_rejected = 1
                     reqs.save()
                     return HttpResponse(
