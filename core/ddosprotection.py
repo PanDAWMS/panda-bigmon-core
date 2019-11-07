@@ -65,8 +65,8 @@ class DDOSMiddleware(object):
         except:
             useragent = None
 
-        _logger.debug('[DDOS protection] got request from agent: {}'.format(useragent))
         if useragent and 'EI-monitor' in useragent:
+            _logger.debug('[DDOS protection] got request from agent: {}'.format(useragent))
             countEIrequests = []
             startdate = datetime.utcnow() - timedelta(minutes=5)
             enddate = datetime.utcnow()
