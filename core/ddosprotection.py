@@ -78,8 +78,8 @@ class DDOSMiddleware(object):
             countEIrequests.extend(
                 AllRequests.objects.filter(**eiquery).values('remote').exclude(urlview='/grafana/').annotate(
                     Count('remote')))
-            if len(countEIrequests) > 0:
-                _logger.debug('[DDOS protection] checked number of non rejected request for last minute: {}'.format(countEIrequests[0]['remote__count']))
+            if len(countEIrequests) > 0 and 'remote__count' in countEIrequests[0]:
+                _logger.debug('[DDOS protection] found number of non rejected request for last minute: {}'.format(countEIrequests[0]['remote__count']))
                 if countEIrequests[0]['remote__count'] > self.maxAllowedJSONRequstesPerMinuteEI:
                     reqs.is_rejected = 1
                     reqs.save()
@@ -87,21 +87,23 @@ class DDOSMiddleware(object):
                         json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
                         status=429,
                         content_type='application/json')
-            else:
-                response = self.get_response(request)
-                reqs.rtime = timezone.now()
-                reqs.save()
-                return response
+
+            response = self.get_response(request)
+            reqs.rtime = timezone.now()
+            reqs.save()
+            return response
 
 
         #if ('json' in request.GET):
         if (not x_forwarded_for is None) and x_forwarded_for not in self.notcachedRemoteAddress:
-#                x_forwarded_for = '141.108.38.22'
+                # x_forwarded_for = '141.108.38.22'
             startdate = timezone.now() - timedelta(hours=2)
             enddate = timezone.now()
-            query = {'remote':x_forwarded_for,
-                     'qtime__range': [startdate, enddate],
-                     }
+            query = {
+                'remote':x_forwarded_for,
+                'qtime__range': [startdate, enddate],
+                'is_rejected': 0,
+                 }
             countRequest = []
             countRequest.extend(AllRequests.objects.filter(**query).values('remote').exclude(urlview='/grafana/').annotate(Count('remote')))
             if len(countRequest) > 0:
