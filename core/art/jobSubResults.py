@@ -75,7 +75,7 @@ def subresults_getter(url_params_str):
     print('Loading {}'.format(base_url+url_params_str))
 
     http = urllib3.PoolManager()
-    resp = http.request('GET', base_url + url_params_str)
+    resp = http.request('GET', base_url + url_params_str, timeout=300)
     if resp and len(resp.data) > 0:
         try:
             data = json.loads(resp.data)
