@@ -70,7 +70,7 @@ class DDOSMiddleware(object):
             pass
         if useragent and useragent.startswith('EI-monitor'):
             countEIrequests = []
-            startdate = timezone.now() - timedelta(minute=1)
+            startdate = timezone.now() - timedelta(minutes=1)
             enddate = timezone.now()
             eiquery = {
                 'qtime__range': [startdate, enddate],
