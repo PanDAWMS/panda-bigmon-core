@@ -1,8 +1,4 @@
-import time
-
-import django.core.exceptions
-import subprocess
-import random
+import logging
 from core.common.models import AllRequests
 
 from django.utils import timezone
@@ -13,6 +9,7 @@ import json
 import psutil
 from django.db import connection
 
+_logger = logging.getLogger('bigpandamon')
 # We postpone JSON requests is server is overloaded
 # Done for protection from bunch of requests from JSON
 
@@ -68,6 +65,8 @@ class DDOSMiddleware(object):
         except:
             useragent = None
             pass
+
+        _logger.debug('[DDOS protection] got request from agent: {}'.format(useragent))
         if useragent and useragent.startswith('EI-monitor'):
             countEIrequests = []
             startdate = datetime.utcnow() - timedelta(minutes=1)
@@ -81,6 +80,7 @@ class DDOSMiddleware(object):
                 AllRequests.objects.filter(**eiquery).values('remote').exclude(urlview='/grafana/').annotate(
                     Count('remote')))
             if len(countEIrequests) > 0:
+                _logger.debug('[DDOS protection] checked number of non rejected request for last minute: {}'.format(countEIrequests[0]['remote__count']))
                 if countEIrequests[0]['remote__count'] > self.maxAllowedJSONRequstesPerMinuteEI:
                     reqs.is_rejected = 1
                     reqs.save()
