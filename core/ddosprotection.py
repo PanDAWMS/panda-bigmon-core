@@ -84,7 +84,7 @@ class DDOSMiddleware(object):
             except:
                 useragent = None
                 pass
-            if useragent and useragent.startswith('EI-moniror'):
+            if useragent and useragent.startswith('EI-monitor'):
                 countEIrequests = []
                 query['useragent'] = useragent
                 countEIrequests.extend(AllRequests.objects.filter(**query).values('remote').exclude(urlview='/grafana/').annotate(
