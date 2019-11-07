@@ -64,7 +64,6 @@ class DDOSMiddleware(object):
             useragent = request.META.get('HTTP_USER_AGENT')
         except:
             useragent = None
-            pass
 
         _logger.debug('[DDOS protection] got request from agent: {}'.format(useragent))
         if useragent and 'EI-monitor' in useragent:
@@ -88,6 +87,11 @@ class DDOSMiddleware(object):
                         json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
                         status=429,
                         content_type='application/json')
+            else:
+                response = self.get_response(request)
+                reqs.rtime = timezone.now()
+                reqs.save()
+                return response
 
 
         #if ('json' in request.GET):
