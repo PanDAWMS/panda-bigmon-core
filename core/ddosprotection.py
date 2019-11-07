@@ -62,6 +62,31 @@ class DDOSMiddleware(object):
         )
 
         # we limit number of requests per hour
+        # temporary protection against EI monitor
+        try:
+            useragent = request.META.get('HTTP_USER_AGENT')
+        except:
+            useragent = None
+            pass
+        if useragent and useragent.startswith('EI-monitor'):
+            countEIrequests = []
+            startdate = timezone.now() - timedelta(hours=2)
+            enddate = timezone.now()
+            eiquery = {'qtime__range': [startdate, enddate]}
+            eiquery['useragent'] = useragent
+            countEIrequests.extend(
+                AllRequests.objects.filter(**eiquery).values('remote').exclude(urlview='/grafana/').annotate(
+                    Count('remote')))
+            if len(countEIrequests) > 0:
+                if countEIrequests[0]['remote__count'] > self.maxAllowedJSONRequstesPerHourEI:
+                    reqs.is_rejected = 1
+                    reqs.save()
+                    return HttpResponse(
+                        json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
+                        status=429,
+                        content_type='application/json')
+
+
         #if ('json' in request.GET):
         if (not x_forwarded_for is None) and x_forwarded_for not in self.notcachedRemoteAddress:
 #                x_forwarded_for = '141.108.38.22'
@@ -77,26 +102,6 @@ class DDOSMiddleware(object):
                     reqs.is_rejected = 1
                     reqs.save()
                     return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), status=429, content_type='application/json')
-
-            # temporary protaction against EI monitor
-            try:
-                useragent = request.META.get('HTTP_USER_AGENT')
-            except:
-                useragent = None
-                pass
-            if useragent and useragent.startswith('EI-monitor'):
-                countEIrequests = []
-                query['useragent'] = useragent
-                countEIrequests.extend(AllRequests.objects.filter(**query).values('remote').exclude(urlview='/grafana/').annotate(
-                        Count('remote')))
-                if len(countEIrequests) > 0:
-                    if countEIrequests[0]['remote__count'] > self.maxAllowedJSONRequstesPerHourEI or x_forwarded_for in self.blacklist:
-                        reqs.is_rejected = 1
-                        reqs.save()
-                        return HttpResponse(
-                            json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
-                            status=429,
-                            content_type='application/json')
 
         response = self.get_response(request)
         reqs.rtime = timezone.now()
