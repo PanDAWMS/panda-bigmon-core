@@ -74,7 +74,8 @@ class DDOSMiddleware(object):
             enddate = datetime.utcnow()
             eiquery = {
                 'qtime__range': [startdate, enddate],
-                'useragent': useragent
+                'useragent': useragent,
+                'is_reject': 0,
             }
             countEIrequests.extend(
                 AllRequests.objects.filter(**eiquery).values('remote').exclude(urlview='/grafana/').annotate(
