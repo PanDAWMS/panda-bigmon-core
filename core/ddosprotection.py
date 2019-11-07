@@ -20,7 +20,7 @@ class DDOSMiddleware(object):
     maxAllowedJSONRequstesPerHour = 400
     notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86']
     blacklist = ['130.132.21.90','192.170.227.149']
-    maxAllowedJSONRequstesPerMinuteEI = 5
+    maxAllowedJSONRequstesPerMinuteEI = 10
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -68,7 +68,7 @@ class DDOSMiddleware(object):
         _logger.debug('[DDOS protection] got request from agent: {}'.format(useragent))
         if useragent and 'EI-monitor' in useragent:
             countEIrequests = []
-            startdate = datetime.utcnow() - timedelta(minutes=1)
+            startdate = datetime.utcnow() - timedelta(minutes=5)
             enddate = datetime.utcnow()
             eiquery = {
                 'qtime__range': [startdate, enddate],
