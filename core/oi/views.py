@@ -96,15 +96,18 @@ def job_problems(request):
     if resp_data:
         plots['hist'] = resp_data['hist'] if 'hist' in resp_data else {}
         spots_raw = resp_data['spots'] if 'spots' in resp_data else {}
-        spots = [v for k, v in sorted(spots_raw.items(), reverse=True)]
+        spots = [v for k, v in spots_raw.items()]
 
-    # transform period str to list of time range to use for highlighting bars in histogram
-    for spot in spots:
-        try:
-            time_range = [spot['period'].split(' to')[0], spot['period'].split(' to')[1]]
-            spot['time_range'] = time_range
-        except:
-            pass
+    if len(spots) > 0:
+        spots = sorted(spots, key=lambda x: x['period'], reverse=True)
+
+        # transform period str to list of time range to use for highlighting bars in histogram
+        for spot in spots:
+            try:
+                time_range = [spot['period'].split(' to')[0], spot['period'].split(' to')[1]]
+                spot['time_range'] = time_range
+            except:
+                pass
 
     data = {
         'request': request,
