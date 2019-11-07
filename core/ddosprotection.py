@@ -23,7 +23,7 @@ class DDOSMiddleware(object):
     maxAllowedJSONRequstesPerHour = 400
     notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86']
     blacklist = ['130.132.21.90','192.170.227.149']
-
+    maxAllowedJSONRequstesPerHourEI = 100
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -76,7 +76,27 @@ class DDOSMiddleware(object):
                 if countRequest[0]['remote__count'] > self.maxAllowedJSONRequstesPerHour or x_forwarded_for in self.blacklist:
                     reqs.is_rejected = 1
                     reqs.save()
-                    return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), content_type='application/json')
+                    return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), status=429, content_type='application/json')
+
+            # temporary protaction against EI monitor
+            try:
+                useragent = request.META.get('HTTP_USER_AGENT')
+            except:
+                useragent = None
+                pass
+            if useragent and useragent.startswith('EI-moniror'):
+                countEIrequests = []
+                query['useragent'] = useragent
+                countEIrequests.extend(AllRequests.objects.filter(**query).values('remote').exclude(urlview='/grafana/').annotate(
+                        Count('remote')))
+                if len(countEIrequests) > 0:
+                    if countEIrequests[0]['remote__count'] > self.maxAllowedJSONRequstesPerHourEI or x_forwarded_for in self.blacklist:
+                        reqs.is_rejected = 1
+                        reqs.save()
+                        return HttpResponse(
+                            json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
+                            status=429,
+                            content_type='application/json')
 
         response = self.get_response(request)
         reqs.rtime = timezone.now()
