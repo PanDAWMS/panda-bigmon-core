@@ -6,7 +6,7 @@ import random
 from core.common.models import AllRequests
 
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.db.models import Count, Sum
 from django.http import HttpResponse
 import json
@@ -70,8 +70,8 @@ class DDOSMiddleware(object):
             pass
         if useragent and useragent.startswith('EI-monitor'):
             countEIrequests = []
-            startdate = timezone.now() - timedelta(minutes=1)
-            enddate = timezone.now()
+            startdate = datetime.utcnow() - timedelta(minutes=1)
+            enddate = datetime.utcnow()
             eiquery = {
                 'qtime__range': [startdate, enddate],
                 'useragent': useragent
