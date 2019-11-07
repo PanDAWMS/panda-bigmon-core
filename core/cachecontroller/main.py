@@ -38,7 +38,7 @@ def run_threaded(job_func):
 
 schedule.every().day.at("20:18").do(run_threaded, cephCleanUp.execute)
 schedule.every(10).minutes.do(run_threaded, mainMenuURLs.execute)
-schedule.every(10).minutes.do(run_threaded, artPackages.execute)
+schedule.every(30).minutes.do(run_threaded, artPackages.execute)
 schedule.every(10).minutes.do(run_threaded, bigTasks.execute)
 schedule.every().day.at("09:00").do(run_threaded, artMails.execute)
 schedule.every(10).minutes.do(run_threaded, harvester.execute)
