@@ -121,7 +121,7 @@ class DDOSMiddleware(object):
 
             #Check against number of unprocessed requests to filebrowser from ART subsystem
             #if 1==1:
-            if request.path == '/filebrowser/' and x_forwarded_for in listOfServerBackendNodesIPs:
+            if request.path == '/filebrowser/' and x_forwarded_for in self.listOfServerBackendNodesIPs:
                 startdate = datetime.utcnow() - timedelta(minutes=60)
                 enddate = datetime.utcnow()
                 query = {
