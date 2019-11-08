@@ -21,6 +21,9 @@ class DDOSMiddleware(object):
     notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86']
     blacklist = ['130.132.21.90','192.170.227.149']
     maxAllowedJSONRequstesPerMinuteEI = 10
+    maxAllowedSimultaneousRequestsToFileBrowser = 5
+    listOfServerBackendNodesIPs = ['188.184.93.101', '188.184.116.46', '188.184.104.150',
+                                   '188.184.84.149', '188.184.108.134', '188.184.108.131']
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -94,11 +97,12 @@ class DDOSMiddleware(object):
             return response
 
 
+        #if (1==1):
         #if ('json' in request.GET):
         if (not x_forwarded_for is None) and x_forwarded_for not in self.notcachedRemoteAddress:
                 # x_forwarded_for = '141.108.38.22'
-            startdate = timezone.now() - timedelta(hours=2)
-            enddate = timezone.now()
+            startdate = datetime.utcnow() - timedelta(hours=1)
+            enddate = datetime.utcnow()
             query = {
                 'remote':x_forwarded_for,
                 'qtime__range': [startdate, enddate],
@@ -106,14 +110,39 @@ class DDOSMiddleware(object):
                  }
             countRequest = []
             countRequest.extend(AllRequests.objects.filter(**query).values('remote').exclude(urlview='/grafana/').annotate(Count('remote')))
+
+            #Check against general number of request
             if len(countRequest) > 0:
                 if countRequest[0]['remote__count'] > self.maxAllowedJSONRequstesPerHour or x_forwarded_for in self.blacklist:
                     reqs.is_rejected = 1
                     reqs.save()
                     return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), status=429, content_type='application/json')
 
+
+            #Check against number of unprocessed requests to filebrowser from ART subsystem
+            #if 1==1:
+            if request.path == '/filebrowser/' and x_forwarded_for in listOfServerBackendNodesIPs:
+                startdate = datetime.utcnow() - timedelta(minutes=60)
+                enddate = datetime.utcnow()
+                query = {
+                    'qtime__range': [startdate, enddate],
+                    'is_rejected': 0,
+                    'urlview': '/filebrowser/',
+                    'rtime': None,
+                     }
+                countRequest = []
+                countRequest.extend(AllRequests.objects.filter(**query).annotate(Count('urlview')))
+                if len(countRequest) > 0:
+                    if countRequest[0][
+                        'urlview__count'] > self.maxAllowedSimultaneousRequestsToFileBrowser or x_forwarded_for in self.blacklist:
+                        reqs.is_rejected = 1
+                        reqs.save()
+                        return HttpResponse(
+                            json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
+                            status=429, content_type='application/json')
+
         response = self.get_response(request)
-        reqs.rtime = timezone.now()
+        reqs.rtime = datetime.utcnow()
         reqs.save()
         return response
 
