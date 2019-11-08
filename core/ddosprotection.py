@@ -20,7 +20,7 @@ class DDOSMiddleware(object):
     maxAllowedJSONRequstesPerHour = 400
     notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86']
     blacklist = ['130.132.21.90','192.170.227.149']
-    maxAllowedJSONRequstesPerMinuteEI = 10
+    maxAllowedJSONRequstesParallelEI = 3
     maxAllowedSimultaneousRequestsToFileBrowser = 5
     listOfServerBackendNodesIPs = ['188.184.93.101', '188.184.116.46', '188.184.104.150',
                                    '188.184.84.149', '188.184.108.134', '188.184.108.131']
@@ -71,19 +71,20 @@ class DDOSMiddleware(object):
         if useragent and 'EI-monitor' in useragent:
             _logger.debug('[DDOS protection] got request from agent: {}'.format(useragent))
             countEIrequests = []
-            startdate = datetime.utcnow() - timedelta(minutes=5)
+            startdate = datetime.utcnow() - timedelta(hours=1)
             enddate = datetime.utcnow()
             eiquery = {
                 'qtime__range': [startdate, enddate],
                 'useragent': useragent,
                 'is_rejected': 0,
+                'rtime': None,
             }
             countEIrequests.extend(
                 AllRequests.objects.filter(**eiquery).values('remote').exclude(urlview='/grafana/').annotate(
                     Count('remote')))
             if len(countEIrequests) > 0 and 'remote__count' in countEIrequests[0]:
                 _logger.debug('[DDOS protection] found number of non rejected request for last minute: {}'.format(countEIrequests[0]['remote__count']))
-                if countEIrequests[0]['remote__count'] > self.maxAllowedJSONRequstesPerMinuteEI:
+                if countEIrequests[0]['remote__count'] > self.maxAllowedJSONRequstesParallelEI:
                     reqs.is_rejected = 1
                     reqs.save()
                     return HttpResponse(
