@@ -28,6 +28,7 @@ class DDOSMiddleware(object):
     def __init__(self, get_response):
         self.get_response = get_response
 
+
     def __call__(self, request):
 
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -35,7 +36,6 @@ class DDOSMiddleware(object):
             x_referer = request.META.get('HTTP_REFERER')
         except:
             x_referer = ''
-
         dbtotalsess, dbactivesess = 0, 0
         cursor = connection.cursor()
         cursor.execute("SELECT SUM(NUM_ACTIVE_SESS), SUM(NUM_SESS) FROM ATLAS_DBA.COUNT_PANDAMON_SESSIONS")
@@ -44,9 +44,15 @@ class DDOSMiddleware(object):
             dbactivesess = row[0]
             dbtotalsess = row[1]
             break
+
+        sqlRequest = "SELECT ATLAS_PANDABIGMON.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
+        cursor.execute(sqlRequest)
+        requestToken = cursor.fetchall()
+        requestToken = requestToken[0][0]
         cursor.close()
 
         reqs = AllRequests(
+            id = requestToken,
             server = request.META.get('HTTP_HOST'),
             remote = x_forwarded_for,
             qtime = timezone.now(),
@@ -60,6 +66,8 @@ class DDOSMiddleware(object):
             dbtotalsess = dbtotalsess,
             dbactivesess = dbactivesess
         )
+        reqs.save()
+
 
         # we limit number of requests per hour
         # temporary protection against EI monitor
@@ -93,7 +101,7 @@ class DDOSMiddleware(object):
                         content_type='application/json')
 
             response = self.get_response(request)
-            reqs.rtime = timezone.now()
+            reqs.rtime = datetime.utcnow()
             reqs.save()
             return response
 
