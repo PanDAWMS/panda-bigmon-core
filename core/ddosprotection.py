@@ -131,7 +131,7 @@ class DDOSMiddleware(object):
         #Check against number of unprocessed requests to filebrowser from ART subsystem
         #if 1==1:
         if request.path == '/filebrowser/' and x_forwarded_for in self.listOfServerBackendNodesIPs:
-            startdate = datetime.utcnow() - timedelta(minutes=60)
+            startdate = datetime.utcnow() - timedelta(minutes=20)
             enddate = datetime.utcnow()
             query = {
                 'qtime__range': [startdate, enddate],
@@ -140,10 +140,9 @@ class DDOSMiddleware(object):
                 'rtime': None,
                  }
             countRequest = []
-            countRequest.extend(AllRequests.objects.filter(**query).annotate(Count('urlview')))
+            countRequest.extend(AllRequests.objects.filter(**query).values('remote').annotate(Count('urlview')))
             if len(countRequest) > 0:
-                if countRequest[0][
-                    'urlview__count'] > self.maxAllowedSimultaneousRequestsToFileBrowser or x_forwarded_for in self.blacklist:
+                if countRequest[0]['urlview__count'] > self.maxAllowedSimultaneousRequestsToFileBrowser or x_forwarded_for in self.blacklist:
                     reqs.is_rejected = 1
                     reqs.save()
                     return HttpResponse(
