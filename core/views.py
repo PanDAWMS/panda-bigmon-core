@@ -374,10 +374,11 @@ def initRequest(request, callselfmon = True):
     #     request.session['ADFS_EMAIL'] = ''
     #     request.session['ADFS_FIRSTNAME'] = ''
     #     request.session['ADFS_LASTNAME'] = ''
-    #     request.session['ADFS_LOGIN'] = 'tkorchug'
+    #     request.session['ADFS_LOGIN'] = ''
     #     # user = None
     #     user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
     #     request.session['IS_TESTER'] = user.is_tester
+    #     request.user = user
 
     # print("IP Address for debug-toolbar: " + request.META['REMOTE_ADDR'])
 
@@ -4993,7 +4994,7 @@ def userInfo(request, user=''):
         if user == '':
             if request.user.is_authenticated:
                 login = user = request.user.username
-                fullname = request.user.first_name + ' ' + request.user.last_name
+                fullname = request.user.first_name.replace('\'', '') + ' ' + request.user.last_name
                 userQueryTask = Q(username=login) | Q(username__startswith=fullname)
                 userQueryJobs = Q(produsername=login) | Q(produsername__startswith=fullname)
 
