@@ -128,27 +128,27 @@ class DDOSMiddleware(object):
                     return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), status=429, content_type='application/json')
 
 
-            #Check against number of unprocessed requests to filebrowser from ART subsystem
-            #if 1==1:
-            if request.path == '/filebrowser/' and x_forwarded_for in self.listOfServerBackendNodesIPs:
-                startdate = datetime.utcnow() - timedelta(minutes=60)
-                enddate = datetime.utcnow()
-                query = {
-                    'qtime__range': [startdate, enddate],
-                    'is_rejected': 0,
-                    'urlview': '/filebrowser/',
-                    'rtime': None,
-                     }
-                countRequest = []
-                countRequest.extend(AllRequests.objects.filter(**query).annotate(Count('urlview')))
-                if len(countRequest) > 0:
-                    if countRequest[0][
-                        'urlview__count'] > self.maxAllowedSimultaneousRequestsToFileBrowser or x_forwarded_for in self.blacklist:
-                        reqs.is_rejected = 1
-                        reqs.save()
-                        return HttpResponse(
-                            json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
-                            status=429, content_type='application/json')
+        #Check against number of unprocessed requests to filebrowser from ART subsystem
+        #if 1==1:
+        if request.path == '/filebrowser/' and x_forwarded_for in self.listOfServerBackendNodesIPs:
+            startdate = datetime.utcnow() - timedelta(minutes=60)
+            enddate = datetime.utcnow()
+            query = {
+                'qtime__range': [startdate, enddate],
+                'is_rejected': 0,
+                'urlview': '/filebrowser/',
+                'rtime': None,
+                 }
+            countRequest = []
+            countRequest.extend(AllRequests.objects.filter(**query).annotate(Count('urlview')))
+            if len(countRequest) > 0:
+                if countRequest[0][
+                    'urlview__count'] > self.maxAllowedSimultaneousRequestsToFileBrowser or x_forwarded_for in self.blacklist:
+                    reqs.is_rejected = 1
+                    reqs.save()
+                    return HttpResponse(
+                        json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
+                        status=429, content_type='application/json')
 
         response = self.get_response(request)
         reqs.rtime = datetime.utcnow()
