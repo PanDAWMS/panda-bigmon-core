@@ -1142,6 +1142,13 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='')
     qworkerid = ''
     qjobstatus = ''
 
+
+
+    if instance != '':
+            qinstance = 'in (\'' + str(instance) + '\')'
+    else:
+        qinstance = 'is not null'
+
     if workerid != '':
             qworkerid = 'in (' + str(workerid) + ')'
     else:
