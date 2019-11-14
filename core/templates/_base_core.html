@@ -22,8 +22,9 @@
 {#<link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}">#}
 {#<link rel="stylesheet" href="{% static "css/page-sections.css" %}?version=3">#}
 
-<link rel="stylesheet" href="{% static "core/css/app.css" %}">
 {% block extra_css %}{% endblock %}
+<link rel="stylesheet" href="{% static "core/css/app.css" %}?{% cache_bust "core/css/app.css" %}">
+
 
 <div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="medium" id="main-menu-small">
   <button class="menu-icon" type="button" data-toggle="main-menu"><i class="fi-list"></i></button>

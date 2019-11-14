@@ -1,6 +1,8 @@
-<tr class="docsection"><th><a name="jobInfoHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="doctextlight">
-
+<div class="card help">
+  <div class="card-divider">
+    <a name="mainHelp"></a> {{ helptitle }}
+  </div>
+  <div class="card-section">
 <p>
 <ul>
 {% if show == 'all' or  job.jobstatus == 'pending' %} <li>  Status <b class='pending'>pending</b> indicates that the job record has been injected into the PanDA DB but PanDA has not yet dealt with it. {% endif %}
@@ -56,4 +58,5 @@ Note that the --debugMode option is available as a pathena/prun option, it cause
 
 {% endif %}
 
-</td>
+  </div>
+</div>

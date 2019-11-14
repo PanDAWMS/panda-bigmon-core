@@ -2,7 +2,6 @@
 {% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static "node_modules/datatables.net-zf/css/dataTables.foundation.min.css" %}">
 {% endblock %}
 {% block subtitle %}PanDA jobs{{ viewParams.selection|safe }}{% endblock %}
 {% block subtitle_params %}
@@ -14,7 +13,7 @@
 {{ viewParams.header }}
 
 
-<div class="callout success">
+<div class="callout info">
     <p>We propose to participate in testing a new much faster jobs page (<a href="http://bigpanda.cern.ch/jobsss{{ xurlnopref }}">http://bigpanda.cern.ch/jobsss{{ xurlnopref }}</a>)
     The new view might have differences with the current one, please inform developers about any issues you have.</p>
 </div>
@@ -26,42 +25,42 @@
 {% endif %}
 </p>
 
-{% if requestParams.transferringnotupdated %}<b>Jobs in transferring state for more than {{ requestParams.transferringnotupdated }} hours</b> {% endif %}
-{% if requestParams.statenotupdated %}<b>Jobs in <span class="{{ requestParams.jobstatus }}">{{ requestParams.jobstatus }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}
-{% if requestParams.workinggroup %}<b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
-{% if requestParams.jobtype %}<b>Job type: {{ requestParams.jobtype }}</b> {% endif %}
-{% if requestParams.jobstatus %}<b>Job status: <span class={{requestParams.jobstatus}}>{{ requestParams.jobstatus }}</span></b> {% endif %}
-{% if requestParams.cloud %}<b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-{% if requestParams.computingsite %}<b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a> <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a></b> {% endif %}
-{% if user %}<b>User: <a href="{% url 'userInfo' user %}?display_limit=100">{{ user }}</a> <a href="{% url 'userInfo' user %}?display_limit=100"> Show user page</a></b> {% endif %}
-{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<b>Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}      {{ taskname }}</a> </b> {% endif %}
-{% if requestParams.taskid and requestParams.taskid != 'None' %}<b>Task: <a href="{% url 'taskInfo' requestParams.taskid  %}">{{ requestParams.taskid }}      {{ taskname }}</a></b> {% endif %}
-{% if requestParams.jobsetid %}<b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}
-{% if requestParams.parentid %}<b>Parent ID: {{ requestParams.parentid }}</b> {% endif %}
+{% if requestParams.transferringnotupdated %}<p><b>Jobs in transferring state for more than {{ requestParams.transferringnotupdated }} hours</b></p> {% endif %}
+{% if requestParams.statenotupdated %}<p><b>Jobs in <span class="{{ requestParams.jobstatus }}">{{ requestParams.jobstatus }}</span> state for more than {{ requestParams.statenotupdated }} hours</b></p> {% endif %}
+{% if requestParams.workinggroup %}<p><b>Working group: {{ requestParams.workinggroup }}</b></p> {% endif %}
+{% if requestParams.jobtype %}<p><b>Job type: {{ requestParams.jobtype }}</b></p> {% endif %}
+{% if requestParams.jobstatus %}<p><b>Job status: <span class={{requestParams.jobstatus}}>{{ requestParams.jobstatus }}</span></b></p> {% endif %}
+{% if requestParams.cloud %}<p><b>Cloud: {{ requestParams.cloud }}</b></p> {% endif %}
+{% if requestParams.computingsite %}<p><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a> <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a></b></p> {% endif %}
+{% if user %}<p><b>User: <a href="{% url 'userInfo' user %}?display_limit=100">{{ user }}</a> <a href="{% url 'userInfo' user %}?display_limit=100"> Show user page</a></b></p> {% endif %}
+{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<p><b>Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}      {{ taskname }}</a> </b></p> {% endif %}
+{% if requestParams.taskid and requestParams.taskid != 'None' %}<p><b>Task: <a href="{% url 'taskInfo' requestParams.taskid  %}">{{ requestParams.taskid }}      {{ taskname }}</a></b></p> {% endif %}
+{% if requestParams.jobsetid %}<p><b>Jobset ID: {{ requestParams.jobsetid }}</b></p> {% endif %}
+{% if requestParams.parentid %}<p><b>Parent ID: {{ requestParams.parentid }}</b></p> {% endif %}
 
-{% if requestParams.reqid %}<b>Request ID: {{ requestParams.reqid }}</b> {% endif %}
-{% if requestParams.reqid_from %}<b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
-{% if requestParams.reqid_to %}<b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
+{% if requestParams.reqid %}<p><b>Request ID: {{ requestParams.reqid }}</b></p> {% endif %}
+{% if requestParams.reqid_from %}<p><b>From request ID: {{ requestParams.reqid_from }}</b></p> {% endif %}
+{% if requestParams.reqid_to %}<p><b>To request ID: {{ requestParams.reqid_to }}</b></p> {% endif %}
 
-{% if requestParams.jobname %}<b>Job name: {{ requestParams.jobname }}</b> {% endif %}
-{% if requestParams.priorityrange %}<b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}
-{% if requestParams.processingtype %}<b>Processing type: {{ requestParams.processingtype }}</b> {% endif %}
-{% if requestParams.transformation %}<b>Transformation: {{ requestParams.transformation }}</b> {% endif %}
+{% if requestParams.jobname %}<p><b>Job name: {{ requestParams.jobname }}</b></p> {% endif %}
+{% if requestParams.priorityrange %}<p><b>Current priority range: {{ requestParams.priorityrange }}</b></p> {% endif %}
+{% if requestParams.processingtype %}<p><b>Processing type: {{ requestParams.processingtype }}</b></p> {% endif %}
+{% if requestParams.transformation %}<p><b>Transformation: {{ requestParams.transformation }}</b></p> {% endif %}
 {% if requestParams.fileid and requestParams.jeditaskid and requestParams.datasetid %}
-<b>File ID: <a href="{% url 'fileInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}&fileid={{ requestParams.fileid }}">{{ requestParams.fileid }}</a></b>
-<b>Dataset ID: <a href="{% url 'datasetInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}">{{ requestParams.datasetid }}</a> </b>
+<p><b>File ID: <a href="{% url 'fileInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}&fileid={{ requestParams.fileid }}">{{ requestParams.fileid }}</a></b></p>
+<p><b>Dataset ID: <a href="{% url 'datasetInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}">{{ requestParams.datasetid }}</a> </b></p>
 {% endif %}
 <p>
 
 {% if jobList %}
-Job <b>modification times</b> in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>,
-<a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a>
-Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.
+<p>Job <b>modification times</b> in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>,
+<a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a></p>
+<p>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.</p>
 {% endif %}
 
 </div>
 {% if requestParams.mode == 'nodrop' %}
-<a href="{{xurl}}mode=drop">Switch to drop mode</a>
+<a class="bp-button primary" href="{{xurl}}mode=drop">Switch to drop mode</a>
 {% endif %}
 
 {% if ndrops > 0 %}
@@ -138,7 +137,7 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
 {% for fdict in sumd %}
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
     <td><div class="comment more">
-        {% for item in fdict.list %}
+        {% for item in fdict.list %}<span class="attrval-count-pair">
             {% if fdict.field == 'jeditaskid' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% elif fdict.field  == 'jobsetid'%} <a href="{% url 'jobList' %}?jobsetid={{ item.kname }}"> {{ item.kname }}</a> <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% elif fdict.field  == 'harvesterinstance' %} {{ item.kname }} <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
@@ -147,9 +146,10 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
                 {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
                 {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
                     <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
-                                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}> ({{ item.kvalue }}) </a>
+                                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a>
                 {% endif %}
             {% endif %}
+            </span>
         {% endfor %}
         </div>
     </td>
@@ -192,12 +192,7 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
 {% endif %}
 
 
-{% if errsByCount %}
-   <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('failedjob');"><br>Click to show/hide failed jobs details</a>
-{% endif %}
-
- <a href="https://prodtask-dev.cern.ch/prodjob/{{ xurl|slice:"6:" }}">Prodsys Jobs Handling</a>
-<p>
+<a class="bp-button primary" href="https://prodtask-dev.cern.ch/prodjob/{{ xurl|slice:"6:" }}">Prodsys Jobs Handling</a>
 
 
 <div class="card bp-container">
@@ -208,7 +203,8 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
 <table class="bp-datatable" id="joblist">
 <thead>
 <tr>
-    <th class="num">PanDA ID<br>Attempt# of maxAttempts#{% if requestParams.fileid %}<br><span style="color: gray">FileAttempt# of maxFileAttempt</span>{% endif %}</th>
+    <th class="num">PanDA ID</th>
+    <th class="num">Job Attempt{% if requestParams.fileid %}<br><span style="color: gray">File Attempt</span>{% endif %}</th>
     <th>Owner {% if viewParams.MON_VO != 'ATLAS' %} / VO{% endif %}</th>
 	<th>Group</th>
     <th class="num">Request</th>
@@ -218,10 +214,12 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
 	<th class="num">Created</th>
 	<th class="num">Time to start<br>d:h:m:s</th>
 	<th class="num">Duration<br>d:h:m:s</th>
-	<th class="num">Mod</th>
-	<th>{% if viewParams.MON_VO == 'ATLAS' %}Cloud {% endif%}Site</th>
+	<th class="num">Modified</th>
+    {% if viewParams.MON_VO == 'ATLAS' %}<th>Cloud</th>{% endif %}
+	<th>Site</th>
 	<th class="num">Priority</th>
-    <th class="num">N input events (N input files)</th>
+    <th class="num">N input events</th>
+    <th class="num">N input files</th>
     {% if requestParams.jeditaskid  %}
         <th class="num">Maximum <br>PSS</th>
     {% endif %}
@@ -234,8 +232,7 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
 <tbody>
 {% for job in jobList %}
 	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
-		<td class="num"><a href="{% url 'jobInfo' %}?pandaid={{ job.pandaid }}">{{ job.pandaid }}</a><br>Attempt {{ job.attemptnr }} of {{ job.maxattempt }}
-			{% if requestParams.fileid %}<br><span style="color: gray">FileAttempt {% if job.fileattemptnr or job.filemaxattempts %}{{ job.fileattemptnr }} of {{ job.filemaxattempts }}{% endif %}</span>{% endif %}
+		<td class="num"><a href="{% url 'jobInfo' %}?pandaid={{ job.pandaid }}">{{ job.pandaid }}</a>
             <br>
 		    {% if job.consumer %}Consumer: <a href="{% url 'jobInfo' %}?pandaid={{ job.consumer }}">{{ job.consumer }}</a>{% endif %}
             {% if request.user.is_tester %}
@@ -248,6 +245,8 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
             {% endif %}
             {% endif %}
         </td>
+        <td class="num">{{ job.attemptnr }} of {{ job.maxattempt }}
+			{% if requestParams.fileid %}<br><span style="color: gray">{% if job.fileattemptnr or job.filemaxattempts %}{{ job.fileattemptnr }} of {{ job.filemaxattempts }}{% endif %}</span>{% endif %}</td>
 		<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }}{% endif %} {% endif %}</td>
 		<td>{% if job.workinggroup %}<a href="{{xurl}}workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}</td>
         <td class="num">{% if job.reqid %}<a href="{% url 'jobList' %}?reqid={{ job.reqid }}&display_limit=300">{{ job.reqid }}</a>{% endif %}</td>
@@ -258,9 +257,11 @@ Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b
 		<td class="num">{{ job.waittime }}</td>
 		<td class="num">{{ job.duration }}</td>
 		<td class="num">{{ job.modificationtime }}</td>
-		<td>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a> <span class='{{job.computingsitestatus}}'>{{job.computingsitestatus}}</span>{{job.computingsitecomment}}</td>
-		<td class="num">{{ job.currentpriority }}</td>
-        <td class="num">{{ job.nevents }} ({{ job.ninputs }})</td>
+        {% if viewParams.MON_VO == 'ATLAS' %}<td><a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a></td>{% endif %}
+		<td><a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a> <span class='{{job.computingsitestatus}}'> {{job.computingsitestatus}} </span> {{job.computingsitecomment}}</td>
+        <td class="num">{{ job.currentpriority }}</td>
+        <td class="num">{{ job.nevents }}</td>
+        <td class="num">{{ job.ninputs }}</td>
         {% if requestParams.jeditaskid  %}
             <td class="num">{% if job.maxpss and job.maxpss != 'None' and job.maxpss != -1 %}{{ job.maxpss }}{% endif %}</td>
         {% endif %}
@@ -291,7 +292,7 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 <script type="text/javascript">
 $(document).ready(function() {
     $(".comment").shorten({
-        showChars: 800,
+        showChars: 2000,
     });
 
     $('#joblist').DataTable({
