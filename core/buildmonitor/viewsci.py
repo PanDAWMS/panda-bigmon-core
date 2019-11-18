@@ -1,4 +1,4 @@
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 from datetime import datetime
 from core.views import initRequest
 from django.db import connection, transaction
@@ -19,22 +19,8 @@ class DateEncoder(json.JSONEncoder):
 
 
 def civiewDemo(request):
-    valid, response = initRequest(request)
-    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
-        nname = request.session['requestParams']['nightly']
-    else:
-        nname = 'MR-CI-builds'
-    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 100:
-        rname = request.session['requestParams']['rel']
-    else:
-        rname = '*'
-#    nname = 'MR-CI-builds'
-    data={"nightly": nname, "rel": rname, 'viewParams': request.session['viewParams']}
-    return render_to_response('civiewDemo.html', data, content_type='text/html') 
 
-def civiewData(request):
     valid, response = initRequest(request)
-    new_cur = connection.cursor()
     if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
         nname = request.session['requestParams']['nightly']
     else:
@@ -43,6 +29,8 @@ def civiewData(request):
         rname = request.session['requestParams']['rel']
     else:
         rname = '*'
+
+    new_cur = connection.cursor()
     check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span s\
 tyle="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-ico\
 n-circle-check">ICON33</span></div>'
@@ -89,6 +77,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
 #                <th>Compilation Errors<BR>(w/warnings)</th>
 #                <th>Test time</th>
 #                <th>Pct. of Successful<BR>CTest tests<BR>(no warnings)</th>
+#                <th>Host</th>
     new_cur.execute(query)
     result = new_cur.fetchall()
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
@@ -147,6 +136,9 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           cpcer=row01[18]
           cpcpb=row01[17]
           area_suffix=row01[19]
+          hname=row01[27]
+          if re.search(r'\.',hname):
+            hname=(re.split(r'\.',hname))[0]
           if area_suffix == None: area_suffix = "";
           pjname=row01[1]  
           ntcompl='0';tpccompl='0';nt_er='0';nt_pb='0';tpcer='0';tpcpb='0'
@@ -191,20 +183,11 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           link_to_compsRes=reverse('CompsRes')
           i_combo_t="<a href=\""+link_to_testsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_t+"</a>"
           i_combo_c="<a href=\""+link_to_compsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_c+"</a>"
-          row_cand=[rname,ar_sel,pjname,mrlink_a,t_start,ii_checkout,ii_inst,ii_config,t_bstart,i_combo_c,t_test,i_combo_t]
+          row_cand=[rname,ar_sel,pjname,mrlink_a,t_start,ii_checkout,ii_inst,ii_config,t_bstart,i_combo_c,t_test,i_combo_t,hname]
           rows_s.append(row_cand)
 
-    return HttpResponse(json.dumps(rows_s, cls=DateEncoder), content_type='application/json')
-####HEADERS  0    <th>Release</th>
-#            1    <th>Platform</th>
-#            2    <th># Projects</th>
-#            3    <th>git branch<BR>(link to MR)</th>
-#            4    <th>Job time stamp</th>
-#            5    <th>git clone</th>
-#            6    <th>Externals<BR>build</th>
-#            7    <th>CMake<BR>config</th>
-#            8    <th>Build time</th>
-#            9    <th>Compilation Errors<BR>(w/warnings)</th>
-#           10    <th>Test time</th>
-#           11    <th>Pct. of Successful<BR>CTest tests<BR>(no warnings)</th>
+    data={"nightly": nname, "rel": rname, 'viewParams': request.session['viewParams'], 'rows_s':json.dumps(rows_s, cls=DateEncoder)} 
+    return render(request,'civiewDemo.html', data, content_type='text/html')
+
+
 

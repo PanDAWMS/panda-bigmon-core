@@ -35,21 +35,20 @@
     </table>
 <script type="text/javascript">
 
+var json=JSON.stringify({{ reslt3 | safe }});
+
 var globaldisplayTable = $('#firstGlobalExample').dataTable({
 "order": [[6, 'asc']],
 "pageLength": 100,
 "lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
+"data": JSON.parse(json),
+
 "columnDefs": [
        {
                 "targets": [ 6 ],
                 "visible": false,
                 "searchable": false
        }],
-"ajax": {
-                 "processing": true,
-                 "url": "{% url 'BuildGlobalData' %}",
-                 "dataSrc" : ''},
-
 "rowCallback": function( row, data, displayIndex ) {
                  var v4=($('td:eq(4)',row).text().split(" "))[0];
                  var v5=($('td:eq(5)',row).text().split(" "))[0]; 

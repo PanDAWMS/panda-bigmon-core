@@ -31,14 +31,13 @@
     </table>
 <script type="text/javascript">
 
+var json=JSON.stringify({{ rows_s | safe }});
+
 var compdisplayTable = $('#CompsResults').dataTable({
 "order": [[0, 'desc'],[1, 'asc']],
 "pageLength": 100,
 "lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
-"ajax": {
-                 "processing": true,
-                 "url": "{% url 'CompsResData' %}?nightly={{ nightly }}&rel={{ rel }}&ar={{ ar }}",
-                 "dataSrc" : ''},
+"data": JSON.parse(json),
 "rowCallback": function( row, data, displayIndex ) {
                var v0v = $('td:eq(0)',row).html();
                var indvv = 1;
