@@ -169,6 +169,7 @@
 // ------------------------------
 .bp-container-simple {
   padding: $global-padding;
+  width: 100%;
 }
 
 
@@ -213,10 +214,16 @@ span {
   margin: 0.3rem 0.7rem;
   font-weight: bold;
   text-decoration: none;
+  display: block;
 
   &.primary {
     background-color: $primary-color;
     color: $white;
+  }
+
+  &:hover, &:focus {
+    background-color: $black;
+    color: white;
   }
 }
 
@@ -241,6 +248,7 @@ span {
   tbody {
     th {
       padding: 0.7rem;
+      white-space: nowrap;
     }
     td {
       padding: 0.3rem 0.7rem;
@@ -252,6 +260,10 @@ span {
 
   .num {
     text-align: right;
+  }
+
+  .mid {
+    text-align: center;
   }
 
   .attrval-count-pair {
@@ -286,15 +298,14 @@ span {
     td {
       padding: 0.3rem;
       line-height: 1.3;
-      &.alarm {
+      .alarm {
         color: $alert-color-dark;
         word-break: break-word;
-        min-width: 25rem;
       }
       &.limitedwidth {
-        width: 15rem;
-        max-width: 15rem;
-        min-width: 15rem;
+        width: 20rem;
+        max-width: 20rem;
+        min-width: 20rem;
         -ms-word-break: break-all;
         //word-break: break-all;
 
@@ -310,6 +321,10 @@ span {
 
   .num {
     text-align: right;
+  }
+
+  .mid {
+    text-align: center;
   }
 }
 

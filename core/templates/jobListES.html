@@ -1,7 +1,6 @@
 {% extends "_base_core.html" %}
 {% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA ES jobs{% endblock %}
-{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA Event Service jobs {{ viewParams.selection|safe }}
 {% endblock %}
 {% block subtitle_params %}
@@ -11,45 +10,327 @@
 
 {{ viewParams.header }}
 
-       <div style="text-align: center; background:darkred; color: whitesmoke; font-size: 20px;" >
-    We propose to participate in testing a new much faster jobs view (<a href="http://bigpanda.cern.ch/jobsss{{ xurlnopref }}">http://bigpanda.cern.ch/jobsss{{ xurlnopref }}</a>)<br>
-    The new view might have differences with the current one, please inform developers about any issues you have.
-    </div>
+ <div class="callout info">
+    <p>We propose to participate in testing a new much faster jobs page (<a href="http://bigpanda.cern.ch/jobsss{{ xurlnopref }}">http://bigpanda.cern.ch/jobsss{{ xurlnopref }}</a>)
+    The new view might have differences with the current one, please inform developers about any issues you have.</p>
+</div>
 
+<div class="bp-container-simple">
+<p><b>{{ njobs }} jobs in this selection</b>
+{% if showwarn and njobs%}
+    <span class="warning"><b>. Warning: limit {{ joblimit }} per job table</b></span>
+{% endif %}
+</p>
 
-<b>{{ njobs }} jobs in this selection</b>
-{% if requestParams.transferringnotupdated %}<br><b>Jobs in transferring state for more than {{ requestParams.transferringnotupdated }} hours</b> {% endif %}
-{% if requestParams.statenotupdated %}<br><b>Jobs in <span class="{{ requestParams.jobstatus }}">{{ requestParams.jobstatus }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}
-{% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
-{% if requestParams.jobtype %}<br><b>Job type: {{ requestParams.jobtype }}</b> {% endif %}
-{% if requestParams.jobstatus %}<br><b>Job status: <span class={{requestParams.jobstatus}}>{{ requestParams.jobstatus }}</span></b> {% endif %}
-{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a>     <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a></b> {% endif %}
-{% if user %}<br><b>User: <a href="{% url 'userInfo' user %}?display_limit=100">{{ user }}</a>     <a href="{% url 'userInfo' user %}?display_limit=100">Show user page</a></b> {% endif %}
-{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}      {{ taskname }}</a> </b> {% endif %}
-{% if requestParams.taskid and requestParams.taskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.taskid  %}">{{ requestParams.taskid }}      {{ taskname }}</a></b> {% endif %}
-{% if requestParams.jobsetid %}<br><b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}
-{% if requestParams.parentid %}<br><b>Parent ID: {{ requestParams.parentid }}</b> {% endif %}
-{% if requestParams.jobname %}<br><b>Job name: {{ requestParams.jobname }}</b> {% endif %}
-{% if requestParams.priorityrange %}<br><b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}
-{% if requestParams.processingtype %}<br><b>Processing type: {{ requestParams.processingtype }}</b> {% endif %}
-{% if requestParams.transformation %}<br><b>Transformation: {{ requestParams.transformation }}</b> {% endif %}
+{% if requestParams.transferringnotupdated %}<p><b>Jobs in transferring state for more than {{ requestParams.transferringnotupdated }} hours</b></p> {% endif %}
+{% if requestParams.statenotupdated %}<p><b>Jobs in <span class="{{ requestParams.jobstatus }}">{{ requestParams.jobstatus }}</span> state for more than {{ requestParams.statenotupdated }} hours</b></p> {% endif %}
+{% if requestParams.workinggroup %}<p><b>Working group: {{ requestParams.workinggroup }}</b></p> {% endif %}
+{% if requestParams.jobtype %}<p><b>Job type: {{ requestParams.jobtype }}</b></p> {% endif %}
+{% if requestParams.jobstatus %}<p><b>Job status: <span class={{requestParams.jobstatus}}>{{ requestParams.jobstatus }}</span></b></p> {% endif %}
+{% if requestParams.cloud %}<p><b>Cloud: {{ requestParams.cloud }}</b></p> {% endif %}
+{% if requestParams.computingsite %}<p><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a> <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a></b></p> {% endif %}
+{% if user %}<p><b>User: <a href="{% url 'userInfo' user %}?display_limit=100">{{ user }}</a> <a href="{% url 'userInfo' user %}?display_limit=100"> Show user page</a></b></p> {% endif %}
+{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<p><b>Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}      {{ taskname }}</a> </b></p> {% endif %}
+{% if requestParams.taskid and requestParams.taskid != 'None' %}<p><b>Task: <a href="{% url 'taskInfo' requestParams.taskid  %}">{{ requestParams.taskid }}      {{ taskname }}</a></b></p> {% endif %}
+{% if requestParams.jobsetid %}<p><b>Jobset ID: {{ requestParams.jobsetid }}</b></p> {% endif %}
+{% if requestParams.parentid %}<p><b>Parent ID: {{ requestParams.parentid }}</b></p> {% endif %}
+
+{% if requestParams.reqid %}<p><b>Request ID: {{ requestParams.reqid }}</b></p> {% endif %}
+{% if requestParams.reqid_from %}<p><b>From request ID: {{ requestParams.reqid_from }}</b></p> {% endif %}
+{% if requestParams.reqid_to %}<p><b>To request ID: {{ requestParams.reqid_to }}</b></p> {% endif %}
+
+{% if requestParams.jobname %}<p><b>Job name: {{ requestParams.jobname }}</b></p> {% endif %}
+{% if requestParams.priorityrange %}<p><b>Current priority range: {{ requestParams.priorityrange }}</b></p> {% endif %}
+{% if requestParams.processingtype %}<p><b>Processing type: {{ requestParams.processingtype }}</b></p> {% endif %}
+{% if requestParams.transformation %}<p><b>Transformation: {{ requestParams.transformation }}</b></p> {% endif %}
 {% if requestParams.fileid and requestParams.jeditaskid and requestParams.datasetid %}
-<br><b>File ID: <a href="{% url 'fileInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}&fileid={{ requestParams.fileid }}">{{ requestParams.fileid }}</a></b>
-<br><b>Dataset ID: <a href="{% url 'datasetInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}">{{ requestParams.datasetid }}</a> </b>
+<p><b>File ID: <a href="{% url 'fileInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}&fileid={{ requestParams.fileid }}">{{ requestParams.fileid }}</a></b></p>
+<p><b>Dataset ID: <a href="{% url 'datasetInfo' %}?jeditaskid={{ requestParams.jeditaskid }}&datasetid={{ requestParams.datasetid }}">{{ requestParams.datasetid }}</a> </b></p>
 {% endif %}
 <p>
 
 {% if jobList %}
-<br>Job <b>modification times</b> in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>.
-<br>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.
+<p>Job <b>modification times</b> in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>,
+<a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a></p>
+<p>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.</p>
 {% endif %}
-{% if requestParams.mode == 'nodrop' %}
-<br><a href="{{xurl}}&mode=drop">Switch to drop mode</a>
-{% endif %}
-<script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
 
+</div>
+
+{% if ndrops > 0 %}
+<div class="callout warning">
+<b>{{ ndrops }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed.</b>
+  <p><a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('retries');">Click to show/hide dropped jobs</a></p>
+  <div class="retries" style="display:none">
+    <br>Dropped (retry):<br>
+    {% for drop in droplist %}
+    <a href="{% url 'jobInfo' drop.pandaid %}">{{ drop.pandaid }}</a> (<a href="{% url 'jobInfo' drop.newpandaid %}">{{ drop.newpandaid }}</a>)
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+
+{% if newndrop_test > 0 %}
+<div class="callout warning">
+<b>New drop algorithm!</b>
+<b>{{ newndrop_test }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
+<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('newretries');"><br>Click to show/hide dropped jobs</a>
+
+<div class="newretries" style="display:none">
+<br>Dropped:<br>
+{% for pandaID in pandaIDList_test %}
+<a href="{% url 'jobInfo' pandaID %}"> {{ pandaID }} </a>
+{% endfor %}
+</div>
+</div>
+
+
+{% if ndropPmerge_test > 0 %}
+<div class="callout warning">
+<b>{{ ndropPmerge_test }} Dropped Pmerge jobs. Pmerge jobs:</b><br/>
+<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('newpmergeretries');"><br>Click to show/hide pmerge dropped jobs</a>
+
+<div class="newpmergeretries" style="display:none">
+<br>Dropped pmerge:<br>
+{% for pmergejob in droppedPmerge2_test %}
+<a href="{% url 'jobInfo' pmergejob %}">{{ pmergejob }}</a>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+
+{% if difDropList_test %}
+<div class="callout warning">
+<b>Difference between old and new drop algorithm.</b>
+<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('difretries');"><br>Click to show/hide difference dropped jobs</a>
+<div class="difretries" style="display:none">
+{% for pandaID in difDropList_test %}
+  <a href="{% url 'jobInfo' pandaID %}">{{ pandaID }}</a>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+
+{% endif %}
+
+{% if requestParams.mode == 'nodrop' %}
+<a class="bp-button primary" href="{{xurl}}mode=drop">Switch to drop mode</a>
+{% elif ndrops > 0 or newndrop_test > 0 %}
+<a class="bp-button primary" href="{{xurl}}mode=nodrop">Switch to nodrop mode</a>
+{% endif %}
+
+{% if warning.jobsforfiles %}
+    <div class="callout warning" data-closable>
+      <h5>Warning! </h5>
+      <p>{{ warning.jobsforfiles }}</p>
+        <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+            <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+{% endif %}
+
+{% if jobList %}
+<div class="card bp-container">
+<div class="card-divider">
+    <p>Job attribute summary, sort by {% if requestParams.sortby == 'count' %} count, <a href="{{ nosorturl }}">alpha</a> {% else %} <a href="{{ nosorturl }}sortby=count">count</a>, alpha {% endif %}</p>
+</div>
+<div class="card-section">
+<table class="bp-table">
+<tbody>
+{% for fdict in sumd %}
+<tr><th>{{ fdict.field }} ({{ fdict.list|length }})</th>
+    <td><div class="comment more">
+        {% for item in fdict.list %}<span class="attrval-count-pair">
+            {% if fdict.field == 'jeditaskid' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% elif fdict.field  == 'jobsetid'%} <a href="{% url 'jobList' %}?jobsetid={{ item.kname }}"> {{ item.kname }}</a> <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% elif fdict.field  == 'harvesterinstance' %} {{ item.kname }} <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% elif fdict.field  == 'durationmin' %} {% if item.kvalue > 0 %} {{ item.kname }} <a href="{{nodurminurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a> {% endif %}
+            {% else %}
+                {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
+                {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
+                    <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
+                                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a>
+                {% endif %}
+            {% endif %}
+            </span>
+        {% endfor %}
+        </div>
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+
+
+{% if errsByCount %}
+<a name="summary"></a>
+<div class="card bp-container">
+<div class="card-divider">
+    <p>Overall error summary</p>
+</div>
+<div class="card-section">
+<table class="bp-table">
+<thead>
+<tr>
+    <th>Category:code</th>
+    <th class="num">Nerrors</th>
+    <th>Sample error description</th>
+</tr>
+</thead>
+<tbody>
+{% for errval in errsByCount %}
+<tr>
+    <th> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </th>
+    <td class="num"> {{ errval.count }} </td>
+    <td> <div class="comment more">{{ errval.diag }}<br/>{% if errval.count > 1 and not 'transformation' in errval.error %} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %}</div>
+
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+{% endif %}
+
+
+<div class="card bp-container">
+<div class="card-divider">
+    <p>Job list {% if display_limit and display_limit < njobs %}, only the most recent {{ display_limit }} jobs are shown.{% endif %}</p>
+</div>
+<div class="card-section">
+<table class="bp-datatable" id="joblistes">
+<thead>
+<tr>
+    <th class="num">PanDA ID</th>
+    <th class="num">Job Attempt{% if requestParams.fileid %}<br><span style="color: gray">File Attempt</span>{% endif %}</th>
+    <th>Owner {% if viewParams.MON_VO != 'ATLAS' %} / VO{% endif %}</th>
+	<th>Group</th>
+    <th class="num">Request ID</th>
+	<th class="num">Task ID</th>
+	<th>Transformation</th>
+	{% comment %}<th>Mode</th>{% endcomment %}
+	<th class="num">Cores</th>
+	<th class="mid">Status</th>
+	<th class="mid">Substate</th>
+	<th class="num">Created</th>
+	<th class="num">Time to start<br>d:h:m:s</th>
+	<th class="num">Duration<br>d:h:m:s</th>
+	<th class="num">Modified</th>
+	{% if viewParams.MON_VO == 'ATLAS' %}<th>Cloud</th>{% endif %}
+	<th>Site</th>
+	<th class="num">Priority</th>
+    <th class="num">N input events</th>
+    <th class="num">N input files</th>
+	<th class="limitedwidth">Job info</th>
+    <th class="limitedwidth">Job name</th>
+    <th class="limitedwidth">Input dataset</th>
+    <th class="limitedwidth">Output dataset</th>
+</tr>
+</thead>
+<tbody>
+    {% for job in jobList %}
+        <tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
+            <td class="num"><a href="{% url 'jobInfo' %}?pandaid={{ job.pandaid }}">{{ job.pandaid }}</a>
+                <br>
+                {% if job.consumer %}Consumer: <a href="{% url 'jobInfo' %}?pandaid={{ job.consumer }}">{{ job.consumer }}</a>{% endif %}
+                {% if request.user.is_tester %}
+                {% if job.pandaid in clist %}
+                    <br>
+                    <a id="comparisonbutton{{ job.pandaid }}" onclick="toggleComparisonList('comparisonbutton{{ job.pandaid }}', '{{ job.pandaid }}')" class="removefromcomparisonbuttoncompact">Remove from comparison</a>
+                {% else %}
+                    <br>
+                    <a id="comparisonbutton{{ job.pandaid }}" onclick="toggleComparisonList('comparisonbutton{{ job.pandaid }}', '{{ job.pandaid }}')" class="addtocomparisonbuttoncompact">Add to comparison</a>
+                {% endif %}
+                {% endif %}
+            </td>
+            <td class="num">{{ job.attemptnr }} of {{ job.maxattempt }}
+                {% if requestParams.fileid %}<br><span style="color: gray">{% if job.fileattemptnr or job.filemaxattempts %}{{ job.fileattemptnr }} of {{ job.filemaxattempts }}{% endif %}</span>{% endif %}</td>
+            <td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }}{% endif %} {% endif %}</td>
+            <td>{% if job.workinggroup %}<a href="{{xurl}}workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}</td>
+            <td class="num">{% if job.reqid %}<a href="{% url 'jobList' %}?reqid={{ job.reqid }}&display_limit=300">{{ job.reqid }}</a>{% endif %}</td>
+            <td class="num">{% if job.jeditaskid  and job.jeditaskid != 'None' %}<a href="{{xurl}}jeditaskid={{job.jeditaskid}}">{{ job.jeditaskid }}</a> {% elif job.taskid and job.taskid != 'None' %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
+            <td><a href="{{xurl}}transformation={{job.transformation}}">{{ job.transformation }}</a></td>
+            {% comment %}<td>{{ job.jobmode }}</td>{% endcomment %}
+            <td class="num">{{ job.corecount }}</td>
+            <td class="mid {{job.jobstatus}}_fill">{{ job.jobstatus }}</td>
+            <td class="mid">{{ job.jobsubstatus }}</td>
+            <td class="num">{{ job.creationtime }}</td>
+            <td class="num">{{ job.waittime }}</td>
+            <td class="num">{{ job.duration }}</td>
+            <td class="num">{{ job.modificationtime }}</td>
+            {% if viewParams.MON_VO == 'ATLAS' %}<td><a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a></td>{% endif %}
+            <td><a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a> <span class='{{job.computingsitestatus}}'> {{job.computingsitestatus}} </span> {{job.computingsitecomment}}</td>
+            <td class="num">{{ job.currentpriority }}</td>
+            <td class="num">{{ job.nevents }}</td>
+            <td class="num">{{ job.ninputs }}</td>
+            {% if requestParams.jeditaskid  %}
+                <td class="num">{% if job.maxpss and job.maxpss != 'None' and job.maxpss != -1 %}{{ job.maxpss }}{% endif %}</td>
+            {% endif %}
+		    <td class="limitedwidth">{% if job.jobinfo != '' %}{{job.jobinfo|safe}}<br>{% endif %}{% if job.errorinfo != '' %}<span class="alarm">{{job.errorinfo|safe}}{% endif %}</span></td>
+            <td class="limitedwidth"><a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></td>
+            <td class="limitedwidth">{% if job.proddblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}">{{ job.proddblock }}</a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a>{% endif %}</td>
+            <td class="limitedwidth">{% if job.destinationdblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}">{{ job.destinationdblock }}</a>{% endif %}</td>
+        </tr>
+    {% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+
+{% else %}
+
+<div class="callout alert">
+<b>No jobs matched the query.</b>
+<p>
+    You can increase the time depth with a days=N parameter on the URL, but use judiciously, this is hard on the database.
+    If you know the jobsetid or taskid/jeditaskid of the jobs you're interested in, you can add these to the URL,
+    and the search will not be time limited
+    (because these IDs give the DB enough indexing info that it isn't stressful on the DB to exclude the time constraint)
+    and it will be fast also.
+</p>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript" src="{% static "node_modules/jquery.shorten/src/jquery.shorten.min.js" %}"></script>
+<script type="text/javascript" src="{% static "node_modules/clipboard/dist/clipboard.min.js" %}"></script>
+<script type="text/javascript" src="{% static "node_modules/datatables.net/js/jquery.dataTables.min.js" %}"></script>
 <script type="text/javascript">
+$(document).ready(function() {
+    $(".comment").shorten({
+        showChars: 2000,
+    });
+
+    $('#joblistes').DataTable({
+        "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+        "paging": true,
+        "scrollX": true,
+        "aaSorting": [[12,'desc']],
+        }
+    );
+
+    let clipboard = new ClipboardJS('#copy-button'); //needed for copy to clipboard button
+
+    clipboard.on('success', function(e) {
+        let copy_button = document.getElementById('copy-button');
+        copy_button.innerHTML = 'copied!';
+        copy_button.classList.add('disabled');
+        e.clearSelection();
+    });
+
+    clipboard.on('error', function(e) {
+        let copy_button = document.getElementById('copy-button');
+        copy_button.innerHTML = 'copying failed!';
+        copy_button.classList.add('disabled');
+    });
+});
 
 function toggleDetailDisplay(className) {
    el = document.getElementsByClassName(className)
@@ -82,237 +363,8 @@ function toggleComparisonList(buttonid, value) {
             document.getElementById(buttonid).className = "addtocomparisonbuttoncompact";
             });
     }
-
 }
-
-	$(document).ready(function() {
-	    $(".comment").shorten();
-	});
-
 </script>
-
-
-{% if ndrops > 0 %}
-<table width=900><tr><td class='highlightcell'>
-<b>{{ ndrops }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
-<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('retries');"><br>Click to show/hide dropped jobs</a>
-
-<div class="retries" style="display:none">
-<font size=-1>
-<br>Dropped (retry):<br>
-{% for drop in droplist %}
-<a href="{% url 'jobInfo' drop.pandaid %}">{{ drop.pandaid }}</a>   (<a href="{% url 'jobInfo' drop.newpandaid %}">{{ drop.newpandaid }}</a>)
-{% endfor %}
-</font>
-</div>
-</td></tr></table>
-<p>
-{% endif %}
-
-
-{% if newndrop_test > 0 %}
-<table width=900><tr><td class='highlightcell'>
-<b style="font-size: 24px">New drop algorithm</b><br/><br/>
-<b>{{ newndrop_test }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
-<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('newretries');"><br>Click to show/hide dropped jobs</a>
-
-<div class="newretries" style="display:none">
-<font size=-1>
-<br>Dropped:<br>
-{% for pandaID in pandaIDList_test %}
-<a href="{% url 'jobInfo' pandaID %}">{{ pandaID }}</a>
-{% endfor %}
-</font>
-</div>
-
-{% if ndropPmerge_test > 0 %}
- <br/><br/>
-<b>{{ ndropPmerge_test }} Dropped Pmerge jobs. Pmerge jobs:</b><br/>
-{% for pmergejob in droppedPmerge2_test %}
-<a href="{% url 'jobInfo' pmergejob %}">{{ pmergejob }}</a>
-{% endfor %}
-{% endif %}
-
-{% if difDropList_test > 0 %}
-     <br/><br/>
-    Difference between old and new drop algorithm.
-    <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('difretries');"><br>Click to show/hide difference dropped jobs</a>
-    <div class="difretries" style="display:none">
-<font size=-1>
-{% for pandaID in difDropList_test %}
-
-  <a href="{% url 'jobInfo' pandaID %}">{{ pandaID }}</a>
-{% endfor %}
-    </font>
-</div>
-
-{% endif %}
-
-</td></tr>
-</table>
-<p>
-
-{% endif %}
-
-{% if warning.jobsforfiles %}
-
-    <div class="callout warning" data-closable>
-      <h5>Warning! </h5>
-      <p>{{ warning.jobsforfiles }}</p>
-        <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-            <span aria-hidden="true">&times;</span>
-      </button>
-    </div>
-
-{% endif %}
-
-{% if jobList %}
-
-<table>
-<tr class='tablesection'><th colspan=20> Job attribute summary       Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
-{% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
-    <td><div class="comment more">
-        {% for item in fdict.list %}
-            {% if fdict.field == 'jeditaskid' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
-             {% elif fdict.field  == 'jobsetid'%} <a href="{% url 'jobList' %}?jobsetid={{ item.kname }}">{{ item.kname }}</a> <a href="{{xurl}}{{fdict.field}}={{item.kname}}" > ({{ item.kvalue }}) </a>
-
-            {% else %}
-                {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
-                {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
-                    <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
-                                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a>
-                {% endif %}
-            {% endif %}
-        {% endfor %}
-        </div>
-    </td>
-</tr>
-{% endfor %}
-</table>
-
-
-{% if errsByCount %}
-<a name="summary"></a>
-<table>
-<tr class='tablesection'><th colspan=20> Overall error summary </th></tr>
-<tr>
-    <th>Category:code</th>
-    <th>Nerrors</th>
-    <th>Sample error description</th>
-</tr>
-{% for errval in errsByCount %}
-<tr>
-    <th> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </th>
-    <td> {{ errval.count }} </td>
-    <td> <div class="comment more">{{ errval.diag }}<br/>{% if errval.count > 1%} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %}</div>
-
-    </td>
-</tr>
-{% endfor %}
-</table>
-{% endif %}
-
-<div class="table-scroll">
-<table>
-<tr class='tablesection'><th colspan=20>
-<a name="joblist"></a> Job list
-{% if display_limit  and display_limit < njobs %}
-<font size=-1>Only the most recent {{ display_limit }} jobs (sorted by PandaID) are shown. Remove the limit and sort by 
-<a href="{{nosorturl}}">PandaID</a>, 
-{% else %}
-Sort by 
-{% if sortby == "PandaID" %}
-<b>PandaID</b>,
-{% else %}
-<a href="{{nosorturl}}">PandaID</a>, 
-{% endif %}
-{% endif %}
-
-{% if sortby == "time-ascending" %}
-<b>ascending mod time</b>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>
-{% elif sortby == "time-descending" %}
-<a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <b>descending mod time</b>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>
-{% elif sortby == "priority" %}
-<a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <b>priority</b>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>
-{% elif sortby == "attemptnr" %}
-<a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <b>attemptnr</b>
-{% else %}
-<a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>
-{% endif %}
-</font>
-</th></tr>
-<tr class='tablesection'>
-	<th>PanDA ID<br>Attempt# of maxAttempts#{% if requestParams.fileid %}<br><span style="color: gray">FileAttempt# of maxFileAttempt</span>{% endif %}</th>
-	<th>Owner {% if viewParams.MON_VO != 'ATLAS' %} / VO{% endif %}<br>Group  </th>
-	<th>Task ID</th>
-	<th>Transformation</th>
-	<th>Mode</th>
-	<th>Cores</th>
-	<th>Status</th>
-	<th>Substate</th>
-	<th>Created</th>
-	<th>Time to start<br>d:h:m:s</th>
-	<th>Duration<br>d:h:m:s</th>
-	<th>Mod</th>
-	<th>{% if viewParams.MON_VO == 'ATLAS' %}Cloud {% endif%}Site</th>
-	<th>Priority</th>
-    <th>N input events (N input files)</th>
-	<th>Job info</th>
-</tr>
-    {% for job in jobList %}
-	<tr>
-		<td rowspan=3><a href="{% url 'jobInfo' %}?pandaid={{ job.pandaid }}">{{ job.pandaid }}</a><br>Attempt {{ job.attemptnr }} of {{ job.maxattempt }}
-            {% if requestParams.fileid %}<br><span style="color: gray">FileAttempt {% if job.fileattemptnr or job.filemaxattempts %}{{ job.fileattemptnr }} of {{ job.filemaxattempts }}{% endif %}</span>{% endif %}
-            <br>
-            {% if job.consumer %}
-		     Consumer: <a href="{% url 'jobInfo' %}?pandaid={{ job.consumer }}">{{ job.consumer }}</a>
-		    {% endif %}
-            {% if request.user.is_tester %}
-            {% if job.pandaid in clist %}
-                <br>
-                <a id="comparisonbutton{{ job.pandaid }}" onclick="toggleComparisonList('comparisonbutton{{ job.pandaid }}', '{{ job.pandaid }}')" class="removefromcomparisonbuttoncompact">Remove from comparison</a>
-            {% else %}
-                <br>
-                <a id="comparisonbutton{{ job.pandaid }}" onclick="toggleComparisonList('comparisonbutton{{ job.pandaid }}', '{{ job.pandaid }}')" class="addtocomparisonbuttoncompact">Add to comparison</a>
-            {% endif %}
-            {% endif %}
-		</td>
-		<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if job.workinggroup %}<br><a href="{{xurl}}workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }}{% endif %} {% endif %}
-		</td>
-		<td>{% if job.jeditaskid  and job.jeditaskid != 'None' %}<a href="{{xurl}}jeditaskid={{job.jeditaskid}}">{{ job.jeditaskid }}</a> {% elif job.taskid and job.taskid != 'None' %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
-		<td><font size=-1><a href="{{xurl}}transformation={{job.transformation}}">{{ job.transformation }}</a></font></td>
-
-	    <td>{{ job.jobmode }}</td>
-	    <td>{{ job.corecount }}</td>
-		<td {% if job.jobstatus == 'closed:toreassign' %} class='reassign_fill' {% else %} class='{{job.jobstatus}}_fill' {% endif %}>{{ job.jobstatus }}</td>
-	    <td>{{ job.jobsubstatus }}</td>
-		<td><font size=-1>{{ job.creationtime }}</font></td>
-		<td><font size=-1>{{ job.waittime }}</font></td>
-		<td><font size=-1>{{ job.duration }}</font></td>
-		<td><font size=-1>{{ job.modificationtime }}</font></td>
-		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a><span class='{{job.computingsitestatus}}'> {{job.computingsitestatus}}</span> {{job.computingsitecomment}}</font></td>
-        <td>{{ job.currentpriority }}</td>
-        <td>{{ job.nevents }} ({{ job.ninputs }})</td>
-		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
-		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}
-		</td>
-	<tr><td colspan=20> {{ job.esjobstr }} </td></tr>
-	</tr>
-	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan="20" class='highlightcell'> Datasets:     {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br>    {% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
-
-    {% endfor %}
-</table>
-</div>
-
-{% else %}
-
-<p>
-No jobs matched the query. You can increase the time depth with a days=N parameter on the URL, but use judiciously, this is hard on the database. If you know the jobsetid or taskid/jeditaskid of the jobs you're interested in, you can add these to the URL, and the search will not be time limited (because these IDs give the DB enough indexing info that it isn't stressful on the DB to exclude the time constraint) and it will be fast also.
-</p>
-
-{% endif %}
-
 {% endblock %}
 
 
