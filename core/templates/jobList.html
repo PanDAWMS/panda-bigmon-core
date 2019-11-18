@@ -1,8 +1,6 @@
 {% extends "_base_core.html" %}
 {% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
-{% block extra_css %}
-{% endblock %}
 {% block subtitle %}PanDA jobs{{ viewParams.selection|safe }}{% endblock %}
 {% block subtitle_params %}
 {% if jobsTotalCount != None%}
@@ -57,72 +55,71 @@
 <a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a></p>
 <p>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.</p>
 {% endif %}
-
 </div>
-{% if requestParams.mode == 'nodrop' %}
-<a class="bp-button primary" href="{{xurl}}mode=drop">Switch to drop mode</a>
-{% endif %}
+
 
 {% if ndrops > 0 %}
-<table width=900><tr><td class='highlightcell'>
-<b>{{ ndrops }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
-
-<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('retries');"><br>Click to show/hide dropped jobs</a>
-<br><a href="{{xurl}}mode=nodrop">Switch to nodrop mode</a>
-<div class="retries" style="display:none">
-<br>Dropped (retry):<br>
-{% for drop in droplist %}
-<a href="{% url 'jobInfo' drop.pandaid %}">{{ drop.pandaid }}</a> (<a href="{% url 'jobInfo' drop.newpandaid %}">{{ drop.newpandaid }}</a>)
-{% endfor %}
+<div class="callout warning">
+<b>{{ ndrops }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed.</b>
+  <p><a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('retries');">Click to show/hide dropped jobs</a></p>
+  <div class="retries" style="display:none">
+    <br>Dropped (retry):<br>
+    {% for drop in droplist %}
+    <a href="{% url 'jobInfo' drop.pandaid %}">{{ drop.pandaid }}</a> (<a href="{% url 'jobInfo' drop.newpandaid %}">{{ drop.newpandaid }}</a>)
+    {% endfor %}
+  </div>
 </div>
-</td></tr></table>
-<p>
-
 {% endif %}
 
 
 {% if newndrop_test > 0 %}
-<table width=900><tr><td class='highlightcell'>
-<b style="font-size: 24px">New drop algorithm</b><br/><br/>
+<div class="callout warning">
+<b>New drop algorithm!</b>
 <b>{{ newndrop_test }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
 <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('newretries');"><br>Click to show/hide dropped jobs</a>
-<br><a href="{{xurl}}mode=nodrop">Switch to nodrop mode</a>
+
 <div class="newretries" style="display:none">
-<font size=-1>
 <br>Dropped:<br>
 {% for pandaID in pandaIDList_test %}
 <a href="{% url 'jobInfo' pandaID %}"> {{ pandaID }} </a>
 {% endfor %}
-</font>
+</div>
 </div>
 
+
 {% if ndropPmerge_test > 0 %}
- <br/><br/>
+<div class="callout warning">
 <b>{{ ndropPmerge_test }} Dropped Pmerge jobs. Pmerge jobs:</b><br/>
+<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('newpmergeretries');"><br>Click to show/hide pmerge dropped jobs</a>
+
+<div class="newpmergeretries" style="display:none">
+<br>Dropped pmerge:<br>
 {% for pmergejob in droppedPmerge2_test %}
 <a href="{% url 'jobInfo' pmergejob %}">{{ pmergejob }}</a>
 {% endfor %}
+</div>
+</div>
 {% endif %}
-<br/>
 
 {% if difDropList_test %}
-    Difference between old and new drop algorithm.
-    <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('difretries');"><br>Click to show/hide difference dropped jobs</a>
-    <div class="difretries" style="display:none">
-        {% for pandaID in difDropList_test %}
-          <a href="{% url 'jobInfo' pandaID %}">{{ pandaID }}</a>
-        {% endfor %}
-    </div>
+<div class="callout warning">
+<b>Difference between old and new drop algorithm.</b>
+<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('difretries');"><br>Click to show/hide difference dropped jobs</a>
+<div class="difretries" style="display:none">
+{% for pandaID in difDropList_test %}
+  <a href="{% url 'jobInfo' pandaID %}">{{ pandaID }}</a>
+{% endfor %}
+</div>
+</div>
 {% endif %}
-</td></tr></table>
-<p>
+
 {% endif %}
 
 
-{% if ndrops < 0 %}
-<table width=900><tr><td class='highlightcell'>
-    <a href="{{xurl}}mode=nodrop">Switch to nodrop mode</a>
-</table>
+{% if requestParams.mode == 'nodrop' %}
+<a class="bp-button primary" href="{{xurl}}mode=drop">Switch to drop mode</a>
+{% elif ndrops > 0 or newndrop_test > 0 %}
+<a class="bp-button primary" href="{{xurl}}mode=nodrop">Switch to nodrop mode</a>
 {% endif %}
 
 
@@ -210,7 +207,7 @@
     <th class="num">Request</th>
     <th class="num">Task ID</th>
 	<th>Transformation</th>
-	<th>Status</th>
+	<th class="mid">Status</th>
 	<th class="num">Created</th>
 	<th class="num">Time to start<br>d:h:m:s</th>
 	<th class="num">Duration<br>d:h:m:s</th>
@@ -223,10 +220,10 @@
     {% if requestParams.jeditaskid  %}
         <th class="num">Maximum <br>PSS</th>
     {% endif %}
-    <th>Job name</th>
-    <th>Input dataset</th>
-    <th>Output dataset</th>
-	<th>Job info</th>
+	<th class="limitedwidth">Job info</th>
+    <th class="limitedwidth">Job name</th>
+    <th class="limitedwidth">Input dataset</th>
+    <th class="limitedwidth">Output dataset</th>
 </tr>
 </thead>
 <tbody>
@@ -252,7 +249,7 @@
         <td class="num">{% if job.reqid %}<a href="{% url 'jobList' %}?reqid={{ job.reqid }}&display_limit=300">{{ job.reqid }}</a>{% endif %}</td>
 		<td class="num">{% if job.jeditaskid  and job.jeditaskid != 'None' %}<a href="{{xurl}}jeditaskid={{job.jeditaskid}}">{{ job.jeditaskid }}</a> {% elif job.taskid and job.taskid != 'None' %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
 		<td><a href="{{xurl}}transformation={{job.transformation}}">{{ job.transformation }}</a></td>
-		<td class="{{job.jobstatus}}_fill">{{ job.jobstatus }}</td>
+		<td class="mid {{job.jobstatus}}_fill">{{ job.jobstatus }}</td>
 		<td class="num">{{ job.creationtime }}</td>
 		<td class="num">{{ job.waittime }}</td>
 		<td class="num">{{ job.duration }}</td>
@@ -265,10 +262,11 @@
         {% if requestParams.jeditaskid  %}
             <td class="num">{% if job.maxpss and job.maxpss != 'None' and job.maxpss != -1 %}{{ job.maxpss }}{% endif %}</td>
         {% endif %}
-        <td><a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></td>
-        <td>{% if job.proddblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}">{{ job.proddblock }}</a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a>{% endif %}</td>
-        <td>{% if job.destinationdblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}">{{ job.destinationdblock }}</a>{% endif %}</td>
-		<td class="alarm">{% if job.jobinfo != '' %}{{job.jobinfo|safe}}<br>{% endif %}{% if job.errorinfo != '' %}{{job.errorinfo|safe}}{% endif %}</td>
+		<td class="limitedwidth">{% if job.jobinfo != '' %}{{job.jobinfo|safe}}<br>{% endif %}{% if job.errorinfo != '' %}<span class="alarm">{{job.errorinfo|safe}}{% endif %}</span></td>
+        <td class="limitedwidth"><a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></td>
+        <td class="limitedwidth">{% if job.proddblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}">{{ job.proddblock }}</a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a>{% endif %}</td>
+        <td class="limitedwidth">{% if job.destinationdblock %}<a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}">{{ job.destinationdblock }}</a>{% endif %}</td>
+    </tr>
 {% endfor %}
 </tbody>
 </table>
@@ -277,9 +275,16 @@
 
 {% else %}
 
+<div class="callout alert">
+<b>No jobs matched the query.</b>
 <p>
-No jobs matched the query. You can increase the time depth with a days=N parameter on the URL, but use judiciously, this is hard on the database. If you know the jobsetid or taskid/jeditaskid of the jobs you're interested in, you can add these to the URL, and the search will not be time limited (because these IDs give the DB enough indexing info that it isn't stressful on the DB to exclude the time constraint) and it will be fast also.
+    You can increase the time depth with a days=N parameter on the URL, but use judiciously, this is hard on the database.
+    If you know the jobsetid or taskid/jeditaskid of the jobs you're interested in, you can add these to the URL,
+    and the search will not be time limited
+    (because these IDs give the DB enough indexing info that it isn't stressful on the DB to exclude the time constraint)
+    and it will be fast also.
 </p>
+</div>
 
 {% endif %}
 
@@ -296,10 +301,10 @@ $(document).ready(function() {
     });
 
     $('#joblist').DataTable({
-        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
         "paging": true,
         "scrollX": true,
-        "aaSorting": [[10,'desc']],
+        "aaSorting": [[12,'desc']],
         }
     );
 
@@ -352,7 +357,6 @@ function toggleComparisonList(buttonid, value) {
     }
 
 }
-
 </script>
 
 {% endblock %}

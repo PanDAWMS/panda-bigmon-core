@@ -1,0 +1,287 @@
+
+//.alarm, .errspan {
+//  color: red;
+//}
+//
+//.error {
+//  color: red !important;
+//  background-color: white !important;
+//  font-size: 12pt !important;
+//  font-style: normal !important;
+//}
+
+.status {
+  font-weight: bold;
+}
+
+.info {
+  color: black;
+}
+
+.messageinfo {
+  color: forestgreen;
+}
+
+.debug {
+  color: darkgrey;
+}
+
+.finished, .completed, .done, .ready, .cached, .online, .merged {
+  color: #248F24;
+}
+
+.failed, .aborted, .aborting, .broken, .tobroken, .deleted {
+  color: red;
+}
+
+.paused, .brokeroff, .test, .offline, .skipped, .notcheckedskipped {
+  color: darkgrey;
+}
+
+.holding, .throttled, .exhausted, .cancelled, .warning, .timeout, .discarded, .finishing, .sent {
+  color: #FF9933;
+}
+
+.running, .approved, .merging, .topreprocess, .preprocessing, .prepared, .starting, .submitting, .scouting, .scouted, .transferring {
+  color: #47D147;
+}
+
+.activated, .assigning, .assigned, .queued {
+  color: #099999;
+}
+
+.fatal {
+  color: firebrick;
+}
+
+.pending, .waiting, .toretry, .toincexec, .rerefine, .defined, .registered {
+  color: grey;
+}
+
+.reassign {
+  color: #FF8174;
+}
+
+.ok {
+  color: #0a47ff;
+}
+
+
+.corrupted {
+  color: red;
+}
+
+.corrupted_fill, .alarm_fill, .error_fill {
+  color: black;
+  background-color: #FF8174;
+  font-weight: bold;
+}
+
+.broken_fill, .tobroken_fill {
+  color: black;
+  background-color: #FF8174;
+  position: static;
+  font-weight: bold;
+}
+
+.reassign_fill {
+  color: black;
+  background-color: #FF8174;
+  font-weight: bold;
+}
+
+.failed_fill, .aborted_fill, .aborting_fill {
+  color: black;
+  background-color: #FFABA2;
+  font-weight: bold;
+  position: static;
+}
+
+.deleted_fill {
+  color: black;
+  background-color: #FFABA2;
+  font-weight: bold;
+}
+
+.info_fill {
+  color: black;
+  font-weight: bold;
+}
+
+.debug_fill {
+  color: black;
+  font-weight: bold;
+}
+
+.failedscouting_fill {
+  color: white;
+  background-color: red;
+  font-weight: bold;
+}
+
+.done_fill, .toincexec_fill, .rerefine_fill {
+  color: black;
+  background-color: #62AC21;
+  position: static;
+  font-weight: bold;
+}
+
+.merged_fill {
+  color: black;
+  background-color: #62AC21;
+  font-weight: bold;
+}
+
+.prepared_fill, .finished_fill, .completed_fill, toretry_fill {
+  color: black;
+  background-color: #A0D670;
+  font-weight: bold;
+  position: static;
+}
+
+.passed_fill {
+  color: black;
+  background-color: white;
+  font-weight: bold;
+  position: static;
+}
+
+.running_fill, .pending_fill, .starting_fill, .scouted_fill, .transferring_fill, .finishing_fill, .ready_fill,
+  .cached_fill, .online_fill, .merging_fill {
+    color: black;
+    background-color: #C7E9A9;
+  font-weight: bold;
+    position: static;
+}
+
+.scouting_fill, .topreprocess_fill, .preprocessing_fill {
+  color: black;
+  background-color: #DBF1C6;
+  font-weight: bold;
+  position: static;
+}
+
+.assigned_fill, .activated_fill {
+  color: black;
+  background-color: #b5e0e0;
+  font-weight: bold;
+}
+
+.assigning_fill, .defined_fill, .registered_fill, .submitting_fill, .approved_fill, .processed_fill {
+  color: black;
+  background-color: #EBF5E2;
+  font-weight: bold;
+  position: static;
+}
+
+.paused_fill, .queued_fill {
+  color: black;
+  background-color: #DCDCDC;
+  font-weight: bold;
+  position: static;
+}
+
+.warning_fill {
+  color: black;
+  background-color: #FFCB2F;
+  font-weight: bold;
+}
+
+.discarded_fill, .timeout_fill, .cancelled_fill {
+  color: black;
+  background-color: #FFD65D;
+  font-weight: bold;
+}
+
+.throttled_fill, .exhausted_fill, .holding_fill {
+  color: black;
+  background-color: #FFE38E;
+  font-weight: bold;
+  position: static;
+}
+
+.waiting_fill, .sent_fill {
+  color: black;
+  background-color: #FFF5D6;
+  font-weight: bold;
+}
+
+.fatal_fill {
+  color: white;
+  background-color: black;
+  font-weight: bold;
+}
+
+.brokeroff_fill, .test_fill, .offline_fill {
+  color: darkgrey;
+  font-weight: bold;
+}
+
+/*States of requests*/
+
+.monitoring_fill, .working_fill {
+  color: black;
+  background-color: #C7E9A9;
+}
+
+/* States of task inputs */
+
+.input_ready_fill {
+  color: black;
+  background-color: #DCDCDC;
+  font-weight: bold;
+}
+
+.input_queued_fill {
+  color: black;
+  background-color: #b5e0e0;
+  font-weight: bold;
+}
+
+.input_running_fill {
+  color: black;
+  background-color: #C7E9A9;
+  font-weight: bold;
+}
+
+.input_merging_fill, .input_transferring_fill {
+  color: black;
+  background-color: #A0D670;
+  font-weight: bold;
+}
+
+.input_finished_fill {
+  color: black;
+  background-color: #62AC21;
+  font-weight: bold;
+}
+
+.input_failed_fill {
+  color: black;
+  background-color: #FF8174;
+  font-weight: bold;
+}
+
+.input_ready {
+  color: grey;
+}
+
+.input_queued {
+  color: #099999;
+}
+
+.input_running {
+  color: #47D147;
+}
+
+.input_merging, .input_transferring {
+  color: #62AC21;
+}
+
+.input_finished {
+  color: #248F24;
+}
+
+.input_failed {
+  color: red;
+}

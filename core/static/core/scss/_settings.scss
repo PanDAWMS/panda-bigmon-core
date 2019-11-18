@@ -83,7 +83,7 @@ $foundation-palette: (
   secondary: $light-blue,
   success: #3adb76,
   warning: #ffae00,
-  alert: #cc4b37,
+  alert: #c5240a,
 );
 $primary-color: $dark-blue;
 $secondary-color: $light-blue;
@@ -96,7 +96,7 @@ $warning-color: #ffae00;
 $warning-color-dark: smart-scale($warning-color, 20%, 20%);
 $warning-color-light: smart-scale($warning-color, 40%, 80%);
 $warning-color-bg: smart-scale($warning-color, 85%, 80%);
-$alert-color: #cc4b37;
+$alert-color: #c5240a;
 $alert-color-dark: smart-scale($alert-color, 20%, 20%);
 $alert-color-light: smart-scale($alert-color, 40%, 80%);
 $alert-color-bg: smart-scale($alert-color, 85%, 80%);

@@ -46,8 +46,19 @@ select {
       background-color: $light-hover-black;
     }
   }
+  li {
+    &:hover {
+      color: $topbar-link-color;
+      background-color: $light-hover-black;
+    }
+  }
   i {
   padding: $i-icon-padding;
+  }
+  .menu {
+    a {
+      display: inline-block;
+    }
   }
   .menu-text {
     padding: 0 !important;
