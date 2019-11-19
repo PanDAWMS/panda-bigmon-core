@@ -1,26 +1,11 @@
 {% extends "_base_core.html" %}
 {% load static %}
 {% block page_title %} {{ jeditaskid }} task  {% endblock %}
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <style>
-        #datasetstable_wrapper .row {
-            max-width: 99%;
-        }
-    </style>
-{% endblock %}
-{% block extra_js %}
-    <script type="text/javascript" src="/static/js/d3jsplot.js"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 
-{% endblock %}
 
 {% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <b>{{ task.taskname }}</b>{% endblock %}
 
 {% block body %}
-{#    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>#}
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
 
     {% if columns %}
@@ -594,6 +579,13 @@
         {% endif %}
 
     {% endif %}
+
+{% endblock %}
+{% block extra_js %}
+    <script type="text/javascript" src="/static/js/d3jsplot.js"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 
 
 
