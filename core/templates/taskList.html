@@ -1,10 +1,6 @@
 {% extends "_base_core.html" %}
 {% load static %}
-
-<script type="text/javascript"
-           src="/core/static/js/progressbartaskpage.js">
-</script>
-
+{% load humanize %}
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA tasks{% endblock %}
 {% block subtitle %}PanDA {% if viewParams.MON_VO == 'ATLAS' %} JEDI {% endif %} task list{{viewParams.selection|safe }}
@@ -12,143 +8,204 @@
 {% endif %}
 {% endblock %}
 {% block subtitle_params %}
-{% if tasksTotalCount != None%} <b> Total tasks found &#x7E; <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{tasksTotalCount}}">{{ tasksTotalCount }}</a></b> {% endif %}
+{% if tasksTotalCount != None %} <b> Total tasks found <i class="fi-"></i> <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{tasksTotalCount}}">{{ tasksTotalCount }}</a></b> {% endif %}
 {% endblock %}
 {% block body %}
 
-    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <script src="{% static 'js/humanize.min.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+<div class="bp-container-simple">
+{% if requestParams.statenotupdated %}<p><b>Tasks in <span class="{{ requestParams.status }}">{{ requestParams.status }}</span> state for more than {{ requestParams.statenotupdated }} hours</b></p> {% endif %}
+{% if requestParams.workinggroup %}<p><b>Working group: {{ requestParams.workinggroup }}</b></p> {% endif %}
+{% if requestParams.username %}<p><b>User: <a href="{% url 'userInfo' requestParams.username %}?display_limit=300">{{ requestParams.username }}</a>     <a href="{% url 'userInfo' requestParams.username %}?display_limit=300">Show user page</a></b></p> {% endif %}
+{% if requestParams.tasktype %}<p><b>Task type: {{ requestParams.tasktype }}</b></p> {% endif %}
+
+{% if requestParams.campaign %}<p><b>Campaign: {{ requestParams.campaign }}</b></p> {% endif %}
+{% if requestParams.project %}<p><b>Project: {{ requestParams.project }}</b></p> {% endif %}
+{% if requestParams.stream %}<p><b>Stream: {{ requestParams.stream }}</b></p> {% endif %}
+{% if requestParams.tag %}<p><b>Tag: {{ requestParams.tag }}</b></p> {% endif %}
+
+{% if requestParams.reqid_from %}<p><b>From request ID: {{ requestParams.reqid_from }}</b></p> {% endif %}
+{% if requestParams.reqid_to %}<p><b>To request ID: {{ requestParams.reqid_to }}</b></p> {% endif %}
+
+{% if requestParams.transpath %}<p><b>Transformation: {{ requestParams.transpath }}</b></p> {% endif %}
+{% if requestParams.transuses %}<p><b>Release: {{ requestParams.transuses }}</b></p> {% endif %}
+{% if requestParams.processingtype %}<p><b>Processing type: {{ requestParams.processingtype }}</b></p> {% endif %}
+{% if requestParams.cloud %}<p><b>Cloud: {{ requestParams.cloud }}</b></p> {% endif %}
+{% if requestParams.parent_tid %}<p><b>Parent task: {{ requestParams.parent_tid }}</b></p> {% endif %}
+{% if requestParams.status %}<p><b>{% if viewParams.MON_VO == 'ATLAS' %}Detailed JEDI task status {% else %}Task status {% endif %}: <span class='{{requestParams.status}}'>{{ requestParams.status }}</span></b></p> {% endif %}
+{% if requestParams.superstatus %}<p><b>{% if viewParams.MON_VO == 'ATLAS' %}Task status {% else %}Task status {% endif %}: <span class='{{requestParams.superstatus}}'>{{ requestParams.superstatus }}</span></b></p> {% endif %}
+{% if requestParams.hashtag %}<p><b>Hashtag: {{ requestParams.hashtag }} </b></p> {% endif %}
+{% if requestParams.eventservice %}<p><b>Event service tasks</b></p> {% endif %}
+</div>
 
 
-{% if requestParams.statenotupdated %}<br><b>Tasks in <span class="{{ requestParams.status }}">{{ requestParams.status }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}
-{% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
-{% if requestParams.username %}<br><b>User: <a href="{% url 'userInfo' requestParams.username %}?display_limit=300">{{ requestParams.username }}</a>     <a href="{% url 'userInfo' requestParams.username %}?display_limit=300">Show user page</a></b> {% endif %}
-{% if requestParams.tasktype %}<br><b>Task type: {{ requestParams.tasktype }}</b> {% endif %}
-
-{% if requestParams.campaign %}<br><b>Campaign: {{ requestParams.campaign }}</b> {% endif %}
-{% if requestParams.project %}<br><b>Project: {{ requestParams.project }}</b> {% endif %}
-{% if requestParams.stream %}<br><b>Stream: {{ requestParams.stream }}</b> {% endif %}
-{% if requestParams.tag %}<br><b>Tag: {{ requestParams.tag }}</b> {% endif %}
-
-{% if requestParams.reqid_from %}<br><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
-{% if requestParams.reqid_to %}<br><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
-
-{% if requestParams.transpath %}<br><b>Transformation: {{ requestParams.transpath }}</b> {% endif %}
-{% if requestParams.transuses %}<br><b>Release: {{ requestParams.transuses }}</b> {% endif %}
-{% if requestParams.processingtype %}<br><b>Processing type: {{ requestParams.processingtype }}</b> {% endif %}
-{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-{% if requestParams.parent_tid %}<br><b>Parent task: {{ requestParams.parent_tid }}</b> {% endif %}
-{% if requestParams.status %}<br><b>{% if viewParams.MON_VO == 'ATLAS' %}Detailed JEDI task status {% else %}Task status {% endif %}: <span class='{{requestParams.status}}'>{{ requestParams.status }}</span></b> {% endif %}
-{% if requestParams.superstatus %}<br><b>{% if viewParams.MON_VO == 'ATLAS' %}Task status {% else %}Task status {% endif %}: <span class='{{requestParams.superstatus}}'>{{ requestParams.superstatus }}</span></b> {% endif %}
-
-{% if requestParams.hashtag %}<br><b>Hashtag: {{ requestParams.hashtag }} </b> {% endif %}
-
-{% if requestParams.eventservice %}<br><b>Event service tasks</b> {% endif %}
-
-<p>
 {% if tasks %}
 
-
 {% if flowstruct %}
-
-<script type="text/javascript"
-           src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
-</script>
-
 {% include "googleFlowDiagram.html" with struct=flowstruct %}
 {% endif %}
 
 
 {% if sumd %}
-
-<table>
-<tr class='tablesection'><th colspan=20> Task attribute summary, {{ ntasks }} tasks </th></tr>
+<div class="card bp-container">
+<div class="card-divider">
+    <p>Task attribute summary, {{ ntasks }} tasks</p>
+</div>
+<div class="card-section">
+<table class="bp-table">
+<tbody>
 {% for fdict in sumd %}
-
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
-{% if fdict.list|length > 300 %}
-Too many to list
-{% else %}
-{% for item in fdict.list %}
-<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}} {{item.kname}}_tooltip'{% endif %}> {{ item.kname }} </span>
-<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
-{% endfor %}
-{% endif %}
-</td></tr>
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
+    <td><div class="comment more">
+        {% for item in fdict.list %}
+            <span class="attrval-count-pair">
+                <span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}} {{item.kname}}_tooltip'{% endif %}> {{ item.kname }} </span>
+                <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
+            </span>
+        {% endfor %}
+        </div>
+    </td>
+</tr>
 {% endfor %}
 {% if hashtags and hashtags|length > 0 %}
-    <tr>
-        <th>hashtags ({{ hashtags|length }})</th>
-        <td>{% for hashtag in hashtags %}
-                {% if 'hashtag' in requestParams %}
-                    <a href="{{ nohashtagurl }}hashtag={{ requestParams.hashtag }},{{ hashtag }}">{{ hashtag }}</a>
-                {% else %}
-                    <a href="{{ xurl }}hashtag={{ hashtag }}">{{ hashtag }}</a>
-                {% endif %}
-                {% if not forloop.last %}, {% endif %}
-            {% endfor %}</td>
-    </tr>
+<tr>
+    <th>hashtags ({{ hashtags|length }})</th>
+    <td>{% for hashtag in hashtags %}
+            {% if 'hashtag' in requestParams %}
+                <a href="{{ nohashtagurl }}hashtag={{ requestParams.hashtag }},{{ hashtag }}">{{ hashtag }}</a>
+            {% else %}
+                <a href="{{ xurl }}hashtag={{ hashtag }}">{{ hashtag }}</a>
+            {% endif %}
+            {% if not forloop.last %}, {% endif %}
+        {% endfor %}</td>
+</tr>
 {% endif %}
+</tbody>
 </table>
+</div>
+</div>
 {% endif %}
+
 
 {% if datasetstage and datasetstage|length > 3 %}
-    <p><b>Datasets staging information for preselected tasks:</b>
-            <table class="table table-striped table-bordered" id="stagingdatasetstable" style="clear: both;">
-                <thead>
-                <tr>
-                    <th>Task ID</th>
-                    <th>Source RSE</th>
-                    <th>Dataset</th>
-                    <th>Status</th>
-                    <th>Staged files</th>
-                    <th>Total files</th>
-                    <th>Start time</th>
-                    <th>End time</th>
-                    <th>Update time</th>
-                    <th>Rse</th>
-                </tr>
-                </thead>
-            </table>
-        <script type="text/javascript">
-
-        $(document).ready(function(){
-            var jsonData = JSON.parse('{{ datasetstage | safe}}');
-            $('#stagingdatasetstable').dataTable({
-                data: jsonData,
-                columns: [
-                    { data: 'TASKID' ,
-                          "render": function(data, type, full, meta) {
-                                var entry =  '<a href="'+{% url 'taskInfo' %}+full['TASKID']+'">'+full['TASKID']+'</a>';
-                                entry += '<a target="_blank" href="'+{% url 'staginprogressplot' %}+'?jeditaskid='+full['TASKID']+'"><img src=\'/static/images/tinychart.png\' width=14 height=14 border=0/></a>';
-                                return entry;
-                          },},
-                    { data: 'SOURCE_RSE' },
-                    { data: 'DATASET' },
-                    { data: 'STATUS' },
-                    { data: 'STAGED_FILES' },
-                    { data: 'TOTAL_FILES' },
-                    { data: 'START_TIME' },
-                    { data: 'END_TIME' },
-                    { data: 'UPDATE_TIME' },
-                    { data: 'RSE', "render": function(data, type, full, meta) {
-                                return '<a target="_blanc" href="https://rucio-ui.cern.ch/rule?rule_id='+full['RSE']+'">'+full['RSE']+'</a>';
-                            },
-},
-                ]
-            });
-        });
-
-
-        </script>
-
+<div class="card bp-container">
+<div class="card-divider">
+    <p>Datasets staging information for preselected tasks</p>
+</div>
+<div class="card-section">
+    <table class="bp-datatable" id="stagingdatasetstable">
+        <thead>
+        <tr>
+            <th>Task ID</th>
+            <th>Source RSE</th>
+            <th>Dataset</th>
+            <th>Status</th>
+            <th>Staged files</th>
+            <th>Total files</th>
+            <th>Start time</th>
+            <th>End time</th>
+            <th>Update time</th>
+            <th>Rse</th>
+        </tr>
+        </thead>
+    </table>
+</div>
+</div>
 {% endif %}
 
+
+<div id="div-sum">
+   <a class="bp-button primary" onclick="javascript:loadSummaryData('{{ nosorturl }}');">Show events summary</a>
+</div>
 <p>
-<script src="/static/js/d3jsplot.js"></script>
+
+
+
+<div class="card bp-container">
+<div class="card-divider">
+    <p>{{ display_limit }} tasks {% if display_limit and ntasks > display_limit %}, only the most recent {{ display_limit }} tasks are shown. <a href="{{ url_nolimit }}">Remove the limit</a>{% endif %}</p>
+</div>
+<div class="card-section">
+<table class="bp-datatable hover" id="tasklist">
+<thead>
+<tr>
+    <th>ID<br>Parent</th>
+    <th>Type</th>
+    <th>Processing type</th>
+    {% if requestParams.tasktype != 'anal' %}<th>Campaign</th>{% endif %}
+    {% if requestParams.tasktype != 'anal' %}<th>Request</th>{% endif %}
+    <th>Group</th>
+    <th>User</th>
+    <th>Status</th>
+    <th class="num">Nfiles</th>
+    <th class="num">Nfinish</th>
+    <th class="num">%</th>
+    <th class="num">Nfail</th>
+    <th class="num">%</th>
+    <th class="num">Total events</th>
+    <th class="num">Remaining events</th>
+    <th class="num">Modified</th>
+    <th class="num">State changed</th>
+    <th class="num">Priority</th>
+    <th>Nucleus</th>
+    <th>Cloud</th>
+    <th>Logged status</th>
+    <th>Tracker</th>
+    <th>Errors</th>
+    <th>Task name</th>
+</tr>
+</thead>
+<tbody>
+{% for task in tasks %}
+<tr>
+    <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>{% if task.parent_tid and task.parent_tid != task.jeditaskid %}<br>
+       <a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a>{% endif %}</td>
+    <td>{{ task.tasktype }}</td>
+    <td>{% if task.processingtype %}{{ task.processingtype }} {% endif %}</td>
+    {% if requestParams.tasktype != 'anal' %}<td>{% if task.campaign %}<a href='{% url 'taskList' %}?campaign={{ task.campaign }}'>{{ task.campaign }}</a>{% else %}-{% endif %}</td>{% endif %}
+    {% if requestParams.tasktype != 'anal' %}<td>{% if task.deftreqid %}<a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a>{% else %}-{% endif %}</td>{% endif %}
+    <td>{% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>{% endif %}</td>
+    <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
+    <td class="{% if task.scoutinghascritfailures == True %} broken_fill {% elif task.scoutinghasnoncritfailures == True %} discarded_fill {% else %} {{task.superstatus}}_fill {% endif %}">
+        <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">
+            {% if task.superstatus %} <span class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</span>
+            {% else %} <span class="{{ task.status }}_tooltip">{{ task.status }} </span> {% endif %}</a>
+        {% if task.failedscouting == True %}<br>during scouting {% endif %}
+    </td>
+    <td class="num">{% if task.dsinfo.nfiles > 0 %} {{ task.dsinfo.nfiles|intcomma }} {% else %} - {% endif %}</td>
+    <td class="num">{% if task.dsinfo.nfilesfinished > 0 %} <span class='finished'>{{ task.dsinfo.nfilesfinished|intcomma }}</span> {% else %} -  {% endif %}</td>
+    <td class="num">{% if task.dsinfo.nfilesfinished > 0 %} <span class='finished'>{{ task.dsinfo.pctfinished }}%</span> {% else %} - {% endif %}</td>
+    <td class="num">{% if task.dsinfo.nfilesfailed > 0 %} <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span  class='failed'>{{ task.dsinfo.nfilesfailed|intcomma }}</span></a> {% else %} -  {% endif %}</td>
+    <td class="num">{% if task.dsinfo.nfilesfailed > 0 %}<a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span class='failed'> {{task.dsinfo.pctfailed}}%</span></a> {% else %} -  {% endif %}</td>
+    <td class="num">{% if task.totev > 0 %} {{ task.totev|intcomma }} {% else %} -  {% endif %}</td>
+    <td class="num">{% if task.totevrem > 0 %} {{ task.totevrem|intcomma }} {% else %} -  {% endif %}</td>
+    <td class="num">{{ task.modificationtime }}</td>
+    <td class="num">{{ task.statechangetime }}</td>
+    <td class="num">{{ task.taskpriority }}</td>
+    <td>{% if task.nucleus  %}{{ task.nucleus }}{% else %}-{% endif %}</td>
+    <td>{% if task.cloud %}{{ task.cloud }}{% else %}-{% endif %}</td>
+    <td class="limitedwidth">{{ task.errordialog|safe }}</td>
+    {% if requestParams.tasktype != 'anal' %}<td>{% if task.ticketid %}<a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %}</td>{% endif %}
+    <td><a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}">Errors</a></td>
+    <td class="limitedwidth"><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+{% else %}
+    <p>No matches to query.</p>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript" src="{% static "node_modules/jquery.shorten/src/jquery.shorten.min.js" %}"></script>
+<script type="text/javascript" src="{% static "node_modules/humanize/humanize.js" %}"></script>
+<script type="text/javascript" src="{% static "node_modules/datatables.net/js/jquery.dataTables.min.js" %}"></script>
+
+{# TODO find the num-html plugin to install via npm #}
+<script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+    
 <script type="text/javascript">
 function loadSummaryData(nosorturl) {
 
@@ -161,71 +218,50 @@ function loadSummaryData(nosorturl) {
     .done(function (response) {
         $('#div-sum').html(response);
     });
-
 }
+
+$(document).ready(function(){
+
+$(".comment").shorten({
+    showChars: 2000,
+});
+
+$('#tasklist').DataTable({
+    "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+    "paging": true,
+    "scrollX": true,
+    "aaSorting": [[15,'desc']],
+    }
+);
+
+
+var jsonData = JSON.parse('{{ datasetstage | safe}}');
+$('#stagingdatasetstable').dataTable({
+    data: jsonData,
+    columns: [
+        { data: 'TASKID' ,
+              "render": function(data, type, full, meta) {
+                    var entry =  '<a href="'+{% url 'taskInfo' %}+full['TASKID']+'">'+full['TASKID']+'</a>';
+                    entry += '<a target="_blank" href="'+{% url 'staginprogressplot' %}+'?jeditaskid='+full['TASKID']+'"><img src=\'/static/images/tinychart.png\' width=14 height=14 border=0/></a>';
+                    return entry;
+              },},
+        { data: 'SOURCE_RSE' },
+        { data: 'DATASET' },
+        { data: 'STATUS' },
+        { data: 'STAGED_FILES' },
+        { data: 'TOTAL_FILES' },
+        { data: 'START_TIME' },
+        { data: 'END_TIME' },
+        { data: 'UPDATE_TIME' },
+        { data: 'RSE', "render": function(data, type, full, meta) {
+                    return '<a target="_blanc" href="https://rucio-ui.cern.ch/rule?rule_id='+full['RSE']+'">'+full['RSE']+'</a>';
+                },
+        },
+    ]
+});
+});
 </script>
 
-
-<p>
-<div id="div-sum">
-   <a onclick="javascript:loadSummaryData('{{ nosorturl }}');">Show events summary</a>
-</div>
-<p>
-
-<div  class="table-scroll">
-<table>
-<tr class='tablesection'><th colspan=20> {{ display_limit }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
-{% if display_limit %} {% if tasks|length > display_limit %}
-        <font size=-1>Only the most recent {{ display_limit }} tasks are shown. <a href="{{ url_nolimit }}">Remove the limit</a></font>
-{% endif %} {% endif %}
-</th></tr>
-<tr class='tablesection'>
-	<th><a href="{{nosorturl}}">ID</a><br>Parent</th>
-    {% if requestParams.tasktype == 'anal' or requestParams.tasktype == 'analy' %}<th>Jobset</th>{% endif %}
-	<th><a href="{{nosorturl}}sortby=taskname">Task name</a><br>TaskType/ProcessingType     Campaign     Group     User {% if requestParams.tasktype == 'prod' %}     Tracker     Request {% endif %}     Errors <br><font color='brown'>Logged status</font></th>
-	<th>Task status<br><a href="{{nosorturl}}sortby=nfiles">Nfiles</a></th>
-	<th>Input files <br><a href="{{nosorturl}}sortby=pctfinished"><span class='finished'>finish%</span></a> <a href="{{nosorturl}}sortby=pctfailed"><span class='failed'>fail%</span></a>
-<br>	<a href="{{nosorturl}}sortby=pctfinished"><span class='finished'>Nfinish</span></a> <a href="{{nosorturl}}sortby=pctfailed"><span class='failed'>Nfail</span></a>
-	</th>
-	<th>Total/<a href="{{nosorturl}}sortby=totevrem">Remaining</a> events</th>
-	<th><a href="{{nosorturl}}sortby=time-descending">Modified</a></th>
-	<th><a href="{{nosorturl}}sortby=statetime-descending">State changed</a></th>
-	<th><a href="{{nosorturl}}sortby=priority">Priority</a></th>
-	<th><a href="{{nosorturl}}sortby=nucleus">Nucleus</a></th>
-	<th><a href="{{nosorturl}}sortby=cloud">Cloud</a></th>
-
-</tr>
-    {% for task in tasks %}
-	<tr>
-		<td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>
-		{% if task.parent_tid and task.parent_tid != task.jeditaskid %}<br><a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a>{% endif %}</td>
-		{% if requestParams.tasktype == 'anal' or requestParams.tasktype == 'analy' %}<td>{{ task.reqid }}</td>{% endif %}
-		<td><font size=-1><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %} {% if task.campaign %}     <a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %}     {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %}     <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %}
-{% if task.deftreqid %}     RequestID:<a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a> {% endif %}      <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}">Errors</a>
-		<br><font color='brown'>{{ task.errordialog|safe }}</font></td>
-        <td  {% if task.scoutinghascritfailures == True %} class='broken_fill'
-             {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
-             {% else %}class='{{task.superstatus}}_fill'
-             {% endif %}>
-            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} <span class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</span> {% else %} <span class="{{ task.status }}_tooltip">{{ task.status }} </span> {% endif %}</a> {% if task.failedscouting == True %}<br>during scouting{%endif%}
-                    {% if task.dsinfo.nfiles > 0 %} <br>{{task.dsinfo.nfiles}} {% endif %} </td>
-        <td>{% if task.dsinfo.nfilesfinished > 0 %}<span  class='finished'>{{task.dsinfo.pctfinished}}%</span>{% endif %} {% if task.dsinfo.nfilesfailed > 0 %}<a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span class='failed'> {{task.dsinfo.pctfailed}}%</span>{% endif %}</a>
-        <br> {% if task.dsinfo.nfilesfinished > 0 %} <span  class='finished'>{{ task.dsinfo.nfilesfinished }}</span> {% endif %}     {% if task.dsinfo.nfilesfailed > 0 %} <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span  class='failed'>{{ task.dsinfo.nfilesfailed }}</span></a> {% endif %}
-		</td>
-		<td><font size=-1>{% if task.totev > 0 %} {{ task.totev }} / {{task.totevrem}} {%endif%}</font></td>	
-		<td><font size=-1>{{ task.modificationtime }}</font></td>
-		<td><font size=-1>{{ task.statechangetime }}</font></td>
-		<td>{{ task.taskpriority }}</td>
-		<td>{{ task.nucleus }}</td>
-		<td>{{ task.cloud }}</td>
-
-	</tr>
-    {% endfor %}
-</table>
-</div>
-{% else %}
-    <p>No matches to query.</p>
-{% endif %}
 {% endblock %}
 
 {% block helptext %}

@@ -1,11 +1,18 @@
 // BigPanDAmon specific style for body elements
 @import "settings";
 
+* {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
 // Container with tabs inside for page parts like tables
 // ------------------------------
 .card.bp-container {
   width: 100%;
   margin: 0 0.7rem 0.7rem 0.7rem;
+  box-sizing: border-box;
 
   .card-divider {
     color: $white;
@@ -322,13 +329,13 @@ span {
   .num {
     text-align: right;
   }
-
   .mid {
     text-align: center;
   }
 }
 
 .dataTables_wrapper {
+  width: 100%;
 
   .dataTables_length {
     margin: 0.7rem;
