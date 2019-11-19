@@ -104,6 +104,7 @@ from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
+from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.bpuser import get_relevant_links
 
 @register.filter(takes_context=True)
@@ -7853,6 +7854,13 @@ def taskList(request):
                         if task['jeditaskid'] in taskMetadata:
                             task['jobs_metadata'] = taskMetadata[task['jeditaskid']]
 
+        if 'extra' in request.session['requestParams'] and 'jobstatecount' in request.session['requestParams']['extra']:
+            js_count_bytask_dict = get_job_state_summary_for_tasklist(tasks)
+            for task in tasks:
+                if task['jeditaskid'] in js_count_bytask_dict:
+                    task['job_state_count'] = js_count_bytask_dict[task['jeditaskid']]
+                else:
+                    task['job_state_count'] = {}
         dump = json.dumps(tasks, cls=DateEncoder)
         del request.session['TFIRST']
         del request.session['TLAST']
