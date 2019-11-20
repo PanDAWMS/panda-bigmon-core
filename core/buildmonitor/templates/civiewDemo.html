@@ -35,20 +35,19 @@
                 <th>Comp. Errors<BR>(w/warnings)</th>
                 <th>Test time</th>
                 <th>Pct. of Successful<BR>CTest tests<BR>(no warnings)</th>
+                <th>Host</th>
      </thead>
      <tbody></tbody>
     </table>
 <script type="text/javascript">
 
+var json=JSON.stringify({{ rows_s | safe }});
+
 var cidisplayTable = $('#CISummary').dataTable({
 "order": [[4, 'desc']],
 "pageLength": 100,
 "lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
-"ajax": {
-                 "processing": true,
-                 "url": "{% url 'BuildCIData' %}?nightly={{ nightly }}&rel={{ rel }}",
-                 "dataSrc" : ''},
-
+"data": JSON.parse(json),
 "rowCallback": function( row, data, displayIndex ) {
                  var v0=($('td:eq(0)',row).text().split("-"))[1];
                  var v0I = parseInt(v0, 10);
