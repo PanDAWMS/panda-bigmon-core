@@ -16,6 +16,8 @@ from core.libs.exlib import parse_datetime
 
 from core.oi.utils import round_time
 from django import template
+from django.http import HttpResponseRedirect
+
 
 from django.template.defaulttags import register
 
@@ -30,7 +32,13 @@ def to_float(value):
 
 @login_customrequired
 def job_problems(request):
+
     valid, response = initRequest(request)
+
+    if request.path_info =='/oi/jobproblems/':
+        get_args_str = request.META['QUERY_STRING']
+        return HttpResponseRedirect('%s?%s' % ('/oi/jobsbuster/?', get_args_str))
+
     if not valid:
         return response
 
