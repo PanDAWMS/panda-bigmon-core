@@ -37,7 +37,7 @@ def job_problems(request):
 
     if request.path_info =='/oi/jobproblems/':
         get_args_str = request.META['QUERY_STRING']
-        return HttpResponseRedirect('%s?%s' % ('/oi/jobsbuster/?', get_args_str))
+        return HttpResponseRedirect('%s?%s' % ('/oi/jobsbuster/', get_args_str))
 
     if not valid:
         return response
