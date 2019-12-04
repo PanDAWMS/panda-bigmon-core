@@ -7950,7 +7950,7 @@ def killtasks(request):
         postdata = {"username": username, "task": taskid, "parameters":[1], "userfullname":fullname}
 
 
-    headers = {'Accept': 'application/json', 'Authorization': 'Token '+prodsysToken}
+    headers = {'Content-Type':'application/json', 'Accept': 'application/json', 'Authorization': 'Token '+prodsysToken}
 
     conn = urllib3.HTTPSConnectionPool(prodsysHost, timeout=100)
     resp = None
