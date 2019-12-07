@@ -6912,7 +6912,7 @@ def worldhs06s(request):
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 @login_customrequired
-def dashboard(request, view='production'):
+def dashboard(request, view='all'):
     valid, response = initRequest(request)
     if not valid: return response
 
@@ -6951,8 +6951,13 @@ def dashboard(request, view='production'):
             estailtojobslinks = '&eventservice=2'
         noldtransjobs, transclouds, transrclouds = stateNotUpdated(request, state='transferring',
                                                                    hoursSinceUpdate=hoursSinceUpdate, count=True, wildCardExtension=extra)
-    else:
+    elif view == 'analysis':
         hours = 3
+        noldtransjobs = 0
+        transclouds = []
+        transrclouds = []
+    else:
+        hours = 12
         noldtransjobs = 0
         transclouds = []
         transrclouds = []
@@ -7006,8 +7011,10 @@ def dashboard(request, view='production'):
     else:
         if view == 'production':
             errthreshold = 5
-        else:
+        elif view == 'analysis':
             errthreshold = 15
+        else:
+            errthreshold = 10
         vosummary = []
 
     cloudview = 'region'
@@ -7015,7 +7022,7 @@ def dashboard(request, view='production'):
         cloudview = request.session['requestParams']['cloudview']
     if view == 'analysis':
         cloudview = 'region'
-    elif view != 'production':
+    elif view != 'production' and view != 'all':
         cloudview = 'N/A'
     if view == 'production' and (cloudview == 'world' or cloudview == 'cloud'): #cloud view is the old way of jobs distributing;
         # just to avoid redirecting
@@ -7036,8 +7043,9 @@ def dashboard(request, view='production'):
 
         if view == 'production':
             query['tasktype'] = 'prod'
-        else:
+        elif view == 'analysis':
             query['tasktype'] = 'anal'
+
 
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
             query['es__in'] = [1, 5]

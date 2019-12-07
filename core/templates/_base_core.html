@@ -86,6 +86,7 @@
         <a href="#">Dash</a>
         <ul class="submenu menu vertical">
             {% if viewParams.MON_VO == 'ATLAS' %}
+                <li><a href="{% url 'dashboard' %}">All jobs - Region view</a></li>
                 <li><a href="{% url 'dashAnalysis' %}">Analysis jobs - Region view</a></li>
                 <li><a href="{% url 'dashProduction' %}?cloudview=world">Production jobs - World view</a></li>
                 <li><a href="{% url 'dashProduction' %}?cloudview=world&es=true">Event Service world view</a></li>
