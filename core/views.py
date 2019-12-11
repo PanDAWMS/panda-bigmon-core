@@ -37,7 +37,7 @@ from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import defaultDatetimeFormat
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
     GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, JobsWorldViewTaskType, CombinedWaitActDefArch4
-from core.schedresource.models import Schedconfig
+from core.schedresource.models import Schedconfig, SchedconfigJson
 from core.common.models import Filestable4
 from core.common.models import Datasets
 from core.common.models import Sitedata
@@ -5434,6 +5434,17 @@ def siteInfo(request, site=''):
                 queue['lastmod'] = queue['lastmod'].strftime(defaultDatetimeFormat)
 
 
+    # get data from new schedconfig_json table
+    panda_queue = []
+    pqquery = {'pandaqueue': site}
+    panda_queues = SchedconfigJson.objects.filter(**pqquery).values()
+    if len(panda_queues) > 0:
+        panda_queue_dict = json.loads(panda_queues[0]['data'])
+        for par, val in panda_queue_dict.items():
+            val = ', '.join([str(subpar) + ' = ' + str(subval) for subpar, subval in val.items()]) if isinstance(val, dict) else val
+            panda_queue.append({'param': par, 'value': val})
+
+    panda_queue = sorted(panda_queue, key=lambda x: x['param'])
 
     HPC = False
     njobhours = 12
@@ -5514,6 +5525,7 @@ def siteInfo(request, site=''):
             'name': site,
             'njobhours': njobhours,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'pandaqueue': panda_queue,
         }
         data.update(getContextVariables(request))
         response = render_to_response('siteInfo.html', data, content_type='text/html')
