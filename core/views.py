@@ -468,6 +468,7 @@ def initRequest(request, callselfmon = True):
                 }
                 return False, render_to_response('errorPage.html', data, content_type='text/html')
             pval = pval.replace('+', ' ')
+            pval = pval.replace("\'", '')
             if p.lower() != 'batchid':  # Special requester exception
                 pval = pval.replace('#', '')
             ## is it int, if it's supposed to be?
