@@ -889,6 +889,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             (endtime is NULL and starttime is not null 
             and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 > {} and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 < {} ) 
             ) """.format(str(durationrange[0]), str(durationrange[1]), str(durationrange[0]), str(durationrange[1]))
+        elif param == 'errormessage':
+            errfield_map_dict = {}
+            for errcode in errorcodelist:
+                errfield_map_dict[errcode['error']] = errcode['diag']
+            for parname in request.session['requestParams']:
+                if parname in errfield_map_dict.keys():
+                    query[errfield_map_dict[parname]] = request.session['requestParams'][param]
 
 
         if querytype == 'task':

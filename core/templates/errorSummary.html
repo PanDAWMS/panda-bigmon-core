@@ -347,7 +347,10 @@ function DisplayErorListDataTable() {
                 "data": "errmessagecount",
                 sDefaultContent: "",
                 className: "num",
-                render: $.fn.dataTable.render.number( ',', '.'),
+                render: function (data, type, row) {
+                    let encdesc = encodeURIComponent(row['errmessage']);
+                    return '<a href="{{ xurlsubst }}' + row['errcodename'] + '=' + row['errcodeval'] + '&errormessage=' + encdesc +'" target="_blank">' + data + '</a>'
+                }
             },
             {
                 "data": "pandaids",
@@ -364,9 +367,6 @@ function DisplayErorListDataTable() {
                 }
             },
         ],
-        rowGroup: {
-            dataSrc: "errcode",
-        },
         initComplete: function () {
             this.api().columns([0,1]).every(function (i) {
                 var column = this;
@@ -396,6 +396,7 @@ function DisplayErorListDataTable() {
     });
 }
 </script>
+
 
 {% endif %}
 
