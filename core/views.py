@@ -892,7 +892,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         elif param == 'errormessage':
             errfield_map_dict = {}
             for errcode in errorcodelist:
-                errfield_map_dict[errcode['error']] = errcode['diag']
+                if errcode['name'] != 'transformation':
+                    errfield_map_dict[errcode['error']] = errcode['diag']
             for parname in request.session['requestParams']:
                 if parname in errfield_map_dict.keys():
                     query[errfield_map_dict[parname]] = request.session['requestParams'][param]
