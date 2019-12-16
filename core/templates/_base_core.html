@@ -492,28 +492,18 @@
 <script>
     function getSelectValue()
     {
-       var selectedValue = document.getElementById("searchselectid").value;
-       switch (selectedValue) {
+        var selectedValue = document.getElementById("searchselectid").value;
+        switch (selectedValue) {
            case 'site':
                $("#searchinputid").autocomplete({
-                        source: "{% url 'getsites' %}",
-                        select: function (event, ui) { //item selected
+                    source: "{% url 'getsites' %}",
+                    select: function (event, ui) { //item selected
                         AutoCompleteSelectHandler(event, ui)
-                        },
-                        minLength: 1,
-                        });
-                        break;
-                    }
-    }
-
-        $.ajax({
-            url: {% url 'saveSettings' %},
-            data: url,
-            async: true,
-            success: function() {
-                window.location = '{{ request.session.notimestampurl|safe }}timestamp={% now "H:i:s" %}'
-            }
-        });
+                    },
+                    minLength: 1,
+                    });
+            break;
+        }
     }
 </script>
 

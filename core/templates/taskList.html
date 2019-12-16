@@ -183,7 +183,7 @@
     <td class="num">{{ task.taskpriority }}</td>
     <td>{% if task.nucleus  %}{{ task.nucleus }}{% else %}-{% endif %}</td>
     <td>{% if task.cloud %}{{ task.cloud }}{% else %}-{% endif %}</td>
-    <td class="limitedwidth">{{ task.errordialog|safe }}</td>
+    <td class="limitedwidth"><span class="alarm">{{ task.errordialog|safe }}</span></td>
     {% if requestParams.tasktype != 'anal' %}<td>{% if task.ticketid %}<a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %}</td>{% endif %}
     <td><a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}">Errors</a></td>
     <td class="limitedwidth"><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a></td>
