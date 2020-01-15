@@ -51,6 +51,7 @@
 
             $scope.gog = function(){
                 var request = "";
+                if ($scope.selectedTime == "hours2160") return '?hours=2160';
                 if ($scope.selectedTime == "hours720") request = '?hours=720';
                 if ($scope.selectedTime == "hours168") request = '?hours=168';
                 if ($scope.selectedTime == "hours24") request = '?hours=24';
@@ -66,15 +67,17 @@
             };
 
             $scope.getTimeHours = function(){
+               if ($scope.selectedTime == "hours4320") return '4320';
+               if ($scope.selectedTime == "hours2160") return '2160';
                if ($scope.selectedTime == "hours720") return '720';
                if ($scope.selectedTime == "hours168") return '168';
                if ($scope.selectedTime == "hours24") return '24';
                if ($scope.selectedTime == "hours12") return '12';
                if ($scope.selectedTime == "hours1") return '1';
-            }
+            };
 
             $scope.updateByTime = function(){
-                Service.get('?hours='+getTimeHours()).then($scope.processResponce)
+                Service.get('?hours='+$scope.getTimeHours()).then($scope.processResponce)
             };
 
 

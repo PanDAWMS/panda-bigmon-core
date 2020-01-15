@@ -170,7 +170,10 @@ def getDTCSubmissionHist(request):
         {"name":"Last 12 hours", "value":"hours12", "selected":"0"},
         {"name":"Last day", "value":"hours24", "selected":"0"},
         {"name":"Last week","value":"hours168", "selected":"0"},
-        {"name":"Last month","value":"hours720", "selected":"0"}]
+        {"name":"Last month","value":"hours720", "selected":"0"},
+        {"name": "Last 3 months", "value": "hours2160", "selected": "0"},
+        {"name": "Last 6 months", "value": "hours4320", "selected": "0"}
+    ]
 
     hours = ""
     if 'hours' in request.session['requestParams']:
