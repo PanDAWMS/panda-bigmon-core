@@ -7566,6 +7566,8 @@ def taskList(request):
     executionData = []
     for id in taskl:
         executionData.append((id, transactionKey))
+    # For tasks plots
+    setCacheEntry(request, transactionKey, taskl, 60 * 20, isData=True)
 
     new_cur = connection.cursor()
     query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
@@ -7922,6 +7924,7 @@ def taskList(request):
             'requestString': urlParametrs,
             'tasksTotalCount': tasksTotalCount,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'idtasks': transactionKey,
         }
 
         setCacheEntry(request, "taskList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -8569,7 +8572,7 @@ def taskInfo(request, jeditaskid=0):
             auxiliaryDict = {}
 
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                request, query, exclude={},  mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
+                request, query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
             plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary2(
                 request, query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isOld')
             if request.user.is_authenticated and request.user.is_tester:
@@ -9617,7 +9620,8 @@ def ganttTaskChain(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None, algorithm = 'isOld'):
+def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False,
+                substatusfilter='', processingtype='', auxiliaryDict = None, algorithm = 'isOld'):
     jobs = []
     jobScoutIDs = {}
     jobScoutIDs['cputimescoutjob'] = []
@@ -9638,7 +9642,9 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
         newquery['processingtype'] = 'pmerge'
         isReturnDroppedPMerge=True
 
-    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid','attemptnr'
+    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', \
+             'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', \
+             'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid','attemptnr'
     # newquery['jobstatus'] = 'finished'
 
     # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses

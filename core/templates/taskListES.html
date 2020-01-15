@@ -34,7 +34,7 @@
 {% if requestParams.hashtag %}<br><b>Hashtag: {{ requestParams.hashtag }} </b> {% endif %}
 
 <p>
-
+<script src="/static/js/d3jsplot.js"></script>
 <script type="text/javascript">
 
 function loadESData(jeditaskid) {
@@ -49,6 +49,88 @@ function loadESData(jeditaskid) {
     });
 
 };
+function toggleDetailDisplay(className) {
+    el = document.getElementsByClassName(className);
+    for (i = 0; i < el.length; i++) {
+        el[i].style.display = (el[i].style.display == "none") ? "" : "none";
+    }
+}
+
+function buildPlots(classname, idtasks) {
+
+    el = document.getElementsByClassName(classname);
+    var flag = 0;
+    for (i = 0; i < el.length; i++) {
+        flag = (el[i].innerHTML) ? flag : flag + 1;
+    }
+    if (flag > 0) {
+        var values =  []
+        $.ajax({
+            type: "GET",
+            url: '{% url 'tasksplots' %}?idtasks='+idtasks,
+            async: false,
+            cache: false,
+            dataType: "json",
+            data: {},
+            success: function (data) {
+                values = data;
+                document.getElementById("plots").style.display = "block";
+            },
+            error : function($xhr,textStatus,errorThrown){
+                var string= $xhr.responseJSON;
+                var json_object= JSON.parse(string);
+                console.log("ERROR : ",  json_object.message);
+            }
+        })
+        ;
+        $("#jobsconsumptionplots").html("<img src='{% static "images/load.gif" %}'>  ");
+
+        if ('maxpss' in values) {
+            pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
+        }
+        if ('maxpssf' in values) {
+            pandamonplotHistNew(values['maxpssf'], "#plot3", "Maximum PSS histogram (failed jobs)");
+        }
+        if ('walltime' in values) {
+            pandamonplotHistNew(values['walltime'], "#plot2", "Walltime histogram");
+        }
+        if ('walltimef' in values) {
+            pandamonplotHistNew(values['walltimef'], "#plot4", "Walltime histogram (failed jobs)");
+        }
+        if ('maxpsspercore' in values) {
+            pandamonplotHistNew(values['maxpsspercore'], "#plot5", "Maximum PSS per core histogram");
+        }
+        if ('maxpsspercoref' in values) {
+            pandamonplotHistNew(values['maxpsspercoref'], "#plot6", "Maximum PSS per core histogram (failed jobs)");
+        }
+        if ('hs06s' in values) {
+            pandamonplotHistNew(values['hs06s'], "#plot7", "HS06s histogram");
+        }
+        if ('hs06sf' in values) {
+            pandamonplotHistNew(values['hs06sf'], "#plot8", "HS06s histogram (failed jobs)");
+        }
+        if ('walltimeperevent' in values) {
+            pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
+        }
+        if ('cputime' in values) {
+            pandamonplotHistNew(values['cputime'], "#plot10", "CPU time histogram");
+        }
+        if ('cputimeperevent' in values) {
+            pandamonplotHistNew(values['cputimeperevent'], "#plot11", "CPU time per event histogram");
+        }
+        if ('cputimef' in values) {
+            pandamonplotHistNew(values['cputimef'], "#plot12", "CPU time histogram (failed jobs)");
+        }
+        if ('cputimepereventf' in values) {
+            pandamonplotHistNew(values['cputimepereventf'], "#plot13", "CPU time per event histogram (failed jobs)");
+        }
+        $("#jobsconsumptionplots").html("");
+        toggleDetailDisplay(classname);
+    }
+    else {
+        toggleDetailDisplay(classname);
+    }
+}
 
 </script>
 
@@ -82,7 +164,39 @@ function loadESData(jeditaskid) {
 {% endif %}
 </table>
 {% endif %}
+<a onclick="javascript:buildPlots('d3splot', {{ idtasks }});">Show plots</a>
+<div id="plots" style="display:none">
+    <div id="jobsconsumptionplots"></div>
+    <div class="d3splot" id="plot1" style="float:left;display:none"></div>
 
+    <div class="d3splot" id="plot2" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot5" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot7" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot10" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot9" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot11" style="float:left;display:none"></div>
+
+    <br style="clear:both;">
+
+    <div class="d3splot" id="plot3" style="clear:both;float:left;display:none"></div>
+
+    <div class="d3splot" id="plot4" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot6" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot8" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot12" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot13" style="float:left;display:none"></div>
+    <br style="clear: both">
+</div>
+<br/><br/>
 <table>
 <tr class='tablesection'><th colspan=20> {{ display_limit }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
 {% if display_limit %} {% if tasks|length >= display_limit %}
@@ -138,6 +252,7 @@ function loadESData(jeditaskid) {
            <div id="div-{{ task.jeditaskid }}">
                 <a onclick="javascript:loadESData('{{ task.jeditaskid }}');">Show</a>
             </div>
+
 
 
         </td>
