@@ -64,7 +64,11 @@
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
     <link rel="stylesheet" href="{% static "js/datatables/RowGroup-1.1.1/css/rowGroup.foundation.css" %}">
     <style>
-        #errorsList_wrapper .row {
+        #errorsummary_groupbymessage_wrapper .row {
+            max-width: 99%;
+            margin-top: 1rem;
+        }
+        #errorsummary_groupbycode_wrapper .row {
             max-width: 99%;
             margin-top: 1rem;
         }
@@ -130,7 +134,7 @@
 <a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a>
 <p>
 
-<p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} {% if errMessageSummary %} <a href="#messages">messages</a> {% endif %} summary
+<p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} summary
 
 <script type="text/javascript"
            src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
@@ -189,29 +193,68 @@
 
 {% if errsByCount %}
 <a name="summary"></a>
-<table id="errsbycount" class="fixed">
-<colgroup>
-    <col class="w10"/>
-    <col class="w5"/>
-    <col class="w5"/>
-    <col class="w80"/>
-</colgroup>
-<thead>
-<tr class='tablesection'><th colspan=4> Overall error summary </th></tr>
-<tr><th>Category:code</th><th>Job list</th><th>Nerrors</th><th>Sample error description</th></tr>
-</thead>
-<tbody>
-{% for errval in errsByCount %}
-<tr>
-    <td class="wrap-words"> <a href="{{xurlsubst}}{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> {{ errval.error }} </a> </td>
-    <td> <a href="{{jobsurl}}{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> jobs </a> </td>
-    <td> {{ errval.count }} </td>
-    <td class="wrap-words"> {{ errval.diag }} <br/> {% if errval.count > 1 and not 'transformation' in errval.error %} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %} </td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-{#<button class="bluebutton" id="errsbycount-showall" onclick="toggleTableByID('errsbycount', 'errsbycount-showall')">Show all</button>#}
+<div class="card card-tabs">
+  <div class="card-divider">
+    <h6 class="float-left"><b>Overall error summary</b></h6>
+    <ul class="tabs menu align-right" data-active-collapse="true" data-tabs id="collapsing-tabs">
+      <li class="tabs-title is-active"><a href="#panel_groupbycode" aria-selected="true">Grouped by error code</a></li>
+      <li class="tabs-title"><a href="#panel_groupbymessage">Grouped by error message</a></li>
+     </ul>
+  </div>
+  <div class="tabs-content" data-tabs-content="collapsing-tabs">
+    <div class="tabs-panel is-active" id="panel_groupbycode">
+      <div class="card-section">
+        <div class="callout success small" data-closable>
+        <p>If you need to explore all error description messages, please use the 'Grouped by error message' link on the right above. </p>
+        <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+            <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        <table id="errorsummary_groupbycode" class="data-table left-aligned">
+        <thead>
+        <tr>
+            <th>Category:code</th>
+            <th>Nerrors</th>
+            <th>Sample error description</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for errval in errsByCount %}
+        <tr>
+            <td> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </td>
+            <td> {{ errval.count }} </td>
+            <td> {{ errval.diag|safe }}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tabs-panel" id="panel_groupbymessage">
+      <div class="card-section">
+        <table id="errorsummary_groupbymessage" class="data-table left-aligned">
+        <thead>
+          <tr>
+            <th>Category:code</th>
+            <th>Error message</th>
+            <th class="num">Number of error message</th>
+          </tr>
+        </thead>
+        <tfoot>
+          <tr>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+        </tfoot>
+        <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 {% endif %}
 
 {% if errsBySite %}
@@ -278,66 +321,38 @@
 {% endif %}
 
 
-{% if errMessageSummary %}
-<a name="messages"></a>
-<table id="errorsList" class="data-table left-aligned">
-    <thead>
-      <tr>
-        <th>Error code</th>
-        <th class="num">Number of errors</th>
-        <th class="num">Walltime * cores loss, years</th>
-        <th>Error message</th>
-        <th class="num">Number of error message</th>
-        <th>Job samples</th>
-      </tr>
-    </thead>
-    <tfoot>
-      <tr>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
-      </tr>
-    </tfoot>
-    <tbody></tbody>
-</table>
-
 <script type="text/javascript">
-var err_list_data = {{ errMessageSummary|safe }};
-var errorListDataTable;
+var err_list_data = {{ errsByMessage|safe }};
+var errorMessagesListDataTable;
+var errorCountListTableData;
 
 $(document).ready(function () {
-        DisplayErorListDataTable();
+        DisplayErrorCountListTableData();
+        DisplayErrorMessagesListTableData();
     });
 
-function DisplayErorListDataTable() {
-    errorListDataTable = $('#errorsList').dataTable({
+function DisplayErrorCountListTableData() {
+    errorCountListTableData = $('#errorsummary_groupbycode').dataTable({
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "aaSorting": [[1, 'desc']],
+    })
+}
+
+function DisplayErrorMessagesListTableData() {
+    errorMessagesListDataTable = $('#errorsummary_groupbymessage').dataTable({
         "sPaginationType": "full_numbers",
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         "paging": true,
-        "aaSorting": [[1, 'desc'], [4, 'desc']],
+        "aaSorting": [[2, 'desc'],],
         "data": err_list_data,
         "columns": [
             {
                 "data": "errcode",
                 sDefaultContent: "",
                 "render": function (data, type, row, meta) {
-                    return '<a href="{{ xurlsubst }}' + row['errcodename'] + '=' + row['errcodeval'] + '" target="_blank">' + data + '</a>'
+                    return '<a href="{{ xurl }}' + row['errcodename'] + '=' + row['errcodeval'] + '">' + data + '</a>'
                 }
-            },
-            {
-                "data": "errcodecount",
-                sDefaultContent: "",
-                className: "num",
-                render: $.fn.dataTable.render.number( ',', '.'),
-            },
-            {
-                "data": "errcodewalltimeloss",
-                sDefaultContent: "",
-                className: "num",
-                render: $.fn.dataTable.render.number( ',', '.', 2),
             },
             {
                 "data": "errmessage",
@@ -349,26 +364,12 @@ function DisplayErorListDataTable() {
                 className: "num",
                 render: function (data, type, row) {
                     let encdesc = encodeURIComponent(row['errmessage']);
-                    return '<a href="{{ xurlsubst }}' + row['errcodename'] + '=' + row['errcodeval'] + '&errormessage=' + encdesc +'" target="_blank">' + data + '</a>'
-                }
-            },
-            {
-                "data": "pandaids",
-                sDefaultContent: "",
-                "render": function (data) {
-                    let rendered_pandaids = '';
-                    for (let i = 0; i < data.length; i++) {
-                        rendered_pandaids += '<a href="/job/' + data[i] + '" target="_blank">' + data[i] + '</a>';
-                        if (i < data.length - 1) {
-                            rendered_pandaids += ', '
-                        }
-                    }
-                    return rendered_pandaids
+                    return '<a href="{{ jobsurl }}' + row['errcodename'] + '=' + row['errcodeval'] + '&errormessage=' + encdesc +'" target="_blank">' + data + '</a>'
                 }
             },
         ],
         initComplete: function () {
-            this.api().columns([0,1]).every(function (i) {
+            this.api().columns([0]).every(function (i) {
                 var column = this;
                 var select = $('<select><option value="">All</option></select>')
                     .appendTo( $(column.footer()).empty() )
@@ -396,9 +397,6 @@ function DisplayErorListDataTable() {
     });
 }
 </script>
-
-
-{% endif %}
 
 {% endblock %}
 

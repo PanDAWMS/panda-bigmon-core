@@ -18,10 +18,10 @@ from core.grafana import StaginDSProgress as dsProgressView
 from core.globalshares import views as globalshares
 from core.dashboards import dtcdboard as dtcdboard
 from core.dashboards import campaignprediction as campaignprediction
+from core.libs import tasksPlots as tasksPlots
 
 from core.compare import views as compare_views
 
-from core.globalpage import views as globalpage
 from core.buildmonitor import viewsglobal as globalview
 from core.buildmonitor import viewsci as ciview
 from core.buildmonitor import viewsn as nview
@@ -212,7 +212,7 @@ urlpatterns = [
     re_path(r'^staginprogress/', dsProgressView.getStageProfileData, name='staginprogress'),
     re_path(r'^staginprogressplot/', dsProgressView.getDATASetsProgressPlot, name='staginprogressplot'),
 
-                  ###Compare###
+    ###Compare###
     re_path(r'^compare/jobs/$', compare_views.compareJobs, name='compareJobs'),
     re_path(r'^deletefromcomparison/$', compare_views.deleteFromComparison),
     re_path(r'^addtocomparison/$', compare_views.addToComparison),
@@ -220,6 +220,7 @@ urlpatterns = [
 
     ###API###
     re_path(r'^api/get_sites/', coremon_views.getSites, name='getsites'),
+    re_path(r'^api/tasks_plots$', tasksPlots.getJobsData, name='tasksplots'),
 
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
