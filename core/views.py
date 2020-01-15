@@ -3500,6 +3500,8 @@ def jobList(request, mode=None, param=None):
     errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
                                                                                           testjobs)
 
+    errsByMessage = get_error_message_summary(jobs)
+
     _logger.debug('Built error summary: {}'.format(time.time() - start_time))
 
     # Here we getting extended data for site
@@ -3622,6 +3624,7 @@ def jobList(request, mode=None, param=None):
         data = {
             'prefix': getPrefix(request),
             'errsByCount': errsByCount,
+            'errsByMessage': json.dumps(errsByMessage),
             'errdSumd': errdSumd,
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -10691,7 +10694,7 @@ def errorSummary(request):
             'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
             'sumd': sumd,
             'errHist': errHist,
-            'errMessageSummary': json.dumps(error_message_summary),
+            'errsByMessage': json.dumps(error_message_summary),
             'tfirst': TFIRST,
             'tlast': TLAST,
             'sortby': sortby,
