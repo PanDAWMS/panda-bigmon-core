@@ -51,7 +51,8 @@
 
             $scope.gog = function(){
                 var request = "";
-                if ($scope.selectedTime == "hours2160") return '?hours=2160';
+                if ($scope.selectedTime == "hours4320") request = '?hours=4320';
+                if ($scope.selectedTime == "hours2160") request ='?hours=2160';
                 if ($scope.selectedTime == "hours720") request = '?hours=720';
                 if ($scope.selectedTime == "hours168") request = '?hours=168';
                 if ($scope.selectedTime == "hours24") request = '?hours=24';
@@ -76,10 +77,46 @@
                if ($scope.selectedTime == "hours1") return '1';
             };
 
-            $scope.updateByTime = function(){
-                Service.get('?hours='+$scope.getTimeHours()).then($scope.processResponce)
+            $scope.updateByPredefinedTime = function(){
+                selHours = $scope.getTimeHours();
+                if (selHours >= 24) {
+                    $scope.dateTo = new Date();
+                    $scope.dateFrom = new Date()
+                    $scope.dateFrom.setHours($scope.dateFrom.getHours() - selHours);
+
+                } else {
+                    $scope.dateFrom ='';
+                    $scope.dateTo ='';
+                }
+                Service.get('?hours='+selHours).then($scope.processResponce);
             };
 
+            formatDate = function(date){
+                return  date.getFullYear() + '-' + ((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1)))  + '-' +
+                    ((date.getDate() > 9) ? (date.getDate()) : ('0' + (date.getDate()))) ;
+            };
+
+            $scope.updateTimeWindow = function(){
+                $scope.selectedTime = "";
+                if ($scope.dateFrom && $scope.dateTo) {
+                    Service.get('?'+$scope.getTimeForQuery()).then($scope.processResponce);
+                }
+            };
+
+            $scope.getTimeForQuery = function(forGrafana = false){
+                if ($scope.getTimeHours()) {
+                    if (forGrafana)
+                        return 'from=now-'+ $scope.getTimeHours()+'h&to=now';
+                    else
+                        return 'hours=' + $scope.getTimeHours();
+                }
+                else {
+                    if (forGrafana)
+                        return 'from='+ $scope.dateFrom.getTime()+'&to='+$scope.dateTo.getTime();
+                    else
+                        return 'date_from=' + formatDate($scope.dateFrom) + '&date_to=' + formatDate($scope.dateTo);
+                }
+            };
 
             var optionsACTCH = {
                           title: 'Activation time',
@@ -183,6 +220,8 @@
                 });
             }
             $scope.selectedTime = 24;
+            $scope.dateFrom = '';
+            $scope.dateTo = '';
             Service.get('?hours='+$scope.selectedTime).then($scope.processResponce);
         }
     </script>
@@ -199,9 +238,17 @@
      <div class="row">
         <div id="chartACTCH_div" class="column column-block panel" ></div>
          <div id="selectionpane" class="column column-block medium-4" style="margin-top: 60px">
-            <select id="timewindow" ng-model="selectedTime" ng-options="timeitem.value as timeitem.name for timeitem in selecttime" ng-change="updateByTime();">
+            <select id="timewindow" ng-model="selectedTime" ng-options="timeitem.value as timeitem.name for timeitem in selecttime" ng-change="updateByPredefinedTime();">
                <option value="" disabled>Select Time Window</option>
             </select>
+            <table class="table">
+           		<tr>
+                <td><label>From:<input type="date" class="ntag-text" ng-model="dateFrom" id="ntag_from" min="2019-07-01" ng-change="updateTimeWindow();"></label>
+                <td><label>To:<input type="date" class="ntag-text" ng-model="dateTo" id="ntag_to" min="2019-07-01" ng-change="updateTimeWindow();"></label>
+                <!-- <td><a ng-click="gog();" class="button secondary">Set</a> -->
+           		</tr>
+            </table>
+
 
             <b>Campaign:</b>
             <select id="campaign" ng-model="selectedCampaign" ng-options="campitem.value as campitem.name for campitem in selectcampaign" multiple>
@@ -238,13 +285,13 @@
               </thead>
               <tbody>
                 <tr ng-repeat="x in progresstablearr" class="low-stat">
-                    <th class="sm_ok_fill"> <a href="{% url 'taskList' %}?tape=true&stagesource={$ x.source $}&hours={$ getTimeHours(selectedTime) $}">{$ x.source $}</a>
+                    <th class="sm_ok_fill"> <a href="{% url 'taskList' %}?tape=true&stagesource={$ x.source $}&{$ getTimeForQuery() $}">{$ x.source $}</a>
                     </th>
                     <td class="sm_ok_light_fill">
-                        <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source $}&hours={$ getTimeHours(selectedTime) $}"><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>
+                        <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source $}&{$ getTimeForQuery() $}"><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>
                     </td>
                     <td class="sm_ok_light_fill">
-                        <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All&var-src_endpoint={$ x.source $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&from=now-{$ getTimeHours(selectedTime) $}h&to=now">--></a>
+                        <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All&var-src_endpoint={$ x.source $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&{$ getTimeForQuery(true) $}">--></a>
                     </td>
                     <td class="sm_ok_light_fill">
                         {$ x.ds_active $}
