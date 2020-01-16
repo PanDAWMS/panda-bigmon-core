@@ -884,7 +884,7 @@ def sendArtReport(request):
         isSent = False
         i = 0
         while not isSent:
-            i +=1
+            i += 1
             if i > 1:
                 time.sleep(10)
             isSent = send_mail_art(template, subject, summary, recipient)

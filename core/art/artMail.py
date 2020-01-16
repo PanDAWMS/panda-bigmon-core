@@ -22,7 +22,9 @@ def textify(html):
 
 
 def send_mail_art(template, subject, summary, recipient):
-    # recipient = 'mailfordebug@cern.ch'
+    # uncomment for debugging
+    # recipient = 'tatiana.korchuganova@cern.ch'
+    # ----
     isSuccess = True
     nmails = 0
     html_message = loader.render_to_string(
@@ -39,11 +41,10 @@ def send_mail_art(template, subject, summary, recipient):
             message=textify(html_message),
             from_email='atlas.pandamon@cern.ch',
             recipient_list=[recipient],
-            # recipient_list=['tatiana.korchuganova@cern.ch'],
             fail_silently=False,
         )
     except SMTPException as e:
-        msg = 'Exception was caught while sending ART jobs report to ' + recipient
+        msg = 'Internal Server Error! Exception was caught while sending ART jobs report to ' + recipient
         msg += '\n' + str(e)
         _logger.exception(msg)
         isSuccess = False
@@ -51,6 +52,7 @@ def send_mail_art(template, subject, summary, recipient):
     if nmails == 0:
         isSuccess = False
     return isSuccess
+
 
 def send_mails(template, subject, summary):
     isSuccess = True
