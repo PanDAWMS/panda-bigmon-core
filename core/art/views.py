@@ -888,6 +888,8 @@ def sendArtReport(request):
             if i > 1:
                 time.sleep(10)
             isSent = send_mail_art(template, subject, summary, recipient)
+            # put 10 seconds delay to bypass the message rate limit of smtp server
+            time.sleep(10)
             if i >= maxTries:
                 break
 
