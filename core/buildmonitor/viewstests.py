@@ -84,7 +84,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
         relnstamp = rowmax[8]
         if gitbrSS != None : gitbrSS=rowmax[9]
         tabname='testresults'
-        query1="select res,projname,nameln,pname,mngrs,contname,to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp,wdirln from " + tabname + "@ATLR.CERN.CH natural join jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH natural join packages@ATLR.CERN.CH where jid ='%s'" % jid_top
+        query1="select res,projname,nameln,pname,mngrs,contname,to_char(tstamp, 'RR/MM/DD HH24:MI'),fname as tstamp,wdirln from " + tabname + "@ATLR.CERN.CH natural join jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH natural join packages@ATLR.CERN.CH where jid ='%s'" % jid_top
         new_cur.execute(query1)
         reslt1 = new_cur.fetchall()
 #     query="select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, relnstamp from nightlies@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and tstamp between sysdate-7+1/24 and sysdate order by tstamp desc" % nname
@@ -116,9 +116,13 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       if row[3] == 'OptionalTests': category='Optional'
       container=row[5]
       ttime=row[6]
+      fname=row[7]
       i_result=di_res.get(str(result),result)
       if i_result == None or i_result == "None" : i_result=radiooff_icon; 
-      row_cand=[i_result,proj,nameln,category,container,ttime]
+      nameln1=nameln
+      if fname != None and fname != '':
+          nameln1=re.sub(fname+'#','',nameln,1)
+      row_cand=[i_result,proj,nameln1,category,container,ttime]
       rows_s.append(row_cand)
 
     data={"nightly": nname, "rel": relname, "ar": arname, "ab123": 'abcd', 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}
