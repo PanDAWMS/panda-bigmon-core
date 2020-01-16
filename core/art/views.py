@@ -655,17 +655,19 @@ def registerARTTest(request):
     if not valid:
         return HttpResponse(status=401)
     pandaid = -1
+    jeditaskid = -1
     testname = ''
     nightly_release_short = None
     platform = None
     project = None
     package = None
     nightly_tag = None
+    extra_info = {}
 
     ### Checking whether params were provided
     if 'requestParams' in request.session and 'pandaid' in request.session['requestParams'] and 'testname' in request.session['requestParams']:
-            pandaid = request.session['requestParams']['pandaid']
-            testname = request.session['requestParams']['testname']
+        pandaid = request.session['requestParams']['pandaid']
+        testname = request.session['requestParams']['testname']
     else:
         data = {'exit_code': -1, 'message': "There were not recieved any pandaid and testname"}
         _logger.error(data['message'] + str(request.session['requestParams']))
@@ -701,6 +703,10 @@ def registerARTTest(request):
         data = {'exit_code': -1, 'message': "No nightly_tag provided"}
         _logger.error(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), content_type='application/json')
+
+    ### Processing extra params
+    if 'html' in request.session['requestParams']:
+        extra_info['html'] = request.session['requestParams']['html']
 
     ### Checking whether params is valid
     try:
@@ -742,7 +748,8 @@ def registerARTTest(request):
 
     ### Preparing params to register art job
 
-    jeditaskid = job['jeditaskid']
+    if 'jeditaskid' in job:
+        jeditaskid = job['jeditaskid']
 
     ### table columns:
     # pandaid
@@ -753,6 +760,7 @@ def registerARTTest(request):
     # package
     # nightly_tag
     # jeditaskid
+    # extrainfo
 
     ### Check whether the pandaid has been registered already
     if ARTTests.objects.filter(pandaid=pandaid).count() == 0:
@@ -766,7 +774,8 @@ def registerARTTest(request):
                                                 nightly_tag=nightly_tag,
                                                 project=project,
                                                 platform=platform,
-                                                package=package
+                                                package=package,
+                                                extrainfo=json.dumps(extra_info)
                                                 )
             insertRow.save()
             data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}
