@@ -147,10 +147,13 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
               tpccompl=dict_jid02[pjname][1]
               nt_er=dict_jid02[pjname][2]
               nt_pb=dict_jid02[pjname][3]
+              if ntcompl == None or ntcompl == 'N/A' or ntcompl <= 0:
+                  nt_er='N/A'
+                  nt_pb='N/A'
               tpcer=dict_jid02[pjname][4]
               tpcpb=dict_jid02[pjname][5]
-          [tpcer_s,tpcpb_s]=map(lambda c: 100 - c, [tpcer,tpcpb])
-          [tpcer_sf,tpcpb_sf]=map(lambda c: format(c,'.1f'), [tpcer_s,tpcpb_s])
+#          [tpcer_s,tpcpb_s]=map(lambda c: 100 - c, [tpcer,tpcpb])
+#          [tpcer_sf,tpcpb_sf]=map(lambda c: format(c,'.1f'), [tpcer_s,tpcpb_s])
           s_checkout='0'
           if row01[26] != None: s_checkout=str(row01[26])
           s_config='0'
@@ -166,7 +169,8 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           if job_start != None: t_start=job_start.strftime('%Y/%m/%d %H:%M')
           build_time_cell=t_bstart+'==='+s_checkout+s_config+s_inst
           combo_c=str(nc_er)+' ('+str(nc_pb)+')'
-          combo_t=str(tpcer_sf)+' ('+str(tpcpb_sf)+')'
+          combo_t=str(nt_er)+' ('+str(nt_pb)+')'
+          if nt_er == 'N/A': combo_t='N/A(N/A)'
           mrlink_a="<a href=\""+mrlink+"\">"+gitbr+"</a>" 
           [i_checkout,i_inst,i_config]=map(lambda x: di_res.get(str(x),str(x)), [s_checkout,s_inst,s_config])
           if i_checkout == None or i_checkout == "None" : i_checkout=radiooff_icon; 
@@ -182,6 +186,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           link_to_testsRes=reverse('TestsRes')
           link_to_compsRes=reverse('CompsRes')
           i_combo_t="<a href=\""+link_to_testsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_t+"</a>"
+          if combo_t == 'N/A(N/A)': i_combo_t=combo_t
           i_combo_c="<a href=\""+link_to_compsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_c+"</a>"
           row_cand=[rname,ar_sel,pjname,mrlink_a,t_start,ii_checkout,ii_inst,ii_config,t_bstart,i_combo_c,t_test,i_combo_t,hname]
           rows_s.append(row_cand)

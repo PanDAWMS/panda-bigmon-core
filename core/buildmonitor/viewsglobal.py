@@ -48,19 +48,18 @@ def globalviewDemo(request):
     (select ncompl as nc, ner as nc_er, npb as nc_pb, jid, projid from cstat@ATLR.CERN.CH ) cs,
     (select ncompl as nt, ner as nt_er, npb as nt_pb, jid, projid from tstat@ATLR.CERN.CH ) ts
      WHERE
-    j.jid BETWEEN to_number(to_char(SYSDATE-6, 'YYYYMMDD'))*10000000
+    j.jid BETWEEN to_number(to_char(SYSDATE-10, 'YYYYMMDD'))*10000000
      AND to_number(to_char(SYSDATE, 'YYYYMMDD')+1)*10000000
      AND j.jid = platf.jid
      AND j.jid = cs.jid and j.projid = cs.projid
      AND j.jid = ts.jid and j.projid = ts.projid
-     AND j.begdate between sysdate-6 and sysdate
+     AND j.begdate between sysdate-10 and sysdate
      AND j.eb is not  NULL order by j.eb desc
           """
     new_cur.execute(query)
     result = new_cur.fetchall()
 
     first_row = result[0]
-    #    hdrs=['Branch', 'Recent<BR>Release', 'Build time', 'Ave.Compilation<BR>Error(w/warnings)','CTest or ATN tests<BR>(no warings)','ORDER']
     rows_s = []
     dd = defaultdict(list)
     for row1 in result:
@@ -83,28 +82,15 @@ def globalviewDemo(request):
               '19.2.X_BUGFIX': 'BB', 'GAUDI_HIVE': 'BAAA', 'UPGRADE_INTEGRATION': 'BAAB'}
     for k, v in dd.items():
         ar1 = []
-        #        k11='<a href="http://atlas-nightlies-browser.cern.ch/~platinum/nightlies/info?tp=g&nightly='+k+'">'+k+'</a>'
-        #        if re.match('^.*CI.*$',k): k11=k
-        k11 = k
-        ar1.append(k11)
+        ar1.append(k)
         row10u = v[0].upper()
         name_code = dict_g.get(row10u, 'Y' + row10u)
         v[0] = row10u
         #        v[13]='<a href="http://atlas-nightlies-browser.cern.ch/~platinum/nightlies/info?tp=g&nightly='+k+'&rel='+v[13]+'&ar=*">'+v[13]+'</a>'
         ar1.extend(v)
-        v38 = 'N/A';
-        v39 = 'N/A';
-        v38s = 'N/A';
-        v39s = 'N/A';
-        m_tcompl = v[18]
-        if m_tcompl != None and m_tcompl != 'N/A' and m_tcompl > 0:
-            nt = max(1, v[18])
-            #            print('vv ',str(nt)+' * '+str(v[19])+' * '+str(v[20]))
-            v38 = float(100. - v[19] * 100. / nt)
-            v39 = float(100. - v[20] * 100. / nt)
-            v38s = format(v38, '.0f')
-            v39s = format(v39, '.0f')
-        ar1.extend([v38s, v39s])
+        m_tcompl = v[17]
+        if m_tcompl == None or m_tcompl == 'N/A' or m_tcompl <= 0: 
+            v[18]='N/A'; v[19]='N/A'
         ar1.append(name_code)
         reslt2.append(ar1)
         lar1 = len(ar1)
@@ -113,7 +99,10 @@ def globalviewDemo(request):
     for row in reslt2:
         list9 = []
         a0001 = str(row[17]) + ' (' + str(row[18]) + ')'
-        a0002 = str(row[27]) + ' (' + str(row[28]) + ')'
+        m_tcompl = row[19]
+        if m_tcompl == None or m_tcompl == 'N/A' or m_tcompl <= 0:
+            row[20]='N/A'; row[21]='N/A';
+        a0002 = str(row[20]) + ' (' + str(row[21]) + ')'
         brname = row[0]
         link_brname = brname
         link_to_ciInfo = reverse('BuildCI')
@@ -128,7 +117,7 @@ def globalviewDemo(request):
         list9.append(row[9]);
         list9.append(a0001);
         list9.append(a0002);
-        list9.append(row[29]);
+        list9.append(row[27]);
         reslt3.append(list9)
 
     data={'viewParams': request.session['viewParams'], 'reslt3':json.dumps(reslt3, cls=DateEncoder)}

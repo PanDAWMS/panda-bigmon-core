@@ -32,9 +32,9 @@
                 <th>Externals<BR>build</th>
                 <th>CMake<BR>config</th>
                 <th>Build time</th>
-                <th>Comp. Errors<BR>(w/warnings)</th>
+                <th>Comp. errors<BR>(w/warnings)</th>
                 <th>Test time</th>
-                <th>Pct. of Successful<BR>CTest tests<BR>(no warnings)</th>
+                <th>CI tests errors<BR>(w/warnings)</th>
                 <th>Host</th>
      </thead>
      <tbody></tbody>
@@ -62,8 +62,8 @@ var cidisplayTable = $('#CISummary').dataTable({
                  else if ( v9 > 0 ) { $('td:eq(9)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");} 
                  else if ( /\s/.test(v9) )  { $('td:eq(9)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(9)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
-                 if ( v11 < 95 ) { $('td:eq(11)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v11 < 32 ) { $('td:eq(11)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 if ( v11 > 0 && v11 <= 1 ) { $('td:eq(11)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v11 > 1 ) { $('td:eq(11)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( v11 != 'N/A' )  { $('td:eq(11)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(11)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
 
