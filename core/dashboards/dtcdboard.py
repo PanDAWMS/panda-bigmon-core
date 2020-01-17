@@ -170,7 +170,10 @@ def getDTCSubmissionHist(request):
         {"name":"Last 12 hours", "value":"hours12", "selected":"0"},
         {"name":"Last day", "value":"hours24", "selected":"0"},
         {"name":"Last week","value":"hours168", "selected":"0"},
-        {"name":"Last month","value":"hours720", "selected":"0"}]
+        {"name":"Last month","value":"hours720", "selected":"0"},
+        {"name": "Last 3 months", "value": "hours2160", "selected": "0"},
+        {"name": "Last 6 months", "value": "hours4320", "selected": "0"}
+    ]
 
     hours = ""
     if 'hours' in request.session['requestParams']:
@@ -246,7 +249,7 @@ def getStagingData(request):
         selection += " AND t3.campaign in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ")"
 
     if not jeditaskid:
-        selection += " AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or END_TIME is NULL)" \
+        selection += " AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or (END_TIME is NULL and not (t1.STATUS = 'done')))" \
                      % (timewindow[0], timewindow[1])
 
     new_cur.execute(

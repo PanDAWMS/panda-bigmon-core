@@ -110,21 +110,32 @@ DDM (Grafana)
 
 </tr></table>
 
-{% if incidents %}
+{#{% if incidents %}#}
+{##}
+{#<table>#}
+{#<tr class='tablesection'><th colspan=20> Incidents over the last month </th></tr>#}
+{#{% for inc in incidents %}#}
+{#<tr><td> {{ inc.at_time }} </td>#}
+{#<td> <font size=-1>{{ inc.description|safe }}</font> </td>#}
+{#{% endfor %}#}
+{#</table>#}
+{##}
+{#{% else %}#}
+{##}
+{#<p>#}
+{#This site has no logged incidents over the last month.#}
+{#</p>#}
+{##}
+{#{% endif %}#}
+
+{% if pandaqueue %}
 
 <table>
-<tr class='tablesection'><th colspan=20> Incidents over the last month </th></tr>
-{% for inc in incidents %}
-<tr><td> {{ inc.at_time }} </td>
-<td> <font size=-1>{{ inc.description|safe }}</font> </td>
+<tr class='tablesection'><th colspan=20> {{ site.siteid }} parameters from AGIS/CRIC configuration file</th></tr>
+{% for item in pandaqueue %}
+<tr><th>{{ item.param }} </th><td> {% if item.value != 'None' %} {{ item.value }} {% endif %}</td></tr>
 {% endfor %}
 </table>
-
-{% else %}
-
-<p>
-This site has no logged incidents over the last month.
-</p>
 
 {% endif %}
 

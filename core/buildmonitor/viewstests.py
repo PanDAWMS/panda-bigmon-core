@@ -1,4 +1,4 @@
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 from datetime import datetime
 from core.views import initRequest
 from django.db import connection, transaction
@@ -32,25 +32,7 @@ def testviewDemo(request):
     else:
         arname = 'x86_64-slc6-gcc62-opt'
 
-    data={"nightly": nname, "rel": relname, "ar": arname, "ab123": 'abcd', 'viewParams': request.session['viewParams']}
-    return render_to_response('testviewDemo.html', data, content_type='text/html') 
-
-def testviewData(request):
-    valid, response = initRequest(request)
     new_cur = connection.cursor()
-    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
-        nname = request.session['requestParams']['nightly']
-    else:
-        nname = 'MR-CI-builds'
-    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 100:
-        relname = request.session['requestParams']['rel']
-    else:
-        relname = 'unknown'
-    if 'ar' in request.session['requestParams'] and len(request.session['requestParams']['ar']) < 100:
-        arname = request.session['requestParams']['ar']
-    else:
-        arname = 'x86_64-slc6-gcc62-opt'
-
     check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span s\
 tyle="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-ico\
 n-circle-check">ICON33</span></div>'
@@ -138,6 +120,8 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       if i_result == None or i_result == "None" : i_result=radiooff_icon; 
       row_cand=[i_result,proj,nameln,category,container,ttime]
       rows_s.append(row_cand)
-    return HttpResponse(json.dumps(rows_s, cls=DateEncoder), content_type='application/json')
+
+    data={"nightly": nname, "rel": relname, "ar": arname, "ab123": 'abcd', 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}
+    return render(request,'testviewDemo.html', data, content_type='text/html')
 
 

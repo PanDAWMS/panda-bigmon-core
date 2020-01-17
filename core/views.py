@@ -37,7 +37,7 @@ from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import defaultDatetimeFormat
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
     GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, JobsWorldViewTaskType, CombinedWaitActDefArch4
-from core.schedresource.models import Schedconfig
+from core.schedresource.models import Schedconfig, SchedconfigJson
 from core.common.models import Filestable4
 from core.common.models import Datasets
 from core.common.models import Sitedata
@@ -104,6 +104,7 @@ from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
+from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.bpuser import get_relevant_links
 
 @register.filter(takes_context=True)
@@ -467,6 +468,7 @@ def initRequest(request, callselfmon = True):
                 }
                 return False, render_to_response('errorPage.html', data, content_type='text/html')
             pval = pval.replace('+', ' ')
+            pval = pval.replace("\'", '')
             if p.lower() != 'batchid':  # Special requester exception
                 pval = pval.replace('#', '')
             ## is it int, if it's supposed to be?
@@ -887,6 +889,14 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             (endtime is NULL and starttime is not null 
             and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 > {} and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 < {} ) 
             ) """.format(str(durationrange[0]), str(durationrange[1]), str(durationrange[0]), str(durationrange[1]))
+        elif param == 'errormessage':
+            errfield_map_dict = {}
+            for errcode in errorcodelist:
+                if errcode['name'] != 'transformation':
+                    errfield_map_dict[errcode['error']] = errcode['diag']
+            for parname in request.session['requestParams']:
+                if parname in errfield_map_dict.keys():
+                    query[errfield_map_dict[parname]] = request.session['requestParams'][param]
 
 
         if querytype == 'task':
@@ -3490,6 +3500,8 @@ def jobList(request, mode=None, param=None):
     errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
                                                                                           testjobs)
 
+    errsByMessage = get_error_message_summary(jobs)
+
     _logger.debug('Built error summary: {}'.format(time.time() - start_time))
 
     # Here we getting extended data for site
@@ -3612,6 +3624,7 @@ def jobList(request, mode=None, param=None):
         data = {
             'prefix': getPrefix(request),
             'errsByCount': errsByCount,
+            'errsByMessage': json.dumps(errsByMessage),
             'errdSumd': errdSumd,
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -5433,6 +5446,17 @@ def siteInfo(request, site=''):
                 queue['lastmod'] = queue['lastmod'].strftime(defaultDatetimeFormat)
 
 
+    # get data from new schedconfig_json table
+    panda_queue = []
+    pqquery = {'pandaqueue': site}
+    panda_queues = SchedconfigJson.objects.filter(**pqquery).values()
+    if len(panda_queues) > 0:
+        panda_queue_dict = json.loads(panda_queues[0]['data'])
+        for par, val in panda_queue_dict.items():
+            val = ', '.join([str(subpar) + ' = ' + str(subval) for subpar, subval in val.items()]) if isinstance(val, dict) else val
+            panda_queue.append({'param': par, 'value': val})
+
+    panda_queue = sorted(panda_queue, key=lambda x: x['param'])
 
     HPC = False
     njobhours = 12
@@ -5513,6 +5537,7 @@ def siteInfo(request, site=''):
             'name': site,
             'njobhours': njobhours,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'pandaqueue': panda_queue,
         }
         data.update(getContextVariables(request))
         response = render_to_response('siteInfo.html', data, content_type='text/html')
@@ -6911,7 +6936,7 @@ def worldhs06s(request):
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 @login_customrequired
-def dashboard(request, view='production'):
+def dashboard(request, view='all'):
     valid, response = initRequest(request)
     if not valid: return response
 
@@ -6950,8 +6975,13 @@ def dashboard(request, view='production'):
             estailtojobslinks = '&eventservice=2'
         noldtransjobs, transclouds, transrclouds = stateNotUpdated(request, state='transferring',
                                                                    hoursSinceUpdate=hoursSinceUpdate, count=True, wildCardExtension=extra)
-    else:
+    elif view == 'analysis':
         hours = 3
+        noldtransjobs = 0
+        transclouds = []
+        transrclouds = []
+    else:
+        hours = 12
         noldtransjobs = 0
         transclouds = []
         transrclouds = []
@@ -7005,8 +7035,10 @@ def dashboard(request, view='production'):
     else:
         if view == 'production':
             errthreshold = 5
-        else:
+        elif view == 'analysis':
             errthreshold = 15
+        else:
+            errthreshold = 10
         vosummary = []
 
     cloudview = 'region'
@@ -7014,7 +7046,7 @@ def dashboard(request, view='production'):
         cloudview = request.session['requestParams']['cloudview']
     if view == 'analysis':
         cloudview = 'region'
-    elif view != 'production':
+    elif view != 'production' and view != 'all':
         cloudview = 'N/A'
     if view == 'production' and (cloudview == 'world' or cloudview == 'cloud'): #cloud view is the old way of jobs distributing;
         # just to avoid redirecting
@@ -7035,8 +7067,9 @@ def dashboard(request, view='production'):
 
         if view == 'production':
             query['tasktype'] = 'prod'
-        else:
+        elif view == 'analysis':
             query['tasktype'] = 'anal'
+
 
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
             query['es__in'] = [1, 5]
@@ -7533,6 +7566,8 @@ def taskList(request):
     executionData = []
     for id in taskl:
         executionData.append((id, transactionKey))
+    # For tasks plots
+    setCacheEntry(request, transactionKey, taskl, 60 * 20, isData=True)
 
     new_cur = connection.cursor()
     query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
@@ -7853,6 +7888,13 @@ def taskList(request):
                         if task['jeditaskid'] in taskMetadata:
                             task['jobs_metadata'] = taskMetadata[task['jeditaskid']]
 
+        if 'extra' in request.session['requestParams'] and 'jobstatecount' in request.session['requestParams']['extra']:
+            js_count_bytask_dict = get_job_state_summary_for_tasklist(tasks)
+            for task in tasks:
+                if task['jeditaskid'] in js_count_bytask_dict:
+                    task['job_state_count'] = js_count_bytask_dict[task['jeditaskid']]
+                else:
+                    task['job_state_count'] = {}
         dump = json.dumps(tasks, cls=DateEncoder)
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -7882,6 +7924,7 @@ def taskList(request):
             'requestString': urlParametrs,
             'tasksTotalCount': tasksTotalCount,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'idtasks': transactionKey,
         }
 
         setCacheEntry(request, "taskList", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -7942,7 +7985,7 @@ def killtasks(request):
         postdata = {"username": username, "task": taskid, "parameters":[1], "userfullname":fullname}
 
 
-    headers = {'Accept': 'application/json', 'Authorization': 'Token '+prodsysToken}
+    headers = {'Content-Type':'application/json', 'Accept': 'application/json', 'Authorization': 'Token '+prodsysToken}
 
     conn = urllib3.HTTPSConnectionPool(prodsysHost, timeout=100)
     resp = None
@@ -8529,7 +8572,7 @@ def taskInfo(request, jeditaskid=0):
             auxiliaryDict = {}
 
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                request, query, exclude={},  mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
+                request, query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='non_es_merge', algorithm='isOld')
             plotsDictESMerge, jobsummaryESMerge, eventssummaryESM, transactionKeyESM, jobScoutIDsESM, hs06sSumESM = jobSummary2(
                 request, query, exclude={}, mode=mode, isEventServiceFlag=True, substatusfilter='es_merge', algorithm='isOld')
             if request.user.is_authenticated and request.user.is_tester:
@@ -9577,7 +9620,8 @@ def ganttTaskChain(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False, substatusfilter='', processingtype='', auxiliaryDict = None, algorithm = 'isOld'):
+def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False,
+                substatusfilter='', processingtype='', auxiliaryDict = None, algorithm = 'isOld'):
     jobs = []
     jobScoutIDs = {}
     jobScoutIDs['cputimescoutjob'] = []
@@ -9598,7 +9642,9 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
         newquery['processingtype'] = 'pmerge'
         isReturnDroppedPMerge=True
 
-    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid','attemptnr'
+    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', \
+             'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', \
+             'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid','attemptnr'
     # newquery['jobstatus'] = 'finished'
 
     # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
@@ -10654,7 +10700,7 @@ def errorSummary(request):
             # 'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
             'sumd': sumd,
             'errHist': errHist,
-            'errMessageSummary': json.dumps(error_message_summary),
+            'errsByMessage': json.dumps(error_message_summary),
             'tfirst': TFIRST,
             'tlast': TLAST,
             'sortby': sortby,

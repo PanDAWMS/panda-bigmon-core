@@ -18,12 +18,23 @@ class DDOSMiddleware(object):
 
     sleepInterval = 5 #sec
     maxAllowedJSONRequstesPerHour = 400
-    notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86']
+    notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86',
+                              '188.184.90.172' # J..h M......n request
+                              ]
     blacklist = ['130.132.21.90','192.170.227.149']
-    maxAllowedJSONRequstesParallelEI = 3
+    maxAllowedJSONRequstesParallel = 1
     maxAllowedSimultaneousRequestsToFileBrowser = 5
     listOfServerBackendNodesIPs = ['188.184.93.101', '188.184.116.46', '188.184.104.150',
                                    '188.184.84.149', '188.184.108.134', '188.184.108.131']
+
+    restrictedIPs = ['137.138.77.2', # Incident on 13-01-2020 14:30:00
+                     '188.185.76.164', #EI Machine
+                     '147.156.116.63', #EI Machine
+                     '147.156.116.43', #EI Machine
+                     '147.156.116.44', #EI Machine
+                     '147.156.116.81', #EI Machine
+                     '147.156.116.83', #EI Machine
+                     ]
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -69,30 +80,29 @@ class DDOSMiddleware(object):
         reqs.save()
 
 
-        # we limit number of requests per hour
-        # temporary protection against EI monitor
+        # we limit number of requests per hour for a set of IPs
         try:
             useragent = request.META.get('HTTP_USER_AGENT')
         except:
             useragent = None
 
-        if useragent and 'EI-monitor' in useragent:
+        if (not x_forwarded_for is None) and x_forwarded_for in self.restrictedIPs:
             _logger.debug('[DDOS protection] got request from agent: {}'.format(useragent))
-            countEIrequests = []
+            countRestictedrequests = []
             startdate = datetime.utcnow() - timedelta(hours=1)
             enddate = datetime.utcnow()
             eiquery = {
                 'qtime__range': [startdate, enddate],
-                'useragent': useragent,
+                'remote':x_forwarded_for,
                 'is_rejected': 0,
                 'rtime': None,
             }
-            countEIrequests.extend(
+            countRestictedrequests.extend(
                 AllRequests.objects.filter(**eiquery).values('remote').exclude(urlview='/grafana/').annotate(
                     Count('remote')))
-            if len(countEIrequests) > 0 and 'remote__count' in countEIrequests[0]:
-                _logger.debug('[DDOS protection] found number of non rejected request for last minute: {}'.format(countEIrequests[0]['remote__count']))
-                if countEIrequests[0]['remote__count'] > self.maxAllowedJSONRequstesParallelEI:
+            if len(countRestictedrequests) > 0 and 'remote__count' in countRestictedrequests[0]:
+                _logger.debug('[DDOS protection] found number of non rejected request for last minute: {}'.format(countRestictedrequests[0]['remote__count']))
+                if countRestictedrequests[0]['remote__count'] > self.maxAllowedJSONRequstesParallel:
                     reqs.is_rejected = 1
                     reqs.save()
                     return HttpResponse(
@@ -106,8 +116,7 @@ class DDOSMiddleware(object):
             return response
 
 
-        #if (1==1):
-        #if ('json' in request.GET):
+        #We restrinct number of requets per hour
         if (not x_forwarded_for is None) and x_forwarded_for not in self.notcachedRemoteAddress:
                 # x_forwarded_for = '141.108.38.22'
             startdate = datetime.utcnow() - timedelta(hours=1)

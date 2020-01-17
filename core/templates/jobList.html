@@ -6,6 +6,28 @@
 {% if jobsTotalCount != None%}
     <b> Total jobs found &#x7E; <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{jobsTotalCount}}">{{ jobsTotalCount }}</a></b> {% endif %}
 {% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <link rel="stylesheet" href="{% static "js/datatables/RowGroup-1.1.1/css/rowGroup.foundation.css" %}">
+    <style>
+        #errorsummary_groupbymessage_wrapper .row {
+            max-width: 99%;
+            margin-top: 1rem;
+        }
+        #errorsummary_groupbycode_wrapper .row {
+            max-width: 99%;
+            margin-top: 1rem;
+        }
+    </style>
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/dataTables.rowGroup.js' %}"></script>
+    <script src="{% static 'js/datatables/Select-1.2.0/js/dataTables.select.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
 {% block body %}
 
 {{ viewParams.header }}
@@ -159,33 +181,89 @@
 
 {% if errsByCount %}
 <a name="summary"></a>
-<div class="card bp-container">
-<div class="card-divider">
-    <p>Overall error summary</p>
-</div>
-<div class="card-section">
-<table class="bp-table">
-<thead>
-<tr>
-    <th>Category:code</th>
-    <th class="num">Nerrors</th>
-    <th>Sample error description</th>
-</tr>
-</thead>
-<tbody>
-{% for errval in errsByCount %}
-<tr>
-    <th> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </th>
-    <td class="num"> {{ errval.count }} </td>
-    <td> <div class="comment more">{{ errval.diag }}<br/>{% if errval.count > 1 and not 'transformation' in errval.error %} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %}</div>
+<div class="card card-tabs">
+  <div class="card-divider">
+    <h6 class="float-left"><b>Overall error summary</b></h6>
+    <ul class="tabs menu align-right" data-active-collapse="true" data-tabs id="collapsing-tabs">
+      <li class="tabs-title is-active"><a href="#panel_groupbycode" aria-selected="true">Grouped by error code</a></li>
+      <li class="tabs-title"><a href="#panel_groupbymessage">Grouped by error message</a></li>
+     </ul>
+  </div>
+  <div class="tabs-content" data-tabs-content="collapsing-tabs">
+    <div class="tabs-panel is-active" id="panel_groupbycode">
+      <div class="card-section">
+        <div class="callout success small" data-closable>
+        <p>If you need to explore all error description messages, please use the 'Grouped by error message' link on the right above. </p>
+        <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+            <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        <table id="errorsummary_groupbycode" class="data-table left-aligned">
+        <thead>
+        <tr>
+            <th>Category:code</th>
+            <th>Nerrors</th>
+            <th>Sample error description</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for errval in errsByCount %}
+        <tr>
+            <td> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </td>
+            <td> {{ errval.count }} </td>
+            <td> {{ errval.diag|safe }}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+        </table>
+      </div>
+    </div>
 
-    </td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
+    <div class="tabs-panel" id="panel_groupbymessage">
+      <div class="card-section">
+        <table id="errorsummary_groupbymessage" class="data-table left-aligned">
+        <thead>
+          <tr>
+            <th>Category:code</th>
+            <th>Error message</th>
+            <th class="num">Number of error message</th>
+          </tr>
+        </thead>
+        <tfoot>
+          <tr>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+        </tfoot>
+        <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
-</div>
+
+{% endif %}
+
+
+{% if errsByCount %}
+   <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('failedjob');"><br>Click to show/hide failed jobs details</a>
+{% endif %}
+
+ <a href="https://prodtask-dev.cern.ch/prodjob/{{ xurl|slice:"6:" }}">Prodsys Jobs Handling</a>
+<p>
+
+<div class="table-scroll">
+<table>
+<tr class='tablesection'><th colspan=20>
+<a name="joblist"></a> Job list.
+{% if display_limit  and display_limit < njobs %}
+<font size=-1> Only the most recent {{ display_limit }} jobs are shown. Remove the limit and sort by
+{% if sortby == "PandaID" %}
+<b>PandaID</b>,
+{% else %}
+<a href="{{nosorturl}}sortby=PandaID">PandaID</a>, 
 {% endif %}
 
 
@@ -287,6 +365,84 @@
 </div>
 
 {% endif %}
+
+<script type="text/javascript">
+var err_list_data = {{ errsByMessage|safe }};
+var errorMessagesListDataTable;
+var errorCountListTableData;
+
+$(document).ready(function () {
+        DisplayErrorCountListTableData();
+        DisplayErrorMessagesListTableData();
+    });
+
+function DisplayErrorCountListTableData() {
+    errorCountListTableData = $('#errorsummary_groupbycode').dataTable({
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "aaSorting": [[1, 'desc']],
+    })
+}
+
+function DisplayErrorMessagesListTableData() {
+    errorMessagesListDataTable = $('#errorsummary_groupbymessage').dataTable({
+        "sPaginationType": "full_numbers",
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "aaSorting": [[2, 'desc'],],
+        "data": err_list_data,
+        "columns": [
+            {
+                "data": "errcode",
+                sDefaultContent: "",
+                "render": function (data, type, row, meta) {
+                    return '<a href="{{ xurl }}' + row['errcodename'] + '=' + row['errcodeval'] + '">' + data + '</a>'
+                }
+            },
+            {
+                "data": "errmessage",
+                sDefaultContent: "",
+            },
+            {
+                "data": "errmessagecount",
+                sDefaultContent: "",
+                className: "num",
+                render: function (data, type, row) {
+                    let encdesc = encodeURIComponent(row['errmessage']);
+                    return '<a href="{{ xurl }}' + row['errcodename'] + '=' + row['errcodeval'] + '&errormessage=' + encdesc +'" target="_blank">' + data + '</a>'
+                }
+            },
+        ],
+        initComplete: function () {
+            this.api().columns([0]).every(function (i) {
+                var column = this;
+                var select = $('<select><option value="">All</option></select>')
+                    .appendTo( $(column.footer()).empty() )
+                    .on('change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+
+                        column
+                            .search(val ? '^' + val + '$' : '', true, false)
+                            .draw();
+                    });
+                if (i === 0) {
+                    column.data().unique().sort().each(function (d, j) {
+                        select.append('<option value="' + d + '">' + d + '</option>')
+                    });
+                }
+                else {
+                    column.data().unique().sort((a,b) => b - a).each(function (d, j) {
+                        select.append('<option value="' + d + '">' + d + '</option>')
+                    });
+                }
+            });
+        }
+    });
+}
+</script>
+
 
 {% endblock %}
 

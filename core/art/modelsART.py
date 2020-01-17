@@ -97,8 +97,10 @@ class ARTTests(models.Model):
     platform = models.CharField(max_length=150, db_column='PLATFORM', null=True)
     nightly_tag = models.CharField(max_length=20, db_column='NIGHTLY_TAG', null=True)
     package = models.CharField(max_length=32, db_column='PACKAGE', null=False, blank=True)
+    extrainfo = models.CharField(max_length=1000, db_column='EXTRA_INFO', null=True, blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ART_TESTS"'
+
 
 class ReportEmails(models.Model):
     id = models.DecimalField(decimal_places=0, max_digits=12, db_column='ID', primary_key=True)

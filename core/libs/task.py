@@ -8,7 +8,7 @@ from django.db import connection
 from django.db.models import Count
 from core.common.models import JediEvents, JediDatasetContents
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
-from core.libs.exlib import dictfetchall
+from core.libs.exlib import dictfetchall, insert_to_temp_table
 from core.settings.local import defaultDatetimeFormat
 
 
@@ -474,6 +474,7 @@ def job_summary_for_task_light(taskrec):
 
     return jobsummarylight, jobsummarylightsplitted
 
+
 def get_top_memory_consumers(taskrec):
     jeditaskidstr = str(taskrec['jeditaskid'])
     topmemoryconsumedjobs = []
@@ -542,3 +543,54 @@ def get_harverster_workers_for_task(jeditaskid):
     harv_workers_names = ['harvesterid', 'workerid', 'sumevents', 'batchid', 'walltime', 'ncore', 'njobs']
     harv_workers_list = [dict(zip(harv_workers_names, row)) for row in harv_workers]
     return harv_workers_list
+
+
+def get_job_state_summary_for_tasklist(tasks):
+    """
+    Getting job state summary for list of tasks. Nodrop mode only
+    :return: taskJobStateSummary : dictionary
+    """
+
+    taskids = [int(task['jeditaskid']) for task in tasks]
+    trans_key = insert_to_temp_table(taskids)
+
+    jsquery = """
+        select  jeditaskid, jobstatus, count(pandaid) as njobs from (
+        (
+        select jeditaskid, pandaid, jobstatus from atlas_pandabigmon.combined_wait_act_def_arch4 
+            where jeditaskid in (select id from ATLAS_PANDABIGMON.TMP_IDS1Debug where TRANSACTIONKEY = :tk )
+        )
+        union all
+        (
+        select jeditaskid, pandaid, jobstatus from atlas_pandaarch.jobsarchived 
+            where jeditaskid in (select id from ATLAS_PANDABIGMON.TMP_IDS1Debug where TRANSACTIONKEY = :tk )
+        minus
+        select jeditaskid, pandaid, jobstatus from atlas_pandaarch.jobsarchived 
+            where jeditaskid in (select id from ATLAS_PANDABIGMON.TMP_IDS1Debug where TRANSACTIONKEY = :tk ) 
+                and pandaid in (
+                    select pandaid from atlas_pandabigmon.combined_wait_act_def_arch4 
+                        where jeditaskid in (select id from ATLAS_PANDABIGMON.TMP_IDS1Debug where TRANSACTIONKEY = :tk )
+            )
+        )
+        )
+        group by jeditaskid, jobstatus
+        """
+    cur = connection.cursor()
+    cur.execute(jsquery, {'tk': trans_key})
+    js_count_bytask = cur.fetchall()
+    cur.close()
+
+    js_count_bytask_names = ['jeditaskid', 'jobstatus', 'count']
+    js_count_bytask_list = [dict(zip(js_count_bytask_names, row)) for row in js_count_bytask]
+
+    # list -> dict
+    js_count_bytask_dict = {}
+    for row in js_count_bytask_list:
+        if row['jeditaskid'] not in js_count_bytask_dict:
+            js_count_bytask_dict[row['jeditaskid']] = {}
+        if row['jobstatus'] not in js_count_bytask_dict[row['jeditaskid']]:
+            js_count_bytask_dict[row['jeditaskid']][row['jobstatus']] = 0
+        js_count_bytask_dict[row['jeditaskid']][row['jobstatus']] += int(row['count'])
+
+    return js_count_bytask_dict
+

@@ -6,7 +6,9 @@ from datetime import datetime, timedelta
 
 from django.db.models.functions import Substr
 
+from core.views import preprocessWildCardString
 from core.art.modelsART import ARTTests
+
 
 
 artdateformat = '%Y-%m-%d'
@@ -103,12 +105,15 @@ def setupView(request, querytype='task'):
     if querytype == 'job':
         if 'package' in request.session['requestParams']:
             packages = request.session['requestParams']['package'].split(',')
-            querystr += '(UPPER(PACKAGE) IN ( '
-            for p in packages:
-                querystr += 'UPPER(\'\'' + p + '\'\'), '
-            if querystr.endswith(', '):
-                querystr = querystr[:len(querystr) - 2]
-            querystr += ')) AND '
+            if len(packages) == 1 and '*' in packages[0]:
+                querystr += preprocessWildCardString(packages[0], 'package').replace('\'', '\'\'') + ' AND '
+            else:
+                querystr += '(UPPER(PACKAGE) IN ( '
+                for p in packages:
+                    querystr += 'UPPER(\'\'' + p + '\'\'), '
+                if querystr.endswith(', '):
+                    querystr = querystr[:len(querystr) - 2]
+                querystr += ')) AND '
         if 'branch' in request.session['requestParams']:
             branches = request.session['requestParams']['branch'].split(',')
             querystr += '(UPPER(NIGHTLY_RELEASE_SHORT || \'\'/\'\' || PROJECT || \'\'/\'\' || PLATFORM)  IN ( '
@@ -160,10 +165,12 @@ def find_last_n_nightlies(request, limit=7):
     """
     nquery = {}
     querystr = '(1=1)'
-    if 'package' in request.session['requestParams'] and not ',' in request.session['requestParams']['package']:
+    if 'package' in request.session['requestParams'] and not ',' in request.session['requestParams']['package'] and not '*' in request.session['requestParams']['package']:
         nquery['package'] = request.session['requestParams']['package']
     elif 'package' in request.session['requestParams'] and ',' in request.session['requestParams']['package']:
         nquery['package__in'] = [p for p in request.session['requestParams']['package'].split(',')]
+    elif 'package' in request.session['requestParams'] and '*' in request.session['requestParams']['package']:
+        querystr += ' AND ' + preprocessWildCardString(request.session['requestParams']['package'], 'package')
     if 'branch' in request.session['requestParams']:
         branches = request.session['requestParams']['branch'].split(',')
         querystr += ' AND (NIGHTLY_RELEASE_SHORT || \'/\' || PROJECT || \'/\' || PLATFORM)  IN ( '
