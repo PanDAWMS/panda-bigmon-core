@@ -20,18 +20,10 @@
         }
     </style>
 {% endblock %}
-{% block extra_js %}
-    <script src="{% static 'js/humanize.min.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/dataTables.rowGroup.js' %}"></script>
-    <script src="{% static 'js/datatables/Select-1.2.0/js/dataTables.select.js' %}"></script>
-    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
-{% endblock %}
+
 {% block body %}
 
 {{ viewParams.header }}
-
 
 <div class="callout info">
     <p>We propose to participate in testing a new much faster jobs page (<a href="http://bigpanda.cern.ch/jobsss{{ xurlnopref }}">http://bigpanda.cern.ch/jobsss{{ xurlnopref }}</a>)
@@ -181,7 +173,7 @@
 
 {% if errsByCount %}
 <a name="summary"></a>
-<div class="card card-tabs">
+<div class="card bp-container">
   <div class="card-divider">
     <h6 class="float-left"><b>Overall error summary</b></h6>
     <ul class="tabs menu align-right" data-active-collapse="true" data-tabs id="collapsing-tabs">
@@ -244,26 +236,6 @@
   </div>
 </div>
 
-{% endif %}
-
-
-{% if errsByCount %}
-   <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('failedjob');"><br>Click to show/hide failed jobs details</a>
-{% endif %}
-
- <a href="https://prodtask-dev.cern.ch/prodjob/{{ xurl|slice:"6:" }}">Prodsys Jobs Handling</a>
-<p>
-
-<div class="table-scroll">
-<table>
-<tr class='tablesection'><th colspan=20>
-<a name="joblist"></a> Job list.
-{% if display_limit  and display_limit < njobs %}
-<font size=-1> Only the most recent {{ display_limit }} jobs are shown. Remove the limit and sort by
-{% if sortby == "PandaID" %}
-<b>PandaID</b>,
-{% else %}
-<a href="{{nosorturl}}sortby=PandaID">PandaID</a>, 
 {% endif %}
 
 
@@ -366,7 +338,76 @@
 
 {% endif %}
 
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript" src="{% static "node_modules/jquery.shorten/src/jquery.shorten.min.js" %}"></script>
+<script type="text/javascript" src="{% static "node_modules/clipboard/dist/clipboard.min.js" %}"></script>
+<script type="text/javascript" src="{% static "node_modules/datatables.net/js/jquery.dataTables.min.js" %}"></script>
 <script type="text/javascript">
+$(document).ready(function() {
+    $(".comment").shorten({
+        showChars: 2000,
+    });
+
+    $('#joblist').DataTable({
+        "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+        "paging": true,
+        "scrollX": true,
+        "aaSorting": [[11,'desc']],
+        }
+    );
+
+    let clipboard = new ClipboardJS('#copy-button'); //needed for copy to clipboard button
+
+    clipboard.on('success', function(e) {
+        let copy_button = document.getElementById('copy-button');
+        copy_button.innerHTML = 'copied!';
+        copy_button.classList.add('disabled');
+        e.clearSelection();
+    });
+
+    clipboard.on('error', function(e) {
+        let copy_button = document.getElementById('copy-button');
+        copy_button.innerHTML = 'copying failed!';
+        copy_button.classList.add('disabled');
+    });
+});
+
+function toggleDetailDisplay(className) {
+   el = document.getElementsByClassName(className)
+   for (i=0; i<el.length; i++) {
+     el[i].style.display = (el[i].style.display=="none") ? "" : "none";
+   }
+}
+
+function toggleComparisonList(buttonid, value) {
+    var buttontext = document.getElementById(buttonid).innerHTML;
+    if (buttontext.indexOf('Add') >= 0) {
+        $.ajax({
+            url: '/addtocomparison/',
+            data: 'object=job&value='+value,
+            async: true,
+            cache: false
+        }).done(function (response) {
+            $('#' + buttonid).html('Remove from comparison');
+            document.getElementById(buttonid).className = "removefromcomparisonbuttoncompact";
+            });
+    }
+    else {
+        $.ajax({
+            url: '/deletefromcomparison/',
+            data: 'object=job&value='+value,
+            async: true,
+            cache: false
+        }).done(function (response) {
+            $('#' + buttonid).html('Add to comparison');
+            document.getElementById(buttonid).className = "addtocomparisonbuttoncompact";
+            });
+    }
+
+}
+
 var err_list_data = {{ errsByMessage|safe }};
 var errorMessagesListDataTable;
 var errorCountListTableData;
@@ -441,78 +482,7 @@ function DisplayErrorMessagesListTableData() {
         }
     });
 }
-</script>
 
-
-{% endblock %}
-
-{% block extra_js %}
-<script type="text/javascript" src="{% static "node_modules/jquery.shorten/src/jquery.shorten.min.js" %}"></script>
-<script type="text/javascript" src="{% static "node_modules/clipboard/dist/clipboard.min.js" %}"></script>
-<script type="text/javascript" src="{% static "node_modules/datatables.net/js/jquery.dataTables.min.js" %}"></script>
-<script type="text/javascript">
-$(document).ready(function() {
-    $(".comment").shorten({
-        showChars: 2000,
-    });
-
-    $('#joblist').DataTable({
-        "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
-        "paging": true,
-        "scrollX": true,
-        "aaSorting": [[11,'desc']],
-        }
-    );
-
-    let clipboard = new ClipboardJS('#copy-button'); //needed for copy to clipboard button
-
-    clipboard.on('success', function(e) {
-        let copy_button = document.getElementById('copy-button');
-        copy_button.innerHTML = 'copied!';
-        copy_button.classList.add('disabled');
-        e.clearSelection();
-    });
-
-    clipboard.on('error', function(e) {
-        let copy_button = document.getElementById('copy-button');
-        copy_button.innerHTML = 'copying failed!';
-        copy_button.classList.add('disabled');
-    });
-});
-
-function toggleDetailDisplay(className) {
-   el = document.getElementsByClassName(className)
-   for (i=0; i<el.length; i++) {
-     el[i].style.display = (el[i].style.display=="none") ? "" : "none";
-   }
-}
-
-function toggleComparisonList(buttonid, value) {
-    var buttontext = document.getElementById(buttonid).innerHTML;
-    if (buttontext.indexOf('Add') >= 0) {
-        $.ajax({
-            url: '/addtocomparison/',
-            data: 'object=job&value='+value,
-            async: true,
-            cache: false
-        }).done(function (response) {
-            $('#' + buttonid).html('Remove from comparison');
-            document.getElementById(buttonid).className = "removefromcomparisonbuttoncompact";
-            });
-    }
-    else {
-        $.ajax({
-            url: '/deletefromcomparison/',
-            data: 'object=job&value='+value,
-            async: true,
-            cache: false
-        }).done(function (response) {
-            $('#' + buttonid).html('Add to comparison');
-            document.getElementById(buttonid).className = "addtocomparisonbuttoncompact";
-            });
-    }
-
-}
 </script>
 
 {% endblock %}

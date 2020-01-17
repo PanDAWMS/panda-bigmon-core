@@ -7,6 +7,18 @@
     box-sizing: border-box;
 }
 
+body {
+  a {
+    font-weight: bold;
+    text-decoration: underline;
+
+    &:hover, &:focus {
+      color: $primary-color;
+      text-decoration: none;
+    }
+  }
+}
+
 // Container with tabs inside for page parts like tables
 // ------------------------------
 .card.bp-container {
@@ -29,6 +41,10 @@
       }
     }
 
+    h6 {
+      margin-bottom: 0;
+    }
+
     ul.tabs {
       padding: 0;
       margin: 0;
@@ -43,15 +59,18 @@
 
       .tabs-title > a {
         color: $white;
+        text-decoration: underline;
         background-color: $primary-color;
         padding: 0;
 
         &:hover {
           background-color: $primary-color;
+          text-decoration: none;
         }
 
         &:focus, &[aria-selected='true'] {
           color: $light-blue;
+          text-decoration: none;
           background-color: $primary-color;
         }
       }
