@@ -60,6 +60,7 @@ body {
       .tabs-title > a {
         color: $white;
         text-decoration: underline;
+        font-size: inherit;
         background-color: $primary-color;
         padding: 0;
 
@@ -69,7 +70,7 @@ body {
         }
 
         &:focus, &[aria-selected='true'] {
-          color: $light-blue;
+          color: $secondary-color-bg;
           text-decoration: none;
           background-color: $primary-color;
         }

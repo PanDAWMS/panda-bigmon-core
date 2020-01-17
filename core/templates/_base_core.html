@@ -508,12 +508,6 @@
     }
 </script>
 
-
-
-{#  <script src="{% static 'js/app.js' %}"></script>#}
-  <script>
-    $(document).foundation();
-  </script>
 <script src="{% static 'js/user-settings.js' %}?{% cache_bust "js/user-settings.js" %}"></script>
 {% block extra_js %}{% endblock %}
 

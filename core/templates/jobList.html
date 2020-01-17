@@ -6,20 +6,6 @@
 {% if jobsTotalCount != None%}
     <b> Total jobs found &#x7E; <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{jobsTotalCount}}">{{ jobsTotalCount }}</a></b> {% endif %}
 {% endblock %}
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <link rel="stylesheet" href="{% static "js/datatables/RowGroup-1.1.1/css/rowGroup.foundation.css" %}">
-    <style>
-        #errorsummary_groupbymessage_wrapper .row {
-            max-width: 99%;
-            margin-top: 1rem;
-        }
-        #errorsummary_groupbycode_wrapper .row {
-            max-width: 99%;
-            margin-top: 1rem;
-        }
-    </style>
-{% endblock %}
 
 {% block body %}
 
@@ -372,6 +358,13 @@ $(document).ready(function() {
         copy_button.innerHTML = 'copying failed!';
         copy_button.classList.add('disabled');
     });
+
+
+    var errorMessagesListDataTable;
+    var errorCountListTableData;
+
+    DisplayErrorCountListTableData();
+    DisplayErrorMessagesListTableData();
 });
 
 function toggleDetailDisplay(className) {
@@ -408,15 +401,6 @@ function toggleComparisonList(buttonid, value) {
 
 }
 
-var err_list_data = {{ errsByMessage|safe }};
-var errorMessagesListDataTable;
-var errorCountListTableData;
-
-$(document).ready(function () {
-        DisplayErrorCountListTableData();
-        DisplayErrorMessagesListTableData();
-    });
-
 function DisplayErrorCountListTableData() {
     errorCountListTableData = $('#errorsummary_groupbycode').dataTable({
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
@@ -426,6 +410,7 @@ function DisplayErrorCountListTableData() {
 }
 
 function DisplayErrorMessagesListTableData() {
+    var err_list_data = {{ errsByMessage|safe }};
     errorMessagesListDataTable = $('#errorsummary_groupbymessage').dataTable({
         "sPaginationType": "full_numbers",
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
