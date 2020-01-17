@@ -64,7 +64,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':minorwarn_icon,'2':majorwarn_icon,'3':error_icon,'10':clock_icon}
     asdd='0'
     if asdd == '0':
-     query="select * from (select to_char(j.jid),j.arch||'-'||os||'-'||comp||'-'||opt as AA, j.tstamp, n.nname as nname, r.name as RNAME, s.hname, j.buildarea, j.copyarea, r.relnstamp, j.gitbr from nightlies@ATLR.CERN.CH n inner join ( releases@ATLR.CERN.CH r inner join ( jobs@ATLR.CERN.CH j inner join jobstat@ATLR.CERN.CH s on j.jid=s.jid ) on r.nid=j.nid and r.relid=j.relid ) on n.nid=r.nid where nname ='%s' and j.tstamp between sysdate-7+1/24 and sysdate order by j.tstamp asc) where RNAME ='%s' and AA='%s'" % (nname,relname,arname)
+     query="select * from (select to_char(j.jid),j.arch||'-'||os||'-'||comp||'-'||opt as AA, j.tstamp, n.nname as nname, r.name as RNAME, s.hname, j.buildarea, j.copyarea, r.relnstamp, j.gitbr from nightlies@ATLR.CERN.CH n inner join ( releases@ATLR.CERN.CH r inner join ( jobs@ATLR.CERN.CH j inner join jobstat@ATLR.CERN.CH s on j.jid=s.jid ) on r.nid=j.nid and r.relid=j.relid ) on n.nid=r.nid where nname ='%s' and j.tstamp between sysdate-11+1/24 and sysdate order by j.tstamp asc) where RNAME ='%s' and AA='%s'" % (nname,relname,arname)
 #     print("Q ",query)
      new_cur.execute(query)
      reslt = new_cur.fetchall()

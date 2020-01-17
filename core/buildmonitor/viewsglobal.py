@@ -48,12 +48,12 @@ def globalviewDemo(request):
     (select ncompl as nc, ner as nc_er, npb as nc_pb, jid, projid from cstat@ATLR.CERN.CH ) cs,
     (select ncompl as nt, ner as nt_er, npb as nt_pb, jid, projid from tstat@ATLR.CERN.CH ) ts
      WHERE
-    j.jid BETWEEN to_number(to_char(SYSDATE-6, 'YYYYMMDD'))*10000000
+    j.jid BETWEEN to_number(to_char(SYSDATE-10, 'YYYYMMDD'))*10000000
      AND to_number(to_char(SYSDATE, 'YYYYMMDD')+1)*10000000
      AND j.jid = platf.jid
      AND j.jid = cs.jid and j.projid = cs.projid
      AND j.jid = ts.jid and j.projid = ts.projid
-     AND j.begdate between sysdate-6 and sysdate
+     AND j.begdate between sysdate-10 and sysdate
      AND j.eb is not  NULL order by j.eb desc
           """
     new_cur.execute(query)

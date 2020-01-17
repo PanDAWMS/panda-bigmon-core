@@ -64,7 +64,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':minorwarn_icon,'2':majorwarn_icon,'3':error_icon,'10':clock_icon}
     asdd='0'
     if asdd == '0':
-     query="select * from (select to_char(j.jid),j.arch||'-'||os||'-'||comp||'-'||opt as AA, j.tstamp, n.nname as nname, r.name as RNAME, s.hname, j.buildarea, j.copyarea, r.relnstamp, j.gitbr from nightlies@ATLR.CERN.CH n inner join ( releases@ATLR.CERN.CH r inner join ( jobs@ATLR.CERN.CH j inner join jobstat@ATLR.CERN.CH s on j.jid=s.jid ) on r.nid=j.nid and r.relid=j.relid ) on n.nid=r.nid where nname ='%s' and j.tstamp between sysdate-7+1/24 and sysdate order by j.tstamp asc) where RNAME ='%s' and AA='%s'" % (nname,relname,arname)
+     query="select * from (select to_char(j.jid),j.arch||'-'||os||'-'||comp||'-'||opt as AA, j.tstamp, n.nname as nname, r.name as RNAME, s.hname, j.buildarea, j.copyarea, r.relnstamp, j.gitbr from nightlies@ATLR.CERN.CH n inner join ( releases@ATLR.CERN.CH r inner join ( jobs@ATLR.CERN.CH j inner join jobstat@ATLR.CERN.CH s on j.jid=s.jid ) on r.nid=j.nid and r.relid=j.relid ) on n.nid=r.nid where nname ='%s' and j.tstamp between sysdate-11+1/24 and sysdate order by j.tstamp asc) where RNAME ='%s' and AA='%s'" % (nname,relname,arname)
 #     print("Q ",query)
      new_cur.execute(query)
      reslt = new_cur.fetchall()
@@ -87,7 +87,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
         query1="select res,projname,nameln,pname,mngrs,contname,to_char(tstamp, 'RR/MM/DD HH24:MI'),fname as tstamp,wdirln from " + tabname + "@ATLR.CERN.CH natural join jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH natural join packages@ATLR.CERN.CH where jid ='%s'" % jid_top
         new_cur.execute(query1)
         reslt1 = new_cur.fetchall()
-#     query="select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, relnstamp from nightlies@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and tstamp between sysdate-7+1/24 and sysdate order by tstamp desc" % nname
+#     query="select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, relnstamp from nightlies@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and tstamp between sysdate-11+1/24 and sysdate order by tstamp desc" % nname
 #     new_cur.execute(query)
 #     reslt = new_cur.fetchall()
      relextend=relname
