@@ -1982,7 +1982,7 @@ def userSummaryDict(jobs):
         sumd[user]['n' + state] += 1
         if not site in sumd[user]['sites']: sumd[user]['sites'][site] = 0
         sumd[user]['sites'][site] += 1
-        if not site in sumd[user]['clouds']: sumd[user]['clouds'][cloud] = 0
+        if not cloud in sumd[user]['clouds']: sumd[user]['clouds'][cloud] = 0
         sumd[user]['clouds'][cloud] += 1
     for user in sumd:
         sumd[user]['nsites'] = len(sumd[user]['sites'])
