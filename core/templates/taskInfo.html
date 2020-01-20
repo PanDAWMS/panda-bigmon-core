@@ -224,104 +224,156 @@
             </div>
         {% endif %}
 
-        {% if jobsummary %}
-
-            {% if requestParams.warning %}
-                <div class="callout small alert">
-                <p style="color:brown">{{ requestParams.warning }}</p>
-                {#    Go to correspondent <a href="{% url 'jobListP' %}?jeditaskid={{ jeditaskid }}&mode=drop"> jobsss page</a>#}
-                </div>
-            {% endif %}
-
-            <table>
-                <tr bgcolor="lightcyan">
-                    <th colspan=20>
-                        <b>States of jobs in this task (merge jobs excluded)</b>                 <a
-                            href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">Show
-                        all jobs</a>
-                        {% if requestParams.mode and requestParams.mode == 'nodrop' %}
-                            <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Switch to drop mode</a>
-                        {% else %}
-                            <a style="cursor: pointer;" href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
-                        {% endif %}
-                    </th>
-                </tr>
-                <tr>
-                    {% for state in jobsummary %}
-                        <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
-                    {% endfor %}
-                </tr>
-                <tr>
-                    {% for state in jobsummary %}
-                        {% if newjobsummary_test %}
-
-                            {% for newstate in newjobsummary_test %}
-                                {% if forloop.counter == forloop.parentloop.counter %}
-                                    <td {% if state.count > 0 or newstate.count > 0 %}
-                                        class='{{ state.name }}_fill' {% endif %}>
-                                        {% if state.count > 0 or newstate.count > 0 %}
-                                            <b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&jobstatus={{ state.name }}&display_limit=100">
-                                                <span class='{{ state.name }}_fill'>{{ state.count }} ({{ newstate.count }})</span></a>
-                                            </b> {% endif %} </td>
-                                {% endif %}
-
-                            {% endfor %}
-
-                        {% else %}
-
+        {% if task.tasktype == 'anal' %}
+            {% if jobsummary or jobsummaryBuild %}
+                <table>
+                    <tr bgcolor="lightcyan">
+                        <th colspan="20">Job status summary </th>
+                    </tr>
+                    <tr>
+                        <th>Job type</th>
+                        {% for state in jobsummary %}
+                            <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
+                        {% endfor %}
+                    </tr>
+                    {% if jobsummary %}
+                    <tr>
+                        <th>Run</th>
+                        {% for state in jobsummary %}
                             <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                                {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&jobstatus={{ state.name }}&display_limit=100">
-                                <span class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
+                                    {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&prodsourcelabel=user&jobstatus={{ state.name }}&display_limit=100">
+                                    <span class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
                             </td>
-
-                        {% endif %}
-
-                        {% comment "Removed in order of consistency between task and jobs page" %}
-{% ifequal state.name 'failed' %}&mode=drop{%  endifequal %}{% ifequal state.name 'finished' %}&mode=drop{%  endifequal %}
-{% endcomment %}
-                    {% endfor %}
-                </tr>
-            </table>
-        {% endif %}
-
-        {% if jobsummaryPMERGE %}
-
-            <table>
-                <tr bgcolor="lightcyan">
-                    <th colspan=20>
-                        <b>States of pmerge jobs in this task</b>         <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&processingtype=pmerge&display_limit=100">Show
-                        jobs</a>
-                    </th>
-                </tr>
-                <tr>
-                    {% for state in jobsummaryPMERGE %}
-                        <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
-                    {% endfor %}
-                </tr>
-                <tr>
-                    {% for state in jobsummaryPMERGE %}
-                        {% if newjobsummaryPMERGE_test %}
-                            {% for newstate in newjobsummaryPMERGE_test %}
-                                {% if forloop.counter == forloop.parentloop.counter %}
-
-                                    <td {% if state.count > 0 or newstate.count > 0 %}
-                                        class='{{ state.name }}_fill' {% endif %}>
-                                        {% if state.count > 0 or newstate.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}&display_limit=100&processingtype=pmerge"><span
-                                                class='{{ state.name }}_fill'>{{ state.count }} ({{ newstate.count }})</span></a>
-                                        </b> {% endif %} </td>
-                                {% endif %}
-                            {% endfor %}
-                        {% else %}
+                        {% endfor %}
+                    </tr>
+                    {% endif %}
+                    {% if jobsummaryBuild %}
+                    <tr>
+                        <th>Build</th>
+                        {% for state in jobsummaryBuild %}
+                            <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
+                                    {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&prodsourcelabel=panda&transformation=build*&jobstatus={{ state.name }}&display_limit=100">
+                                    <span class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endif %}
+                    {% if jobsummaryPMERGE %}
+                    <tr>
+                        <th>PMerge</th>
+                        {% for state in jobsummaryPMERGE %}
                             <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
                                 {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}&display_limit=100&processingtype=pmerge"><span
                                         class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
                             </td>
+                        {% endfor %}
+                    </tr>
+                    {% endif %}
+                </table>
+            {% endif %}
+        {% else %}
+            {% if jobsummary %}
 
-                        {% endif %}
-                    {% endfor %}
-                </tr>
-            </table>
+                {% if requestParams.warning %}
+                    <div class="callout small alert">
+                    <p style="color:brown">{{ requestParams.warning }}</p>
+                    {#    Go to correspondent <a href="{% url 'jobListP' %}?jeditaskid={{ jeditaskid }}&mode=drop"> jobsss page</a>#}
+                    </div>
+                {% endif %}
+
+                <table>
+                    <tr bgcolor="lightcyan">
+                        <th colspan=20>
+                            <b>States of jobs in this task (merge jobs excluded)</b>                 <a
+                                href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">Show
+                            all jobs</a>
+                            {% if requestParams.mode and requestParams.mode == 'nodrop' %}
+                                <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Switch to drop mode</a>
+                            {% else %}
+                                <a style="cursor: pointer;" href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
+                            {% endif %}
+                        </th>
+                    </tr>
+                    <tr>
+                        {% for state in jobsummary %}
+                            <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for state in jobsummary %}
+                            {% if newjobsummary_test %}
+
+                                {% for newstate in newjobsummary_test %}
+                                    {% if forloop.counter == forloop.parentloop.counter %}
+                                        <td {% if state.count > 0 or newstate.count > 0 %}
+                                            class='{{ state.name }}_fill' {% endif %}>
+                                            {% if state.count > 0 or newstate.count > 0 %}
+                                                <b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&jobstatus={{ state.name }}&display_limit=100">
+                                                    <span class='{{ state.name }}_fill'>{{ state.count }} ({{ newstate.count }})</span></a>
+                                                </b> {% endif %} </td>
+                                    {% endif %}
+
+                                {% endfor %}
+
+                            {% else %}
+
+                                <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
+                                    {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&jobstatus={{ state.name }}&display_limit=100">
+                                    <span class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
+                                </td>
+
+                            {% endif %}
+
+                            {% comment "Removed in order of consistency between task and jobs page" %}
+    {% ifequal state.name 'failed' %}&mode=drop{%  endifequal %}{% ifequal state.name 'finished' %}&mode=drop{%  endifequal %}
+    {% endcomment %}
+                        {% endfor %}
+                    </tr>
+                </table>
+            {% endif %}
+
+            {% if jobsummaryPMERGE %}
+
+                <table>
+                    <tr bgcolor="lightcyan">
+                        <th colspan=20>
+                            <b>States of pmerge jobs in this task</b>         <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&processingtype=pmerge&display_limit=100">Show
+                            jobs</a>
+                        </th>
+                    </tr>
+                    <tr>
+                        {% for state in jobsummaryPMERGE %}
+                            <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for state in jobsummaryPMERGE %}
+                            {% if newjobsummaryPMERGE_test %}
+                                {% for newstate in newjobsummaryPMERGE_test %}
+                                    {% if forloop.counter == forloop.parentloop.counter %}
+
+                                        <td {% if state.count > 0 or newstate.count > 0 %}
+                                            class='{{ state.name }}_fill' {% endif %}>
+                                            {% if state.count > 0 or newstate.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}&display_limit=100&processingtype=pmerge"><span
+                                                    class='{{ state.name }}_fill'>{{ state.count }} ({{ newstate.count }})</span></a>
+                                            </b> {% endif %} </td>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
+                                    {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}&display_limit=100&processingtype=pmerge"><span
+                                            class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
+                                </td>
+
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                </table>
+            {% endif %}
+
         {% endif %}
+
+
         {% if task.tasktype == 'anal' and warning.memoryleaksuspicion %}
             <p>
             <div class="callout warning" data-closable>

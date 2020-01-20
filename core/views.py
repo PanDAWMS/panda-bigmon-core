@@ -8535,6 +8535,7 @@ def taskInfo(request, jeditaskid=0):
     walltime = []
     jobsummaryESMerge = []
     jobsummaryPMERGE = []
+    jobsummaryBuild = []
     eventsdict=[]
     objectStoreDict=[]
     eventsChains = []
@@ -8556,6 +8557,7 @@ def taskInfo(request, jeditaskid=0):
         tasks = JediTasks.objects.filter(**query).values()
         if len(tasks) > 0:
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
+
         if eventservice:
             if 'version' not in request.session['requestParams'] or (
                     'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old'):
@@ -8629,16 +8631,22 @@ def taskInfo(request, jeditaskid=0):
                 objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
                 for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
 
-
-
-
-
-#SELECT * FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS WHERE JEDITASKID=12380658 and pandaid=3665826228
-
-#SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV FROM (
-#SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=12380658 and RELATIONTYPE='jobset_retry'
-#)t1 CONNECT BY NOCYCLE OLDPANDAID=PRIOR NEWPANDAID ;
-
+        elif 'tasktype' in tasks[0] and tasks[0]['tasktype']  == 'anal':
+            # Divide jobs into 3 categories: run, build, merge
+            extra = '(1=1)'
+            jbquery = copy.deepcopy(query)
+            jbquery['transformation__icontains'] = 'build'
+            exclude = {'processingtype': 'pmerge'}
+            jextra = "transformation NOT LIKE \'%%build%%\'"
+            mode = 'drop'
+            if 'mode' in request.session['requestParams']:
+                mode = request.session['requestParams']['mode']
+            plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
+                request, query, exclude=exclude, extra=jextra, mode=mode,algorithm='isOld')
+            plotsDictBuild, jobsummaryBuild, eventssummaryBuild, transactionKeyBuild, jobScoutIDsBuild, hs06sSumBuild = jobSummary2(
+                request, jbquery, exclude={}, extra=extra,  mode=mode, algorithm='isOld')
+            plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary2(
+                request, query, exclude={},extra=extra,  mode=mode, processingtype='pmerge',algorithm='isOld')
         else:
             extra = '(1=1)'
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
@@ -8966,6 +8974,7 @@ def taskInfo(request, jeditaskid=0):
             'showtaskprof': showtaskprof,
             'jobsummaryESMerge': jobsummaryESMerge,
             'jobsummaryPMERGE': jobsummaryPMERGE,
+            'jobsummaryBuild': jobsummaryBuild,
             'plotsDict': plotsDict,
             'taskbrokerage': taskbrokerage,
             'jobscoutids' : jobScoutIDs,
@@ -9644,7 +9653,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
 
     values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', \
              'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', \
-             'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid','attemptnr'
+             'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid','attemptnr', 'transformation'
     # newquery['jobstatus'] = 'finished'
 
     # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
