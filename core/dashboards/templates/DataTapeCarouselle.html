@@ -142,7 +142,7 @@
                             keepInBounds: true,
                             maxZoomIn: 4.0
                           },
-                          colors: ['green', 'blue'],
+                          colors: ['green', 'blue', 'red'],
                           legend: { position: "top" },
 
                       };
@@ -277,6 +277,7 @@
                     <th>Source</th>
                     <th>Progress plot</th>
                     <th>DDM Dash</th>
+                    <th>Datasets Queued</th>
                     <th>Datasets Active</th>
                     <th>Datasets Done <br>(+ 90% readiness)</th>
                     <th>Files Remaining</th>
@@ -292,6 +293,9 @@
                     </td>
                     <td class="sm_ok_light_fill">
                         <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All&var-src_endpoint={$ x.source $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&{$ getTimeForQuery(true) $}">--></a>
+                    </td>
+                    <td class="sm_ok_light_fill">
+                        {$ x.ds_queued $}
                     </td>
                     <td class="sm_ok_light_fill">
                         {$ x.ds_active $}

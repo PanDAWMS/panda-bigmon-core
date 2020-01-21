@@ -42,18 +42,25 @@ def getStagingInfoForTask(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
     return response
 
-def getBinnedData(listData, additionalList = None):
+def getBinnedData(listData, additionalList1 = None, additionalList2 = None):
     isTimeNotDelta = True
-    timesadd = None
+    timesadd1 = None
+    timesadd2 = None
+
     try:
         times = pd.to_datetime(listData)
-        if additionalList:
-            timesadd = pd.to_datetime(additionalList)
+        if additionalList1:
+            timesadd1 = pd.to_datetime(additionalList1)
+        if additionalList2:
+            timesadd2 = pd.to_datetime(additionalList2)
+
     except:
         times = pd.to_timedelta(listData)
         isTimeNotDelta = False
-        if additionalList:
-            timesadd = pd.to_timedelta(additionalList)
+        if additionalList1:
+            timesadd1 = pd.to_timedelta(additionalList1)
+        if additionalList2:
+            timesadd2 = pd.to_timedelta(additionalList2)
 
     #if not timesadd is None:
     #    mergedIndex = times.union(timesadd)
@@ -65,14 +72,22 @@ def getBinnedData(listData, additionalList = None):
         "Count1": [1 for _ in listData]
     }, index=times)
 
-    if not timesadd is None:
+    if not timesadd1 is None:
         dfadd = pd.DataFrame({
-            "Count2": [1 for _ in additionalList]
-        }, index=timesadd)
+            "Count2": [1 for _ in additionalList1]
+        }, index=timesadd1)
         result = pd.concat([df, dfadd])
     else:
         result = df
-        
+
+    if not timesadd2 is None:
+        dfadd = pd.DataFrame({
+            "Count3": [1 for _ in additionalList2]
+        }, index=timesadd2)
+        result = pd.concat([result, dfadd])
+    else:
+        result = df
+
 
     grp = result.groupby([pd.Grouper(freq="24h")]).count()
     values = grp.values.tolist()
@@ -81,11 +96,21 @@ def getBinnedData(listData, additionalList = None):
     else:
         index = (grp.index / pd.Timedelta(hours=1)).tolist()  # an ndarray method, you probably shouldn't depend on this
 
-    if not additionalList is None and len(additionalList) == 0:
+    if not additionalList1 is None and len(additionalList1) == 0:
         tmpval = []
         for item in values:
-            tmpval.append([item[0], 0])
+            if additionalList2:
+                tmpval.append([item[0], 0, item[1]])
+            else:
+                tmpval.append([item[0], 0])
         values = tmpval
+
+    if not additionalList2 is None and len(additionalList2) == 0:
+        tmpval = []
+        for item in values:
+            tmpval.append([item[0], item[1], 0])
+        values = tmpval
+
 
     data = []
     for time, count in zip(index, values):
@@ -98,7 +123,7 @@ def getDTCSubmissionHist(request):
     valid, response = initRequest(request)
     staginData = getStagingData(request)
 
-    timelistQueued = []
+    timelistSubmitted = []
 
     progressDistribution = []
     summarytableDict = {}
@@ -107,24 +132,32 @@ def getDTCSubmissionHist(request):
     detailsTable = []
     timelistIntervalfin = []
     timelistIntervalact = []
+    timelistIntervalqueued = []
+
 
     for task, dsdata in staginData.items():
         epltime = None
-        timelistQueued.append(dsdata['start_time'])
-        if dsdata['end_time']:
-            epltime = dsdata['end_time'] - dsdata['start_time']
-            timelistIntervalfin.append(epltime)
-        else:
-            epltime = timezone.now() - dsdata['start_time']
-            timelistIntervalact.append(epltime)
+        timelistSubmitted.append(dsdata['start_time'])
 
-        dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_90pdone":0, "files_rem":0, "files_done":0})
+        dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_queued":0, "ds_90pdone":0, "files_rem":0, "files_done":0})
+
+        # Build the summary by SEs and create lists for histograms
         if dsdata['end_time'] != None:
             dictSE["ds_done"]+=1
-        else:
+            epltime = dsdata['end_time'] - dsdata['start_time']
+            timelistIntervalfin.append(epltime)
+
+        elif dsdata['status'] != 'queued':
+            epltime = timezone.now() - dsdata['start_time']
+            timelistIntervalact.append(epltime)
             dictSE["ds_active"]+=1
             if dsdata['staged_files'] >= dsdata['total_files']*0.9:
                 dictSE["ds_90pdone"] += 1
+        elif dsdata['status'] == 'queued':
+            dictSE["ds_queued"] += 1
+            epltime = timezone.now() - dsdata['start_time']
+            timelistIntervalqueued.append(epltime)
+
         progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
 
         dictSE["files_done"] += dsdata['staged_files']
@@ -152,8 +185,9 @@ def getDTCSubmissionHist(request):
     # #arr1 = [["EplTime"]]
     # arr.extend([[x] for x in timedelta.tolist()])
 
-    binnedActFinData = getBinnedData(timelistIntervalact, timelistIntervalfin)
-    eplTime = [['Time', 'Active staging', 'Finished staging']] + [[time, data[0], data[1]] for (time, data) in binnedActFinData]
+    binnedActFinData = getBinnedData(timelistIntervalact, additionalList1 = timelistIntervalfin, additionalList2 = timelistIntervalqueued)
+    eplTime = [['Time', 'Act. staging', 'Fin. staging', 'Q. staging']] + [[time, data[0], data[1], data[2]] for (time, data) in binnedActFinData]
+    #, 'Queued staging'
 
     finalvalue = {"epltime": eplTime}
 
@@ -161,7 +195,7 @@ def getDTCSubmissionHist(request):
     arr.extend([[x*100] for x in progressDistribution])
     finalvalue["progress"] = arr
 
-    binnedSubmData = getBinnedData(timelistQueued)
+    binnedSubmData = getBinnedData(timelistSubmitted)
     finalvalue["submittime"] = [['Time', 'Count']] + [[time, data[0]] for (time, data) in binnedSubmData]
     finalvalue["progresstable"] = summarytableList
 
