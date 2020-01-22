@@ -402,7 +402,7 @@ def artJobs(request):
     testdirectories = {}
     outputcontainers = {}
     reportTo = {'mail': [], 'jira': {}}
-    gitlabids = list(sorted(set([x['gitlabid'] for x in jobs])))
+    gitlabids = list(sorted(set([x['gitlabid'] for x in jobs if 'gitlabid' in x and x['gitlabid'] is not None])))
 
     artjobsdict={}
 
