@@ -550,3 +550,12 @@ a.close-x-sign:hover {
 .card.tile.warning-light {
     background-color: #fff0b3;
 }
+
+
+.inline-div {
+    display: inline-block;
+}
+
+.parent{
+    background-color: #e6f7ff !important;
+}
