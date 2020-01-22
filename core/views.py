@@ -4451,7 +4451,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                         f['ruciodatasetname'] = dsets[0]['datasetname']
                         f['datasetname'] = dsets[0]['datasetname']
                     if job['computingsite'] in pandaSites.keys():
-                        f['ddmsite'] = pandaSites[job['computingsite']]['site']
+                        _, _, computeSvsAtlasS = getAGISSites()
+                        f['ddmsite'] = computeSvsAtlasS.get(job['computingsite'], "")
 
                 if 'dst' in f['destinationdblocktoken']:
                     parced = f['destinationdblocktoken'].split("_")
@@ -6012,29 +6013,41 @@ def checkUcoreSite(site, usites):
     return isUsite
 
 def getAGISSites():
-    url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
-    http = urllib3.PoolManager()
-    data = {}
-    sitesUcore = []
-    sitesHarvester = []
-    try:
-        r = http.request('GET', url)
-        data = json.loads(r.data.decode('utf-8'))
-        for cs in data.keys():
-            if 'unifiedPandaQueue' in data[cs]['catchall'] or 'ucore' in data[cs]['capability']:
-                sitesUcore.append(data[cs]['siteid'])
-            if 'harvester' in data[cs] and len(data[cs]['harvester']) != 0:
-                sitesHarvester.append(data[cs]['siteid'])
-    except Exception as exc:
-        print (exc)
-    return sitesUcore, sitesHarvester
+    sitesUcore = cache.get('sitesUcore')
+    sitesHarvester = cache.get('sitesHarvester')
+    computevsAtlasCE = cache.get('computevsAtlasCE')
+
+    if not (sitesUcore and sitesHarvester and computevsAtlasCE):
+        sitesUcore, sitesHarvester = [], []
+        computevsAtlasCE = {}
+        url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
+        http = urllib3.PoolManager()
+        data = {}
+        try:
+            r = http.request('GET', url)
+            data = json.loads(r.data.decode('utf-8'))
+            for cs in data.keys():
+                if 'unifiedPandaQueue' in data[cs]['catchall'] or 'ucore' in data[cs]['capability']:
+                    sitesUcore.append(data[cs]['siteid'])
+                if 'harvester' in data[cs] and len(data[cs]['harvester']) != 0:
+                    sitesHarvester.append(data[cs]['siteid'])
+                if 'panda_site' in data[cs]:
+                    computevsAtlasCE[cs] = data[cs]['atlas_site']
+        except Exception as exc:
+            print (exc)
+
+        cache.set('sitesUcore', sitesUcore, 3600)
+        cache.set('sitesHarvester', sitesHarvester, 3600)
+        cache.set('computevsAtlasCE', computevsAtlasCE, 3600)
+
+    return sitesUcore, sitesHarvester, computevsAtlasCE
 
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
     start_time = time.time()
     pilots = getPilotCounts(view)
     query = setupView(request, hours=hours, limit=limit, opmode=view)
-    ucoreComputingSites, harvesterComputingSites = getAGISSites()
+    ucoreComputingSites, harvesterComputingSites, _ = getAGISSites()
 
     _logger.debug('[dashSummary] Got AGIS json: {}'.format(time.time() - start_time))
 
