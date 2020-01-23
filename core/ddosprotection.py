@@ -23,7 +23,7 @@ class DDOSMiddleware(object):
                               ]
     blacklist = ['130.132.21.90','192.170.227.149']
     maxAllowedJSONRequstesParallel = 1
-    maxAllowedSimultaneousRequestsToFileBrowser = 5
+    maxAllowedSimultaneousRequestsToFileBrowser = 1
     listOfServerBackendNodesIPs = ['188.184.93.101', '188.184.116.46', '188.184.104.150',
                                    '188.184.84.149', '188.184.108.134', '188.184.108.131']
 
