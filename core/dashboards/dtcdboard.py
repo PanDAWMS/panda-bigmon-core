@@ -139,7 +139,10 @@ def getDTCSubmissionHist(request):
         epltime = None
         timelistSubmitted.append(dsdata['start_time'])
 
-        dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_queued":0, "ds_90pdone":0, "files_rem":0, "files_done":0})
+        dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_queued":0, "ds_90pdone":0, "files_rem":0, "files_q":0, "files_done":0})
+
+        dictSE["files_done"] += dsdata['staged_files']
+        dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
 
         # Build the summary by SEs and create lists for histograms
         if dsdata['end_time'] != None:
@@ -155,13 +158,12 @@ def getDTCSubmissionHist(request):
                 dictSE["ds_90pdone"] += 1
         elif dsdata['status'] == 'queued':
             dictSE["ds_queued"] += 1
+            dictSE["files_q"] += (dsdata['total_files'] - dsdata['staged_files'])
             epltime = timezone.now() - dsdata['start_time']
             timelistIntervalqueued.append(epltime)
 
         progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
 
-        dictSE["files_done"] += dsdata['staged_files']
-        dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
         summarytableDict[dsdata['source_rse']] = dictSE
         selectCampaign.append({"name": dsdata['campaign'], "value": dsdata['campaign'], "selected": "0"})
         selectSource.append({"name": dsdata['source_rse'], "value": dsdata['source_rse'], "selected": "0"})

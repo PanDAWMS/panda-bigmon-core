@@ -277,10 +277,11 @@
                     <th>Source</th>
                     <th>Progress plot</th>
                     <th>DDM Dash</th>
-                    <th>Datasets Queued</th>
+                    <th>Datasets Queuing</th>
                     <th>Datasets Active</th>
                     <th>Datasets Done <br>(+ 90% readiness)</th>
                     <th>Files Remaining</th>
+                    <th>Files Queuing</th>
                     <th>Files Done</th>
                 </tr>
               </thead>
@@ -305,6 +306,9 @@
                     </td>
                     <td class="sm_ok_light_fill">
                         {$ x.files_rem $}
+                    </td>
+                    <td class="sm_ok_light_fill">
+                        {$ x.files_q $}
                     </td>
                     <td class="sm_ok_light_fill">
                         {$ x.files_done $}
