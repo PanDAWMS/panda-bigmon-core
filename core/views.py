@@ -8644,7 +8644,7 @@ def taskInfo(request, jeditaskid=0):
                 objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
                 for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
 
-        elif 'tasktype' in tasks[0] and tasks[0]['tasktype']  == 'anal':
+        elif len(tasks) > 0 and 'tasktype' in tasks[0] and tasks[0]['tasktype']  == 'anal':
             # Divide jobs into 3 categories: run, build, merge
             extra = '(1=1)'
             jbquery = copy.deepcopy(query)
