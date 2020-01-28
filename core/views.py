@@ -5946,11 +5946,8 @@ def wnInfo(request, site, wnname='all'):
         elif request.session['requestParams']['sortby'] == 'pctfail':
             fullsummary = sorted(fullsummary, key=lambda x: x['pctfail'], reverse=True)
 
-    kys = wnPlotFailed.keys()
-    kys = sorted(kys)
-    wnPlotFailedL = []
-    for k in kys:
-        wnPlotFailedL.append([k, wnPlotFailed[k]])
+    wnPlotFailedL = [[k, v] for k, v in wnPlotFailed.items()]
+    wnPlotFailedL = sorted(wnPlotFailedL, key=lambda x: x[1], reverse=True)
 
     kys = wnPlotFinished.keys()
     kys = sorted(kys)
