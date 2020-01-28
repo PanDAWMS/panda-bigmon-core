@@ -5947,7 +5947,7 @@ def wnInfo(request, site, wnname='all'):
             fullsummary = sorted(fullsummary, key=lambda x: x['pctfail'], reverse=True)
 
     wnPlotFailedL = [[k, v] for k, v in wnPlotFailed.items()]
-    wnPlotFailedL = sorted(wnPlotFailedL, key=lambda x: x[1], reverse=True)
+    wnPlotFailedL = sorted(wnPlotFailedL, key=lambda x: x[0])
 
     kys = wnPlotFinished.keys()
     kys = sorted(kys)
