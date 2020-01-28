@@ -7,6 +7,9 @@
 {% block extra_css %}
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
     <style>
+        #wn_table_wrapper .row {
+            max-width: 99%;
+        }
         #wn_slot_table_wrapper .row {
             max-width: 99%;
         }
@@ -146,47 +149,58 @@
 {% endif %}
 
 {% if wnname and wnname != 'all' %}
+<h5>Slot info for worker node {{ wnname }} at {{ site }}</h5>
 
-<table>
-<tr class='tablesection'><th colspan=20> Slot info for worker node {{ wnname }} at {{ site }}</th></tr>
-<tr class='tablesection'>
+<table id="wn_slot_table" class="data-table nowrap">
+<thead>
+<tr>
 <th> WN </th>
 <th> nSlots </th>
 <th> nJobs </th>
-<th> <a href="{{nosorturl}}?sortby=defined">defined</a> </th>
-<th> <a href="{{nosorturl}}?sortby=waiting">waiting</a> </th>
-<th> <a href="{{nosorturl}}?sortby=throttled">throttled</a> </th>
-<th> <a href="{{nosorturl}}?sortby=sent">sent</a> </th>
-<th> <a href="{{nosorturl}}?sortby=starting">starting</a> </th>
-<th> <a href="{{nosorturl}}?sortby=running">running</a> </th>
-<th> <a href="{{nosorturl}}?sortby=holding">holding</a> </th>
-<th> <a href="{{nosorturl}}?sortby=merging">merging</a> </th>
-<th> <a href="{{nosorturl}}?sortby=transferring">transferring</a> </th>
-<th> <a href="{{nosorturl}}?sortby=finished">finished</a> </th>
-<th> <a href="{{nosorturl}}?sortby=failed">failed</a> </th>
-<th> <a href="{{nosorturl}}?sortby=cancelled">cancelled</a> </th>
-<th> <a href="{{nosorturl}}?sortby=closed">closed</a> </th>
-<th> <a href="{{nosorturl}}?sortby=pctfail">% failed</a> </th>
+<th> defined </th>
+<th> waiting</th>
+<th> throttled </th>
+<th> sent </th>
+<th> starting </th>
+<th> running </th>
+<th> holding </th>
+<th> merging </th>
+<th> transferring </th>
+<th> finished </th>
+<th> failed </th>
+<th> cancelled </th>
+<th> closed </th>
+<th> % failed </th>
 <th> outliers </th>
 </tr>
-
+</thead>
+<tbody>
 {% for wn in summary %}
-<tr {% if wn.outlier != '' %} class='warning' {% endif %}>
-<th> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </th>
+<tr>
+<td> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </td>
 <td>{{ wn.slotcount  }} </td>
 <td><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
 {% if state.name != 'assigned' and state.name != 'activated' %}
-<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% endif %} </td>
+<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% else %}-{% endif %} </td>
 {% endif %}
 {% endfor %}
-<td> {% if wn.pctfail > errthreshold %} <font color=red>{{ wn.pctfail  }}</font> {% else %} {{ wn.pctfail  }} {% endif %} </td>
+<td> {% if wn.pctfail > errthreshold %} <span class="failed">{{ wn.pctfail }}</span> {% else %} {{ wn.pctfail  }} {% endif %} </td>
 <td> {% if wn.outlier != '' %} <span class='warning'> {{ wn.outlier }} </span> {% endif %} </td>
 </tr>
 {% endfor %}
-
+</tbody>
 </table>
-
+<script>
+$(document).ready(function () {
+    var wnSlotTable = $('#wn_slot_table').dataTable({
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "scrollX": true,
+        "aaSorting": [[0, 'asc']],
+    });
+});
+</script>
 
 {% else %}
 
@@ -236,8 +250,8 @@
 {% endcomment %}
     
 {% if summary %}
-    <h6>WN summary for {{ site }}</h6>
-<table id="wn_slot_table" class="data-table nowrap">
+    <h5>WN summary for {{ site }}</h5>
+<table id="wn_table" class="data-table nowrap">
 <thead>
 <tr>
 <th> WN </th>
@@ -280,7 +294,7 @@
 
 <script>
 $(document).ready(function () {
-    var wnSlotTable = $('#wn_slot_table').dataTable({
+    var wnTable = $('#wn_table').dataTable({
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         "paging": true,
         "scrollX": true,

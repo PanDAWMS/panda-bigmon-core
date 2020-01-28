@@ -5807,11 +5807,15 @@ def wnInfo(request, site, wnname='all'):
 
     errthreshold = 15
 
+    wnname_rgx = None
+    if 'wnname' in request.session['requestParams'] and request.session['requestParams']['wnname']:
+        wnname_rgx = request.session['requestParams']['wnname']
+
+    query = setupView(request, hours=hours, limit=999999)
     if wnname != 'all':
-        query = setupView(request, hours=hours, limit=999999)
         query['modificationhost__endswith'] = wnname
-    else:
-        query = setupView(request, hours=hours, limit=999999)
+    elif wnname_rgx is not None:
+        query['modificationhost__contains'] = wnname_rgx.replace('*', '')
     query['computingsite'] = site
     wnsummarydata = wnSummary(query)
     totstates = {}
