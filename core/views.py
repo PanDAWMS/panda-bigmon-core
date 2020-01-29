@@ -5807,11 +5807,15 @@ def wnInfo(request, site, wnname='all'):
 
     errthreshold = 15
 
+    wnname_rgx = None
+    if 'wnname' in request.session['requestParams'] and request.session['requestParams']['wnname']:
+        wnname_rgx = request.session['requestParams']['wnname']
+
+    query = setupView(request, hours=hours, limit=999999)
     if wnname != 'all':
-        query = setupView(request, hours=hours, limit=999999)
         query['modificationhost__endswith'] = wnname
-    else:
-        query = setupView(request, hours=hours, limit=999999)
+    elif wnname_rgx is not None:
+        query['modificationhost__contains'] = wnname_rgx.replace('*', '')
     query['computingsite'] = site
     wnsummarydata = wnSummary(query)
     totstates = {}
@@ -5946,11 +5950,8 @@ def wnInfo(request, site, wnname='all'):
         elif request.session['requestParams']['sortby'] == 'pctfail':
             fullsummary = sorted(fullsummary, key=lambda x: x['pctfail'], reverse=True)
 
-    kys = wnPlotFailed.keys()
-    kys = sorted(kys)
-    wnPlotFailedL = []
-    for k in kys:
-        wnPlotFailedL.append([k, wnPlotFailed[k]])
+    wnPlotFailedL = [[k, v] for k, v in wnPlotFailed.items()]
+    wnPlotFailedL = sorted(wnPlotFailedL, key=lambda x: x[0])
 
     kys = wnPlotFinished.keys()
     kys = sorted(kys)
