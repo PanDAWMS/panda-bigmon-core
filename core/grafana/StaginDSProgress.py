@@ -44,7 +44,7 @@ def run_query(rules):
 
 def __getRucioRuleByTaskID(taskid):
     new_cur = connection.cursor()
-    new_cur.execute(""" SELECT RSE FROM ATLAS_DEFT.T_DATASET_STAGING where DATASET IN (select PRIMARY_INPUT FROM ATLAS_DEFT.t_production_task where TASKID=%i)""" % int(taskid))
+    new_cur.execute(""" SELECT RSE FROM ATLAS_DEFT.T_DATASET_STAGING where DATASET_STAGING_ID IN (select DATASET_STAGING_ID FROM ATLAS_DEFT.T_ACTION_STAGING where TASKID=%i)""" % int(taskid))
     rucioRule = dictfetchall(new_cur)
     if rucioRule and len(rucioRule) > 0:
         return rucioRule[0]['RSE']
