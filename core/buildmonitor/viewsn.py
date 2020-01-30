@@ -5,6 +5,7 @@ from django.db import connection, transaction
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.core.cache import cache
 import json, re
 from collections import defaultdict
 from operator import itemgetter, attrgetter
@@ -92,7 +93,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       gitbr = row[13]
 #      print "JID",jid_sel
       dict_p={'jid' : jid_sel}
-      query1="select to_char(jid),projname,econf,eb,sb,ei,si,eafs,safs,ekit,skit,erpm,srpm,ncompl,pccompl,npb,ner,pcpb,pcer,suff,skitinst,skitkv,scv,scvkv,scb,sib,sco,hname from jobstat@ATLR.CERN.CH natural join cstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = :jid order by projname"
+      query1="select to_char(jid),projname,econf,eb,sb,ei,si,ecv,ecvkv,ekit,skit,erpm,srpm,ncompl,pccompl,npb,ner,pcpb,pcer,suff,skitinst,skitkv,scv,scvkv,scb,sib,sco,hname from jobstat@ATLR.CERN.CH natural join cstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = :jid order by projname"
       new_cur.execute(query1, dict_p)
       reslt1 = new_cur.fetchall()
       lenres=len(reslt1)
@@ -106,7 +107,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
 #      pjname=reslt1[0][1]
 #      print "========= ",nccompl,cpccompl,nc_pb,nc_er,cpcer,cpcpb
       dict_p={'jid' : jid_sel}
-      query2="select to_char(jid),projname,econf,eb,sb,ei,si,eafs,safs,ekit,skit,erpm,srpm,ncompl,pccompl,npb,ner,pcpb,pcer,suff,skitinst,skitkv,scv,scvkv,scb,sib,sco from jobstat@ATLR.CERN.CH natural join tstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = :jid order by projname"
+      query2="select to_char(jid),projname,econf,eb,sb,ei,si,ecv,ecvkv,ekit,skit,erpm,srpm,ncompl,pccompl,npb,ner,pcpb,pcer,suff,skitinst,skitkv,scv,scvkv,scb,sib,sco from jobstat@ATLR.CERN.CH natural join tstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = :jid order by projname"
       new_cur.execute(query2, dict_p)
       reslt2 = new_cur.fetchall()
       dict_jid02={}
@@ -132,6 +133,10 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           cpcpb=row01[17]
           pjname=row01[1]  
           hname=row01[27]
+          t_cv_serv=row01[7]
+          t_cv_clie=row01[8]
+          s_cv_serv=row01[22]
+          s_cv_clie=row01[23]
           if re.search(r'\.',hname):
             hname=(re.split(r'\.',hname))[0]
           ntcompl='0';tpccompl='0';nt_er='0';nt_pb='0';tpcer='0';tpcpb='0'
@@ -153,19 +158,27 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           if row01[24] != None: s_config=str(row01[24])
           s_inst='0'
           if row01[25] != None: s_inst=str(row01[25])
-          t_bstart='N/A'
-          if row01[3] != None: t_bstart=row01[3].strftime('%Y/%m/%d %H:%M')
+          t_build='N/A'
+          if row01[3] != None: t_build=row01[3].strftime('%Y/%m/%d %H:%M')
           t_test='N/A'
           if row01[5] != None: t_test=row01[5].strftime('%Y/%m/%d %H:%M')
           t_start='N/A'
-#          if row01[2] != None: t_start=row01[2].strftime('%Y/%m/%d %H:%M')
           if job_start != None: t_start=job_start.strftime('%Y/%m/%d %H:%M')
-          build_time_cell=t_bstart+'==='+s_checkout+s_config+s_inst
+          tt_cv_serv='N/A'
+          if t_cv_serv != None and t_cv_serv != '': tt_cv_serv=t_cv_serv.strftime('%Y/%m/%d %H:%M')
+          tt_cv_clie='N/A'
+          if t_cv_clie != None and t_cv_clie != '': tt_cv_clie=t_cv_clie.strftime('%Y/%m/%d %H:%M')
+          ss_cv_serv='N/A'
+          if s_cv_serv != None and s_cv_serv != '': ss_cv_serv=str(s_cv_serv)
+          ss_cv_clie='N/A'
+          if s_cv_clie != None and s_cv_clie != '': ss_cv_clie=str(s_cv_clie)
+#
+          build_time_cell=t_build+'==='+s_checkout+s_config+s_inst
           combo_c=str(nc_er)+' ('+str(nc_pb)+')'  
           combo_t=str(nt_er)+' ('+str(nt_pb)+')'
           if nt_er == 'N/A': combo_t='N/A(N/A)'
 #          mrlink_a="<a href=\""+mrlink+"\">"+gitbr+"</a>" 
-          [i_checkout,i_inst,i_config]=map(lambda x: di_res.get(str(x),str(x)), [s_checkout,s_inst,s_config])
+          [i_checkout,i_inst,i_config,i_cv_serv,i_cv_clie]=map(lambda x: di_res.get(str(x),str(x)), [s_checkout,s_inst,s_config,ss_cv_serv,ss_cv_clie])
           if i_checkout == None or i_checkout == "None" : i_checkout=radiooff_icon; 
           if i_inst == None or i_inst == "None" : i_inst=radiooff_icon;
           if i_config == None or i_config == "None" : i_config=radiooff_icon;
@@ -174,7 +187,11 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           i_combo_t="<a href=\""+link_to_testsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_t+"</a>"
           if combo_t == 'N/A(N/A)': i_combo_t=combo_t
           i_combo_c="<a href=\""+link_to_compsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_c+"</a>"
-          row_cand=[rname,ar_sel,pjname,t_start,i_checkout,i_inst,i_config,t_bstart,i_combo_c,t_test,i_combo_t,'coming soon',hname]
+          if tt_cv_serv != 'N/A' : i_combo_cv_serv=tt_cv_serv+i_cv_serv
+          else: i_combo_cv_serv=i_cv_serv
+          if tt_cv_clie != 'N/A' : i_combo_cv_clie=tt_cv_clie+i_cv_clie
+          else: i_combo_cv_clie=i_cv_clie
+          row_cand=[rname,ar_sel,pjname,t_start,i_checkout,i_inst,i_config,t_build,i_combo_c,t_test,i_combo_t,i_combo_cv_serv,i_combo_cv_clie,hname]
           rows_s.append(row_cand)
 
     data={"nightly": nname, "rel": rname, 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}

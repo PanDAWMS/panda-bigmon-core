@@ -26,6 +26,7 @@ from core.compare import views as compare_views
 
 from core.globalpage import views as globalpage
 from core.buildmonitor import viewsglobal as globalview
+from core.buildmonitor import viewsartmonit as artmonitview
 from core.buildmonitor import viewsci as ciview
 from core.buildmonitor import viewsn as nview
 from core.buildmonitor import viewstests as testsview
@@ -97,6 +98,7 @@ urlpatterns = [
     re_path(r'^campaignpredictioninfo/$', campaignprediction.campaignPredictionInfo, name='campaignPredictionInfo'),
     re_path(r'^globalpage/$', globalview.globalviewDemo, name='BuildGlobal'),
     re_path(r'^globalview/$', globalview.globalviewDemo, name='BuildGlobal'),
+    re_path(r'^artmonitview/$', artmonitview.artmonitviewDemo, name='BuildARTMonit'),
     re_path(r'^ciview/$', ciview.civiewDemo, name='BuildCI'),
     re_path(r'^nview/$', nview.nviewDemo, name='BuildN'),
     re_path(r'^testsview/$', testsview.testviewDemo, name='TestsRes'),

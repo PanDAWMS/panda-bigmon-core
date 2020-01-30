@@ -29,6 +29,8 @@
                 <th>Build time</th>
                 <th>Compilation errors<BR>(w/warnings)</th>
                 <th>CTest (or CI)<BR>test errors<BR>(w/warnings)</th>
+                <th>CVMFS<BR>(on server)</th>
+                <th>CVMFS<BR>(on client)<BR>under constr.</th>
                 <th>ORDER string</th>
      </thead>
      <tbody></tbody>
@@ -38,14 +40,14 @@
 var json=JSON.stringify({{ reslt3 | safe }});
 
 var globaldisplayTable = $('#firstGlobalExample').dataTable({
-"order": [[6, 'asc']],
+"order": [[8, 'asc']],
 "pageLength": 100,
 "lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
 "data": JSON.parse(json),
 
 "columnDefs": [
        {
-                "targets": [ 6 ],
+                "targets": [ 8 ],
                 "visible": false,
                 "searchable": false
        }],
