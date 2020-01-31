@@ -23,6 +23,14 @@ def globalviewDemo(request):
 
     valid, response = initRequest(request)
     new_cur = connection.cursor()
+    check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span style="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-icon-circle-check">ICON33</span></div>'
+    clock_icon='<div class="ui-widget ui-state-hover" style="display:inline-block;"> <span style="display:inline-block;" title="UPDATING" class="DataTables_sort_icon css_right ui-icon ui-icon-clock">ICON39</span></div>'
+    minorwarn_icon='<div class="ui-widget ui-state-highlight" style="display:inline-block;"> <span style="display:inline-block;" title="MINOR WARNING" class="DataTables_sort_icon css_right ui-icon ui-icon-alert">ICON34</span></div>'
+    majorwarn_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span style="display:inline-block;" title="WARNING" class="DataTables_sort_icon css_right ui-icon ui-icon-lightbulb">ICON35</span></div>'
+    error_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span style="display:inline-block;" title="ERROR" class="DataTables_sort_icon css_right ui-icon ui-icon-circle-close">ICON36</span></div>'
+    radiooff_icon='<div class="ui-widget ui-state-default" style="display:inline-block";> <span title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
+    di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
+
     query = """
     select n.nname as \"BRANCH\", n.ngroup as \"GROUP\", platf.pl,
     TO_CHAR(j.begdate,'DD-MON HH24:MI') as \"DATE\",
@@ -39,7 +47,8 @@ def globalviewDemo(request):
     j.lastpj,
     j.relid,
     a.gitmrlink as \"GLINK\",
-    a.relnstamp as \"TMSTAMP\"
+    a.relnstamp as \"TMSTAMP\",
+    TO_CHAR(j.ecvkv,'DD-MON HH24:MI') as \"CVMCL\", j.SCVKV as \"S.CVMCL\"
     from nightlies@ATLR.CERN.CH n inner join
       ( releases@ATLR.CERN.CH a inner join
         ( jobstat@ATLR.CERN.CH j inner join projects@ATLR.CERN.CH p on j.projid = p.projid) on a.nid=j.nid and a.relid=j.relid )
@@ -58,6 +67,9 @@ def globalviewDemo(request):
           """
     new_cur.execute(query)
     result = new_cur.fetchall()
+
+    di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
+    
 
     first_row = result[0]
     rows_s = []
@@ -103,6 +115,23 @@ def globalviewDemo(request):
         if m_tcompl == None or m_tcompl == 'N/A' or m_tcompl <= 0:
             row[20]='N/A'; row[21]='N/A';
         a0002 = str(row[20]) + ' (' + str(row[21]) + ')'
+        
+        t_cv_clie=row[27];s_cv_clie=row[28]
+        t_cv_serv=row[11];s_cv_serv=row[12]
+        tt_cv_serv='N/A' 
+        if t_cv_serv != None and t_cv_serv != '': tt_cv_serv=t_cv_serv
+        tt_cv_clie='N/A'
+        if t_cv_clie != None and t_cv_clie != '': tt_cv_clie=t_cv_clie
+        ss_cv_serv='N/A'
+        if s_cv_serv != None and s_cv_serv != '': ss_cv_serv=str(s_cv_serv)
+        ss_cv_clie='N/A'
+        if s_cv_clie != None and s_cv_clie != '': ss_cv_clie=str(s_cv_clie)
+        [i_cv_serv,i_cv_clie]=map(lambda x: di_res.get(str(x),str(x)), [ss_cv_serv,ss_cv_clie])
+        if tt_cv_serv != 'N/A' : i_combo_cv_serv=tt_cv_serv+i_cv_serv
+        else: i_combo_cv_serv=i_cv_serv
+        if tt_cv_clie != 'N/A' : i_combo_cv_clie=tt_cv_clie+i_cv_clie
+        else: i_combo_cv_clie=i_cv_clie
+
         brname = row[0]
         link_brname = brname
         link_to_ciInfo = reverse('BuildCI')
@@ -117,10 +146,13 @@ def globalviewDemo(request):
         list9.append(row[9]);
         list9.append(a0001);
         list9.append(a0002);
-        list9.append(row[27]);
+        list9.append(i_combo_cv_serv);
+        list9.append(i_combo_cv_clie);
+        list9.append(row[29]);
         reslt3.append(list9)
 
     data={'viewParams': request.session['viewParams'], 'reslt3':json.dumps(reslt3, cls=DateEncoder)}
+
     return render(request,'globalviewDemo.html', data, content_type='text/html')
 #    return render_to_response('globalviewDemo.html', data, content_type='text/html') 
 
