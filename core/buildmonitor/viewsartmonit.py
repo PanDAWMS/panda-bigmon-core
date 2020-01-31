@@ -11,6 +11,7 @@ from operator import itemgetter, attrgetter
 from pprint import pprint
 import requests
 import json,re,sys,datetime 
+from django.views.decorators.cache import never_cache
 
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -20,6 +21,7 @@ class DateEncoder(json.JSONEncoder):
             return str(obj)
         return json.JSONEncoder.default(self, obj)
 
+@never_cache
 def artmonitviewDemo(request):
 #https://bigpanda.cern.ch/art/tasks/?branch=master/Athena/x86_64-centos7-gcc8-opt&ntags=2020-01-22,2020-01-23,2020-01-24,2020-01-25&json  
 #https://bigpanda.cern.ch/art/overview/?ntags=2020-01-14,2020-01-15&view=branches&json          
