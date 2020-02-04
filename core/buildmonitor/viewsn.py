@@ -30,7 +30,7 @@ def nviewDemo(request):
         rname = '*'
 
     new_cur = connection.cursor()
-
+    dict_from_cache = cache.get('art-monit-dict')
     check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span s\
 tyle="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-ico\
 n-circle-check">ICON33</span></div>'
@@ -80,6 +80,17 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
     new_cur.execute(query)
     result = new_cur.fetchall()
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
+
+    dict_cache_transf={}
+    for k46, v46 in dict_from_cache.items():
+        for kk, vv in v46.items():
+            kk_transf = re.sub('/','_',k46)
+            key_transf = kk_transf+'_'+kk
+            string_vv = '<span style="color: blue">' + str(vv['active']) + '</span>'
+            string_vv = string_vv + ',<B><span style="color: green">'+ str(vv['done']) +'</span></B>,'
+            string_vv = string_vv + '<span style="color: maroon">' + str(vv['finished']) + '</span>'
+            string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>'
+            dict_cache_transf[key_transf] = [string_vv, k46]
     i=0
     rows_s = []
     for row in result:
@@ -191,7 +202,14 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           else: i_combo_cv_serv=i_cv_serv
           if tt_cv_clie != 'N/A' : i_combo_cv_clie=tt_cv_clie+i_cv_clie
           else: i_combo_cv_clie=i_cv_clie
-          row_cand=[rname,ar_sel,pjname,t_start,i_checkout,i_inst,i_config,t_build,i_combo_c,t_test,i_combo_t,i_combo_cv_serv,i_combo_cv_clie,hname]
+
+          key_cache_transf=nname + '_' + rname
+          val_cache_transf,nightly_name_art=dict_cache_transf.get(key_cache_transf,['N/A','N/A'])
+          if val_cache_transf != 'N/A' and nightly_name_art != 'N/A':
+              vacasf = "<a href=\"https://bigpanda.cern.ch/art/overview/?branch="
+              val_cache_transf = vacasf + nightly_name_art + "&ntag_full=" + rname + "\">" + val_cache_transf + "</a>"
+
+          row_cand=[rname,ar_sel,pjname,t_start,i_checkout,i_inst,i_config,t_build,i_combo_c,t_test,i_combo_t,val_cache_transf,i_combo_cv_serv,tt_cv_clie,hname]
           rows_s.append(row_cand)
 
     data={"nightly": nname, "rel": rname, 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}
