@@ -173,3 +173,17 @@ def get_job_walltime(job):
         walltime = (endtime-starttime).total_seconds()
 
     return walltime
+
+
+def is_job_active(jobststus):
+    """
+    Check if jobstatus is one of the active
+    :param jobststus: str
+    :return: True or False
+    """
+    end_status_list = ['finished', 'failed', 'cancelled', 'closed']
+    if jobststus in end_status_list:
+        return False
+
+    return True
+
