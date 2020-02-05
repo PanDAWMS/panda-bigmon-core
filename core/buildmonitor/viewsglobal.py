@@ -6,7 +6,9 @@ from django.db import connection, transaction
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.core.cache import cache
 import json, re
+from pprint import pprint
 from collections import defaultdict
 from operator import itemgetter, attrgetter
 
@@ -23,6 +25,7 @@ def globalviewDemo(request):
 
     valid, response = initRequest(request)
     new_cur = connection.cursor()
+    dict_from_cache = cache.get('art-monit-dict')
     check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span style="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-icon-circle-check">ICON33</span></div>'
     clock_icon='<div class="ui-widget ui-state-hover" style="display:inline-block;"> <span style="display:inline-block;" title="UPDATING" class="DataTables_sort_icon css_right ui-icon ui-icon-clock">ICON39</span></div>'
     minorwarn_icon='<div class="ui-widget ui-state-highlight" style="display:inline-block;"> <span style="display:inline-block;" title="MINOR WARNING" class="DataTables_sort_icon css_right ui-icon ui-icon-alert">ICON34</span></div>'
@@ -70,7 +73,6 @@ def globalviewDemo(request):
 
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
     
-
     first_row = result[0]
     rows_s = []
     dd = defaultdict(list)
@@ -107,6 +109,17 @@ def globalviewDemo(request):
         reslt2.append(ar1)
         lar1 = len(ar1)
     #    print(reslt2)
+    dict_cache_transf={}
+    for k46, v46 in dict_from_cache.items():
+        for kk, vv in v46.items():
+            kk_transf = re.sub('/','_',k46) 
+            key_transf = kk_transf+'_'+kk
+            string_vv = '<span style="color: blue">' + str(vv['active']) + '</span>'
+            string_vv = string_vv + ',<B><span style="color: green">'+ str(vv['done']) +'</span></B>,'
+            string_vv = string_vv + '<span style="color: maroon">' + str(vv['finished']) + '</span>'
+            string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>' 
+            dict_cache_transf[key_transf] = [string_vv, k46]
+#    pprint(dict_cache_transf)
     reslt3 = []
     for row in reslt2:
         list9 = []
@@ -140,16 +153,29 @@ def globalviewDemo(request):
             link_brname = "<a href=\"" + link_to_ciInfo + "\">" + brname + "</a>"
         else:
             link_brname = "<a href=\"" + link_to_nInfo + "?nightly=" + brname + "\">" + brname + "</a>"
+
+        key_cache_transf=brname + '_' + row[14]
+        val_cache_transf,nightly_name_art=dict_cache_transf.get(key_cache_transf,['N/A','N/A'])
+        if val_cache_transf != 'N/A' and nightly_name_art != 'N/A': 
+            vacasf = "<a href=\"https://bigpanda.cern.ch/art/overview/?branch=" 
+            val_cache_transf = vacasf + nightly_name_art + "&ntag_full=" + row[14] + "\">" + val_cache_transf + "</a>"
         list9.append(row[1]);
         list9.append(link_brname);
         list9.append(row[14]);
         list9.append(row[9]);
         list9.append(a0001);
         list9.append(a0002);
-        list9.append(i_combo_cv_serv);
-        list9.append(i_combo_cv_clie);
+        list9.append(val_cache_transf);
+        list9.append(tt_cv_clie);
         list9.append(row[29]);
         reslt3.append(list9)
+
+#    for k46, v46 in dict_from_cache.items():
+#        for kk, vv in v46.items():
+#            l1=[k46]
+#            l1.append(kk)
+#            l1.extend([vv['active'], vv['done'], vv['failed'], vv['finished']])
+#            print('L1 ',l1)    
 
     data={'viewParams': request.session['viewParams'], 'reslt3':json.dumps(reslt3, cls=DateEncoder)}
 
