@@ -3193,6 +3193,7 @@ def jobList(request, mode=None, param=None):
                 set(['date_to', 'hours']).intersection(request.session['requestParams'].keys()) == 0) or \
                 ('jobstatus' in request.session['requestParams'] and is_job_active(request.session['requestParams']['jobstatus'])):
             del excludedTimeQuery['modificationtime__castdate__range']
+            warning['notimelimit'] = "no time window limitting was applied for active jobs in this selection"
 
         jobs.extend(Jobsdefined4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
                     :request.session['JOB_LIMIT']].values(*values))
