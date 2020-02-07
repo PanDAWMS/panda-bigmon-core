@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.core.cache import cache
+from pprint import pprint
 import json, re
 from collections import defaultdict
 from operator import itemgetter, attrgetter
@@ -91,8 +92,10 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
             string_vv = string_vv + '<span style="color: maroon">' + str(vv['finished']) + '</span>'
             string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>'
             dict_cache_transf[key_transf] = [string_vv, k46]
+    ar_sel="unknown"
+    pjname='unknown'
     i=0
-    rows_s = []
+    rows_s = []   
     for row in result:
       i+=1
       if i > 1000: break
@@ -100,118 +103,127 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       ar_sel = row[1]
       rname = row[4]
       job_start = row[8]
+      t_start='N/A'
+      if job_start != None: t_start=job_start.strftime('%Y/%m/%d %H:%M')
 ##      mrlink = row[7]
       gitbr = row[13]
-#      print "JID",jid_sel
-      dict_p={'jid' : jid_sel}
-      query1="select to_char(jid),projname,econf,eb,sb,ei,si,ecv,ecvkv,ekit,skit,erpm,srpm,ncompl,pccompl,npb,ner,pcpb,pcer,suff,skitinst,skitkv,scv,scvkv,scb,sib,sco,hname from jobstat@ATLR.CERN.CH natural join cstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = :jid order by projname"
-      new_cur.execute(query1, dict_p)
+#      print("JIDX",jid_sel)
+#
+      query01="select to_char(jid),projname,stat,eb,sb,ei,si,ecv,ecvkv,suff,scv,scvkv,scb,sib,sco,hname from jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
+      new_cur.execute(query01)
       reslt1 = new_cur.fetchall()
       lenres=len(reslt1)
-#      print "length1 ", lenres
-#      nccompl=reslt1[0][13]
-#      cpccompl=reslt1[0][14]
-#      nc_er=reslt1[0][16]
-#      nc_pb=reslt1[0][15]
-#      cpcer=reslt1[0][18]
-#      cpcpb=reslt1[0][17]
-#      pjname=reslt1[0][1]
-#      print "========= ",nccompl,cpccompl,nc_pb,nc_er,cpcer,cpcpb
-      dict_p={'jid' : jid_sel}
-      query2="select to_char(jid),projname,econf,eb,sb,ei,si,ecv,ecvkv,ekit,skit,erpm,srpm,ncompl,pccompl,npb,ner,pcpb,pcer,suff,skitinst,skitkv,scv,scvkv,scb,sib,sco from jobstat@ATLR.CERN.CH natural join tstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = :jid order by projname"
-      new_cur.execute(query2, dict_p)
-      reslt2 = new_cur.fetchall()
-      dict_jid02={}
-      for row02 in reslt2:
-#          print("=======", row02[0],row02[1],row02[1],row02[13])
-          pj2=row02[1]
-          if not pj2 in dict_jid02 : dict_jid02[pj2]=[]
-          dict_jid02[pj2]=[row02[13],row02[14],row02[16],row02[15],row02[18],row02[17]]
-      reslt2 = {}
-#      ntcompl=reslt2[0][13]
-#      tpccompl=reslt2[0][14]
-#      nt_er=reslt2[0][16]
-#      nt_pb=reslt2[0][15]
-#      tpcer=reslt2[0][18]
-#      tpcpb=reslt2[0][17]
-#      print "========= ",ntcompl,tpccompl,nt_pb,nt_er,tpcer,tpcpb
-      for row01 in reslt1:
-          nccompl=row01[13]
-          cpccompl=row01[14]
-          nc_er=row01[16]
-          nc_pb=row01[15]
-          cpcer=row01[18]
-          cpcpb=row01[17]
-          pjname=row01[1]  
-          hname=row01[27]
-          t_cv_serv=row01[7]
-          t_cv_clie=row01[8]
-          s_cv_serv=row01[22]
-          s_cv_clie=row01[23]
+      if lenres != 0 and ( reslt1[0][2] == 'cancel' or reslt1[0][2] == 'CANCEL' ):
+          pjname=reslt1[0][1]
+          hname=reslt1[0][15]
           if re.search(r'\.',hname):
-            hname=(re.split(r'\.',hname))[0]
-          ntcompl='0';tpccompl='0';nt_er='0';nt_pb='0';tpcer='0';tpcpb='0'
-          if pjname in dict_jid02 :
-              ntcompl=dict_jid02[pjname][0]
-              tpccompl=dict_jid02[pjname][1]
-              nt_er=dict_jid02[pjname][2]
-              nt_pb=dict_jid02[pjname][3]
-              if ntcompl == None or ntcompl == 'N/A' or ntcompl <= 0: 
-                  nt_er='N/A'
-                  nt_pb='N/A'
-              tpcer=dict_jid02[pjname][4]
-              tpcpb=dict_jid02[pjname][5]
-#          [tpcer_s,tpcpb_s]=map(lambda c: 100 - c, [tpcer,tpcpb])
-#          [tpcer_sf,tpcpb_sf]=map(lambda c: format(c,'.1f'), [tpcer_s,tpcpb_s])
-          s_checkout='0'
-          if row01[26] != None: s_checkout=str(row01[26])
-          s_config='0'
-          if row01[24] != None: s_config=str(row01[24])
-          s_inst='0'
-          if row01[25] != None: s_inst=str(row01[25])
-          t_build='N/A'
-          if row01[3] != None: t_build=row01[3].strftime('%Y/%m/%d %H:%M')
-          t_test='N/A'
-          if row01[5] != None: t_test=row01[5].strftime('%Y/%m/%d %H:%M')
-          t_start='N/A'
-          if job_start != None: t_start=job_start.strftime('%Y/%m/%d %H:%M')
-          tt_cv_serv='N/A'
-          if t_cv_serv != None and t_cv_serv != '': tt_cv_serv=t_cv_serv.strftime('%Y/%m/%d %H:%M')
-          tt_cv_clie='N/A'
-          if t_cv_clie != None and t_cv_clie != '': tt_cv_clie=t_cv_clie.strftime('%Y/%m/%d %H:%M')
-          ss_cv_serv='N/A'
-          if s_cv_serv != None and s_cv_serv != '': ss_cv_serv=str(s_cv_serv)
-          ss_cv_clie='N/A'
-          if s_cv_clie != None and s_cv_clie != '': ss_cv_clie=str(s_cv_clie)
-#
-          build_time_cell=t_build+'==='+s_checkout+s_config+s_inst
-          combo_c=str(nc_er)+' ('+str(nc_pb)+')'  
-          combo_t=str(nt_er)+' ('+str(nt_pb)+')'
-          if nt_er == 'N/A': combo_t='N/A(N/A)'
-#          mrlink_a="<a href=\""+mrlink+"\">"+gitbr+"</a>" 
-          [i_checkout,i_inst,i_config,i_cv_serv,i_cv_clie]=map(lambda x: di_res.get(str(x),str(x)), [s_checkout,s_inst,s_config,ss_cv_serv,ss_cv_clie])
-          if i_checkout == None or i_checkout == "None" : i_checkout=radiooff_icon; 
-          if i_inst == None or i_inst == "None" : i_inst=radiooff_icon;
-          if i_config == None or i_config == "None" : i_config=radiooff_icon;
-          link_to_testsRes=reverse('TestsRes')
-          link_to_compsRes=reverse('CompsRes')
-          i_combo_t="<a href=\""+link_to_testsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_t+"</a>"
-          if combo_t == 'N/A(N/A)': i_combo_t=combo_t
-          i_combo_c="<a href=\""+link_to_compsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_c+"</a>"
-          if tt_cv_serv != 'N/A' : i_combo_cv_serv=tt_cv_serv+i_cv_serv
-          else: i_combo_cv_serv=i_cv_serv
-          if tt_cv_clie != 'N/A' : i_combo_cv_clie=tt_cv_clie+i_cv_clie
-          else: i_combo_cv_clie=i_cv_clie
-
-          key_cache_transf=nname + '_' + rname
-          val_cache_transf,nightly_name_art=dict_cache_transf.get(key_cache_transf,['N/A','N/A'])
-          if val_cache_transf != 'N/A' and nightly_name_art != 'N/A':
-              vacasf = "<a href=\"https://bigpanda.cern.ch/art/overview/?branch="
-              val_cache_transf = vacasf + nightly_name_art + "&ntag_full=" + rname + "\">" + val_cache_transf + "</a>"
-
-          row_cand=[rname,ar_sel,pjname,t_start,i_checkout,i_inst,i_config,t_build,i_combo_c,t_test,i_combo_t,val_cache_transf,i_combo_cv_serv,tt_cv_clie,hname]
+              hname=(re.split(r'\.',hname))[0]
+          row_cand=[rname,t_start,'NO NEW<BR>CODE','N/A','N/A','CANCELLED','N/A','N/A','N/A','N/A','N/A','N/A',hname]
           rows_s.append(row_cand)
+      else: 
+          query1="select to_char(jid),projname,ncompl,pccompl,npb,ner,pcpb,pcer from cstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
+          new_cur.execute(query1)
+          reslt_addtl = new_cur.fetchall()
+          lenres_addtl=len(reslt_addtl)
+          if lenres_addtl != 0:
+              dict_jid01={}
+              for row02 in reslt_addtl:
+#                  print("------", row02[0],row02[1],row02[2])
+                  pj2=row02[1]
+                  if not pj2 in dict_jid01 : dict_jid01[pj2]=[]
+                  dict_jid01[pj2]=[row02[2],row02[3],row02[5],row02[4],row02[7],row02[6]]
+#
+              query2="select to_char(jid),projname,ncompl,pccompl,npb,ner,pcpb,pcer from tstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
+              new_cur.execute(query2)
+              reslt2 = new_cur.fetchall()
+              dict_jid02={}
+              for row02 in reslt2:
+#                  print("=======", row02[0],row02[1],row02[2])
+                  pj2=row02[1]
+                  if not pj2 in dict_jid02 : dict_jid02[pj2]=[]
+                  dict_jid02[pj2]=[row02[2],row02[3],row02[5],row02[4],row02[7],row02[6]]
+              reslt2 = {}
+              for row01 in reslt1:
+#                  print("JID",row01[0])  
+                  pjname=row01[1]  
+                  hname=row01[15]
+                  t_cv_serv=row01[7]
+                  t_cv_clie=row01[8]
+                  s_cv_serv=row01[10]
+                  s_cv_clie=row01[11]
+                  if re.search(r'\.',hname):
+                      hname=(re.split(r'\.',hname))[0]
+                  nccompl='0';cpccompl='0';nc_er='0';nc_pb='0';cpcer='0';cpcpb='0'
+                  if pjname in dict_jid01 :
+                      nccompl=dict_jid01[pjname][0]
+                      cpccompl=dict_jid01[pjname][1]
+                      nc_er=dict_jid01[pjname][2]
+                      nc_pb=dict_jid01[pjname][3]
+                      if nccompl == None or nccompl == 'N/A' or nccompl <= 0:
+                          nc_er='N/A'
+                          nc_pb='N/A'
+                      cpcer=dict_jid01[pjname][4]
+                      cpcpb=dict_jid01[pjname][5]
+                  ntcompl='0';tpccompl='0';nt_er='0';nt_pb='0';tpcer='0';tpcpb='0'
+                  if pjname in dict_jid02 :
+                      ntcompl=dict_jid02[pjname][0]
+                      tpccompl=dict_jid02[pjname][1]
+                      nt_er=dict_jid02[pjname][2]
+                      nt_pb=dict_jid02[pjname][3]
+                      if ntcompl == None or ntcompl == 'N/A' or ntcompl <= 0: 
+                          nt_er='N/A'
+                          nt_pb='N/A'
+                      tpcer=dict_jid02[pjname][4]
+                      tpcpb=dict_jid02[pjname][5]
+#                  [tpcer_s,tpcpb_s]=map(lambda c: 100 - c, [tpcer,tpcpb])
+#                  [tpcer_sf,tpcpb_sf]=map(lambda c: format(c,'.1f'), [tpcer_s,tpcpb_s])
+                  s_checkout='0'
+                  if row01[14] != None: s_checkout=str(row01[14])
+                  s_config='0'
+                  if row01[12] != None: s_config=str(row01[12])
+                  s_inst='0'
+                  if row01[13] != None: s_inst=str(row01[13])
+                  t_build='N/A'
+                  if row01[3] != None: t_build=row01[3].strftime('%Y/%m/%d %H:%M')
+                  t_test='N/A'
+                  if row01[5] != None: t_test=row01[5].strftime('%Y/%m/%d %H:%M')
+                  tt_cv_serv='N/A'
+                  if t_cv_serv != None and t_cv_serv != '': tt_cv_serv=t_cv_serv.strftime('%Y/%m/%d %H:%M')
+                  tt_cv_clie='N/A'
+                  if t_cv_clie != None and t_cv_clie != '': tt_cv_clie=t_cv_clie.strftime('%Y/%m/%d %H:%M')
+                  ss_cv_serv='N/A'
+                  if s_cv_serv != None and s_cv_serv != '': ss_cv_serv=str(s_cv_serv)
+                  ss_cv_clie='N/A'
+                  if s_cv_clie != None and s_cv_clie != '': ss_cv_clie=str(s_cv_clie)
+#
+                  build_time_cell=t_build+'==='+s_checkout+s_config+s_inst
+                  combo_c=str(nc_er)+' ('+str(nc_pb)+')'  
+                  combo_t=str(nt_er)+' ('+str(nt_pb)+')'
+                  if nt_er == 'N/A': combo_t='N/A(N/A)'
+#                  mrlink_a="<a href=\""+mrlink+"\">"+gitbr+"</a>" 
+                  [i_checkout,i_inst,i_config,i_cv_serv,i_cv_clie]=map(lambda x: di_res.get(str(x),str(x)), [s_checkout,s_inst,s_config,ss_cv_serv,ss_cv_clie])
+                  if i_checkout == None or i_checkout == "None" : i_checkout=radiooff_icon; 
+                  if i_inst == None or i_inst == "None" : i_inst=radiooff_icon;
+                  if i_config == None or i_config == "None" : i_config=radiooff_icon;
+                  link_to_testsRes=reverse('TestsRes')
+                  link_to_compsRes=reverse('CompsRes')
+                  i_combo_t="<a href=\""+link_to_testsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_t+"</a>"
+                  if combo_t == 'N/A(N/A)': i_combo_t=combo_t
+                  i_combo_c="<a href=\""+link_to_compsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_c+"</a>"
+                  if tt_cv_serv != 'N/A' : i_combo_cv_serv=tt_cv_serv+i_cv_serv
+                  else: i_combo_cv_serv=i_cv_serv
+                  if tt_cv_clie != 'N/A' : i_combo_cv_clie=tt_cv_clie+i_cv_clie
+                  else: i_combo_cv_clie=i_cv_clie
 
-    data={"nightly": nname, "rel": rname, 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}
+                  key_cache_transf=nname + '_' + rname
+                  val_cache_transf,nightly_name_art=dict_cache_transf.get(key_cache_transf,['N/A','N/A'])
+                  if val_cache_transf != 'N/A' and nightly_name_art != 'N/A':
+                      vacasf = "<a href=\"https://bigpanda.cern.ch/art/overview/?branch="
+                      val_cache_transf = vacasf + nightly_name_art + "&ntag_full=" + rname + "\">" + val_cache_transf + "</a>"
+
+                  row_cand=[rname,t_start,i_checkout,i_inst,i_config,t_build,i_combo_c,t_test,i_combo_t,val_cache_transf,i_combo_cv_serv,tt_cv_clie,hname]
+                  rows_s.append(row_cand)
+
+    data={"nightly": nname, "rel": rname, "platform": ar_sel, "project": pjname, 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}
     return render(request,'nviewDemo.html', data, content_type='text/html')
 

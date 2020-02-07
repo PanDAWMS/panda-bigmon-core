@@ -25,11 +25,14 @@
 <LI> For ART GRID test results, the number of tests with statuses active, done, finished, failed are shown. Follow result links for details
 </UL></div>
 
+<div id="details">
+<P style="font-family:Times New Roman; font-size: 20px;">
+These nightly jobs build <B>{{ project }}</B> on <B>{{ platform }}</B>
+</div>
+
 <table id="NSummary" class="stripe">
      <thead>
                 <th>Release</th>
-                <th>Platform</th>
-                <th>Project</th>
                 <th>Job time stamp</th>
                 <th>git clone</th>
                 <th>Extern.<BR>build</th>
@@ -40,7 +43,7 @@
                 <th>CTest tests<BR>errors<BR>(w/warnings)</th>
                 <th>ART GRID</th>
                 <th>CVMFS<BR>(on server)</th>
-                <th>CVMFS<BR>(on client)<BR>under constr.</th>
+                <th>CVMFS<BR>(on client)</th>
                 <th>Host</th>
      </thead>
      <tbody></tbody>
@@ -50,7 +53,7 @@
 var json=JSON.stringify({{ rows_s | safe }});
 
 var ndisplayTable = $('#NSummary').dataTable({
-"order": [[3, 'desc'],[7, 'desc']],
+"order": [[1, 'desc'],[5, 'desc']],
 "pageLength": 100,
 "lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
 "data": JSON.parse(json),
@@ -62,16 +65,16 @@ var ndisplayTable = $('#NSummary').dataTable({
                  else if ( v0I >= 30000 && v0I < 40000 ) { v0F = (v0I - 30000)/11000;}
                  var hexV0 = '#F'+Math.floor(v0F*1048575).toString(16);
                  $('td:eq(0)', row).css("background-color", hexV0).css("border", "1px solid rgb(197, 219, 236)");
-                 var v8=($('td:eq(8)',row).text().split(" "))[0];
-                 var v10=($('td:eq(10)',row).text().split(" "))[0]; 
-                 if ( v8 > 6 ) { $('td:eq(8)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v8 > 0 ) { $('td:eq(8)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");} 
-                 else if ( /\s/.test(v8) )  { $('td:eq(8)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
-                 else { $('td:eq(8)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
-                 if ( v10 > 0 && v10 <=5 ) { $('td:eq(10)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v10 > 5 ) { $('td:eq(10)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v10 != 'N/A' )  { $('td:eq(10)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
-                 else { $('td:eq(10)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+                 var v8=($('td:eq(6)',row).text().split(" "))[0];
+                 var v10=($('td:eq(8)',row).text().split(" "))[0]; 
+                 if ( v8 > 6 ) { $('td:eq(6)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v8 > 0 ) { $('td:eq(6)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");} 
+                 else if ( /\s/.test(v8) )  { $('td:eq(6)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+                 else { $('td:eq(6)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 if ( v10 > 0 && v10 <=5 ) { $('td:eq(8)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v10 > 5 ) { $('td:eq(8)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v10 != 'N/A' )  { $('td:eq(8)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 else { $('td:eq(8)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
 
 /*
                  if (v9 >= 0) { 
