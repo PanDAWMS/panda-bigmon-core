@@ -101,7 +101,7 @@ from core.auth.utils import grant_rights, deny_rights
 from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
-from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime
+from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, is_job_active
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.task import get_job_state_summary_for_tasklist
@@ -227,8 +227,8 @@ def login_customrequired(function):
             # if '/user/' in request.path:
             #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
             # else:
-            return function(request, *args, **kwargs)
-            #return HttpResponseRedirect('/login/?next='+request.get_full_path())
+            # return function(request, *args, **kwargs)
+            return HttpResponseRedirect('/login/?next='+request.get_full_path())
     wrap.__doc__ = function.__doc__
     wrap.__name__ = function.__name__
     return wrap
@@ -1982,7 +1982,7 @@ def userSummaryDict(jobs):
         sumd[user]['n' + state] += 1
         if not site in sumd[user]['sites']: sumd[user]['sites'][site] = 0
         sumd[user]['sites'][site] += 1
-        if not site in sumd[user]['clouds']: sumd[user]['clouds'][cloud] = 0
+        if not cloud in sumd[user]['clouds']: sumd[user]['clouds'][cloud] = 0
         sumd[user]['clouds'][cloud] += 1
     for user in sumd:
         sumd[user]['nsites'] = len(sumd[user]['sites'])
@@ -3190,8 +3190,11 @@ def jobList(request, mode=None, param=None):
     else:
         excludedTimeQuery = copy.deepcopy(query)
         if ('modificationtime__castdate__range' in excludedTimeQuery and
-                set(['date_to', 'hours']).intersection(request.session['requestParams'].keys()) == 0):
+                set(['date_to', 'hours']).intersection(request.session['requestParams'].keys()) == 0) or \
+                ('jobstatus' in request.session['requestParams'] and is_job_active(request.session['requestParams']['jobstatus'])):
             del excludedTimeQuery['modificationtime__castdate__range']
+            warning['notimelimit'] = "no time window limitting was applied for active jobs in this selection"
+
         jobs.extend(Jobsdefined4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
                     :request.session['JOB_LIMIT']].values(*values))
         jobs.extend(Jobsactive4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
@@ -4451,7 +4454,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                         f['ruciodatasetname'] = dsets[0]['datasetname']
                         f['datasetname'] = dsets[0]['datasetname']
                     if job['computingsite'] in pandaSites.keys():
-                        f['ddmsite'] = pandaSites[job['computingsite']]['site']
+                        _, _, computeSvsAtlasS = getAGISSites()
+                        f['ddmsite'] = computeSvsAtlasS.get(job['computingsite'], "")
 
                 if 'dst' in f['destinationdblocktoken']:
                     parced = f['destinationdblocktoken'].split("_")
@@ -5806,11 +5810,15 @@ def wnInfo(request, site, wnname='all'):
 
     errthreshold = 15
 
+    wnname_rgx = None
+    if 'wnname' in request.session['requestParams'] and request.session['requestParams']['wnname']:
+        wnname_rgx = request.session['requestParams']['wnname']
+
+    query = setupView(request, hours=hours, limit=999999)
     if wnname != 'all':
-        query = setupView(request, hours=hours, limit=999999)
         query['modificationhost__endswith'] = wnname
-    else:
-        query = setupView(request, hours=hours, limit=999999)
+    elif wnname_rgx is not None:
+        query['modificationhost__contains'] = wnname_rgx.replace('*', '')
     query['computingsite'] = site
     wnsummarydata = wnSummary(query)
     totstates = {}
@@ -5945,11 +5953,8 @@ def wnInfo(request, site, wnname='all'):
         elif request.session['requestParams']['sortby'] == 'pctfail':
             fullsummary = sorted(fullsummary, key=lambda x: x['pctfail'], reverse=True)
 
-    kys = wnPlotFailed.keys()
-    kys = sorted(kys)
-    wnPlotFailedL = []
-    for k in kys:
-        wnPlotFailedL.append([k, wnPlotFailed[k]])
+    wnPlotFailedL = [[k, v] for k, v in wnPlotFailed.items()]
+    wnPlotFailedL = sorted(wnPlotFailedL, key=lambda x: x[0])
 
     kys = wnPlotFinished.keys()
     kys = sorted(kys)
@@ -6012,29 +6017,41 @@ def checkUcoreSite(site, usites):
     return isUsite
 
 def getAGISSites():
-    url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
-    http = urllib3.PoolManager()
-    data = {}
-    sitesUcore = []
-    sitesHarvester = []
-    try:
-        r = http.request('GET', url)
-        data = json.loads(r.data.decode('utf-8'))
-        for cs in data.keys():
-            if 'unifiedPandaQueue' in data[cs]['catchall'] or 'ucore' in data[cs]['capability']:
-                sitesUcore.append(data[cs]['siteid'])
-            if 'harvester' in data[cs] and len(data[cs]['harvester']) != 0:
-                sitesHarvester.append(data[cs]['siteid'])
-    except Exception as exc:
-        print (exc)
-    return sitesUcore, sitesHarvester
+    sitesUcore = cache.get('sitesUcore')
+    sitesHarvester = cache.get('sitesHarvester')
+    computevsAtlasCE = cache.get('computevsAtlasCE')
+
+    if not (sitesUcore and sitesHarvester and computevsAtlasCE):
+        sitesUcore, sitesHarvester = [], []
+        computevsAtlasCE = {}
+        url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
+        http = urllib3.PoolManager()
+        data = {}
+        try:
+            r = http.request('GET', url)
+            data = json.loads(r.data.decode('utf-8'))
+            for cs in data.keys():
+                if 'unifiedPandaQueue' in data[cs]['catchall'] or 'ucore' in data[cs]['capability']:
+                    sitesUcore.append(data[cs]['siteid'])
+                if 'harvester' in data[cs] and len(data[cs]['harvester']) != 0:
+                    sitesHarvester.append(data[cs]['siteid'])
+                if 'panda_site' in data[cs]:
+                    computevsAtlasCE[cs] = data[cs]['atlas_site']
+        except Exception as exc:
+            print (exc)
+
+        cache.set('sitesUcore', sitesUcore, 3600)
+        cache.set('sitesHarvester', sitesHarvester, 3600)
+        cache.set('computevsAtlasCE', computevsAtlasCE, 3600)
+
+    return sitesUcore, sitesHarvester, computevsAtlasCE
 
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
     start_time = time.time()
     pilots = getPilotCounts(view)
     query = setupView(request, hours=hours, limit=limit, opmode=view)
-    ucoreComputingSites, harvesterComputingSites = getAGISSites()
+    ucoreComputingSites, harvesterComputingSites, _ = getAGISSites()
 
     _logger.debug('[dashSummary] Got AGIS json: {}'.format(time.time() - start_time))
 
@@ -8535,6 +8552,7 @@ def taskInfo(request, jeditaskid=0):
     walltime = []
     jobsummaryESMerge = []
     jobsummaryPMERGE = []
+    jobsummaryBuild = []
     eventsdict=[]
     objectStoreDict=[]
     eventsChains = []
@@ -8556,6 +8574,7 @@ def taskInfo(request, jeditaskid=0):
         tasks = JediTasks.objects.filter(**query).values()
         if len(tasks) > 0:
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
+
         if eventservice:
             if 'version' not in request.session['requestParams'] or (
                     'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old'):
@@ -8629,16 +8648,22 @@ def taskInfo(request, jeditaskid=0):
                 objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
                 for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
 
-
-
-
-
-#SELECT * FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS WHERE JEDITASKID=12380658 and pandaid=3665826228
-
-#SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV FROM (
-#SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=12380658 and RELATIONTYPE='jobset_retry'
-#)t1 CONNECT BY NOCYCLE OLDPANDAID=PRIOR NEWPANDAID ;
-
+        elif len(tasks) > 0 and 'tasktype' in tasks[0] and tasks[0]['tasktype']  == 'anal':
+            # Divide jobs into 3 categories: run, build, merge
+            extra = '(1=1)'
+            jbquery = copy.deepcopy(query)
+            jbquery['transformation__icontains'] = 'build'
+            exclude = {'processingtype': 'pmerge'}
+            jextra = "transformation NOT LIKE \'%%build%%\'"
+            mode = 'drop'
+            if 'mode' in request.session['requestParams']:
+                mode = request.session['requestParams']['mode']
+            plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
+                request, query, exclude=exclude, extra=jextra, mode=mode,algorithm='isOld')
+            plotsDictBuild, jobsummaryBuild, eventssummaryBuild, transactionKeyBuild, jobScoutIDsBuild, hs06sSumBuild = jobSummary2(
+                request, jbquery, exclude={}, extra=extra,  mode=mode, algorithm='isOld')
+            plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary2(
+                request, query, exclude={},extra=extra,  mode=mode, processingtype='pmerge',algorithm='isOld')
         else:
             extra = '(1=1)'
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
@@ -8966,6 +8991,7 @@ def taskInfo(request, jeditaskid=0):
             'showtaskprof': showtaskprof,
             'jobsummaryESMerge': jobsummaryESMerge,
             'jobsummaryPMERGE': jobsummaryPMERGE,
+            'jobsummaryBuild': jobsummaryBuild,
             'plotsDict': plotsDict,
             'taskbrokerage': taskbrokerage,
             'jobscoutids' : jobScoutIDs,
@@ -9644,7 +9670,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
 
     values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', \
              'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', \
-             'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid','attemptnr'
+             'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid','attemptnr', 'transformation'
     # newquery['jobstatus'] = 'finished'
 
     # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses

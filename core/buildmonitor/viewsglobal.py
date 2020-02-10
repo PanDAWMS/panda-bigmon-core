@@ -6,7 +6,9 @@ from django.db import connection, transaction
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.core.cache import cache
 import json, re
+from pprint import pprint
 from collections import defaultdict
 from operator import itemgetter, attrgetter
 
@@ -23,6 +25,15 @@ def globalviewDemo(request):
 
     valid, response = initRequest(request)
     new_cur = connection.cursor()
+    dict_from_cache = cache.get('art-monit-dict')
+    check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span style="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-icon-circle-check">ICON33</span></div>'
+    clock_icon='<div class="ui-widget ui-state-hover" style="display:inline-block;"> <span style="display:inline-block;" title="UPDATING" class="DataTables_sort_icon css_right ui-icon ui-icon-clock">ICON39</span></div>'
+    minorwarn_icon='<div class="ui-widget ui-state-highlight" style="display:inline-block;"> <span style="display:inline-block;" title="MINOR WARNING" class="DataTables_sort_icon css_right ui-icon ui-icon-alert">ICON34</span></div>'
+    majorwarn_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span style="display:inline-block;" title="WARNING" class="DataTables_sort_icon css_right ui-icon ui-icon-lightbulb">ICON35</span></div>'
+    error_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span style="display:inline-block;" title="ERROR" class="DataTables_sort_icon css_right ui-icon ui-icon-circle-close">ICON36</span></div>'
+    radiooff_icon='<div class="ui-widget ui-state-default" style="display:inline-block";> <span title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
+    di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
+
     query = """
     select n.nname as \"BRANCH\", n.ngroup as \"GROUP\", platf.pl,
     TO_CHAR(j.begdate,'DD-MON HH24:MI') as \"DATE\",
@@ -39,7 +50,8 @@ def globalviewDemo(request):
     j.lastpj,
     j.relid,
     a.gitmrlink as \"GLINK\",
-    a.relnstamp as \"TMSTAMP\"
+    a.relnstamp as \"TMSTAMP\",
+    TO_CHAR(j.ecvkv,'DD-MON HH24:MI') as \"CVMCL\", j.SCVKV as \"S.CVMCL\"
     from nightlies@ATLR.CERN.CH n inner join
       ( releases@ATLR.CERN.CH a inner join
         ( jobstat@ATLR.CERN.CH j inner join projects@ATLR.CERN.CH p on j.projid = p.projid) on a.nid=j.nid and a.relid=j.relid )
@@ -48,19 +60,20 @@ def globalviewDemo(request):
     (select ncompl as nc, ner as nc_er, npb as nc_pb, jid, projid from cstat@ATLR.CERN.CH ) cs,
     (select ncompl as nt, ner as nt_er, npb as nt_pb, jid, projid from tstat@ATLR.CERN.CH ) ts
      WHERE
-    j.jid BETWEEN to_number(to_char(SYSDATE-6, 'YYYYMMDD'))*10000000
+    j.jid BETWEEN to_number(to_char(SYSDATE-10, 'YYYYMMDD'))*10000000
      AND to_number(to_char(SYSDATE, 'YYYYMMDD')+1)*10000000
      AND j.jid = platf.jid
      AND j.jid = cs.jid and j.projid = cs.projid
      AND j.jid = ts.jid and j.projid = ts.projid
-     AND j.begdate between sysdate-6 and sysdate
+     AND j.begdate between sysdate-10 and sysdate
      AND j.eb is not  NULL order by j.eb desc
           """
     new_cur.execute(query)
     result = new_cur.fetchall()
 
+    di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
+    
     first_row = result[0]
-    #    hdrs=['Branch', 'Recent<BR>Release', 'Build time', 'Ave.Compilation<BR>Error(w/warnings)','CTest or ATN tests<BR>(no warings)','ORDER']
     rows_s = []
     dd = defaultdict(list)
     for row1 in result:
@@ -83,37 +96,55 @@ def globalviewDemo(request):
               '19.2.X_BUGFIX': 'BB', 'GAUDI_HIVE': 'BAAA', 'UPGRADE_INTEGRATION': 'BAAB'}
     for k, v in dd.items():
         ar1 = []
-        #        k11='<a href="http://atlas-nightlies-browser.cern.ch/~platinum/nightlies/info?tp=g&nightly='+k+'">'+k+'</a>'
-        #        if re.match('^.*CI.*$',k): k11=k
-        k11 = k
-        ar1.append(k11)
+        ar1.append(k)
         row10u = v[0].upper()
         name_code = dict_g.get(row10u, 'Y' + row10u)
         v[0] = row10u
         #        v[13]='<a href="http://atlas-nightlies-browser.cern.ch/~platinum/nightlies/info?tp=g&nightly='+k+'&rel='+v[13]+'&ar=*">'+v[13]+'</a>'
         ar1.extend(v)
-        v38 = 'N/A';
-        v39 = 'N/A';
-        v38s = 'N/A';
-        v39s = 'N/A';
-        m_tcompl = v[18]
-        if m_tcompl != None and m_tcompl != 'N/A' and m_tcompl > 0:
-            nt = max(1, v[18])
-            #            print('vv ',str(nt)+' * '+str(v[19])+' * '+str(v[20]))
-            v38 = float(100. - v[19] * 100. / nt)
-            v39 = float(100. - v[20] * 100. / nt)
-            v38s = format(v38, '.0f')
-            v39s = format(v39, '.0f')
-        ar1.extend([v38s, v39s])
+        m_tcompl = v[17]
+        if m_tcompl == None or m_tcompl == 'N/A' or m_tcompl <= 0: 
+            v[18]='N/A'; v[19]='N/A'
         ar1.append(name_code)
         reslt2.append(ar1)
         lar1 = len(ar1)
     #    print(reslt2)
+    dict_cache_transf={}
+    for k46, v46 in dict_from_cache.items():
+        for kk, vv in v46.items():
+            kk_transf = re.sub('/','_',k46) 
+            key_transf = kk_transf+'_'+kk
+            string_vv = '<span style="color: blue">' + str(vv['active']) + '</span>'
+            string_vv = string_vv + ',<B><span style="color: green">'+ str(vv['done']) +'</span></B>,'
+            string_vv = string_vv + '<span style="color: maroon">' + str(vv['finished']) + '</span>'
+            string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>' 
+            dict_cache_transf[key_transf] = [string_vv, k46]
+#    pprint(dict_cache_transf)
     reslt3 = []
     for row in reslt2:
         list9 = []
         a0001 = str(row[17]) + ' (' + str(row[18]) + ')'
-        a0002 = str(row[27]) + ' (' + str(row[28]) + ')'
+        m_tcompl = row[19]
+        if m_tcompl == None or m_tcompl == 'N/A' or m_tcompl <= 0:
+            row[20]='N/A'; row[21]='N/A';
+        a0002 = str(row[20]) + ' (' + str(row[21]) + ')'
+        
+        t_cv_clie=row[27];s_cv_clie=row[28]
+        t_cv_serv=row[11];s_cv_serv=row[12]
+        tt_cv_serv='N/A' 
+        if t_cv_serv != None and t_cv_serv != '': tt_cv_serv=t_cv_serv
+        tt_cv_clie='N/A'
+        if t_cv_clie != None and t_cv_clie != '': tt_cv_clie=t_cv_clie
+        ss_cv_serv='N/A'
+        if s_cv_serv != None and s_cv_serv != '': ss_cv_serv=str(s_cv_serv)
+        ss_cv_clie='N/A'
+        if s_cv_clie != None and s_cv_clie != '': ss_cv_clie=str(s_cv_clie)
+        [i_cv_serv,i_cv_clie]=map(lambda x: di_res.get(str(x),str(x)), [ss_cv_serv,ss_cv_clie])
+        if tt_cv_serv != 'N/A' : i_combo_cv_serv=tt_cv_serv+i_cv_serv
+        else: i_combo_cv_serv=i_cv_serv
+        if tt_cv_clie != 'N/A' : i_combo_cv_clie=tt_cv_clie+i_cv_clie
+        else: i_combo_cv_clie=i_cv_clie
+
         brname = row[0]
         link_brname = brname
         link_to_ciInfo = reverse('BuildCI')
@@ -122,16 +153,32 @@ def globalviewDemo(request):
             link_brname = "<a href=\"" + link_to_ciInfo + "\">" + brname + "</a>"
         else:
             link_brname = "<a href=\"" + link_to_nInfo + "?nightly=" + brname + "\">" + brname + "</a>"
+
+        key_cache_transf=brname + '_' + row[14]
+        val_cache_transf,nightly_name_art=dict_cache_transf.get(key_cache_transf,['N/A','N/A'])
+        if val_cache_transf != 'N/A' and nightly_name_art != 'N/A': 
+            vacasf = "<a href=\"https://bigpanda.cern.ch/art/overview/?branch=" 
+            val_cache_transf = vacasf + nightly_name_art + "&ntag_full=" + row[14] + "\">" + val_cache_transf + "</a>"
         list9.append(row[1]);
         list9.append(link_brname);
         list9.append(row[14]);
         list9.append(row[9]);
         list9.append(a0001);
         list9.append(a0002);
+        list9.append(val_cache_transf);
+        list9.append(tt_cv_clie);
         list9.append(row[29]);
         reslt3.append(list9)
 
+#    for k46, v46 in dict_from_cache.items():
+#        for kk, vv in v46.items():
+#            l1=[k46]
+#            l1.append(kk)
+#            l1.extend([vv['active'], vv['done'], vv['failed'], vv['finished']])
+#            print('L1 ',l1)    
+
     data={'viewParams': request.session['viewParams'], 'reslt3':json.dumps(reslt3, cls=DateEncoder)}
+
     return render(request,'globalviewDemo.html', data, content_type='text/html')
 #    return render_to_response('globalviewDemo.html', data, content_type='text/html') 
 

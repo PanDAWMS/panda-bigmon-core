@@ -52,6 +52,7 @@
 
 {% if jobList %}
 <p>Job <b>modification times</b> in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>,
+{% if warning.notimelimit %} although {{ warning.notimelimit }}, {% endif %}
 <a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a></p>
 <p>Job <b>current priorities</b> in this listing range from <b>{{ plow }}</b> to <b>{{ phigh }}</b>. See priorityrange in the job attribute summary to see how priorities are distributed.</p>
 {% endif %}

@@ -19,7 +19,10 @@
 
 </div>
 
-<div id="note1"><P><UL><LI><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/NightliesCIInfo">Nightly and CI systems features and policies</a><LI><a href="https://atlas-nightlies-browser.cern.ch/~platinum/nightlies/globalpage">Old Nightly and CI display</a></UL></div>
+<div id="note1"><P>
+<UL><LI><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/NightliesCIInfo">Nightly and CI systems features and policies</a>
+<LI> For ART GRID test results, the number of tests with statuses active, done, finished, failed are shown. Follow result links for details 
+</UL></div>
 
 <table id="firstGlobalExample" class="stripe">
      <thead>
@@ -27,8 +30,10 @@
                 <th>Branch</th>
                 <th>Recent<BR>Release</th>
                 <th>Build time</th>
-                <th>Compilation Errors<BR>(w/warnings)</th>
-                <th>Pct. of Successful<BR>CTest or ATN tests<BR>(no warnings)</th>
+                <th>Compilation errors<BR>(w/warnings)</th>
+                <th>CTest (or CI)<BR>test errors<BR>(w/warnings)</th>
+                <th>ART GRID</th>
+                <th>CVMFS<BR>(on client)</th>
                 <th>ORDER string</th>
      </thead>
      <tbody></tbody>
@@ -38,14 +43,14 @@
 var json=JSON.stringify({{ reslt3 | safe }});
 
 var globaldisplayTable = $('#firstGlobalExample').dataTable({
-"order": [[6, 'asc']],
+"order": [[8, 'asc']],
 "pageLength": 100,
 "lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
 "data": JSON.parse(json),
 
 "columnDefs": [
        {
-                "targets": [ 6 ],
+                "targets": [ 8 ],
                 "visible": false,
                 "searchable": false
        }],
@@ -56,8 +61,8 @@ var globaldisplayTable = $('#firstGlobalExample').dataTable({
                  else if ( v4 > 0 ) { $('td:eq(4)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");} 
                  else if ( /\s/.test(v4) )  { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(4)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
-                 if ( v5 < 95 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v5 < 32 ) { $('td:eq(5)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 if ( v5 > 0 && v5 <= 5 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v5 > 5 ) { $('td:eq(5)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( v5 != 'N/A' )  { $('td:eq(5)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(5)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
 

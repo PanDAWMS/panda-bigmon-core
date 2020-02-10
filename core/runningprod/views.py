@@ -329,8 +329,6 @@ def prodNeventsTrend(request):
             days = int(request.session['requestParams']['days'])
         except:
             days = defaultdays
-        if days > defaultdays:
-            days = defaultdays
         starttime = datetime.now() - timedelta(days=days)
         endtime = datetime.now()
         request.session['requestParams']['days'] = days

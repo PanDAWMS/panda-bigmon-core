@@ -51,13 +51,18 @@
 
             $scope.gog = function(){
                 var request = "";
-                if ($scope.selectedTime == "hours4320") request = '?hours=4320';
-                if ($scope.selectedTime == "hours2160") request ='?hours=2160';
-                if ($scope.selectedTime == "hours720") request = '?hours=720';
-                if ($scope.selectedTime == "hours168") request = '?hours=168';
-                if ($scope.selectedTime == "hours24") request = '?hours=24';
-                if ($scope.selectedTime == "hours12") request = '?hours=12';
-                if ($scope.selectedTime == "hours1") request = '?hours=1';
+
+                if ((typeof $scope.selectedTime === 'string' || $scope.selectedTime instanceof String) && ($scope.selectedTime.length > 0))  {
+                    if ($scope.selectedTime == "hours4320") request = '?hours=4320';
+                    if ($scope.selectedTime == "hours2160") request = '?hours=2160';
+                    if ($scope.selectedTime == "hours720") request = '?hours=720';
+                    if ($scope.selectedTime == "hours168") request = '?hours=168';
+                    if ($scope.selectedTime == "hours24") request = '?hours=24';
+                    if ($scope.selectedTime == "hours12") request = '?hours=12';
+                    if ($scope.selectedTime == "hours1") request = '?hours=1';
+                } else {
+                    request = "?"+$scope.getTimeForQuery();
+                }
 
                 if (request.length == 0) request = "?"; else request += "&";
                 if ($scope.selectedCampaign) request += ('campaign=' + $scope.selectedCampaign);
@@ -92,6 +97,7 @@
             };
 
             formatDate = function(date){
+                date = new Date(date)
                 return  date.getFullYear() + '-' + ((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1)))  + '-' +
                     ((date.getDate() > 9) ? (date.getDate()) : ('0' + (date.getDate()))) ;
             };
@@ -111,8 +117,12 @@
                         return 'hours=' + $scope.getTimeHours();
                 }
                 else {
-                    if (forGrafana)
-                        return 'from='+ $scope.dateFrom.getTime()+'&to='+$scope.dateTo.getTime();
+                    if (forGrafana) {
+                        dateFrom = new Date($scope.dateFrom);
+                        if (!$scope.dateTo) $scope.dateTo = new Date();
+                        dateTo = new Date($scope.dateTo);
+                        return 'from=' + dateFrom.getTime() + '&to=' + $scope.dateTo.getTime();
+                    }
                     else
                         return 'date_from=' + formatDate($scope.dateFrom) + '&date_to=' + formatDate($scope.dateTo);
                 }
@@ -142,7 +152,7 @@
                             keepInBounds: true,
                             maxZoomIn: 4.0
                           },
-                          colors: ['green', 'blue'],
+                          colors: ['green', 'blue', 'red'],
                           legend: { position: "top" },
 
                       };
@@ -243,8 +253,8 @@
             </select>
             <table class="table">
            		<tr>
-                <td><label>From:<input type="date" class="ntag-text" ng-model="dateFrom" id="ntag_from" min="2019-07-01" ng-change="updateTimeWindow();"></label>
-                <td><label>To:<input type="date" class="ntag-text" ng-model="dateTo" id="ntag_to" min="2019-07-01" ng-change="updateTimeWindow();"></label>
+                <td><label>From:<input type="date" class="ntag-text" ng-model="dateFrom" id="ntag_from" min="2019-06-01" ng-change="updateTimeWindow();"></label>
+                <td><label>To:<input type="date" class="ntag-text" ng-model="dateTo" id="ntag_to" min="2019-06-01" ng-change="updateTimeWindow();"></label>
                 <!-- <td><a ng-click="gog();" class="button secondary">Set</a> -->
            		</tr>
             </table>
@@ -277,9 +287,11 @@
                     <th>Source</th>
                     <th>Progress plot</th>
                     <th>DDM Dash</th>
+                    <th>Datasets Queuing</th>
                     <th>Datasets Active</th>
                     <th>Datasets Done <br>(+ 90% readiness)</th>
                     <th>Files Remaining</th>
+                    <th>Files Queuing</th>
                     <th>Files Done</th>
                 </tr>
               </thead>
@@ -294,6 +306,9 @@
                         <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All&var-src_endpoint={$ x.source $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&{$ getTimeForQuery(true) $}">--></a>
                     </td>
                     <td class="sm_ok_light_fill">
+                        {$ x.ds_queued $}
+                    </td>
+                    <td class="sm_ok_light_fill">
                         {$ x.ds_active $}
                     </td>
                     <td class="sm_ok_light_fill">
@@ -301,6 +316,9 @@
                     </td>
                     <td class="sm_ok_light_fill">
                         {$ x.files_rem $}
+                    </td>
+                    <td class="sm_ok_light_fill">
+                        {$ x.files_q $}
                     </td>
                     <td class="sm_ok_light_fill">
                         {$ x.files_done $}
@@ -349,7 +367,7 @@
                      <td>{$ n[7] $}</td>
                      <td>{$ n[8] $}</td>
                      <td>{$ n[9] $}</td>
-                     <td><a href="https://rucio-ui.cern.ch/rule?rule_id={$ n[10] $}">{$ n[10] $}</a></td>
+                     <td><a target="_blank" href="https://rucio-ui.cern.ch/rule?rule_id={$ n[10] $}">{$ n[10] $}</a></td>
                  </tr>
                  </tbody>
 

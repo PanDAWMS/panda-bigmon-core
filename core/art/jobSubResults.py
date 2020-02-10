@@ -207,7 +207,8 @@ def get_final_result(job):
         'testdirectory': None,
         'reportjira': None,
         'reportmail': None,
-        'description': None
+        'description': None,
+        'linktoplots': None,
         }
     finalresult = ''
     if job['jobstatus'] == 'finished':
@@ -242,6 +243,10 @@ def get_final_result(job):
         pass
     try:
         extraParamsDict['description'] = job['result']['description'] if 'description' in job['result'] else None
+    except:
+        pass
+    try:
+        extraParamsDict['linktoplots'] = job['result']['url'] if 'url' in job['result'] else None
     except:
         pass
 

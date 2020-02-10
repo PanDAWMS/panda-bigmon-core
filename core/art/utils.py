@@ -56,7 +56,10 @@ def setupView(request, querytype='task'):
         except:
             del request.session['requestParams']['ntag_full']
 
-    ndaysmax = 6
+    if request.path != '/art/updatejoblist/':
+        ndaysmax = 6
+    else:
+        ndaysmax = 30
     if 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
         enddate = startdate + timedelta(days=ndaysmax)
     elif not 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams']:
