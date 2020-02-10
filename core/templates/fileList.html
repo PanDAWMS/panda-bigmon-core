@@ -2,80 +2,68 @@
 {% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA files {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
-{% block subtitle %}PanDA files<font size=-1>{{ viewParams.selection|safe }}</font>{% endblock %}
-
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <style>
-        #filelist_wrapper .row {
-            max-width: 99%;
-        }
-    </style>
-{% endblock %}
-{% block extra_js %}
-    <script src="{% static 'js/humanize.min.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
-{% endblock %}
+{% block subtitle %}PanDA files {{ viewParams.selection|safe }} {% endblock %}
 
 {% block body %}
 
 {% if nfilestotal > 0 %}
+<div class="bp-container-simple">
+{% if requestParams.datasetname %}<p>Files in dataset <b>{{ requestParams.datasetname }}</b></p> {% endif %}
+{% if requestParams.datasetid %}<p>Files in dataset ID = <b>{{ requestParams.datasetid }}</b></p> {% endif %}
 
-{% if requestParams.datasetname %}<br>Files in dataset <b>{{ requestParams.datasetname }}</b> {% endif %}
-{% if requestParams.datasetid %}<br>Files in dataset ID = <b>{{ requestParams.datasetid }}</b> {% endif %}
-
-{#<b>{{ files|length }} listed files {% if limitexceeded %} but some files are excluded due to DB retrieval limit. To see more files please add &limit=<i>some number</i> to request{% endif %} </b>#}
-{#{% if nfiles != files|length %} <br> <b>{{ nfiles }} unique files</b> {% endif %}#}
-
-<br>Total number of inputs in dataset: <b> {{ nfilestotal }} </b>
+<p>Total number of inputs in dataset: <b> {{ nfilestotal }} </b>
 {% if nfilestotal != nfilesunique %} whereas number of unique files is <b>{{ nfilesunique }}</b> {% endif %}
-<p>
+</p>
+
+
 {% if nfilestotal > 1000 %}
-    <div id="nlistedfiles" style="display: inline; font-weight: bold"> 1000 </div> event chunks listed below. If you want to see more, please input the desire number and press Reload button.
-    <div class="row" style="max-width: 100%; font-size: 0.85rem; margin-top: 0.5rem">
-      <div class="small-12 medium-3 columns" style="padding-left: 0">
+    <p><span id="nlistedfiles"> 1000 </span> event chunks listed below. If you want to see more, please input the desire number and press Reload button.</p>
+    <div class="grid-x">
+      <div class="small-12 medium-3 cell">
         <div class="input-group">
           <span class="input-group-label">Number of files</span>
           <input class="input-group-field" id="nfilestoload" type="number" placeholder="1000">
           <div class="input-group-button">
-            <input type="submit" class="button secondary" value="Reload" id="reloadfilelist" style="font-size: 0.85rem">
+            <input type="submit" class="button primary" value="Reload" id="reloadfilelist" style="font-size: 0.85rem">
+          </div>
         </div>
       </div>
     </div>
-</div>
-
 {% else %}
     <b>{{ nfilestotal }}</b> files listed below
 {% endif %}
-
-
-<table id = 'filelist' class="data-table nowrap">
-    <thead>
-    <tr>
-        <th>File name</th>
-        <th>File ID</th>
-        <th>Type</th>
-        <th>Size (MB)</th>
-        <th>N events</th>
-        <th>Task ID</th>
-        <th>PanDA ID</th>
-        <th>Status</th>
-        <th>Processing status</th>
-        <th>Attempt</th>
-        <th>Max attempts</th>
-        <th>Created</th>
-        <th>Lumi block</th>
-        <th>Rucio link</th>
-        <th>Scope</th>
-        <th>GUID</th>
-    </tr>
-    </thead>
+</div>
+<div class="card bp-container">
+<div class="card-divider">
+    <p>Job list {% if display_limit and display_limit < njobs %}, only the most recent {{ display_limit }} jobs are shown.{% endif %}</p>
+</div>
+<div class="card-section">
+<table class="bp-datatable" id="filelist">
+<thead>
+<tr>
+    <th>File name</th>
+    <th>File ID</th>
+    <th>Type</th>
+    <th>Size (MB)</th>
+    <th>N events</th>
+    <th>Task ID</th>
+    <th>PanDA ID</th>
+    <th>Status</th>
+    <th>Processing status</th>
+    <th>Attempt</th>
+    <th>Max attempts</th>
+    <th>Created</th>
+    <th>Lumi block</th>
+    <th>Rucio link</th>
+    <th>Scope</th>
+    <th>GUID</th>
+</tr>
+</thead>
 <tbody>
 </tbody>
 </table>
-
+</div>
+</div>
 
 {% else %}
 
@@ -83,6 +71,11 @@ No files matching selection were found.
 
 {% endif %}
 
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script type="text/javascript" src="{% static "node_modules/datatables.net/js/jquery.dataTables.min.js" %}"></script>
 <script>
 $(document).ready(function () {
     var extraparams = '{{ extraparams | safe }}';

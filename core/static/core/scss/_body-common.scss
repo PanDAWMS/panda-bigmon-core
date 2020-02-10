@@ -197,6 +197,10 @@ body {
 .bp-container-simple {
   padding: $global-padding;
   width: 100%;
+
+  p {
+    margin: 0 0 0 0.3rem;
+  }
 }
 
 
