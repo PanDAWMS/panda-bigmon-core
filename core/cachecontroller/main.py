@@ -3,7 +3,7 @@ import time
 import threading
 import logging.config
 
-from schedinstances.MainMenuURLs import MainMenuURLs
+from schedinstances.TextFileURLs import TextFileURLs
 from schedinstances.ArtPackages import ArtPackages
 from schedinstances.ArtMails import ArtMails
 from schedinstances.BigTasks import BigTasks
@@ -19,7 +19,10 @@ from settingscron import LOG_PATH
 
 logging.basicConfig(level=logging.DEBUG, filename=LOG_PATH, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-mainMenuURLs = MainMenuURLs(EXECUTION_CAP_FOR_MAINMENUURLS)
+mainMenuURLs = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS)
+infrequentURLS = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS)
+infrequentURLS.setInputFile("infrequenturls.txt")
+
 artPackages = ArtPackages(EXECUTION_CAP_FOR_MAINMENUURLS)
 artMails = ArtMails(EXECUTION_CAP_FOR_MAINMENUURLS)
 bigTasks = BigTasks(EXECUTION_CAP_FOR_MAINMENUURLS)
@@ -38,6 +41,7 @@ def run_threaded(job_func):
 
 schedule.every().day.at("20:18").do(run_threaded, cephCleanUp.execute)
 schedule.every(10).minutes.do(run_threaded, mainMenuURLs.execute)
+schedule.every(120).minutes.do(run_threaded, infrequentURLS.execute)
 schedule.every(20).minutes.do(run_threaded, artPackages.execute)
 schedule.every(10).minutes.do(run_threaded, bigTasks.execute)
 schedule.every().day.at("09:00").do(run_threaded, artMails.execute)

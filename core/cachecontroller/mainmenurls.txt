@@ -50,7 +50,5 @@
 /bigpandamonitor/
 /art/
 /errorsscat/
-/report/?campaign=MC16
-/report/?campaign=MC16c
 /jobs/?harvesterid=all&display_limit=100
 /artmonitview
