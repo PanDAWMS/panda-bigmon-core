@@ -101,7 +101,7 @@ from core.auth.utils import grant_rights, deny_rights
 from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
-from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime
+from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, is_job_active
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.task import get_job_state_summary_for_tasklist
@@ -3190,8 +3190,11 @@ def jobList(request, mode=None, param=None):
     else:
         excludedTimeQuery = copy.deepcopy(query)
         if ('modificationtime__castdate__range' in excludedTimeQuery and
-                set(['date_to', 'hours']).intersection(request.session['requestParams'].keys()) == 0):
+                set(['date_to', 'hours']).intersection(request.session['requestParams'].keys()) == 0) or \
+                ('jobstatus' in request.session['requestParams'] and is_job_active(request.session['requestParams']['jobstatus'])):
             del excludedTimeQuery['modificationtime__castdate__range']
+            warning['notimelimit'] = "no time window limitting was applied for active jobs in this selection"
+
         jobs.extend(Jobsdefined4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
                     :request.session['JOB_LIMIT']].values(*values))
         jobs.extend(Jobsactive4.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension])[
@@ -5807,11 +5810,15 @@ def wnInfo(request, site, wnname='all'):
 
     errthreshold = 15
 
+    wnname_rgx = None
+    if 'wnname' in request.session['requestParams'] and request.session['requestParams']['wnname']:
+        wnname_rgx = request.session['requestParams']['wnname']
+
+    query = setupView(request, hours=hours, limit=999999)
     if wnname != 'all':
-        query = setupView(request, hours=hours, limit=999999)
         query['modificationhost__endswith'] = wnname
-    else:
-        query = setupView(request, hours=hours, limit=999999)
+    elif wnname_rgx is not None:
+        query['modificationhost__contains'] = wnname_rgx.replace('*', '')
     query['computingsite'] = site
     wnsummarydata = wnSummary(query)
     totstates = {}
@@ -5946,11 +5953,8 @@ def wnInfo(request, site, wnname='all'):
         elif request.session['requestParams']['sortby'] == 'pctfail':
             fullsummary = sorted(fullsummary, key=lambda x: x['pctfail'], reverse=True)
 
-    kys = wnPlotFailed.keys()
-    kys = sorted(kys)
-    wnPlotFailedL = []
-    for k in kys:
-        wnPlotFailedL.append([k, wnPlotFailed[k]])
+    wnPlotFailedL = [[k, v] for k, v in wnPlotFailed.items()]
+    wnPlotFailedL = sorted(wnPlotFailedL, key=lambda x: x[0])
 
     kys = wnPlotFinished.keys()
     kys = sorted(kys)

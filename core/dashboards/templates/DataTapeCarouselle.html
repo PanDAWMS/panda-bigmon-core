@@ -51,13 +51,18 @@
 
             $scope.gog = function(){
                 var request = "";
-                if ($scope.selectedTime == "hours4320") request = '?hours=4320';
-                if ($scope.selectedTime == "hours2160") request ='?hours=2160';
-                if ($scope.selectedTime == "hours720") request = '?hours=720';
-                if ($scope.selectedTime == "hours168") request = '?hours=168';
-                if ($scope.selectedTime == "hours24") request = '?hours=24';
-                if ($scope.selectedTime == "hours12") request = '?hours=12';
-                if ($scope.selectedTime == "hours1") request = '?hours=1';
+
+                if ((typeof $scope.selectedTime === 'string' || $scope.selectedTime instanceof String) && ($scope.selectedTime.length > 0))  {
+                    if ($scope.selectedTime == "hours4320") request = '?hours=4320';
+                    if ($scope.selectedTime == "hours2160") request = '?hours=2160';
+                    if ($scope.selectedTime == "hours720") request = '?hours=720';
+                    if ($scope.selectedTime == "hours168") request = '?hours=168';
+                    if ($scope.selectedTime == "hours24") request = '?hours=24';
+                    if ($scope.selectedTime == "hours12") request = '?hours=12';
+                    if ($scope.selectedTime == "hours1") request = '?hours=1';
+                } else {
+                    request = "?"+$scope.getTimeForQuery();
+                }
 
                 if (request.length == 0) request = "?"; else request += "&";
                 if ($scope.selectedCampaign) request += ('campaign=' + $scope.selectedCampaign);
@@ -92,6 +97,7 @@
             };
 
             formatDate = function(date){
+                date = new Date(date)
                 return  date.getFullYear() + '-' + ((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1)))  + '-' +
                     ((date.getDate() > 9) ? (date.getDate()) : ('0' + (date.getDate()))) ;
             };
@@ -111,8 +117,12 @@
                         return 'hours=' + $scope.getTimeHours();
                 }
                 else {
-                    if (forGrafana)
-                        return 'from='+ $scope.dateFrom.getTime()+'&to='+$scope.dateTo.getTime();
+                    if (forGrafana) {
+                        dateFrom = new Date($scope.dateFrom);
+                        if (!$scope.dateTo) $scope.dateTo = new Date();
+                        dateTo = new Date($scope.dateTo);
+                        return 'from=' + dateFrom.getTime() + '&to=' + $scope.dateTo.getTime();
+                    }
                     else
                         return 'date_from=' + formatDate($scope.dateFrom) + '&date_to=' + formatDate($scope.dateTo);
                 }
@@ -243,8 +253,8 @@
             </select>
             <table class="table">
            		<tr>
-                <td><label>From:<input type="date" class="ntag-text" ng-model="dateFrom" id="ntag_from" min="2019-07-01" ng-change="updateTimeWindow();"></label>
-                <td><label>To:<input type="date" class="ntag-text" ng-model="dateTo" id="ntag_to" min="2019-07-01" ng-change="updateTimeWindow();"></label>
+                <td><label>From:<input type="date" class="ntag-text" ng-model="dateFrom" id="ntag_from" min="2019-06-01" ng-change="updateTimeWindow();"></label>
+                <td><label>To:<input type="date" class="ntag-text" ng-model="dateTo" id="ntag_to" min="2019-06-01" ng-change="updateTimeWindow();"></label>
                 <!-- <td><a ng-click="gog();" class="button secondary">Set</a> -->
            		</tr>
             </table>
@@ -357,7 +367,7 @@
                      <td>{$ n[7] $}</td>
                      <td>{$ n[8] $}</td>
                      <td>{$ n[9] $}</td>
-                     <td><a href="https://rucio-ui.cern.ch/rule?rule_id={$ n[10] $}">{$ n[10] $}</a></td>
+                     <td><a target="_blank" href="https://rucio-ui.cern.ch/rule?rule_id={$ n[10] $}">{$ n[10] $}</a></td>
                  </tr>
                  </tbody>
 

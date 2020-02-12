@@ -374,7 +374,8 @@ def artJobs(request):
             c.maxattempt,  
             c.parentid, 
             c.attemptmark, 
-            c.inputfileid 
+            c.inputfileid,
+            c.extrainfo 
         FROM table(ATLAS_PANDABIGMON.ARTTESTS('{}','{}','{}')) c
         """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
@@ -385,7 +386,7 @@ def artJobs(request):
                     'computingsite', 'endtime', 'starttime' , 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn',
                     'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'cpuconsumptionunit', 'result',
                     'gitlabid', 'outputcontainer', 'maxrss', 'attemptnr', 'maxattempt', 'parentid', 'attemptmark',
-                    'inputfileid']
+                    'inputfileid', 'extrainfo']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
     # i=0
@@ -403,6 +404,7 @@ def artJobs(request):
     outputcontainers = {}
     reportTo = {'mail': [], 'jira': {}}
     gitlabids = list(sorted(set([x['gitlabid'] for x in jobs if 'gitlabid' in x and x['gitlabid'] is not None])))
+    linktoplots = []
 
     artjobsdict={}
 
@@ -457,6 +459,14 @@ def artJobs(request):
                     jobdict['tarindex'] = int(re.search('.([0-9]{6}).log.', job['lfn']).group(1))
                 except:
                     jobdict['tarindex'] = ''
+                # ATLINFR-3305
+                if 'extrainfo' in job:
+                    try:
+                        job['extrainfo'] = json.loads(job['extrainfo'])
+                    except:
+                        job['extrainfo'] = {}
+                if 'html' in job['extrainfo']:
+                    jobdict['htmllink'] = jobdict['linktext'] + '/' + job['extrainfo']['html']
 
                 finalresult, extraparams = get_final_result(job)
 
@@ -480,6 +490,9 @@ def artJobs(request):
                             reportTo['jira'][jira] = link
                 if jobdict['reportmail'] is not None and jobdict['reportmail'] not in reportTo['mail']:
                     reportTo['mail'].append(jobdict['reportmail'])
+
+                if 'linktoplots' in extraparams and extraparams['linktoplots'] is not None:
+                    linktoplots.append(extraparams['linktoplots'])
 
     # add links to logs of previous attempt if there is one
     for job in jobs:
@@ -510,6 +523,7 @@ def artJobs(request):
                 artjobslist[i][j].append(tdict)
             artjobslist[i][j] = sorted(artjobslist[i][j], key=lambda x: x['testname'].lower())
 
+    linktoplots = set(linktoplots)
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
 
@@ -535,6 +549,7 @@ def artJobs(request):
             'gitlabids': gitlabids,
             'outputcontainers': outputcontainers,
             'reportto': reportTo,
+            'linktoplots': linktoplots,
         }
         setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artJobs.html', data, content_type='text/html')

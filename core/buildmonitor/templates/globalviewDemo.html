@@ -19,7 +19,10 @@
 
 </div>
 
-<div id="note1"><P><UL><LI><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/NightliesCIInfo">Nightly and CI systems features and policies</a></UL></div>
+<div id="note1"><P>
+<UL><LI><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/NightliesCIInfo">Nightly and CI systems features and policies</a>
+<LI> For ART GRID test results, the number of tests with statuses active, done, finished, failed are shown. Follow result links for details 
+</UL></div>
 
 <table id="firstGlobalExample" class="stripe">
      <thead>
@@ -29,6 +32,8 @@
                 <th>Build time</th>
                 <th>Compilation errors<BR>(w/warnings)</th>
                 <th>CTest (or CI)<BR>test errors<BR>(w/warnings)</th>
+                <th>ART GRID</th>
+                <th>CVMFS<BR>(on client)</th>
                 <th>ORDER string</th>
      </thead>
      <tbody></tbody>
@@ -38,14 +43,14 @@
 var json=JSON.stringify({{ reslt3 | safe }});
 
 var globaldisplayTable = $('#firstGlobalExample').dataTable({
-"order": [[6, 'asc']],
+"order": [[8, 'asc']],
 "pageLength": 100,
 "lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
 "data": JSON.parse(json),
 
 "columnDefs": [
        {
-                "targets": [ 6 ],
+                "targets": [ 8 ],
                 "visible": false,
                 "searchable": false
        }],
