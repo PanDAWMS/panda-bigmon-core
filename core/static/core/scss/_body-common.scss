@@ -100,6 +100,7 @@ body {
   }
 }
 
+
 // Help
 // ------------------------------
 
@@ -129,6 +130,44 @@ body {
     }
 
     code {
+      font-size: 90%;
+    }
+  }
+}
+
+
+// Error listing container
+// ------------------------------
+.card.error {
+  border: 1px solid $alert-color;
+  margin: 0 0.7rem 0.7rem 0.7rem;
+  a {
+    display: inline-flex;
+    font-weight: bold;
+    &:focus, &:hover {
+      color: $alert-color-dark;
+    }
+  }
+  .card-divider {
+    background-color: $alert-color-dark;
+    color: $white;
+    font-weight: bold;
+  }
+  .card-section {
+    font-size: 90%;
+    background-color: $white;
+    color: $black;
+
+    p {
+      margin-bottom: 0.7rem;
+      line-height: 1.3rem;
+    }
+
+    code {
+      font-size: 90%;
+    }
+
+    pre {
       font-size: 90%;
     }
   }
@@ -242,13 +281,21 @@ span {
 //
 .bp-button {
   padding: 0.7rem;
-  margin: 0.3rem 0.7rem;
+  margin: 0.3rem 0 0.7rem 0.7rem;
   font-weight: bold;
   text-decoration: none;
-  display: block;
+  display: inline-block;
+  min-width: 7rem;
+  line-height: 1.15;
+  font-size: 0.9rem;
 
   &.primary {
     background-color: $primary-color;
+    color: $white;
+  }
+
+  &.alert {
+    background-color: $alert-color-dark;
     color: $white;
   }
 
@@ -274,12 +321,16 @@ span {
     th {
       background-color: $secondary-color-bg;
     }
+    td {
+      background-color: $white;
+    }
   }
 
   tbody {
     th {
       padding: 0.7rem;
       white-space: nowrap;
+      background-color: $secondary-color-bg;
     }
     td {
       padding: 0.3rem 0.7rem;
@@ -417,10 +468,43 @@ span {
   }
 }
 
+
+// Simple BP Container for plot
+// ------------------------------
 .bp-plot {
   width: 100%;
   height:30rem;
 }
 
 
+// Drop down buttons
+// ------------------------------
+.bp-dd-container {
+  padding: 0.3rem 0 0.7rem 0.7rem;
 
+  button {
+    width: 14rem;
+    font-weight: bold;
+  }
+
+  .bp-dd-pane {
+    width: 14rem;
+    background-color: $white;
+    border: none;
+    padding: 0;
+    box-shadow: 0.3rem 0.3rem 0.7rem 0 rgba(0,0,0,0.5);
+
+    a {
+      display: inline-grid;
+      color: $black;
+      width: 14rem;
+      padding: $global-padding;
+      font-weight: normal;
+      font-size: inherit;
+
+      &:hover {
+        background-color: $secondary-color;
+      }
+    }
+  }
+}
