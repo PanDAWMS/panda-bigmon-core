@@ -10,7 +10,7 @@ class TextFileURLs(BaseURLTasksProvider):
     inputfile = 'mainmenurls.txt'
 
     def setInputFile(self, filename):
-        inputfile = filename
+        self.inputfile = filename
 
 
     def getpayload(self):
