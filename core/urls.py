@@ -18,6 +18,7 @@ from core.grafana import StaginDSProgress as dsProgressView
 from core.globalshares import views as globalshares
 from core.dashboards import dtcdboard as dtcdboard
 from core.dashboards import campaignprediction as campaignprediction
+from core.dashboards import jobsummaryregion as jsr_views
 from core.libs import tasksPlots as tasksPlots
 
 from core.compare import views as compare_views
@@ -126,6 +127,8 @@ urlpatterns = [
     re_path(r'^dp/$', dpviews.doRequest, name='doRequest'),
     re_path(r'^report/$', coremon_views.report, name='report'),
     re_path(r'^serverstatushealth/$', coremon_views.serverStatusHealth, name='serverStatusHealth'),
+
+    re_path(r'^new/dash/$', jsr_views.dashboard, name='dashRegion'),
 
     ### ART nightly tests
     re_path(r'^art/', include('core.art.urls_art')),

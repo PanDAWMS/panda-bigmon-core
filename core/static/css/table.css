@@ -323,8 +323,15 @@ th.vertical {
 
 /* New style for dataTables */
 
+.dataTables_wrapper {
+   width: 100%;
+}
+.dataTables_wrapper .row {
+   max-width: 100%;
+}
+
 .data-table {
-    width: 99% !important;
+    width: 100% !important;
     border: none;
 }
 
@@ -359,6 +366,26 @@ th.vertical {
     border: none;
     text-align: center;
     font-size: 0.875rem;
+}
+
+.data-table thead th.vertical {
+    height: 6rem;
+	padding: 0;
+    width: 1.8rem;
+    max-width: 1.8rem;
+    min-width: 1.8rem;
+}
+
+div.rotate {
+         text-align: left;
+             margin: 3rem 0 0 0;
+             filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083);  /* IE6,IE7 */
+         -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083)"; /* IE8 */
+     -moz-transform: rotate(-70.0deg);  /* FF3.5+ */
+      -ms-transform: rotate(-70.0deg);  /* IE9+ */
+       -o-transform: rotate(-70.0deg);  /* Opera 10.5 */
+  -webkit-transform: rotate(-70.0deg);  /* Safari 3.1+, Chrome */
+          transform: rotate(-70.0deg);  /* Standard */
 }
 
 .data-table tbody td {
@@ -431,6 +458,10 @@ th.vertical {
 
 .num {
     text-align: right !important;
+}
+
+.text{
+    text-align: left !important;
 }
 
 /*Style for compare table*/
