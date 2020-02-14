@@ -128,7 +128,7 @@ urlpatterns = [
     re_path(r'^report/$', coremon_views.report, name='report'),
     re_path(r'^serverstatushealth/$', coremon_views.serverStatusHealth, name='serverStatusHealth'),
 
-    re_path(r'^new/dash/$', jsr_views.dashboard, name='dashboard'),
+    re_path(r'^new/dash/$', jsr_views.dashboard, name='dashRegion'),
 
     ### ART nightly tests
     re_path(r'^art/', include('core.art.urls_art')),

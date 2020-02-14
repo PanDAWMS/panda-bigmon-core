@@ -559,3 +559,17 @@ a.close-x-sign:hover {
 .parent{
     background-color: #e6f7ff !important;
 }
+
+
+li.list-item {
+    margin-bottom: 0;
+}
+
+li.list-item > input {
+    vertical-align: middle;
+    margin: 0;
+}
+
+li.list-item > label {
+    vertical-align: middle;
+}
