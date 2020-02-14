@@ -410,7 +410,10 @@
             sDefaultContent: "---",
             className: "text",
             "render": function(data, type, row, meta) {
-                return '<a href = "{{ xurl }}computingsite=' + row[0] + '">'+row[0]+'</a>'
+                let link = '<a href = "{% url 'siteInfo' %}/' + row[0] + '/">'+row[0]+'</a>';
+                link += ' <a target="_blank" href="https://monit-grafana.cern.ch/d/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite=' + row[0] + '&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1"><div class="tooltip-upper"><img src="/static/images/grafana.png" width=14 height=14 border=0><span class="tooltip-text">Link to Jobs accountig dashboard in Grafana</span></div></a>\n';
+                link += ' <a onclick=\'PopUpGrafana("SITE=' + row[0] + '&SIZE=medium", "' + row[0] +  '", "day")\' style="padding-right:16px;"><div class="tooltip-upper"><img src="/static/images/grafana-black.png" width=14 height=14 border=0><span class="tooltip-text">Slots of running jobs (Pop-up window)</span></div></a>\n';
+                return link
             }
           },
           {
@@ -674,6 +677,21 @@
         ],
       });
     return queuesTable
+    }
+
+    var newWinGrafana;
+    function PopUpGrafana(ref, site) {
+        var prt = 'https://';
+        var strFeatures="toolbar=no,status=no,menubar=no,location=no,scrollbars=no,resizable=no,height=800,width=1100";
+        if (!newWinGrafana || newWinGrafana.closed) {
+            newWinGrafana = window.open(ref,'TellObj', strFeatures);
+            if (!newWinGrafana.opener) {newWinGrafana.opener = window; }
+
+        newWinGrafana.document.write('<img src="{% url 'grafana' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite='+site+'&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1&panelId=138&width=1000&height=500&tz=Europe%2FBerlin" id="show_image"><p>');
+        newWinGrafana.document.close();
+        } else {
+            if (window.focus) {newWinGrafana.focus()};
+        }
     }
 </script>
 
