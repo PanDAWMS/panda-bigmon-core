@@ -52,3 +52,4 @@
 /errorsscat/
 /jobs/?harvesterid=all&display_limit=100
 /artmonitview
+/new/dash/
