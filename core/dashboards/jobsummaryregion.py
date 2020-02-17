@@ -56,11 +56,11 @@ def dashboard(request):
         'starting',
         'running',
         'holding',
+        'merging',
         'transferring',
         'finished',
         'failed',
         'cancelled',
-        'merging',
         'closed'
     ]
 
@@ -94,12 +94,12 @@ def dashboard(request):
                     row.append(jt)
                     row.append(rt)
                     row.append(sum(summary.values()))
-                    for js in job_states_order:
-                        row.append(summary[js])
                     if summary['failed'] + summary['finished'] > 0:
                         row.append(round(100.0*summary['failed']/(summary['failed'] + summary['finished']), 1))
                     else:
                         row.append(0)
+                    for js in job_states_order:
+                        row.append(summary[js])
 
                     if split_by is None:
                         if jt == 'all' and rt == 'all':
@@ -108,7 +108,7 @@ def dashboard(request):
                         if jt != 'all' and rt != 'all':
                             jsr_queues_list.append(row)
                     elif 'jobtype' in split_by and 'resourcetype' not in split_by:
-                        if jt == 'all' and rt != 'all':
+                        if jt != 'all' and rt == 'all':
                             jsr_queues_list.append(row)
                     elif 'jobtype' not in split_by and 'resourcetype' in split_by:
                         if jt == 'all' and rt != 'all':
@@ -123,12 +123,12 @@ def dashboard(request):
                     row.append(jt)
                     row.append(rt)
                     row.append(sum(summary.values()))
-                    for js in job_states_order:
-                        row.append(summary[js])
                     if summary['failed'] + summary['finished'] > 0:
                         row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
                     else:
                         row.append(0)
+                    for js in job_states_order:
+                        row.append(summary[js])
 
                     if split_by is None:
                         if jt == 'all' and rt == 'all':
