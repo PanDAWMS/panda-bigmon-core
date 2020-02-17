@@ -453,36 +453,31 @@
             sDefaultContent: "---",
             className: "num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '">'+row[6]+'</a>';
                 return url_link
             }
           },
           {
-            {#"data": "region",#}
             sDefaultContent: "---",
             className: "{{ jobstates.0 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.0 }}' + '">'+row[7]+'</a>';
                 return url_link
             }
           },
           {
-            {#"data": "region",#}
             sDefaultContent: "---",
             className: "{{ jobstates.1 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.1 }}' + '">'+row[8]+'</a>';
                 return url_link
             }
@@ -492,10 +487,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.2 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.2 }}' + '">'+row[9]+'</a>';
                 return url_link
             }
@@ -505,10 +499,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.3 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.3 }}' + '">'+row[10]+'</a>';
                 return url_link
             }
@@ -518,10 +511,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.4 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.4 }}' + '">'+row[11]+'</a>';
                 return url_link
             }
@@ -531,10 +523,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.5 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.5 }}' + '">'+row[12]+'</a>';
                 return url_link
             }
@@ -544,10 +535,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.6 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.6 }}' + '">'+row[13]+'</a>';
                 return url_link
             }
@@ -557,10 +547,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.7 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.7 }}' + '">'+row[14]+'</a>';
                 return url_link
             }
@@ -570,10 +559,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.8 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.8 }}' + '">'+row[15]+'</a>';
                 return url_link
             }
@@ -583,10 +571,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.9 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.9 }}' + '">'+row[16]+'</a>';
                 return url_link
             }
@@ -596,10 +583,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.10 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.10 }}' + '">'+row[17]+'</a>';
                 return url_link
             }
@@ -609,10 +595,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.11 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.11 }}' + '">'+row[18]+'</a>';
                 return url_link
             }
@@ -622,10 +607,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.12 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.12 }}' + '">'+row[19]+'</a>';
                 return url_link
             }
@@ -635,10 +619,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.13 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.13 }}' + '">'+row[20]+'</a>';
                 return url_link
             }
@@ -648,10 +631,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.14 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.14 }}' + '">'+row[21]+'</a>';
                 return url_link
             }
@@ -661,10 +643,9 @@
             sDefaultContent: "---",
             className: "{{ jobstates.15 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
-                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[2];
-                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
-                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+                (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+                (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
                 url_link += '&jobstatus=' + '{{ jobstates.15 }}' + '">'+row[22]+'</a>';
                 return url_link
             }
@@ -690,7 +671,7 @@
         newWinGrafana.document.write('<img src="{% url 'grafana' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite='+site+'&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1&panelId=138&width=1000&height=500&tz=Europe%2FBerlin" id="show_image"><p>');
         newWinGrafana.document.close();
         } else {
-            if (window.focus) {newWinGrafana.focus()};
+            if (window.focus) {newWinGrafana.focus()}
         }
     }
 </script>

@@ -4,16 +4,18 @@
 import json
 import logging
 import copy
+import urllib3
 
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.db.models import Count
+from django.core.cache import cache
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.views import login_customrequired, initRequest, setupView, DateEncoder
 
 from core.schedresource.models import SchedconfigJson
-from core.pandajob.models import Jobsdefined4, Jobswaiting4, Jobsactive4, Jobsarchived4, Jobsarchived
+from core.pandajob.models import Jobsdefined4, Jobswaiting4, Jobsactive4, Jobsarchived4, CombinedWaitActDefArch4
 
 from core.views import getAGISSites
 
@@ -179,19 +181,24 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
     resource_types = ['SCORE', 'MCORE', 'SCORE_HIMEM', 'MCORE_HIMEM']
 
     # get info from AGIS|CRIC
-    ucoreComputingSites, harvesterComputingSites, _ = getAGISSites()
+    try:
+        panda_queues_dict = get_AGIS_panda_queues()
+    except:
+        panda_queues_dict = None
+        _logger.error("[JSR] cannot get json from AGIS")
 
-    # get data from new schedconfigjson table
-    panda_queues_list = []
-    panda_queues_dict = {}
-    panda_queues_list.extend(SchedconfigJson.objects.values())
-    if len(panda_queues_list) > 0:
-        for pq in panda_queues_list:
-            try:
-                panda_queues_dict[pq['pandaqueue']] = json.loads(pq['data'])
-            except:
-                panda_queues_dict[pq['pandaqueue']] = None
-                _logger.error("[JSR] cannot load json from SHEDCONFIGJSON table for {} PanDA queue".format(pq['pandaqueue']))
+    if not panda_queues_dict:
+        # get data from new SCHEDCONFIGJSON table
+        panda_queues_list = []
+        panda_queues_dict = {}
+        panda_queues_list.extend(SchedconfigJson.objects.values())
+        if len(panda_queues_list) > 0:
+            for pq in panda_queues_list:
+                try:
+                    panda_queues_dict[pq['pandaqueue']] = json.loads(pq['data'])
+                except:
+                    panda_queues_dict[pq['pandaqueue']] = None
+                    _logger.error("[JSR] cannot load json from SCHEDCONFIGJSON table for {} PanDA queue".format(pq['pandaqueue']))
 
     regions_list = list(set([params['cloud'] for pq, params in panda_queues_dict.items()]))
 
@@ -261,6 +268,9 @@ def get_job_summary_split(query, extra):
     order_by = ('computingsite', 'jobstatus',)
 
     # get jobs groupings
+
+    # summary.extend(CombinedWaitActDefArch4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
+
     summary.extend(
         Jobsactive4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
     summary.extend(
@@ -284,3 +294,25 @@ def get_job_summary_split(query, extra):
 
     return jsq
 
+
+def get_AGIS_panda_queues():
+    """Get PanDA queues config from AGIS"""
+    panda_queues_dict = cache.get('pandaQueues')
+
+    if not panda_queues_dict:
+        panda_queues_dict = {}
+        url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
+        http = urllib3.PoolManager()
+        data = {}
+        try:
+            r = http.request('GET', url)
+            data = json.loads(r.data.decode('utf-8'))
+            for pq, params in data.items():
+                if 'vo_name' in params and params['vo_name'] == 'atlas':
+                    panda_queues_dict[pq] = params
+        except Exception as exc:
+            print (exc)
+
+        cache.set('pandaQueues', panda_queues_dict, 3600)
+
+    return panda_queues_dict
