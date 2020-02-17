@@ -257,21 +257,17 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
 
 
 def get_job_summary_split(query, extra):
-    summary = []
+    """ Get jobs summary """
+
+    extra_str = '(1=1)'
+    if 'computingsite__in' in query:
+        extra_str += " and (computingsite in ("
+        for pq in query['computingsite__in']:
+            extra_str += "'" + str(pq) + "',"
+        extra_str = extra_str[:-1]
+        extra_str += "))"
 
     # get jobs groupings
-
-    # summary.extend(CombinedWaitActDefArch4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
-
-    # summary.extend(
-    #     Jobsactive4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
-    # summary.extend(
-    #     Jobsdefined4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
-    # summary.extend(
-    #     Jobswaiting4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
-    # summary.extend(
-    #     Jobsarchived4.objects.filter(**query).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
-
     query_raw = """
         select computingsite, resource_type as resourcetype, prodsourcelabel, jobstatus, count(pandaid) as count
         from  (
@@ -287,9 +283,10 @@ def get_job_summary_split(query, extra):
         select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime
         from ATLAS_PANDA.jobsdefined4 jd4 
         )
+        where {}
         GROUP BY computingsite, prodsourcelabel, resource_type, jobstatus
         order by computingsite, prodsourcelabel, resource_type, jobstatus
-    """.format(query['modificationtime__castdate__range'][0])
+    """.format(query['modificationtime__castdate__range'][0], extra_str)
 
     cur = connection.cursor()
     cur.execute(query_raw)
