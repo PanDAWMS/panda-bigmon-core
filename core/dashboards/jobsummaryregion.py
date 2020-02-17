@@ -3,8 +3,8 @@
 """
 import json
 import logging
-import copy
 import urllib3
+from datetime import datetime
 
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
@@ -37,7 +37,7 @@ def dashboard(request):
 
     # Here we try to get cached data
     data = getCacheEntry(request, "JobSummaryRegion")
-    # data = None
+    data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -153,6 +153,7 @@ def dashboard(request):
         'request': request,
         'viewParams': request.session['viewParams'],
         'requestParams': request.session['requestParams'],
+        'built': datetime.now().strftime("%H:%M:%S"),
         'hours': hours,
         'xurl': xurl,
         'jobstates': job_states_order,
