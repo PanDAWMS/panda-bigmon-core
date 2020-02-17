@@ -8,21 +8,18 @@ import urllib3
 
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
-from django.db.models import Count
+from django.db import connection
 from django.core.cache import cache
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.views import login_customrequired, initRequest, setupView, DateEncoder
 
 from core.schedresource.models import SchedconfigJson
-from core.pandajob.models import Jobsdefined4, Jobswaiting4, Jobsactive4, Jobsarchived4, CombinedWaitActDefArch4
-
-from core.views import getAGISSites
 
 _logger = logging.getLogger('bigpandamon')
 
 
-# @login_customrequired
+@login_customrequired
 def dashboard(request):
     """
     A new job summary dashboard for regions that allows to split jobs in Grand Unified Queue
@@ -260,25 +257,44 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
 
 def get_job_summary_split(query, extra):
     summary = []
-    querynotime = copy.deepcopy(query)
-    if 'modificationtime__castdate__range' in querynotime:
-        del querynotime['modificationtime__castdate__range']
-
-    job_values = ('computingsite', 'resourcetype', 'prodsourcelabel', 'jobstatus')
-    order_by = ('computingsite', 'jobstatus',)
 
     # get jobs groupings
 
     # summary.extend(CombinedWaitActDefArch4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
 
-    summary.extend(
-        Jobsactive4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
-    summary.extend(
-        Jobsdefined4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
-    summary.extend(
-        Jobswaiting4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
-    summary.extend(
-        Jobsarchived4.objects.filter(**query).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
+    # summary.extend(
+    #     Jobsactive4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
+    # summary.extend(
+    #     Jobsdefined4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
+    # summary.extend(
+    #     Jobswaiting4.objects.filter(**querynotime).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
+    # summary.extend(
+    #     Jobsarchived4.objects.filter(**query).values(*job_values).extra(where=[extra]).annotate(count=Count('jobstatus')).order_by(*order_by))
+
+    query_raw = """
+        select computingsite, resource_type as resourcetype, prodsourcelabel, jobstatus, count(pandaid) as count
+        from  (
+        select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime 
+        from ATLAS_PANDA.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{}', 'YYYY-MM-DD HH24:MI:SS')
+        union
+        select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime
+        from ATLAS_PANDA.jobsactive4 jav4
+        union
+        select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime
+        from ATLAS_PANDA.jobswaiting4 jw4 
+        union
+        select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime
+        from ATLAS_PANDA.jobsdefined4 jd4 
+        )
+        GROUP BY computingsite, prodsourcelabel, resource_type, jobstatus
+        order by computingsite, prodsourcelabel, resource_type, jobstatus
+    """.format(query['modificationtime__castdate__range'][0])
+
+    cur = connection.cursor()
+    cur.execute(query_raw)
+    job_summary_tuple = cur.fetchall()
+    job_summary_header = ['computingsite', 'resourcetype', 'prodsourcelabel', 'jobstatus', 'count']
+    summary = [dict(zip(job_summary_header, row)) for row in job_summary_tuple]
 
     # translate prodsourcelabel values to descriptive analy|prod job types
     psl_to_jt = {
