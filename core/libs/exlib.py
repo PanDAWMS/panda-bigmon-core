@@ -187,3 +187,9 @@ def is_job_active(jobststus):
 
     return True
 
+def get_tmp_table_name():
+    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
+    else:
+        tmpTableName = "TMP_IDS1"
+    return tmpTableName

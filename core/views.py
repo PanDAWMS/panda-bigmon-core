@@ -101,7 +101,7 @@ from core.auth.utils import grant_rights, deny_rights
 from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
-from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, is_job_active
+from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, is_job_active, get_tmp_table_name
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.task import get_job_state_summary_for_tasklist
@@ -7550,6 +7550,16 @@ def taskList(request):
         extraquery = """JEDITASKID IN (SELECT TASKID FROM ATLAS_DEFT.t_production_task where PRIMARY_INPUT in (select DATASET FROM ATLAS_DEFT.T_DATASET_STAGING) )"""
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
+
+    tmpTableName = 'ATLAS_PANDABIGMON.TMP_IDS1Debug'
+    if 'jeditaskid__in' in query:
+        taskl = query['jeditaskid__in']
+        if len(taskl) > 20:
+            transactionKey = insert_to_temp_table(taskl)
+            selectTail = """jeditaskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)""" % (tmpTableName, transactionKey)
+            extraquery = selectTail if len(extraquery) == 0 else extraquery + ' AND ' + selectTail
+            del query['jeditaskid__in']
+
     if len(extraquery) > 0:
         if len(wildCardExtension) > 0:
             wildCardExtension += ' AND ( ' + extraquery + ' )'
@@ -7573,23 +7583,12 @@ def taskList(request):
     taskl = []
     for task in tasks:
         taskl.append(task['jeditaskid'])
-    random.seed()
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-    else:
-        tmpTableName = "TMP_IDS1"
-    transactionKey = random.randrange(1000000)
-    print (transactionKey)
-    executionData = []
-    for id in taskl:
-        executionData.append((id, transactionKey))
+
+    transactionKey = insert_to_temp_table(taskl)
+
     # For tasks plots
     setCacheEntry(request, transactionKey, taskl, 60 * 20, isData=True)
-
     new_cur = connection.cursor()
-    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
-    new_cur.executemany(query, executionData)
-    connection.commit()
     new_cur.execute(
         """
         select htt.TASKID,
