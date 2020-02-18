@@ -389,12 +389,12 @@ div.rotate {
 }
 
 .data-table tbody td {
-    border: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid white;
+    border-top: 1px solid white;
     text-align: center;
-    padding-left: 0.3rem;
-    padding-right: 0.3rem;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
+    padding: 0.25rem 0.3rem 0.25rem 0.3rem;
     font-size: 0.875rem;
 }
 
@@ -419,11 +419,7 @@ div.rotate {
 .data-table tfoot th {
     border: none;
     background-color: #fefefe;
-    padding-left: 0.3rem;
-    padding-right: 0.3rem;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-
+    padding: 0.25rem 0.3rem 0.25rem 0.3rem;
 }
 
 .data-table td > a {
