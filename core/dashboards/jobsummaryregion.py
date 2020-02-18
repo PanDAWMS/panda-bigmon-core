@@ -76,6 +76,12 @@ def dashboard(request):
 
     jquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='job', wildCardExt=True)
 
+    # add queue related request params to query dict
+    if 'queuetype' in request.session['requestParams'] and request.session['requestParams']['queuetype']:
+        jquery['queuetype'] = request.session['requestParams']['queuetype']
+    if 'queuestatus' in request.session['requestParams'] and request.session['requestParams']['queuestatus']:
+        jquery['queuestatus'] = request.session['requestParams']['queuestatus']
+
     # get job summary data
     jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery, job_states_order, extra=wildCardExtension)
 
@@ -143,6 +149,11 @@ def dashboard(request):
                         if jt == 'all' and rt != 'all':
                             jsr_regions_list.append(row)
 
+
+    select_params_dict = {}
+    select_params_dict['queuetype'] = sorted(list(set([pq[1] for pq in jsr_queues_list])))
+    select_params_dict['queuestatus'] = sorted(list(set([pq[3] for pq in jsr_queues_list])))
+
     xurl = request.get_full_path()
     if xurl.find('?') > 0:
         xurl += '&'
@@ -156,6 +167,7 @@ def dashboard(request):
         'built': datetime.now().strftime("%H:%M:%S"),
         'hours': hours,
         'xurl': xurl,
+        'selectParams': select_params_dict,
         'jobstates': job_states_order,
         'regions': jsr_regions_list,
         'queues': jsr_queues_list,
@@ -199,6 +211,16 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
                     _logger.error("[JSR] cannot load json from SCHEDCONFIGJSON table for {} PanDA queue".format(pq['pandaqueue']))
 
     regions_list = list(set([params['cloud'] for pq, params in panda_queues_dict.items()]))
+
+    # filter out queues by queue related selection params
+    pq_to_remove = []
+    if 'queuestatus' in query:
+        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['status'] != query['queuestatus']])
+    if 'queuetype' in query:
+        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['type'] != query['queuetype']])
+    if len(pq_to_remove) > 0:
+        for pqr in list(set(pq_to_remove)):
+            del panda_queues_dict[pqr]
 
     # create template structure for grouping by queue
     for pqn, params in panda_queues_dict.items():
@@ -257,7 +279,7 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
 
 
 def get_job_summary_split(query, extra):
-    """ Get jobs summary """
+    """ Query the jobs summary """
 
     extra_str = '(1=1)'
     if 'computingsite__in' in query:
