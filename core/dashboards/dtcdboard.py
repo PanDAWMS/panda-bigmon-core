@@ -298,6 +298,8 @@ def getStagingData(request):
     )
     datasets = dictfetchall(new_cur)
     for dataset in datasets:
-        dataset = {k.lower(): v for k, v in dataset.items()}
-        data[dataset['taskid']] = dataset
+        # Sort out requests by request on February 19, 2020
+        if dataset['STATUS'] in ('staging', 'queued', 'done'):
+            dataset = {k.lower(): v for k, v in dataset.items()}
+            data[dataset['taskid']] = dataset
     return data
