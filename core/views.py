@@ -106,6 +106,7 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.bpuser import get_relevant_links
+from django.template.context_processors import csrf
 
 @register.filter(takes_context=True)
 def get_count(dict, key):
@@ -7493,6 +7494,18 @@ def removeDublicates(inlist, key):
     return outlist
 
 
+@login_customrequired
+def getCSRFToken(request):
+    c = {}
+    user = request.user
+    if user.is_authenticated:
+        c.update(csrf(request))
+        return render_to_response("csrftoken.html", c)
+    else:
+        resp = {"detail": "User not authenticated. Please login to bigpanda"}
+        dump = json.dumps(resp, cls=DateEncoder)
+        response = HttpResponse(dump, content_type='application/json')
+        return response
 
 
 @login_customrequired

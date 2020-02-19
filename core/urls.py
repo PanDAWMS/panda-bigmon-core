@@ -130,6 +130,8 @@ urlpatterns = [
 
     re_path(r'^new/dash/$', jsr_views.dashboard, name='dashRegion'),
 
+    re_path(r'^csrftoken/$', coremon_views.getCSRFToken, name='getCSRFToken'),
+
     ### ART nightly tests
     re_path(r'^art/', include('core.art.urls_art')),
 
