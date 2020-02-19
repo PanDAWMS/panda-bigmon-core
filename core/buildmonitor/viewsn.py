@@ -62,9 +62,9 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
     majorwarn_icon=warn_icon
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
 
-    query="select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and tstamp between sysdate-11+1/24 and sysdate order by tstamp desc" % nname
+    query="select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr,lartwebarea from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and tstamp between sysdate-11+1/24 and sysdate order by tstamp desc" % nname
     if rname != '*':
-      query="select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and name ='%s' and tstamp between sysdate-11+1/24 and sysdate order by tstamp desc" % (nname,rname)
+      query="select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr,lartwebarea from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and name ='%s' and tstamp between sysdate-11+1/24 and sysdate order by tstamp desc" % (nname,rname)
 ####HEADERS      <th>Release</th>
 #                <th>Platform</th>
 #                <th>Project</th>
@@ -107,18 +107,24 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       if job_start != None: t_start=job_start.strftime('%Y/%m/%d %H:%M')
 ##      mrlink = row[7]
       gitbr = row[13]
+      lartwebarea=row[14]
+      if lartwebarea == None or lartwebarea == '': lartwebarea="http://atlas-computing.web.cern.ch/atlas-computing/links/distDirectory/gitwww/GITWebArea/nightlies"
 #      print("JIDX",jid_sel)
 #
-      query01="select to_char(jid),projname,stat,eb,sb,ei,si,ecv,ecvkv,suff,scv,scvkv,scb,sib,sco,hname from jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
+      query01="select to_char(jid),projname,stat,eb,sb,ei,si,ecv,ecvkv,suff,scv,scvkv,scb,sib,sco,ela,sla,erla,sula,hname from jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
       new_cur.execute(query01)
       reslt1 = new_cur.fetchall()
       lenres=len(reslt1)
       if lenres != 0 and ( reslt1[0][2] == 'cancel' or reslt1[0][2] == 'CANCEL' ):
           pjname=reslt1[0][1]
-          hname=reslt1[0][15]
+          erla=reslt1[0][17]
+          if erla == None or erla == '': erla='N/A'
+          sula=reslt1[0][18]
+          if sula == None or sula == '': sula='N/A'
+          hname=reslt1[0][19]
           if re.search(r'\.',hname):
               hname=(re.split(r'\.',hname))[0]
-          row_cand=[rname,t_start,'NO NEW<BR>CODE','N/A','N/A','CANCELLED','N/A','N/A','N/A','N/A','N/A','N/A',hname]
+          row_cand=[rname,t_start,'NO NEW<BR>CODE','N/A','N/A','CANCELLED','N/A','N/A','N/A','N/A','N/A','N/A','N/A',hname]
           rows_s.append(row_cand)
       else: 
           query1="select to_char(jid),projname,ncompl,pccompl,npb,ner,pcpb,pcer from cstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
@@ -146,7 +152,11 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
               for row01 in reslt1:
 #                  print("JID",row01[0])  
                   pjname=row01[1]  
-                  hname=row01[15]
+                  erla=row01[17]
+                  if erla == None or erla == '': erla='N/A'
+                  sula=row01[18]
+                  if sula == None or sula == '': sula='N/A'
+                  hname=row01[19]
                   t_cv_serv=row01[7]
                   t_cv_clie=row01[8]
                   s_cv_serv=row01[10]
@@ -220,8 +230,19 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   if val_cache_transf != 'N/A' and nightly_name_art != 'N/A':
                       vacasf = "<a href=\"https://bigpanda.cern.ch/art/overview/?branch="
                       val_cache_transf = vacasf + nightly_name_art + "&ntag_full=" + rname + "\">" + val_cache_transf + "</a>"
-
-                  row_cand=[rname,t_start,i_checkout,i_inst,i_config,t_build,i_combo_c,t_test,i_combo_t,val_cache_transf,i_combo_cv_serv,tt_cv_clie,hname]
+                  local_art_res=''
+                  if sula == 'N/A' and erla == 'N/A':
+                      local_art_res='N/A'
+                  elif sula == '0' and erla == '0':
+                      local_art_res='N/A'
+                  else: 
+                      local_art_res=local_art_res+'<B><span style="color: green">'+ str(sula)+'</span></B>,'
+                      local_art_res=local_art_res+'<B><span style="color: red">'+ str(erla)+'</span></B>'
+                      arrk=re.split('_',nname)
+                      branch=arrk[0]
+                      loares="<a href=\""+lartwebarea+"/"+branch+"/"+rname+"/"+pjname+"/"+ar_sel+"/"+pjname+"/art.log.html\">"
+                      local_art_res=loares+local_art_res+"</a>"
+                  row_cand=[rname,t_start,i_checkout,i_inst,i_config,t_build,i_combo_c,t_test,i_combo_t,local_art_res,val_cache_transf,i_combo_cv_serv,tt_cv_clie,hname]
                   rows_s.append(row_cand)
 
     data={"nightly": nname, "rel": rname, "platform": ar_sel, "project": pjname, 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}
