@@ -23,6 +23,7 @@
 <UL><LI><a href="{% url 'BuildGlobal' %}">Link to global system page</a>
 <LI><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/NightliesCIInfo">Nightly and CI systems features and policies</a>
 <LI> For ART GRID test results, the number of tests with statuses active, done, finished, failed are shown. Follow result links for details
+<LI> For ART LOCAL test results, the number of tests with statuses successful, failed are shown. Follow results links to access ART local documentation (built by the tool developed by Oleg Zenin)
 </UL></div>
 
 <div id="details">
@@ -38,10 +39,11 @@ These nightly jobs build <B>{{ project }}</B> on <B>{{ platform }}</B>
                 <th>Extern.<BR>build</th>
                 <th>CMake<BR>config</th>
                 <th>Build time</th>
-                <th>Comp. errors<BR>(w/warnings)</th>
+                <th>Comp.<BR>errors<BR>(w/warn)</th>
                 <th>Test time</th>
-                <th>CTest tests<BR>errors<BR>(w/warnings)</th>
-                <th>ART GRID</th>
+                <th>CTest<BR>errors<BR>(w/warn)</th>
+                <th>ART<BR>LOCAL</th>
+                <th>ART<BR>GRID</th>
                 <th>CVMFS<BR>(on server)</th>
                 <th>CVMFS<BR>(on client)</th>
                 <th>Host</th>
