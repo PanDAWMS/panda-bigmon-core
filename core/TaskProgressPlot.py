@@ -49,7 +49,7 @@ class TaskProgressPlot:
     def get_raw_task_profile_fresh(self,taskid):
         cur = connection.cursor()
         cur.execute("SELECT  * FROM ("
-                    "SELECT DISTINCT starttime, creationtime, endtime, pandaid, jeditaskid, EVENTSERVICE FROM JOBSARCHIVED WHERE JEDITASKID={0} and JOBSTATUS='finished' UNION ALL "
+                    "SELECT DISTINCT starttime, creationtime, endtime, pandaid, jeditaskid, EVENTSERVICE FROM JOBSARCHIVED WHERE JEDITASKID={0} and JOBSTATUS='finished' UNION "
                     "SELECT DISTINCT starttime, creationtime, endtime, pandaid, jeditaskid, EVENTSERVICE FROM JOBSARCHIVED4 WHERE JEDITASKID={0} and JOBSTATUS='finished'"
                     ")t ORDER BY pandaid asc".format(taskid))
         rows = cur.fetchall()
