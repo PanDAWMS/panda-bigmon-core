@@ -192,7 +192,7 @@ ectory/gitwww/GITWebArea/nightlies"
         list9.append(local_art_res);
         list9.append(val_cache_transf);
         list9.append(tt_cv_clie);
-        list9.append(row[29]);
+        list9.append(row[33]);
         reslt3.append(list9)
 
 #    for k46, v46 in dict_from_cache.items():
