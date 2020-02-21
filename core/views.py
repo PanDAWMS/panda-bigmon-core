@@ -653,7 +653,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     elif limit != -99 and limit > 0:
         request.session['JOB_LIMIT'] = limit
     elif VOMODE == 'atlas':
-        request.session['JOB_LIMIT'] = 10000
+        request.session['JOB_LIMIT'] = 20000
     else:
         request.session['JOB_LIMIT'] = 10000
 
@@ -1566,18 +1566,13 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             newjobs.append(job)
     jobs = newjobs
 
-    # if mode == 'nodrop':
-    #     print ('job list cleaned')
-    #     return jobs
-
+    # find max and min values of priority and modificationtime for current selection of jobs
     global PLOW, PHIGH
-    # request.session['TFIRST'] = timezone.now()  # .strftime(defaultDatetimeFormat)
-    # request.session['TLAST'] = (timezone.now() - timedelta(hours=2400))  # .strftime(defaultDatetimeFormat)
     PLOW = 1000000
     PHIGH = -1000000
     for job in jobs:
-        # if job['modificationtime'] > request.session['TLAST']: request.session['TLAST'] = job['modificationtime']
-        # if job['modificationtime'] < request.session['TFIRST']: request.session['TFIRST'] = job['modificationtime']
+        if job['modificationtime'] > request.session['TLAST']: request.session['TLAST'] = job['modificationtime']
+        if job['modificationtime'] < request.session['TFIRST']: request.session['TFIRST'] = job['modificationtime']
         if job['currentpriority'] > PHIGH: PHIGH = job['currentpriority']
         if job['currentpriority'] < PLOW: PLOW = job['currentpriority']
     jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
@@ -3613,9 +3608,14 @@ def jobList(request, mode=None, param=None):
         print (xurl)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
-        #nosorturl = removeParam(nosorturl, 'harvesterinstance', mode='extensible')
         xurl = removeParam(nosorturl, 'mode', mode='extensible')
 
+        # check if there are jobs exceeding timewindow and add warning message
+        if math.floor((request.session['TLAST'] - request.session['TFIRST']).total_seconds()) > LAST_N_HOURS_MAX * 3600:
+            warning['timelimitexceeding'] = """
+            Some of jobs in this listing are outside of the default 'last {} hours' time window, 
+            because this limit was applied to jobs in final state only. Please explicitly add &hours=N to URL, 
+            if you want to force applying the time window limit on active jobs also.""".format(LAST_N_HOURS_MAX)
         TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
