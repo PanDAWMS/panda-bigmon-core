@@ -3189,9 +3189,10 @@ def jobList(request, mode=None, param=None):
         jobs = getCeHarvesterJobs(request, computingelment=request.session['requestParams']['harvesterce'])
     else:
         excludedTimeQuery = copy.deepcopy(query)
-        if ('modificationtime__castdate__range' in excludedTimeQuery and
-                set(['date_to', 'hours']).intersection(request.session['requestParams'].keys()) == 0) or \
-                ('jobstatus' in request.session['requestParams'] and is_job_active(request.session['requestParams']['jobstatus'])):
+        if ('modificationtime__castdate__range' in excludedTimeQuery and len(set(['date_to', 'hours']).intersection(
+                request.session['requestParams'].keys())) == 0) or (
+                    'jobstatus' in request.session['requestParams'] and is_job_active(
+                        request.session['requestParams']['jobstatus'])):
             del excludedTimeQuery['modificationtime__castdate__range']
             warning['notimelimit'] = "no time window limitting was applied for active jobs in this selection"
 
