@@ -51,12 +51,15 @@ def globalviewDemo(request):
     j.relid,
     a.gitmrlink as \"GLINK\",
     a.relnstamp as \"TMSTAMP\",
-    TO_CHAR(j.ecvkv,'DD-MON HH24:MI') as \"CVMCL\", j.SCVKV as \"S.CVMCL\"
+    TO_CHAR(j.ecvkv,'DD-MON HH24:MI') as \"CVMCL\", j.SCVKV as \"S.CVMCL\",
+    platf.lartwebarea,
+    TO_CHAR(j.ela,'DD-MON HH24:MI') as \"LA\",
+    j.erla,j.sula
     from nightlies@ATLR.CERN.CH n inner join
       ( releases@ATLR.CERN.CH a inner join
         ( jobstat@ATLR.CERN.CH j inner join projects@ATLR.CERN.CH p on j.projid = p.projid) on a.nid=j.nid and a.relid=j.relid )
       on n.nid=a.nid,
-    (select arch||'-'||os||'-'||comp||'-'||opt as pl, jid from jobs@ATLR.CERN.CH ) platf,
+    (select arch||'-'||os||'-'||comp||'-'||opt as pl, jid, lartwebarea from jobs@ATLR.CERN.CH ) platf,
     (select ncompl as nc, ner as nc_er, npb as nc_pb, jid, projid from cstat@ATLR.CERN.CH ) cs,
     (select ncompl as nt, ner as nt_er, npb as nt_pb, jid, projid from tstat@ATLR.CERN.CH ) ts
      WHERE
@@ -145,6 +148,13 @@ def globalviewDemo(request):
         if tt_cv_clie != 'N/A' : i_combo_cv_clie=tt_cv_clie+i_cv_clie
         else: i_combo_cv_clie=i_cv_clie
 
+        lartwebarea=row[29]
+        if lartwebarea == None or lartwebarea == '': lartwebarea="http://atlas-computing.web.cern.ch/atlas-computing/links/distDir\
+ectory/gitwww/GITWebArea/nightlies"        
+        erla=row[31];sula=row[32]
+        if erla == None or erla == '': erla='N/A'
+        if sula == None or sula == '': sula='N/A'
+
         brname = row[0]
         link_brname = brname
         link_to_ciInfo = reverse('BuildCI')
@@ -159,15 +169,30 @@ def globalviewDemo(request):
         if val_cache_transf != 'N/A' and nightly_name_art != 'N/A': 
             vacasf = "<a href=\"https://bigpanda.cern.ch/art/overview/?branch=" 
             val_cache_transf = vacasf + nightly_name_art + "&ntag_full=" + row[14] + "\">" + val_cache_transf + "</a>"
+
+        local_art_res=''
+        if sula == 'N/A' and erla == 'N/A':
+            local_art_res='N/A'
+        elif sula == '0' and erla == '0':
+            local_art_res='N/A'
+        else:
+            local_art_res=local_art_res+'<B><span style="color: green">'+ str(sula)+'</span></B>,'
+            local_art_res=local_art_res+'<B><span style="color: red">'+ str(erla)+'</span></B>'
+            arrk=re.split('_',brname)
+            branch=arrk[0]
+            loares="<a href=\""+lartwebarea+"/"+branch+"/"+row[14]+"/"+row[15]+"/"+row[2]+"/"+row[15]+"/art.log.html\">"
+            local_art_res=loares+local_art_res+"</a>"
+
         list9.append(row[1]);
         list9.append(link_brname);
         list9.append(row[14]);
         list9.append(row[9]);
         list9.append(a0001);
         list9.append(a0002);
+        list9.append(local_art_res);
         list9.append(val_cache_transf);
         list9.append(tt_cv_clie);
-        list9.append(row[29]);
+        list9.append(row[33]);
         reslt3.append(list9)
 
 #    for k46, v46 in dict_from_cache.items():
