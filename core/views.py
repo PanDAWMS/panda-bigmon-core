@@ -7279,7 +7279,11 @@ def dashboard(request, view='all'):
 
     else:
 
-        fullsummary = dashSummary(request, hours=hours, view=view, cloudview=cloudview)
+        notime = True
+        if len({'date_to', 'hours'}.intersection(request.session['requestParams'].keys())) > 0:
+            notime = False
+
+        fullsummary = dashSummary(request, hours=hours, view=view, cloudview=cloudview, notime=notime)
         cloudTaskSummary = wgTaskSummary(request, fieldname='cloud', view=view, taskdays=taskdays)
         jobsLeft = {}
         rw = {}
