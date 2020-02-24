@@ -18,6 +18,7 @@ from core.grafana import StaginDSProgress as dsProgressView
 from core.globalshares import views as globalshares
 from core.dashboards import dtcdboard as dtcdboard
 from core.dashboards import campaignprediction as campaignprediction
+from core.dashboards import campaingprogressDKB
 from core.dashboards import jobsummaryregion as jsr_views
 from core.libs import tasksPlots as tasksPlots
 
@@ -94,6 +95,9 @@ urlpatterns = [
     re_path(r'^datacardash/$', dtcdboard.dataCarouselleDashBoard, name='dataCarouselleDashBoard'),
     re_path(r'^campaignpredictiondash/$', campaignprediction.campaignPredictionDash, name='campaignPredictionDash'),
     re_path(r'^campaignpredictioninfo/$', campaignprediction.campaignPredictionInfo, name='campaignPredictionInfo'),
+
+    re_path(r'^campprog/$', campaingprogressDKB.campaignProgressDash, name='campaignProgressDash'),
+
     re_path(r'^globalpage/$', globalview.globalviewDemo, name='BuildGlobal'),
     re_path(r'^globalview/$', globalview.globalviewDemo, name='BuildGlobal'),
     re_path(r'^artmonitview/$', artmonitview.artmonitviewDemo, name='BuildARTMonit'),

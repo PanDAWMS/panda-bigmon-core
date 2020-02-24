@@ -1,0 +1,79 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Campaign Progress Dash{% endblock %}
+{% block subtitle %}Campaign Progress Dash <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+
+<link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+
+{% block body %}
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+<div>
+
+     {% if events_progress_wrap %}
+         <h1>Events progress:</h1>
+        <table id="events_progress_table" class="stripe">
+         <thead>
+            <th></th>
+            {% for item in events_progress_wrap.steps %}
+                <th>{{ item }}</th>
+            {% endfor %}
+         </thead>
+         <tbody></tbody>
+        </table>
+        <script type="text/javascript">
+
+        var json_ev=JSON.stringify({{ events_progress_wrap.events_progress | safe }});
+
+        var events_progress_table = $('#events_progress_table').dataTable({
+            "data": JSON.parse(json_ev),
+            "order": [],
+            searching: false,
+            paging: false,
+            info: false,
+            "bSort" : false,
+
+        });
+        </script>
+    {% endif %}
+
+
+    {% if tasks_progress_wrap %}
+         <h1>Tasks progress:</h1>
+
+        <table id="tasks_progress_table">
+         <thead>
+            <th></th>
+            {% for item in tasks_progress_wrap.steps %}
+                <th>{{ item }}</th>
+            {% endfor %}
+         </thead>
+         <tbody></tbody>
+        </table>
+        <script type="text/javascript">
+
+        var json_tasks=JSON.stringify({{ tasks_progress_wrap.tasks_progress | safe }});
+
+        var tasks_progress_table = $('#tasks_progress_table').dataTable({
+            "data": JSON.parse(json_tasks),
+            "order": [],
+            searching: false,
+            paging: false,
+            info: false,
+            "bSort" : false,
+            autoWidth: true,
+        });
+       $($.fn.dataTable.tables(true)).DataTable()
+          .columns.adjust();
+        </script>
+    {% endif %}
+
+
+
+{% endblock %}
