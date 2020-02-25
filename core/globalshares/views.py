@@ -25,22 +25,25 @@ def globalshares(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        gsPlotData = {}
-        oldGsPlotData = data['gsPlotData']
-        for shareName, shareValue in oldGsPlotData.items():
-            gsPlotData[str(shareName)] = int(shareValue)
-        data['gsPlotData'] = gsPlotData
 
     if not valid: return response
     setupView(request, hours=180 * 24, limit=9999999)
     gs, tablerows = __get_hs_leave_distribution()
-    gsPlotData = {}#{'Upgrade':130049 , 'Reprocessing default':568841, 'Data Derivations': 202962, 'Event Index': 143 }
+    gsPlotData = {'pieChartActualHS06': [], 'barChartActualVSTarget': []}
 
     for shareName, shareValue in gs.items():
         shareValue['delta'] = shareValue['executing'] - shareValue['pledged']
         shareValue['used'] = shareValue['ratio'] if 'ratio' in shareValue else None
-        gsPlotData[str(shareName)] = int(shareValue['executing'])
+        # prepare data for charts
+        gsPlotData['pieChartActualHS06'].append([str(shareName), int(shareValue['executing'])])
+        gsPlotData['barChartActualVSTarget'].append({
+            'GS': str(shareName),
+            'Actual': int(shareValue['executing']),
+            'Target': int(shareValue['pledged'])
+        })
 
+    gsPlotData['pieChartActualHS06'] = sorted(gsPlotData['pieChartActualHS06'], key=lambda x: x[0])
+    gsPlotData['barChartActualVSTarget'] = sorted(gsPlotData['barChartActualVSTarget'], key=lambda x: -x['Actual'])
 
     for shareValue in tablerows:
         shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue else None

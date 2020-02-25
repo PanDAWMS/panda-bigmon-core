@@ -573,3 +573,8 @@ li.list-item > input {
 li.list-item > label {
     vertical-align: middle;
 }
+
+
+.c3-plots-row {
+    max-width: 100%;
+}

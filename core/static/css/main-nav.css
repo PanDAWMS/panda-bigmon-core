@@ -14,7 +14,8 @@
 .top-bar-title {
     font-size: 14pt;
     color: #fefefe;
-    padding-left: 15px;
+    padding: 0.5rem 0.3rem 0.5rem 0.7rem;
+    /*padding-left: 15px;*/
 }
 
 
@@ -25,9 +26,10 @@
 .top-bar .menu a {
   color: #fefefe;
   border: 0;
-  padding-right: 15px !important;
+  padding-right: 0.8rem !important;
   padding-bottom: 1rem;
   padding-top: 1rem;
+  padding-left: 0.7rem;
   height: 100%;
 }
 
