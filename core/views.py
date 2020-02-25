@@ -16,7 +16,7 @@ from django.db.models import DateTimeField
 
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
 from django.utils.decorators import available_attrs
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
@@ -222,7 +222,7 @@ def login_customrequired(function):
         if x_forwarded_for and x_forwarded_for in notcachedRemoteAddress:
             return function(request, *args, **kwargs)
 
-        if request.user.is_authenticated or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET):
+        if request.user.is_authenticated or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET or 'json' in request.POST):
             return function(request, *args, **kwargs)
         else:
             # if '/user/' in request.path:
@@ -7577,6 +7577,8 @@ def taskList(request):
             selectTail = """jeditaskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)""" % (tmpTableName, transactionKey)
             extraquery = selectTail if len(extraquery) == 0 else extraquery + ' AND ' + selectTail
             del query['jeditaskid__in']
+            if 'modificationtime__castdate__range' in query:
+                del query['modificationtime__castdate__range']
 
     if len(extraquery) > 0:
         if len(wildCardExtension) > 0:
@@ -7930,9 +7932,8 @@ def taskList(request):
                 else:
                     task['job_state_count'] = {}
         dump = json.dumps(tasks, cls=DateEncoder)
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        return HttpResponse(dump, content_type='application/json')
+        del request.session
+        return JsonResponse(tasks, encoder=DateEncoder, safe=False)
     else:
         #tasks = removeDublicates(tasks, "jeditaskid")
         sumd = taskSummaryDict(request, tasks, copy.deepcopy(standard_taskfields) +
