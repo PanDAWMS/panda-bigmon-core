@@ -14,8 +14,8 @@ from django import template
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 
-
 from django.template.defaulttags import register
+from core.iDDS.models import Transforms, Collections
 
 CACHE_TIMEOUT = 20
 OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
@@ -29,6 +29,7 @@ def to_float(value):
 @login_customrequired
 def main(request):
     #request.session['viewParams']['selection'] = '' + hashtag
+    collections = Collections.objects.using('idds_intr').all()
     data = {
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
