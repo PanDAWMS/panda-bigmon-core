@@ -142,6 +142,9 @@ urlpatterns = [
     ### OI related views
     re_path(r'^oi/', include('core.oi.urls')),
 
+    ### IDDS related views
+    re_path(r'^idds/', include('core.iDDS.urls')),
+
     ### Running Prod tasks
     re_path('', include('core.runningprod.urls_runningprod')),
 

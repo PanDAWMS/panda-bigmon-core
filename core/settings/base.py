@@ -208,6 +208,8 @@ INSTALLED_APPS_BIGPANDAMON_core = (
     'core.globalpage',
     'core.buildmonitor',
     'core.oi',
+    'core.iDDS',
+
 )
 INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_core
 
