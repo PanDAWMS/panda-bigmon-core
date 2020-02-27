@@ -107,8 +107,9 @@ def getBinnedData(listData, additionalList1 = None, additionalList2 = None):
 
     if not additionalList2 is None and len(additionalList2) == 0:
         tmpval = []
-        for item in values:
-            tmpval.append([item[0], item[1], 0])
+        if len(values) > 1:  # temp fix, to be looked closer
+            for item in values:
+                tmpval.append([item[0], item[1], 0])
         values = tmpval
 
 
