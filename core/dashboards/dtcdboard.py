@@ -85,16 +85,13 @@ def getBinnedData(listData, additionalList1 = None, additionalList2 = None):
             "Count3": [1 for _ in additionalList2]
         }, index=timesadd2)
         result = pd.concat([result, dfadd])
-    else:
-        result = df
-
 
     grp = result.groupby([pd.Grouper(freq="24h")]).count()
     values = grp.values.tolist()
     if isTimeNotDelta:
-        index = grp.index.to_pydatetime().tolist()  # an ndarray method, you probably shouldn't depend on this
+        index = grp.index.to_pydatetime().tolist()
     else:
-        index = (grp.index / pd.Timedelta(hours=1)).tolist()  # an ndarray method, you probably shouldn't depend on this
+        index = (grp.index / pd.Timedelta(hours=1)).tolist()
 
     if not additionalList1 is None and len(additionalList1) == 0:
         tmpval = []
