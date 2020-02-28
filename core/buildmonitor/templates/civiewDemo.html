@@ -53,6 +53,10 @@ var cidisplayTable = $('#CISummary').dataTable({
                  var v0I = parseInt(v0, 10);
                  var v0F = 0.5;
                  if ( v0I > 20000 && v0I < 30000 ) { v0F = (v0I - 20000)/11000;}
+                 else if ( v0I >= 30000 && v0I < 32000 ) { v0F = (v0I - 26000)/11000;}
+                 else if ( v0I >= 32000 && v0I < 34000 ) { v0F = (v0I - 28000)/11000;}
+                 else if ( v0I >= 34000 && v0I < 36000 ) { v0F = (v0I - 30000)/11000;}
+                 else if ( v0I >= 38000 ) { v0F = (v0I - 32000)/11000;}
                  else if ( v0I >= 30000 && v0I < 40000 ) { v0F = (v0I - 30000)/11000;}
                  var hexV0 = '#F'+Math.floor(v0F*1048575).toString(16);
                  $('td:eq(0)', row).css("background-color", hexV0).css("border", "1px solid rgb(197, 219, 236)");
