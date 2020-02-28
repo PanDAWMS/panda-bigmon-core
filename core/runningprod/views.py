@@ -135,6 +135,12 @@ def runningProdTasks(request):
         sortby = request.session['requestParams']['sortby']
     else:
         sortby = 'creationdate-desc'
+    if 'currentpriority__gte' in tquery and 'currentpriority__lte' in tquery:
+        tquery['priority__gte'] = tquery['currentpriority__gte']
+        tquery['priority__lte'] = tquery['currentpriority__lte']
+        del tquery['currentpriority__gte']
+        del tquery['currentpriority__lte']
+
     oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
 
     tasks = []
