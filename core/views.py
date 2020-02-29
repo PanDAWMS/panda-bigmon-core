@@ -8493,7 +8493,7 @@ def taskInfo(request, jeditaskid=0):
                         data = None
                         setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 1)
                 except:
-                    data = None
+                    pass
             if 'eventservice' in data and data['eventservice'] is not None:
                 if data['eventservice'] == True and (
                     'version' not in request.session['requestParams'] or (
@@ -9102,7 +9102,7 @@ def taskInfoNew(request, jeditaskid=0):
                     data = None
                     setCacheEntry(request, "taskInfoNew", json.dumps(data, cls=DateEncoder), 1)
             except:
-                data = None
+                pass
 
     if data is not None:
         doRefresh = False
