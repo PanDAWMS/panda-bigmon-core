@@ -8486,11 +8486,14 @@ def taskInfo(request, jeditaskid=0):
         if data is not None:
 
             if 'built' in data and data['built'] is not None:
-                builtDate = datetime.strptime('2019-'+data['built'], defaultDatetimeFormat)
-                if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
+                ### TO DO it should be fixed
+                try:
+                    builtDate = datetime.strptime('2019-'+data['built'], defaultDatetimeFormat)
+                    if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
+                        data = None
+                        setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 1)
+                except:
                     data = None
-                    setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 1)
-
             if 'eventservice' in data and data['eventservice'] is not None:
                 if data['eventservice'] == True and (
                     'version' not in request.session['requestParams'] or (
@@ -9091,10 +9094,15 @@ def taskInfoNew(request, jeditaskid=0):
         data = json.loads(data)
 
         if 'built' in data:
-            builtDate = datetime.strptime('2018-'+data['built'], defaultDatetimeFormat)
-            if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
+            ### TO DO it should be fixed
+            try:
+                builtDate = datetime.strptime('2018-'+data['built'], defaultDatetimeFormat)
+
+                if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
+                    data = None
+                    setCacheEntry(request, "taskInfoNew", json.dumps(data, cls=DateEncoder), 1)
+            except:
                 data = None
-                setCacheEntry(request, "taskInfoNew", json.dumps(data, cls=DateEncoder), 1)
 
     if data is not None:
         doRefresh = False
