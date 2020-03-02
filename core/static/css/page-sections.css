@@ -578,3 +578,8 @@ li.list-item > label {
 .c3-plots-row {
     max-width: 100%;
 }
+
+.c3-chart-block {
+    float:left;
+    margin: 1rem 0.3rem;
+}

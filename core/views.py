@@ -8484,43 +8484,32 @@ def taskInfo(request, jeditaskid=0):
     if data is not None:
         data = json.loads(data)
         if data is not None:
+            doRefresh = False
 
+            # check the build date of cached data, since data structure for plots changed on 02.02.2020 and
+            # we need to refresh cached data for ended tasks which we store for 1 month
             if 'built' in data and data['built'] is not None:
-                ### TO DO it should be fixed
                 try:
-                    builtDate = datetime.strptime('2019-'+data['built'], defaultDatetimeFormat)
-                    if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
+                    builtDate = datetime.strptime('2020-'+data['built'], defaultDatetimeFormat)
+                    if builtDate < datetime.strptime('2020-02-02 19:00:00', defaultDatetimeFormat):
                         data = None
-                        setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), 1)
+                        doRefresh = True
                 except:
-                    pass
+                    doRefresh = True
+
+            # redirect event service tasks to new special view
             if 'eventservice' in data and data['eventservice'] is not None:
-                if data['eventservice'] == True and (
+                if data['eventservice'] is True and (
                     'version' not in request.session['requestParams'] or (
                         'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old' )):
                     return redirect('/tasknew/'+str(jeditaskid))
 
             try:
                 data = deleteCacheTestData(request, data)
-            except: pass
-            doRefresh = False
+            except:
+                pass
 
-        plotDict = {}
-        if 'plotsDict' in data:
-            oldPlotDict = data['plotsDict']
-            if isinstance(oldPlotDict, dict):
-                for plotName, plotData in oldPlotDict.items():
-                    if 'sites' in plotData and 'ranges' in plotData:
-                        plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
-                        for dictSiteName, listValues in plotData['sites'].items():
-                            try:
-                                plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
-                                plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
-                            except:
-                                pass
-                data['plotsDict'] = plotDict
-
-            #We still want to refresh tasks if request came from central crawler and task not in the frozen state
+            # We still want to refresh tasks if request came from central crawler and task not in the frozen state
             if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
                     data['task'] and data['task']['status'] not in ['broken', 'aborted']):
                 doRefresh = True
@@ -8544,12 +8533,6 @@ def taskInfo(request, jeditaskid=0):
                         doRefresh = True
             # doRefresh = True
 
-            ### This is a temporary fix in order of avoiding 500 error for cached tasks not compartible to a new template
-            if not isinstance(data['jobscoutids']['ramcountscoutjob'], list):
-                if 'ramcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['ramcountscoutjob']
-                if 'iointensityscoutjob' in data['jobscoutids']: del data['jobscoutids']['iointensityscoutjob']
-                if 'outdiskcountscoutjob' in data['jobscoutids']: del data['jobscoutids']['outdiskcountscoutjob']
-
             if not doRefresh:
                 data['request'] = request
                 if data['eventservice'] == True:
@@ -8561,6 +8544,7 @@ def taskInfo(request, jeditaskid=0):
 
     if 'taskname' in request.session['requestParams'] and request.session['requestParams']['taskname'].find('*') >= 0:
         return taskList(request)
+
     setupView(request, hours=365 * 24, limit=999999999, querytype='task')
     eventservice = False
     query = {}
@@ -9798,10 +9782,27 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
         request.session['requestParams']['warning'] = 'Task has more than 400 000 jobs. Dropping was not done to avoid timeout error!'
 
     plotsNames = ['maxpss', 'maxpsspercore', 'nevents', 'walltime', 'walltimeperevent', 'hs06s', 'cputime', 'cputimeperevent', 'maxpssf', 'maxpsspercoref', 'walltimef', 'hs06sf', 'cputimef', 'cputimepereventf']
+    plotDetails = {
+        'maxpss': {'title': 'Maximum PSS histogram (finished jobs)', 'xlabel': 'MaxPSS, KB'},
+        'maxpsspercore': {'title': 'Maximum PSS per core histogram (finished jobs)', 'xlabel': 'MaxPSS per core, KB'},
+        'nevents': {'title': 'Number of events histogram', 'xlabel': 'N events'},
+        'walltime': {'title': 'Walltime histogram (finished jobs)', 'xlabel': 'walltime, s'},
+        'walltimeperevent': {'title': 'Walltime per event histogram (finished jobs)', 'xlabel': 'walltime per event, s'},
+        'hs06s': {'title': 'HS06s histogram (finished jobs)', 'xlabel': 'HS06s'},
+        'cputime': {'title': 'CPU time histogram (finished jobs)', 'xlabel': 'CPU time, s'},
+        'cputimeperevent': {'title': 'CPU time per event histogram (finished jobs)', 'xlabel': 'CPU time, s'},
+        'maxpssf': {'title': 'Maximum PSS histogram (failed jobs)', 'xlabel': 'MaxPSS, kB'},
+        'maxpsspercoref': {'title': 'Maximum PSS per core histogram (failed jobs)', 'xlabel': 'MaxPSS per core, KB'},
+        'walltimef': {'title': 'Walltime histogram (failed jobs)', 'xlabel': 'walltime, s'},
+        'hs06sf': {'title': 'HS06s histogram (failed jobs)', 'xlabel': 'HS06s'},
+        'cputimef': {'title': 'CPU time histogram (failed jobs)', 'xlabel': 'CPU time, s'},
+        'cputimepereventf': {'title': 'CPU time per event histogram (failed jobs)', 'xlabel': 'CPU time, s'},
+    }
+
     plotsDict = {}
 
     for pname in plotsNames:
-        plotsDict[pname] = {'sites': {}, 'ranges': {}}
+        plotsDict[pname] = {'sites': {}, 'ranges': {}, 'details': plotDetails[pname]}
 
     for job in jobs:
         if job['actualcorecount'] is None:
@@ -9864,10 +9865,10 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
                         plotsDict['cputimepereventf']['sites'][job['computingsite']] = []
                     plotsDict['cputimepereventf']['sites'][job['computingsite']].append(round(job['cpuconsumptiontime']/(job['nevents']*1.0), 2))
 
-    nbinsmax = 100
+    nbinsmax = 50
     for pname in plotsNames:
         rawdata = []
-        for k,d in plotsDict[pname]['sites'].items():
+        for k, d in plotsDict[pname]['sites'].items():
             rawdata.extend(d)
         if len(rawdata) > 0:
             plotsDict[pname]['stats'] = []
