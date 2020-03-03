@@ -110,6 +110,8 @@ def jbhome(request):
         timeticks = [parse_datetime(tick) for tick in resp_data['ticks']]
         timeticks = ['x'] + [tick.strftime("%Y-%m-%d %H:%M:%S") for tick in timeticks]
         resp_data['mesuresW'].insert(0,timeticks)
+        resp_data['mesuresNF'].insert(0,timeticks)
+
         colors = {}
         for name, color in zip(names, resp_data['colorsW']):
             colors[name] = matplotlib.colors.to_hex(color)
@@ -136,7 +138,7 @@ def jbhome(request):
             spots.append(card)
 
         resp_dict = {
-            'mesuresW': resp_data['mesuresW'],
+            'mesures': resp_data['mesuresW'] if not metric or metric=='loss' else resp_data['mesuresNF'],
             'ticks': resp_data['ticks'],
             'issnames': names,
             'doGroup': False if len(names) < 2 else True,
@@ -149,7 +151,7 @@ def jbhome(request):
         'requestParams': request.session['requestParams'],
         'viewParams': request.session['viewParams'],
         'message': message,
-        'mesuresW': [],
+        'mesures': [],
         #'plots': plots,
         #'spots': spots,
     }

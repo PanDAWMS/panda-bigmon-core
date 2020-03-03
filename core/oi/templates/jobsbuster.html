@@ -126,7 +126,7 @@ $(document).ready(function () {
         data: {
             x: 'x',
             xFormat: '%Y-%m-%d %H:%M:%S',
-            columns: {{ mesuresW|safe }},
+            columns: {{ mesures|safe }},
             {% if doGroup %}
             groups: [{{ issnames|safe }}],
             {% endif %}
