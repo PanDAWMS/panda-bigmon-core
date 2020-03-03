@@ -575,6 +575,26 @@ li.list-item > label {
 }
 
 
+.form-container {
+    max-width: 100%;
+}
+.form-container .column {
+    padding: 0.7rem 0.3rem;
+}
+.form-container .no-bullet {
+    margin: 0;
+}
+.form-container fieldset {
+    margin-bottom: 0;
+    padding-top: 0 !important;
+}
+.form-container fieldset legend {
+    padding-top: 0.7rem;
+    margin-bottom: 0;
+    font-size: 0.875rem;
+}
+
+
 .c3-plots-row {
     max-width: 100%;
 }

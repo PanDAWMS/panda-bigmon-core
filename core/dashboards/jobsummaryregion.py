@@ -281,11 +281,17 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
 def get_job_summary_split(query, extra):
     """ Query the jobs summary """
 
-    extra_str = '(1=1)'
+    extra_str = extra
     if 'computingsite__in' in query:
         extra_str += " and (computingsite in ("
         for pq in query['computingsite__in']:
             extra_str += "'" + str(pq) + "',"
+        extra_str = extra_str[:-1]
+        extra_str += "))"
+    if 'prodsourcelabel__in' in query:
+        extra_str += " and (prodsourcelabel in ("
+        for pl in query['prodsourcelabel__in']:
+            extra_str += "'" + str(pl) + "',"
         extra_str = extra_str[:-1]
         extra_str += "))"
 
