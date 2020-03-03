@@ -505,8 +505,8 @@ a.close-x-sign:hover {
 }
 
 .tiles .column {
-    padding: 0;
-    margin: 0.7rem 0.3rem;
+    margin: 0;
+    padding: 0.7rem 0.3rem;
 }
 
 .card.tile {
