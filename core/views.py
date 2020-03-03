@@ -8491,7 +8491,7 @@ def taskInfo(request, jeditaskid=0):
             if 'built' in data and data['built'] is not None:
                 try:
                     builtDate = datetime.strptime('2020-'+data['built'], defaultDatetimeFormat)
-                    if builtDate < datetime.strptime('2020-02-02 19:00:00', defaultDatetimeFormat):
+                    if builtDate < datetime.strptime('2020-03-03 00:00:00', defaultDatetimeFormat):
                         data = None
                         doRefresh = True
                 except:
