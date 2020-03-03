@@ -1650,12 +1650,12 @@ def cleanTaskList(request, tasks):
 
     random.seed()
     transactionKey = random.randrange(1000000)
-#    connection.enter_transaction_management()
+
     new_cur = connection.cursor()
     for id in taskl:
         new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
             tmpTableName, id, transactionKey))  # Backend dependable
-#    connection.commit()
+
     dsets = JediDatasets.objects.filter(**dsquery).extra(
         where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values(
         'jeditaskid', 'nfiles', 'nfilesfinished', 'nfilesfailed')
@@ -1666,10 +1666,6 @@ def cleanTaskList(request, tasks):
             if taskid not in dsinfo:
                 dsinfo[taskid] = []
             dsinfo[taskid].append(ds)
-
-    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-#    connection.commit()
-#   connection.leave_transaction_management()
 
     for task in tasks:
         if 'totevrem' not in task:
@@ -1803,21 +1799,16 @@ def jobSummaryDict(request, jobs, fieldlist=None):
 
         transactionKey = random.randrange(1000000)
 
- #       connection.enter_transaction_management()
         new_cur = connection.cursor()
         executionData = []
         for id in esjobs:
             executionData.append((id, transactionKey))
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
- #       connection.commit()
 
         new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM (SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */ PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY = %i AND  PANDAID = ID) t1 GROUP BY STATUS" % (tmpTableName, transactionKey))
 
         evtable = dictfetchall(new_cur)
-        new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-#        connection.commit()
- #       connection.leave_transaction_management()
 
         for ev in evtable:
             evstat = eventservicestatelist[ev['STATUS']]
@@ -7686,10 +7677,6 @@ def taskList(request):
             listItem["totev"] = tasksEventInfoItem["totev"]
             eventInfoDict[tasksEventInfoItem["jeditaskid"]] = listItem
 
-
-    # clean temporary table
-    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-
     taskids = {}
     for taskid in taskhashtags:
         taskids[taskid['TASKID']] = taskid['HASHTAGS']
@@ -7805,14 +7792,6 @@ def taskList(request):
             """ % (tmpTableName, transactionKey)
         )
         evtable = dictfetchall(new_cur)
-
-        #        esquery = {}
-        #        esquery['pandaid__in'] = esjobs
-        #        evtable = JediEvents.objects.filter(**esquery).values('pandaid','status')
-
-        new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
- #       connection.commit()
- #       connection.leave_transaction_management()
 
         for ev in evtable:
             taskid = taskdict[ev['PANDAID']]
@@ -8096,7 +8075,6 @@ def getTaskScoutingInfo(tasks, nmax):
     scoutingHasCritFailures = [item['jeditaskid'] for item in scoutingHasCritFailures if
                                (taskStatuses[item['jeditaskid']] in ('scouting'))]
 
-    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
     transactionKey = random.randrange(1000000)
     executionData = []
     for id in scoutingHasCritFailures:
@@ -8112,7 +8090,6 @@ def getTaskScoutingInfo(tasks, nmax):
     taskStatuses[item['jeditaskid']] == 'scouting' and item['jeditaskid'] not in scoutingHasCritFailures)]
 
 
-    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
     transactionKey = random.randrange(1000000)
     executionData = []
     for id in scoutingHasNonCritFailures:
@@ -8126,7 +8103,6 @@ def getTaskScoutingInfo(tasks, nmax):
         where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid')
     scoutingHasNonCritFailures = [item['jeditaskid'] for item in scoutingHasNonCritFailures]
 
-    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
 
     for task in taskslToBeDisplayed:
         correspondendEventInfo = []
@@ -8319,19 +8295,16 @@ def getSummaryForTaskList(request):
     taskEvents = []
     random.seed()
     transactionKey = random.randrange(1000000)
-#    connection.enter_transaction_management()
+
     new_cur = connection.cursor()
     for id in taskl:
         new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
         tmpTableName, id, transactionKey))  # Backend dependable
-#    connection.commit()
+
     taske = GetEventsForTask.objects.extra(
         where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values()
     for task in taske:
         taskEvents.append(task)
-    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-#    connection.commit()
-#    connection.leave_transaction_management()
 
     nevents = {'neventstot': 0, 'neventsrem': 0}
     for task in taskEvents:
@@ -9919,14 +9892,14 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
                 tmpTableName = "TMP_IDS1DEBUG"
 
             transactionKey = random.randrange(1000000)
-#            connection.enter_transaction_management()
+
             new_cur = connection.cursor()
             executionData = []
             for id in esjobs:
                 executionData.append((id, transactionKey, timezone.now().strftime(defaultDatetimeFormat) ))
             query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
             new_cur.executemany(query, executionData)
-#            connection.commit()
+
             jeditaskidstr = str(newquery['jeditaskid'])
             new_cur.execute(
                 """
@@ -9939,9 +9912,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
             )
 
             evtable = dictfetchall(new_cur)
-            # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-#            connection.commit()
-#            connection.leave_transaction_management()
+
             for ev in evtable:
                 essummary[eventservicestatelist[ev['STATUS']]] += ev['EVCOUNT']
         eventsdict=[]
@@ -12746,9 +12717,7 @@ def addJobMetadata(jobs, require=False):
                 pass
                 # job['metadata'] = mdict[job['pandaid']]
     print ('added metadata')
-    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
- #   connection.commit()
- #   connection.leave_transaction_management()
+
     return jobs
 
 
