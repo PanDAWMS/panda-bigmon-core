@@ -8492,7 +8492,6 @@ def taskInfo(request, jeditaskid=0):
                 try:
                     builtDate = datetime.strptime('2020-'+data['built'], defaultDatetimeFormat)
                     if builtDate < datetime.strptime('2020-03-03 00:00:00', defaultDatetimeFormat):
-                        data = None
                         doRefresh = True
                 except:
                     doRefresh = True
