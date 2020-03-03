@@ -19,7 +19,7 @@
 {% endfor %}
 
 {% for package, psum in summary.items %}
-<p>[{{ forloop.counter }}] {{ psum.link }}</p>
+<p>[{{ forloop.counter }}] {{ psum.link | safe }}</p>
 {% for bsum in psum.packages %}
 <p>[{{ forloop.parentloop.counter }}.{{ forloop.counter }}] {{ bsum.linktoeos }}</p>
 {% endfor %}
