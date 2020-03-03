@@ -79,8 +79,6 @@ def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPM
                 else:
                     newjobs = newjobs + list(notDroppedPmerge)
                     droppedPmerge = []
-        new_cur = connection.cursor()
-        new_cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i" % (tk))
         return newjobs, droppedPmerge,droplist
     else:
         pandaDropIDList=set()
@@ -130,8 +128,6 @@ def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPM
                 else: newjobs.append(checkJob)
                 #else:
                 #    newjobs.append(checkJob)
-            new_cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i" % (transactionKey))
-            new_cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i" % (tk))
             new_cur.close()
             pandaDropIDList = list(pandaDropIDList)
 
@@ -167,8 +163,7 @@ def clearDropPmergeRetrielsJobs(dPmerge,retryquery):
                 notDropPmerge.append(checkJob)
         else:
             notDropPmerge.append(checkJob)
-    new_cur.execute("DELETE FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%i" % (transactionKey))
-    return dropPmerge,notDropPmerge
+    return dropPmerge, notDropPmerge
 
 def compareDropAlgorithm(oldDropDict,newDropList):
     difDropList = []
