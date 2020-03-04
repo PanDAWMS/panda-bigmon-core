@@ -103,6 +103,10 @@ def jbhome(request):
     spots = []
     names = []
     if resp_data:
+
+        for i, problem in enumerate(resp_data['mesuresW']):
+            resp_data['mesuresW'][i] = list(map(lambda x: x/3.154e+7 if not type(x) is str else x, problem))
+
         names = [i[0] for i in resp_data['mesuresW']]
 
     timeticks = []
@@ -121,6 +125,7 @@ def jbhome(request):
             card['color'] = colors[issue['name']]
             card['impactloss'] = str(round(issue['sumWLoss'] / 3.154e+7, 2))
             card['impactfails'] = issue['sumJFails']
+            card['name'] = issue['name']
             card['params'] = {}
             urlstr = "https://bigpanda.cern.ch/jobs/?endtimerange=" + str(issue['observation_started']).replace(" ", "T") + "|" + str(issue['observation_finished']).replace(" ", "T")
 
@@ -137,8 +142,9 @@ def jbhome(request):
             card['url'] = urlstr
             spots.append(card)
 
+        measures = resp_data['mesuresW'] if not metric or metric=='loss' else resp_data['mesuresNF']
         resp_dict = {
-            'mesures': resp_data['mesuresW'] if not metric or metric=='loss' else resp_data['mesuresNF'],
+            'mesures': measures,
             'ticks': resp_data['ticks'],
             'issnames': names,
             'doGroup': False if len(names) < 2 else True,
