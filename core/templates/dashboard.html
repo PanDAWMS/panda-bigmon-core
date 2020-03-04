@@ -8,6 +8,18 @@
 
 {{ viewParams.header }}
 
+{% if cloudview == 'region' %}
+<div class="callout alert large" data-closable>
+    <h5>Please participate in testing
+        <a class="blacklink" href="{% url 'dashRegion' %}"><b>a new nicer and faster dashboard page</b></a>,
+        where a number of interactive filters are available and e.g. job counts for GU queues can be split by both job and resource types:
+        <a class="blacklink" href="{% url 'dashRegion' %}"><b>https://bigpanda.cern.ch/new/dash/</b></a></h5>
+  <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
+
 {% if requestParams.sortby %} <p><b>Sorted by: {{ requestParams.sortby }} </b><p> {% endif %}
 
 {% if viewParams.MON_VO != 'ATLAS' %}

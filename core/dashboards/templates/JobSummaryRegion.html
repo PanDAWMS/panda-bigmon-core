@@ -23,6 +23,21 @@
 
 {{ viewParams.header }}
 
+<div class="callout primary" data-closable>
+    <h5><b>This is a new dashboard page!</b></h5>
+    <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.
+        Test jobs are not accounted in this statistics.</p>
+    <p>Use controls row on top of the page to select particular queue type and status, job type, resource type,
+        and to split the region/site statistics by job and/or resource type. Click on <b>Update</b> button to apply selection.</p>
+    <p>Click the job counts to go to job listings. Use the <b>Search</b> text input on the top of second table to find a PQ by name.</p>
+    <p>If you notice any issue or if you have an advise how to improve the page, please let us know
+        <a class="blacklink" href="mailto:atlas-adc-pandamon-support@cern.ch"><b>atlas-adc-pandamon-support@cern.ch</b></a> !</p>
+  <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+
 <div data-ng-app="jobSummaryRegion">
 <div data-ng-controller="JobSummaryRegionController">
 <form novalidate class="simple-form">
@@ -250,7 +265,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -266,7 +281,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.0 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -278,7 +293,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.1 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -290,7 +305,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.2 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -302,7 +317,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.3 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -314,7 +329,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.4 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -326,7 +341,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.5 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -338,7 +353,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.6 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -350,7 +365,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.7 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -362,7 +377,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.8 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -374,7 +389,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.9 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -386,7 +401,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.10 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -398,7 +413,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.11 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -410,7 +425,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.12 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -422,7 +437,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.13 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -434,7 +449,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.14 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -446,7 +461,7 @@ function buildRegionSummary(data, divid) {
             sDefaultContent: "---",
             className: "{{ jobstates.15 }}_fill num",
             "render": function(data, type, row, meta) {
-                let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
@@ -516,7 +531,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '">'+row[6]+'</a>';
@@ -531,7 +546,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.0 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.0 }}' + '">'+row[8]+'</a>';
@@ -542,7 +557,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.1 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.1 }}' + '">'+row[9]+'</a>';
@@ -554,7 +569,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.2 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.2 }}' + '">'+row[10]+'</a>';
@@ -566,7 +581,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.3 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.3 }}' + '">'+row[11]+'</a>';
@@ -578,7 +593,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.4 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.4 }}' + '">'+row[12]+'</a>';
@@ -590,7 +605,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.5 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.5 }}' + '">'+row[13]+'</a>';
@@ -602,7 +617,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.6 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.6 }}' + '">'+row[14]+'</a>';
@@ -614,7 +629,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.7 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.7 }}' + '">'+row[15]+'</a>';
@@ -626,7 +641,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.8 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.8 }}' + '">'+row[16]+'</a>';
@@ -638,7 +653,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.9 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.9 }}' + '">'+row[17]+'</a>';
@@ -650,7 +665,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.10 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.10 }}' + '">'+row[18]+'</a>';
@@ -662,7 +677,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.11 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.11 }}' + '">'+row[19]+'</a>';
@@ -674,7 +689,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.12 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.12 }}' + '">'+row[20]+'</a>';
@@ -686,7 +701,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.13 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.13 }}' + '">'+row[21]+'</a>';
@@ -698,7 +713,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.14 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.14 }}' + '">'+row[22]+'</a>';
@@ -710,7 +725,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "{{ jobstates.15 }}_fill num",
         "render": function(data, type, row, meta) {
-            let url_link = '<a href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
             url_link += '&jobstatus=' + '{{ jobstates.15 }}' + '">'+row[23]+'</a>';
