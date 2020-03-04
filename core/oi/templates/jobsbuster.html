@@ -146,7 +146,12 @@ $(document).ready(function () {
                     format: function (d) { return d; }
                 },
                 label: {
+    {% if metric and metric == 'fails'%}
+                  text: 'N Failes',
+    {% else %}
                   text: 'walltime * cores loss [years]',
+    {% endif %}
+
                   position: 'outer-middle'
                 }
             }

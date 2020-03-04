@@ -152,6 +152,7 @@ def jbhome(request):
         'viewParams': request.session['viewParams'],
         'message': message,
         'mesures': [],
+        'metric': metric,
         #'plots': plots,
         #'spots': spots,
     }
