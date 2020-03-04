@@ -9,12 +9,14 @@ from datetime import datetime
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.db import connection
+from django.db.models import Q, Sum
 from django.core.cache import cache
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.views import login_customrequired, initRequest, setupView, DateEncoder
 
 from core.schedresource.models import SchedconfigJson
+from core.harvester.models import HarvesterWorkerStats
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -99,6 +101,8 @@ def dashboard(request):
                     row.append(params['pq_params']['status'])
                     row.append(jt)
                     row.append(rt)
+                    row.append(summary['nworkers_submitted'])
+                    row.append(summary['nworkers_running'])
                     row.append(sum(summary.values()))
                     if summary['failed'] + summary['finished'] > 0:
                         row.append(round(100.0*summary['failed']/(summary['failed'] + summary['finished']), 1))
@@ -128,6 +132,8 @@ def dashboard(request):
                     row.append(reg)
                     row.append(jt)
                     row.append(rt)
+                    row.append(summary['nworkers_submitted'])
+                    row.append(summary['nworkers_running'])
                     row.append(sum(summary.values()))
                     if summary['failed'] + summary['finished'] > 0:
                         row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
@@ -224,7 +230,7 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
 
     # create template structure for grouping by queue
     for pqn, params in panda_queues_dict.items():
-        jsr_queues_dict[pqn] = {'pq_params': {}, 'summary': {}}
+        jsr_queues_dict[pqn] = {'pq_params': {}, 'summary': {}, 'wsummary': {}}
         jsr_queues_dict[pqn]['pq_params']['pqtype'] = params['type']
         jsr_queues_dict[pqn]['pq_params']['region'] = params['cloud']
         jsr_queues_dict[pqn]['pq_params']['status'] = params['status']
@@ -242,6 +248,12 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
                     jsr_queues_dict[pqn]['summary']['all'][rt][js] = 0
                     jsr_queues_dict[pqn]['summary']['all']['all'][js] = 0
 
+                for ws in ('nworkers_running', 'nworkers_submitted'):
+                    jsr_queues_dict[pqn]['summary'][jt][rt][ws] = 0
+                    jsr_queues_dict[pqn]['summary'][jt]['all'][ws] = 0
+                    jsr_queues_dict[pqn]['summary']['all'][rt][ws] = 0
+                    jsr_queues_dict[pqn]['summary']['all']['all'][ws] = 0
+
     # create template structure for grouping by region
     for r in regions_list:
         jsr_regions_dict[r] = {}
@@ -258,13 +270,21 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
                     jsr_regions_dict[r][jt]['all'][js] = 0
                     jsr_regions_dict[r]['all'][rt][js] = 0
                     jsr_regions_dict[r]['all']['all'][js] = 0
+                for ws in ('nworkers_running', 'nworkers_submitted'):
+                    jsr_regions_dict[r][jt][rt][ws] = 0
+                    jsr_regions_dict[r][jt]['all'][ws] = 0
+                    jsr_regions_dict[r]['all'][rt][ws] = 0
+                    jsr_regions_dict[r]['all']['all'][ws] = 0
 
     # get job info
     jsq = get_job_summary_split(query, extra=extra)
 
-    # fill template with real values
+    # get workers info
+    wsq = get_workers_summary_split(query, extra=extra)
+
+    # fill template with real values of job states counts
     for row in jsq:
-        if row['computingsite'] in jsr_queues_dict.keys() and row['jobtype'] in job_types and row['resourcetype'] in resource_types and row['jobstatus'] in job_states_order and 'count' in row:
+        if row['computingsite'] in jsr_queues_dict and row['jobtype'] in job_types and row['resourcetype'] in resource_types and row['jobstatus'] in job_states_order and 'count' in row:
             jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']][row['resourcetype']][row['jobstatus']] += int(row['count'])
             jsr_queues_dict[row['computingsite']]['summary']['all'][row['resourcetype']][row['jobstatus']] += int(row['count'])
             jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']]['all'][row['jobstatus']] += int(row['count'])
@@ -274,6 +294,33 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
             jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all'][row['resourcetype']][row['jobstatus']] += int(row['count'])
             jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']]['all'][row['jobstatus']] += int(row['count'])
             jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all']['all'][row['jobstatus']] += int(row['count'])
+
+    # fill template with real values of n workers stats
+    for row in wsq:
+        if row['computingsite'] in jsr_queues_dict and row['jobtype'] in job_types and row['resourcetype'] in resource_types:
+            jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']][row['resourcetype']]['nworkers_running'] += int(row['nrunning'])
+            jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']][row['resourcetype']]['nworkers_submitted'] += int(row['nsubmitted'])
+
+            jsr_queues_dict[row['computingsite']]['summary']['all'][row['resourcetype']]['nworkers_running'] += int(row['nrunning'])
+            jsr_queues_dict[row['computingsite']]['summary']['all'][row['resourcetype']]['nworkers_submitted'] += int(row['nsubmitted'])
+
+            jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']]['all']['nworkers_running'] += int(row['nrunning'])
+            jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']]['all']['nworkers_submitted'] += int(row['nsubmitted'])
+
+            jsr_queues_dict[row['computingsite']]['summary']['all']['all']['nworkers_running'] += int(row['nrunning'])
+            jsr_queues_dict[row['computingsite']]['summary']['all']['all']['nworkers_submitted'] += int(row['nsubmitted'])
+
+            jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']][row['resourcetype']]['nworkers_running'] += int(row['nrunning'])
+            jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']][row['resourcetype']]['nworkers_submitted'] += int(row['nsubmitted'])
+
+            jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all'][row['resourcetype']]['nworkers_running'] += int(row['nrunning'])
+            jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all'][row['resourcetype']]['nworkers_submitted'] += int(row['nsubmitted'])
+
+            jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']]['all']['nworkers_running'] += int(row['nrunning'])
+            jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']]['all']['nworkers_submitted'] += int(row['nsubmitted'])
+
+            jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all']['all']['nworkers_running'] += int(row['nrunning'])
+            jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all']['all']['nworkers_submitted'] += int(row['nsubmitted'])
 
     return jsr_queues_dict, jsr_regions_dict
 
@@ -322,19 +369,28 @@ def get_job_summary_split(query, extra):
     job_summary_header = ['computingsite', 'resourcetype', 'prodsourcelabel', 'jobstatus', 'count']
     summary = [dict(zip(job_summary_header, row)) for row in job_summary_tuple]
 
-    # translate prodsourcelabel values to descriptive analy|prod job types
-    psl_to_jt = {
-        'panda': 'analy',
-        'user': 'analy',
-        'managed': 'prod',
-    }
-    jsq = []
-    for row in summary:
-        if 'prodsourcelabel' in row and row['prodsourcelabel'] in psl_to_jt.keys():
-            row['jobtype'] = psl_to_jt[row['prodsourcelabel']]
-            jsq.append(row)
+    # Translate prodsourcelabel values to descriptive analy|prod job types
+    summary = prodsourcelabel_to_jobtype(summary)
 
-    return jsq
+    return summary
+
+
+def get_workers_summary_split(query, extra):
+    """Get statistics of submitted and running Harvester workers"""
+
+    if 'modificationtime__castdate__range' in query:
+        del query['modificationtime__castdate__range']
+    query['status__in'] = ['running', 'submitted']
+    query['jobtype__in'] = ['managed', 'user', 'panda']
+    w_running = Sum('nworkers', filter=Q(status__exact='running'))
+    w_submitted = Sum('nworkers', filter=Q(status__exact='submitted'))
+    w_values = ['computingsite', 'resourcetype', 'jobtype']
+    worker_summary = HarvesterWorkerStats.objects.filter(**query).extra(where=[extra]).values(*w_values).annotate(nrunning=w_running).annotate(nsubmitted=w_submitted)
+
+    # Translate prodsourcelabel values to descriptive analy|prod job types
+    worker_summary = prodsourcelabel_to_jobtype(worker_summary, field_name='jobtype')
+
+    return list(worker_summary)
 
 
 def get_AGIS_panda_queues():
@@ -358,3 +414,20 @@ def get_AGIS_panda_queues():
         cache.set('pandaQueues', panda_queues_dict, 3600)
 
     return panda_queues_dict
+
+
+def prodsourcelabel_to_jobtype(list_of_dict, field_name='prodsourcelabel'):
+    """Translate prodsourcelabel values to descriptive analy|prod job types"""
+
+    psl_to_jt = {
+        'panda': 'analy',
+        'user': 'analy',
+        'managed': 'prod',
+    }
+    new_list_of_dict = []
+    for row in list_of_dict:
+        if field_name in row and row[field_name] in psl_to_jt.keys():
+            row['jobtype'] = psl_to_jt[row[field_name]]
+            new_list_of_dict.append(row)
+
+    return new_list_of_dict

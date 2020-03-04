@@ -44,6 +44,7 @@ class HarvesterWorkerStats (models.Model):
     computingsite = models.CharField(max_length=128, db_column='COMPUTINGSITE', null=False, blank=True)
     resourcetype = models.CharField(max_length=128, db_column='RESOURCETYPE', null=False, blank=True)
     status = models.CharField(max_length=80, db_column='STATUS', null=False, blank=True)
+    jobtype = models.CharField(max_length=128, db_column='JOBTYPE', null=False, blank=True)
     nworkers = models.IntegerField(db_column='N_WORKERS', null=False)
     lastupdate = models.DateTimeField(null=True, db_column='LASTUPDATE', blank=True)
     class Meta:

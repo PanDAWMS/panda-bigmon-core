@@ -102,6 +102,8 @@
         <th class="text">Region</th>
         <th class="text">Job type</th>
         <th class="text">Resource type</th>
+        <th class="text">N submitted workers</th>
+        <th class="text">N running workers</th>
         <th class="num">N jobs total</th>
         <th class="vertical fixed_dash"><div class="rotate">% failure</div></th>
         {% for js in jobstates %}
@@ -124,6 +126,8 @@
         <th class="text">Status</th>
         <th class="text">Job type</th>
         <th class="text">Resource type</th>
+        <th class="text">N submitted workers</th>
+        <th class="text">N running workers</th>
         <th class="num">N jobs total</th>
         <th class="num">% failure</th>
         {% for js in jobstates %}
@@ -264,12 +268,20 @@ function buildRegionSummary(data, divid) {
           {
             sDefaultContent: "---",
             className: "num",
+          },
+          {
+            sDefaultContent: "---",
+            className: "num",
+          },
+          {
+            sDefaultContent: "---",
+            className: "num",
             "render": function(data, type, row, meta) {
                 let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '">'+row[3]+'</a>';
+                url_link += '">'+row[5]+'</a>';
                 return url_link
             }
           },
@@ -285,7 +297,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.0 }}' + '">'+row[5]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.0 }}' + '">'+row[7]+'</a>';
                 return url_link
             }
           },
@@ -297,7 +309,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.1 }}' + '">'+row[6]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.1 }}' + '">'+row[8]+'</a>';
                 return url_link
             }
           },
@@ -309,7 +321,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.2 }}' + '">'+row[7]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.2 }}' + '">'+row[9]+'</a>';
                 return url_link
             }
           },
@@ -321,7 +333,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.3 }}' + '">'+row[8]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.3 }}' + '">'+row[10]+'</a>';
                 return url_link
             }
           },
@@ -333,7 +345,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.4 }}' + '">'+row[9]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.4 }}' + '">'+row[11]+'</a>';
                 return url_link
             }
           },
@@ -345,7 +357,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.5 }}' + '">'+row[10]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.5 }}' + '">'+row[12]+'</a>';
                 return url_link
             }
           },
@@ -357,7 +369,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.6 }}' + '">'+row[11]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.6 }}' + '">'+row[13]+'</a>';
                 return url_link
             }
           },
@@ -369,7 +381,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.7 }}' + '">'+row[12]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.7 }}' + '">'+row[14]+'</a>';
                 return url_link
             }
           },
@@ -381,7 +393,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.8 }}' + '">'+row[13]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.8 }}' + '">'+row[15]+'</a>';
                 return url_link
             }
           },
@@ -393,7 +405,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.9 }}' + '">'+row[14]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.9 }}' + '">'+row[16]+'</a>';
                 return url_link
             }
           },
@@ -405,7 +417,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.10 }}' + '">'+row[15]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.10 }}' + '">'+row[17]+'</a>';
                 return url_link
             }
           },
@@ -417,7 +429,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.11 }}' + '">'+row[16]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.11 }}' + '">'+row[18]+'</a>';
                 return url_link
             }
           },
@@ -429,7 +441,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.12 }}' + '">'+row[17]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.12 }}' + '">'+row[19]+'</a>';
                 return url_link
             }
           },
@@ -441,7 +453,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.13 }}' + '">'+row[18]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.13 }}' + '">'+row[20]+'</a>';
                 return url_link
             }
           },
@@ -453,7 +465,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.14 }}' + '">'+row[19]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.14 }}' + '">'+row[21]+'</a>';
                 return url_link
             }
           },
@@ -465,7 +477,7 @@ function buildRegionSummary(data, divid) {
                 (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
                 (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
                 (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
-                url_link += '&jobstatus=' + '{{ jobstates.15 }}' + '">'+row[20]+'</a>';
+                url_link += '&jobstatus=' + '{{ jobstates.15 }}' + '">'+row[22]+'</a>';
                 return url_link
             }
           },
@@ -527,6 +539,14 @@ function buildQueueSummary(data, divid) {
             return '<a href = "{{ xurl }}resourcetype=' + row[5] + '">'+row[5]+'</a>'
         }
       },
+          {
+            sDefaultContent: "---",
+            className: "num",
+          },
+          {
+            sDefaultContent: "---",
+            className: "num",
+          },
       {
         sDefaultContent: "---",
         className: "num",
@@ -534,7 +554,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '">'+row[6]+'</a>';
+            url_link += '">'+row[8]+'</a>';
             return url_link
         }
       },
@@ -549,7 +569,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.0 }}' + '">'+row[8]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.0 }}' + '">'+row[10]+'</a>';
             return url_link
         }
       },
@@ -560,7 +580,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.1 }}' + '">'+row[9]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.1 }}' + '">'+row[11]+'</a>';
             return url_link
         }
       },
@@ -572,7 +592,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.2 }}' + '">'+row[10]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.2 }}' + '">'+row[12]+'</a>';
             return url_link
         }
       },
@@ -584,7 +604,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.3 }}' + '">'+row[11]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.3 }}' + '">'+row[13]+'</a>';
             return url_link
         }
       },
@@ -596,7 +616,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.4 }}' + '">'+row[12]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.4 }}' + '">'+row[14]+'</a>';
             return url_link
         }
       },
@@ -608,7 +628,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.5 }}' + '">'+row[13]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.5 }}' + '">'+row[15]+'</a>';
             return url_link
         }
       },
@@ -620,7 +640,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.6 }}' + '">'+row[14]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.6 }}' + '">'+row[16]+'</a>';
             return url_link
         }
       },
@@ -632,7 +652,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.7 }}' + '">'+row[15]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.7 }}' + '">'+row[17]+'</a>';
             return url_link
         }
       },
@@ -644,7 +664,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.8 }}' + '">'+row[16]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.8 }}' + '">'+row[18]+'</a>';
             return url_link
         }
       },
@@ -656,7 +676,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.9 }}' + '">'+row[17]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.9 }}' + '">'+row[19]+'</a>';
             return url_link
         }
       },
@@ -668,7 +688,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.10 }}' + '">'+row[18]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.10 }}' + '">'+row[20]+'</a>';
             return url_link
         }
       },
@@ -680,7 +700,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.11 }}' + '">'+row[19]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.11 }}' + '">'+row[21]+'</a>';
             return url_link
         }
       },
@@ -692,7 +712,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.12 }}' + '">'+row[20]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.12 }}' + '">'+row[22]+'</a>';
             return url_link
         }
       },
@@ -704,7 +724,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.13 }}' + '">'+row[21]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.13 }}' + '">'+row[23]+'</a>';
             return url_link
         }
       },
@@ -716,7 +736,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.14 }}' + '">'+row[22]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.14 }}' + '">'+row[24]+'</a>';
             return url_link
         }
       },
@@ -728,7 +748,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.15 }}' + '">'+row[23]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.15 }}' + '">'+row[25]+'</a>';
             return url_link
         }
       },
