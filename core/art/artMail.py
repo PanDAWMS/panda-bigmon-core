@@ -18,7 +18,8 @@ def textify(html):
     # Remove html tags and continuous whitespaces
     text_only = strip_tags(html)
     # Strip single spaces in the beginning of each line
-    return text_only.replace('\n ', '\n').strip()
+    text_only = text_only.replace('\n ', '\n').replace(';=', '=').strip()
+    return text_only
 
 
 def send_mail_art(template, subject, summary, recipient):
