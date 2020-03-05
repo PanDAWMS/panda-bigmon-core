@@ -1083,6 +1083,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             extraQueryString += 'AND (corecount = 1 or corecount is NULL)'
                         except:
                             extraQueryString = '(corecount = 1 or corecount is NULL) '
+
+                    elif param == 'resourcetype' and request.session['requestParams'][param]:
+                        if '|' in request.session['requestParams'][param]:
+                            rtypes = request.session['requestParams'][param].split('|')
+                            query['resourcetype__in'] = rtypes
+                        else:
+                            query['resourcetype'] = request.session['requestParams'][param]
                     else:
                         if (param not in wildSearchFields):
                             query[param] = request.session['requestParams'][param]
