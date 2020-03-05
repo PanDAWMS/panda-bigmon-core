@@ -42,28 +42,6 @@
     <div class='section'>Worker node slot performance {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at <a href="{% url 'siteInfo' site %}">{{ site }}</a></div>
 {% endif %}
 
-{% if curStat %}
-    <table class="fresh-table">
-    <thead>
-    <tr>
-        <th colspan="12">Statistics of currently running jobs</th>
-    </tr>
-    <tr>
-        <td class="num">Number of running jobs</td>
-        <td class="num">Number of running slots</td>
-        <td class="num">Sum of min RAM count, GB</td>
-    </tr>
-    </thead>
-    <tbody>
-    <tr>
-        <td class="num">{{ curStat.nrjobs | intcomma }}</td>
-        <td class="num">{{ curStat.ncores | intcomma }}</td>
-        <td class="num">{{ curStat.nminramcount | intcomma }}</td>
-    </tr>
-    </tbody>
-    </table>
-{% endif %}
-
 {% if wnPlotFailed %}
 
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
@@ -198,8 +176,8 @@
 {% for wn in summary %}
 <tr>
 <td> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </td>
-<td class="num">{{ wn.slotcount  }} </td>
-<td class="num">{{ wn.rcores  }} </td>
+<td class="num">{{ wn.slotcount }} </td>
+<td class="num">{{ wn.rcores }} </td>
 <td class="num"><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
 {% if state.name != 'assigned' and state.name != 'activated' %}
@@ -278,6 +256,7 @@ $(document).ready(function () {
 <th> WN </th>
 <th class="num"> nSlots </th>
 <th class="num"> nRunningCores </th>
+<th class="num"> Running min RAM count, GB</th>
 <th class="num"> nJobs </th>
 <th class="num"> defined </th>
 <th class="num"> waiting</th>
@@ -300,8 +279,9 @@ $(document).ready(function () {
 {% for wn in summary %}
 <tr>
 <td> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </td>
-<td class="num">{{ wn.slotcount  }} </td>
-<td class="num">{{ wn.rcores  }} </td>
+<td class="num">{{ wn.slotcount }} </td>
+<td class="num">{{ wn.rcores }} </td>
+<td class="num">{{ wn.rminramcount  }} </td>
 <td class="num"><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
 {% if state.name != 'assigned' and state.name != 'activated' %}

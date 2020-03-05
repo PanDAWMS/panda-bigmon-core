@@ -5765,11 +5765,12 @@ def wnSummary(query):
     summary = []
     querynotime = query
     cores_running = Sum('actualcorecount', filter=Q(jobstatus__exact='running'))
+    minramcount_running = Sum('minramcount', filter=Q(jobstatus__exact='running'))
     # del querynotime['modificationtime__range']    ### creates inconsistency with job lists. Stick to advertised 12hrs
     summary.extend(Jobsactive4.objects.filter(**querynotime).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).annotate(rcores=cores_running).order_by('modificationhost', 'jobstatus'))
+        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
     summary.extend(Jobsarchived4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).annotate(rcores=cores_running).order_by('modificationhost', 'jobstatus'))
+        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
     return summary
 
 
@@ -5827,6 +5828,7 @@ def wnInfo(request, site, wnname='all'):
     totstates = {}
     totjobs = 0
     totrcores = 0
+    totrminramcount = 0
     wns = {}
     wnPlotFailed = {}
     wnPlotFinished = {}
@@ -5836,6 +5838,7 @@ def wnInfo(request, site, wnname='all'):
         jobstatus = rec['jobstatus']
         count = rec['jobstatus__count']
         rcores = rec['rcores'] if rec['rcores'] is not None else 0
+        rminramcount = rec['rminramcount'] if rec['rminramcount'] is not None else 0
         wnfull = rec['modificationhost']
         wnsplit = wnfull.split('@')
         if len(wnsplit) == 2:
@@ -5859,12 +5862,14 @@ def wnInfo(request, site, wnname='all'):
             totstates[jobstatus] = 0
         totstates[jobstatus] += count
         totrcores += rcores
+        totrminramcount += rminramcount
         if wn not in wns:
             wns[wn] = {}
             wns[wn]['name'] = wn
             wns[wn]['count'] = 0
             wns[wn]['states'] = {}
             wns[wn]['rcores'] = 0
+            wns[wn]['rminramcount'] = 0
             wns[wn]['slotd'] = {}
             wns[wn]['statelist'] = []
             for state in sitestatelist:
@@ -5875,6 +5880,7 @@ def wnInfo(request, site, wnname='all'):
         wns[wn]['slotd'][slot] += 1
         wns[wn]['count'] += count
         wns[wn]['rcores'] += rcores
+        wns[wn]['rminramcount'] += rminramcount
         if jobstatus not in wns[wn]['states']:
             wns[wn]['states'][jobstatus] = {}
             wns[wn]['states'][jobstatus]['count'] = 0
@@ -5901,6 +5907,7 @@ def wnInfo(request, site, wnname='all'):
     allwns['slotcount'] = sum([len(row['slotd']) for key, row in wns.items()])
     allwns['count'] = totjobs
     allwns['rcores'] = totrcores
+    allwns['rminramcount'] = round(totrminramcount*1.0/1000, 2)
     allwns['states'] = totstates
     allwns['statelist'] = []
     for state in sitestatelist:
@@ -5943,6 +5950,7 @@ def wnInfo(request, site, wnname='all'):
     for wn in wnkeys:
         outlier = ''
         wns[wn]['slotcount'] = len(wns[wn]['slotd'])
+        wns[wn]['rminramcount'] = round(wns[wn]['rminramcount']*1.0/1000, 2)
         wns[wn]['pctfail'] = 0
         for state in sitestatelist:
             wns[wn]['statelist'].append(wns[wn]['states'][state])
@@ -5972,9 +5980,6 @@ def wnInfo(request, site, wnname='all'):
     for k in kys:
         wnPlotFinishedL.append([k, wnPlotFinished[k]])
 
-    # get overall statistics of running jobs
-    rjs_dict = get_running_jobs_stats([site])[site]
-
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
         xurl = extensibleURL(request)
@@ -5992,7 +5997,6 @@ def wnInfo(request, site, wnname='all'):
             'summary': fullsummary,
             'wnPlotFailed': wnPlotFailedL,
             'wnPlotFinished': wnPlotFinishedL,
-            'curStat': rjs_dict,
             'hours': hours,
             'errthreshold': errthreshold,
             'warning': warning,
