@@ -5764,11 +5764,12 @@ def wgSummary(query):
 def wnSummary(query):
     summary = []
     querynotime = query
+    cores_running = Sum('actualcorecount', filter=Q(jobstatus__exact='running'))
     # del querynotime['modificationtime__range']    ### creates inconsistency with job lists. Stick to advertised 12hrs
     summary.extend(Jobsactive4.objects.filter(**querynotime).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('modificationhost', 'jobstatus'))
+        Count('jobstatus')).annotate(rcores=cores_running).order_by('modificationhost', 'jobstatus'))
     summary.extend(Jobsarchived4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('modificationhost', 'jobstatus'))
+        Count('jobstatus')).annotate(rcores=cores_running).order_by('modificationhost', 'jobstatus'))
     return summary
 
 
@@ -5825,6 +5826,7 @@ def wnInfo(request, site, wnname='all'):
     wnsummarydata = wnSummary(query)
     totstates = {}
     totjobs = 0
+    totrcores = 0
     wns = {}
     wnPlotFailed = {}
     wnPlotFinished = {}
@@ -5833,6 +5835,7 @@ def wnInfo(request, site, wnname='all'):
     for rec in wnsummarydata:
         jobstatus = rec['jobstatus']
         count = rec['jobstatus__count']
+        rcores = rec['rcores'] if rec['rcores'] is not None else 0
         wnfull = rec['modificationhost']
         wnsplit = wnfull.split('@')
         if len(wnsplit) == 2:
@@ -5855,11 +5858,13 @@ def wnInfo(request, site, wnname='all'):
         if jobstatus not in totstates:
             totstates[jobstatus] = 0
         totstates[jobstatus] += count
+        totrcores += rcores
         if wn not in wns:
             wns[wn] = {}
             wns[wn]['name'] = wn
             wns[wn]['count'] = 0
             wns[wn]['states'] = {}
+            wns[wn]['rcores'] = 0
             wns[wn]['slotd'] = {}
             wns[wn]['statelist'] = []
             for state in sitestatelist:
@@ -5869,6 +5874,7 @@ def wnInfo(request, site, wnname='all'):
         if slot not in wns[wn]['slotd']: wns[wn]['slotd'][slot] = 0
         wns[wn]['slotd'][slot] += 1
         wns[wn]['count'] += count
+        wns[wn]['rcores'] += rcores
         if jobstatus not in wns[wn]['states']:
             wns[wn]['states'][jobstatus] = {}
             wns[wn]['states'][jobstatus]['count'] = 0
@@ -5894,6 +5900,7 @@ def wnInfo(request, site, wnname='all'):
     allwns['name'] = 'All'
     allwns['slotcount'] = sum([len(row['slotd']) for key, row in wns.items()])
     allwns['count'] = totjobs
+    allwns['rcores'] = totrcores
     allwns['states'] = totstates
     allwns['statelist'] = []
     for state in sitestatelist:
