@@ -1,6 +1,6 @@
 {% extends "_base_core.html" %}
 {% load static %}
-
+{% load humanize %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA WN {{ wnname }}@{{ site }} {% endblock %}
 {% block subtitle %}PanDA WN slot performance {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at {{ site }}{{ viewParams.selection|safe }}
 {% endblock %}
@@ -42,7 +42,27 @@
     <div class='section'>Worker node slot performance {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at <a href="{% url 'siteInfo' site %}">{{ site }}</a></div>
 {% endif %}
 
-{% if requestParams.sortby %} <p><b>Sorted by: {{ requestParams.sortby }} </b><p> {% endif %}
+{% if curStat %}
+    <table class="fresh-table">
+    <thead>
+    <tr>
+        <th colspan="12">Statistics of currently running jobs</th>
+    </tr>
+    <tr>
+        <td class="num">Number of running jobs</td>
+        <td class="num">Number of running slots</td>
+        <td class="num">Sum of min RAM count, GB</td>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td class="num">{{ curStat.nrjobs | intcomma }}</td>
+        <td class="num">{{ curStat.ncores | intcomma }}</td>
+        <td class="num">{{ curStat.nminramcount | intcomma }}</td>
+    </tr>
+    </tbody>
+    </table>
+{% endif %}
 
 {% if wnPlotFailed %}
 

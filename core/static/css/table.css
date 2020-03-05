@@ -575,6 +575,13 @@ div.rotate {
     color: #272727;
 }
 
+.fresh-table thead td {
+    background-color: #f1f1f1;
+    color: #272727;
+    font-weight: bold;
+    border: solid 1px #d3deed;
+}
+
 .fresh-table tbody td {
     border: solid 1px #e9e9e9;
 }

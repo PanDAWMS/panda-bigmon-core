@@ -106,6 +106,7 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.bpuser import get_relevant_links
+from core.libs.site import get_running_jobs_stats
 from django.template.context_processors import csrf
 
 @register.filter(takes_context=True)
@@ -5770,6 +5771,7 @@ def wnSummary(query):
         Count('jobstatus')).order_by('modificationhost', 'jobstatus'))
     return summary
 
+
 @login_customrequired
 def wnInfo(request, site, wnname='all'):
     """ Give worker node level breakdown of site activity. Spot hot nodes, error prone nodes. """
@@ -5962,6 +5964,9 @@ def wnInfo(request, site, wnname='all'):
     for k in kys:
         wnPlotFinishedL.append([k, wnPlotFinished[k]])
 
+    # get overall statistics of running jobs
+    rjs_dict = get_running_jobs_stats([site])[site]
+
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
         xurl = extensibleURL(request)
@@ -5979,6 +5984,7 @@ def wnInfo(request, site, wnname='all'):
             'summary': fullsummary,
             'wnPlotFailed': wnPlotFailedL,
             'wnPlotFinished': wnPlotFinishedL,
+            'curStat': rjs_dict,
             'hours': hours,
             'errthreshold': errthreshold,
             'warning': warning,
