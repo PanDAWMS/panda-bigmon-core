@@ -393,7 +393,7 @@ div.rotate {
     border-right: none;
     border-bottom: 1px solid white;
     border-top: 1px solid white;
-    text-align: center;
+    text-align: left;
     padding: 0.25rem 0.3rem 0.25rem 0.3rem;
     font-size: 0.875rem;
 }

@@ -5892,6 +5892,7 @@ def wnInfo(request, site, wnname='all'):
     allstated['finished'] = allstated['failed'] = 0
     allwns = {}
     allwns['name'] = 'All'
+    allwns['slotcount'] = sum([len(row['slotd']) for key, row in wns.items()])
     allwns['count'] = totjobs
     allwns['states'] = totstates
     allwns['statelist'] = []
