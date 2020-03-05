@@ -16,8 +16,11 @@
 <table class="minimalistic-table">
   <thead>
     <tr>
-        <th><h1><a href="?&metric=loss">Order by lost walltime</a></h1></th>
-        <th><h1><a href="?&metric=fails">Order by failures counts</a></h1></th>
+        <th><h1><a href="?&metric=loss">
+            {% if not metric or metric == 'loss'%}<u>{% endif %}Order by lost walltime{% if not metric or metric == 'loss'%}</u>{% endif %}</a></h1></th>
+        <th><h1><a href="?&metric=fails">
+            {% if metric == 'fails'%}<u>{% endif %}Order by failures counts{% if metric == 'fails'%}</u>{% endif %}
+            </a></h1></th>
         <th></th>
     </tr>
 
@@ -67,7 +70,7 @@
     <a href="{{ problem.url }}" target="_blank">
     <div class="card tile warning-light" style="background-color: {{ problem.color }};">
         <div class="card-divider">
-            <b>Lost {{ problem.impactloss }} years / {{ problem.impactfails }} jobs failed</b>
+            <b><b>{{ problem.name }}:</b> lost {{ problem.impactloss }} years / {{ problem.impactfails }} jobs failed</b>
 
         </div>
         <div class="card-section">
