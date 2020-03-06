@@ -6,67 +6,84 @@
 {% block title %}PanDA monitor{% endblock %}
 {% block subtitle %} <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
 {% block extra_css %}
-  <link rel="stylesheet" type="text/css" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
-  <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
-  <style type="text/css">
-   #harvesterworkers_wrapper .row {
-       max-width: 99%;
-   }
-   #harvesterworkerstats_wrapper .row {
-       max-width: 99%;
-   }
-   #harvesterdialogs_wrapper .row {
-       max-width: 99%;
-   }
-   #harvesterinstances_wrapper .row {
-       max-width: 99%;
-   }
-   #workerList p {
-       display: none;
-   }
-   #loadMore {
-       color: #0a47ff;
-       cursor: pointer;
-   }
-   #loadMore:hover {
-       color: black;
-   }
-   #loadAll {
-       color: #0a47ff;
-       cursor: pointer;
-   }
-   #loadAll:hover {
-       color: black;
-   }
-   #reloadDialogs {
-       color: #0a47ff;
-       cursor: pointer;
-   }
-   #reloadDialogs:hover {
-       color: black;
-   }
-   #reloadWorkers {
-       color: #0a47ff;
-       cursor: pointer;
-   }
-   #reloadWorkers:hover {
-       color: black;
-   }
-   #reloadWorkersList {
-       color: #0a47ff;
-       cursor: pointer;
-   }
-   #reloadWorkersList:hover {
-       color: black;
-   }
-   #reloadJobs {
-        color: #0a47ff;
-        cursor: pointer;
-   }
-   #reloadJobs:hover {
-        color: black;
-   }
-  </style>
+    <link rel="stylesheet" type="text/css"
+          href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
+    <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
+    <style type="text/css">
+        #harvesterworkers_wrapper .row {
+            max-width: 99%;
+        }
+
+        #harvesterworkerstats_wrapper .row {
+            max-width: 99%;
+        }
+
+        #harvesterdialogs_wrapper .row {
+            max-width: 99%;
+        }
+
+        #harvesterinstances_wrapper .row {
+            max-width: 99%;
+        }
+
+        #workerList p {
+            display: none;
+        }
+
+        #loadMore {
+            color: #0a47ff;
+            cursor: pointer;
+        }
+
+        #loadMore:hover {
+            color: black;
+        }
+
+        #loadAll {
+            color: #0a47ff;
+            cursor: pointer;
+        }
+
+        #loadAll:hover {
+            color: black;
+        }
+
+        #reloadDialogs {
+            color: #0a47ff;
+            cursor: pointer;
+        }
+
+        #reloadDialogs:hover {
+            color: black;
+        }
+
+        #reloadWorkers {
+            color: #0a47ff;
+            cursor: pointer;
+        }
+
+        #reloadWorkers:hover {
+            color: black;
+        }
+
+        #reloadWorkersList {
+            color: #0a47ff;
+            cursor: pointer;
+        }
+
+        #reloadWorkersList:hover {
+            color: black;
+        }
+
+        #reloadJobs {
+            color: #0a47ff;
+            cursor: pointer;
+        }
+
+        #reloadJobs:hover {
+            color: black;
+        }
+    </style>
 {% endblock %}
 {% block extra_js %}
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
@@ -113,26 +130,29 @@
             {% endfor %}
             </tbody>
         </table>
-{#        <br/><br/>#}
-{#        <iframe src="https://es-atlas6.cern.ch/kibana/app/kibana::/dashboard/e776b290-8594-11e8-be57-2be8d64792c0?embed=true&_g=(refreshInterval%3A(display%3A'5%20seconds'%2Cpause%3A!f%2Csection%3A1%2Cvalue%3A5000)%2Ctime%3A(from%3Anow-24h%2Cmode%3Aquick%2Cto%3Anow))" height="900" width="100%"></iframe>#}
+        {#        <br/><br/>#}
+        {#        <iframe src="https://es-atlas6.cern.ch/kibana/app/kibana::/dashboard/e776b290-8594-11e8-be57-2be8d64792c0?embed=true&_g=(refreshInterval%3A(display%3A'5%20seconds'%2Cpause%3A!f%2Csection%3A1%2Cvalue%3A5000)%2Ctime%3A(from%3Anow-24h%2Cmode%3Aquick%2Cto%3Anow))" height="900" width="100%"></iframe>#}
         <br/><br/>
         <div class="callout warning">
-        Dear BigPanDA monitor users,<br><br>
+            Dear BigPanDA monitor users,<br><br>
 
-        We propose to participate in testing the <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:''),sort:!('@timestamp',desc))" target="_blank"> first prototype </a> (only CERN inside) of Elasticsearch+Kibana engine for harvester monitoring. <br>
-        Data in Elasticsearch is synchronized with PanDA DB every minute. Timestamp field = submittime field. <br>
-        If you find an error or you have comments or suggestions, please inform us to the following address:<br>
-        atlas-adc-pandamon-support@cern.ch<br><br>
+            We propose to participate in testing the <a
+                href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:''),sort:!('@timestamp',desc))"
+                target="_blank"> first prototype </a> (only CERN inside) of Elasticsearch+Kibana engine for harvester
+            monitoring. <br>
+            Data in Elasticsearch is synchronized with PanDA DB every minute. Timestamp field = submittime field. <br>
+            If you find an error or you have comments or suggestions, please inform us to the following address:<br>
+            atlas-adc-pandamon-support@cern.ch<br><br>
         </div>
 
         <script>
             $(document).ready(function () {
-{#                $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');#}
+                {#                $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');#}
                 $('#harvesterinstances').dataTable({"iDisplayLength": 100, responsive: true,});
-{#                $('#harvesterinstances').addClass("data-table bluelinks")#}
+                {#                $('#harvesterinstances').addClass("data-table bluelinks")#}
             });
         </script>
-        {% elif  type == 'workers' %}
+    {% elif type == 'workers' %}
         <table>
             {% for name,value in generalInstanseInfo.items|dictsort:"0.lower" %}
                 <tr>
@@ -140,41 +160,54 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td>
                             {% for n,v in value.items %}
-                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'status: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> <span class='{{ n }} item'>{{ n }}</span></a>
+                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'status: &quot;{{ n }}&quot;%20AND%20{% if instance != 0 %}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))"
+                                   target="_blank"> <span class='{{ n }} item'>{{ n }}</span></a>
                                 <a href="{{ xurl }}status={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
                         </td>
                     {% elif name ==  'Computingsites' %}
                         <td><b>{{ name }} ({{ value|length }})</b></td>
-                        <td><div class="comment more">
-                            {% for n,v in value.items %}
-                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'computingsite: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}computingsite={{ n|safe }}">({{ v }})</a>
-                            {% endfor %}
-                        </div>
+                        <td>
+                            <div class="comment more">
+                                {% for n,v in value.items %}
+                                    <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'computingsite: &quot;{{ n }}&quot;%20AND%20{% if instance != 0 %}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))"
+                                       target="_blank"> {{ n }}</a>
+                                    <a href="{{ xurl }}computingsite={{ n|safe }}">({{ v }})</a>
+                                {% endfor %}
+                            </div>
                         </td>
                     {% elif name ==  'Resourcetypes' %}
                         <td><b>{{ name }} ({{ value|length }})</b></td>
-                        <td><div class="comment more">
-                            {% for n,v in value.items %}
-                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'resourcetype: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}resourcetype={{ n|safe }}">({{ v }})</a>
-                            {% endfor %}
-                        </div>
+                        <td>
+                            <div class="comment more">
+                                {% for n,v in value.items %}
+                                    <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'resourcetype: &quot;{{ n }}&quot;%20AND%20{% if instance != 0 %}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))"
+                                       target="_blank"> {{ n }}</a>
+                                    <a href="{{ xurl }}resourcetype={{ n|safe }}">({{ v }})</a>
+                                {% endfor %}
+                            </div>
                         </td>
                     {% elif name ==  'Computingelements' %}
                         <td><b>{{ name }} ({{ value|length }})</b></td>
-                        <td><div class="comment more">
-                            {% for n,v in value.items %}
-                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'computingelement: &quot;{{ n }}&quot;%20AND%20{% if instance != 0%}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}computingelement={{ n|safe }}">({{ v }})</a>
-                            {% endfor %}
-                        </div>
+                        <td>
+                            <div class="comment more">
+                                {% for n,v in value.items %}
+                                    <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'computingelement: &quot;{{ n }}&quot;%20AND%20{% if instance != 0 %}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))"
+                                       target="_blank"> {{ n }}</a>
+                                    <a href="{{ xurl }}computingelement={{ n|safe }}">({{ v }})</a>
+                                {% endfor %}
+                            </div>
                         </td>
                     {% elif name ==  'Harvesters' %}
                         <td><b>{{ name }} ({{ value|length }})</b></td>
-                        <td><div class="comment more">
-                            {% for n,v in value.items %}
-                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'harvesterid: &quot;{{ n }}&quot;%20AND%20computingsite:&quot;{{ computingsite|safe }}&quot;'),sort:!('@timestamp',desc))" target="_blank"> {{ n }}</a> <a href="{{ xurl }}instance={{ n|safe }}">({{ v }})</a>
-                            {% endfor %}
-                        </div>
+                        <td>
+                            <div class="comment more">
+                                {% for n,v in value.items %}
+                                    <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'harvesterid: &quot;{{ n }}&quot;%20AND%20computingsite:&quot;{{ computingsite|safe }}&quot;'),sort:!('@timestamp',desc))"
+                                       target="_blank"> {{ n }}</a>
+                                    <a href="{{ xurl }}instance={{ n|safe }}">({{ v }})</a>
+                                {% endfor %}
+                            </div>
                         </td>
                     {% elif name ==  'wrkpandaids' %}
                         <td><b>WorkerID (jobs)</b></td>
@@ -191,23 +224,25 @@
                             <div id="loadAll" style="display: inline">Load all</div>
                         </td>
                     {% elif name ==  'Jobscount' %}
-                         <td><b>Jobs count</b></td>
-                         <td>
+                        <td><b>Jobs count</b></td>
+                        <td>
                             <a href="{% url 'jobList' %}?harvesterinstance={{ instance|safe }}">{{ value }}</a>
                         </td>
                     {% elif name ==  'JobsStatuses' %}
                         <td><b>Jobs statuses</b></td>
-                         <td>
-                         {% for jobstatus, jobstatuscount in value.items %}
-                             <span class='{{ jobstatus }}  item'>{{ jobstatus }} </span> <a href="{% url 'jobList' %}?{% if harvesterid %}harvesterinstance={{ harvesterid }}{% endif %}{% if workerid %}&workerid={{ workerid }}{% endif %}{% if jobstatus %}&jobstatus={{ jobstatus }}{% endif %}"> ({{ jobstatuscount }})</a>
-                         {% endfor %}
+                        <td>
+                            {% for jobstatus, jobstatuscount in value.items %}
+                                <span class='{{ jobstatus }}  item'>{{ jobstatus }} </span>
+                                <a href="{% url 'jobList' %}?{% if harvesterid %}harvesterinstance={{ harvesterid }}{% endif %}{% if workerid %}&workerid={{ workerid }}{% endif %}{% if jobstatus %}&jobstatus={{ jobstatus }}{% endif %}">
+                                    ({{ jobstatuscount }})</a>
+                            {% endfor %}
                         </td>
                     {% elif name ==  'JobsSubStatuses' %}
                         <td><b>Jobs substatuses</b></td>
-                         <td>
-                         {% for jobsubstatus, jobsubtatuscount in value.items %}
-                            {{ jobsubstatus }} ({{jobsubtatuscount}})
-                         {% endfor %}
+                        <td>
+                            {% for jobsubstatus, jobsubtatuscount in value.items %}
+                                {{ jobsubstatus }} ({{ jobsubtatuscount }})
+                            {% endfor %}
                         </td>
                     {% else %}
                         <td><b>{{ name }}</b></td>
@@ -216,9 +251,9 @@
                 </tr>
             {% endfor %}
         </table>
-         {% if instance or computingsite %}
-{#        <a href="javascript:ReverseDisplay('harvesterdialogsdiv','harvesterdialogslink','harvesterdialogs')"#}
-{#           id="harvesterdialogslink" class="bluebutton">Show dialog messages / worker stats / jobs</a> <br/><br/>#}
+        {% if instance or computingsite %}
+            {#        <a href="javascript:ReverseDisplay('harvesterdialogsdiv','harvesterdialogslink','harvesterdialogs')"#}
+            {#           id="harvesterdialogslink" class="bluebutton">Show dialog messages / worker stats / jobs</a> <br/><br/>#}
         {% endif %}
         <hr/>
         <div id="harvesterinfodiv">
@@ -306,9 +341,9 @@
                         </caption>
                         <thead>
                         {% if instance == 0 %}
-                        <th>Harvester</th>
+                            <th>Harvester</th>
                         {% else %}
-                        <th>Computing site</th>
+                            <th>Computing site</th>
                         {% endif %}
                         <th>Resource type</th>
                         <th>Status</th>
@@ -357,11 +392,11 @@
                     </table>
 
                 </div>
-                </div>
+            </div>
         </div>
-        {% if instance or computingsite%}
-        <a href="javascript:ReverseDisplay('harvesterplotsdiv','harvesterplotslink','harvesterplots')"
-           id="harvesterplotslink" class="bluebutton" style="display: none;">Show plots [DEV]</a>
+        {% if instance or computingsite %}
+            <a href="javascript:ReverseDisplay('harvesterplotsdiv','harvesterplotslink','harvesterplots')"
+               id="harvesterplotslink" class="bluebutton" style="display: none;">Show plots [DEV]</a>
         {% endif %}
         <div id="harvesterplotsdiv" style="display: none">
             <div id="plotstabs">
@@ -370,7 +405,7 @@
                 </ul>
                 <div id="tabs-1">
                     {% if instance == 0 %}
-                          <a style="color: #0a47ff" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
+                        <a style="color: #0a47ff" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
 filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'09f5a610-6810-11e9-a744-833d910adbcf',key:computingsite.keyword,negate:!f,params:(query:{{ computingsite|safe }},type:phrase),
 type:phrase,value:{{ computingsite|safe }}),query:(match:(computingsite.keyword:(query:{{ computingsite|safe }},type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),
 panels:!((gridData:(h:3,i:'1',w:6,x:6,y:6),id:'44015690-843d-11e8-be57-2be8d64792c0',panelIndex:'1',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'2',w:6,x:0,y:3),
@@ -379,8 +414,9 @@ type:visualization,version:'6.2.4'),(gridData:(h:3,i:'4',w:7,x:5,y:0),id:a3b25e0
 (gridData:(h:3,i:'5',w:6,x:0,y:9),id:fbbecd90-843c-11e8-be57-2be8d64792c0,panelIndex:'5',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'6',w:6,x:0,y:6),
 id:a9207bf0-843d-11e8-a7e3-ffbb2f24f6b4,panelIndex:'6',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'7',w:5,x:0,y:0),id:'23173650-843f-11e8-a7e3-ffbb2f24f6b4',panelIndex:'7',type:visualization,version:'6.2.4'),
 (gridData:(h:3,i:'8',w:6,x:6,y:9),id:ed82b2a0-859f-11e8-be57-2be8d64792c0,panelIndex:'8',type:visualization,version:'6.2.4')),
-query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashboard',viewMode:view)" target="_blank">Link (es-atlas.cern.ch)</a> <br/><br/>
-                   <iframe src="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?embed=true&_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
+query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashboard',viewMode:view)" target="_blank">Link
+                            (es-atlas.cern.ch)</a> <br/><br/>
+                        <iframe src="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?embed=true&_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
 filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'09f5a610-6810-11e9-a744-833d910adbcf',key:computingsite.keyword,negate:!f,params:(query:{{ computingsite|safe }},type:phrase),
 type:phrase,value:{{ computingsite|safe }}),query:(match:(computingsite.keyword:(query:{{ computingsite|safe }},type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),
 panels:!((gridData:(h:3,i:'1',w:6,x:6,y:6),id:'44015690-843d-11e8-be57-2be8d64792c0',panelIndex:'1',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'2',w:6,x:0,y:3),
@@ -390,9 +426,9 @@ type:visualization,version:'6.2.4'),(gridData:(h:3,i:'4',w:7,x:5,y:0),id:a3b25e0
 id:a9207bf0-843d-11e8-a7e3-ffbb2f24f6b4,panelIndex:'6',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'7',w:5,x:0,y:0),id:'23173650-843f-11e8-a7e3-ffbb2f24f6b4',panelIndex:'7',type:visualization,version:'6.2.4'),
 (gridData:(h:3,i:'8',w:6,x:6,y:9),id:ed82b2a0-859f-11e8-be57-2be8d64792c0,panelIndex:'8',type:visualization,version:'6.2.4')),
 query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashboard',viewMode:view)"
-height="1000" width="100%"></iframe>
+                                height="1000" width="100%"></iframe>
                     {% else %}
-                   <a style="color: #0a47ff" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
+                        <a style="color: #0a47ff" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
 filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'09f5a610-6810-11e9-a744-833d910adbcf',key:harvesterid.keyword,negate:!f,params:(query:{{ instance|safe }},type:phrase),
 type:phrase,value:{{ instance|safe }}),query:(match:(harvesterid.keyword:(query:{{ instance|safe }},type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),
 panels:!((gridData:(h:3,i:'1',w:6,x:6,y:6),id:'44015690-843d-11e8-be57-2be8d64792c0',panelIndex:'1',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'2',w:6,x:0,y:3),
@@ -401,8 +437,9 @@ type:visualization,version:'6.2.4'),(gridData:(h:3,i:'4',w:7,x:5,y:0),id:a3b25e0
 (gridData:(h:3,i:'5',w:6,x:0,y:9),id:fbbecd90-843c-11e8-be57-2be8d64792c0,panelIndex:'5',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'6',w:6,x:0,y:6),
 id:a9207bf0-843d-11e8-a7e3-ffbb2f24f6b4,panelIndex:'6',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'7',w:5,x:0,y:0),id:'23173650-843f-11e8-a7e3-ffbb2f24f6b4',panelIndex:'7',type:visualization,version:'6.2.4'),
 (gridData:(h:3,i:'8',w:6,x:6,y:9),id:ed82b2a0-859f-11e8-be57-2be8d64792c0,panelIndex:'8',type:visualization,version:'6.2.4')),
-query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashboard',viewMode:view)" target="_blank">Link (es-atlas.cern.ch)</a> <br/><br/>
-                   <iframe src="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?embed=true&_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
+query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashboard',viewMode:view)" target="_blank">Link
+                            (es-atlas.cern.ch)</a> <br/><br/>
+                        <iframe src="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?embed=true&_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
 filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'09f5a610-6810-11e9-a744-833d910adbcf',key:harvesterid.keyword,negate:!f,params:(query:{{ instance|safe }},type:phrase),
 type:phrase,value:{{ instance|safe }}),query:(match:(harvesterid.keyword:(query:{{ instance|safe }},type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),
 panels:!((gridData:(h:3,i:'1',w:6,x:6,y:6),id:'44015690-843d-11e8-be57-2be8d64792c0',panelIndex:'1',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'2',w:6,x:0,y:3),
@@ -412,14 +449,13 @@ type:visualization,version:'6.2.4'),(gridData:(h:3,i:'4',w:7,x:5,y:0),id:a3b25e0
 id:a9207bf0-843d-11e8-a7e3-ffbb2f24f6b4,panelIndex:'6',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'7',w:5,x:0,y:0),id:'23173650-843f-11e8-a7e3-ffbb2f24f6b4',panelIndex:'7',type:visualization,version:'6.2.4'),
 (gridData:(h:3,i:'8',w:6,x:6,y:9),id:ed82b2a0-859f-11e8-be57-2be8d64792c0,panelIndex:'8',type:visualization,version:'6.2.4')),
 query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashboard',viewMode:view)"
-height="1000" width="100%"></iframe>
-                  {% endif %}
+                                height="1000" width="100%"></iframe>
+                    {% endif %}
                 </div>
             </div>
         </div>
         <script>
             $(document).ready(function () {
-{#                $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');#}
                 $("#tabs").tabs();
                 $("#plotstabs").tabs();
                 var items = 100
@@ -438,10 +474,11 @@ height="1000" width="100%"></iframe>
                     var number = $('#numberD').val();
                     var instance = "{{ instance|safe }}";
                     var computingsite = "{{ computingsite|safe }}";
-                    if (instance!="0") {
-                    var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&dialogs&limit=" + number
+                    if (instance != "0") {
+                        var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&dialogs&limit=" + number
+                    } else {
+                        var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&instancelist={{ instancelist|safe }}&dialogs&limit=" + number
                     }
-                    else {var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&instancelist={{ instancelist|safe }}&dialogs&limit=" + number}
                     $('#harvesterdialogs').DataTable().ajax.url(url).load();
                     {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
                 });
@@ -449,10 +486,11 @@ height="1000" width="100%"></iframe>
                     var number = $('#numberW').val();
                     var instance = "{{ instance|safe }}";
                     var computingsite = "{{ computingsite|safe }}";
-                    if (instance!="0") {
-                    var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&workersstats&limit=" + number
+                    if (instance != "0") {
+                        var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&workersstats&limit=" + number
+                    } else {
+                        var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&workersstats&limit=" + number
                     }
-                    else {var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&workersstats&limit=" + number}
                     $('#harvesterworkerstats').DataTable().ajax.url(url).load();
                     {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
                 });
@@ -460,15 +498,20 @@ height="1000" width="100%"></iframe>
                     var number = $('#numberJ').val();
                     var instance = "{{ instance|safe }}";
                     var computingsite = "{{ computingsite|safe }}";
-                    var urlN = "{% url 'harvesters' %}{{ url|safe }}&pandaids&limit=" + number;
-                    var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&pandaids&limit=" + number
+                    var url_string = "{{ url|safe }}";
+                    if (url_string.includes("pandaid"))
+                    {
+                       var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&pandaids&limit=" + number
+                    } else {
+                       var url = "{% url 'harvesters' %}{{ url|safe }}&pandaids&limit=" + number;
+                    }
 
-                    $('#harvesterjobs').DataTable().ajax.url(urlN).load();
+                    $('#harvesterjobs').DataTable().ajax.url(url).load();
                     {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
                 });
                 $('#reloadWorkersList').click(function () {
                     var number = $('#numberWL').val();
-                    var key = getRandomInt(100000000,900000000)
+                    var key = getRandomInt(100000000, 900000000)
                     var url = "{% url 'workers' %}{{url|safe}}&dt&display_limit_workers=" + number + "&key=" + key
                     $('#harvesterworkers').DataTable().ajax.url(url).load();
                     {#            $('#harvesterdialogs').DataTable().ajax.reload();#}
@@ -482,15 +525,8 @@ height="1000" width="100%"></iframe>
 
             function workersTable() {
 
-                {#var instance = "{{ instance|safe}}";#}
-                {#    if (instance!="0") {#}
-                {#        dt = "computingsite"#}
-                {#    } else  {#}
-                {#        dt = "harvesterid"#}
-                {#    }#}
-
                 $('#harvesterworkers').dataTable({
-                    "order": [[ 9, "desc" ]],
+                    "order": [[9, "desc"]],
                     "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
                     "paging": true,
                     "scrollX": true,
@@ -500,10 +536,10 @@ height="1000" width="100%"></iframe>
                         "url": "{% url 'workers' %}{{url|safe}}&dt&display_limit_workers=1000",
                         "dataSrc": ''
                     },
-                        columnDefs: [ {
-                        targets: [2,9,10,11],
-                        render: $.fn.dataTable.render.moment( 'YYYY-MM-DDTHH:mm:ss','YYYY-MM-DD HH:mm:ss')
-                        } ],
+                    columnDefs: [{
+                        targets: [2, 9, 10, 11],
+                        render: $.fn.dataTable.render.moment('YYYY-MM-DDTHH:mm:ss', 'YYYY-MM-DD HH:mm:ss')
+                    }],
                     "aoColumns": [
                         {
                             data: "workerid",
@@ -511,18 +547,16 @@ height="1000" width="100%"></iframe>
                             "render": function (data, type, full, meta) {
                                 if (type === "sort" || type === 'type') {
                                     return data;
-                                }
-                                else {
-                                    if (full['njobs']!=null) {
-                                        if("harvesterid" in full) {
-                                        return '' +'<a href="{% url 'harvesterWorkerInfo' %}?harvesterid='+ full['harvesterid'] +'&workerid='+full['workerid']+'">'+full['workerid']+'</a>'
+                                } else {
+                                    if (full['njobs'] != null) {
+                                        if ("harvesterid" in full) {
+                                            return '' + '<a href="{% url 'harvesterWorkerInfo' %}?harvesterid=' + full['harvesterid'] + '&workerid=' + full['workerid'] + '">' + full['workerid'] + '</a>'
                                             {#+' <a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid'] + '">' + ' (' + full['njobs'] + ')' + '</a>'#}
                                         } else {
-                                        return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">'
+                                            return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite=' + full['computingsite'] + '&workerid=' + full['workerid'] + '">'
                                         }
-                                    }
-                                    else {
-                                        return '' + '<a href="{% url 'harvesterWorkerInfo' %}?harvesterid='+ full['harvesterid'] +'&workerid='+full['workerid']+'">'+full['workerid']+'</a>'
+                                    } else {
+                                        return '' + '<a href="{% url 'harvesterWorkerInfo' %}?harvesterid=' + full['harvesterid'] + '&workerid=' + full['workerid'] + '">' + full['workerid'] + '</a>'
                                     }
                                 }
                             }
@@ -533,17 +567,16 @@ height="1000" width="100%"></iframe>
                             "render": function (data, type, full, meta) {
                                 if (type === "sort" || type === 'type') {
                                     return data;
-                                }
-                                else {
-                                    if (full['njobs']!=null) {
-                                        if("harvesterid" in full){
-                                        return  '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid'] + '">' +  full['njobs']  + '</a>'
+                                } else {
+                                    if (full['njobs'] != null) {
+                                        if ("harvesterid" in full) {
+                                            return '<a href = "{% url 'jobList' %}?harvesterinstance=' + full['harvesterid'] + '&workerid=' + full['workerid'] + '">' + full['njobs'] + '</a>'
+                                        } else {
+                                            return '<a href = "{% url 'jobList' %}?computingsite=' + full['computingsite'] + '&workerid=' + full['workerid'] + '">' + full['njobs'] + '</a>'
                                         }
-                                        else {
-                                        return '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">' +  full['njobs'] +  '</a>'
-                                        }
+                                    } else {
+                                        return '-'
                                     }
-                                    else { return '-' }
                                 }
                             }
                         },
@@ -561,14 +594,12 @@ height="1000" width="100%"></iframe>
                             "render": function (data, type, full, meta) {
                                 if (type === "sort" || type === 'type') {
                                     return data;
-                                }
-                                else {
-                                        if("harvesterid" in full){
-                                        return '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid']  +'&batchid=' +full['batchid'] +'">' + full['batchid'] + '</a>'
-                                        }
-                                        else {
-                                        return  '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] +'&batchid=' +full['batchid'] +'">' + full['batchid'] + '</a>'
-                                        }
+                                } else {
+                                    if ("harvesterid" in full) {
+                                        return '<a href = "{% url 'jobList' %}?harvesterinstance=' + full['harvesterid'] + '&workerid=' + full['workerid'] + '&batchid=' + full['batchid'] + '">' + full['batchid'] + '</a>'
+                                    } else {
+                                        return '<a href = "{% url 'jobList' %}?computingsite=' + full['computingsite'] + '&workerid=' + full['workerid'] + '&batchid=' + full['batchid'] + '">' + full['batchid'] + '</a>'
+                                    }
 
                                 }
                             }
@@ -585,7 +616,7 @@ height="1000" width="100%"></iframe>
                             "data": "computingsite",
                             sDefaultContent: "",
                         },
-                                                {
+                        {
                             "data": "harvesterid",
                             sDefaultContent: "",
                         },
@@ -613,10 +644,9 @@ height="1000" width="100%"></iframe>
                             "data": "stdout",
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
-                                if (full['stdout'] == 0 || full['stdout']==null) {
+                                if (full['stdout'] == 0 || full['stdout'] == null) {
                                     return "-"
-                                }
-                                else {
+                                } else {
                                     return '<a href = "' + full['stdout'] + '" target="_blank">' + 'Link' + '</a>'
                                 }
                             }
@@ -625,10 +655,9 @@ height="1000" width="100%"></iframe>
                             "data": "stderr",
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
-                                if (full['stderr'] == 0  || full['stderr']==null) {
+                                if (full['stderr'] == 0 || full['stderr'] == null) {
                                     return "-"
-                                }
-                                else {
+                                } else {
                                     return '<a href = "' + full['stderr'] + '" target="_blank">' + 'Link' + '</a>'
                                 }
                             }
@@ -649,10 +678,9 @@ height="1000" width="100%"></iframe>
                             "data": "jdl",
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
-                                if (full['jdl'] == 0  || full['jdl']==null) {
+                                if (full['jdl'] == 0 || full['jdl'] == null) {
                                     return "-"
-                                }
-                                else {
+                                } else {
                                     return '<a href = "' + full['jdl'] + '" target="_blank">' + 'Link' + '</a>'
                                 }
                             }
@@ -686,12 +714,11 @@ height="1000" width="100%"></iframe>
             }
 
             function dialogsTable(number) {
-                var instance =  "{{ instance|safe}}";
-                if (instance!="0")
-                {
-                var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&dialogs&limit=" + number
+                var instance = "{{ instance|safe}}";
+                if (instance != "0") {
+                    var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&dialogs&limit=" + number
                 } else {
-                var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&instancelist={{ instancelist|safe }}&dialogs&limit=" + number
+                    var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&instancelist={{ instancelist|safe }}&dialogs&limit=" + number
                 }
                 $('#harvesterdialogs').dataTable({
                     "order": [[0, "desc"]],
@@ -725,14 +752,13 @@ height="1000" width="100%"></iframe>
                     ],
 
                     "createdRow": function (row, data, index) {
-                    if (data["messagelevel"] == 'ERROR') {
+                        if (data["messagelevel"] == 'ERROR') {
 
-                        $('td', row).eq(2).addClass('errspan');
-                    }
-                    else{
-                    $('td', row).eq(2).addClass(data["messagelevel"].toString().toLowerCase());
-                    }
-                    $('td', row).eq(3).addClass("textleft")
+                            $('td', row).eq(2).addClass('errspan');
+                        } else {
+                            $('td', row).eq(2).addClass(data["messagelevel"].toString().toLowerCase());
+                        }
+                        $('td', row).eq(3).addClass("textleft")
                     },
                     initComplete: function () {
                         this.api().columns([1, 2]).every(function () {
@@ -756,17 +782,23 @@ height="1000" width="100%"></iframe>
                     }
                 });
             }
+
             function jobsTable(number) {
                 var instance = "{{ instance|safe}}";
-                if (instance!="0")
-                {
-                var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&pandaids&limit=" + number;
-                dt = "computingsite"
+                if (instance != "0") {
+                    var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&pandaids&limit=" + number;
+                    dt = "computingsite"
                 } else {
-                var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&pandaids&limit=" + number
-                dt = "harvesterid"
+                    var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&pandaids&limit=" + number;
+                    dt = "harvesterid"
                 }
-                var urlN = "{% url 'harvesters' %}{{ url|safe }}&pandaids&limit=" + number;
+                var url_string = "{{ url|safe }}";
+                if (url_string.includes("pandaid")) {
+                    var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&pandaids&limit=" + number;
+                } else {
+                    var url = "{% url 'harvesters' %}{{ url|safe }}&pandaids&limit=" + number;
+                }
+
                 $('#harvesterjobs').dataTable({
                     "order": [[0, "desc"]],
                     "retrieve": true,
@@ -774,7 +806,7 @@ height="1000" width="100%"></iframe>
                     "bLengthChange": false,
                     "ajax": {
                         "processing": true,
-                        "url": urlN,
+                        "url": url,
                         "dataSrc": ''
                     },
                     "aoColumns": [
@@ -796,9 +828,8 @@ height="1000" width="100%"></iframe>
                             "render": function (data, type, full, meta) {
                                 if (type === "sort" || type === 'type') {
                                     return data;
-                                }
-                                else {
-                                    return '<a href = "{% url 'jobInfo' %}/'+full['pandaid']+'">' + full['pandaid'] + '</a>'
+                                } else {
+                                    return '<a href = "{% url 'jobInfo' %}/' + full['pandaid'] + '">' + full['pandaid'] + '</a>'
                                 }
                             }
                         },
@@ -817,15 +848,15 @@ height="1000" width="100%"></iframe>
                 });
 
             }
+
             function workerstatsTable(number) {
                 var instance = "{{ instance|safe}}";
-                if (instance!="0")
-                {
-                var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&workersstats&limit=" + number;
-                dt = "computingsite"
+                if (instance != "0") {
+                    var url = "{% url 'harvesters' %}?instance={{ instance|safe }}&workersstats&limit=" + number;
+                    dt = "computingsite"
                 } else {
-                var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&workersstats&limit=" + number
-                dt = "harvesterid"
+                    var url = "{% url 'harvesters' %}?computingsite={{ computingsite|safe }}&workersstats&limit=" + number
+                    dt = "harvesterid"
                 }
                 $('#harvesterworkerstats').dataTable({
                     "order": [[0, "desc"]],
@@ -838,11 +869,12 @@ height="1000" width="100%"></iframe>
                         "dataSrc": ''
                     },
                     "aoColumns": [
-                        {   "data": dt,
-                             sDefaultContent: "",
+                        {
+                            "data": dt,
+                            sDefaultContent: "",
                             {#"render": function (data, type, full, meta) {#}
                             {#    if (type === "sort" || type === 'filter') {#}
-                                    {#return $('#harvesterworkerstats').DataTable().cell(meta.row, meta.col).nodes().to$().find('input').val();#}
+                            {#return $('#harvesterworkerstats').DataTable().cell(meta.row, meta.col).nodes().to$().find('input').val();#}
                             {#        return data#}
                             {#    }#}
                             {#    else {#}
@@ -882,30 +914,31 @@ height="1000" width="100%"></iframe>
                     },
 
                     initComplete: function () {
-                        this.api().columns([0,1,2]).every(function () {
+                        this.api().columns([0, 1, 2]).every(function () {
                             var column = this;
 
-                                var select = $('<select><option value="">Show all</option></select>')
-                                    .appendTo($(column.footer()).empty())
-                                    .on('change', function () {
+                            var select = $('<select><option value="">Show all</option></select>')
+                                .appendTo($(column.footer()).empty())
+                                .on('change', function () {
 
-                                        var val = $.fn.dataTable.util.escapeRegex(
-                                            $(this).val()
-                                        );
+                                    var val = $.fn.dataTable.util.escapeRegex(
+                                        $(this).val()
+                                    );
 
-                                        column
-                                            .search(val ? '^' + val + '$' : '', true, false)
-                                            .draw(true);
-                                    });
-
-                                column.data().unique().sort().each(function (d, j) {
-                                    select.append('<option value="' + d + '">' + d + '</option>')
+                                    column
+                                        .search(val ? '^' + val + '$' : '', true, false)
+                                        .draw(true);
                                 });
+
+                            column.data().unique().sort().each(function (d, j) {
+                                select.append('<option value="' + d + '">' + d + '</option>')
+                            });
                         });
                     }
                 });
 
             }
+
             $("#tabs").on("tabsactivate", function (event, ui) {
                 switch (ui.newPanel.attr('id')) {
                     case 'tabs-2':
@@ -930,5 +963,5 @@ height="1000" width="100%"></iframe>
 {% endblock %}
 
 {% block helptext %}
-{% include "harvesterInfoHelp.html" with helptitle="Harvester list help" show="all" %}
+    {% include "harvesterInfoHelp.html" with helptitle="Harvester list help" show="all" %}
 {% endblock %}
