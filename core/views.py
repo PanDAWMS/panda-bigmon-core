@@ -106,6 +106,7 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.bpuser import get_relevant_links
+from core.libs.site import get_running_jobs_stats
 from django.template.context_processors import csrf
 
 @register.filter(takes_context=True)
@@ -1083,6 +1084,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             extraQueryString += 'AND (corecount = 1 or corecount is NULL)'
                         except:
                             extraQueryString = '(corecount = 1 or corecount is NULL) '
+
+                    elif param == 'resourcetype' and request.session['requestParams'][param]:
+                        if '|' in request.session['requestParams'][param]:
+                            rtypes = request.session['requestParams'][param].split('|')
+                            query['resourcetype__in'] = rtypes
+                        else:
+                            query['resourcetype'] = request.session['requestParams'][param]
                     else:
                         if (param not in wildSearchFields):
                             query[param] = request.session['requestParams'][param]
@@ -5756,12 +5764,15 @@ def wgSummary(query):
 def wnSummary(query):
     summary = []
     querynotime = query
+    cores_running = Sum('actualcorecount', filter=Q(jobstatus__exact='running'))
+    minramcount_running = Sum('minramcount', filter=Q(jobstatus__exact='running'))
     # del querynotime['modificationtime__range']    ### creates inconsistency with job lists. Stick to advertised 12hrs
     summary.extend(Jobsactive4.objects.filter(**querynotime).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('modificationhost', 'jobstatus'))
+        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
     summary.extend(Jobsarchived4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('modificationhost', 'jobstatus'))
+        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
     return summary
+
 
 @login_customrequired
 def wnInfo(request, site, wnname='all'):
@@ -5816,6 +5827,8 @@ def wnInfo(request, site, wnname='all'):
     wnsummarydata = wnSummary(query)
     totstates = {}
     totjobs = 0
+    totrcores = 0
+    totrminramcount = 0
     wns = {}
     wnPlotFailed = {}
     wnPlotFinished = {}
@@ -5824,6 +5837,8 @@ def wnInfo(request, site, wnname='all'):
     for rec in wnsummarydata:
         jobstatus = rec['jobstatus']
         count = rec['jobstatus__count']
+        rcores = rec['rcores'] if rec['rcores'] is not None else 0
+        rminramcount = rec['rminramcount'] if rec['rminramcount'] is not None else 0
         wnfull = rec['modificationhost']
         wnsplit = wnfull.split('@')
         if len(wnsplit) == 2:
@@ -5846,11 +5861,15 @@ def wnInfo(request, site, wnname='all'):
         if jobstatus not in totstates:
             totstates[jobstatus] = 0
         totstates[jobstatus] += count
+        totrcores += rcores
+        totrminramcount += rminramcount
         if wn not in wns:
             wns[wn] = {}
             wns[wn]['name'] = wn
             wns[wn]['count'] = 0
             wns[wn]['states'] = {}
+            wns[wn]['rcores'] = 0
+            wns[wn]['rminramcount'] = 0
             wns[wn]['slotd'] = {}
             wns[wn]['statelist'] = []
             for state in sitestatelist:
@@ -5860,6 +5879,8 @@ def wnInfo(request, site, wnname='all'):
         if slot not in wns[wn]['slotd']: wns[wn]['slotd'][slot] = 0
         wns[wn]['slotd'][slot] += 1
         wns[wn]['count'] += count
+        wns[wn]['rcores'] += rcores
+        wns[wn]['rminramcount'] += rminramcount
         if jobstatus not in wns[wn]['states']:
             wns[wn]['states'][jobstatus] = {}
             wns[wn]['states'][jobstatus]['count'] = 0
@@ -5883,7 +5904,10 @@ def wnInfo(request, site, wnname='all'):
     allstated['finished'] = allstated['failed'] = 0
     allwns = {}
     allwns['name'] = 'All'
+    allwns['slotcount'] = sum([len(row['slotd']) for key, row in wns.items()])
     allwns['count'] = totjobs
+    allwns['rcores'] = totrcores
+    allwns['rminramcount'] = round(totrminramcount*1.0/1000, 2)
     allwns['states'] = totstates
     allwns['statelist'] = []
     for state in sitestatelist:
@@ -5926,6 +5950,7 @@ def wnInfo(request, site, wnname='all'):
     for wn in wnkeys:
         outlier = ''
         wns[wn]['slotcount'] = len(wns[wn]['slotd'])
+        wns[wn]['rminramcount'] = round(wns[wn]['rminramcount']*1.0/1000, 2)
         wns[wn]['pctfail'] = 0
         for state in sitestatelist:
             wns[wn]['statelist'].append(wns[wn]['states'][state])

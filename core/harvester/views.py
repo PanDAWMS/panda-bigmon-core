@@ -117,6 +117,7 @@ def harvesterWorkList(request):
 
 @login_customrequired
 def harvesterWorkerInfo(request):
+
     valid, response = initRequest(request)
     harvesterid = None
     workerid = None
@@ -229,7 +230,8 @@ def harvesters(request):
                 stat['lastupdate'] = datetime.strptime(str(stat['lastupdate']), old_format).strftime(new_format)
                 harvsterworkerstats.append(stat)
             return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='application/json')
-        if ('pandaids' in request.session['requestParams']  and 'instance' in request.session['requestParams']) :
+        if ('pandaids' in request.session['requestParams'] and 'instance' in request.session['requestParams']):
+
             status = ''
             computingsite = ''
             workerid = ''
@@ -263,13 +265,14 @@ def harvesters(request):
                     request.session['requestParams']['days'])
                 hours = ''
                 defaulthours = int(request.session['requestParams']['days']) * 24
+
             harvsterpandaids = []
 
             limit = 100
             if 'limit' in request.session['requestParams']:
                 limit = request.session['requestParams']['limit']
             sqlqueryjobs = """
-            SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where  harvesterid like '%s' and workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
+            SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where harvesterid like '%s' and workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
             where harvesterid like '%s' %s %s %s %s %s %s %s)  ORDER by lastupdate DESC) WHERE  rownum <= %s
             """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
             computingelement, limit)
@@ -368,7 +371,7 @@ def harvesters(request):
         FROM
         atlas_panda.harvester_instances ii INNER JOIN 
         atlas_panda.harvester_workers ww on ww.harvesterid = ii.harvester_id {0} and ii.harvester_id like '{1}'
-        """.format(hours,str(instance))
+        """.format(hours, str(instance))
 
         cur = connection.cursor()
         cur.execute(sqlquery)
@@ -455,8 +458,8 @@ def harvesters(request):
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
 
         return render_to_response('harvesters.html', data, content_type='text/html')
-
     elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
+
         computingsite = request.session['requestParams']['computingsite']
         if ('workersstats' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']):
             harvsterworkerstats = []
@@ -528,7 +531,6 @@ def harvesters(request):
                     str(request.session['requestParams']['computingelement']))
             if 'workerid' in request.session['requestParams']:
                 workerid = """AND workerid in (%s)""" % (request.session['requestParams']['workerid'])
-
             if 'hours' in request.session['requestParams']:
                 defaulthours = request.session['requestParams']['hours']
                 hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) AS DATE)""" % (
@@ -642,12 +644,12 @@ def harvesters(request):
         request.session['viewParams']['selection'] =  'Harvester workers, last %s hours' %(defaulthours)
 
         data = {
-                'generalInstanseInfo':generalInstanseInfo,
-                'type':'workers',
-                'instance':0,
-                'instancelist':','.join(harvesteridDict.keys()),
-                'computingsite':computingsite,
-                'xurl':xurl,
+                'generalInstanseInfo': generalInstanseInfo,
+                'type': 'workers',
+                'instance': 0,
+                'instancelist': ','.join(harvesteridDict.keys()),
+                'computingsite': computingsite,
+                'xurl': xurl,
                 'request': request,
                 'requestParams': request.session['requestParams'],
                 'viewParams': request.session['viewParams'],
@@ -658,7 +660,9 @@ def harvesters(request):
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
         return render_to_response('harvesters.html', data, content_type='text/html')
     elif 'pandaid' in request.session['requestParams'] and 'computingsite' not in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
+
         pandaid = request.session['requestParams']['pandaid']
+
         workerid = ''
         days = ''
         defaulthours = 24
@@ -780,14 +784,18 @@ def harvesters(request):
             if harvester not in harvesteridDict.keys():
                 del pandaids[harvester]
 
-        generalInstanseInfo = {'JobID' : ' '.join(pandaids.values()), 'Harvesters' : harvesteridDict, 'Statuses' : statusesDict, 'Resourcetypes' : resourcetypesDict, 'Computingelements' : computingelementsDict, 'Computingsites': computingsitesDict}
+        generalInstanseInfo = {'JobID': ' '.join(pandaids.values()), 'Harvesters': harvesteridDict,
+                               'Statuses': statusesDict,
+                               'Resourcetypes':resourcetypesDict, 'Computingelements': computingelementsDict,
+                               'Computingsites': computingsitesDict}
 
-        request.session['viewParams']['selection'] = 'Harvester workers, last %s hours' %(defaulthours)
+        request.session['viewParams']['selection'] = 'Harvester workers, last %s hours' % defaulthours
 
         data = {
-                'generalInstanseInfo':generalInstanseInfo,
-                'type':'workers',
-                'xurl':xurl,
+                'generalInstanseInfo': generalInstanseInfo,
+                'type': 'workers',
+                'instance': ','.join(list(harvesteridDict.keys())),
+                'xurl': xurl,
                 'request': request,
                 'requestParams': request.session['requestParams'],
                 'viewParams': request.session['viewParams'],
