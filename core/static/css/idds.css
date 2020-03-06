@@ -1,0 +1,7 @@
+table.display tbody tr:nth-child(even):hover td{
+    background-color: #ffa !important;
+}
+
+table.display tbody tr:nth-child(odd):hover td {
+    background-color: #ffa !important;
+}

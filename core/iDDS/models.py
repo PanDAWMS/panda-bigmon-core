@@ -16,10 +16,32 @@ from django.contrib.auth.models import AbstractUser
 
 from django.db import models
 
+
+class Transforms(models.Model):
+    transform_id = models.BigIntegerField(primary_key=True, null=True, db_column='TRANSFORM_ID')
+    transform_type = models.SmallIntegerField(db_column='TRANSFORM_TYPE')
+    transform_tag = models.CharField(null=True, max_length=20, db_column='TRANSFORM_TAG')
+    priority = models.IntegerField(null=True, db_column='PRIORITY')
+    safe2get_output_from_input = models.BigIntegerField(null=True, db_column='SAFE2GET_OUTPUT_FROM_INPUT')
+    status = models.SmallIntegerField(db_column='STATUS')
+    substatus = models.SmallIntegerField(null=True, db_column='SUBSTATUS')
+    locking = models.SmallIntegerField(null=True, db_column='LOCKING')
+    retries = models.IntegerField(null=True, db_column='RETRIES')
+    created_at = models.DateTimeField(db_column='CREATED_AT')
+    updated_at = models.DateTimeField(db_column='UPDATED_AT')
+    started_at = models.DateTimeField(null=True,db_column='STARTED_AT')
+    finished_at = models.DateTimeField(null=True,db_column='FINISHED_AT')
+    expired_at = models.DateTimeField(null=True, db_column='EXPIRED_AT')
+    transform_metadata = models.TextField(db_column='TRANSFORM_METADATA', blank=True)
+    class Meta:
+        db_table = u'"ATLAS_IDDS"."TRANSFORMS"'
+        app_label = 'idds_intr'
+
+
 class Collections(models.Model):
     coll_id = models.BigIntegerField(primary_key=True, db_column='COLL_ID')
-    type = models.SmallIntegerField(null=True, db_column='TYPE')
-    transform_id = models.BigIntegerField(db_column='TRANSFORM_ID')
+    coll_type = models.SmallIntegerField(null=True, db_column='COLL_TYPE')
+    transform_id = models.ForeignKey(Transforms, related_name='transform_id', on_delete=models.DO_NOTHING, db_column='TRANSFORM_ID')
     relation_type = models.SmallIntegerField(null=True, db_column='RELATION_TYPE')
     scope = models.CharField(max_length=25, db_column='SCOPE')
     name = models.CharField(max_length=255, db_column='NAME')
@@ -118,31 +140,14 @@ class Requests(models.Model):
 
 
 
-class Transforms(models.Model):
-    transform_id = models.BigIntegerField(primary_key=True, null=True, db_column='TRANSFORM_ID')
-    transform_type = models.SmallIntegerField(db_column='TRANSFORM_TYPE')
-    transform_tag = models.CharField(null=True, max_length=20, db_column='TRANSFORM_TAG')
-    priority = models.IntegerField(null=True, db_column='PRIORITY')
-    safe2get_output_from_input = models.BigIntegerField(null=True, db_column='SAFE2GET_OUTPUT_FROM_INPUT')
-    status = models.SmallIntegerField(db_column='STATUS')
-    substatus = models.SmallIntegerField(null=True, db_column='SUBSTATUS')
-    locking = models.SmallIntegerField(null=True, db_column='LOCKING')
-    retries = models.IntegerField(null=True, db_column='RETRIES')
-    created_at = models.DateTimeField(db_column='CREATED_AT')
-    updated_at = models.DateTimeField(db_column='UPDATED_AT')
-    started_at = models.DateTimeField(null=True,db_column='STARTED_AT')
-    finished_at = models.DateTimeField(null=True,db_column='FINISHED_AT')
-    expired_at = models.DateTimeField(null=True, db_column='EXPIRED_AT')
-    transform_metadata = models.TextField(db_column='TRANSFORM_METADATA', blank=True)
-    class Meta:
-        db_table = u'"ATLAS_IDDS"."TRANSFORMS"'
-        app_label = 'idds_intr'
-
-
 class Req2transforms(models.Model):
-    request_id = models.ForeignKey(Requests, related_name='request_id', on_delete=models.DO_NOTHING)
-    transform_id = models.ForeignKey(Transforms, related_name='transform_id', on_delete=models.DO_NOTHING)
+    request_id_fk = models.ForeignKey(Requests, related_name='request_id', on_delete=models.DO_NOTHING, db_column='REQUEST_ID')
+    transform_id_fk = models.ForeignKey(Transforms, related_name='transform_id', on_delete=models.DO_NOTHING, db_column='TRANSFORM_ID')
     class Meta:
         db_table = u'"ATLAS_IDDS"."REQ2TRANSFORMS"'
         app_label = 'idds_intr'
+        unique_together = (('request_id_fk', 'transform_id_fk'),)
+        managed = False
+
+
 
