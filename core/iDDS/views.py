@@ -17,9 +17,12 @@ from django.http import JsonResponse
 from django.template.defaulttags import register
 from core.iDDS.models import Transforms, Collections, Requests, Req2transforms, Processings, Contents
 from django.db.models import Q, F
+from core.iDDS.useconstants import SubstitleValue
 
 CACHE_TIMEOUT = 20
 OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
+
+subtitleValue = SubstitleValue()
 
 
 @register.filter(takes_context=True)
@@ -31,6 +34,9 @@ def to_float(value):
 def main(request):
     #request.session['viewParams']['selection'] = '' + hashtag
     iDDSrequests = list(Requests.objects.using('idds_intr').values())
+
+    subtitleValue.replace('requests', iDDSrequests)
+
     data = {
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
@@ -57,6 +63,7 @@ def collections(request):
                                   'processed_files',
                                   'relation_type'
                                   ))
+    subtitleValue.replace('collections', iDDScollections)
     return JsonResponse({'data': iDDScollections}, encoder=DateEncoder, safe=False)
 
 
@@ -74,6 +81,7 @@ def iddsсontents(request):
                                   'status',
                                   'storage_id'
                                   ))
+    subtitleValue.replace('сontents', iDDSсontents)
     return JsonResponse({'data': iDDSсontents}, encoder=DateEncoder, safe=False)
 
 
@@ -91,6 +99,7 @@ def processings(request):
                                   'updated_at',
                                   'finished_at'
                                   ))
+    subtitleValue.replace('processings', iDDSprocessings)
     return JsonResponse({'data': iDDSprocessings}, encoder=DateEncoder, safe=False)
 
 
@@ -117,5 +126,5 @@ def transforms(request):
                                   'transform_id_fk__expired_at',
                                   'transform_id_fk__transform_metadata',
                                   ))
-
+    subtitleValue.replace('transforms', iDDStransforms)
     return JsonResponse({'data': iDDStransforms}, encoder=DateEncoder, safe=False)
