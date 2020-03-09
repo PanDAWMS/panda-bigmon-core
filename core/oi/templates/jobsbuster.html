@@ -5,6 +5,10 @@
 {% block page_title %}Jobs Buster{% endblock %}
 {% block subtitle %}Jobs Buster{{ viewParams.selection|safe }}{% endblock %}
 
+{% block time_window %}
+    End time window: <span class="time-window-range">{{ timerange.0 }}</span>
+    - <span class="time-window-range">{{ timerange.1 }}</span> UTC
+{% endblock %}
 
 {% block extra_css %}
 <!-- Load c3.css -->
