@@ -3,7 +3,7 @@
 {% load staticfiles %}
 {% block page_title %} {{ jeditaskid }} ES task {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
-{% block extra_css %}
+{% block base_css %}
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
     <style>
         #inputfilestable_wrapper .row {
@@ -12,9 +12,7 @@
     </style>
 {% endblock %}
 
-
 {% block subtitle %}PanDA Event Service task {{ jeditaskid }} {% if task.site %} at {{ task.site }} {% endif %} {% endblock %}
-
 
 {% block body %}
 
@@ -464,57 +462,6 @@
             {% endif %}
         </div>
 
-
-{#        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>#}
-{#        <div class="badevents" ng-app="taskESApps" ng-controller="taskEventsController" style="display:none;">#}
-{#            <p>#}
-{#            <table class="fresh-table">#}
-{#              <thead>#}
-{#                <tr>#}
-{#                    <th colspan=4>Exhausted events</th>#}
-{#                </tr>#}
-{#              </thead>#}
-{#                <tr>#}
-{#                    <th>Error</th>#}
-{#                    <th>Count</th>#}
-{#                    <th>PandaIDs</th>#}
-{#                    <th>Events</th>#}
-{#                </tr>#}
-{##}
-{#                <tbody ng-repeat="row in eventsrows">#}
-{#                <tr>#}
-{#                    <td>{$ row.ERROR_CODE $}</td>#}
-{#                    <td>{$ row.COUNT $}</td>#}
-{#                    <td>{$ row.PANDAIDS.join(', ') $}</td>#}
-{#                    <td>{$ row.EVENTS.join(', ') $}</td>#}
-{#                </tr>#}
-{#                </tbody>#}
-{#            </table>#}
-{#        </div>#}
-{##}
-{#        <script>#}
-{#            var app = angular.module('taskESApps', []).config(function ($interpolateProvider) {#}
-{#                $interpolateProvider.startSymbol('{$');#}
-{#                $interpolateProvider.endSymbol('$}');#}
-{#            });#}
-{##}
-{#            app.controller('taskEventsController', function ($scope, $http) {#}
-{#                $scope.eventsrows = [];#}
-{##}
-{#                $http({#}
-{#                    url: '{% url 'getbadeventsfortask' %}?jeditaskid={{ jeditaskid }}&mode={{ requestParams.mode }}',#}
-{#                    method: "GET",#}
-{#                }).then(function successCallback(response) {#}
-{#                    $scope.eventsrows = response.data;#}
-{#                }, function errorCallback(response) {#}
-{##}
-{#                });#}
-{##}
-{#            });#}
-{#        </script>#}
-
-
-
         {% if task.errordialog %}
             <p>
             {% if logtxt %}
@@ -810,7 +757,7 @@
 {% endblock %}
 
 
-{% block extra_js_bottombody %}
+{% block extra_js %}
     <script src="{% static 'js/humanize.min.js' %}"></script>
     <script type="text/javascript" src="/static/js/d3jsplot.js?version=1"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
@@ -835,7 +782,6 @@
             element1.style.display = "";
             }
         }
-
 
 
         function clearDivById(id) {
@@ -1297,9 +1243,7 @@
                     $("#plots").show();
                 $('#plots').goTo();
                 loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');
-            };
-
-
+            }
         })
 
     </script>

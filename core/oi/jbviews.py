@@ -60,9 +60,9 @@ def jbhome(request):
         hours = int(request.session['requestParams']['hours'])
         endtime = datetime.now()
         starttime = datetime.now() - timedelta(hours=hours)
-    elif 'timewindow' in request.session['requestParams'] and request.session['requestParams']['timewindow']:
-        endtime = parse_datetime(request.session['requestParams']['timewindow'].split('|')[1])
-        starttime = parse_datetime(request.session['requestParams']['timewindow'].split('|')[0])
+    elif 'endtime_from' in request.session['requestParams'] and 'endtime_to' in request.session['requestParams']:
+        endtime = parse_datetime(request.session['requestParams']['endtime_to'])
+        starttime = parse_datetime(request.session['requestParams']['endtime_from'])
     else:
         default_hours = 12
         endtime = datetime.now()

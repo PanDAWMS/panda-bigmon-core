@@ -38,6 +38,9 @@
 <link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}?{% cache_bust "css/taskstatestooltip.css" %}">
 <link rel="stylesheet" href="{% static "css/page-sections.css" %}?{% cache_bust "css/page-sections.css" %}">
 
+{% block base_css %}{% endblock %}
+{% block extra_css %}{% endblock %}
+
 
 <script>
 (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -470,12 +473,6 @@ ga('send', 'pageview');
 {#  <!-- End sub-title and bread-crumbs -->#}
 
 
-
-	{% block base_css %}{% endblock %}
-	{% block extra_css %}{% endblock %}
-
-{#	<script src="{% static "js/vendor/custom.modernizr.js" %}"></script>#}
-
 <script>
 var app = angular.module('bp-app', []);
 app.config(function ($interpolateProvider) {
@@ -487,8 +484,8 @@ app.config(['$compileProvider', function ($compileProvider) {
             }]);
 </script>
 
-	{% block base_js %}{% endblock %}
-	{% block extra_js %}{% endblock %}
+{% block base_js %}{% endblock %}
+{% block extra_js %}{% endblock %}
 
 
 <div class="large-12 columns" id="content">

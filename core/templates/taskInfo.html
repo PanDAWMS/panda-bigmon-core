@@ -11,7 +11,7 @@
         }
     </style>
 {% endblock %}
-{% block extra_js %}
+{% block base_js %}
 {#    <script type="text/javascript" src="/static/js/d3jsplot.js"></script>#}
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
@@ -28,9 +28,6 @@
 {% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <b>{{ task.taskname }}</b>{% endblock %}
 
 {% block body %}
-{#    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>#}
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
-
     {% if columns %}
         <table>
             <tr bgcolor='lightcyan'>
@@ -632,17 +629,10 @@
 
     {% endif %}
 
+{% endblock %}
 
-
+{% block extra_js %}
 <script>
-
-    var app = angular.module('taskInfoAppAJS', []).config(function ($interpolateProvider) {
-        $interpolateProvider.startSymbol('{$');
-        $interpolateProvider.endSymbol('$}');
-    }).config(['$compileProvider', function ($compileProvider) {
-    $compileProvider.debugInfoEnabled(false);
-    }]);
-
     app.controller('StagingDSController', function ($scope, $http) {
         $scope.json = "";
         $scope.getStagingDS = function () {
@@ -848,6 +838,13 @@ function buildDatasetsTable() {
   })
 }
 
+function onWindowResize() {
+    // get chart vars to apply resizing
+    Object.keys(jobconsump_charts).forEach(function (key) {
+      jobconsump_charts[key].resize({width:getWidth()/3-20});
+    })
+}
+
 $(document).ready(function () {
     buildDatasetsTable();
     var url = window.location.href;
@@ -856,14 +853,8 @@ $(document).ready(function () {
         {#        $('#jobsconsumptionplots').goTo();#}
     }
 });
-
-function onWindowResize() {
-    // get chart vars to apply resizing
-    Object.keys(jobconsump_charts).forEach(function (key) {
-      jobconsump_charts[key].resize({width:getWidth()/3-20});
-    })
-}
 </script>
+
 {% endblock %}
 
 {% block helptext %}
