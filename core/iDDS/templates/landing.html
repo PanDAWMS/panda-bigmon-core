@@ -5,41 +5,372 @@
 {% block page_title %}iDDS monitor{% endblock %}
 {% block subtitle %}<font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
 
-<link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
 
 {% block body %}
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <link rel="stylesheet" href="{% static "css/idds.css" %}">
+
     <script src="{% static 'js/humanize.min.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
     <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 <div>
 
-        <h1>Collections:</h1>
-        <table id="collections_table" class="stripe">
+        <h1>Requests:</h1>
+        <table id="requests_table" class="display" >
          <thead>
-            <th></th>
-            <th>Collection ID</th>
+             <th>Request ID</th>
+             <th>Scope</th>
+             <th>Name</th>
+             <th>Requester</th>
+             <th>Request Type</th>
+             <th>Transform Tag</th>
+             <th>Workload ID</th>
+             <th>Priority</th>
+             <th>Status</th>
+             <th>Substatus</th>
+             <th>Locking</th>
+             <th>Created At</th>
+             <th>Updated At</th>
+             <th>Accessed At</th>
+             <th>Expired At</th>
+             <th>Errors</th>
+             {% comment %}
+             <th>Request Metadata</th>
+             <th>Processing Metadata</th>
+             {% endcomment %}
+
          </thead>
          <tbody></tbody>
         </table>
+
+
+        <h1>Transform:</h1>
+        <table id="transform_table" class="display" >
+         <thead>
+            <th>transform_id</th>
+            <th>transform_type</th>
+            <th>transform_tag</th>
+            <th>priority</th>
+            <th>safe2get_output_from_input</th>
+            <th>status</th>
+            <th>substatus</th>
+            <th>locking</th>
+            <th>retries</th>
+            <th>created_at</th>
+            <th>updated_at</th>
+            <th>started_at</th>
+            <th>finished_at</th>
+            <th>expired_at</th>
+            <th>transform_metadata</th>
+         </thead>
+         <tbody></tbody>
+        </table>
+
+
+        <h1>Input Collections:</h1>
+        <table id="collections_table_input" class="display" >
+         <thead>
+         </thead>
+         <tbody></tbody>
+        </table>
+
+        <h1>Output Collections:</h1>
+        <table id="collections_table_output" class="display" >
+         <thead>
+         </thead>
+         <tbody></tbody>
+        </table>
+
+        <h1>Log Collections:</h1>
+        <table id="collections_table_log" class="display" >
+         <thead>
+         </thead>
+         <tbody></tbody>
+        </table>
+
+        <h1>Processing:</h1>
+        <table id="processing_table" class="display" >
+         <thead>
+         </thead>
+         <tbody></tbody>
+        </table>
+
+        <h1>Contents:</h1>
+        <table id="contents_table" class="display" >
+         <thead>
+         </thead>
+         <tbody></tbody>
+        </table>
+
+
         <script type="text/javascript">
 
-        var json_ev=JSON.stringify({{ events_progress_wrap.events_progress | safe }});
+        var iDDSrequests=JSON.parse(JSON.stringify({{ iDDSrequests | safe }}));
 
-        var collections_table = $('#collections_table').dataTable({
-            "order": [],
-            searching: false,
-            paging: false,
-            info: false,
-            "bSort" : false,
-            "ajax": {
-                "processing": true,
-                "url": 'href="{% url 'iddscollections' %}"',
-                "dataSrc": ''
+        function preprocData(dataIn){
+           var dataOut = [];
+           for(id in dataIn){
+              if(dataIn.hasOwnProperty(id)){
+                 dataOut.push(dataIn[id]);
+                 dataOut[dataOut.length - 1].Id = id;
+              }
+           }
+           return dataOut;
+        }
+
+        var collections_table_input = $('#collections_table_input').DataTable({
+             columns: [
+                { data: "coll_id", title: "coll_id" },
+                { data: "status", title: "status" },
+                { data: "total_files", title: "total_files" },
+                { data: "new_files", title: "new_files" },
+                { data: "processed_files", title: "processed_files" },
+                { data: "relation_type", title: "relation_type" },
+            ],
+            "processing": true,
+            language: {
+                "emptyTable":     "Please select transform",
             },
         });
+
+        var collections_table_output = $('#collections_table_output').DataTable({
+             columns: [
+                { data: "coll_id", title: "coll_id" },
+                { data: "status", title: "status" },
+                { data: "total_files", title: "total_files" },
+                { data: "new_files", title: "new_files" },
+                { data: "processed_files", title: "processed_files" },
+                { data: "relation_type", title: "relation_type" },
+            ],
+            "processing": true,
+            language: {
+                "emptyTable":     "Please select transform",
+            },
+        });
+
+        var collections_table_log = $('#collections_table_log').DataTable({
+             columns: [
+                { data: "coll_id", title: "coll_id" },
+                { data: "status", title: "status" },
+                { data: "total_files", title: "total_files" },
+                { data: "new_files", title: "new_files" },
+                { data: "processed_files", title: "processed_files" },
+                { data: "relation_type", title: "relation_type" },
+            ],
+            "processing": true,
+            language: {
+                "emptyTable":     "Please select transform",
+            },
+        });
+
+        var contents_table = $('#contents_table').DataTable({
+             columns: [
+                { data: "content_id", title: "content_id" },
+                { data: "scope", title: "scope" },
+                { data: "name", title: "name" },
+                { data: "min_id", title: "min_id" },
+                { data: "max_id", title: "max_id" },
+                { data: "status", title: "status" },
+                { data: "storage_id", title: "storage_id" },
+            ],
+            "processing": true,
+            language: {
+                "emptyTable":     "Please select Collection",
+            },
+        });
+
+
+        var processing_table = $('#processing_table').DataTable({
+             columns: [
+                { data: "processing_id", title: "processing_id" },
+                { data: "transform_id", title: "transform_id" },
+                { data: "status", title: "status" },
+                { data: "created_at", title: "created_at" },
+                { data: "updated_at", title: "updated_at" },
+                { data: "finished_at", title: "finished_at" },
+            ],
+            "processing": true,
+            language: {
+                "emptyTable":     "Please select transform",
+            },
+        });
+
+        var transform_table = $('#transform_table').DataTable({
+             columns: [
+                { data: "transform_id_fk__transform_id", title: "transform_id" },
+                { data: "transform_id_fk__transform_type", title: "transform_type" },
+                { data: "transform_id_fk__transform_tag", title: "transform_tag" },
+                { data: "transform_id_fk__priority", title: "priority" },
+                { data: "transform_id_fk__safe2get_output_from_input", title: "safe2get_output_from_input" },
+                { data: "transform_id_fk__status", title: "status" },
+                { data: "transform_id_fk__substatus", title: "substatus" },
+                { data: "transform_id_fk__locking", title: "locking" },
+                { data: "transform_id_fk__retries", title: "retries" },
+                { data: "transform_id_fk__created_at", title: "created_at" },
+                { data: "transform_id_fk__updated_at", title: "updated_at" },
+                { data: "transform_id_fk__started_at", title: "started_at" },
+                { data: "transform_id_fk__finished_at", title: "finished_at" },
+                { data: "transform_id_fk__expired_at", title: "expired_at" },
+                { data: "transform_id_fk__transform_metadata", title: "transform_metadata" },
+            ],
+            "processing": true,
+            language: {
+                "emptyTable":     "Please select request",
+            },
+        });
+
+        var requests_table = $('#requests_table').DataTable({
+            "order": [],
+            pageLength: 20,
+            columns: [
+                { data: "request_id", title: "request_id" },
+                { data: "scope", title: "scope" },
+                { data: "name", title: "name" },
+                { data: "requester", title: "requester" },
+                { data: "request_type", title: "request_type" },
+                { data: "transform_tag", title: "transform_tag" },
+                { data: "workload_id", title: "workload_id" },
+                { data: "priority", title: "priority" },
+                { data: "status", title: "status" },
+                { data: "substatus", title: "substatus" },
+                { data: "locking", title: "locking" },
+                { data: "created_at", title: "created_at" },
+                { data: "updated_at", title: "updated_at" },
+                { data: "accessed_at", title: "accessed_at" },
+                { data: "expired_at", title: "expired_at" },
+                { data: "errors", title: "errors" },
+                {% comment %}
+                { data: "request_metadata", title: "request_metadata" },
+                { data: "processing_metadata", title: "processing_metadata" },
+                {% endcomment %}
+            ],
+            data: preprocData(iDDSrequests),
+            selectable: true,
+            select: {
+                style: 'single'
+            },
+
+        });
+
+        $('#requests_table tbody').on( 'click', 'tr', function () {
+            $(this).toggleClass('selected');
+            doHide = true;
+            transform_table.clear().draw();
+            collections_table_input.clear().draw();
+            collections_table_output.clear().draw();
+            collections_table_log.clear().draw();
+            if (!$(this).hasClass('selected')) doHide = false;
+            requests_table.rows().every(function (index, element) {
+                var data = this.data();
+                var node = this.node();
+                if (!node.className.includes('selected')) {
+                    if (doHide)
+                        node.hidden = true;
+                    else node.hidden = false;
+                } else {
+                    loadTransformByReq(data.request_id);
+                }
+            });
+        });
+
+
+        $('#transform_table tbody').on( 'click', 'tr', function () {
+            $(this).toggleClass('selected');
+            doHide = true;
+            if (!$(this).hasClass('selected')) doHide = false;
+            transform_table.rows().every(function (index, element) {
+                var data = this.data();
+                var node = this.node();
+                if (!node.className.includes('selected')) {
+                    if (doHide)
+                        node.hidden = true;
+                    else node.hidden = false;
+                } else {
+                    loadCollectionByReq(data.transform_id_fk__transform_id);
+                }
+            });
+        });
+
+
+        $('#collections_table_input tbody').on( 'click', 'tr', function () {
+            $(this).toggleClass('selected');
+            doHide = true;
+            if (!$(this).hasClass('selected')) doHide = false;
+            collections_table_input.rows().every(function (index, element) {
+                var data = this.data();
+                var node = this.node();
+                if (!node.className.includes('selected')) {
+                    if (doHide)
+                        node.hidden = true;
+                    else node.hidden = false;
+                } else {
+                    loadContentByCollection(data.coll_id);
+                }
+            });
+        });
+
+        $('#collections_table_log tbody').on( 'click', 'tr', function () {
+            $(this).toggleClass('selected');
+            doHide = true;
+            if (!$(this).hasClass('selected')) doHide = false;
+            collections_table_log.rows().every(function (index, element) {
+                var data = this.data();
+                var node = this.node();
+                if (!node.className.includes('selected')) {
+                    if (doHide)
+                        node.hidden = true;
+                    else node.hidden = false;
+                } else {
+                    loadContentByCollection(data.coll_id);
+                }
+            });
+         });
+
+        $('#collections_table_output tbody').on( 'click', 'tr', function () {
+            $(this).toggleClass('selected');
+            doHide = true;
+            if (!$(this).hasClass('selected')) doHide = false;
+            collections_table_output.rows().every(function (index, element) {
+                var data = this.data();
+                var node = this.node();
+                if (!node.className.includes('selected')) {
+                    if (doHide)
+                        node.hidden = true;
+                    else node.hidden = false;
+                } else {
+                    loadContentByCollection(data.coll_id);
+                }
+            });
+         });
+
+
+        function loadCollectionByReq(transform_id) {
+            collections_table_input.clear().draw();
+            collections_table_input.ajax.url('{% url 'iddscollections' %}?relation_type=0&transform_id='+transform_id.toString()).load();
+            collections_table_output.clear().draw();
+            collections_table_output.ajax.url('{% url 'iddscollections' %}?relation_type=1&transform_id='+transform_id.toString()).load();
+            collections_table_log.clear().draw();
+            collections_table_log.ajax.url('{% url 'iddscollections' %}?relation_type=2&transform_id='+transform_id.toString()).load();
+            processing_table.clear().draw();
+            processing_table.ajax.url('{% url 'iddprocessings' %}?relation_type=2&transform_id='+transform_id.toString()).load();
+
+        };
+
+
+        function loadContentByCollection(coll_id) {
+            contents_table.clear().draw();
+            contents_table.ajax.url('{% url 'iddsсontents' %}?coll_id='+coll_id.toString()).load();
+        }
+
+        function loadTransformByReq(requestID) {
+            transform_table.clear().draw();
+            transform_table.ajax.url('{% url 'iddstransforms' %}?requestID='+requestID.toString()).load();
+        };
+
+
+
         </script>
 
 {% endblock %}

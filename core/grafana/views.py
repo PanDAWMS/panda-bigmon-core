@@ -297,10 +297,10 @@ def pledges(request):
         endtime = (datetime.utcnow()).replace(minute=00, hour=00, second=00, microsecond=000)
         starttime = (endtime - timebefore).replace(minute=00, hour=00, second=00, microsecond=000)
         total_seconds = (starttime - endtime).total_seconds()
+        total_days = (endtime - starttime).days
         endtime = endtime - timedelta(minutes=1)
         endtime = endtime.strftime("%d.%m.%Y %H:%M:%S")
         starttime = starttime.strftime("%d.%m.%Y %H:%M:%S")
-
     if 'type' in request.session['requestParams'] and request.session['requestParams'] \
             ['type'] == 'federation':
 
