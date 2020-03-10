@@ -7,10 +7,10 @@
 {% block subtitle %}PanDA {{view}} {{ requestParams.mode }} dashboard{{ viewParams.selection|safe }}
 {% endblock %}
 
-{% block extra_css %}
+{% block base_css %}
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
 {% endblock %}
-{% block extra_js %}
+{% block base_js %}
     <script src="{% static 'js/humanize.min.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
@@ -44,51 +44,51 @@
 <div class="row form-container">
 <div class="medium-1 column">
     <label>Last hours:
-    <input type="number"  ng-model="selection.hours"
+    <input type="number"  ng-model="dash.selection.hours"
            min="1" max="72" required>
     </label>
 </div>
 <div class="medium-2 column">
     <label>Queue type:
-    <select id="queuetype__select" ng-model="selection.queuetype" ng-options="qt.value as qt.name for qt in availableOptions.queuetype">
+    <select id="queuetype__select" ng-model="dash.selection.queuetype" ng-options="qt.value as qt.name for qt in dash.availableOptions.queuetype">
     </select>
     </label>
 </div>
 <div class="medium-2 column">
     <label>Queue status:
-    <select id="queuestatus__select" ng-model="selection.queuestatus" ng-options="qs.value as qs.name for qs in availableOptions.queuestatus">
+    <select id="queuestatus__select" ng-model="dash.selection.queuestatus" ng-options="qs.value as qs.name for qs in dash.availableOptions.queuestatus">
     </select>
     </label>
 </div>
 <div class="medium-2 column">
     <label>Job type:
     <select id="jobtype__select"
-            ng-model="selection.jobtype"
-            ng-options="jt.value as jt.name for jt in availableOptions.jobtype"
-            ng-change="change(selection)">
+            ng-model="dash.selection.jobtype"
+            ng-options="jt.value as jt.name for jt in dash.availableOptions.jobtype"
+            ng-change="change(dash.selection)">
     </select>
     </label>
 </div>
 <div class="medium-2 column">
     <label>Resource type:
     <select id="resourcetype__select"
-            ng-model="selection.resourcetype"
-            ng-options="rt.value as rt.name for rt in availableOptions.resourcetype"
-            ng-change="change(selection)">
+            ng-model="dash.selection.resourcetype"
+            ng-options="rt.value as rt.name for rt in dash.availableOptions.resourcetype"
+            ng-change="change(dash.selection)">
     </select>
     </label>
 </div>
 <fieldset class="medium-2 column">
     <legend>Split by:</legend>
     <ul class="no-bullet">
-      <li class="list-item"><input id="jobtype" type="checkbox" ng-model="selection.splitby.jobtype"><label for="jobtype">job type</label>
+      <li class="list-item"><input id="jobtype" type="checkbox" ng-model="dash.selection.splitby.jobtype"><label for="jobtype">job type</label>
       </li>
-      <li class="list-item"><input id="resourcetype" type="checkbox" ng-model="selection.splitby.resourcetype"><label for="resourcetype">resource type</label>
+      <li class="list-item"><input id="resourcetype" type="checkbox" ng-model="dash.selection.splitby.resourcetype"><label for="resourcetype">resource type</label>
       </li>
     </ul>
 </fieldset>
 <div class="medium-1 column">
-    <a class="button primary" ng-click="update(selection)">Update</a>
+    <a class="button primary" ng-click="update(dash.selection)">Update</a>
 </div>
 </div>
 </form>
@@ -142,59 +142,64 @@
 </table>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
 <script>
 
 var select_params = {{ selectParams | safe }};
 var request_params = {{ requestParams | safe }};
-var app = angular.module('jobSummaryRegion', []);
+
 app.controller('JobSummaryRegionController', ['$scope', function($scope) {
-    $scope.selection = {
-      hours: 12,
-      queuetype: '',
-      queuestatus: '',
-      jobtype: '',
-      resourcetype: '',
-      splitby: {
-          jobtype: false,
-          resourcetype: false,
-      },
+    $scope.dash = {
+        selection: {
+            hours: 12,
+            queuetype: '',
+            queuestatus: '',
+            jobtype: '',
+            resourcetype: '',
+            splitby: {
+                jobtype: false,
+                resourcetype: false,
+            },
+        }
     };
 
-    $scope.availableOptions = {
-      queuetype: [{name:'all', value:'', query: ''},],
-      queuestatus: [{name:'all', value:'', query: ''},],
-      jobtype: [
+    $scope.dash.availableOptions = {
+        queuetype: [{name:'all', value:'', query: ''},],
+        queuestatus: [{name:'all', value:'', query: ''},],
+        jobtype: [
           {name:'all', value:'', query: ''},
           {name:'analy', value:'analy', query: 'jobtype=analy&'},
           {name:'prod', value:'prod', query: 'jobtype=prod&'}
-      ],
-      resourcetype: [
+        ],
+        resourcetype: [
           {name:'all', value:'', query: ''},
           {name:'SCORE', value:'SCORE', query: 'resourcetype=SCORE&'},
           {name:'SCORE_HIMEM', value:'SCORE_HIMEM', query: 'resourcetype=SCORE_HIMEM&'},
           {name:'MCORE', value:'MCORE', query: 'resourcetype=MCORE&'},
           {name:'MCORE_HIMEM', value:'MCORE_HIMEM', query: 'resourcetype=MCORE_HIMEM&'}
-      ],
+        ],
     };
 
     select_params.queuetype.forEach(function (param) {
-     $scope.availableOptions.queuetype.push({name:param, value:param, query:'queuetype' + param + '&'});
+     $scope.dash.availableOptions.queuetype.push({name:param, value:param, query:'queuetype' + param + '&'});
     });
 
     select_params.queuestatus.forEach(function (param) {
-     $scope.availableOptions.queuestatus.push({name:param, value:param, query:'queuestatus' + param + '&'});
+     $scope.dash.availableOptions.queuestatus.push({name:param, value:param, query:'queuestatus' + param + '&'});
     });
 
-    Object.keys($scope.availableOptions).forEach(function (key) {
-        if (key in request_params && typeof request_params[key] === 'string') {$scope.selection[key] = request_params[key]}
+    Object.keys($scope.dash.availableOptions).forEach(function (key) {
+        if (key in request_params && typeof request_params[key] === 'string') {$scope.dash.selection[key] = request_params[key]}
     });
-    if ('hours' in request_params) {$scope.selection.hours = parseInt(request_params.hours)}
+    if ('hours' in request_params) {$scope.dash.selection.hours = parseInt(request_params.hours)}
     if ('splitby' in request_params) {
         if (request_params.splitby.indexOf('jobtype') !== -1) {
-            $scope.selection.splitby.jobtype = true
+            $scope.dash.selection.splitby.jobtype = true
         }
         if (request_params.splitby.indexOf('resourcetype') !== -1) {
-            $scope.selection.splitby.resourcetype = true
+            $scope.dash.selection.splitby.resourcetype = true
         }
     }
 
@@ -222,8 +227,8 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
     };
 
     $scope.change = function (selection) {
-        (selection.jobtype.length > 0) ? $scope.selection.splitby.jobtype = true : $scope.selection.splitby.jobtype = false;
-        (selection.resourcetype.length > 0) ? $scope.selection.splitby.resourcetype = true : $scope.selection.splitby.resourcetype = false;
+        (selection.jobtype.length > 0) ? $scope.dash.selection.splitby.jobtype = true : $scope.dash.selection.splitby.jobtype = false;
+        (selection.resourcetype.length > 0) ? $scope.dash.selection.splitby.resourcetype = true : $scope.dash.selection.splitby.resourcetype = false;
     }
 }]);
 
@@ -790,8 +795,6 @@ function PopUpGrafana(ref, site) {
     }
 }
 </script>
-
-
 {% endblock %}
 
 
