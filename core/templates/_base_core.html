@@ -5,38 +5,31 @@
 <head profile="http://www.w3.org/2005/10/profile">
 <link rel="icon" type="image/png" href='{% static "images/favicon.png" %}' />
 
-	<!-- Set the viewport width to device width for mobile -->
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Set the viewport width to device width for mobile -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-	<title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
+<title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
 
 <script src="{% static 'js/vendor/modernizr.js' %}"></script>
 <script src="{% static 'js/jquery/jquery-3.3.1.min.js' %}"></script>
 <script src="{% static 'js/vendor/what-input.js' %}"></script>
 <script src="{% static 'js/vendor/foundation.min.js' %}"></script>
+<script src="{% static 'js/foundation-datepicker/js/foundation-datepicker.min.js' %}"></script>
 <script src="{% static 'js/d3.v3.min.js' %}"></script>
 <script src="{% static "/js/clipboardjs/clipboard.min.js" %}"></script>
 <script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
 
 {% block extra_js_hepsw %}
 
 {% endblock %}
 
-
-
-
-	<!-- Included CSS Files -->
-
-
-{% comment %}
-	<link rel="stylesheet" href="http://hepsoftware.org/static/css/normalize.css">
-	<link rel="stylesheet" href="http://hepsoftware.org/static/css/foundation.css">
-{% endcomment %}
-
-{#  <link rel="stylesheet" href="{% static "css/foundation/normalize.css" %}">#}
+<!-- Included CSS Files -->
 
 <link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}?{% cache_bust "css/foundation/foundation.css" %}">
 <link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}?{% cache_bust "css/foundation/foundation-icons/foundation-icons.css" %}">
+<link rel="stylesheet" href="{% static "js/foundation-datepicker/css/foundation-datepicker.css" %}?{% cache_bust "js/foundation-datepicker/css/foundation-datepicker.css" %}">
 <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}?{% cache_bust 'js/jquery-ui/jquery-ui.css' %}">
 <link rel="stylesheet" href="{% static "css/main-nav.css" %}?{% cache_bust "css/main-nav.css" %}">
 <link rel="stylesheet" href="{% static "css/state-colors.css" %}?{% cache_bust "css/state-colors.css" %}">
@@ -45,20 +38,19 @@
 <link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}?{% cache_bust "css/taskstatestooltip.css" %}">
 <link rel="stylesheet" href="{% static "css/page-sections.css" %}?{% cache_bust "css/page-sections.css" %}">
 
+{% block base_css %}{% endblock %}
+{% block extra_css %}{% endblock %}
 
-	{% comment %} <link rel="stylesheet" href="{% static "css/bigpandamon.css" %}"> {% endcomment %}
 
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-
-	<script>
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-    ga('create', '{% block gacode %}UA-44940804-1{% endblock %}', '{% block gaweb %}pandawms.org{% endblock %}');
-    ga('send', 'pageview');
-	</script>
+ga('create', '{% block gacode %}UA-44940804-1{% endblock %}', '{% block gaweb %}pandawms.org{% endblock %}');
+ga('send', 'pageview');
+</script>
 
 
 <div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="large" id="main-menu-small">
@@ -376,42 +368,124 @@
           $('#main-menu').foundation();
   </script>
 </head>
-<body>
-  <!-- sub-title and bread-crumbs -->
 
-<div class="top-subbar">
+<body ng-app="bp-app">
 
-    <!-- sub-title -->
-    <div class="left" id="div-subtitle">
-        {% block subtitle %}Subtitle goes here{% endblock %}
-        {% block subtitle_params %} {% endblock %}
+<!-- sub-title -->
+<div id="time-window-change-panel" class="time-window-change is-hidden" data-toggler="is-hidden" data-ng-controller="timeWindowController">
+    <div class="row">
+        <div class="column">
+            <ul class="tabbed-time-window-change tabs" data-tabs id="time-window-change-tabs">
+              <li class="tabs-title is-active"><a href="#tab-quick" aria-selected="true">Select time window</a></li>
+            </ul>
+            <div class="tabbed-time-window-change-content tabs-content" data-tabs-content="time-window-change-tabs">
+              <div class="tabs-panel is-active" id="tab-quick">
+                <ul class="no-bullet">
+                    <li class="row">
+                        <div class="column large-3 medium-6">
+                            <div class="input-group">
+                                <input type="radio" name="time-window-radio" value="hours" id="time-window-radio-hours" ng-model="timewindow.data.quick" ng-change="change()">
+                                <span class="input-group-label">Last hours:</span>
+                                <input type="number" class="time-window-input input-group-field time-window-input-hours" min="1" ng-model="timewindow.data.hours"  ng-change="change()">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="row">
+                        <div class="column large-3 medium-6">
+                            <div class="input-group">
+                                <input type="radio" name="time-window-radio" value="days" id="time-window-radio-days" ng-model="timewindow.data.quick" ng-change="change()">
+                                <span class="input-group-label">Last days:</span>
+                                <input type="number" class="time-window-input input-group-field time-window-input-days" min="1" ng-model="timewindow.data.days"  ng-change="change()">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="row">
+                        <div class="column large-6 medium-12">
+                            <div class="input-group">
+                                <input type="radio" name="time-window-radio" value="custom" id="time-window-radio-custom" ng-model="timewindow.data.quick" ng-change="change()">
+                                <span class="input-group-label">Custom:</span>
+                                <span class="input-group-label">from</span>
+                                <input type="text" class="fdatetimepicker time-window-input-date input-group-field time-window-input-custom" min="2017-01-01" value="{{ timerange.0 }}" ng-model="timewindow.selection.from">
+
+                                <span class="input-group-label">to</span>
+                                <input type="text" class="fdatetimepicker time-window-input-date input-group-field time-window-input-custom" value="{{ timerange.1 }}" ng-model="timewindow.selection.to">
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+              </div>
+            </div>
+        </div>
     </div>
-    <!-- End sub-title -->
-
-    <!-- bread-crumbs -->
-    <div class="right">
-    {#      {% block header-nav-chain %}#}
-          <span class="hide-for-small">
-              {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
-              {% if built != None %} {{ built }}, {% endif %}
-               <a id="reloadlink" href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a>
-          </span>
-    {#      {% endblock %}#}
-    </div>
-    <!-- End bread-crumbs -->
-
-
+    <a class="button" ng-click="update()">Apply</a>
 </div>
-  <!-- End sub-title and bread-crumbs -->
 
-{% block left_menu %}{% endblock %}
+<!-- sub-title -->
+<div class="row collapse top-subbar">
+    <div class="column {% if timerange and timerange|length > 0 %} small-6 medium-2 large-2 {% else %} small-6 medium-9 large-10 {% endif %}" id="">
+        <p>
+            {% block subtitle %}Subtitle goes here{% endblock %}
+            {% if not timerange %}
+                {% block subtitle_params %} {% endblock %}
+            {% endif %}
+        </p>
+    </div>
 
-	{% block base_css %}{% endblock %}
-	{% block extra_css %}{% endblock %}
+    {% if timerange and timerange|length > 0 %}
+    <div class="column medium-7 large-8 center show-for-medium">
+        {% block time_window %}{% endblock %}
+        <a class="button time-window" data-toggle="time-window-change-panel">Change</a>
+    </div>
+    {% endif %}
 
-{#	<script src="{% static "js/vendor/custom.modernizr.js" %}"></script>#}
-	{% block base_js %}{% endblock %}
-	{% block extra_js %}{% endblock %}
+    <div class="column small-6 medium-3 large-2 right">
+        {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
+        {% if built != None %} {{ built }}, {% endif %} <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}"> Refresh</a>
+    </div>
+</div>
+<!-- End sub-title -->
+
+
+
+{#<div class="top-subbar">#}
+{##}
+{#    <!-- sub-title -->#}
+{#    <div class="left" id="div-subtitle">#}
+{#        {% block subtitle %}Subtitle goes here{% endblock %}#}
+{#        {% block subtitle_params %} {% endblock %}#}
+{#    </div>#}
+{#    <!-- End sub-title -->#}
+{##}
+{#    <!-- bread-crumbs -->#}
+{#    <div class="right">#}
+    {#      {% block header-nav-chain %}#}
+{#          <span class="hide-for-small">#}
+{#              {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |#}
+{#              {% if built != None %} {{ built }}, {% endif %}#}
+{#               <a id="reloadlink" href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a>#}
+{#          </span>#}
+    {#      {% endblock %}#}
+{#    </div>#}
+{#    <!-- End bread-crumbs -->#}
+{##}
+{##}
+{#</div>#}
+{#  <!-- End sub-title and bread-crumbs -->#}
+
+
+<script>
+var app = angular.module('bp-app', []);
+app.config(function ($interpolateProvider) {
+            $interpolateProvider.startSymbol('{$');
+            $interpolateProvider.endSymbol('$}');
+            });
+app.config(['$compileProvider', function ($compileProvider) {
+        $compileProvider.debugInfoEnabled(false);
+            }]);
+</script>
+
+{% block base_js %}{% endblock %}
+{% block extra_js %}{% endblock %}
 
 
 <div class="large-12 columns" id="content">
@@ -566,9 +640,120 @@
 
 
 {#  <script src="{% static 'js/app.js' %}"></script>#}
-  <script>
-    $(document).foundation();
-  </script>
+<script>
+
+$(document).foundation();
+$(function(){
+    $('#time-window-input-date-from').fdatepicker({
+        format: 'yyyy-mm-dd hh:ii',
+        disableDblClickSelection: true,
+        language: 'en',
+        pickTime: true
+    });
+    $('#time-window-input-date-to').fdatepicker({
+        format: 'yyyy-mm-dd hh:ii',
+        disableDblClickSelection: true,
+        language: 'en',
+        pickTime: true
+    });
+});
+
+function diff_hours(dt2, dt1) {
+    let diff =(dt2.getTime() - dt1.getTime()) / 1000;
+    diff /= (60 * 60);
+    return Math.abs(Math.round(diff));
+}
+
+function subtract_hours(dt, h) {
+  let dt_new = new Date(dt);
+  dt_new.setTime(dt_new.getTime() - (h*60*60*1000));
+  return dt_new;
+}
+
+function disable_input(item, options) {
+    let available_options = options.slice();
+    let item_index = available_options.indexOf(item);
+    available_options.splice(item_index, 1);
+    available_options.forEach(function (val) {
+        let els = document.querySelectorAll('input.time-window-input-' + val);
+        for (let i = 0; i < els.length; i++) { els[i].disabled = true; }
+    });
+    let els = document.querySelectorAll('input.time-window-input-' + item);
+    for (let i = 0; i < els.length; i++) { els[i].disabled = false; }
+}
+
+
+{% if timerange %}
+    var timerange = {{ timerange|safe }};
+{% else %}
+    var timerange =  ['', ''];
+{% endif %}
+
+
+app.controller('timeWindowController', ['$scope', function($scope) {
+    $scope.timewindow = {
+        selection : {
+            from: timerange[0],
+            to: timerange[1],
+        }
+    };
+    $scope.timewindow.data = {
+        hours: 12,
+        days: 0,
+        quick: 'hours',
+    };
+    $scope.timewindow.availableOptions = ['hours', 'days', 'custom'];
+
+    var dt_from = new Date(timerange[0]);
+    var dt_to = new Date(timerange[1]);
+
+    if (diff_hours(dt_to, dt_from) % 24 === 0 ) {
+        $scope.timewindow.data.quick = 'days';
+        $scope.timewindow.data.days = diff_hours(dt_to, dt_from)/24;
+        disable_input('days', $scope.timewindow.availableOptions);
+    }
+    else if (diff_hours(dt_to, dt_from) % 24 > 1 ) {
+        $scope.timewindow.data.quick = 'hours';
+        $scope.timewindow.data.hours = diff_hours(dt_to, dt_from);
+        disable_input('hours', $scope.timewindow.availableOptions);
+    }
+    else {
+        $scope.timewindow.data.quick = 'custom';
+        disable_input('custom', $scope.timewindow.availableOptions);
+    }
+
+    $scope.change = function () {
+        if ($scope.timewindow.data.quick === 'hours') {
+            disable_input('hours', $scope.timewindow.availableOptions);
+            dt_to = new Date();
+            dt_from = subtract_hours(dt_to, $scope.timewindow.data.hours);
+            $scope.timewindow.selection.to = dt_to.toISOString().substring(0, dt_to.toISOString().indexOf('.'));
+            $scope.timewindow.selection.from = dt_from.toISOString().substring(0, dt_from.toISOString().indexOf('.'));
+        }
+        else if ($scope.timewindow.data.quick === 'days') {
+            disable_input('days', $scope.timewindow.availableOptions);
+            dt_to = new Date();
+            dt_from = new Date(dt_to.getTime() - 86400000);
+            $scope.timewindow.selection.to = dt_to.toISOString().substring(0, dt_to.toISOString().indexOf('.'));
+            $scope.timewindow.selection.from = dt_from.toISOString().substring(0, dt_from.toISOString().indexOf('.'));
+        }
+
+        else if ($scope.timewindow.data.quick === 'custom') {
+            disable_input('custom', $scope.timewindow.availableOptions);
+        }
+    };
+
+    $scope.update = function() {
+        var query = location.protocol + '//' + location.host + location.pathname + '?';
+        var timeparamname = (location.pathname.indexOf('jobsbuster') > -1) ? 'endtime' : 'modificationtime';
+
+        query += timeparamname + '_from=' + $scope.timewindow.selection.from + '&';
+        query += timeparamname + '_to=' + $scope.timewindow.selection.to;
+        window.location = query;
+    };
+}]);
+
+</script>
 <script src="{% static 'js/user-settings.js' %}?{% cache_bust "js/user-settings.js" %}"></script>
 </body>
 

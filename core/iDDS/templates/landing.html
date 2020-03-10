@@ -3,19 +3,23 @@
 {% load static %}
 
 {% block page_title %}iDDS monitor{% endblock %}
-{% block subtitle %}<font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+{% block subtitle %}{{ viewParams.selection|safe }} {% endblock %}
 
-
-{% block body %}
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+{% block base_css %}
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
     <link rel="stylesheet" href="{% static "css/idds.css" %}">
+{% endblock %}
 
+{% block base_js %}
     <script src="{% static 'js/humanize.min.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
     <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
-<div>
+{% endblock %}
+
+{% block body %}
+
+    <div>
 
         <h1>Requests:</h1>
         <table id="requests_table" class="display" >
@@ -103,7 +107,7 @@
          </thead>
          <tbody></tbody>
         </table>
-
+    </div>
 
         <script type="text/javascript">
 
