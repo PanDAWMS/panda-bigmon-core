@@ -405,10 +405,10 @@ ga('send', 'pageview');
                                 <input type="radio" name="time-window-radio" value="custom" id="time-window-radio-custom" ng-model="timewindow.data.quick" ng-change="change()">
                                 <span class="input-group-label">Custom:</span>
                                 <span class="input-group-label">from</span>
-                                <input type="text" class="fdatetimepicker time-window-input-date input-group-field time-window-input-custom" min="2017-01-01" value="{{ timerange.0 }}" ng-model="timewindow.selection.from">
+                                <input type="text" class="fdatetimepicker time-window-input-date input-group-field time-window-input-custom" id="time-window-input-date-from" min="2017-01-01" value="{{ timerange.0 }}" ng-model="timewindow.selection.from">
 
                                 <span class="input-group-label">to</span>
-                                <input type="text" class="fdatetimepicker time-window-input-date input-group-field time-window-input-custom" value="{{ timerange.1 }}" ng-model="timewindow.selection.to">
+                                <input type="text" class="fdatetimepicker time-window-input-date input-group-field time-window-input-custom" id="time-window-input-date-to" value="{{ timerange.1 }}" ng-model="timewindow.selection.to">
                             </div>
                         </div>
                     </li>
