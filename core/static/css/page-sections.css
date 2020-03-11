@@ -49,7 +49,18 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
 .inputN{width:2em}
 .input4{width:4em}
 
+.row {
+    max-width: 100%;
+}
 
+.row.lim-width {
+    max-width: 75rem;
+}
+
+.panel {
+    width: 600px;
+    height: 500px;
+}
 
 a.uservisits {
     color: black;
@@ -531,6 +542,8 @@ a.close-x-sign:hover {
 
 .card.tile .card-section p {
     margin-bottom: 0.3rem;
+    font-size: 90%;
+    line-height: 1.15;
 }
 
 .card.tile a {

@@ -37,9 +37,13 @@ class Grafana(object):
             startMillisec = int(starttime.strftime("%s")) * 1000
             endMillisec = int(endtime.strftime("%s")) * 1000
         else:
-            startD = datetime.strptime(query_object.starttime, '%d.%m.%Y %H:%M:%S')
-
-            endD = datetime.strptime(query_object.endtime, '%d.%m.%Y %H:%M:%S')
+            try:
+                startD = datetime.strptime(query_object.starttime, '%d.%m.%Y %H:%M:%S')
+                endD = datetime.strptime(query_object.endtime, '%d.%m.%Y %H:%M:%S')
+            except:
+                ### TODO will change this
+                startD = datetime.strptime(query_object.starttime, '%Y-%m-%d')
+                endD = datetime.strptime(query_object.endtime, '%Y-%m-%d')
 
             startMillisec = int(startD.strftime("%s")) * 1000
             endMillisec = int(endD.strftime("%s")) * 1000

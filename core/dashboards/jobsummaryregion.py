@@ -94,7 +94,7 @@ def dashboard(request):
     for pq, params in jsr_queues_dict.items():
         for jt, resourcetypes in params['summary'].items():
             for rt, summary in resourcetypes.items():
-                if sum(summary.values()) > 0:  # filter out rows with 0 jobs
+                if sum([v for k, v in summary.items() if k in job_states_order]) > 0:  # filter out rows with 0 jobs
                     row = list()
                     row.append(pq)
                     row.append(params['pq_params']['pqtype'])
@@ -105,7 +105,7 @@ def dashboard(request):
                     row.append(summary['nwsubmitted'])
                     row.append(summary['nwrunning'])
                     row.append(summary['rcores'])
-                    row.append(sum(summary.values()))
+                    row.append(sum([v for k, v in summary.items() if k in job_states_order]))
                     if summary['failed'] + summary['finished'] > 0:
                         row.append(round(100.0*summary['failed']/(summary['failed'] + summary['finished']), 1))
                     else:
@@ -129,7 +129,7 @@ def dashboard(request):
     for reg, jobtypes in jsr_regions_dict.items():
         for jt, resourcetypes in jobtypes.items():
             for rt, summary in resourcetypes.items():
-                if sum(summary.values()) > 0:  # filter out rows with 0 jobs
+                if sum([v for k, v in summary.items() if k in job_states_order]) > 0:  # filter out rows with 0 jobs
                     row = list()
                     row.append(reg)
                     row.append(jt)
@@ -137,7 +137,7 @@ def dashboard(request):
                     row.append(summary['nwsubmitted'])
                     row.append(summary['nwrunning'])
                     row.append(summary['rcores'])
-                    row.append(sum(summary.values()))
+                    row.append(sum([v for k, v in summary.items() if k in job_states_order]))
                     if summary['failed'] + summary['finished'] > 0:
                         row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
                     else:
