@@ -11,9 +11,9 @@
 {% if cloudview == 'region' %}
 <div class="callout alert large" data-closable>
     <h5>Please participate in testing
-        <a class="blacklink" href="{% url 'dashRegion' %}{% if view == 'analysis' %}?jobtype=analy{% elif view == 'production' %}?jobtype=prod{% endif %}"><b>a new nicer and faster dashboard page</b></a>,
+        <a class="blacklink" href="{% url 'dashRegion' %}{% if view == 'analysis' %}?jobtype=analy&splitby=jobtype{% elif view == 'production' %}?jobtype=prod&splitby=jobtype{% endif %}"><b>a new nicer and faster dashboard page</b></a>,
         where a number of interactive filters are available and e.g. job counts for GU queues can be split by both job and resource types:
-        <a class="blacklink" href="{% url 'dashRegion' %}{% if view == 'analysis' %}?jobtype=analy{% elif view == 'production' %}?jobtype=prod{% endif %}"><b>https://bigpanda.cern.ch/new/dash/{% if view == 'analysis' %}?jobtype=analy{% elif view == 'production' %}?jobtype=prod{% endif %}</b></a></h5>
+        <a class="blacklink" href="{% url 'dashRegion' %}{% if view == 'analysis' %}?jobtype=analy&splitby=jobtype{% elif view == 'production' %}?jobtype=prod&splitby=jobtype{% endif %}"><b>https://bigpanda.cern.ch/new/dash/{% if view == 'analysis' %}?jobtype=analy&splitby=jobtype{% elif view == 'production' %}?jobtype=prod&splitby=jobtype{% endif %}</b></a></h5>
   <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
         <span aria-hidden="true">&times;</span>
   </button>
