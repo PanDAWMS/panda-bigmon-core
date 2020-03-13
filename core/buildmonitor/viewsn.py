@@ -83,15 +83,16 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
 
     dict_cache_transf={}
-    for k46, v46 in dict_from_cache.items():
-        for kk, vv in v46.items():
-            kk_transf = re.sub('/','_',k46)
-            key_transf = kk_transf+'_'+kk
-            string_vv = '<span style="color: blue">' + str(vv['active']) + '</span>'
-            string_vv = string_vv + ',<B><span style="color: green">'+ str(vv['done']) +'</span></B>,'
-            string_vv = string_vv + '<span style="color: maroon">' + str(vv['finished']) + '</span>'
-            string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>'
-            dict_cache_transf[key_transf] = [string_vv, k46]
+    if dict_from_cache:
+        for k46, v46 in dict_from_cache.items():
+            for kk, vv in v46.items():
+                kk_transf = re.sub('/','_',k46)
+                key_transf = kk_transf+'_'+kk
+                string_vv = '<span style="color: blue">' + str(vv['active']) + '</span>'
+                string_vv = string_vv + ',<B><span style="color: green">'+ str(vv['done']) +'</span></B>,'
+                string_vv = string_vv + '<span style="color: maroon">' + str(vv['finished']) + '</span>'
+                string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>'
+                dict_cache_transf[key_transf] = [string_vv, k46]
     ar_sel="unknown"
     pjname='unknown'
     i=0

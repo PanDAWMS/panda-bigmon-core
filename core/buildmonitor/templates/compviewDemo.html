@@ -19,6 +19,7 @@
        <H3>branch {{ nightly }}, release {{ rel }}, platform={{ ar }}</H3>
 </div>
 <div id="linkslist"><P><a href="{% url 'BuildGlobal' %}">Link to global system page</a></div>
+<div id="noteonsearch"><P><B>To find your package:</B> use Search window, or choose to show more entries, or select viewing other pages (at the table bottom). Note that multi column sorting is supported: just make a 'shift' click on the column header triangle symbols.</a></div>
 
 <table id="CompsResults" class="stripe">
      <thead>
@@ -34,7 +35,7 @@
 var json=JSON.stringify({{ rows_s | safe }});
 
 var compdisplayTable = $('#CompsResults').dataTable({
-"order": [[0, 'desc'],[1, 'asc']],
+"order": [[0, 'desc'],[1, 'asc'],[2, 'asc']],
 "pageLength": 100,
 "lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
 "data": JSON.parse(json),
