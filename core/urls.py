@@ -5,7 +5,6 @@ from django.conf import settings
 from django.urls import re_path, include
 
 from core import views as coremon_views
-from core import dpviews as dpviews
 from core import MemoryMonitorPlots as memmon
 
 
@@ -127,8 +126,6 @@ urlpatterns = [
     re_path(r'^savesettings/$', coremon_views.saveSettings, name='saveSettings'),
     #re_path(r'^globalsharesnew/$', coremon_views.globalsharesnew, name='globalsharesnew'),
                        #    re_path(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
-    ### data product catalog prototyping
-    re_path(r'^dp/$', dpviews.doRequest, name='doRequest'),
     re_path(r'^report/$', coremon_views.report, name='report'),
     re_path(r'^serverstatushealth/$', coremon_views.serverStatusHealth, name='serverStatusHealth'),
 
