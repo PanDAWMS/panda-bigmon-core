@@ -605,19 +605,19 @@ def updateARTJobList(request):
             query['pandaid__in'] = [id['pandaid'] for id in ids]
             file_properties = []
             try:
-                file_properties = Filestable4.objects.filter(**query).values('pandaid', 'guid', 'scope', 'lfn', 'destinationse', 'status')
+                file_properties = Filestable4.objects.filter(**query).values('pandaid', 'guid', 'scope', 'lfn', 'destinationse', 'status', 'fileid')
             except:
                 pass
             if len(file_properties) == 0:
                 try:
-                    file_properties.extend(FilestableArch.objects.filter(**query).values('pandaid', 'guid', 'scope', 'lfn', 'destinationse', 'status'))
+                    file_properties.extend(FilestableArch.objects.filter(**query).values('pandaid', 'guid', 'scope', 'lfn', 'destinationse', 'status', 'fileid'))
                 except:
                     pass
 
             # Forming url params to single str for request to filebrowser
             url_params = []
             if len(file_properties):
-                url_params = [('&guid=' + filei['guid'] + '&lfn=' + filei['lfn'] + '&scope=' + filei['scope'] + '&pandaid=' + str(filei['pandaid'])) for filei in file_properties]
+                url_params = [('&guid=' + filei['guid'] + '&lfn=' + filei['lfn'] + '&scope=' + filei['scope'] + '&fileid=' + filei['fileid'] + '&pandaid=' + str(filei['pandaid'])) for filei in file_properties]
 
             # Loading subresults in parallel and collecting to list of dictionaries
             pool = multiprocessing.Pool(processes=N_ROWS)
