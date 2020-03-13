@@ -118,7 +118,7 @@ def index(request):
             try:
                 sizemb = round(int([f['fsize'] for f in fsize if f['fileid'] == fileid][0])/1000/1000)
             except:
-                pass
+                _logger.warning("ERROR!!! Failed to calculate log tarball size in MB")
 
     #_logger.error("index step1 - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
