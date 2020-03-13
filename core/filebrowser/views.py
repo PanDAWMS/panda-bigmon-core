@@ -116,7 +116,10 @@ def index(request):
             fsize = FilestableArch.objects.filter(**lquery).values('fsize', 'fileid')
         if len(fsize) > 0:
             try:
-                sizemb = round(int([f['fsize'] for f in fsize if f['fileid'] == fileid][0])/1000/1000)
+                if fileid > 0:
+                    sizemb = round(int([f['fsize'] for f in fsize if f['fileid'] == fileid][0])/1000/1000)
+                else:
+                    sizemb = round(int([f['fsize'] for f in fsize][0])/1000/1000)
             except:
                 pass
 
