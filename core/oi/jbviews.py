@@ -124,8 +124,8 @@ def jbhome(request):
         for issue in resp_data['issues']:
             card = {}
             card['color'] = colors[issue['name']]
-            card['impactloss'] = str(round(issue['sumWLoss'] / 3.154e+7, 2))
-            card['impactfails'] = issue['sumJFails']
+            card['impactloss'] = str(round(issue['walltime_loss'] / 3.154e+7, 2))
+            card['impactfails'] = issue['nFailed_jobs']
             card['name'] = issue['name']
             card['params'] = {}
             urlstr = "https://bigpanda.cern.ch/jobs/?endtimerange=" + str(issue['observation_started']).replace(" ", "T") + "|" + str(issue['observation_finished']).replace(" ", "T")
