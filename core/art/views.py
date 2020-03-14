@@ -617,7 +617,7 @@ def updateARTJobList(request):
             # Forming url params to single str for request to filebrowser
             url_params = []
             if len(file_properties):
-                url_params = [('&guid=' + filei['guid'] + '&lfn=' + filei['lfn'] + '&scope=' + filei['scope'] + '&fileid=' + filei['fileid'] + '&pandaid=' + str(filei['pandaid'])) for filei in file_properties]
+                url_params = [('&guid=' + filei['guid'] + '&lfn=' + filei['lfn'] + '&scope=' + filei['scope'] + '&fileid=' + str(filei['fileid']) + '&pandaid=' + str(filei['pandaid'])) for filei in file_properties]
 
             # Loading subresults in parallel and collecting to list of dictionaries
             pool = multiprocessing.Pool(processes=N_ROWS)
