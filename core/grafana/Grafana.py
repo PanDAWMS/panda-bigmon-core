@@ -41,10 +41,12 @@ class Grafana(object):
                 startD = datetime.strptime(query_object.starttime, '%d.%m.%Y %H:%M:%S')
                 endD = datetime.strptime(query_object.endtime, '%d.%m.%Y %H:%M:%S')
             except:
-                ### TODO will change this
-                startD = datetime.strptime(query_object.starttime, '%Y-%m-%d')
-                endD = datetime.strptime(query_object.endtime, '%Y-%m-%d')
-
+                try:
+                    startD = datetime.strptime(query_object.starttime, '%Y-%m-%d')
+                    endD = datetime.strptime(query_object.endtime, '%Y-%m-%d')
+                except:
+                    endD = (datetime.utcnow()).replace(minute=00, hour=00, second=00, microsecond=000)
+                    startD = ((endD - 1)).replace(minute=00, hour=00, second=00, microsecond=000)
             startMillisec = int(startD.strftime("%s")) * 1000
             endMillisec = int(endD.strftime("%s")) * 1000
         if query_object.table == "pledges_last":
