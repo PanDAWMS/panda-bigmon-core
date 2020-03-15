@@ -84,7 +84,7 @@ def subresults_getter(url_params_str):
             MEDIA_URL = data['MEDIA_URL']
             dirprefix = data['dirprefix']
             files = data['files']
-            files = [f for f in files if 'jobReport.json' in f['name']]
+            files = [f for f in files if 'artReport.json' in f['name']]
         except:
             _logger.exception('Exception was caught while seeking jobReport.json in logs for PanDA job: {}'.format(str(pandaid)))
             return {}
