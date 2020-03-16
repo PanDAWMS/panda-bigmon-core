@@ -113,15 +113,16 @@ def globalviewDemo(request):
         lar1 = len(ar1)
     #    print(reslt2)
     dict_cache_transf={}
-    for k46, v46 in dict_from_cache.items():
-        for kk, vv in v46.items():
-            kk_transf = re.sub('/','_',k46) 
-            key_transf = kk_transf+'_'+kk
-            string_vv = '<span style="color: blue">' + str(vv['active']) + '</span>'
-            string_vv = string_vv + ',<B><span style="color: green">'+ str(vv['done']) +'</span></B>,'
-            string_vv = string_vv + '<span style="color: maroon">' + str(vv['finished']) + '</span>'
-            string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>' 
-            dict_cache_transf[key_transf] = [string_vv, k46]
+    if dict_from_cache:
+        for k46, v46 in dict_from_cache.items():
+            for kk, vv in v46.items():
+                kk_transf = re.sub('/','_',k46) 
+                key_transf = kk_transf+'_'+kk
+                string_vv = '<span style="color: blue">' + str(vv['active']) + '</span>'
+                string_vv = string_vv + ',<B><span style="color: green">'+ str(vv['done']) +'</span></B>,'
+                string_vv = string_vv + '<span style="color: maroon">' + str(vv['finished']) + '</span>'
+                string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>' 
+                dict_cache_transf[key_transf] = [string_vv, k46]
 #    pprint(dict_cache_transf)
     reslt3 = []
     for row in reslt2:
@@ -195,12 +196,18 @@ ectory/gitwww/GITWebArea/nightlies"
         list9.append(row[33]);
         reslt3.append(list9)
 
-#    for k46, v46 in dict_from_cache.items():
-#        for kk, vv in v46.items():
-#            l1=[k46]
-#            l1.append(kk)
-#            l1.extend([vv['active'], vv['done'], vv['failed'], vv['finished']])
-#            print('L1 ',l1)    
+#    if dict_from_cache:
+#        for k46, v46 in dict_from_cache.items():
+#            for kk, vv in v46.items():
+#                l1=[k46]
+#                l1.append(kk)
+#                l1.extend([vv['active'], vv['done'], vv['failed'], vv['finished']])
+#                print('L1 ',l1)    
+#    dict_from_local_cache = cache.get('art-local-dict')
+#    if dict_from_local_cache:
+#        for k47, v47 in dict_from_local_cache.items():
+#            print('L2',k47)
+#            pprint(v47)
 
     data={'viewParams': request.session['viewParams'], 'reslt3':json.dumps(reslt3, cls=DateEncoder)}
 
