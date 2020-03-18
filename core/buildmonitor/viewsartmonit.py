@@ -90,8 +90,56 @@ def artmonitviewDemo(request):
             l1 = [k46]
             l1.append(kk)
             l1.extend([vv['active'], vv['done'], vv['failed'], vv['finished']])
-            #            print('L1 ',l1)
+#            print('L1 ',l1)
             list2view.append(l1)
+###########
+    new_cur = connection.cursor() 
+    query = """                                                                                                                                                
+    select n.nname as \"BRANCH\", platf.pl,                                                                                             
+    TO_CHAR(j.begdate,'DD-MON HH24:MI') as \"DATE\",                                                                                                           
+    TO_CHAR(j.eb,'DD-MON HH24:MI') as \"BLD\",  
+    a.relnstamp as \"TMSTAMP\",                                                                                                                                
+    platf.lartwebarea,                                                                                                                                         
+    TO_CHAR(j.ela,'DD-MON HH24:MI') as \"LA\",                                                                                                                 
+    j.erla,j.sula                                                                                                                                              
+    from nightlies@ATLR.CERN.CH n inner join                                                                                                                   
+      ( releases@ATLR.CERN.CH a inner join                                                                                                                     
+        ( jobstat@ATLR.CERN.CH j inner join projects@ATLR.CERN.CH p on j.projid = p.projid) on a.nid=j.nid and a.relid=j.relid )                               
+      on n.nid=a.nid,                                                                                                                                          
+    (select arch||'-'||os||'-'||comp||'-'||opt as pl, jid, lartwebarea from jobs@ATLR.CERN.CH ) platf                                                         
+     WHERE                                                                                                                                                     
+    j.jid BETWEEN to_number(to_char(SYSDATE-3, 'YYYYMMDD'))*10000000                                                                                          
+     AND to_number(to_char(SYSDATE, 'YYYYMMDD')+1)*10000000                                                                                                    
+     AND j.jid = platf.jid                                                                                                                                     
+     AND j.begdate between sysdate-3 and sysdate                                                                                                              
+     AND j.eb is not NULL 
+     AND j.sula is not NULL order by j.eb desc                                                                                                                  
+          """
+    new_cur.execute(query)
+    qresult = new_cur.fetchall() 
+    dict_loc_result = {}
+    for row in qresult:
+        l_branch = row[0]
+        l_rel = row[4]
+        l_er = row[7]
+        l_su = row[8]
+        dict_inter = {}
+        dict_inter[l_rel] = {'done': str(l_su), 'failed': str(l_er)}
+        if l_branch in dict_loc_result:
+            dict_inter1 = {}
+            dict_inter1 = dict_loc_result[l_branch]
+            dict_inter1.update(dict_inter)
+            dict_loc_result[l_branch] = dict_inter1
+        else:
+            dict_loc_result[l_branch] = dict_inter
+    cache.set('art-local-dict', dict_loc_result, 1800)
+
+#    pprint(dict_loc_result) 
+#    for k47, v47 in dict_loc_result.items():
+#         print('L2',k47)
+#         pprint(v47)
+#        for kk, vv in v47.items():
+#            print('L2 ', k47, kk, vv.get('done','UNDEF'), vv.get('failed','UNDEF')) 
 
     data = {'viewParams': request.session['viewParams'], 'resltART': json.dumps(list2view, cls=DateEncoder)}
 
