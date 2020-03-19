@@ -139,7 +139,7 @@ def jbhome(request):
                 propname = value
                 urlstr += "&" + str(key).lower() + "=" + str(propname)
 
-            urlstr += "&mode=nodrop"
+            urlstr += "&mode=nodrop&prodsourcelabel=managed"
             card['url'] = urlstr
             spots.append(card)
 
