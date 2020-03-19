@@ -86,18 +86,21 @@ def subresults_getter(url_params_str):
             files = data['files']
             files = [f for f in files if 'artReport.json' in f['name']]
         except:
-            _logger.exception('Exception was caught while seeking jobReport.json in logs for PanDA job: {}'.format(str(pandaid)))
+            _logger.exception('Exception was caught while seeking artReport.json in logs for PanDA job: {}'.format(str(pandaid)))
             return {}
     else:
         _logger.exception('Exception was caught while downloading logs using Rucio for PanDA job: {}'.format(str(pandaid)))
-        return {}
+        return {pandaid: subresults_dict}
 
-    urlBase = "http://" + HOSTNAME + "/" + MEDIA_URL + dirprefix + "/" + tardir
-
-    for f in files:
-        url = urlBase + "/" + f['name']
-        response = http.request('GET', url)
-        data = json.loads(response.data)
+    if len(files) > 0:
+        urlBase = "http://" + HOSTNAME + "/" + MEDIA_URL + dirprefix + "/" + tardir
+        for f in files:
+            url = urlBase + "/" + f['name']
+            response = http.request('GET', url)
+            data = json.loads(response.data)
+    else:
+        _logger.warning('No artReport.json file found in log tarball for PanDA job: {}'.format(str(pandaid)))
+        return {pandaid: subresults_dict}
 
     if isinstance(data, dict) and 'art' in data:
         subresults_dict = data['art']
