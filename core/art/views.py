@@ -744,7 +744,7 @@ def registerARTTest(request):
     ### Checking if provided pandaid exists in panda db
     query={}
     query['pandaid'] = pandaid
-    values = 'pandaid', 'jeditaskid', 'jobname'
+    values = 'pandaid', 'jeditaskid', 'username'
     jobs = []
     jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
     if len(jobs) == 0:
@@ -757,7 +757,7 @@ def registerARTTest(request):
         return HttpResponse(json.dumps(data), content_type='application/json')
 
     ### Checking whether provided pandaid is art job
-    if 'jobname' in job and not job['jobname'].startswith('user.artprod'):
+    if 'username' in job and job['username'] != 'artprod':
         data = {'exit_code': -1, 'message': "Provided pandaid is not art job"}
         return HttpResponse(json.dumps(data), content_type='application/json')
 

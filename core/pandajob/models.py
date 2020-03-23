@@ -133,6 +133,7 @@ class CombinedWaitActDefArch4(models.Model):
     es = models.IntegerField(db_column='ES')
     nevents = models.IntegerField(db_column='NEVENTS')
     isarchive = models.IntegerField(db_column='ISARCHIVE')
+    username = models.CharField(max_length=168, db_column='USERNAME')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."COMBINED_WAIT_ACT_DEF_ARCH4"'
 
