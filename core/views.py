@@ -3123,9 +3123,9 @@ def jobList(request, mode=None, param=None):
         'json' in request.session['requestParams']):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     elif eventservice:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt',  'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype', 'schedulerid', 'pilotid'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt',  'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype', 'schedulerid', 'pilotid', 'computingelement'
     else:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype','schedulerid', 'pilotid'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype','schedulerid', 'pilotid', 'computingelement'
 
     JOB_LIMITS = request.session['JOB_LIMIT']
     totalJobs = 0
@@ -3140,7 +3140,7 @@ def jobList(request, mode=None, param=None):
         tk = 0
         if 'eventservice' in request.session['requestParams']:
             isEventTask = True
-            print ('Event Service!')
+            print('Event Service!')
         else:
             isEventTask = False
         if 'jeditaskid' in request.session['requestParams']:
@@ -3199,7 +3199,7 @@ def jobList(request, mode=None, param=None):
                     :request.session['JOB_LIMIT']].values(*values))
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[
                     :request.session['JOB_LIMIT']].values(*values))
-        listJobs = [Jobsarchived4,Jobsactive4,Jobswaiting4,Jobsdefined4]
+        listJobs = [Jobsarchived4, Jobsactive4, Jobswaiting4, Jobsdefined4]
         if not noarchjobs:
             queryFrozenStates = []
             if 'jobstatus' in request.session['requestParams']:
@@ -3471,7 +3471,7 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     # Sort in order to see the most important tasks
-    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount','noutputdatafiles','actualcorecount','schedulerid', 'pilotversion'])
+    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount', 'noutputdatafiles', 'actualcorecount', 'schedulerid', 'pilotversion', 'computingelement'])
     if sumd:
         for item in sumd:
             if item['field'] == 'jeditaskid':
@@ -3666,10 +3666,10 @@ def jobList(request, mode=None, param=None):
             'built': datetime.now().strftime("%H:%M:%S"),
             'newndrop_test': len(newdroplist) if len(newdroplist) > 0 else (- len(newdroppedPmerge)),
             'cntStatus_test': cntStatus,
-            'ndropPmerge_test':len(newdroppedPmerge),
-            'droppedPmerge2_test':newdroppedPmerge,
-            'pandaIDList_test':newdroplist,
-            'difDropList_test':difDropList,
+            'ndropPmerge_test': len(newdroppedPmerge),
+            'droppedPmerge2_test': newdroppedPmerge,
+            'pandaIDList_test': newdroplist,
+            'difDropList_test': difDropList,
             'clist': clist,
             'warning': warning,
         }
@@ -10567,7 +10567,7 @@ def errorSummary(request):
         'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode',
         'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',
         'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',
-        'destinationse', 'currentpriority', 'computingelement', 'gshare', 'reqid', 'actualcorecount'
+        'destinationse', 'currentpriority', 'computingelement', 'gshare', 'reqid', 'actualcorecount', 'computingelement'
     )
 
     if testjobs:
