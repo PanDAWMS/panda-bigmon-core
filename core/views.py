@@ -208,7 +208,8 @@ standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'cor
                        'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
                        'reqid', 'ramcount', 'nucleus', 'eventservice', 'gshare']
 standard_errorfields = ['cloud', 'computingsite', 'eventservice', 'produsername', 'jeditaskid', 'jobstatus',
-                        'processingtype', 'prodsourcelabel', 'specialhandling','taskid' ,'transformation', 'workinggroup','reqid']
+                        'processingtype', 'prodsourcelabel', 'specialhandling', 'taskid', 'transformation',
+                        'workinggroup', 'reqid', 'computingelement']
 
 VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
@@ -10097,7 +10098,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     errHist = {}
 
     flist = standard_errorfields
-    print (len(jobs))
+    print(len(jobs))
     for job in jobs:
         if not testjobs:
             if job['jobstatus'] not in ['failed', 'holding']: continue
@@ -10674,15 +10675,15 @@ def errorSummary(request):
 
     _logger.debug('Built google diagram: {}'.format(time.time() - start_time))
 
-    if thread!=None:
+    if thread is not None:
         try:
             thread.join()
             jobsErrorsTotalCount = sum(tcount[dkey])
-            print (dkey)
-            print (tcount[dkey])
+            print(dkey)
+            print(tcount[dkey])
             del tcount[dkey]
-            print (tcount)
-            print (jobsErrorsTotalCount)
+            print(tcount)
+            print(jobsErrorsTotalCount)
         except: jobsErrorsTotalCount = -1
     else: jobsErrorsTotalCount = -1
 
@@ -10803,11 +10804,11 @@ def filterErrorData(request, data):
     defaultErrorsPreferences['jobattr'] = standard_errorfields
 
     defaultErrorsPreferences['tables'] = {
-        'jobattrsummary' : 'Job attribute summary',
+        'jobattrsummary': 'Job attribute summary',
         'errorsummary': 'Overall error summary',
-        'siteerrorsummary' : 'Site error summary',
-        'usererrorsummary' : 'User error summary',
-        'taskerrorsummary' : 'Task error summary'
+        'siteerrorsummary': 'Site error summary',
+        'usererrorsummary': 'User error summary',
+        'taskerrorsummary': 'Task error summary'
     }
     userids = BPUser.objects.filter(email=request.user.email).values('id')
     userid = userids[0]['id']
@@ -10823,6 +10824,7 @@ def filterErrorData(request, data):
     userPreferences['defaultjobattr'] = defaultErrorsPreferences['jobattr']
    ###TODO Temporary fix. Need to redesign
     userPreferences['jobattr'].append('reqid')
+    userPreferences['jobattr'].append('computingelement')
 
     data['userPreferences'] = userPreferences
     if 'tables' in userPreferences:

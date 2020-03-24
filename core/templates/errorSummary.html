@@ -182,7 +182,7 @@
             {% else %}
                     {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
                     <a href="{{xurlsubst}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
-               {% endif %}
+            {% endif %}
         {% endfor %}
     </div>
 </td></tr>
