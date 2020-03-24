@@ -31,6 +31,10 @@ def compviewDemo(request):
         arname = request.session['requestParams']['ar']
     else:
         arname = 'x86_64-slc6-gcc62-opt'
+    if 'proj' in request.session['requestParams'] and len(request.session['requestParams']['proj']) < 100:
+        pjname = request.session['requestParams']['proj']
+    else:
+        pjname = 'all'
 
     new_cur = connection.cursor()
     check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span s\
@@ -84,7 +88,14 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
         relnstamp = rowmax[8]
         if gitbrSS != None : gitbrSS=rowmax[9]
         tabname='compresults'
-        query1="select res,projname,nameln,contname,corder from " + tabname + "@ATLR.CERN.CH natural join jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH natural join packages@ATLR.CERN.CH where jid ='%s'" % jid_top
+        if pjname == '*' or re.match('^all$',pjname,re.IGNORECASE) :
+            query1 = "select res,projname,nameln,contname,corder \
+            from " + tabname + "@ATLR.CERN.CH natural join jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH \
+            natural join packages@ATLR.CERN.CH where jid ='%s'" % jid_top
+        else:
+            query1 = "select res,projname,nameln,contname,corder \
+            from " + tabname + "@ATLR.CERN.CH natural join jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH \
+            natural join packages@ATLR.CERN.CH where jid ='%s' and projname ='%s'" % (jid_top,pjname)
         new_cur.execute(query1)
         reslt1 = new_cur.fetchall()
      relextend=relname
@@ -93,7 +104,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
         sComm='git branch '+gitbrSS
         cmmnt='ATLAS CI %s, release %s, platform %s (on %s)<BR><span style="font-size:  smaller">%s</span>' % ( nname, relextend, arname, host, sComm )
      else:
-        cmmnt='ATLAS nightly %s, release %s, platform %s (on %s)' % ( nname, relextend, arname, host)
+        cmmnt='ATLAS nightly %s, release %s, platform %s, project %s (on %s)' % ( nname, relextend, arname, pjname, host)
 #  HEADERS
 #  1. RES
 #  2. PROJECT
@@ -114,7 +125,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       row_cand=[i_result,proj,nameln,container]
       rows_s.append(row_cand)
 
-    data={"nightly": nname, "rel": relname, "ar": arname, "ab123": 'abcd', 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}
+    data={"nightly": nname, "rel": relname, "ar": arname, "proj": pjname, 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}
     return render(request,'compviewDemo.html', data, content_type='text/html')
 
 

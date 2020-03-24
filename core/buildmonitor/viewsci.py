@@ -185,13 +185,13 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
               ii_config = "<a href=\""+webarea_cur+os.sep+'nicos_web_area'+area_suffix+os.sep+'NICOS_Log_'+rname_trun+os.sep+'nicos_confbuild.html'+"\">"+i_config+"</a>"
           link_to_testsRes=reverse('TestsRes')
           link_to_compsRes=reverse('CompsRes')
-          i_combo_t="<a href=\""+link_to_testsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_t+"</a>"
+          i_combo_t="<a href=\""+link_to_testsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"&proj="+pjname+"\">"+combo_t+"</a>"
           if combo_t == 'N/A(N/A)': i_combo_t=combo_t
-          i_combo_c="<a href=\""+link_to_compsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"\">"+combo_c+"</a>"
+          i_combo_c="<a href=\""+link_to_compsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"&proj="+pjname+"\">"+combo_c+"</a>"
           row_cand=[rname,ar_sel,pjname,mrlink_a,t_start,ii_checkout,ii_inst,ii_config,t_bstart,i_combo_c,t_test,i_combo_t,hname]
           rows_s.append(row_cand)
 
-    data={"nightly": nname, "rel": rname, 'viewParams': request.session['viewParams'], 'rows_s':json.dumps(rows_s, cls=DateEncoder)} 
+    data={"nightly": nname, "rel": rname, "project": pjname, 'viewParams': request.session['viewParams'], 'rows_s':json.dumps(rows_s, cls=DateEncoder)}
     return render(request,'civiewDemo.html', data, content_type='text/html')
 
 
