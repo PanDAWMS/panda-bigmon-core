@@ -463,7 +463,7 @@ def initRequest(request, callselfmon = True):
         for p in request.GET:
             pval = request.GET[p]
             ####if injection###
-            if 'script' in pval.lower() or '</' in pval.lower() or '/>' in pval.lower():
+            if 'script' in pval.lower() and ('</' in pval.lower() or '/>' in pval.lower()):
                 data = {
                     'viewParams': request.session['viewParams'],
                     'requestParams': request.session['requestParams'],
