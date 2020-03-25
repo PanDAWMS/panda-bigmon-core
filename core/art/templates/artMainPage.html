@@ -1,9 +1,9 @@
 {% extends "_base_core.html" %}
-{% load static %}
+{% load static %}{% load common_tags %}
 
 {% block page_title %}ART nightly tests{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}">
+    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
 {% endblock %}
 {% block subtitle %}Select menu{% endblock %}
 {% block body %}

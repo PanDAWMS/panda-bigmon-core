@@ -1,8 +1,8 @@
 {% extends "_base_core.html" %}
-{% load static %}
+{% load static %}{% load common_tags %}
 {% block page_title %}ART nightly tests{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?version=1">
+    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
 {% endblock %}
 {% block subtitle %}ART nightly tasks {{ viewParams.selection|safe }}{% endblock %}
 {% block body %}
