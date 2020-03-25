@@ -22,6 +22,8 @@
 {% if requestParams.ntag_from %}<b>Listed tests are for builds done from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
 {% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 
+{% if artpackages|length > 0 %}
+
 <div class="row collapse">
   <div class="columns">
     <ul class="accordion-art" data-accordion data-allow-all-closed="true" data-multi-expand="true">
@@ -76,6 +78,18 @@
     </ul>
   </div>
 </div>
+
+{% else %}
+
+<p></p>
+<div class="callout alert" data-closable>
+  <h5>No tests were found for provided selection parameters!</h5>
+    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+{% endif %}
 
 {% endblock %}
 

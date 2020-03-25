@@ -47,7 +47,7 @@ function toggleShowHide(divID, linkID) {
     {% if reportto.mail|length == 1 %} ,  {% with reportmail=reportto.mail %}{% for email in reportmail %} <a href="mailto:{{ email }} ">email</a> {% endfor %} {% endwith %} {% endif %}
 </b>{% endif %} {% endif %}
 
-
+{% if artjobs|length > 0 %}
 
 <div class="row">
   <div class="columns accordion-art-container">
@@ -219,6 +219,18 @@ function toggleShowHide(divID, linkID) {
     </ul>
   </div>
 </div>
+
+{% else %}
+
+<p></p>
+<div class="callout alert" data-closable>
+  <h5>No tests were found for provided selection parameters!</h5>
+    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+{% endif %}
 
 {% endblock %}
 

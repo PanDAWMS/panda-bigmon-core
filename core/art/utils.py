@@ -89,12 +89,16 @@ def setupView(request, querytype='task'):
     if 'nlastnightlies' in request.session['requestParams']:
         nlastnightlies = int(request.session['requestParams']['nlastnightlies'])
         datelist = find_last_n_nightlies(request, nlastnightlies)
+        if len(datelist) == 0:
+            startdate = datetime.strptime('2017-05-03', artdateformat)
+            enddate = datetime.now()
 
     if not 'ntag' in request.session['requestParams']:
         if 'ntags' in request.session['requestParams'] or 'nlastnightlies' in request.session['requestParams']:
-            request.session['requestParams']['ntags'] = datelist
-            startdate = min(datelist)
-            enddate = max(datelist)
+            if len(datelist) > 0:
+                request.session['requestParams']['ntags'] = datelist
+                startdate = min(datelist)
+                enddate = max(datelist)
             request.session['requestParams']['ntag_from'] = startdate
             request.session['requestParams']['ntag_to'] = enddate
         else:
@@ -127,7 +131,7 @@ def setupView(request, querytype='task'):
             querystr += ')) AND '
         if 'taskid' in request.session['requestParams']:
             querystr += '(a.TASK_ID = ' + request.session['requestParams']['taskid'] + ' ) AND '
-        if 'ntags' in request.session['requestParams'] or 'nlastnightlies' in request.session['requestParams']:
+        if 'ntags' in request.session['requestParams'] or ('nlastnightlies' in request.session['requestParams'] and len(datelist) > 0):
             querystr += '((SUBSTR(NIGHTLY_TAG, 0, INSTR(NIGHTLY_TAG, \'\'T\'\')-1)) IN ('
             for datei in datelist:
                 querystr += '\'\'' + datei.strftime(artdateformat) + '\'\', '

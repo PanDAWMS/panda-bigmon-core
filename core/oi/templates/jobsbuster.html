@@ -28,29 +28,9 @@
         <th></th>
     </tr>
 
-{#    <tr>#}
-{#        <th>Time range, last hours</th>#}
-{#        <th>Jobtype</th>#}
-{#        <th></th>#}
-{#    </tr>#}
   </thead>
   <tbody>
-{#    <tr>#}
-{#        <td>#}
-{#            <input type="number" min="1" max="12" id="timerange_hours"#}
-{#                    {% if requestParams.hours %} value="{{ requestParams.hours }}" {% else %} value="12" {% endif %}>#}
-{#        </td>#}
-{#        <td>#}
-{#            <select id="jobtype">#}
-{#                <option disabled value="all" selected="selected" {% if requestParams.jobtype == 'all' %} disabled="disabled" {% endif %}>All</option>#}
-{#                <option value="prod" {% if requestParams.jobtype == 'prod' %} selected="selected" {% endif %}>Production</option>#}
-{#                <option disabled value="analy" {% if requestParams.jobtype == 'analy' %} selected="selected" {% endif %}>Analysis</option>#}
-{#            </select>#}
-{#        </td>#}
-{#        <td>#}
-{#            <a onclick="go()" class="button secondary">Go!</a>#}
-{#        </td>#}
-{#    </tr>#}
+
   </tbody>
 </table>
 
@@ -89,41 +69,17 @@
 {% else %}
     <p>No error peaks were spotted. Please extend time range.</p>
 {% endif %}
-
+</div>
 
 {% endblock %}
 
-{% block extra_js_bottombody %}
-{#<script>#}
-{#function go() {#}
-{##}
-{#var query = '{% url 'jobProblems' %}';#}
-{#let timerange_hours_Q = "";#}
-{#let jobtype_Q = "";#}
-{#let timerange_hours = document.getElementById("timerange_hours");#}
-{#let jobtype = document.getElementById("jobtype");#}
-{##}
-{#if (timerange_hours.value.length > 0) timerange_hours_Q = "hours="+timerange_hours.value;#}
-{#if (jobtype.value.length > 0) jobtype_Q = "jobtype="+jobtype.value;#}
-{##}
-{#if ((timerange_hours_Q.length>1) || (jobtype_Q.length>1)) {#}
-{#    query += "?";#}
-{#    if (timerange_hours_Q.length > 1) {#}
-{#        query += timerange_hours_Q+"&";#}
-{#    }#}
-{#    if (jobtype_Q.length > 1) {#}
-{#        query += jobtype_Q+"&";#}
-{#    }#}
-{#    query = query.substring(0, query.length - 1);#}
-{#}#}
-{#window.location = query;#}
-{#}#}
-{#</script>#}
-
+{% block base_js %}
 <!-- Load d3.js and c3.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.js"></script>
 <script src="{% static 'js/datatables/moment.min.js' %}"></script>
+{% endblock %}
+{% block extra_js %}
 
 <script>
 $(document).ready(function () {
