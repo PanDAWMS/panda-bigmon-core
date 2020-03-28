@@ -53,3 +53,4 @@
 /jobs/?harvesterid=all&display_limit=100
 /artmonitview
 /new/dash/
+/jobs/?days=3&json=1&datasets=yes&cloud=RU&jobtype=test&istestmonitor=yes

@@ -3023,7 +3023,10 @@ def jobList(request, mode=None, param=None):
         data = json.loads(data)
         try:
             data = deleteCacheTestData(request,data)
-        except: pass
+        except:
+            pass
+        if 'istestmonitor' in request.session['requestParams'] and request.session['requestParams']['istestmonitor'] == 'yes':
+            return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
         data['request'] = request
         if data['eventservice'] == True:
             response = render_to_response('jobListES.html', data, content_type='text/html')
@@ -3708,6 +3711,9 @@ def jobList(request, mode=None, param=None):
             "jobs": jobs,
             "errsByCount": errsByCount,
         }
+        # cache json response for particular usage (HC test monitor for RU)
+        if 'istestmonitor' in request.session['requestParams'] and request.session['requestParams']['istestmonitor'] == 'yes':
+            setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 10)
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
