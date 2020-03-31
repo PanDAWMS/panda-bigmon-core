@@ -1,22 +1,13 @@
-import json, urllib3
-from datetime import datetime, timedelta
+import json
 
-from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
+from django.http import JsonResponse
+from django.template.defaulttags import register
+from django.db.models import Q, F
 
 from core.views import initRequest, login_customrequired, DateEncoder
-from core.libs.cache import setCacheEntry, getCacheEntry
-from core.libs.exlib import parse_datetime
-
-from core.oi.utils import round_time
-from django import template
-from django.http import HttpResponseRedirect
-from django.http import JsonResponse
-
-from django.template.defaulttags import register
 from core.iDDS.models import Transforms, Collections, Requests, Req2transforms, Processings, Contents
-from django.db.models import Q, F
 from core.iDDS.useconstants import SubstitleValue
 
 CACHE_TIMEOUT = 20
@@ -32,7 +23,8 @@ def to_float(value):
 
 @login_customrequired
 def main(request):
-    #request.session['viewParams']['selection'] = '' + hashtag
+    initRequest(request)
+
     iDDSrequests = list(Requests.objects.values())
 
     subtitleValue.replace('requests', iDDSrequests)
@@ -45,6 +37,7 @@ def main(request):
     response = render_to_response('landing.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
+
 
 def collections(request):
     initRequest(request)
@@ -85,7 +78,6 @@ def iddsсontents(request):
     return JsonResponse({'data': iDDSсontents}, encoder=DateEncoder, safe=False)
 
 
-
 def processings(request):
     initRequest(request)
     query = Q()
@@ -101,7 +93,6 @@ def processings(request):
                                   ))
     subtitleValue.replace('processings', iDDSprocessings)
     return JsonResponse({'data': iDDSprocessings}, encoder=DateEncoder, safe=False)
-
 
 
 def transforms(request):

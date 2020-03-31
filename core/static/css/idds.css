@@ -1,7 +1,20 @@
 table.display tbody tr:nth-child(even):hover td{
-    background-color: #ffa !important;
+    background-color: #d4dfed !important;
 }
 
 table.display tbody tr:nth-child(odd):hover td {
-    background-color: #ffa !important;
+    background-color: #d4dfed !important;
+}
+
+table.display tbody tr.selected {
+    background-color: #d4dfed !important;
+}
+
+div.dataTables_wrapper div.dataTables_processing {
+    height: auto;
+    padding: 0.7rem 0;
+    background-color: #d4dfed;
+    z-index: 7;
+    border: none;
+    box-shadow: 8px 8px 16px 0px rgba(0,0,0,0.5);
 }

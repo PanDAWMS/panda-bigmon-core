@@ -364,7 +364,7 @@ th.vertical {
     color: #272727;
     background-color: #fefefe;
     border: none;
-    text-align: center;
+    text-align: left;
     font-size: 0.875rem;
 }
 
@@ -433,10 +433,17 @@ div.rotate {
 }
 
 .dataTables_info {
+    margin-top: 0.3rem;
     color: #727C81 !important;
     font-size: inherit;
 }
 
+.dataTables_paginate {
+    margin-top: 0.3rem !important;
+}
+ul.pagination {
+    margin-bottom: 0;
+}
 .paginate_button.current {
     background-color: #727C81;
     color:white;

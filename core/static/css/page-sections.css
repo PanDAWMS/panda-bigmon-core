@@ -26,6 +26,11 @@ a:hover, a:visited, a:link, a:active
     color:#0a47ff;
 }
 
+select {
+    -moz-appearance: none;
+    text-indent: 0.01px;
+    text-overflow: '';
+}
 
 .section{ font-weight:bold; color:darkblue; padding-bottom:10px }
 
@@ -616,3 +621,66 @@ li.list-item > label {
     float:left;
     margin: 1rem 0.3rem;
 }
+
+.card.bp-container-simple {
+  width: 100%;
+  margin: 0.7rem 0;
+  border: 1px solid #5e789a;
+}
+  .card.bp-container-simple .card-divider {
+    padding: 0.7rem;
+    background-color: #5e789a;
+    color: #fefefe;
+    font-weight: bold;
+    font-size: inherit;
+    justify-content: space-between;
+  }
+  .card.bp-container-simple .card-section {
+    padding: 0.3rem 0;
+    margin: 0;
+  }
+
+
+.card.bp-container {
+  width: 100%;
+  margin: 0 0.7rem 0.7rem 0.7rem; }
+  .card.bp-container .card-divider {
+    color: #fefefe;
+    font-weight: bold;
+    font-size: inherit;
+    justify-content: space-between; }
+    .card.bp-container .card-divider a {
+      color: #fefefe;
+      padding: 0; }
+      .card.bp-container .card-divider a:hover, .card.bp-container .card-divider a:focus {
+        color: #b8cae1; }
+    .card.bp-container .card-divider ul.tabs {
+      padding: 0;
+      margin: 0;
+      border: none;
+      background-color: #355681;
+      color: #fefefe; }
+      .card.bp-container .card-divider ul.tabs li {
+        padding-left: 0.7rem;
+        padding-top: 0.3rem; }
+      .card.bp-container .card-divider ul.tabs .tabs-title > a {
+        color: #fefefe;
+        background-color: #355681;
+        padding: 0; }
+        .card.bp-container .card-divider ul.tabs .tabs-title > a:hover {
+          background-color: #355681; }
+        .card.bp-container .card-divider ul.tabs .tabs-title > a:focus, .card.bp-container .card-divider ul.tabs .tabs-title > a[aria-selected='true'] {
+          color: #b0c4de;
+          background-color: #355681; }
+  .card.bp-container .tabs-content {
+    padding: 0;
+    margin: 0; }
+    .card.bp-container .tabs-content .tabs-panel {
+      padding: 0;
+      margin: 0; }
+      .card.bp-container .tabs-content .tabs-panel .card-section {
+        padding: 0;
+        margin: 0; }
+  .card.bp-container .card-section {
+    padding: 0;
+    margin: 0; }
