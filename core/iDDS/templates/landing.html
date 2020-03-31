@@ -306,6 +306,7 @@ $('#requests_table tbody').on( 'click', 'tr', function () {
     collections_table_input.clear().draw();
     collections_table_output.clear().draw();
     collections_table_log.clear().draw();
+    processing_table.clear().draw();
     contents_table.clear().draw();
     if (!$(this).hasClass('selected')) doHide = false;
     $('#transform_table_container').goTo();
