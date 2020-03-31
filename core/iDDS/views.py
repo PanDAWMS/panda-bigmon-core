@@ -33,7 +33,7 @@ def to_float(value):
 @login_customrequired
 def main(request):
     #request.session['viewParams']['selection'] = '' + hashtag
-    iDDSrequests = list(Requests.objects.using('idds_intr').values())
+    iDDSrequests = list(Requests.objects.values())
 
     subtitleValue.replace('requests', iDDSrequests)
 
@@ -55,7 +55,7 @@ def collections(request):
     if 'relation_type' in request.session['requestParams']:
         query = Q(relation_type=request.session['requestParams']['relation_type']) & query
 
-    iDDScollections = list(Collections.objects.using('idds_intr').filter(query)
+    iDDScollections = list(Collections.objects.filter(query)
                           .values('coll_id',
                                   'status',
                                   'total_files',
@@ -72,7 +72,7 @@ def iddsсontents(request):
     query = Q()
     if 'coll_id' in request.session['requestParams']:
         query = Q(coll_id=request.session['requestParams']['coll_id'])
-    iDDSсontents = list(Contents.objects.using('idds_intr').filter(query)
+    iDDSсontents = list(Contents.objects.filter(query)
                           .values('content_id',
                                   'scope',
                                   'name',
@@ -91,7 +91,7 @@ def processings(request):
     query = Q()
     if 'transform_id' in request.session['requestParams']:
         query = Q(transform_id=request.session['requestParams']['transform_id'])
-    iDDSprocessings = list(Processings.objects.using('idds_intr').filter(query)
+    iDDSprocessings = list(Processings.objects.filter(query)
                           .values('processing_id',
                                   'transform_id',
                                   'status',
@@ -109,7 +109,7 @@ def transforms(request):
     query = Q()
     if 'requestid' in request.session['requestParams']:
         query = Q(request_id_fk=request.session['requestParams']['requestid'])
-    iDDStransforms = list(Req2transforms.objects.using('idds_intr').select_related('transform_id_fk').filter(query)
+    iDDStransforms = list(Req2transforms.objects.select_related('transform_id_fk').filter(query)
                           .values('transform_id_fk__transform_id',
                                   'transform_id_fk__transform_type',
                                   'transform_id_fk__transform_tag',
