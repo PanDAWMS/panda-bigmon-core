@@ -1010,15 +1010,14 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         if paramQuery[0] == '*': paramQuery = paramQuery[1:]
                         if paramQuery[-1] == '*': paramQuery = paramQuery[:-1]
                         query['%s__contains' % param] = paramQuery
-                    elif param == 'jeditaskid':
-                        if request.session['requestParams']['jeditaskid'] != 'None':
-                            if int(request.session['requestParams']['jeditaskid']) < 4000000:
-                                query['taskid'] = request.session['requestParams'][param]
-                            else:
-                                query[param] = request.session['requestParams'][param]
-                    elif param == 'taskid':
-                        if request.session['requestParams']['taskid'] != 'None': query[param] = \
-                        request.session['requestParams'][param]
+                    elif param == 'jeditaskid' or param == 'taskid':
+                        val = escapeInput(request.session['requestParams'][param])
+                        if '|' in val:
+                            values = val.split('|')
+                            values = [int(val) for val in values]
+                            query[param + '__in'] = values
+                        else:
+                            query[param] = int(val)
                     elif param == 'pandaid':
                         try:
                             pid = request.session['requestParams']['pandaid']
@@ -3379,9 +3378,9 @@ def jobList(request, mode=None, param=None):
     _logger.debug('Sorted joblist: {}'.format(time.time() - start_time))
 
     taskname = ''
-    if 'jeditaskid' in request.session['requestParams']:
+    if 'jeditaskid' in request.session['requestParams'] and '|' not in request.session['requestParams']['jeditaskid']:
         taskname = getTaskName('jeditaskid', request.session['requestParams']['jeditaskid'])
-    if 'taskid' in request.session['requestParams']:
+    if 'taskid' in request.session['requestParams'] and '|' not in request.session['requestParams']['taskid']:
         taskname = getTaskName('jeditaskid', request.session['requestParams']['taskid'])
 
     if 'produsername' in request.session['requestParams']:
