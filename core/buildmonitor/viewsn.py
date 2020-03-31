@@ -29,6 +29,8 @@ def nviewDemo(request):
         rname = request.session['requestParams']['rel']
     else:
         rname = '*'
+    ar_sel="unknown"
+    pjname='unknown'
 
     new_cur = connection.cursor()
     dict_from_cache = cache.get('art-monit-dict')
