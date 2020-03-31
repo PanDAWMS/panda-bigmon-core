@@ -29,6 +29,7 @@ def civiewDemo(request):
         rname = request.session['requestParams']['rel']
     else:
         rname = '*'
+    pjname = '*'
 
     new_cur = connection.cursor()
     check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span s\
