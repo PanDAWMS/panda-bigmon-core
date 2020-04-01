@@ -268,7 +268,6 @@ var transform_table = $('#transform_table').DataTable({
 var requests_table = $('#requests_table').DataTable({
     scrollX: true,
     order: [],
-    pageLength: 20,
     columns: [
         { data: "request_id", title: "request_id", className: "num" },
         { data: "scope", title: "scope" },
@@ -306,9 +305,10 @@ $('#requests_table tbody').on( 'click', 'tr', function () {
     collections_table_input.clear().draw();
     collections_table_output.clear().draw();
     collections_table_log.clear().draw();
+    processing_table.clear().draw();
     contents_table.clear().draw();
     if (!$(this).hasClass('selected')) doHide = false;
-    $('#transform_table_container').goTo();
+    //$('#transform_table_container').goTo();
     requests_table.rows().every(function (index, element) {
         var data = this.data();
         var node = this.node();
