@@ -18,6 +18,7 @@
 {% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <b>{{ task.taskname }}</b>{% endblock %}
 
 {% block body %}
+
 {% if columns %}
   <table>
     <tr bgcolor='lightcyan'>
@@ -372,7 +373,7 @@
   {% endif %}
 
   {% if task.errordialog %}
-      <p>
+    <p></p>
       {% if logtxt %}
           <div class="card scrollable">
               <div class="card-divider errorlog">
@@ -499,7 +500,7 @@
               </tr>
           {% endfor %}
       </table>
-      <p>
+      <p></p>
   {% endif %}
 
   {% if jobscoutids.cputimescoutjob|length > 0 or jobscoutids.walltimescoutjob|length > 0 or jobscoutids.ramcountscoutjob|length > 0 or jobscoutids.outdiskcountscoutjob|length > 0 or jobscoutids.iointensityscoutjob|length > 0 %}
@@ -591,6 +592,7 @@
       {% endif %}
 
   {% endif %}
+{% endif %}
 
 {% endblock %}
 
