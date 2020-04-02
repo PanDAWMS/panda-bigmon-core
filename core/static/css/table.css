@@ -330,6 +330,8 @@ th.vertical {
 
 .dataTables_wrapper {
   width: 100%;
+  margin-top: 0.7rem;
+  margin-bottom: 0.7rem;
 }
 .dataTables_wrapper .row {
   max-width: 100%;
