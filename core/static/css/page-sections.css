@@ -20,10 +20,13 @@ vertical-align: top;
 width:10em;
 }
 
-a:hover, a:visited, a:link, a:active
+a:link {
+  color: #0a47ff;
+}
+
+a:hover, a:visited, a:active
 {
-    text-decoration: none;
-    color:#0a47ff;
+  text-decoration: none;
 }
 
 select {

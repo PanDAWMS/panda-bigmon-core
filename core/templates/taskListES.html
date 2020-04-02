@@ -1,7 +1,5 @@
 {% extends "_base_core.html" %}
 {% load staticfiles %}
-
-
 {% block page_title %} {{ viewParams.MON_VO }} PanDA ES tasks{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA Event Service tasks{{viewParams.selection|safe }}
@@ -12,6 +10,12 @@
 {% block subtitle_params %}
 {% if tasksTotalCount != None%} <b> Total tasks found &#x7E; <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{tasksTotalCount}}">{{ tasksTotalCount }}</a></b> {% endif %}
 {% endblock %}
+
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/d3.v3.min.js' %}"></script>
+{% endblock %}
+
 {% block body %}
 
 {% if requestParams.statenotupdated %}<br><b>Tasks in <span class="{{ requestParams.status }}">{{ requestParams.status }}</span> state for more than {{ requestParams.statenotupdated }} hours</b> {% endif %}
@@ -33,8 +37,137 @@
 {% if requestParams.superstatus %}<br><b>{% if viewParams.MON_VO == 'ATLAS' %}Task status {% else %}Task status {% endif %}: <span class='{{requestParams.superstatus}}'>{{ requestParams.superstatus }}</span></b> {% endif %}
 {% if requestParams.hashtag %}<br><b>Hashtag: {{ requestParams.hashtag }} </b> {% endif %}
 
-<p>
-<script src="/static/js/d3jsplot.js"></script>
+<p></p>
+
+{% if tasks %}
+
+{% if sumd %}
+
+<table>
+<tr class='tablesection'><th colspan=20> Task attribute summary, {{ ntasks }} tasks </th></tr>
+{% for fdict in sumd %}
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
+{% for item in fdict.list %}
+<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}} {{item.kname}}_tooltip' {% endif %}> {{ item.kname }} </span>
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
+{% endfor %}
+</td></tr>
+{% endfor %}
+{% if hashtags and hashtags|length > 0 %}
+    <tr>
+        <th>hashtags ({{ hashtags|length }})</th>
+        <td>{% for hashtag in hashtags %}
+                {% if 'hashtag' in requestParams %}
+                    <a href="{{ nohashtagurl }}hashtag={{ requestParams.hashtag }},{{ hashtag }}">{{ hashtag }}</a>
+                {% else %}
+                    <a href="{{ xurl }}hashtag={{ hashtag }}">{{ hashtag }}</a>
+                {% endif %}
+                {% if not forloop.last %}, {% endif %}
+            {% endfor %}</td>
+    </tr>
+{% endif %}
+</table>
+{% endif %}
+<a onclick="javascript:buildPlots('d3splot', {{ idtasks }});">Show plots</a>
+<div id="plots" style="display:none">
+    <div id="jobsconsumptionplots"></div>
+    <div class="d3splot" id="plot1" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot2" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot5" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot7" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot10" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot9" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot11" style="float:left;display:none"></div>
+
+    <br style="clear:both;">
+
+    <div class="d3splot" id="plot3" style="clear:both;float:left;display:none"></div>
+
+    <div class="d3splot" id="plot4" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot6" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot8" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot12" style="float:left;display:none"></div>
+
+    <div class="d3splot" id="plot13" style="float:left;display:none"></div>
+    <br style="clear: both">
+</div>
+<br/><br/>
+<table>
+<tr class='tablesection'><th colspan=20> {{ display_limit }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
+{% if display_limit %} {% if tasks|length >= display_limit %}
+        <font size=-1>Only the most recent {{ display_limit }} tasks are shown. <a href="{{ url_nolimit }}">Remove the limit</a></font>
+{% endif %} {% endif %}
+</th></tr>
+<tr class='tablesection'>
+	<th><a href="{{nosorturl}}">ID</a></th>
+    {% if requestParams.tasktype == 'anal' %}<th>Jobset</th>{% endif %}
+	<th>TaskType/ProcessingType     Group<br><font color='brown'>Logged status</font></th>
+
+    <th>Site</th>
+
+	<th>Task status</th>
+	<th>Ninputfiles | <span class='finished'>finished</span> | <br><span class='failed'>failed</span></th>
+	<th>Nevents | remaining</th>
+
+	<th>Event dispatches</th>
+	<th><a href="{{nosorturl}}">Created</a></th>
+	<th><a href="{{nosorturl}}sortby=time-descending">Modified</a></th>
+	<th><a href="{{nosorturl}}sortby=statetime-descending">State changed</a></th>
+	<th><a href="{{nosorturl}}sortby=priority">Priority</a></th>
+</tr>
+{% for task in tasks %}
+	<tr>
+		<td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>
+            <br> <a style="color: grey" href="{% url 'taskInfoNew' task.jeditaskid %}"><span class="tooltip-upper">{{ task.jeditaskid }}<span class="tooltip-text">Go to a new<br>input-based<br>ES task page</span></span></a>
+		</td>
+		{% if requestParams.tasktype == 'anal' %}<td>{{ task.reqid }}</td>{% endif %}
+		<td>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %}     {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %}     <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %}
+{% if task.deftreqid %}     RequestID:<a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a> {% endif %}
+		<br><font color='brown'>{{ task.errordialog|safe }}</font></td>
+
+        <td> <a href="{% url 'siteInfo' task.site %}">{{ task.site }}</a> </td>
+
+		<td  class='{{task.superstatus}}_fill'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} <span class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</span> {% else %} <span class="{{ task.status }}_tooltip">{{ task.status }} </span> {% endif %}</a></td>
+        <td>
+            {{ task.dsinfo.nfiles }} | <span class='finished'> {{ task.dsinfo.nfilesfinished }}</span> | <span class='failed'>{{ task.dsinfo.nfilesfailed }}</span>
+        </td>
+
+        <td>
+        {% if task.eventsData %}
+            {{ task.eventsData.totev }} | {{ task.eventsData.totevrem }}
+        {% endif %}
+        </td>
+
+        <td> {{task.estaskstr}}
+
+           <div id="div-{{ task.jeditaskid }}">
+                <a onclick="javascript:loadESData('{{ task.jeditaskid }}');">Show</a>
+            </div>
+        </td>
+		<td><font size=-1>{{ task.creationdate }}</font></td>
+		<td><font size=-1>{{ task.modificationtime }}</font></td>
+		<td><font size=-1>{{ task.statechangetime }}</font></td>
+		<td>{{ task.taskpriority }}</td>
+	</tr>
+{% endfor %}
+</table>
+
+{% else %}
+    <p>No matches to query.</p>
+{% endif %}
+{% endblock %}
+
+{% block js_body_page %}
+  <script src="{% static 'js/d3jsplot.js' %}"></script>
 <script type="text/javascript">
 
 function loadESData(jeditaskid) {
@@ -133,140 +266,6 @@ function buildPlots(classname, idtasks) {
 }
 
 </script>
-
-
-{% if tasks %}
-
-{% if sumd %}
-
-<table>
-<tr class='tablesection'><th colspan=20> Task attribute summary, {{ ntasks }} tasks </th></tr>
-{% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
-{% for item in fdict.list %}
-<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}} {{item.kname}}_tooltip' {% endif %}> {{ item.kname }} </span>
-<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
-{% endfor %}
-</td></tr>
-{% endfor %}
-{% if hashtags and hashtags|length > 0 %}
-    <tr>
-        <th>hashtags ({{ hashtags|length }})</th>
-        <td>{% for hashtag in hashtags %}
-                {% if 'hashtag' in requestParams %}
-                    <a href="{{ nohashtagurl }}hashtag={{ requestParams.hashtag }},{{ hashtag }}">{{ hashtag }}</a>
-                {% else %}
-                    <a href="{{ xurl }}hashtag={{ hashtag }}">{{ hashtag }}</a>
-                {% endif %}
-                {% if not forloop.last %}, {% endif %}
-            {% endfor %}</td>
-    </tr>
-{% endif %}
-</table>
-{% endif %}
-<a onclick="javascript:buildPlots('d3splot', {{ idtasks }});">Show plots</a>
-<div id="plots" style="display:none">
-    <div id="jobsconsumptionplots"></div>
-    <div class="d3splot" id="plot1" style="float:left;display:none"></div>
-
-    <div class="d3splot" id="plot2" style="float:left;display:none"></div>
-
-    <div class="d3splot" id="plot5" style="float:left;display:none"></div>
-
-    <div class="d3splot" id="plot7" style="float:left;display:none"></div>
-
-    <div class="d3splot" id="plot10" style="float:left;display:none"></div>
-
-    <div class="d3splot" id="plot9" style="float:left;display:none"></div>
-
-    <div class="d3splot" id="plot11" style="float:left;display:none"></div>
-
-    <br style="clear:both;">
-
-    <div class="d3splot" id="plot3" style="clear:both;float:left;display:none"></div>
-
-    <div class="d3splot" id="plot4" style="float:left;display:none"></div>
-
-    <div class="d3splot" id="plot6" style="float:left;display:none"></div>
-
-    <div class="d3splot" id="plot8" style="float:left;display:none"></div>
-
-    <div class="d3splot" id="plot12" style="float:left;display:none"></div>
-
-    <div class="d3splot" id="plot13" style="float:left;display:none"></div>
-    <br style="clear: both">
-</div>
-<br/><br/>
-<table>
-<tr class='tablesection'><th colspan=20> {{ display_limit }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
-{% if display_limit %} {% if tasks|length >= display_limit %}
-        <font size=-1>Only the most recent {{ display_limit }} tasks are shown. <a href="{{ url_nolimit }}">Remove the limit</a></font>
-{% endif %} {% endif %}
-</th></tr>
-
-
-
-
-<tr class='tablesection'>
-	<th><a href="{{nosorturl}}">ID</a></th>
-    {% if requestParams.tasktype == 'anal' %}<th>Jobset</th>{% endif %}
-	<th>TaskType/ProcessingType     Group<br><font color='brown'>Logged status</font></th>
-
-    <th>Site</th>
-
-	<th>Task status</th>
-	<th>Ninputfiles | <span class='finished'>finished</span> | <br><span class='failed'>failed</span></th>
-	<th>Nevents | remaining</th>
-
-	<th>Event dispatches</th>
-	<th><a href="{{nosorturl}}">Created</a></th>
-	<th><a href="{{nosorturl}}sortby=time-descending">Modified</a></th>
-	<th><a href="{{nosorturl}}sortby=statetime-descending">State changed</a></th>
-	<th><a href="{{nosorturl}}sortby=priority">Priority</a></th>
-</tr>
-    {% for task in tasks %}
-	<tr>
-		<td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>
-            <br> <a style="color: grey" href="{% url 'taskInfoNew' task.jeditaskid %}"><span class="tooltip-upper">{{ task.jeditaskid }}<span class="tooltip-text">Go to a new<br>input-based<br>ES task page</span></span></a>
-		</td>
-		{% if requestParams.tasktype == 'anal' %}<td>{{ task.reqid }}</td>{% endif %}
-		<td>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %}     {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %}     <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %}
-{% if task.deftreqid %}     RequestID:<a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{task.deftreqid}}/">{{task.deftreqid}}</a> {% endif %}
-		<br><font color='brown'>{{ task.errordialog|safe }}</font></td>
-
-        <td> <a href="{% url 'siteInfo' task.site %}">{{ task.site }}</a> </td>
-
-		<td  class='{{task.superstatus}}_fill'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} <span class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</span> {% else %} <span class="{{ task.status }}_tooltip">{{ task.status }} </span> {% endif %}</a></td>
-        <td>
-            {{ task.dsinfo.nfiles }} | <span class='finished'> {{ task.dsinfo.nfilesfinished }}</span> | <span class='failed'>{{ task.dsinfo.nfilesfailed }}</span>
-        </td>
-
-        <td>
-        {% if task.eventsData %}
-            {{ task.eventsData.totev }} | {{ task.eventsData.totevrem }}
-        {% endif %}
-        </td>
-
-        <td> {{task.estaskstr}}
-
-           <div id="div-{{ task.jeditaskid }}">
-                <a onclick="javascript:loadESData('{{ task.jeditaskid }}');">Show</a>
-            </div>
-
-
-
-        </td>
-		<td><font size=-1>{{ task.creationdate }}</font></td>
-		<td><font size=-1>{{ task.modificationtime }}</font></td>
-		<td><font size=-1>{{ task.statechangetime }}</font></td>
-		<td>{{ task.taskpriority }}</td>
-	</tr>
-    {% endfor %}
-</table>
-
-{% else %}
-    <p>No matches to query.</p>
-{% endif %}
 {% endblock %}
 
 {% block helptext %}

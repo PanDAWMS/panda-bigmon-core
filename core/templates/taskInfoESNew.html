@@ -1,17 +1,18 @@
 {% extends "_base_core.html" %}
-
-{% load staticfiles %}
+{% load common_tags %}
+{% load static %}
 {% block page_title %} {{ jeditaskid }} ES task {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
-{% block base_css %}
+{% block css_page_library %}
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <style>
-        #inputfilestable_wrapper .row {
-            max-width: 99%;
-        }
-    </style>
 {% endblock %}
-
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.rowsGroup.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script src="{% static 'js/d3.v3.min.js' %}"></script>
+{% endblock %}
 {% block subtitle %}PanDA Event Service task {{ jeditaskid }} {% if task.site %} at {{ task.site }} {% endif %} {% endblock %}
 
 {% block body %}
@@ -757,12 +758,8 @@
 {% endblock %}
 
 
-{% block extra_js %}
-    <script src="{% static 'js/humanize.min.js' %}"></script>
-    <script type="text/javascript" src="/static/js/d3jsplot.js?version=1"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% block js_body_page %}
+  <script src="{% static 'js/d3jsplot.js' %}?"></script>
 
     <script>
         function toggleDetailDisplay(className) {

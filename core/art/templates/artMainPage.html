@@ -2,7 +2,7 @@
 {% load static %}{% load common_tags %}
 
 {% block page_title %}ART nightly tests{% endblock %}
-{% block extra_css %}
+{% block css_page %}
     <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
 {% endblock %}
 {% block subtitle %}Select menu{% endblock %}
@@ -70,6 +70,9 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block js_body_page %}
 <script>
 
 function searchResults() {

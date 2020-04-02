@@ -1,11 +1,5 @@
 {% extends "_base_core.html" %}
 {% load static %}
-
-<script type="text/javascript"
-        src="/core/static/js/progressbartaskpage.js">
-</script>
-
-
 {% block page_title %} {{ viewParams.MON_VO }} PanDA tasks{% endblock %}
 {% block subtitle %}PanDA {% if viewParams.MON_VO == 'ATLAS' %} JEDI {% endif %} task list
     {{ viewParams.selection|safe }}
@@ -14,23 +8,22 @@
 {% endblock %}
 {% block subtitle_params %}
     {% if tasksTotalCount != None %}<b> Total tasks found &#x7E; <a href="{% url 'taskList' %}?
-
-
-
-
-
-
-            {% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{ display_limit }}{% endif %}&limit={{ tasksTotalCount }}">{{ tasksTotalCount }}</a></b>
+        {% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{ display_limit }}{% endif %}&limit={{ tasksTotalCount }}">{{ tasksTotalCount }}</a></b>
     {% endif %}
 {% endblock %}
+
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script src="{% static 'js/d3.v3.min.js' %}"></script>
+{% endblock %}
+
 {% block body %}
-
-    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <script src="{% static 'js/humanize.min.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
-
 
     {% if requestParams.statenotupdated %}<br>
         <b>Tasks in <span class="{{ requestParams.status }}">{{ requestParams.status }}</span> state for more
@@ -69,11 +62,6 @@
 
 
         {% if flowstruct %}
-
-            <script type="text/javascript"
-                    src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
-            </script>
-
             {% include "googleFlowDiagram.html" with struct=flowstruct %}
         {% endif %}
 
@@ -135,166 +123,8 @@
                 </tr>
                 </thead>
             </table>
-            <script type="text/javascript">
-
-                $(document).ready(function () {
-                    var jsonData = JSON.parse('{{ datasetstage | safe}}');
-                    $('#stagingdatasetstable').dataTable({
-                        data: jsonData,
-                        columns: [
-                            {
-                                data: 'TASKID',
-                                "render": function (data, type, full, meta) {
-                                    var entry = '<a href="'+{% url 'taskInfo' %}+
-                                    full['TASKID'] + '">' + full['TASKID'] + '</a>';
-                                    entry += '<a target="_blank" href="'+{% url 'staginprogressplot' %}+
-                                    '?jeditaskid=' + full['TASKID'] + '"><img src=\'/static/images/tinychart.png\' width=14 height=14 border=0/></a>';
-                                    return entry;
-                                },
-                            },
-                            {data: 'SOURCE_RSE'},
-                            {data: 'DATASET'},
-                            {data: 'STATUS'},
-                            {data: 'STAGED_FILES'},
-                            {data: 'TOTAL_FILES'},
-                            {data: 'START_TIME'},
-                            {data: 'END_TIME'},
-                            {data: 'UPDATE_TIME'},
-                            {
-                                data: 'RSE', "render": function (data, type, full, meta) {
-                                    return '<a target="_blanc" href="https://rucio-ui.cern.ch/rule?rule_id=' + full['RSE'] + '">' + full['RSE'] + '</a>';
-                                },
-                            },
-                        ]
-                    });
-                });
-            </script>
-
         {% endif %}
 
-        <script src="/static/js/d3jsplot.js"></script>
-        <script type="text/javascript">
-            function toggleDetailDisplay(className) {
-                el = document.getElementsByClassName(className);
-                for (i = 0; i < el.length; i++) {
-                    el[i].style.display = (el[i].style.display == "none") ? "" : "none";
-                }
-            }
-
-
-            function tasksPlots(classname, idtasks) {
-                var values = []
-
-                $('input[type=radio][name=jobtype]').on('change', function () {
-                    toggleDetailDisplay(classname);
-                    $(".d3splot").empty();
-                    switch ($(this).val()) {
-                        case 'all':
-                            buildPlots(classname, values['all']);
-                            break;
-                        case 'run':
-                            buildPlots(classname, values['run']);
-                            break;
-                        case 'build':
-                            buildPlots(classname, values['build']);
-                            break;
-                        case 'pmerge':
-                            buildPlots(classname, values['pmerge']);
-                            break;
-                    }
-                });
-                $.ajax({
-                    type: "GET",
-                    url: '{% url 'tasksplots' %}?idtasks=' + idtasks,
-                    async: false,
-                    cache: false,
-                    dataType: "json",
-                    data: {},
-                    success: function (data) {
-                        values = data;
-                        document.getElementById("plots").style.display = "block";
-                    },
-                    error: function ($xhr, textStatus, errorThrown) {
-                        var string = $xhr.responseJSON;
-                        var json_object = JSON.parse(string);
-                        console.log("ERROR : ", json_object.message);
-                    }
-                })
-                ;
-                buildPlots(classname, values['all'])
-            }
-
-            function buildPlots(classname, data) {
-                values = data;
-                el = document.getElementsByClassName(classname);
-
-                var flag = 0;
-                for (i = 0; i < el.length; i++) {
-                    flag = (el[i].innerHTML) ? flag : flag + 1;
-                }
-                if (flag > 0) {
-                    $("#jobsconsumptionplots").html("<img src='{% static "images/load.gif" %}'>  ");
-
-                    if ('maxpss' in values) {
-                        pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
-                    }
-                    if ('maxpssf' in values) {
-                        pandamonplotHistNew(values['maxpssf'], "#plot3", "Maximum PSS histogram (failed jobs)");
-                    }
-                    if ('walltime' in values) {
-                        pandamonplotHistNew(values['walltime'], "#plot2", "Walltime histogram");
-                    }
-                    if ('walltimef' in values) {
-                        pandamonplotHistNew(values['walltimef'], "#plot4", "Walltime histogram (failed jobs)");
-                    }
-                    if ('maxpsspercore' in values) {
-                        pandamonplotHistNew(values['maxpsspercore'], "#plot5", "Maximum PSS per core histogram");
-                    }
-                    if ('maxpsspercoref' in values) {
-                        pandamonplotHistNew(values['maxpsspercoref'], "#plot6", "Maximum PSS per core histogram (failed jobs)");
-                    }
-                    if ('hs06s' in values) {
-                        pandamonplotHistNew(values['hs06s'], "#plot7", "HS06s histogram");
-                    }
-                    if ('hs06sf' in values) {
-                        pandamonplotHistNew(values['hs06sf'], "#plot8", "HS06s histogram (failed jobs)");
-                    }
-                    if ('walltimeperevent' in values) {
-                        pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
-                    }
-                    if ('cputime' in values) {
-                        pandamonplotHistNew(values['cputime'], "#plot10", "CPU time histogram");
-                    }
-                    if ('cputimeperevent' in values) {
-                        pandamonplotHistNew(values['cputimeperevent'], "#plot11", "CPU time per event histogram");
-                    }
-                    if ('cputimef' in values) {
-                        pandamonplotHistNew(values['cputimef'], "#plot12", "CPU time histogram (failed jobs)");
-                    }
-                    if ('cputimepereventf' in values) {
-                        pandamonplotHistNew(values['cputimepereventf'], "#plot13", "CPU time per event histogram (failed jobs)");
-                    }
-                    $("#jobsconsumptionplots").html("");
-                    toggleDetailDisplay(classname);
-                } else {
-                    toggleDetailDisplay(classname);
-                }
-            }
-
-            function loadSummaryData(nosorturl) {
-
-                $('#div-sum').html("<img src='{% static "images/load.gif" %}'>  ");
-                $.ajax({
-                    url: {% url 'taskListSummary' %},
-                    data: nosorturl.replace('/tasks/?', ''),
-                    async: true
-                })
-                    .done(function (response) {
-                        $('#div-sum').html(response);
-                    });
-
-            }
-        </script>
         <div id="div-sum">
             <a onclick="javascript:loadSummaryData('{{ nosorturl }}');">Show events summary</a> <br/>
         </div>
@@ -437,6 +267,170 @@
     {% else %}
         <p>No matches to query.</p>
     {% endif %}
+{% endblock %}
+
+{% block js_body_page %}
+  <script type="text/javascript"
+          src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
+  </script>
+  <script src="{% static 'js/d3jsplot.js' %}"></script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      var jsonData = JSON.parse('{{ datasetstage | safe}}');
+      $('#stagingdatasetstable').dataTable({
+          data: jsonData,
+          columns: [
+              {
+                  data: 'TASKID',
+                  "render": function (data, type, full, meta) {
+                      var entry = '<a href="'+{% url 'taskInfo' %}+
+                      full['TASKID'] + '">' + full['TASKID'] + '</a>';
+                      entry += '<a target="_blank" href="'+{% url 'staginprogressplot' %}+
+                      '?jeditaskid=' + full['TASKID'] + '"><img src=\'/static/images/tinychart.png\' width=14 height=14 border=0/></a>';
+                      return entry;
+                  },
+              },
+              {data: 'SOURCE_RSE'},
+              {data: 'DATASET'},
+              {data: 'STATUS'},
+              {data: 'STAGED_FILES'},
+              {data: 'TOTAL_FILES'},
+              {data: 'START_TIME'},
+              {data: 'END_TIME'},
+              {data: 'UPDATE_TIME'},
+              {
+                  data: 'RSE', "render": function (data, type, full, meta) {
+                      return '<a target="_blanc" href="https://rucio-ui.cern.ch/rule?rule_id=' + full['RSE'] + '">' + full['RSE'] + '</a>';
+                  },
+              },
+          ]
+      });
+    });
+
+
+
+    function toggleDetailDisplay(className) {
+        el = document.getElementsByClassName(className);
+        for (i = 0; i < el.length; i++) {
+            el[i].style.display = (el[i].style.display == "none") ? "" : "none";
+        }
+    }
+
+
+    function tasksPlots(classname, idtasks) {
+        var values = []
+
+        $('input[type=radio][name=jobtype]').on('change', function () {
+            toggleDetailDisplay(classname);
+            $(".d3splot").empty();
+            switch ($(this).val()) {
+                case 'all':
+                    buildPlots(classname, values['all']);
+                    break;
+                case 'run':
+                    buildPlots(classname, values['run']);
+                    break;
+                case 'build':
+                    buildPlots(classname, values['build']);
+                    break;
+                case 'pmerge':
+                    buildPlots(classname, values['pmerge']);
+                    break;
+            }
+        });
+        $.ajax({
+            type: "GET",
+            url: '{% url 'tasksplots' %}?idtasks=' + idtasks,
+            async: false,
+            cache: false,
+            dataType: "json",
+            data: {},
+            success: function (data) {
+                values = data;
+                document.getElementById("plots").style.display = "block";
+            },
+            error: function ($xhr, textStatus, errorThrown) {
+                var string = $xhr.responseJSON;
+                var json_object = JSON.parse(string);
+                console.log("ERROR : ", json_object.message);
+            }
+        })
+        ;
+        buildPlots(classname, values['all'])
+    }
+
+    function buildPlots(classname, data) {
+        values = data;
+        el = document.getElementsByClassName(classname);
+
+        var flag = 0;
+        for (i = 0; i < el.length; i++) {
+            flag = (el[i].innerHTML) ? flag : flag + 1;
+        }
+        if (flag > 0) {
+            $("#jobsconsumptionplots").html("<img src='{% static "images/load.gif" %}'>  ");
+
+            if ('maxpss' in values) {
+                pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
+            }
+            if ('maxpssf' in values) {
+                pandamonplotHistNew(values['maxpssf'], "#plot3", "Maximum PSS histogram (failed jobs)");
+            }
+            if ('walltime' in values) {
+                pandamonplotHistNew(values['walltime'], "#plot2", "Walltime histogram");
+            }
+            if ('walltimef' in values) {
+                pandamonplotHistNew(values['walltimef'], "#plot4", "Walltime histogram (failed jobs)");
+            }
+            if ('maxpsspercore' in values) {
+                pandamonplotHistNew(values['maxpsspercore'], "#plot5", "Maximum PSS per core histogram");
+            }
+            if ('maxpsspercoref' in values) {
+                pandamonplotHistNew(values['maxpsspercoref'], "#plot6", "Maximum PSS per core histogram (failed jobs)");
+            }
+            if ('hs06s' in values) {
+                pandamonplotHistNew(values['hs06s'], "#plot7", "HS06s histogram");
+            }
+            if ('hs06sf' in values) {
+                pandamonplotHistNew(values['hs06sf'], "#plot8", "HS06s histogram (failed jobs)");
+            }
+            if ('walltimeperevent' in values) {
+                pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
+            }
+            if ('cputime' in values) {
+                pandamonplotHistNew(values['cputime'], "#plot10", "CPU time histogram");
+            }
+            if ('cputimeperevent' in values) {
+                pandamonplotHistNew(values['cputimeperevent'], "#plot11", "CPU time per event histogram");
+            }
+            if ('cputimef' in values) {
+                pandamonplotHistNew(values['cputimef'], "#plot12", "CPU time histogram (failed jobs)");
+            }
+            if ('cputimepereventf' in values) {
+                pandamonplotHistNew(values['cputimepereventf'], "#plot13", "CPU time per event histogram (failed jobs)");
+            }
+            $("#jobsconsumptionplots").html("");
+            toggleDetailDisplay(classname);
+        } else {
+            toggleDetailDisplay(classname);
+        }
+    }
+
+    function loadSummaryData(nosorturl) {
+
+        $('#div-sum').html("<img src='{% static "images/load.gif" %}'>  ");
+        $.ajax({
+            url: {% url 'taskListSummary' %},
+            data: nosorturl.replace('/tasks/?', ''),
+            async: true
+        })
+            .done(function (response) {
+                $('#div-sum').html(response);
+            });
+
+    }
+  </script>
+
 {% endblock %}
 
 {% block helptext %}

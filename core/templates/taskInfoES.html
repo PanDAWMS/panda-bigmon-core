@@ -3,273 +3,270 @@
 {% load staticfiles %}
 {% block page_title %} {{ jeditaskid }} ES task {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
-{% block extra_css %}
-    <link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
 {% endblock %}
-{% block base_js %}
-    <script type="text/javascript" src="/static/js/d3jsplot.js"></script>
-    <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
-    <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
-
-    <script>
-        function toggleDetailDisplay(className) {
-            el = document.getElementsByClassName(className);
-            for (i = 0; i < el.length; i++) {
-                el[i].style.display = (el[i].style.display == "none") ? "" : "none";
-            }
-        }
-
-        (function ($) {
-            $.fn.goTo = function () {
-                $('html, body').animate({
-                    scrollTop: $(this).offset().top + 'px'
-                }, 'fast');
-                return this;
-            }
-        })(jQuery);
-
-        function toggleRowsDisplay(className) {
-            el = document.getElementsByClassName(className)
-            for (i = 0; i < el.length; i++) {
-                el[i].style.display = (el[i].style.display == "none") ? "" : "none";
-            }
-        }
-
-        function killtasks(taskID, action) {
-            var message = ''
-            if (action == 0)
-                message = 'Are you sure you want to FINISH this task?'
-            else
-                message = 'Are you sure you want to ABORT this task?'
-            if (confirm(message)) {
-                $.ajax({
-                    url: {% url 'killtasks' %},
-                    data: {'task': taskID, 'action': action},
-                    async: true
-                })
-                    .done(function (response) {
-                        var parcedResponse = $.parseJSON(response);
-                        alert(parcedResponse.detail);
-                        location.reload();
-                    });
-            } else {
-                // Do nothing!
-            }
-        }
-
-        function loadErrorSummaryData(jeditaskid, mode, tk) {
-
-            $('#div-error-sum').html("<img src='{% static "images/load.gif" %}'>  ");
-            $.ajax({
-                url: {% url 'eventsErrorSummary' %},
-                data: {'jeditaskid': jeditaskid, 'mode': mode, 'tk': tk},
-                async: true
-            })
-                .done(function (response) {
-                    $('#div-error-sum').html(response);
-                });
-        }
-
-        function buildNeventsPlot(idname, classname) {
-            if (!document.getElementById(idname).innerHTML) {
-                var data = {{ plotsDict|safe }};
-                if ('nevents' in data) {
-                    pandamonplotHistNew(data['nevents'], "#plot0", "Number of events histogram (finished non-merge jobs)");
-                }
-                toggleDetailDisplay(classname)
-            }
-            else {
-                toggleDetailDisplay(classname)
-            }
-        }
-
-        function buildPlots(classname) {
-
-            el = document.getElementsByClassName(classname);
-            var flag = 0;
-            for (i = 0; i < el.length; i++) {
-                flag = (el[i].innerHTML) ? flag : flag + 1;
-            }
-            if (flag > 0) {
-                $("#jobsconsumptionplots").html("<img src='{% static "images/load.gif" %}'>  ");
-                var values = {{ plotsDict|safe }};
-                if ('maxpss' in values) {
-                    pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
-                }
-                if ('maxpssf' in values) {
-                    pandamonplotHistNew(values['maxpssf'], "#plot3", "Maximum PSS histogram (failed jobs)");
-                }
-                if ('walltime' in values) {
-                    pandamonplotHistNew(values['walltime'], "#plot2", "Walltime histogram");
-                }
-                if ('walltimef' in values) {
-                    pandamonplotHistNew(values['walltimef'], "#plot4", "Walltime histogram (failed jobs)");
-                }
-                if ('maxpsspercore' in values) {
-                    pandamonplotHistNew(values['maxpsspercore'], "#plot5", "Maximum PSS per core histogram");
-                }
-                if ('maxpsspercoref' in values) {
-                    pandamonplotHistNew(values['maxpsspercoref'], "#plot6", "Maximum PSS per core histogram (failed jobs)");
-                }
-                if ('hs06s' in values) {
-                    pandamonplotHistNew(values['hs06s'], "#plot7", "HS06s histogram");
-                }
-                if ('hs06sf' in values) {
-                    pandamonplotHistNew(values['hs06sf'], "#plot8", "HS06s histogram (failed jobs)");
-                }
-                if ('walltimeperevent' in values) {
-                    pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
-                }
-                $("#jobsconsumptionplots").html("");
-                toggleDetailDisplay(classname);
-                $('#jobsconsumptionplots').goTo();
-            }
-            else {
-                toggleDetailDisplay(classname);
-            }
-        }
-
-        function buildEventChunkTable() {
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.rowsGroup.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script src="{% static 'js/d3.v3.min.js' %}"></script>
+{% endblock %}
 
 
-            {#    $(document).ready(function() {#}
-            document.getElementById('div-eventchunktable').style.display = 'block';
 
-            eventchunktable = $('#eventchunktable').dataTable({
-                "aaSorting": [[4, "desc"]],
-                "aoColumns": [
-                    {
-                        "mData": "jobsetid",
-                        sDefaultContent: "",
-                        "render": function (chunk, type, full) {
-                            return '<a href="'+{% url 'jobList' %}+
-                            '?jeditaskid={{ jeditaskid }}&jobsetid=' + full['jobsetid'] + '">' + full['jobsetid'] + '</a>';
-                        },
+{% block js_body_page %}
+  <script src="{% static 'js/d3jsplot.js' %}"></script>
 
-                    },
-                    {
-                        "mData": "attemptnrDS",
-                        sDefaultContent: "",
-                        "render": function (chunk, type, full) {
-                            var reStr = "";
-                            full['prevAttempts'].forEach(function (entry) {
-                                reStr += '<- <a href="'+{% url 'jobList' %}+
-                                '?jeditaskid={{ jeditaskid }}&jobsetid=' + entry + '">' + entry + '</a>';
-                            });
-                            return reStr;
-                        },
+  <script>
+      function toggleDetailDisplay(className) {
+          el = document.getElementsByClassName(className);
+          for (i = 0; i < el.length; i++) {
+              el[i].style.display = (el[i].style.display == "none") ? "" : "none";
+          }
+      }
 
-                    },
-                    {
-                        "mData": "status",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "attemptnr",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "attemptnrDS",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "lfn",
-                        sDefaultContent: ""
-                    },
-                    {
-                        "mData": "startevent",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "endevent",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "failedattempt",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "maxfailure",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "maxattempt",
-                        sDefaultContent: "",
-                    },
-                ],
+      function toggleRowsDisplay(className) {
+          el = document.getElementsByClassName(className)
+          for (i = 0; i < el.length; i++) {
+              el[i].style.display = (el[i].style.display == "none") ? "" : "none";
+          }
+      }
 
-                "bServerSide": false,
-                "searching": true,
+      function killtasks(taskID, action) {
+          var message = ''
+          if (action == 0)
+              message = 'Are you sure you want to FINISH this task?'
+          else
+              message = 'Are you sure you want to ABORT this task?'
+          if (confirm(message)) {
+              $.ajax({
+                  url: {% url 'killtasks' %},
+                  data: {'task': taskID, 'action': action},
+                  async: true
+              })
+                  .done(function (response) {
+                      var parcedResponse = $.parseJSON(response);
+                      alert(parcedResponse.detail);
+                      location.reload();
+                  });
+          } else {
+              // Do nothing!
+          }
+      }
 
-                "ajax": {
-                    "processing": true,
-                    "url": "{% url 'eventschunks' %}?jeditaskid={{ jeditaskid }}",
-                    "dataSrc": ''
-                },
+      function loadErrorSummaryData(jeditaskid, mode, tk) {
 
-                "bStateSave": true, // optional
+          $('#div-error-sum').html("<img src='{% static "images/load.gif" %}'>  ");
+          $.ajax({
+              url: {% url 'eventsErrorSummary' %},
+              data: {'jeditaskid': jeditaskid, 'mode': mode, 'tk': tk},
+              async: true
+          })
+              .done(function (response) {
+                  $('#div-error-sum').html(response);
+              });
+      }
 
+      function buildNeventsPlot(idname, classname) {
+          if (!document.getElementById(idname).innerHTML) {
+              var data = {{ plotsDict|safe }};
+              if ('nevents' in data) {
+                  pandamonplotHistNew(data['nevents'], "#plot0", "Number of events histogram (finished non-merge jobs)");
+              }
+              toggleDetailDisplay(classname)
+          }
+          else {
+              toggleDetailDisplay(classname)
+          }
+      }
 
-                initComplete: function () {
-                    this.api().columns([2]).every(function () {
-                        var column = this;
-                        var select = $('<select><option value="">Show all</option></select>')
-                            .appendTo($(column.header()).empty())
-                            .on('change', function () {
-                                var val = $.fn.dataTable.util.escapeRegex(
-                                    $(this).val()
-                                );
+      function buildPlots(classname) {
 
-                                column
-                                    .search(val ? '^' + val + '$' : '', true, false)
-                                    .draw();
-                            });
+          el = document.getElementsByClassName(classname);
+          var flag = 0;
+          for (i = 0; i < el.length; i++) {
+              flag = (el[i].innerHTML) ? flag : flag + 1;
+          }
+          if (flag > 0) {
+              $("#jobsconsumptionplots").html("<img src='{% static "images/load.gif" %}'>  ");
+              var values = {{ plotsDict|safe }};
+              if ('maxpss' in values) {
+                  pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
+              }
+              if ('maxpssf' in values) {
+                  pandamonplotHistNew(values['maxpssf'], "#plot3", "Maximum PSS histogram (failed jobs)");
+              }
+              if ('walltime' in values) {
+                  pandamonplotHistNew(values['walltime'], "#plot2", "Walltime histogram");
+              }
+              if ('walltimef' in values) {
+                  pandamonplotHistNew(values['walltimef'], "#plot4", "Walltime histogram (failed jobs)");
+              }
+              if ('maxpsspercore' in values) {
+                  pandamonplotHistNew(values['maxpsspercore'], "#plot5", "Maximum PSS per core histogram");
+              }
+              if ('maxpsspercoref' in values) {
+                  pandamonplotHistNew(values['maxpsspercoref'], "#plot6", "Maximum PSS per core histogram (failed jobs)");
+              }
+              if ('hs06s' in values) {
+                  pandamonplotHistNew(values['hs06s'], "#plot7", "HS06s histogram");
+              }
+              if ('hs06sf' in values) {
+                  pandamonplotHistNew(values['hs06sf'], "#plot8", "HS06s histogram (failed jobs)");
+              }
+              if ('walltimeperevent' in values) {
+                  pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
+              }
+              $("#jobsconsumptionplots").html("");
+              toggleDetailDisplay(classname);
+              $('#jobsconsumptionplots').goTo();
+          }
+          else {
+              toggleDetailDisplay(classname);
+          }
+      }
 
-                        column.data().unique().sort().each(function (d, j) {
-                            select.append('<option value="' + d + '">' + d + '</option>')
-                        });
-                    });
-
-                }
-            });
-
-
-            $('#eventchunktable').click(function () { // only if you don't hardcode column widths
-                eventchunktable.fnAdjustColumnSizing();
-            });
-
-            $('#eventchunktable').goTo();
-        }
-
-
-        function showEventsDetails() {
-            if (!$(".showeventsdetailsrow").is(':visible')) {
-                $(".showeventsdetailsrow").show()
-            }
-            else {
-                $(".showeventsdetailsrow").hide()
-            }
-        }
-
-        $(document).ready(function () {
-
-            {% if eventssummary|length > 0 %}
-
-                if ($(".showeventsdetailsrow").is(':visible'))
-                    $(".showeventsdetailsrow").hide();
-
-            {% endif %}
-
-            var url = window.location.href;
-            if (url.indexOf("#jobsconsumptionplots") > -1) {
-                buildPlots('d3splot');
-                $('#jobsconsumptionplots').goTo();
-            }
+      function buildEventChunkTable() {
 
 
-        })
+          {#    $(document).ready(function() {#}
+          document.getElementById('div-eventchunktable').style.display = 'block';
 
-    </script>
+          eventchunktable = $('#eventchunktable').dataTable({
+              "aaSorting": [[4, "desc"]],
+              "aoColumns": [
+                  {
+                      "mData": "jobsetid",
+                      sDefaultContent: "",
+                      "render": function (chunk, type, full) {
+                          return '<a href="'+{% url 'jobList' %}+
+                          '?jeditaskid={{ jeditaskid }}&jobsetid=' + full['jobsetid'] + '">' + full['jobsetid'] + '</a>';
+                      },
+
+                  },
+                  {
+                      "mData": "attemptnrDS",
+                      sDefaultContent: "",
+                      "render": function (chunk, type, full) {
+                          var reStr = "";
+                          full['prevAttempts'].forEach(function (entry) {
+                              reStr += '<- <a href="'+{% url 'jobList' %}+
+                              '?jeditaskid={{ jeditaskid }}&jobsetid=' + entry + '">' + entry + '</a>';
+                          });
+                          return reStr;
+                      },
+
+                  },
+                  {
+                      "mData": "status",
+                      sDefaultContent: "",
+                  },
+                  {
+                      "mData": "attemptnr",
+                      sDefaultContent: "",
+                  },
+                  {
+                      "mData": "attemptnrDS",
+                      sDefaultContent: "",
+                  },
+                  {
+                      "mData": "lfn",
+                      sDefaultContent: ""
+                  },
+                  {
+                      "mData": "startevent",
+                      sDefaultContent: "",
+                  },
+                  {
+                      "mData": "endevent",
+                      sDefaultContent: "",
+                  },
+                  {
+                      "mData": "failedattempt",
+                      sDefaultContent: "",
+                  },
+                  {
+                      "mData": "maxfailure",
+                      sDefaultContent: "",
+                  },
+                  {
+                      "mData": "maxattempt",
+                      sDefaultContent: "",
+                  },
+              ],
+
+              "bServerSide": false,
+              "searching": true,
+
+              "ajax": {
+                  "processing": true,
+                  "url": "{% url 'eventschunks' %}?jeditaskid={{ jeditaskid }}",
+                  "dataSrc": ''
+              },
+
+              "bStateSave": true, // optional
+
+
+              initComplete: function () {
+                  this.api().columns([2]).every(function () {
+                      var column = this;
+                      var select = $('<select><option value="">Show all</option></select>')
+                          .appendTo($(column.header()).empty())
+                          .on('change', function () {
+                              var val = $.fn.dataTable.util.escapeRegex(
+                                  $(this).val()
+                              );
+
+                              column
+                                  .search(val ? '^' + val + '$' : '', true, false)
+                                  .draw();
+                          });
+
+                      column.data().unique().sort().each(function (d, j) {
+                          select.append('<option value="' + d + '">' + d + '</option>')
+                      });
+                  });
+
+              }
+          });
+
+
+          $('#eventchunktable').click(function () { // only if you don't hardcode column widths
+              eventchunktable.fnAdjustColumnSizing();
+          });
+
+          $('#eventchunktable').goTo();
+      }
+
+
+      function showEventsDetails() {
+          if (!$(".showeventsdetailsrow").is(':visible')) {
+              $(".showeventsdetailsrow").show()
+          }
+          else {
+              $(".showeventsdetailsrow").hide()
+          }
+      }
+
+      $(document).ready(function () {
+
+          {% if eventssummary|length > 0 %}
+
+              if ($(".showeventsdetailsrow").is(':visible'))
+                  $(".showeventsdetailsrow").hide();
+
+          {% endif %}
+
+          var url = window.location.href;
+          if (url.indexOf("#jobsconsumptionplots") > -1) {
+              buildPlots('d3splot');
+              $('#jobsconsumptionplots').goTo();
+          }
+      });
+
+  </script>
 {% endblock %}
 
 {% block subtitle %}PanDA Event Service task {{ jeditaskid }} at {{ task.site }} {% endblock %}

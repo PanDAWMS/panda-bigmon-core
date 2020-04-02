@@ -1,24 +1,9 @@
 {% extends "_base_core.html" %}
 {% load static %}{% load common_tags %}
 {% block page_title %}ART nightly tests{% endblock %}
-{% block extra_css %}
+{% block css_page %}
     <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
 {% endblock %}
-{% block extra_js %}
-<script type="text/javascript">
-function toggleShowHide(divID, linkID) {
-    if ($("#" + divID).is(':visible')){
-        $("#" + divID).hide();
-        document.getElementById(linkID).innerHTML = 'Show output container';
-    }
-    else {
-        $('#'+divID).show();
-        document.getElementById(linkID).innerHTML = 'Hide output container';
-    }
-}
-</script>
-{% endblock %}
-
 {% block subtitle %}ART nightly tests {{ viewParams.selection|safe }}{% endblock %}
 {% block body %}
 
@@ -233,6 +218,22 @@ function toggleShowHide(divID, linkID) {
 {% endif %}
 
 {% endblock %}
+
+{% block js_body_page %}
+<script type="text/javascript">
+function toggleShowHide(divID, linkID) {
+    if ($("#" + divID).is(':visible')){
+        $("#" + divID).hide();
+        document.getElementById(linkID).innerHTML = 'Show output container';
+    }
+    else {
+        $('#'+divID).show();
+        document.getElementById(linkID).innerHTML = 'Hide output container';
+    }
+}
+</script>
+{% endblock %}
+
 
 {% block helptext %}
     <a name="help"></a>

@@ -2,523 +2,751 @@
 
 {% load static %}
 {% load humanize %}
+{% load common_tags %}
 
 {% block page_title %} {{ viewParams.MON_VO }} Global Shares{% endblock %}
 {% block subtitle %}Global Shares{% endblock %}
-{% block extra_css %}
-    <link rel="stylesheet" type="text/css" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
-    <link rel="stylesheet" type="text/css" href="{% static "css/globalsharetooltip.css" %}">
-    <!-- Load c3.css -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
-    <style>
-        #detailedinformation_wrapper .row {
-            max-width: 99%;
-        }
-        #sharesdistribution_wrapper .row {
-                max-width: 99%;
-            }
-        #siteworkqueues_wrapper .row {
-                max-width: 99%;
-        }
-        #hpc{
-         background-color: #F2D7D5;
-        }
-        #GRID{
-         background-color: #D4E6F1;
-        }
-        #cloud{
-         background-color: #D5F5E3;
-        }
-        #hpc_special{
-         background-color: #FCF3CF;
-        }
-        .test {
-            color: black;
-        }
 
-    </style>
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
 {% endblock %}
 
-{% block extra_js %}
-    <script src="{% static 'js/humanize.min.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/dataTables.rowsGroup.js' %}"></script>
-
-    <!-- Load d3.js and c3.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
-
-
-    <script src="{% static 'js/draw-plots-c3.js' %}"></script>
+{% block css_page %}
+  <link rel="stylesheet" href="{% static "css/globalshares.css" %}?{% cache_bust "css/globalshares.css" %}">
 {% endblock %}
+
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.min.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.rowsGroup.js' %}"></script>
+  <!-- Load d3.js and c3.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
+{% endblock %}
+
 {% block body %}
-<div class="c3-plots-row row small-up-1 medium-up-1 large-up-2">
-    <div class="column column-block" id="pieChartGS"></div>
-    <div class="column column-block" id="barChartGS"></div>
-</div>
-    <script>
-        var gsPlotData ={{ gsPlotData.pieChartActualHS06|safe }};
-        var dt = {};
+  <div class="c3-plots-row row small-up-1 medium-up-1 large-up-2">
+      <div class="column column-block" id="pieChartGS"></div>
+      <div class="column column-block" id="barChartGS"></div>
+  </div>
 
-        draw_donut(gsPlotData, "pieChartGS", 'Actual HS06',{colors: 'gs', size:[600,300]});
 
-        {#var gsBarPlotData ={{ gsPlotData.barChartActualVSTarget|safe }};#}
-        {#draw_sbar(gsBarPlotData, 'barChartGS', 'Actual VS Target', {colors: 'gs', size:[700,300], struct:['GS', 'Actual', 'Target']});#}
+  <table>
+    <tr class='tablesection'>
+        <th>L1 Share</th>
+        <th>L2 Share</th>
+        <th>L3 Share</th>
+        <th>Actual HS06</th>
+        <th>Target HS06</th>
+        <th>HS06 ratio</th>
+        <th>Queued HS06</th>
+        <th>Actual share</th>
+        <th>Target share</th>
+    </tr>
+    {% for row in tablerows %}
+      <tr>
+          <td>{{ row.level1 }} {% if row.gshare and row.level1 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
+            {% endif %}</td>
+          <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level2 }}</a>
+              {% else %}{{ row.level2 }} {% endif %} {% if row.gshare and row.level2 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
+            {% endif %}</td>
+          <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level3 }}</a>
+              {% else %}{{ row.level3 }} {% endif %} {% if row.gshare and row.level3 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
+            {% endif %}</td>
+          <td style="text-align:right">
+              {% if row.executing %}{{ row.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+          <td style="text-align:right">
+              {% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+          <td style="text-align:right">{% if row.ratio %} {{ row.ratio |floatformat:2|intcomma }} % {% else %}
+              --- {% endif %}</td>
+          <td style="text-align:right">
+              {% if row.queued %}{{ row.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+          <td style="text-align:right">{% if row.used %} {{ row.used |floatformat:2|intcomma }} % {% else %}
+              --- {% endif %}</td>
+          <td style="text-align:right">
+              {% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}</td>
+      </tr>
+      {% for resource in row.resources%}
+{#            <tr style="display: none" id="{{ row.gshare }}{% if resource.level1 %}_{{ resource.level1 }}{% elif resource.level2%}_{{ resource.level2 }}{% elif resource.level3%}_{{ resource.level3 }}{% endif %}">#}
+        <tr style="display: none" id="{% if resource.level1 %}{{ resource.level1 }}{% elif resource.level2%}{{ resource.level2 }}{% elif resource.level3%}{{ resource.level3 }}{% endif %}" class="{{ row.gshare }}">
 
-        function NumberRound(num) {
-            return num.toFixed(2).replace(/./g, function(c, i, a) {return i && c !== "." && ((a.length - i) % 3 === 0) ? ',' + c : c;})
+            <td>{{ resource.level1 }}</td>
+            <td>{{ resource.level2 }}</td>
+            <td>{{ resource.level3 }}</td>
+            <td style="text-align:right">
+                {% if resource.executing %}{{ resource.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+            <td style="text-align:right">
+                ---
+{#                    {% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>#}
+            <td style="text-align:right">
+{#                {% if row.ratio %} {{ row.ratio |floatformat:2|intcomma }} % {% else %}#}
+                --- </td>
+            <td style="text-align:right">
+                {% if resource.queued %}{{ resource.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
+            <td style="text-align:right">
+{#                    {% if resource.used %} {{ resource.used |floatformat:2|intcomma }} % {% else %}#}
+                --- </td>
+            <td style="text-align:right">
+{#                    {% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}#}
+                ---
+            </td>
+        </tr>
+      {% endfor %}
+    {% endfor %}
+  </table>
+  <br>
+  <a href="javascript:ReverseDisplay('sharesdistributiondiv','sharesdistributionlink')" id="sharesdistributionlink" class="bluebutton">Show
+      shares distribution</a> <br/><br/>
+  <div id="sharesdistributiondiv" style="display: none">
+      <hr/>
+      <a href="{% url 'sharesDistributionJSON' %}">JSON</a><br/><br/>
+
+      <table id="sharesdistribution" style="width: 100%" class="data-table">
+          <caption style="height: 30px;vertical-align: middle">Shares distribution (4 days)</caption>
+          <thead>
+          <th>Global share</th>
+          <th>Computing site</th>
+          <th>Resource</th>
+          <th>Core count</th>
+          <th>Job status</th>
+          <th>COUNT</th>
+          <th>HS06</th>
+          <th>HS06/COUNT</th>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+          <tr>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+          </tr>
+          </tfoot>
+      </table>
+      <hr/>
+  </div>
+  <a href="javascript:ReverseDisplay('siteworkqueuesdiv','siteworkqueueslink')" id="siteworkqueueslink" class="bluebutton">Show site
+      workqueues occupations</a>  <br/><br/>
+  <div id="siteworkqueuesdiv" style="display: none">
+      <hr/>
+      <table id="siteworkqueues" style="width: 100%" class="data-table">
+          <caption style="height: 30px;vertical-align: middle">Site workqueues occupations (4 days)</caption>
+          <thead>
+          <th>Computing site</th>
+          <th>Global share</th>
+          <th>Core count</th>
+          <th>Job status</th>
+          <th>COUNT</th>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+          <tr>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+          </tr>
+          </tfoot>
+      </table>
+      <hr/>
+  </div>
+  <a href="javascript:ReverseDisplay('detailedinformationdiv','detailedinformationlink')"
+     id="detailedinformationlink" class="bluebutton">Show detailed information</a> <br/><br/>
+  <div id="detailedinformationdiv" style="display: none">
+      <hr/>
+      <table id="detailedinformation" style="width: 100%" class="data-table">
+          <caption style="height: 30px;vertical-align: middle">Detailed information (4 days)</caption>
+          <thead>
+          <th>Global share</th>
+          <th>Core count</th>
+          <th>Job status <span class="hasTooltip"> (?)
+    <table>
+    <thead>
+        <th>Table job status</th>
+        <th>Database job status</th>
+    </thead>
+    <tr>
+        <td>scheduled</td>
+        <td>defined,waiting,pending,assigned,throttled,activated,merging,starting,holding,transferring</td>
+    </tr>
+    <tr>
+        <td>running</td>
+        <td>sent,running</td>
+    </tr>
+    <tr>
+        <td>did run</td>
+        <td>failed,cancelled,closed</td>
+    </tr>
+    </table></span>
+          </th>
+          <th>COUNT</th>
+          <th>HS06</th>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+          <tr>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+          </tr>
+          </tfoot>
+      </table>
+      <hr/>
+  </div>
+  <a href="javascript:ReverseDisplay('resourcesDiv','resourcesLink')"
+     id="resourcesLink" class="bluebutton">Show resources information</a> <br/><br/>
+  <div id="resourcesDiv" style="display: none">
+  <div class="d3splot" id="pieChartResources"></div>
+  <hr/>
+  <table id="resources" style="width: 100%" class="data-table">
+          <caption style="height: 30px;vertical-align: middle"></caption>
+          <thead>
+          <th>Resource</th>
+          <th>Actual HS06</th>
+          <th>Queued HS06</th>
+          <th>Other HS06</th>
+          <th>Total HS06</th>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+          <tr>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+          </tr>
+          </tfoot>
+  </table>
+  </div>
+  <a href="javascript:ReverseDisplay('coresDiv','coresLink')"
+     id="coresLink" class="bluebutton">Show corescount information</a> <br/><br/>
+  <div id="coresDiv" style="display: none">
+  <div class="d3splot" id="pieChartCores"></div>
+  <hr/>
+  <table id="cores" style="width: 100%" class="data-table">
+          <caption style="height: 30px;vertical-align: middle"></caption>
+          <thead>
+          <th>Core</th>
+          <th>Actual HS06</th>
+          <th>Queued HS06</th>
+          <th>Other HS06</th>
+          <th>Total HS06</th>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+          <tr>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+          </tr>
+          </tfoot>
+  </table>
+  </div>
+  <a href="javascript:ReverseDisplay('fairshareDiv','fairshareLink')"
+     id="fairshareLink" class="bluebutton">Show policy information</a> <br/><br/>
+  <div id="fairshareDiv" style="display: none">
+  <div class="d3splot" id="pieChartPolicy"></div>
+  <hr/>
+  <table id="fairsharepolicy" style="width: 100%" class="data-table">
+          <caption style="height: 30px;vertical-align: middle"></caption>
+          <thead>
+          <th>Policy</th>
+          <th>Actual HS06</th>
+          <th>Queued HS06</th>
+          <th>Other HS06</th>
+          <th>Total HS06</th>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+          <tr>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+          </tr>
+          </tfoot>
+  </table>
+  </div>
+{% endblock %}
+
+{% block js_body_page %}
+  <script src="{% static 'js/draw-plots-c3.js' %}"></script>
+  <script>
+    var gsPlotData ={{ gsPlotData.pieChartActualHS06|safe }};
+    var dt = {};
+
+    draw_donut(gsPlotData, "pieChartGS", 'Actual HS06',{colors: 'gs', size:[600,300]});
+
+    {#var gsBarPlotData ={{ gsPlotData.barChartActualVSTarget|safe }};#}
+    {#draw_sbar(gsBarPlotData, 'barChartGS', 'Actual VS Target', {colors: 'gs', size:[700,300], struct:['GS', 'Actual', 'Target']});#}
+
+    function NumberRound(num) {
+        return num.toFixed(2).replace(/./g, function(c, i, a) {return i && c !== "." && ((a.length - i) % 3 === 0) ? ',' + c : c;})
+    }
+    function ReverseDisplay(d, hlink) {
+        var urlname = document.getElementById(hlink).innerText;
+        var resourcesElement = $( "."+d);
+        if (resourcesElement.length>0){
+            if(urlname.indexOf("+") !== -1) {
+                resourcesElement.each(function (index) {
+                    $(this).show();
+                })
+                urlname = urlname.replace("+", "-");
+                document.getElementById(hlink).innerText = urlname;
+            }
+            else {
+                resourcesElement.each(function (index) {
+                    $(this).hide();
+                })
+                urlname = urlname.replace("-", "+");
+                document.getElementById(hlink).innerText = urlname;
+            }
         }
-        function ReverseDisplay(d, hlink) {
-            var urlname = document.getElementById(hlink).innerText;
-            var resourcesElement = $( "."+d);
-            if (resourcesElement.length>0){
-                if(urlname.indexOf("+") !== -1) {
-                    resourcesElement.each(function (index) {
-                        $(this).show();
-                    })
-                    urlname = urlname.replace("+", "-");
+        else {
+            if (document.getElementById(d).style.display == "none") {
+                if (urlname.indexOf("Show") !== -1) {
+                    document.getElementById(d).style.display = "block";
+                    urlname = urlname.replace("Show", "Hide");
                     document.getElementById(hlink).innerText = urlname;
-                }
-                else {
-                    resourcesElement.each(function (index) {
-                        $(this).hide();
-                    })
-                    urlname = urlname.replace("-", "+");
-                    document.getElementById(hlink).innerText = urlname;
+
+                    switch (d)
+                    {
+                        case "sharesdistributiondiv":
+                        {
+                            DisplaySharesDistribution();
+                            break;
+                        }
+                        case "detailedinformationdiv":
+                        {
+                            DisplayDetailedInformation();
+                            break;
+                        }
+                        case "siteworkqueuesdiv":
+                        {
+                            DisplaySiteworkqueues();
+                            break;
+                        }
+                        case "resourcesDiv":
+                        {
+                            dt = {}
+                            dt = getData('resources');
+                            d3.select("#pieChartResources").selectAll("*").remove();
+                            let plot_data = Array.from(Object.keys(dt.resourceList), k=>[`${k}`, dt.resourceList[k]]);
+                            draw_donut(plot_data, "pieChartResources", 'Actual HS06');
+                            DisplayResources(dt.resource);
+                        }
+                        case "coresDiv":
+                        {
+                            dt = {}
+                            dt = getData('cores');
+                            d3.select("#pieChartCores").selectAll("*").remove();
+                            let plot_data = Array.from(Object.keys(dt.coresList), k=>[`${k}`, dt.coresList[k]]);
+                            draw_donut(plot_data, "pieChartCores", 'Actual HS06');
+                            DisplayCoreTypes(dt.cores);
+                        }
+                        case "fairshareDiv":
+                        {
+                            dt = {}
+                            dt = getData('fairshares');
+                            d3.select("#pieChartPolicy").selectAll("*").remove();
+                            let plot_data = Array.from(Object.keys(dt.policyList), k=>[`${k}`, dt.policyList[k]]);
+                            draw_donut(plot_data, "pieChartPolicy", 'Actual HS06');
+                            DisplayFairshareTypes(dt.policy);
+                        }
+                    }
                 }
             }
             else {
-                if (document.getElementById(d).style.display == "none") {
-                    if (urlname.indexOf("Show") !== -1) {
-                        document.getElementById(d).style.display = "block";
-                        urlname = urlname.replace("Show", "Hide");
-                        document.getElementById(hlink).innerText = urlname;
+                document.getElementById(d).style.display = "none";
+                if (urlname.indexOf("Hide") !== -1) {
+                    urlname = urlname.replace("Hide", "Show");
+                    document.getElementById(hlink).innerText = urlname;
 
-                        switch (d)
-                        {
-                            case "sharesdistributiondiv":
-                            {
-                                DisplaySharesDistribution();
-                                break;
-                            }
-                            case "detailedinformationdiv":
-                            {
-                                DisplayDetailedInformation();
-                                break;
-                            }
-                            case "siteworkqueuesdiv":
-                            {
-                                DisplaySiteworkqueues();
-                                break;
-                            }
-                            case "resourcesDiv":
-                            {
-                                dt = {}
-                                dt = getData('resources');
-                                d3.select("#pieChartResources").selectAll("*").remove();
-                                let plot_data = Array.from(Object.keys(dt.resourceList), k=>[`${k}`, dt.resourceList[k]]);
-                                draw_donut(plot_data, "pieChartResources", 'Actual HS06');
-                                DisplayResources(dt.resource);
-                            }
-                            case "coresDiv":
-                            {
-                                dt = {}
-                                dt = getData('cores');
-                                d3.select("#pieChartCores").selectAll("*").remove();
-                                let plot_data = Array.from(Object.keys(dt.coresList), k=>[`${k}`, dt.coresList[k]]);
-                                draw_donut(plot_data, "pieChartCores", 'Actual HS06');
-                                DisplayCoreTypes(dt.cores);
-                            }
-                            case "fairshareDiv":
-                            {
-                                dt = {}
-                                dt = getData('fairshares');
-                                d3.select("#pieChartPolicy").selectAll("*").remove();
-                                let plot_data = Array.from(Object.keys(dt.policyList), k=>[`${k}`, dt.policyList[k]]);
-                                draw_donut(plot_data, "pieChartPolicy", 'Actual HS06');
-                                DisplayFairshareTypes(dt.policy);
-                            }
+                }
+            }
+        }
+    }
+    function DisplayDetailedInformation() {
+        var detinf = $('#detailedinformation').dataTable({
+            //"bRetrieve": true,
+            "retrieve": true,
+            "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+            paging: true,
+            //"bProcessing": true,
+            //"bAutoWidth": false,
+            //"bStateSave": true,
+            order: [[3, 'desc']],
+            "ajax": {
+                "processing": true,
+                "url": "{% url 'detailedInformationJSON' %}",
+
+                "dataSrc": ''
+            },
+
+            "createdRow": function (row, data, index) {
+                if (data["jobstatus"] == 'running') {
+                    $('td', row).eq(0).addClass('running_fill');
+                    $('td', row).eq(1).addClass('running_fill');
+                    $('td', row).eq(2).addClass('running_fill');
+                    $('td', row).eq(3).addClass('running_fill');
+                    $('td', row).eq(4).addClass('running_fill');
+                }
+            },
+            "aoColumns": [
+                {
+                    "data": "gshare",
+                    sDefaultContent: ""
+                },
+                {
+                    "data": "corecount",
+                    sDefaultContent: "",
+                },
+                {
+                    "data": "jobstatus",
+                    sDefaultContent: "",
+                },
+                {
+                    "data": "count",
+                    sDefaultContent: "",
+                },
+                {
+                    "data": "hs06",
+                    sDefaultContent: "",
+                }
+            ],
+            initComplete: function () {
+                this.api().columns([0, 1, 2]).every(function () {
+                    var column = this;
+                    var select = $('<select><option value="">Show all</option></select>')
+                        .appendTo($(column.footer()).empty())
+                        .on('change', function () {
+                            var val = $.fn.dataTable.util.escapeRegex(
+                                $(this).val()
+                            );
+                            column
+                                .search(val ? '^' + val + '$' : '', true, false)
+                                .draw();
+                        });
+                    column.data().unique().sort().each(function (d, j) {
+                        select.append('<option value="' + d + '">' + d + '</option>')
+                    });
+                });
+
+            }
+        });
+    }
+    function DisplaySharesDistribution() {
+        $('#sharesdistribution').dataTable({
+            //"bRetrieve": true,
+            "retrieve": true,
+            "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+            paging: true,
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'csvHtml5',
+                    filename: function () {
+                        var today = new Date();
+                        var dd = today.getDate();
+                        var mm = today.getMonth() + 1; //January is 0!
+                        var yyyy = today.getFullYear();
+
+                        if (dd < 10) {
+                            dd = '0' + dd
                         }
-                    }
-                }
-                else {
-                    document.getElementById(d).style.display = "none";
-                    if (urlname.indexOf("Hide") !== -1) {
-                        urlname = urlname.replace("Hide", "Show");
-                        document.getElementById(hlink).innerText = urlname;
-
-                    }
-                }
-            }
-        }
-        function DisplayDetailedInformation() {
-            var detinf = $('#detailedinformation').dataTable({
-                //"bRetrieve": true,
-                "retrieve": true,
-                "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
-                paging: true,
-                //"bProcessing": true,
-                //"bAutoWidth": false,
-                //"bStateSave": true,
-                order: [[3, 'desc']],
-                "ajax": {
-                    "processing": true,
-                    "url": "{% url 'detailedInformationJSON' %}",
-
-                    "dataSrc": ''
-                },
-
-                "createdRow": function (row, data, index) {
-                    if (data["jobstatus"] == 'running') {
-                        $('td', row).eq(0).addClass('running_fill');
-                        $('td', row).eq(1).addClass('running_fill');
-                        $('td', row).eq(2).addClass('running_fill');
-                        $('td', row).eq(3).addClass('running_fill');
-                        $('td', row).eq(4).addClass('running_fill');
-                    }
-                },
-                "aoColumns": [
-                    {
-                        "data": "gshare",
-                        sDefaultContent: ""
-                    },
-                    {
-                        "data": "corecount",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "data": "jobstatus",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "data": "count",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "data": "hs06",
-                        sDefaultContent: "",
-                    }
-                ],
-                initComplete: function () {
-                    this.api().columns([0, 1, 2]).every(function () {
-                        var column = this;
-                        var select = $('<select><option value="">Show all</option></select>')
-                            .appendTo($(column.footer()).empty())
-                            .on('change', function () {
-                                var val = $.fn.dataTable.util.escapeRegex(
-                                    $(this).val()
-                                );
-                                column
-                                    .search(val ? '^' + val + '$' : '', true, false)
-                                    .draw();
-                            });
-                        column.data().unique().sort().each(function (d, j) {
-                            select.append('<option value="' + d + '">' + d + '</option>')
-                        });
-                    });
-
-                }
-            });
-        }
-        function DisplaySharesDistribution() {
-            $('#sharesdistribution').dataTable({
-                //"bRetrieve": true,
-                "retrieve": true,
-                "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
-                paging: true,
-                dom: 'Bfrtip',
-                buttons: [
-                    {
-                        extend: 'csvHtml5',
-                        filename: function () {
-                            var today = new Date();
-                            var dd = today.getDate();
-                            var mm = today.getMonth() + 1; //January is 0!
-                            var yyyy = today.getFullYear();
-
-                            if (dd < 10) {
-                                dd = '0' + dd
-                            }
-                            if (mm < 10) {
-                                mm = '0' + mm
-                            }
-                            today = dd + '_' + mm + '_' + yyyy;
-                            return 'Shares_distribution_' + today;
-                        },
-                    },
-                    {
-                        extend: 'pdfHtml5',
-                        filename: function () {
-                            var today = new Date();
-                            var dd = today.getDate();
-                            var mm = today.getMonth() + 1; //January is 0!
-                            var yyyy = today.getFullYear();
-
-                            if (dd < 10) {
-                                dd = '0' + dd
-                            }
-                            if (mm < 10) {
-                                mm = '0' + mm
-                            }
-                            today = dd + '_' + mm + '_' + yyyy;
-                            return 'Shares_distribution_' + today;
+                        if (mm < 10) {
+                            mm = '0' + mm
                         }
-                    }
-                ],
-                //"bProcessing": true,
-                //"bAutoWidth": false,
-                //"bStateSave": true,
-                order: [[4, 'desc']],
-                "ajax": {
-                    "processing": true,
-                    "url": "{% url 'sharesDistributionJSON' %}",
-
-                    "dataSrc": ''
+                        today = dd + '_' + mm + '_' + yyyy;
+                        return 'Shares_distribution_' + today;
+                    },
                 },
-                "aoColumns": [
-                    {
-                        "data": "gshare",
-                        sDefaultContent: ""
-                    },
-                    {
-                        "data": "computingsite",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "data": "resources",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "data": "corecount",
+                {
+                    extend: 'pdfHtml5',
+                    filename: function () {
+                        var today = new Date();
+                        var dd = today.getDate();
+                        var mm = today.getMonth() + 1; //January is 0!
+                        var yyyy = today.getFullYear();
 
-                        sDefaultContent: "",
-                    },
-                    {
-                        "data": "jobstatus",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "data": "count",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "data": "hs06",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "data": "hs06/count",
-                        sDefaultContent: "",
+                        if (dd < 10) {
+                            dd = '0' + dd
+                        }
+                        if (mm < 10) {
+                            mm = '0' + mm
+                        }
+                        today = dd + '_' + mm + '_' + yyyy;
+                        return 'Shares_distribution_' + today;
                     }
-                ],
-                "createdRow": function (row, data, index) {
-                    if (data["jobstatus"] == 'running') {
-                        $('td', row).eq(0).addClass('running_fill');
-                        $('td', row).eq(1).addClass('running_fill');
-                        $('td', row).eq(2).addClass('running_fill');
-                        $('td', row).eq(3).addClass('running_fill');
-                        $('td', row).eq(4).addClass('running_fill');
-                        $('td', row).eq(5).addClass('running_fill');
-                        $('td', row).eq(6).addClass('running_fill');
-                        $('td', row).eq(7).addClass('running_fill');
-                    }
-                },
-                initComplete: function () {
-                    this.api().columns([0, 1, 2, 3,4]).every(function () {
-                        var column = this;
-                        var select = $('<select><option value="">Show all</option></select>')
-                            .appendTo($(column.footer()).empty())
-                            .on('change', function () {
-                                var val = $.fn.dataTable.util.escapeRegex(
-                                    $(this).val()
-                                );
-
-                                column
-                                    .search(val ? '^' + val + '$' : '', true, false)
-                                    .draw();
-                            });
-
-                        column.data().unique().sort().each(function (d, j) {
-                            select.append('<option value="' + d + '">' + d + '</option>')
-                        });
-                    });
                 }
-            });
+            ],
+            //"bProcessing": true,
+            //"bAutoWidth": false,
+            //"bStateSave": true,
+            order: [[4, 'desc']],
+            "ajax": {
+                "processing": true,
+                "url": "{% url 'sharesDistributionJSON' %}",
 
-        }
-        function DisplaySiteworkqueues() {
-            $('#siteworkqueues').dataTable({
-                //"bRetrieve": true,
-                "retrieve": true,
-                "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
-                paging: true,
-                order: [[4, 'desc']],
-                "ajax": {
-                    "processing": true,
-                    "url": "{% url 'siteWorkQueuesJSON' %}",
-                    "dataSrc": ''
+                "dataSrc": ''
+            },
+            "aoColumns": [
+                {
+                    "data": "gshare",
+                    sDefaultContent: ""
                 },
-                "aoColumns": [
-                    {
-                        "data": "computingsite",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "data": "gshare",
-                        sDefaultContent: ""
-                    },
-                    {
-                        "data": "corecount",
-                        sDefaultContent: "",
-
-                    },
-                    {
-                        "data": "jobstatus",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "data": "count",
-                        sDefaultContent: "",
-                    }
-                ],
-                "createdRow": function (row, data, index) {
-                    if (data["jobstatus"] == 'running') {
-                        $('td', row).eq(0).addClass('running_fill');
-                        $('td', row).eq(1).addClass('running_fill');
-                        $('td', row).eq(2).addClass('running_fill');
-                        $('td', row).eq(3).addClass('running_fill');
-                        $('td', row).eq(4).addClass('running_fill');
-                    }
+                {
+                    "data": "computingsite",
+                    sDefaultContent: "",
                 },
+                {
+                    "data": "resources",
+                    sDefaultContent: "",
+                },
+                {
+                    "data": "corecount",
 
-                initComplete: function () {
-                    this.api().columns([0, 1, 2, 3]).every(function () {
-                        var column = this;
-                        var select = $('<select><option value="">Show all</option></select>')
-                            .appendTo($(column.footer()).empty())
-                            .on('change', function () {
-                                var val = $.fn.dataTable.util.escapeRegex(
-                                    $(this).val()
-                                );
-                                column
-                                    .search(val ? '^' + val + '$' : '', true, false)
-                                    .draw();
-                            });
-                        column.data().unique().sort().each(function (d, j) {
-                            select.append('<option value="' + d + '">' + d + '</option>')
-                        });
-                    });
+                    sDefaultContent: "",
+                },
+                {
+                    "data": "jobstatus",
+                    sDefaultContent: "",
+                },
+                {
+                    "data": "count",
+                    sDefaultContent: "",
+                },
+                {
+                    "data": "hs06",
+                    sDefaultContent: "",
+                },
+                {
+                    "data": "hs06/count",
+                    sDefaultContent: "",
                 }
-            });
+            ],
+            "createdRow": function (row, data, index) {
+                if (data["jobstatus"] == 'running') {
+                    $('td', row).eq(0).addClass('running_fill');
+                    $('td', row).eq(1).addClass('running_fill');
+                    $('td', row).eq(2).addClass('running_fill');
+                    $('td', row).eq(3).addClass('running_fill');
+                    $('td', row).eq(4).addClass('running_fill');
+                    $('td', row).eq(5).addClass('running_fill');
+                    $('td', row).eq(6).addClass('running_fill');
+                    $('td', row).eq(7).addClass('running_fill');
+                }
+            },
+            initComplete: function () {
+                this.api().columns([0, 1, 2, 3,4]).every(function () {
+                    var column = this;
+                    var select = $('<select><option value="">Show all</option></select>')
+                        .appendTo($(column.footer()).empty())
+                        .on('change', function () {
+                            var val = $.fn.dataTable.util.escapeRegex(
+                                $(this).val()
+                            );
+
+                            column
+                                .search(val ? '^' + val + '$' : '', true, false)
+                                .draw();
+                        });
+
+                    column.data().unique().sort().each(function (d, j) {
+                        select.append('<option value="' + d + '">' + d + '</option>')
+                    });
+                });
+            }
+        });
+
+    }
+    function DisplaySiteworkqueues() {
+        $('#siteworkqueues').dataTable({
+            //"bRetrieve": true,
+            "retrieve": true,
+            "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+            paging: true,
+            order: [[4, 'desc']],
+            "ajax": {
+                "processing": true,
+                "url": "{% url 'siteWorkQueuesJSON' %}",
+                "dataSrc": ''
+            },
+            "aoColumns": [
+                {
+                    "data": "computingsite",
+                    sDefaultContent: "",
+                },
+                {
+                    "data": "gshare",
+                    sDefaultContent: ""
+                },
+                {
+                    "data": "corecount",
+                    sDefaultContent: "",
+
+                },
+                {
+                    "data": "jobstatus",
+                    sDefaultContent: "",
+                },
+                {
+                    "data": "count",
+                    sDefaultContent: "",
+                }
+            ],
+            "createdRow": function (row, data, index) {
+                if (data["jobstatus"] == 'running') {
+                    $('td', row).eq(0).addClass('running_fill');
+                    $('td', row).eq(1).addClass('running_fill');
+                    $('td', row).eq(2).addClass('running_fill');
+                    $('td', row).eq(3).addClass('running_fill');
+                    $('td', row).eq(4).addClass('running_fill');
+                }
+            },
+
+            initComplete: function () {
+                this.api().columns([0, 1, 2, 3]).every(function () {
+                    var column = this;
+                    var select = $('<select><option value="">Show all</option></select>')
+                        .appendTo($(column.footer()).empty())
+                        .on('change', function () {
+                            var val = $.fn.dataTable.util.escapeRegex(
+                                $(this).val()
+                            );
+                            column
+                                .search(val ? '^' + val + '$' : '', true, false)
+                                .draw();
+                        });
+                    column.data().unique().sort().each(function (d, j) {
+                        select.append('<option value="' + d + '">' + d + '</option>')
+                    });
+                });
+            }
+        });
+    }
+    function getData (type) {
+        var dtR = [];
+        var dtC = [];
+        var dtF = [];
+        if(type == 'resources') {
+        $.ajax({
+        url: '{% url 'resourcesType' %}',
+        async: false,
+        dataType: 'json',
+        success: function (json) {
+        dtR = json;
         }
-        function getData (type) {
-            var dtR = [];
-            var dtC = [];
-            var dtF = [];
-            if(type == 'resources') {
-            $.ajax({
-            url: '{% url 'resourcesType' %}',
-            async: false,
-            dataType: 'json',
-            success: function (json) {
-            dtR = json;
-            }
-            });
-            }
-            else if (type == 'cores') {
-            $.ajax({
-            url: '{% url 'coreTypes' %}',
-            async: false,
-            dataType: 'json',
-            success: function (json) {
-            dtC = json;
-            }
-            });
-            }
-            else if (type == 'fairshares') {
-            $.ajax({
-            url: '{% url 'fairsharePolicy' %}',
-            async: false,
-            dataType: 'json',
-            success: function (json) {
-            dtF = json;
-            }
-            });
-            }
-            var dtRList = {};
-            var dtCList = {};
-            var dtFList = {};
-            for (i=0;i<dtR.length;i++)
-            {
-                dtRList[String(dtR[i].resource)] = Math.round(dtR[i].executing);
-            }
-            for (i=0;i<dtC.length;i++)
-            {
-                dtCList[String(dtC[i].coretypes)] = Math.round(dtC[i].executing);
-            }
-            for (i=0;i<dtF.length;i++)
-            {
-                dtFList[String(dtF[i].policy)] = Math.round(dtF[i].executing);
-            }
-            return {
-                resource:dtR,
-                cores: dtC,
-                policy:dtF,
-                resourceList:dtRList,
-                coresList:dtCList,
-                policyList:dtFList
-            }
+        });
         }
-        function DisplayResources(dt) {
-            $('#resources').dataTable({
-                //"bRetrieve": true,
-                "retrieve": true,
-                "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
-                 paging: false,
-                "searching": false,
-                 order: [[4, 'desc']],
-                 data: dt,
+        else if (type == 'cores') {
+        $.ajax({
+        url: '{% url 'coreTypes' %}',
+        async: false,
+        dataType: 'json',
+        success: function (json) {
+        dtC = json;
+        }
+        });
+        }
+        else if (type == 'fairshares') {
+        $.ajax({
+        url: '{% url 'fairsharePolicy' %}',
+        async: false,
+        dataType: 'json',
+        success: function (json) {
+        dtF = json;
+        }
+        });
+        }
+        var dtRList = {};
+        var dtCList = {};
+        var dtFList = {};
+        for (i=0;i<dtR.length;i++)
+        {
+            dtRList[String(dtR[i].resource)] = Math.round(dtR[i].executing);
+        }
+        for (i=0;i<dtC.length;i++)
+        {
+            dtCList[String(dtC[i].coretypes)] = Math.round(dtC[i].executing);
+        }
+        for (i=0;i<dtF.length;i++)
+        {
+            dtFList[String(dtF[i].policy)] = Math.round(dtF[i].executing);
+        }
+        return {
+            resource:dtR,
+            cores: dtC,
+            policy:dtF,
+            resourceList:dtRList,
+            coresList:dtCList,
+            policyList:dtFList
+        }
+    }
+    function DisplayResources(dt) {
+        $('#resources').dataTable({
+            //"bRetrieve": true,
+            "retrieve": true,
+            "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+             paging: false,
+            "searching": false,
+             order: [[4, 'desc']],
+             data: dt,
 {#                "ajax": {#}
 {#                    "processing": true,#}
 {#                    "url": "{% url 'resourcesType' %}",#}
 {#                    "dataSrc": ''#}
 {#                },#}
-                "aoColumns": [
-                    {
-                        "data": "resource",
-                        sDefaultContent: ""
-                    },
-                    {
-                        "data": "executing",
-                        sDefaultContent: "",
-                        "render": function(data, type, full, meta) {
-                        return NumberRound(full['executing']) +' (' + full['executing_percent']+'%)'
-                        }
-                    },
-                    {
-                        "data": "queued",
-                        sDefaultContent: "",
-                        "render": function(data, type, full, meta) {
-                        return NumberRound(full['queued']) +' (' + full['queued_percent']+'%)'
-                        }
-                    },
-                    {
-                        "data": "ignore",
-                        sDefaultContent: "",
-                        "render": function(data, type, full, meta) {
-                        return NumberRound(full['ignore']) +' (' + full['ignore_percent']+'%)'
-                        }
-                    },
-                    {
-                        "data": "total_hs",
-                        sDefaultContent: "",
-                        "render": function(data, type, full, meta) {
-                        return NumberRound(full['total_hs']) +' (' + full['total_hs_percent']+'%)'
-                        }
-                    }
-                ],
-                "createdRow": function (row, data, index) {
+            "aoColumns": [
+                {
+                    "data": "resource",
+                    sDefaultContent: ""
                 },
+                {
+                    "data": "executing",
+                    sDefaultContent: "",
+                    "render": function(data, type, full, meta) {
+                    return NumberRound(full['executing']) +' (' + full['executing_percent']+'%)'
+                    }
+                },
+                {
+                    "data": "queued",
+                    sDefaultContent: "",
+                    "render": function(data, type, full, meta) {
+                    return NumberRound(full['queued']) +' (' + full['queued_percent']+'%)'
+                    }
+                },
+                {
+                    "data": "ignore",
+                    sDefaultContent: "",
+                    "render": function(data, type, full, meta) {
+                    return NumberRound(full['ignore']) +' (' + full['ignore_percent']+'%)'
+                    }
+                },
+                {
+                    "data": "total_hs",
+                    sDefaultContent: "",
+                    "render": function(data, type, full, meta) {
+                    return NumberRound(full['total_hs']) +' (' + full['total_hs_percent']+'%)'
+                    }
+                }
+            ],
+            "createdRow": function (row, data, index) {
+            },
 
 {#                initComplete: function () {#}
 {#                    this.api().columns([0, 1, 2, 3]).every(function () {#}
@@ -538,366 +766,118 @@
 {#                        });#}
 {#                    });#}
 {#                }#}
-            });
-    }
-        function DisplayCoreTypes(dt) {
-            $('#cores').dataTable({
-                //"bRetrieve": true,
-                "retrieve": true,
-                "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
-                paging: false,
-                "searching": false,
-                order: [[4, 'desc']],
-                data: dt,
+        });
+}
+    function DisplayCoreTypes(dt) {
+        $('#cores').dataTable({
+            //"bRetrieve": true,
+            "retrieve": true,
+            "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+            paging: false,
+            "searching": false,
+            order: [[4, 'desc']],
+            data: dt,
 {#                "ajax": {#}
 {#                    "processing": true,#}
 {#                    "url": "{% url 'coreTypes' %}",#}
 {#                    "dataSrc": ''#}
 {#                },#}
-                "aoColumns": [
-                    {
-                        "data": "coretypes",
-                        sDefaultContent: ""
-                    },
-                    {
-                        "data": "executing",
-                        sDefaultContent: "",
-                        "render": function(data, type, full, meta) {
-                        return NumberRound(full['executing']) +' (' + full['executing_percent']+'%)'
-                        }
-                    },
-                    {
-                        "data": "queued",
-                        sDefaultContent: "",
-                        "render": function(data, type, full, meta) {
-                        return NumberRound(full['queued']) +' (' + full['queued_percent']+'%)'
-                        }
-                    },
-                    {
-                        "data": "ignore",
-                        sDefaultContent: "",
-                        "render": function(data, type, full, meta) {
-                        return NumberRound(full['ignore']) +' (' + full['ignore_percent']+'%)'
-                        }
-                    },
-                    {
-                        "data": "total_hs",
-                        sDefaultContent: "",
-                        "render": function(data, type, full, meta) {
-                        return NumberRound(full['total_hs']) +' (' + full['total_hs_percent']+'%)'
-                        }
-                    }
-                ],
-                "createdRow": function (row, data, index) {
+            "aoColumns": [
+                {
+                    "data": "coretypes",
+                    sDefaultContent: ""
                 },
+                {
+                    "data": "executing",
+                    sDefaultContent: "",
+                    "render": function(data, type, full, meta) {
+                    return NumberRound(full['executing']) +' (' + full['executing_percent']+'%)'
+                    }
+                },
+                {
+                    "data": "queued",
+                    sDefaultContent: "",
+                    "render": function(data, type, full, meta) {
+                    return NumberRound(full['queued']) +' (' + full['queued_percent']+'%)'
+                    }
+                },
+                {
+                    "data": "ignore",
+                    sDefaultContent: "",
+                    "render": function(data, type, full, meta) {
+                    return NumberRound(full['ignore']) +' (' + full['ignore_percent']+'%)'
+                    }
+                },
+                {
+                    "data": "total_hs",
+                    sDefaultContent: "",
+                    "render": function(data, type, full, meta) {
+                    return NumberRound(full['total_hs']) +' (' + full['total_hs_percent']+'%)'
+                    }
+                }
+            ],
+            "createdRow": function (row, data, index) {
+            },
 
-            });
-    }
-        function DisplayFairshareTypes(dt) {
-            $('#fairsharepolicy').dataTable({
-                //"bRetrieve": true,
-                "retrieve": true,
-                "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
-                paging: false,
-                "searching": false,
-                order: [[4, 'desc']],
-                data:dt,
+        });
+}
+    function DisplayFairshareTypes(dt) {
+        $('#fairsharepolicy').dataTable({
+            //"bRetrieve": true,
+            "retrieve": true,
+            "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+            paging: false,
+            "searching": false,
+            order: [[4, 'desc']],
+            data:dt,
 {#                "ajax": {#}
 {#                    "processing": true,#}
 {#                    "url": "{% url 'fairsharePolicy' %}",#}
 {#                    "dataSrc": ''#}
 {#                },#}
-                "aoColumns": [
-                    {
-                        "data": "policy",
-                        sDefaultContent: ""
-                    },
-                    {
-                        "data": "executing",
-                        sDefaultContent: "",
-                        "render": function(data, type, full, meta) {
-                        return NumberRound(full['executing']) +' (' + full['executing_percent']+'%)'
-                        }
-                    },
-                    {
-                        "data": "queued",
-                        sDefaultContent: "",
-                        "render": function(data, type, full, meta) {
-                        return NumberRound(full['queued']) +' (' + full['queued_percent']+'%)'
-                        }
-                    },
-                    {
-                        "data": "ignore",
-                        sDefaultContent: "",
-                        "render": function(data, type, full, meta) {
-                        return NumberRound(full['ignore']) +' (' + full['ignore_percent']+'%)'
-                        }
-                    },
-                    {
-                        "data": "total_hs",
-                        sDefaultContent: "",
-                        "render": function(data, type, full, meta) {
-                        return NumberRound(full['total_hs']) +' (' + full['total_hs_percent']+'%)'
-                        }
-                    }
-                ],
-                "createdRow": function (row, data, index) {
+            "aoColumns": [
+                {
+                    "data": "policy",
+                    sDefaultContent: ""
                 },
+                {
+                    "data": "executing",
+                    sDefaultContent: "",
+                    "render": function(data, type, full, meta) {
+                    return NumberRound(full['executing']) +' (' + full['executing_percent']+'%)'
+                    }
+                },
+                {
+                    "data": "queued",
+                    sDefaultContent: "",
+                    "render": function(data, type, full, meta) {
+                    return NumberRound(full['queued']) +' (' + full['queued_percent']+'%)'
+                    }
+                },
+                {
+                    "data": "ignore",
+                    sDefaultContent: "",
+                    "render": function(data, type, full, meta) {
+                    return NumberRound(full['ignore']) +' (' + full['ignore_percent']+'%)'
+                    }
+                },
+                {
+                    "data": "total_hs",
+                    sDefaultContent: "",
+                    "render": function(data, type, full, meta) {
+                    return NumberRound(full['total_hs']) +' (' + full['total_hs_percent']+'%)'
+                    }
+                }
+            ],
+            "createdRow": function (row, data, index) {
+            },
 
-            });
-    }
-
-        $(document).ready(function () {
-            $(".has-dropdown").addClass("has-dropdown not-click");
         });
-    </script>
+}
 
-    <table>
-        <tr class='tablesection'>
-            <th>L1 Share</th>
-            <th>L2 Share</th>
-            <th>L3 Share</th>
-            <th>Actual HS06</th>
-            <th>Target HS06</th>
-            <th>HS06 ratio</th>
-            <th>Queued HS06</th>
-            <th>Actual share</th>
-            <th>Target share</th>
-        </tr>
-        {% for row in tablerows %}
-            <tr>
-                <td>{{ row.level1 }} {% if row.gshare and row.level1 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
-   {% endif %}</td>
-                <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level2 }}</a>
-                    {% else %}{{ row.level2 }} {% endif %} {% if row.gshare and row.level2 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
-   {% endif %}</td>
-                <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level3 }}</a>
-                    {% else %}{{ row.level3 }} {% endif %} {% if row.gshare and row.level3 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
-   {% endif %}</td>
-                <td style="text-align:right">
-                    {% if row.executing %}{{ row.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">
-                    {% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">{% if row.ratio %} {{ row.ratio |floatformat:2|intcomma }} % {% else %}
-                    --- {% endif %}</td>
-                <td style="text-align:right">
-                    {% if row.queued %}{{ row.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">{% if row.used %} {{ row.used |floatformat:2|intcomma }} % {% else %}
-                    --- {% endif %}</td>
-                <td style="text-align:right">
-                    {% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}</td>
-            </tr>
-            {% for resource in row.resources%}
-{#            <tr style="display: none" id="{{ row.gshare }}{% if resource.level1 %}_{{ resource.level1 }}{% elif resource.level2%}_{{ resource.level2 }}{% elif resource.level3%}_{{ resource.level3 }}{% endif %}">#}
-            <tr style="display: none" id="{% if resource.level1 %}{{ resource.level1 }}{% elif resource.level2%}{{ resource.level2 }}{% elif resource.level3%}{{ resource.level3 }}{% endif %}" class="{{ row.gshare }}">
+    $(document).ready(function () {
+        $(".has-dropdown").addClass("has-dropdown not-click");
+    });
+</script>
 
-                <td>{{ resource.level1 }}</td>
-                <td>{{ resource.level2 }}</td>
-                <td>{{ resource.level3 }}</td>
-                <td style="text-align:right">
-                    {% if resource.executing %}{{ resource.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">
-                    ---
-{#                    {% if row.pledged %}{{ row.pledged|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>#}
-                <td style="text-align:right">
-{#                {% if row.ratio %} {{ row.ratio |floatformat:2|intcomma }} % {% else %}#}
-                    --- </td>
-                <td style="text-align:right">
-                    {% if resource.queued %}{{ resource.queued|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
-                <td style="text-align:right">
-{#                    {% if resource.used %} {{ resource.used |floatformat:2|intcomma }} % {% else %}#}
-                    --- </td>
-                <td style="text-align:right">
-{#                    {% if row.value %}{{ row.value|floatformat:2|intcomma }}%{% else %} 0.00% {% endif %}#}
-                    ---
-                </td>
-            </tr>
-            {% endfor %}
-        {% endfor %}
-    </table>
-    <br>
-    <a href="javascript:ReverseDisplay('sharesdistributiondiv','sharesdistributionlink')" id="sharesdistributionlink" class="bluebutton">Show
-        shares distribution</a> <br/><br/>
-    <div id="sharesdistributiondiv" style="display: none">
-        <hr/>
-        <a href="{% url 'sharesDistributionJSON' %}">JSON</a><br/><br/>
-
-        <table id="sharesdistribution" style="width: 100%" class="data-table">
-            <caption style="height: 30px;vertical-align: middle">Shares distribution (4 days)</caption>
-            <thead>
-            <th>Global share</th>
-            <th>Computing site</th>
-            <th>Resource</th>
-            <th>Core count</th>
-            <th>Job status</th>
-            <th>COUNT</th>
-            <th>HS06</th>
-            <th>HS06/COUNT</th>
-            </thead>
-            <tbody></tbody>
-            <tfoot>
-            <tr>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-            </tfoot>
-        </table>
-        <hr/>
-    </div>
-    <a href="javascript:ReverseDisplay('siteworkqueuesdiv','siteworkqueueslink')" id="siteworkqueueslink" class="bluebutton">Show site
-        workqueues occupations</a>  <br/><br/>
-    <div id="siteworkqueuesdiv" style="display: none">
-        <hr/>
-        <table id="siteworkqueues" style="width: 100%" class="data-table">
-            <caption style="height: 30px;vertical-align: middle">Site workqueues occupations (4 days)</caption>
-            <thead>
-            <th>Computing site</th>
-            <th>Global share</th>
-            <th>Core count</th>
-            <th>Job status</th>
-            <th>COUNT</th>
-            </thead>
-            <tbody></tbody>
-            <tfoot>
-            <tr>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-            </tfoot>
-        </table>
-        <hr/>
-    </div>
-    <a href="javascript:ReverseDisplay('detailedinformationdiv','detailedinformationlink')"
-       id="detailedinformationlink" class="bluebutton">Show detailed information</a> <br/><br/>
-    <div id="detailedinformationdiv" style="display: none">
-        <hr/>
-        <table id="detailedinformation" style="width: 100%" class="data-table">
-            <caption style="height: 30px;vertical-align: middle">Detailed information (4 days)</caption>
-            <thead>
-            <th>Global share</th>
-            <th>Core count</th>
-            <th>Job status <span class="hasTooltip"> (?)
-      <table>
-      <thead>
-          <th>Table job status</th>
-          <th>Database job status</th>
-      </thead>
-      <tr>
-          <td>scheduled</td>
-          <td>defined,waiting,pending,assigned,throttled,activated,merging,starting,holding,transferring</td>
-      </tr>
-      <tr>
-          <td>running</td>
-          <td>sent,running</td>
-      </tr>
-      <tr>
-          <td>did run</td>
-          <td>failed,cancelled,closed</td>
-      </tr>
-      </table></span>
-            </th>
-            <th>COUNT</th>
-            <th>HS06</th>
-            </thead>
-            <tbody></tbody>
-            <tfoot>
-            <tr>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-            </tfoot>
-        </table>
-        <hr/>
-    </div>
-    <a href="javascript:ReverseDisplay('resourcesDiv','resourcesLink')"
-       id="resourcesLink" class="bluebutton">Show resources information</a> <br/><br/>
-    <div id="resourcesDiv" style="display: none">
-    <div class="d3splot" id="pieChartResources"></div>
-    <hr/>
-    <table id="resources" style="width: 100%" class="data-table">
-            <caption style="height: 30px;vertical-align: middle"></caption>
-            <thead>
-            <th>Resource</th>
-            <th>Actual HS06</th>
-            <th>Queued HS06</th>
-            <th>Other HS06</th>
-            <th>Total HS06</th>
-            </thead>
-            <tbody></tbody>
-            <tfoot>
-            <tr>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-            </tfoot>
-    </table>
-    </div>
-    <a href="javascript:ReverseDisplay('coresDiv','coresLink')"
-       id="coresLink" class="bluebutton">Show corescount information</a> <br/><br/>
-    <div id="coresDiv" style="display: none">
-    <div class="d3splot" id="pieChartCores"></div>
-    <hr/>
-    <table id="cores" style="width: 100%" class="data-table">
-            <caption style="height: 30px;vertical-align: middle"></caption>
-            <thead>
-            <th>Core</th>
-            <th>Actual HS06</th>
-            <th>Queued HS06</th>
-            <th>Other HS06</th>
-            <th>Total HS06</th>
-            </thead>
-            <tbody></tbody>
-            <tfoot>
-            <tr>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-            </tfoot>
-    </table>
-    </div>
-    <a href="javascript:ReverseDisplay('fairshareDiv','fairshareLink')"
-       id="fairshareLink" class="bluebutton">Show policy information</a> <br/><br/>
-    <div id="fairshareDiv" style="display: none">
-    <div class="d3splot" id="pieChartPolicy"></div>
-    <hr/>
-    <table id="fairsharepolicy" style="width: 100%" class="data-table">
-            <caption style="height: 30px;vertical-align: middle"></caption>
-            <thead>
-            <th>Policy</th>
-            <th>Actual HS06</th>
-            <th>Queued HS06</th>
-            <th>Other HS06</th>
-            <th>Total HS06</th>
-            </thead>
-            <tbody></tbody>
-            <tfoot>
-            <tr>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-            </tfoot>
-    </table>
-    </div>
 {% endblock %}
-

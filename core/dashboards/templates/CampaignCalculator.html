@@ -7,17 +7,18 @@
 {% block subtitle %}Campaign duration calculator {{ viewParams.selection|safe }} {% endblock %}
 
 
-{% block base_css %}
-    <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}">
-    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
 {% endblock %}
-{% block base_js %}
-    <script src="{% static 'js/hideCells.js' %}"></script>
-    <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
-    <script src="{% static 'js/humanize.min.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% block css_page %}
+  <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 {% endblock %}
 
 {% block body %}
@@ -65,7 +66,8 @@
 
 {% endblock %}
 
-{% block extra_js %}
+{% block js_body_page %}
+<script src="{% static 'js/hideCells.js' %}"></script>
 <script>
     app.service('Service', ['$http', service])
         .controller('dataviewctrl', ['$scope', 'Service',controller]);

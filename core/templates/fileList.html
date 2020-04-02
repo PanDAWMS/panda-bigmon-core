@@ -4,15 +4,10 @@
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA files<font size=-1>{{ viewParams.selection|safe }}</font>{% endblock %}
 
-{% block extra_css %}
+{% block css_page_library %}
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <style>
-        #filelist_wrapper .row {
-            max-width: 99%;
-        }
-    </style>
 {% endblock %}
-{% block extra_js %}
+{% block js_head_page_library %}
     <script src="{% static 'js/humanize.min.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
@@ -83,6 +78,9 @@ No files matching selection were found.
 
 {% endif %}
 
+{% endblock %}
+
+{% block js_body_page %}
 <script>
 $(document).ready(function () {
     var extraparams = '{{ extraparams | safe }}';
@@ -140,11 +138,12 @@ function fileListTable(extraparams) {
             {
                 "data": "fsizemb",
                 sDefaultContent: "",
+                className: 'num',
             },
             {
                 "data": "nevents",
                 sDefaultContent: "---",
-                className: 'dt-body-right',
+                className: 'num',
                 render: $.fn.dataTable.render.number( ',', '.')
 
             },
@@ -170,18 +169,22 @@ function fileListTable(extraparams) {
             {
                 "data": "status",
                 sDefaultContent: "",
+                className: 'state',
             },
             {
                 "data": "procstatus",
                 sDefaultContent: "-",
+                className: 'state',
             },
             {
                 "data": "attemptnr",
                 sDefaultContent: "",
+                className: 'num',
             },
             {
                 "data": "maxattempt",
                 sDefaultContent: "",
+                className: 'num',
             },
             {
                 "data": "creationdate",
@@ -190,6 +193,7 @@ function fileListTable(extraparams) {
             {
                 "data": "lumiblocknr",
                 sDefaultContent: "---",
+                className: 'num',
             },
             {
                 "data": "ruciolink",
@@ -221,9 +225,7 @@ function fileListTable(extraparams) {
     }
 
 </script>
-
 {% endblock %}
-
 
 {% block helptext %}
 {% include "fileListHelp.html" with helptitle="File list help" %}

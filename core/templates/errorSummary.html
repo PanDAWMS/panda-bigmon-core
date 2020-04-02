@@ -1,56 +1,6 @@
 {% extends "_base_core.html" %}
 {% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA job errors{% endblock %}
-
-{% block settings-offcanvas %}
-    <p>
-        <span style="font-weight: bold">Errors page settings</span>
-    </p>
-
-  {% for table, desc in userPreferences.defaulttables.items %}
-          <div class="switch-toggle-wrapper">
-            <div class="switch tiny">
-              <input class="switch-input" id="switch-table-{{ table }}" type="checkbox" name="switch-table"
-                      {% if table in userPreferences.tables %} checked="checked" {% endif %}
-                        onchange="disableDetails('{{ table }}');">
-              <label class="switch-paddle" for="switch-table-{{ table }}">
-                <span class="show-for-sr">{{ desc }}</span>
-              </label>
-            </div>
-            <span>{{desc }}</span>
-          </div>
-  {% endfor %}
-
-
-<div class="row">
-  <div class="columns offCanvasRight-columns">
-    <ul class="accordion " data-accordion data-allow-all-closed="true">
-    <li id="jobattr-menu" class="accordion-item is-active " data-accordion-item><a href="#" class="menu-link" id="jobattr-link" class="accordion-title">Job Attribute Summary Table</a>
-     <div class="accordion-content" data-tab-content >
-      <ul id="jobattr-menu-item" class="menu vertical nested">
-
-        {% for attr in userPreferences.defaultjobattr %}
-          <div class="switch-toggle-wrapper">
-            <div class="switch tiny">
-              <input class="switch-input" id="switch-jobsattr-{{ attr }}" type="checkbox" name="switch-jobsattr"
-                {% if attr in userPreferences.jobattr %} checked="checked" {% endif %}>
-              <label class="switch-paddle" for="switch-jobsattr-{{ attr }}">
-                <span class="show-for-sr">{{ attr }}</span>
-              </label>
-            </div>
-            <span>{{ attr }}</span>
-          </div>
-        {% endfor %}
-       </ul>
-     </div>
-    </li>
-  </ul>
-  </div>
-</div>
-
-{% endblock %}
-
-
 {% block subtitle %}PanDA job error summary{{ viewParams.selection|safe }}
 {% if user %}     user={{ user }} {% endif %}
 {% if site %}     site={{ site }} {% endif %}
@@ -60,50 +10,22 @@
 {% if jobsErrorsTotalCount != None%} <b> Total jobs found &#x7E; <a href="{% url 'errorSummary' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">{{ jobsErrorsTotalCount }}</a></b> {% endif %}
 {% endblock %}
 
-{% block extra_css %}
+{% block css_page_library %}
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <link rel="stylesheet" href="{% static "js/datatables/RowGroup-1.1.1/css/rowGroup.foundation.css" %}">
-    <style>
-        #errorsummary_groupbymessage_wrapper .row {
-            max-width: 99%;
-            margin-top: 1rem;
-        }
-        #errorsummary_groupbycode_wrapper .row {
-            max-width: 99%;
-            margin-top: 1rem;
-        }
-    </style>
 {% endblock %}
-{% block extra_js %}
+
+{% block js_head_page_library %}
     <script src="{% static 'js/humanize.min.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/dataTables.rowGroup.js' %}"></script>
     <script src="{% static 'js/datatables/Select-1.2.0/js/dataTables.select.js' %}"></script>
     <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+    <script src="{% static "js/clipboardjs/clipboard.min.js" %}"></script>
+    <script src="{% static "js/jquery.shorten.1.0.js" %}"></script>
 {% endblock %}
 
 {% block body %}
 {{ viewParams.header }}
-<script>
-    $(document).ready(function() {
-        let clipboard = new ClipboardJS('#copy-button'); //needed for copy to clipboard button
-
-        clipboard.on('success', function (e) {
-            let copy_button = document.getElementById('copy-button');
-            copy_button.innerHTML = 'copied!';
-            copy_button.classList.add('disabled');
-            e.clearSelection();
-        });
-
-        clipboard.on('error', function (e) {
-            let copy_button = document.getElementById('copy-button');
-            copy_button.innerHTML = 'copying failed!';
-            copy_button.classList.add('disabled');
-        });
-    });
-</script>
-
 
 <b>{{ njobs }} jobs found. Show jobs: </b>
     <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}jobstatus=failed&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>Failed </b></a>,
@@ -136,41 +58,14 @@
 
 <p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} summary
 
-<script type="text/javascript"
-           src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
-</script>
 {% if flowstruct %}
 {% include "googleFlowDiagram.html" with struct=flowstruct %}
 {% endif %}
 
 {% if errHist %}
-    <script type="text/javascript">
-      google.setOnLoadCallback(drawChart);
-      function drawChart() {
-        var data = google.visualization.arrayToDataTable([
-          ['Time', 'Count'],
-          {% for time, count in errHist %}
-                   ['{{ time|date:"m-d H:i" }}', {{ count }}],
-          {% endfor %}
-        ]);
-        var options = {
-          title: 'Error count timeline',
-          legend: { position: 'none' },
-          hAxis: {title: 'Time (empty bins suppressed)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
-        };
-        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
-        chart.draw(data, options);
-      }
-    </script>
 <div id="chart_div" style="height: 500px;"></div>
 {% endif %}
 
-<script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
-<script type="text/javascript">
-	$(document).ready(function() {
-	    $(".comment").shorten();
-	});
-</script>
 {% if sumd %}
 <table>
 <tr class='tablesection'><th colspan=20> Error occurrences by job attribute </th></tr>
@@ -320,16 +215,56 @@
 
 {% endif %}
 
+{% endblock %}
 
-<script type="text/javascript">
+{% block js_body_page %}
+<script type="text/javascript"
+           src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
+</script>
+<script>
+$(document).ready(function() {
+
+    $(".comment").shorten();
+
+    DisplayErrorCountListTableData();
+    DisplayErrorMessagesListTableData();
+
+    let clipboard = new ClipboardJS('#copy-button'); //needed for copy to clipboard button
+
+    clipboard.on('success', function (e) {
+        let copy_button = document.getElementById('copy-button');
+        copy_button.innerHTML = 'copied!';
+        copy_button.classList.add('disabled');
+        e.clearSelection();
+    });
+
+    clipboard.on('error', function (e) {
+        let copy_button = document.getElementById('copy-button');
+        copy_button.innerHTML = 'copying failed!';
+        copy_button.classList.add('disabled');
+    });
+});
+
+google.setOnLoadCallback(drawChart);
+function drawChart() {
+  var data = google.visualization.arrayToDataTable([
+    ['Time', 'Count'],
+    {% for time, count in errHist %}
+             ['{{ time|date:"m-d H:i" }}', {{ count }}],
+    {% endfor %}
+  ]);
+  var options = {
+    title: 'Error count timeline',
+    legend: { position: 'none' },
+    hAxis: {title: 'Time (empty bins suppressed)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
+  };
+  var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+  chart.draw(data, options);
+}
+
 var err_list_data = {{ errsByMessage|safe }};
 var errorMessagesListDataTable;
 var errorCountListTableData;
-
-$(document).ready(function () {
-        DisplayErrorCountListTableData();
-        DisplayErrorMessagesListTableData();
-    });
 
 function DisplayErrorCountListTableData() {
     errorCountListTableData = $('#errorsummary_groupbycode').dataTable({
@@ -398,10 +333,59 @@ function DisplayErrorMessagesListTableData() {
 }
 </script>
 
+
 {% endblock %}
 
 {% block helptext %}
 {% include "errorSummaryHelp.html" with helptitle="Error summary help" %}
 {% endblock %}
 
+
+{% block settings-offcanvas %}
+  <p>
+      <span style="font-weight: bold">Errors page settings</span>
+  </p>
+
+  {% for table, desc in userPreferences.defaulttables.items %}
+          <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-table-{{ table }}" type="checkbox" name="switch-table"
+                      {% if table in userPreferences.tables %} checked="checked" {% endif %}
+                        onchange="disableDetails('{{ table }}');">
+              <label class="switch-paddle" for="switch-table-{{ table }}">
+                <span class="show-for-sr">{{ desc }}</span>
+              </label>
+            </div>
+            <span>{{desc }}</span>
+          </div>
+  {% endfor %}
+
+
+<div class="row">
+  <div class="columns offCanvasRight-columns">
+    <ul class="accordion " data-accordion data-allow-all-closed="true">
+    <li id="jobattr-menu" class="accordion-item is-active " data-accordion-item><a href="#" class="menu-link" id="jobattr-link" class="accordion-title">Job Attribute Summary Table</a>
+     <div class="accordion-content" data-tab-content >
+      <ul id="jobattr-menu-item" class="menu vertical nested">
+
+        {% for attr in userPreferences.defaultjobattr %}
+          <div class="switch-toggle-wrapper">
+            <div class="switch tiny">
+              <input class="switch-input" id="switch-jobsattr-{{ attr }}" type="checkbox" name="switch-jobsattr"
+                {% if attr in userPreferences.jobattr %} checked="checked" {% endif %}>
+              <label class="switch-paddle" for="switch-jobsattr-{{ attr }}">
+                <span class="show-for-sr">{{ attr }}</span>
+              </label>
+            </div>
+            <span>{{ attr }}</span>
+          </div>
+        {% endfor %}
+       </ul>
+     </div>
+    </li>
+  </ul>
+  </div>
+</div>
+
+{% endblock %}
 

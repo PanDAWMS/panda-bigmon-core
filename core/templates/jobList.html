@@ -10,37 +10,25 @@
 {% if jobsTotalCount != None%}
     <b> Total jobs found &#x7E; <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{jobsTotalCount}}">{{ jobsTotalCount }}</a></b> {% endif %}
 {% endblock %}
-{% block extra_css %}
+
+{% block css_page_library %}
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <link rel="stylesheet" href="{% static "js/datatables/RowGroup-1.1.1/css/rowGroup.foundation.css" %}">
-    <style>
-        #errorsummary_groupbymessage_wrapper .row {
-            max-width: 99%;
-            margin-top: 1rem;
-        }
-        #errorsummary_groupbycode_wrapper .row {
-            max-width: 99%;
-            margin-top: 1rem;
-        }
-    </style>
+
 {% endblock %}
-{% block extra_js %}
+
+{% block js_head_page_library %}
     <script src="{% static 'js/humanize.min.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/dataTables.rowGroup.js' %}"></script>
     <script src="{% static 'js/datatables/Select-1.2.0/js/dataTables.select.js' %}"></script>
     <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+    <script src="{% static "js/clipboardjs/clipboard.min.js" %}"></script>
+    <script src="{% static "js/jquery.shorten.1.0.js" %}"></script>
 {% endblock %}
+
 {% block body %}
 
 {{ viewParams.header }}
-
-    <div style="text-align: center; background:darkred; color: whitesmoke; font-size: 20px;" >
-    We propose to participate in testing a new much faster jobs page (<a href="http://bigpanda.cern.ch/jobsss{{ xurlnopref }}">http://bigpanda.cern.ch/jobsss{{ xurlnopref }}</a>)<br>
-    The new view might have differences with the current one, please inform developers about any issues you have.
-    </div>
-
 
 <b>{{ njobs }} jobs in this selection</b>
 {% if requestParams.transferringnotupdated %}<br><b>Jobs in transferring state for more than {{ requestParams.transferringnotupdated }} hours</b> {% endif %}
@@ -82,71 +70,8 @@
 {% endif %}
 
 {% if flowstruct %}
-
-<script type="text/javascript"
-           src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
-</script>
-
-{% include "googleFlowDiagram.html" with struct=flowstruct %}
+  {% include "googleFlowDiagram.html" with struct=flowstruct %}
 {% endif %}
-
-<script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
-<script type="text/javascript">    
-
-function toggleDetailDisplay(className) {                                                                                                                                                                                    
-   el = document.getElementsByClassName(className)
-   for (i=0; i<el.length; i++) {   
-     el[i].style.display = (el[i].style.display=="none") ? "" : "none";                                                                                           
-   }
-}
-
-	$(document).ready(function() {
-	    $(".comment").shorten();
-
-	    let clipboard = new ClipboardJS('#copy-button'); //needed for copy to clipboard button
-
-        clipboard.on('success', function(e) {
-            let copy_button = document.getElementById('copy-button');
-            copy_button.innerHTML = 'copied!';
-            copy_button.classList.add('disabled');
-            e.clearSelection();
-        });
-
-        clipboard.on('error', function(e) {
-            let copy_button = document.getElementById('copy-button');
-            copy_button.innerHTML = 'copying failed!';
-            copy_button.classList.add('disabled');
-        });
-	});
-
-function toggleComparisonList(buttonid, value) {
-    var buttontext = document.getElementById(buttonid).innerHTML;
-    if (buttontext.indexOf('Add') >= 0) {
-        $.ajax({
-            url: '/addtocomparison/',
-            data: 'object=job&value='+value,
-            async: true,
-            cache: false
-        }).done(function (response) {
-            $('#' + buttonid).html('Remove from comparison');
-            document.getElementById(buttonid).className = "removefromcomparisonbuttoncompact";
-            });
-    }
-    else {
-        $.ajax({
-            url: '/deletefromcomparison/',
-            data: 'object=job&value='+value,
-            async: true,
-            cache: false
-        }).done(function (response) {
-            $('#' + buttonid).html('Add to comparison');
-            document.getElementById(buttonid).className = "addtocomparisonbuttoncompact";
-            });
-    }
-
-}
-
-</script>
 
 {% if ndrops > 0 %}
 <table width=900><tr><td class='highlightcell'>
@@ -431,15 +356,51 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 
 {% endif %}
 
+
+{% endblock %}
+
+{% block js_body_page %}
+<script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}"></script>
 <script type="text/javascript">
+
 var err_list_data = {{ errsByMessage|safe }};
 var errorMessagesListDataTable;
 var errorCountListTableData;
 
-$(document).ready(function () {
-        DisplayErrorCountListTableData();
-        DisplayErrorMessagesListTableData();
-    });
+
+function toggleDetailDisplay(className) {
+   el = document.getElementsByClassName(className)
+   for (i=0; i<el.length; i++) {
+     el[i].style.display = (el[i].style.display=="none") ? "" : "none";
+   }
+}
+
+function toggleComparisonList(buttonid, value) {
+    var buttontext = document.getElementById(buttonid).innerHTML;
+    if (buttontext.indexOf('Add') >= 0) {
+        $.ajax({
+            url: '/addtocomparison/',
+            data: 'object=job&value='+value,
+            async: true,
+            cache: false
+        }).done(function (response) {
+            $('#' + buttonid).html('Remove from comparison');
+            document.getElementById(buttonid).className = "removefromcomparisonbuttoncompact";
+            });
+    }
+    else {
+        $.ajax({
+            url: '/deletefromcomparison/',
+            data: 'object=job&value='+value,
+            async: true,
+            cache: false
+        }).done(function (response) {
+            $('#' + buttonid).html('Add to comparison');
+            document.getElementById(buttonid).className = "addtocomparisonbuttoncompact";
+            });
+    }
+
+}
 
 function DisplayErrorCountListTableData() {
     errorCountListTableData = $('#errorsummary_groupbycode').dataTable({
@@ -506,11 +467,32 @@ function DisplayErrorMessagesListTableData() {
         }
     });
 }
+
+$(document).ready(function () {
+
+    $(".comment").shorten();
+
+    DisplayErrorCountListTableData();
+    DisplayErrorMessagesListTableData();
+
+    let clipboard = new ClipboardJS('#copy-button'); //needed for copy to clipboard button
+
+    clipboard.on('success', function(e) {
+        let copy_button = document.getElementById('copy-button');
+        copy_button.innerHTML = 'copied!';
+        copy_button.classList.add('disabled');
+        e.clearSelection();
+    });
+
+    clipboard.on('error', function(e) {
+        let copy_button = document.getElementById('copy-button');
+        copy_button.innerHTML = 'copying failed!';
+        copy_button.classList.add('disabled');
+    });
+});
+
 </script>
-
-
 {% endblock %}
-
 
 {% block helptext %}
 {% include "jobListHelp.html" with helptitle="Job list help" %}
