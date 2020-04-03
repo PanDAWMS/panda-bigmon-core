@@ -128,7 +128,7 @@
                                                         </div>
                                                       {% endif %}
                                                         <div class="clickable {% if ntaglist|length != 1 %}nosubresults {% endif %}">
-                                                            <div {% if job.finalresult == 'failed' or job.finalresult == 'finished' or job.finalresult == 'done' %} class="{{ job.finalresult }}_job">{{ job.finalresult }} {% else %} class="active_job"> active {% endif %}  </div>
+                                                            <div {% if job.finalresult == 'failed' or job.finalresult == 'finished' or job.finalresult == 'succeeded' %} class="{{ job.finalresult }}_job">{{ job.finalresult }} {% else %} class="active_job"> active {% endif %}  </div>
                                                             <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
                                                         </div>
                                                         <div class="extra-links">

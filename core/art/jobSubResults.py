@@ -198,12 +198,12 @@ def clear_queue(cur):
 
 def get_final_result(job):
     """ A function to determine the real ART test result depending on sub-step results, exitcode and PanDA job state
-    0 - done - green
+    0 - succeeded - green
     1 - finished - yellow
     2 - running - blue
     3 - failed - red
     """
-    finalResultDict = {0: 'done', 1: 'finished', 2: 'active', 3: 'failed'}
+    finalResultDict = {0: 'succeeded', 1: 'finished', 2: 'active', 3: 'failed'}
     extraParamsDict = {
         'testexitcode': None,
         'subresults': None,

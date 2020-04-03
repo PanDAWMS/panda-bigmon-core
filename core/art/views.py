@@ -41,7 +41,7 @@ def get_time(value):
 artdateformat = '%Y-%m-%d'
 humandateformat = '%d %b %Y'
 cache_timeout = 15
-
+statestocount = ['finished', 'failed', 'active', 'succeeded']
 
 @login_customrequired
 def art(request):
@@ -145,8 +145,6 @@ def artOverview(request):
     artJobs = ['package', 'branch','ntag', 'jobstatus', 'result']
     jobs = [dict(zip(artJobs, row)) for row in tasks_raw]
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
-
-    statestocount = ['finished', 'failed', 'active', 'done']
     
     artpackagesdict = {}
     for j in jobs:
@@ -246,7 +244,6 @@ def artTasks(request):
 
     # tasks = ARTTasks.objects.filter(**query).values('package','branch','task_id', 'ntag', 'nfilesfinished', 'nfilesfailed')
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
-    statestocount = ['finished', 'failed', 'active', 'done']
     arttasksdict = {}
     jeditaskids = {}
     for job in jobs:
@@ -855,10 +852,8 @@ def sendArtReport(request):
             if job['package'] not in artjobsdictbranch[job['branch']]['packages'].keys():
                 artjobsdictbranch[job['branch']]['packages'][job['package']] = {}
                 artjobsdictbranch[job['branch']]['packages'][job['package']]['name'] = job['package']
-                artjobsdictbranch[job['branch']]['packages'][job['package']]['ndone'] = 0
-                artjobsdictbranch[job['branch']]['packages'][job['package']]['nfailed'] = 0
-                artjobsdictbranch[job['branch']]['packages'][job['package']]['nfinished'] = 0
-                artjobsdictbranch[job['branch']]['packages'][job['package']]['nactive'] = 0
+                for state in statestocount:
+                    artjobsdictbranch[job['branch']]['packages'][job['package']]['n' + state] = 0
 
             if job['package'] not in artjobsdictpackage.keys():
                 artjobsdictpackage[job['package']] = {}
@@ -871,10 +866,8 @@ def sendArtReport(request):
             if job['branch'] not in artjobsdictpackage[job['package']]['branches'].keys():
                 artjobsdictpackage[job['package']]['branches'][job['branch']] = {}
                 artjobsdictpackage[job['package']]['branches'][job['branch']]['name'] = job['branch']
-                artjobsdictpackage[job['package']]['branches'][job['branch']]['ndone'] = 0
-                artjobsdictpackage[job['package']]['branches'][job['branch']]['nfailed'] = 0
-                artjobsdictpackage[job['package']]['branches'][job['branch']]['nfinished'] = 0
-                artjobsdictpackage[job['package']]['branches'][job['branch']]['nactive'] = 0
+                for state in statestocount:
+                    artjobsdictpackage[job['package']]['branches'][job['branch']]['n' + state] = 0
                 artjobsdictpackage[job['package']]['branches'][job['branch']][
                     'linktoeos'] = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{}/{}/{}/'.format(
                     job['branch'], job['nightly_tag'], job['package'])

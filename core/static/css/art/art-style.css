@@ -73,6 +73,19 @@ li.artmenu-item > label {
   color: black;
   font-size: 14px;
   font-weight: bold;
+}
+
+.clickable .succeeded {
+  text-align: center;
+  vertical-align: middle;
+  height: 100%;
+  width: 25%;
+  display: inline-block;
+  background: #3adb76;
+  color: black;
+  font-size: 14px;
+  font-weight: bold;
+
 
 }
 .clickable .failed {
@@ -120,8 +133,21 @@ li.artmenu-item > label {
   font-size: 14px;
   font-weight: bold;
   border-color: #3adb76;
-
 }
+
+.clickable .succeeded_job {
+  text-align: center;
+  vertical-align: middle;
+  height: 100%;
+  width: 100%;
+  display: inline-block;
+  background: #3adb76;
+  color: black;
+  font-size: 14px;
+  font-weight: bold;
+  border-color: #3adb76;
+}
+
 .clickable .active_job {
   text-align: center;
   vertical-align: middle;
@@ -548,6 +574,10 @@ li.artmenu-item > label {
 }
 
 .art-legend.done_job {
+    background: #3adb76;
+}
+
+.art-legend.succeeded_job {
     background: #3adb76;
 }
 
