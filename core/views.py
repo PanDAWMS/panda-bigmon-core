@@ -13344,6 +13344,119 @@ def getHarversterWorkersForTask(request):
     return HttpResponse(status=400)
 
 
+def get_hc_tests(request):
+    """
+    API for getting list of HammerCloud Tests
+    :param request:
+    :return: JSON response
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    jobs = []
+    tests = []
+
+    pilot_timings_names = ['timegetjob', 'timestagein', 'timepayload', 'timestageout', 'timetotal_setup']
+    error_fields = [
+        'brokerageerrorcode', 'brokerageerrordiag',
+        'ddmerrorcode', 'ddmerrordiag',
+        'exeerrorcode', 'exeerrordiag',
+        'jobdispatchererrorcode', 'jobdispatchererrordiag',
+        'piloterrorcode', 'piloterrordiag',
+        'superrorcode', 'superrordiag',
+        'taskbuffererrorcode', 'taskbuffererrordiag',
+        'transexitcode',
+    ]
+    fields = [
+        'pandaid',
+        'produsername',
+        'prodsourcelabel',
+        'processingtype',
+        'transformation',
+        'atlasrelease',
+        'proddblock',
+        'destinationdblock',
+        'destinationse',
+        'homepackage',
+        'inputfileproject',
+        'inputfiletype',
+        'jobname',
+        'cloud',
+        'nucleus',
+        'computingsite',
+        'computingelement',
+        'gshare',
+        'schedulerid',
+        'pilotid',
+        'jobstatus',
+        'creationtime',
+        'starttime',
+        'endtime',
+        'statechangetime',
+        'modificationtime',
+        'actualcorecount',
+        'minramcount',
+        'maxvmem',
+        'maxpss',
+        'maxrss',
+        'cpuconsumptiontime',
+        'nevents',
+        'noutputdatafiles',
+        'resourcetype',
+        'eventservice',
+        ]
+
+    jvalues = ['pilottiming',]
+    jvalues.extend(fields)
+    jvalues.extend(error_fields)
+
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
+    query['proddblock__startswith'] = 'hc_test:'
+    query['produsername'] = 'gangarbt'
+    excluded_time_query = copy.deepcopy(query)
+    if 'modificationtime__castdate__range' in excluded_time_query:
+        del excluded_time_query['modificationtime__castdate__range']
+
+    is_archive_only = False
+    is_archive = False
+    modtimerange = [parse_datetime(mt) for mt in query['modificationtime__castdate__range']]
+    if modtimerange[0] < datetime.utcnow()-timedelta(days=4) and modtimerange[1] < datetime.utcnow()-timedelta(days=4):
+        is_archive_only = True
+    if modtimerange[0] < datetime.utcnow() - timedelta(days=3):
+        is_archive = True
+
+    if not is_archive_only:
+        jobs.extend(Jobsdefined4.objects.filter(**excluded_time_query).extra(where=[wildCardExtension]).values(*jvalues))
+        jobs.extend(Jobsactive4.objects.filter(**excluded_time_query).extra(where=[wildCardExtension]).values(*jvalues))
+        jobs.extend(Jobswaiting4.objects.filter(**excluded_time_query).extra(where=[wildCardExtension]).values(*jvalues))
+        jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
+    if is_archive_only or is_archive:
+        jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
+
+    for job in jobs:
+        test = {}
+        test['errorinfo'] = errorInfo(job)
+        try:
+            hctestid = job['destinationdblock'].split('.')[2][2:]
+        except:
+            hctestid = None
+        test['hctestid'] = hctestid
+        try:
+            pilot_timings = [int(pti) for pti in job['pilottiming'].split('|')]
+        except:
+            pilot_timings = [''] * 5
+        test.update(dict(zip(pilot_timings_names, pilot_timings)))
+
+        for f in fields:
+            test[f] = job[f]
+        tests.append(test)
+
+    data = {'tests': tests}
+    response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+    return response
+
+
 #import logging
 #logging.basicConfig()
 @never_cache

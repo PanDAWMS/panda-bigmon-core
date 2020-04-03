@@ -232,6 +232,7 @@ urlpatterns = [
     ###API###
     re_path(r'^api/get_sites/', coremon_views.getSites, name='getsites'),
     re_path(r'^api/tasks_plots$', tasksPlots.getJobsData, name='tasksplots'),
+    re_path(r'^api/get_hc_tests/', coremon_views.get_hc_tests, name='gethctests'),
 
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
