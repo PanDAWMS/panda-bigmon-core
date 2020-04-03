@@ -51,7 +51,6 @@ def artmonitviewDemo(request):
     dict_result = {}
     for branch in branch_list:
         url11 = "https://bigpanda.cern.ch/art/tasks/?branch=" + branch + '&ntags=' + s_tstamp + '&json'
-        url11 = "http://aipanda163.cern.ch:8001/art/tasks/?branch=" + branch + '&ntags=' + s_tstamp + '&json'
         #        print('TRYING requests.get('+url11+')')
         r = requests.get(url11, verify=False)
         #        pprint(r)
