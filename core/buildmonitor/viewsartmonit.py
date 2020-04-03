@@ -51,6 +51,7 @@ def artmonitviewDemo(request):
     dict_result = {}
     for branch in branch_list:
         url11 = "https://bigpanda.cern.ch/art/tasks/?branch=" + branch + '&ntags=' + s_tstamp + '&json'
+        url11 = "http://aipanda163.cern.ch:8001/art/tasks/?branch=" + branch + '&ntags=' + s_tstamp + '&json'
         #        print('TRYING requests.get('+url11+')')
         r = requests.get(url11, verify=False)
         #        pprint(r)
@@ -70,13 +71,13 @@ def artmonitviewDemo(request):
                                         #                                    print('K ',kxx,kxxx)
                                         if re.search(kxx, kxxx):
                                             #                                        pprint(kyyy)
-                                            a0_branch = dict_branch.get(kxxx, {'active': 0, 'done': 0, 'failed': 0,
+                                            a0_branch = dict_branch.get(kxxx, {'active': 0, 'succeeded': 0, 'failed': 0,
                                                                                'finished': 0})
                                             s_active = kyyy['active'] + a0_branch['active']
-                                            s_done = kyyy['done'] + a0_branch['done']
+                                            s_done = kyyy['succeeded'] + a0_branch['succeeded']
                                             s_failed = kyyy['failed'] + a0_branch['failed']
                                             s_finished = kyyy['finished'] + a0_branch['finished']
-                                            dict_branch[kxxx] = {'active': s_active, 'done': s_done, 'failed': s_failed,
+                                            dict_branch[kxxx] = {'active': s_active, 'succeeded': s_done, 'failed': s_failed,
                                                                  'finished': s_finished}
                                             #                                        cache.set('art-monit-dict', dict_branch, 1800)
                                             reslist.append([s_active, s_done, s_failed, s_finished])
@@ -89,7 +90,7 @@ def artmonitviewDemo(request):
         for kk, vv in v46.items():
             l1 = [k46]
             l1.append(kk)
-            l1.extend([vv['active'], vv['done'], vv['failed'], vv['finished']])
+            l1.extend([vv['active'], vv['succeeded'], vv['failed'], vv['finished']])
 #            print('L1 ',l1)
             list2view.append(l1)
 ###########
