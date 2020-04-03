@@ -6,17 +6,21 @@
 {% block title %}PanDA monitor{% endblock %}
 {% block subtitle %}Monitoring for ASCIG on BigPanDA{% endblock %}
 
+{% block css_page_library %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/rowGroup.dataTables.js' %}"></script>
+{% endblock %}
+
 {% block body %}
 
 <div>
-<P>
-<link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
-  <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
-  <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
 
 <div id="hjk">
     <P><H3>ATLAS ART Monitoring for Nightlies</H3>
-
 </div>
 
 <table id="firstMonitExample" class="stripe">
@@ -29,7 +33,12 @@
                 <th>Finished</th>
      </thead>
      <tbody></tbody>
-    </table>
+</table>
+
+</div>
+{% endblock %}
+
+{% block js_body_page %}
 <script type="text/javascript">
 
 var json=JSON.stringify({{ resltART | safe }});
@@ -41,5 +50,4 @@ var artmonitdisplayTable = $('#firstMonitExample').dataTable({
 });
 
 </script>
-</div>
 {% endblock %}

@@ -6,13 +6,18 @@
 {% block title %}PanDA monitor{% endblock %}
 {% block subtitle %}Monitoring for ASCIG on BigPanDA{% endblock %}
 
+{% block css_page_library %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/rowGroup.dataTables.js' %}"></script>
+{% endblock %}
+
 {% block body %}
 
 <div>
-<P>
-<link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
-  <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
-  <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
 
 <div id="hjk">
     <P><H3>ATLAS Nightlies and CI Global Page</H3>
@@ -39,7 +44,12 @@
                 <th>ORDER string</th>
      </thead>
      <tbody></tbody>
-    </table>
+</table>
+
+</div>
+{% endblock %}
+
+{% block js_body_page %}
 <script type="text/javascript">
 
 var json=JSON.stringify({{ reslt3 | safe }});
@@ -58,9 +68,9 @@ var globaldisplayTable = $('#firstGlobalExample').dataTable({
        }],
 "rowCallback": function( row, data, displayIndex ) {
                  var v4=($('td:eq(4)',row).text().split(" "))[0];
-                 var v5=($('td:eq(5)',row).text().split(" "))[0]; 
+                 var v5=($('td:eq(5)',row).text().split(" "))[0];
                  if ( v4 > 6 ) { $('td:eq(4)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v4 > 0 ) { $('td:eq(4)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");} 
+                 else if ( v4 > 0 ) { $('td:eq(4)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( /\s/.test(v4) )  { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(4)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
                  if ( v5 > 0 && v5 <= 5 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
@@ -69,7 +79,7 @@ var globaldisplayTable = $('#firstGlobalExample').dataTable({
                  else { $('td:eq(5)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
 
 /*
-                 if (v4 >= 0) { 
+                 if (v4 >= 0) {
                  $('td:eq(4)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");
                  };
 */
@@ -77,5 +87,4 @@ var globaldisplayTable = $('#firstGlobalExample').dataTable({
 });
 
 </script>
-</div>
 {% endblock %}
