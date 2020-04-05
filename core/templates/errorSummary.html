@@ -74,6 +74,7 @@
     <td><div class="comment more">
         {% for item in fdict.list %}
             {% if fdict.field == 'jeditaskid' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% elif fdict.field == 'produsername' %} <a href="{% url 'userInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% else %}
                     {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
                     <a href="{{xurlsubst}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
