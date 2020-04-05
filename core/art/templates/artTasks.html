@@ -55,7 +55,7 @@
                                     {% if ntfulldict|length > 1 %}
                                         {% for ntfull, files in ntfulldict.items %}
                                           {% if ntname in ntfull %}
-                                            {% if files.finished > 0 or files.active > 0 or files.failed > 0 or files.done > 0 %}
+                                            {% if files.finished > 0 or files.active > 0 or files.failed > 0 or files.succeeded > 0 %}
                                               <div class="with-ntagfull">
                                                 <div class="clickable">
                                                     <div class="active">{{ files.active }}</div>
