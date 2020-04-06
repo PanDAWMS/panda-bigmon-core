@@ -336,28 +336,36 @@ th.vertical {
 .dataTables_wrapper .row {
   max-width: 100%;
 }
+.dataTables_wrapper .row .columns {
+  padding: 0.3rem 0;
+}
+
+.dataTables_wrapper .dt-buttons {
+  margin-bottom: 0;
+}
+
+.dataTables_wrapper .dataTables_length label {
+  margin-right: 1rem;
+}
+
 .dataTables_info {
-  margin-top: 0.3rem;
   color: #727C81 !important;
   font-size: inherit;
 }
 
-.dataTables_paginate {
-  margin-top: 0.3rem !important;
+.dataTables_paginate ul.pagination {
+  margin-bottom: 0;
 }
-  .dataTables_paginate ul.pagination {
-    margin-bottom: 0;
-  }
-  .dataTables_paginate .paginate_button.current {
-    background-color: #727C81;
-    color:white;
-    font-weight: bold;
-  }
+.dataTables_paginate .paginate_button.current {
+  background-color: #333333;
+  color: #fefefe;
+  font-weight: bold;
+}
 
-  .dataTables_paginate .paginate_button > a {
-    background-color: #fefefe;
-    color: #727C81 !important;
-  }
+.dataTables_paginate .paginate_button > a {
+  background-color: #5e789a;
+  color: #fefefe;
+}
 
 .data-table {
   width: 100% !important;

@@ -543,7 +543,7 @@
 
         $scope.update = function() {
             var query = location.protocol + '//' + location.host + location.pathname + '?';
-            var timeparamname = (location.pathname.indexOf('jobsbuster') > -1) ? 'endtime' : 'modificationtime';
+            var timeparamname = (location.pathname.indexOf('jobsbuster') > -1) ? 'endtime' : 'date';
 
             query += timeparamname + '_from=' + $scope.timewindow.selection.from + '&';
             query += timeparamname + '_to=' + $scope.timewindow.selection.to;

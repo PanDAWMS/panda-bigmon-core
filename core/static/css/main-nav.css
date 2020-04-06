@@ -38,6 +38,7 @@
 
 .top-bar .menu a {
   color: #fefefe;
+  background-color: #333;
   border: 0;
   padding-right: 0.8rem !important;
   padding-bottom: 1rem;

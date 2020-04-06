@@ -29,6 +29,15 @@ a:hover, a:visited, a:active
   text-decoration: none;
 }
 
+a.button, a.button.primary {
+  color: #fefefe;
+  background-color: #5e789a;
+}
+a.button:hover, a.button:focus, a.button.primary:hover, a.button.primary:focus {
+  color: #fefefe;
+  background-color: #222222;
+}
+
 select {
     -moz-appearance: none;
     text-indent: 0.01px;
