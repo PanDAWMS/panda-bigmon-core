@@ -13402,6 +13402,7 @@ def get_hc_tests(request):
         'maxrss',
         'cpuconsumptiontime',
         'nevents',
+        'hs06sec',
         'noutputdatafiles',
         'resourcetype',
         'eventservice',
@@ -13412,7 +13413,7 @@ def get_hc_tests(request):
     jvalues.extend(error_fields)
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
-    query['proddblock__startswith'] = 'hc_test:'
+    query['proddblock__icontains'] = 'hc_test'
     query['produsername'] = 'gangarbt'
     excluded_time_query = copy.deepcopy(query)
     if 'modificationtime__castdate__range' in excluded_time_query:
