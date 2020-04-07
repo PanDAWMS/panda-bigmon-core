@@ -24,6 +24,28 @@
 
     <div class="card bp-container-simple">
       <div class="card-divider">
+        <p>Requests summary:</p>
+      </div>
+      <div class="card-section">
+        <table id="requests_summary_table" class="display data-table" >
+         <tbody>
+         <tr>
+             <td>Status</td>
+             <td>
+                {% for status, count in requests_summary.items %}
+                    <a href="{% url 'iddsmain' %}?reqstatus={{ status }}">{{ status }}({{ count }})</a>
+                {% endfor %}
+             </td>
+         </tr>
+
+         </tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <div class="card bp-container-simple">
+      <div class="card-divider">
         <p>Requests:</p>
       </div>
       <div class="card-section">
@@ -32,24 +54,14 @@
              <th>Request ID</th>
              <th>Scope</th>
              <th>Name</th>
-             <th>Requester</th>
-             <th>Request Type</th>
-             <th>Transform Tag</th>
-             <th>Workload ID</th>
-             <th>Priority</th>
              <th>Status</th>
-             <th>Substatus</th>
-             <th>Locking</th>
-             <th>Created At</th>
-             <th>Updated At</th>
-             <th>Accessed At</th>
-             <th>Expired At</th>
-             <th>Errors</th>
-             {% comment %}
-             <th>Request Metadata</th>
-             <th>Processing Metadata</th>
-             {% endcomment %}
-
+             <th>Transform Status</th>
+             <th>In status</th>
+             <th>In total files</th>
+             <th>In processed files</th>
+             <th>Out status</th>
+             <th>Out total files</th>
+             <th>Out processed files</th>
          </thead>
          <tbody></tbody>
         </table>
@@ -154,6 +166,23 @@
 {% block js_body_page %}
 
 <script type="text/javascript">
+
+var requests_summary_table = $('#requests_summary_table').DataTable(
+    {
+        columns: [
+            {title:"Summary category",},
+            {title:"Value",}
+        ],
+        "columnDefs": [
+            { "width": "20%", "targets": 0 }
+        ],
+        "paging":   false,
+        "ordering": false,
+        "info":     false,
+        "searching": false,
+    }
+);
+
 
 var iDDSrequests=JSON.parse(JSON.stringify({{ iDDSrequests | safe }}));
 
@@ -275,25 +304,20 @@ var requests_table = $('#requests_table').DataTable({
     order: [],
     columns: [
         { data: "request_id", title: "request_id", className: "num" },
-        { data: "scope", title: "scope" },
-        { data: "name", title: "name" },
-        { data: "requester", title: "requester" },
-        { data: "request_type", title: "request_type" },
-        { data: "transform_tag", title: "transform_tag" },
-        { data: "workload_id", title: "workload_id", className: "num" },
-        { data: "priority", title: "priority", className: "num" },
+        { data: "scope", title: "scope",},
+        { data: "name", title: "name",
+           render: function(data, type, row, meta) {
+                return '<a target=blank href = "{% url "taskInfo" %}'+row['workload_id']+'">'+data+'</a>';
+           }
+        },
         { data: "status", title: "status" },
-        { data: "substatus", title: "substatus" },
-        { data: "locking", title: "locking" },
-        { data: "created_at", title: "created_at" },
-        { data: "updated_at", title: "updated_at" },
-        { data: "accessed_at", title: "accessed_at" },
-        { data: "expired_at", title: "expired_at" },
-        { data: "errors", title: "errors" },
-        {% comment %}
-        { data: "request_metadata", title: "request_metadata" },
-        { data: "processing_metadata", title: "processing_metadata" },
-        {% endcomment %}
+        { data: "transform_status", title: "transform_status" },
+        { data: "in_status", title: "in_status" },
+        { data: "in_total_files", title: "in_total_files" },
+        { data: "in_processed_files", title: "in_processed_files" },
+        { data: "out_status", title: "out_status" },
+        { data: "out_total_files", title: "out_total_files" },
+        { data: "out_processed_files", title: "out_processed_files" },
     ],
     data: preprocData(iDDSrequests),
     selectable: true,

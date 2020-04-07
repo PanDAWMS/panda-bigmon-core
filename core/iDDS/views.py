@@ -9,6 +9,10 @@ from django.db.models import Q, F
 from core.views import initRequest, login_customrequired, DateEncoder
 from core.iDDS.models import Transforms, Collections, Requests, Req2transforms, Processings, Contents
 from core.iDDS.useconstants import SubstitleValue
+from core.iDDS.rawsqlquery import getRequests
+from core.iDDS.algorithms import generate_requests_summary, parse_request
+from core.libs.exlib import lower_dicts_in_list
+from django.core.cache import cache
 
 CACHE_TIMEOUT = 20
 OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
@@ -24,18 +28,26 @@ def to_float(value):
 @login_customrequired
 def main(request):
     initRequest(request)
+    query_params = parse_request(request)
 
-    iDDSrequests = list(Requests.objects.values())
-
+    iDDSrequests = cache.get('iDDSrequests')
+    iDDSrequests = None
+    if not iDDSrequests:
+        iDDSrequests = getRequests(query_params)
+        cache.set("iDDSrequests", iDDSrequests, 10 * 60)
+    iDDSrequests = lower_dicts_in_list(iDDSrequests)
     subtitleValue.replace('requests', iDDSrequests)
+    requests_summary = generate_requests_summary(iDDSrequests)
 
     data = {
+        'requests_summary':requests_summary,
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
         'iDDSrequests':json.dumps(iDDSrequests, cls=DateEncoder),
     }
     response = render_to_response('landing.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+
     return response
 
 
@@ -119,3 +131,4 @@ def transforms(request):
                                   ))
     subtitleValue.replace('transforms', iDDStransforms)
     return JsonResponse({'data': iDDStransforms}, encoder=DateEncoder, safe=False)
+

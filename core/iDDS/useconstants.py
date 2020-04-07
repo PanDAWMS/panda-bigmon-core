@@ -4,11 +4,11 @@ from core.iDDS.constants import RequestStatus, RequestType, TransformType, \
 class SubstitleValue:
 
     substitleMap = {
-        'requests':{'status':{}, 'request_type':{}},
+        'requests':{'status':{}, 'request_type':{}, 'transform_status':{}, 'in_status':{}, 'out_status':{}},
         'transforms':{'transform_id_fk__status':{}, 'transform_id_fk__transform_type':{}},
         'collections':{'status':{}},
         'processings':{'status':{}},
-        'сontents':{'status':{}}
+        'сontents':{'status':{}},
     }
 
 
@@ -19,6 +19,15 @@ class SubstitleValue:
                 klassname = RequestStatus
             elif field == 'request_type':
                 klassname = RequestType
+            elif field == 'transform_status':
+                klassname = TransformStatus
+            elif field == 'request_type':
+                klassname = RequestType
+            elif field == 'in_status':
+                klassname = CollectionStatus
+            elif field == 'out_status':
+                klassname = CollectionStatus
+
 
         elif objName == 'transforms':
             if field == 'transform_id_fk__status':
@@ -37,6 +46,7 @@ class SubstitleValue:
         elif objName == 'сontents':
             if field == 'status':
                 klassname = ContentStatus
+
         return klassname
 
 
@@ -61,3 +71,15 @@ class SubstitleValue:
             for field in fieldsToSub:
                 valueToSubTitle = objects[field]
                 objects[field] = self.substitleMap[objName][field][valueToSubTitle]
+
+
+    def replaceInverseKeys(self, objName, value):
+        replacement = {}
+        if objName == 'requests':
+            for k,v in value.items():
+                replacement[k] = RequestStatus[v].value
+        return replacement
+
+
+
+

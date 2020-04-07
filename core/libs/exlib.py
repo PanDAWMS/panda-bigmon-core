@@ -193,3 +193,14 @@ def get_tmp_table_name():
     else:
         tmpTableName = "TMP_IDS1"
     return tmpTableName
+
+
+def lower_string(string):
+    return string.lower() if isinstance(string, str) else string
+
+def lower_dicts_in_list(input_list):
+    output_list = []
+    for row_dict in input_list:
+        out_dict = {lower_string(k): lower_string(v) for k,v in row_dict.items()}
+        output_list.append(out_dict)
+    return output_list
