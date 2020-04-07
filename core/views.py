@@ -13402,6 +13402,7 @@ def get_hc_tests(request):
         'maxrss',
         'cpuconsumptiontime',
         'nevents',
+        'hs06sec',
         'noutputdatafiles',
         'resourcetype',
         'eventservice',
