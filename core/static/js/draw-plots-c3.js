@@ -1,7 +1,7 @@
 
 
 function getWidth() {
-  return Math.max(
+  return Math.min(
     document.body.scrollWidth,
     document.documentElement.scrollWidth,
     document.body.offsetWidth,
@@ -69,9 +69,11 @@ function draw_donut(data, divid, title, ext={}) {
 function draw_sbar(data, divid, title, ext) {
     let width = 300;
     let height = 200;
+    let labels = ['',''];
     let x = Object.keys(data[0])[0];
     let values = Object.keys(data[0])[1];
     if (ext.size) {width = ext.size[0]; height=ext.size[1]}
+    if (ext.labels) {labels = ext.labels}
     let colors = {};
     if (ext.colors === 'gs') {
         colors = {
@@ -93,7 +95,10 @@ function draw_sbar(data, divid, title, ext) {
             },
             type: 'bar',
             colors: colors,
-          },
+        },
+        padding: {
+          right: 20
+        },
         bar: {
             width: {
                 ratio: 0.6
@@ -115,7 +120,7 @@ function draw_sbar(data, divid, title, ext) {
                     format: function (d) { return d3.format(',.3s')(d); }
                 },
                 label: {
-                  //text: 'Number of tests',
+                  text: labels[1],
                   position: 'outer-middle'
                 }
             }
@@ -123,6 +128,9 @@ function draw_sbar(data, divid, title, ext) {
         size: {
             width: width,
             height: height,
+        },
+        title: {
+          text: title
         },
 
     });

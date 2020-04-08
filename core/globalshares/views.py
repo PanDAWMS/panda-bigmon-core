@@ -35,12 +35,13 @@ def globalshares(request):
         shareValue['delta'] = shareValue['executing'] - shareValue['pledged']
         shareValue['used'] = shareValue['ratio'] if 'ratio' in shareValue else None
         # prepare data for charts
-        gsPlotData['pieChartActualHS06'].append([str(shareName), int(shareValue['executing'])])
-        gsPlotData['barChartActualVSTarget'].append({
-            'GS': str(shareName),
-            'Actual': int(shareValue['executing']),
-            'Target': int(shareValue['pledged'])
-        })
+        if int(shareValue['executing']) > 0:
+            gsPlotData['pieChartActualHS06'].append([str(shareName), int(shareValue['executing'])])
+            gsPlotData['barChartActualVSTarget'].append({
+                'GS': str(shareName),
+                'Actual': int(shareValue['executing']),
+                'Target': int(shareValue['pledged'])
+            })
 
     gsPlotData['pieChartActualHS06'] = sorted(gsPlotData['pieChartActualHS06'], key=lambda x: x[0])
     gsPlotData['barChartActualVSTarget'] = sorted(gsPlotData['barChartActualVSTarget'], key=lambda x: -x['Actual'])

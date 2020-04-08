@@ -26,6 +26,14 @@ td {
     font-size: 0.875rem;
 }
 
+th.num {
+  text-align: right;
+}
+
+td.num {
+  text-align: right;
+}
+
 td.wrap{
     word-break: break-word;
 }
@@ -326,12 +334,66 @@ th.vertical {
     padding-bottom: 0.4rem;
 }
 
+/* New style for BP tables */
+
+.bp-table {
+  width: 100%;
+  background-color: #fefefe;
+}
+  .bp-table thead {
+    border: solid 1px #d3deed;
+  }
+  .bp-table tbody {
+    border: solid 1px #d3deed;
+    border-bottom: solid 2px #d3deed;;
+  }
+  .bp-table thead th {
+    background-color: #d3deed;
+    color: #272727;
+    border: none;
+  }
+  .bp-table thead th a {
+    color: #355681;
+    font-weight: bold;
+  }
+  .bp-table thead th a:hover {
+    color: #272727;
+  }
+  .bp-table thead td {
+    background-color: #f1f1f1;
+    color: #272727;
+    font-weight: bold;
+    border: none;
+  }
+  .bp-table tbody td {
+    border: none;
+    padding: 0.3rem 0.7rem;
+  }
+  .bp-table tbody th {
+    border: none;
+    background-color: #f1f1f1;
+  }
+  .bp-table tbody td a {
+    color: #355681;
+    font-weight: bold;
+  }
+  .bp-table tbody td a:hover {
+    color: #272727;
+  }
+  .bp-table tbody tr:nth-child(even):hover td{
+    background-color: #d4dfed !important;
+  }
+  .bp-table tbody tr:nth-child(odd):hover td {
+    background-color: #d4dfed !important;
+  }
+
+
 /* New style for dataTables */
 
 .dataTables_wrapper {
   width: 100%;
-  margin-top: 0.7rem;
-  margin-bottom: 0.7rem;
+  margin: 0;
+  padding: 0.7rem 0.3rem;
 }
 .dataTables_wrapper .row {
   max-width: 100%;
@@ -349,7 +411,7 @@ th.vertical {
 }
 
 .dataTables_info {
-  color: #727C81 !important;
+  color: #272727;
   font-size: inherit;
 }
 
@@ -379,7 +441,7 @@ th.vertical {
     font-size: 0.875rem;
     color: #272727;
     text-align: left;
-    margin-left: 1.4rem;
+    margin-left: 0.3rem;
   }
   .data-table thead {
     border: none;

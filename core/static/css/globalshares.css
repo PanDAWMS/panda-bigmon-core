@@ -8,11 +8,24 @@
 #cloud{
  background-color: #D5F5E3;
 }
+#cloud_special{
+ background-color: #CBF5F3;
+}
+#hpc_test{
+ background-color: #fce5d6;
+}
 #hpc_special{
  background-color: #FCF3CF;
 }
 .test {
     color: black;
+}
+
+tr.l1 {
+  background-color: #dedede !important;
+}
+tr.l2 {
+  background-color: #f4f4f4 !important;
 }
 
 .hasTooltip {
@@ -57,3 +70,29 @@
     color: #fff;
 
 }
+
+.tabs.gs {
+  border: none;
+  background-color: #5e789a;
+}
+  .tabs.gs li.tabs-title {
+    background-color: #5e789a;
+    color: #fefefe;
+  }
+  .tabs.gs li.tabs-title a {
+    padding: 0.7rem 1rem;
+    background-color: #5e789a;
+    color: #fefefe;
+    font-size: 0.875rem;
+    font-weight: bold;
+    border-right: 1px solid #fefefe;
+  }
+  .tabs.gs li.tabs-title a:hover, .tabs.gs li.tabs-title a[aria-selected="true"] {
+    background-color: #333333;
+  }
+  .tabs-content .tabs-panel {
+    padding: 0.3rem 0;
+    border-right: 1px solid #5e789a;
+    border-left: 1px solid #5e789a;
+    border-bottom: 1px solid #5e789a;
+  }

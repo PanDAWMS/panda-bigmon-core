@@ -45,6 +45,7 @@
 .transferring { color:#47D147 }
 .activated { color:#099999 }
 .assigning { color:#099999 }
+.scheduled { color:#099999 }
 .defined { color:grey }
 .registered { color:grey }
 .assigned { color:black }
@@ -103,8 +104,10 @@
 .scouting_fill { color:black;  background-color:#DBF1C6; position: static;  }
 .topreprocess_fill { color:black;  background-color:#DBF1C6; position: static; }
 .preprocessing_fill { color:black;  background-color:#DBF1C6; position: static; }
-.assigned_fill { color:black;  background-color:#DBF1C6 }
-.activated_fill { color:black;  background-color:#DBF1C6 }
+
+.assigned_fill { color:black;  background-color:#d9efef }
+.activated_fill { color:black;  background-color:#d9efef }
+.scheduled_fill { color:black;  background-color:#d9efef }
 
 .assigning_fill { color:black;  background-color:#EBF5E2; position: static; }
 .defined_fill { color:black;  background-color:#EBF5E2; position: static; }
@@ -143,7 +146,7 @@
 /* States of task inputs */
 
 .input_ready_fill { color:black;  background-color:#DCDCDC; }
-.input_queued_fill { color:black; background-color: #b5e0e0; }
+.input_queued_fill { color:black; background-color: #d9efef; }
 .input_running_fill { color:black;  background-color:#C7E9A9; }
 .input_merging_fill { color:black;  background-color:#A0D670; }
 .input_transferring_fill { color:black;  background-color:#A0D670; }

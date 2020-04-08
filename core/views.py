@@ -13344,6 +13344,7 @@ def getHarversterWorkersForTask(request):
     return HttpResponse(status=400)
 
 
+@never_cache
 def get_hc_tests(request):
     """
     API for getting list of HammerCloud Tests
