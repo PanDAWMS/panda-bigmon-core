@@ -488,6 +488,11 @@
       {% else %}
           var timerange =  ['', ''];
       {% endif %}
+      {% if request.session.notimerangeurl %}
+          var notimerangeurl = '{{ request.session.notimerangeurl|safe }}';
+      {% else %}
+          var notimerangeurl =  window.location.href ;
+      {% endif %}
       app.controller('timeWindowController', ['$scope', function($scope) {
         $scope.timewindow = {
             selection : {
@@ -531,7 +536,7 @@
             else if ($scope.timewindow.data.quick === 'days') {
                 disable_input('days', $scope.timewindow.availableOptions);
                 dt_to = new Date();
-                dt_from = new Date(dt_to.getTime() - 86400000);
+                dt_from = new Date(dt_to.getTime() - $scope.timewindow.data.days * 86400000 );
                 $scope.timewindow.selection.to = dt_to.toISOString().substring(0, dt_to.toISOString().indexOf('.'));
                 $scope.timewindow.selection.from = dt_from.toISOString().substring(0, dt_from.toISOString().indexOf('.'));
             }
@@ -542,7 +547,7 @@
         };
 
         $scope.update = function() {
-            var query = location.protocol + '//' + location.host + location.pathname + '?';
+            var query = notimerangeurl;
             var timeparamname = (location.pathname.indexOf('jobsbuster') > -1) ? 'endtime' : 'date';
 
             query += timeparamname + '_from=' + $scope.timewindow.selection.from + '&';

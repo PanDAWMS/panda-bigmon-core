@@ -28,12 +28,9 @@
 
 {% block body %}
 
-{{ viewParams.header }}
-
 <div class="callout primary" data-closable>
     <h5><b>This is a new dashboard page!</b></h5>
-    <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.
-        Test jobs are not accounted in this statistics.</p>
+    <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
     <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
         Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type. Click on <b>Update</b> button to apply selection.</p>
     <p>Click the job counts to go to job listings. Use the <b>Search</b> text input on the top of second table to find a PQ by name.</p>
@@ -44,6 +41,9 @@
   </button>
 </div>
 
+{% if viewParams.selection %}
+  {{ viewParams.selection|safe }}
+{% endif %}
 
 <div data-ng-app="jobSummaryRegion">
 <div data-ng-controller="JobSummaryRegionController">
@@ -179,7 +179,8 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
         jobtype: [
           {name:'all', value:'', query: ''},
           {name:'analy', value:'analy', query: 'jobtype=analy&'},
-          {name:'prod', value:'prod', query: 'jobtype=prod&'}
+          {name:'prod', value:'prod', query: 'jobtype=prod&'},
+          {name:'test', value:'test', query: 'jobtype=test&'}
         ],
         resourcetype: [
           {name:'all', value:'', query: ''},

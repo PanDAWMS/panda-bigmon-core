@@ -404,6 +404,12 @@ def initRequest(request, callselfmon = True):
         return False, render_to_response('errorPage.html', data, content_type='text/html')
     request.session['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
 
+    notimerangeurl = extensibleURL(request)
+    timerange_params = ['days', 'hours', 'date_from', 'date_to', 'endtimerange', 'earlierthan', 'earlierthandays']
+    for trp in timerange_params:
+        notimerangeurl = removeParam(notimerangeurl, trp, mode='extensible')
+    request.session['notimerangeurl'] = notimerangeurl
+
     request.session['secureurl'] = 'https://bigpanda.cern.ch' + url
 
     #if 'USER' in os.environ and os.environ['USER'] != 'apache':
@@ -731,6 +737,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if request.session['requestParams'][param] == '': continue
         if param == 'display_limit': continue
         if param == 'sortby': continue
+        if param == 'timestamp': continue
         if param == 'limit' and request.session['JOB_LIMIT'] > 0: continue
         request.session['viewParams']['selection'] += " <b>%s=</b>%s " % (
         param, request.session['requestParams'][param])
@@ -829,6 +836,21 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             val = escapeInput(request.session['requestParams'][param])
             values = val.split(',')
             query['harvesterid__in'] = values
+        elif param == 'jobtype':
+            jobtype = request.session['requestParams']['jobtype']
+            if jobtype.startswith('anal'):
+                query['prodsourcelabel__in'] = ['panda', 'user']
+            elif jobtype.startswith('prod'):
+                query['prodsourcelabel__in'] = ['managed']
+            elif jobtype == 'groupproduction':
+                query['prodsourcelabel'] = 'managed'
+                query['workinggroup__isnull'] = False
+            elif jobtype == 'eventservice':
+                query['eventservice'] = 1
+            elif jobtype == 'esmerge':
+                query['eventservice'] = 2
+            elif jobtype == 'test' or jobtype.find('test') >= 0:
+                query['prodsourcelabel__in'] = ['prod_test', 'ptest', 'install', 'rc_alrb', 'rc_test2']
 
 
         elif param in ('tag',) and querytype == 'task':
@@ -992,6 +1014,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query[param] = int(request.session['requestParams'][param])
                     elif param == 'specialhandling' and not '*' in request.session['requestParams'][param]:
                         query['specialhandling__contains'] = request.session['requestParams'][param]
+                    elif param == 'prodsourcelabel':
+                        query['prodsourcelabel'] = request.session['requestParams'][param]
                     elif param == 'reqid':
                         val = escapeInput(request.session['requestParams'][param])
                         if val.find('|') >= 0:
@@ -1094,24 +1118,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     else:
                         if (param not in wildSearchFields):
                             query[param] = request.session['requestParams'][param]
-
-    if 'jobtype' in request.session['requestParams']:
-        jobtype = request.session['requestParams']['jobtype']
-    else:
-        jobtype = opmode
-    if jobtype.startswith('anal'):
-        query['prodsourcelabel__in'] = ['panda', 'user', 'prod_test', 'rc_test']
-    elif jobtype.startswith('prod'):
-        query['prodsourcelabel__in'] = ['managed', 'prod_test', 'rc_test']
-    elif jobtype == 'groupproduction':
-        query['prodsourcelabel'] = 'managed'
-        query['workinggroup__isnull'] = False
-    elif jobtype == 'eventservice':
-        query['eventservice'] = 1
-    elif jobtype == 'esmerge':
-        query['eventservice'] = 2
-    elif jobtype.find('test') >= 0:
-        query['prodsourcelabel__icontains'] = jobtype
 
     if 'region' in request.session['requestParams']:
         region = request.session['requestParams']['region']

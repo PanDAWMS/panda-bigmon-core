@@ -18,6 +18,7 @@ from core.views import login_customrequired, initRequest, setupView, DateEncoder
 
 from core.schedresource.models import SchedconfigJson
 from core.harvester.models import HarvesterWorkerStats
+from core.pandajob.models import PandaJob
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -169,6 +170,16 @@ def dashboard(request):
     else:
         xurl += '?'
 
+    # overwrite view selection params
+    view_params_str = '<b>Manually entered params</b>: '
+    supported_params = {f.verbose_name: '' for f in PandaJob._meta.get_fields()}
+    interactive_params = ['hours', 'days', 'date_from', 'date_to', 'timestamp',
+                        'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region']
+    for pn, pv in request.session['requestParams'].items():
+        if pn not in interactive_params and pn in supported_params:
+            view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
+    request.session['viewParams']['selection'] = view_params_str if not view_params_str.endswith(': ') else ''
+
     data = {
         'request': request,
         'viewParams': request.session['viewParams'],
@@ -197,7 +208,7 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
     jsr_queues_dict = {}
     jsr_regions_dict = {}
 
-    job_types = ['analy', 'prod']
+    job_types = ['analy', 'prod', 'test']
     resource_types = ['SCORE', 'MCORE', 'SCORE_HIMEM', 'MCORE_HIMEM']
     worker_metrics = ['nwrunning', 'nwsubmitted']
     extra_metrics = copy.deepcopy(worker_metrics)
@@ -336,41 +347,37 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
 
 def get_job_summary_split(query, extra):
     """ Query the jobs summary """
-
+    fields = {field.attname: field.db_column for field in PandaJob._meta.get_fields()}
     extra_str = extra
-    if 'computingsite__in' in query:
-        extra_str += " and (computingsite in ("
-        for pq in query['computingsite__in']:
-            extra_str += "'" + str(pq) + "',"
-        extra_str = extra_str[:-1]
-        extra_str += "))"
-    if 'prodsourcelabel__in' in query:
-        extra_str += " and (prodsourcelabel in ("
-        for pl in query['prodsourcelabel__in']:
-            extra_str += "'" + str(pl) + "',"
-        extra_str = extra_str[:-1]
-        extra_str += "))"
-    if 'resourcetype' in query:
-        extra_str += " and (resource_type = '" + query['resourcetype'] + "')"
+    for qn, qvs in query.items():
+        if '__in' in qn and qn.replace('__in', '') in fields:
+            extra_str += " and (" + fields[qn.replace('__in', '')] + " in ("
+            for qv in qvs:
+                extra_str += "'" + str(qv) + "',"
+            extra_str = extra_str[:-1]
+            extra_str += "))"
+        elif '__icontains' in qn or '__contains' in qn and qn.replace('__icontains', '').replace('__contains', '') in fields:
+            extra_str += " and (" + fields[qn.replace('__icontains', '').replace('__contains', '')] + " LIKE '%%" + qvs + "%%')"
+        elif qn in fields:
+            extra_str += " and (" + fields[qn] + "= '" + qvs + "' )"
 
     # get jobs groupings
     query_raw = """
         select computingsite, resource_type as resourcetype, prodsourcelabel, jobstatus, count(pandaid) as count, sum(rcores) as rcores
         from  (
         select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime, 0 as rcores
-        from ATLAS_PANDA.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{}', 'YYYY-MM-DD HH24:MI:SS')
+        from ATLAS_PANDA.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and {1}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
         case when jobstatus = 'running' then actualcorecount else 0 end as rcores
-        from ATLAS_PANDA.jobsactive4 jav4
+        from ATLAS_PANDA.jobsactive4 jav4 where {1}
         union
         select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores
-        from ATLAS_PANDA.jobswaiting4 jw4 
+        from ATLAS_PANDA.jobswaiting4 jw4 where {1}
         union
         select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores
-        from ATLAS_PANDA.jobsdefined4 jd4 
+        from ATLAS_PANDA.jobsdefined4 jd4  where {1}
         )
-        where {}
         GROUP BY computingsite, prodsourcelabel, resource_type, jobstatus
         order by computingsite, prodsourcelabel, resource_type, jobstatus
     """.format(query['modificationtime__castdate__range'][0], extra_str)
@@ -438,6 +445,11 @@ def prodsourcelabel_to_jobtype(list_of_dict, field_name='prodsourcelabel'):
         'panda': 'analy',
         'user': 'analy',
         'managed': 'prod',
+        'prod_test': 'test',
+        'ptest': 'test',
+        'install': 'test',
+        'rc_alrb': 'test',
+        'rc_test2': 'test',
     }
     new_list_of_dict = []
     for row in list_of_dict:
