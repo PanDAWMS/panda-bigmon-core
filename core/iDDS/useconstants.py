@@ -70,7 +70,10 @@ class SubstitleValue:
             fieldsToSub = set(objects.keys()) & set(self.substitleMap[objName])
             for field in fieldsToSub:
                 valueToSubTitle = objects[field]
-                objects[field] = self.substitleMap[objName][field][valueToSubTitle]
+                try:
+                    objects[field] = self.substitleMap[objName][field][valueToSubTitle]
+                except:
+                    pass
 
 
     def replaceInverseKeys(self, objName, value):
