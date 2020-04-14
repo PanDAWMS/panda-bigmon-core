@@ -38,7 +38,7 @@
   </div>
 
 
-  <table class="bp-table unstriped">
+  <table class="unstriped bp-table">
     <thead>
     <tr>
         <th>L1 Share</th>
@@ -54,7 +54,7 @@
     </thead>
     <tbody>
     {% for row in tablerows %}
-      <tr {% if row.level1 %} class="l1" {% elif row.level2 %} class="l2" {% endif %}>
+      <tr {% if row.level1 %} class="l1" {% elif row.level2 %} class="l2" {% elif row.level3 %} class="l3" {% endif %}>
           <td>{{ row.level1 }} {% if row.gshare and row.level1 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
             {% endif %}</td>
           <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level2 }}</a>

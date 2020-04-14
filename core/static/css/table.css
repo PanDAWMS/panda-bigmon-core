@@ -339,28 +339,32 @@ th.vertical {
 .bp-table {
   width: 100%;
   background-color: #fefefe;
+  border: 1px solid #5e789a;
+  border-collapse: separate;
+  border-spacing: 0;
 }
   .bp-table thead {
-    border: solid 1px #d3deed;
+    border: solid 1px #5e789a;
   }
   .bp-table tbody {
-    border: solid 1px #d3deed;
-    border-bottom: solid 2px #d3deed;;
+    border: solid 1px #5e789a;
   }
   .bp-table thead th {
-    background-color: #d3deed;
-    color: #272727;
+    background-color: #5e789a;
+    color: #fefefe;
     border: none;
   }
   .bp-table thead th a {
-    color: #355681;
+    color: #fefefe;
     font-weight: bold;
+    text-decoration: underline;
   }
   .bp-table thead th a:hover {
-    color: #272727;
+    color: #fefefe;
+    text-decoration: none;
   }
   .bp-table thead td {
-    background-color: #f1f1f1;
+    background-color: #fefefe;
     color: #272727;
     font-weight: bold;
     border: none;
@@ -371,7 +375,7 @@ th.vertical {
   }
   .bp-table tbody th {
     border: none;
-    background-color: #f1f1f1;
+    background-color: #fefefe;
   }
   .bp-table tbody td a {
     color: #355681;
@@ -385,6 +389,9 @@ th.vertical {
   }
   .bp-table tbody tr:nth-child(odd):hover td {
     background-color: #d4dfed !important;
+  }
+  .bp-table tbody tr:last-child td {
+    border-bottom: none !important;
   }
 
 

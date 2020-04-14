@@ -21,12 +21,27 @@
     color: black;
 }
 
-tr.l1 {
-  background-color: #dedede !important;
+table.bp-table tbody tr.l1 {
+  background-color: #dedede;
 }
-tr.l2 {
-  background-color: #f4f4f4 !important;
+  table.bp-table tbody tr.l1 td {
+    background-color: #dedede;
+    border-bottom: 1px solid #f1f1f1;
+  }
+table.bp-table tbody tr.l2 {
+  background-color: #f4f4f4;
 }
+  table.bp-table tbody tr.l2 td {
+    background-color: #f4f4f4;
+    border-bottom: 1px solid #e6e6e6;
+  }
+table.bp-table tbody tr.l3 {
+  background-color: #fefefe;
+}
+  table.bp-table tbody tr.l3 td {
+    background-color: #fefefe;
+    border-bottom: 1px solid #f1f1f1;
+  }
 
 .hasTooltip {
     color:#0a47ff;
