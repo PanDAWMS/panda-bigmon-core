@@ -22,7 +22,7 @@ from django.contrib.auth.models import AbstractUser
 #import uuid
 #from hashlib import sha1
 #import hmac
-
+from core.settings.base import BP_MON_SCHEMA
 
 from django.db import models
 models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
@@ -418,7 +418,6 @@ class JediDatasetContents(models.Model):
     failedattempt = models.IntegerField(null=True, db_column='FAILEDATTEMPT', blank=True)
     lumiblocknr = models.IntegerField(null=True, db_column='LUMIBLOCKNR', blank=True)
     procstatus = models.CharField(max_length=192, db_column='PROC_STATUS')
-
     class Meta:
         db_table = u'jedi_dataset_contents'
         unique_together = ('jeditaskid', 'datasetid', 'fileid')
@@ -594,7 +593,7 @@ class JediTasks(JediTasksBase):
 
 class JediTasksOrdered(JediTasksBase):
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."JEDI_TASKS_ORDERED"'
+        db_table = u'"' + BP_MON_SCHEMA + '"."JEDI_TASKS_ORDERED"'
 
 
 class GetEventsForTask(models.Model):
@@ -602,20 +601,20 @@ class GetEventsForTask(models.Model):
     totevrem = models.BigIntegerField(db_column='totevrem')
     totev = models.BigIntegerField(db_column='totev')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."GETEVENTSFORTASK"'
+        db_table = u'"' + BP_MON_SCHEMA + '"."GETEVENTSFORTASK"'
 
 class BPUser(AbstractUser):
     is_tester = models.NullBooleanField(db_column='IS_TESTER', null=True, blank=False)
     last_login = models.DateTimeField(db_column='LAST_LOGIN', auto_now_add=True, blank=False)
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."AUTH_USER"'
+        db_table = u'"' + BP_MON_SCHEMA + '"."AUTH_USER"'
 
 class BPUserSettings(models.Model):
     userid = models.IntegerField(db_column='USERID', null=False )
     page = models.CharField(db_column='PAGE', max_length=100, null=False)
     preferences = models.CharField(db_column='PREFERENCES', max_length=4000)
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."USER_SETTINGS"'
+        db_table = u'"' + BP_MON_SCHEMA + '"."USER_SETTINGS"'
 
 #class BPToken(models.Model):
 #    key = models.CharField(max_length=40, primary_key=True)
@@ -1532,7 +1531,7 @@ class Visits(models.Model):
     userid = models.IntegerField(null=True, db_column='USERID', blank=True)
     service = models.IntegerField(null=True, db_column='SERVICE', blank=True)
     class Meta:
-        db_table= u'"ATLAS_PANDABIGMON"."VISITS"'
+        db_table= u'"' + BP_MON_SCHEMA + '"."VISITS"'
 
 
 class RucioAccounts(models.Model):
@@ -1541,7 +1540,7 @@ class RucioAccounts(models.Model):
     rucio_account = models.CharField(max_length=40, db_column='RUCIO_ACCOUNT')
     create_time = models.DateTimeField(db_column='CREATE_TIME')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."RUCIO_ACCOUNTS"'
+        db_table = u'"' + BP_MON_SCHEMA + '"."RUCIO_ACCOUNTS"'
 
 
 class AllRequests(models.Model):
@@ -1560,7 +1559,7 @@ class AllRequests(models.Model):
     dbactivesess = models.IntegerField(db_column='DBACTIVESESS')
     dbtotalsess = models.IntegerField(db_column='DBTOTALSESS')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."ALL_REQUESTS_DAILY"'
+        db_table = u'"' + BP_MON_SCHEMA + '"."ALL_REQUESTS_DAILY"'
 
 
 class Savedpages(models.Model):

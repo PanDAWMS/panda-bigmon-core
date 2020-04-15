@@ -25,6 +25,11 @@ USE_TZ = True
 # Site ID
 SITE_ID = 1
 
+ATLAS_DEPLOYMENT = False
+BP_MON_SCHEMA = 'ATLAS_PANDABIGMON' if ATLAS_DEPLOYMENT else 'DOMA_PANDABIGMON'
+PANDA_SCHEMA = 'ATLAS_PANDA' if ATLAS_DEPLOYMENT else 'DOMA_PANDA'
+PANDAARCH_SCHEMA = 'ATLAS_PANDAARCH' if ATLAS_DEPLOYMENT else 'DOMA_PANDAARCH'
+
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
@@ -33,9 +38,15 @@ STATICFILES_FINDERS = (
 
 # List of callables that know how to import templates from various sources.
 
+if ATLAS_DEPLOYMENT:
+    MIDDLEWARE = (
+        'core.ddosprotection.DDOSMiddleware'
+    )
+else:
+    MIDDLEWARE = ()
 
-MIDDLEWARE = (
-    'core.ddosprotection.DDOSMiddleware',
+MIDDLEWARE = MIDDLEWARE + (
+#    'core.ddosprotection.DDOSMiddleware', #Removed for non Atlas Deployemnt
     'django.middleware.cache.UpdateCacheMiddleware',
 #    'htmlmin.middleware.HtmlMinifyMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',

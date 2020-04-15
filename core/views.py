@@ -109,6 +109,8 @@ from core.libs.bpuser import get_relevant_links
 from core.libs.site import get_running_jobs_stats
 from django.template.context_processors import csrf
 
+from core.settings.base import ATLAS_DEPLOYMENT, BP_MON_SCHEMA, PANDA_SCHEMA, PANDAARCH_SCHEMA
+
 @register.filter(takes_context=True)
 def get_count(dict, key):
     return dict[key]['count']
@@ -1644,10 +1646,8 @@ def reconstructJobsConsumers(jobsList):
 
 
 def cleanTaskList(request, tasks):
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
+
+    tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1"
 
     for task in tasks:
         if task['transpath']: task['transpath'] = task['transpath'].split('/')[-1]
@@ -1806,10 +1806,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
     if len(esjobs) > 0:
         sumd['eventservicestatus'] = {}
 
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-        else:
-            tmpTableName = "TMP_IDS1"
+        tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1"
 
         transactionKey = random.randrange(1000000)
 
@@ -1820,7 +1817,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
 
-        new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM (SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */ PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY = %i AND  PANDAID = ID) t1 GROUP BY STATUS" % (tmpTableName, transactionKey))
+        new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM (SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */ PANDAID, STATUS FROM "+PANDA_SCHEMA+".JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY = %i AND  PANDAID = ID) t1 GROUP BY STATUS" % (tmpTableName, transactionKey))
 
         evtable = dictfetchall(new_cur)
 
@@ -2318,7 +2315,7 @@ def jobParamList(request):
 
 def jobSummaryDictProto(request, cutsummary, requestToken):
     esjobdict = []
-    sqlRequest = "SELECT ATTR, ATTR_VALUE, NUM_OCCUR FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE " \
+    sqlRequest = "SELECT ATTR, ATTR_VALUE, NUM_OCCUR FROM "+BP_MON_SCHEMA+".JOBSPAGE_CUMULATIVE_RESULT WHERE " \
                  "REQUEST_TOKEN=%s AND ATTR_VALUE <> 'END' ORDER BY ATTR, ATTR_VALUE;)" % str(requestToken)
     cur = connection.cursor()
     cur.execute(sqlRequest)
@@ -2412,7 +2409,7 @@ def postpone(function):
 @postpone
 def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension):
 
-    plsql = "BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE("
+    plsql = "BEGIN "+BP_MON_SCHEMA+".QUERY_JOBSPAGE_CUMULATIVE("
     plsql += " REQUEST_TOKEN=>"+str(requestToken)+", "
     requestFields = {}
 
@@ -2500,11 +2497,6 @@ def startDataRetrieve(request, dropmode, query, requestToken, wildCardExtension)
     cursor.close()
 
 
-# plsql = """BEGIN ATLAS_PANDABIGMON.QUERY_JOBSPAGE_CUMULATIVE(:REQUEST_TOKEN, :RANGE_DAYS); END;;"""
-# cursor.execute(plsql, {'REQUEST_TOKEN': 54, 'RANGE_DAYS': 1})
-
-
-
 def jobListP(request, mode=None, param=None):
     valid, response = initRequest(request)
   #  initSelfMonitor(request)
@@ -2524,7 +2516,7 @@ def jobListP(request, mode=None, param=None):
     elif len(list(request.GET.values())) == 1 and 'json' in request.GET:
         requestToken = -1
     else:
-        sqlRequest = "SELECT ATLAS_PANDABIGMON.PANDAMON_REQUEST_TOKEN_SEQ.NEXTVAL as my_req_token FROM dual;"
+        sqlRequest = "SELECT "+BP_MON_SCHEMA+".PANDAMON_REQUEST_TOKEN_SEQ.NEXTVAL as my_req_token FROM dual;"
         cur = connection.cursor()
         cur.execute(sqlRequest)
         requestToken = cur.fetchall()
@@ -2587,7 +2579,7 @@ def getJobList(request,requesttoken=None):
     njobsmax = display_limit
     cur = connection.cursor()
     if 'requesttoken' in request.GET:
-        sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.GET[
+        sqlRequest = "SELECT * FROM "+BP_MON_SCHEMA+".JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.GET[
         'requesttoken']
         cur.execute(sqlRequest)
         rawsummary = cur.fetchall()
@@ -2595,7 +2587,7 @@ def getJobList(request,requesttoken=None):
         #     request.session['requesttoken'] = request.REQUEST[
         #     'requesttoken']
     else:
-        sqlRequest = "SELECT * FROM ATLAS_PANDABIGMON.JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % int(requesttoken)
+        sqlRequest = "SELECT * FROM "+BP_MON_SCHEMA+".JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % int(requesttoken)
         cur.execute(sqlRequest)
         rawsummary = cur.fetchall()
         time.sleep(10)
@@ -3081,17 +3073,17 @@ def jobList(request, mode=None, param=None):
         if jeditaskid and datasetid and fileid:
             extraquery_files += """
                 pandaid in (
-                (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
+                (select pandaid from """+PANDA_SCHEMA+""".filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
                 union all
-                (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
+                (select pandaid from """+PANDAARCH_SCHEMA+""".filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
                 ) """.format(jeditaskid, datasetid, fileid, jeditaskid, datasetid, fileid)
 
         if 'ecstate' in request.session['requestParams'] and tk and datasetid:
             extraquery_files += """
                 pandaid in (
-                    (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
+                    (select pandaid from """+PANDA_SCHEMA+""".filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from """+BP_MON_SCHEMA+""".TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
                     union all 
-                    (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
+                    (select pandaid from """+PANDAARCH_SCHEMA+""".filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from """+BP_MON_SCHEMA+""".TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
                     ) """.format(jeditaskid, datasetid, tk, jeditaskid, datasetid, tk)
         # warning['jobsforfiles'] = 'Only jobs for last 4 days are shown. Support of filtering older jobs associated with files will be implemented soon.'
     elif 'jeditaskid' in request.session['requestParams'] and 'datasetid' in request.session['requestParams']:
@@ -3107,9 +3099,9 @@ def jobList(request, mode=None, param=None):
         if datasetid and jeditaskid:
             extraquery_files += """
                 pandaid in (
-                (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid = {} )
+                (select pandaid from """+PANDA_SCHEMA+""".filestable4 where jeditaskid = {} and datasetid = {} )
                 union all
-                (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid = {})
+                (select pandaid from """+PANDAARCH_SCHEMA+""".filestable_arch where jeditaskid = {} and datasetid = {})
                 ) """.format(jeditaskid, datasetid, jeditaskid, datasetid)
     else:
         fileid = None
@@ -3726,10 +3718,9 @@ def jobList(request, mode=None, param=None):
 def importToken(request,errsByCount):
     newErrsByCount = []
     random.seed()
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-    else:
-        tmpTableName = "TMP_IDS1DEBUG"
+
+    tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1DEBUG"
+
     isListPID = False
     new_cur = connection.cursor()
     transactionKey = random.randrange(1000000)
@@ -3784,7 +3775,7 @@ def summaryErrorsList(request):
 
     if transactionkey and codename and codeval:
         checkTKeyQuery = '''
-            SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}
+            SELECT ID FROM '''+BP_MON_SCHEMA+'''.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}
             '''
         try:
             sqlRequestFull = checkTKeyQuery.format(transactionkey)
@@ -3797,10 +3788,8 @@ def summaryErrorsList(request):
 
         if len(errorsList) == 0 or errorsList == '':
             data = getCacheEntry(request, transactionkey, isData=True)
-            if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-                tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-            else:
-                tmpTableName = "TMP_IDS1DEBUG"
+            tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1DEBUG"
+
             new_cur = connection.cursor()
             query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
             if data is not None:
@@ -3879,36 +3868,36 @@ def summaryErrorMessagesListJSON(request):
             COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,
             SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,
             JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
-        FROM ATLAS_PANDA.JOBSARCHIVED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
-        WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSARCHIVED4.PANDAID
+        FROM """+PANDA_SCHEMA+""".JOBSARCHIVED4, (SELECT ID FROM """+BP_MON_SCHEMA+""".TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
+        WHERE PIDACTIVE.ID="""+PANDA_SCHEMA+""".JOBSARCHIVED4.PANDAID
         UNION ALL
         SELECT PANDAID,JEDITASKID, 
             COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,
             SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,
             JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
-        FROM ATLAS_PANDA.JOBSACTIVE4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
-        WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSACTIVE4.PANDAID
+        FROM """+PANDA_SCHEMA+""".JOBSACTIVE4, (SELECT ID FROM """+BP_MON_SCHEMA+""".TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
+        WHERE PIDACTIVE.ID="""+PANDA_SCHEMA+""".JOBSACTIVE4.PANDAID
         UNION ALL 
         SELECT PANDAID,JEDITASKID, 
             COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,
             SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,
             JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
-        FROM ATLAS_PANDA.JOBSDEFINED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
-        WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSDEFINED4.PANDAID
+        FROM """+PANDA_SCHEMA+""".JOBSDEFINED4, (SELECT ID FROM """+BP_MON_SCHEMA+""".TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
+        WHERE PIDACTIVE.ID="""+PANDA_SCHEMA+""".JOBSDEFINED4.PANDAID
         UNION ALL 
         SELECT PANDAID,JEDITASKID, 
             COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,
             SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,
             JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
-        FROM ATLAS_PANDA.JOBSWAITING4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
-        WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSWAITING4.PANDAID
+        FROM """+PANDA_SCHEMA+""".JOBSWAITING4, (SELECT ID FROM """+BP_MON_SCHEMA+""".TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
+        WHERE PIDACTIVE.ID="""+PANDA_SCHEMA+""".JOBSWAITING4.PANDAID
         UNION ALL
         SELECT PANDAID,JEDITASKID, 
             COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,
             SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,
             BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
-        FROM ATLAS_PANDAARCH.JOBSARCHIVED, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
-        WHERE PIDACTIVE.ID=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID
+        FROM """+PANDAARCH_SCHEMA+""".JOBSARCHIVED, (SELECT ID FROM """+BP_MON_SCHEMA+""".TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
+        WHERE PIDACTIVE.ID="""+PANDAARCH_SCHEMA+""".JOBSARCHIVED.PANDAID
         )
     """
 
@@ -3963,15 +3952,15 @@ def summaryErrorsListJSON(request):
     condition = request.session['requestParams']['tk']
     sqlRequest = '''
 SELECT DISTINCT PANDAID,JEDITASKID, COMMANDTOPILOT, concat('transformation:',TRANSEXITCODE) AS TRANSEXITCODE, concat('pilot:',PILOTERRORCODE) AS PILOTERRORCODE, PILOTERRORDIAG, concat('exe:',EXEERRORCODE) AS EXEERRORCODE, EXEERRORDIAG, concat('sup:',SUPERRORCODE) AS SUPERRORCODE,SUPERRORDIAG,concat('ddm:',DDMERRORCODE) AS DDMERRORCODE,DDMERRORDIAG,concat('brokerage:',BROKERAGEERRORCODE) AS BROKERAGEERRORCODE,BROKERAGEERRORDIAG,concat('jobdispatcher:',JOBDISPATCHERERRORCODE) AS JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,concat('taskbuffer:',TASKBUFFERERRORCODE) AS TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM
-(SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSARCHIVED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSARCHIVED4.PANDAID
+(SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM '''+PANDA_SCHEMA+'''.JOBSARCHIVED4, (SELECT ID FROM '''+BP_MON_SCHEMA+'''.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID='''+PANDA_SCHEMA+'''.JOBSARCHIVED4.PANDAID
 UNION ALL
-SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSACTIVE4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSACTIVE4.PANDAID
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM '''+PANDA_SCHEMA+'''.JOBSACTIVE4, (SELECT ID FROM '''+BP_MON_SCHEMA+'''.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID='''+PANDA_SCHEMA+'''.JOBSACTIVE4.PANDAID
 UNION ALL 
-SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSDEFINED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSDEFINED4.PANDAID
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM '''+PANDA_SCHEMA+'''.JOBSDEFINED4, (SELECT ID FROM '''+BP_MON_SCHEMA+'''.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID='''+PANDA_SCHEMA+'''.JOBSDEFINED4.PANDAID
 UNION ALL 
-SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSWAITING4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSWAITING4.PANDAID
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM '''+PANDA_SCHEMA+'''.JOBSWAITING4, (SELECT ID FROM '''+BP_MON_SCHEMA+'''.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID='''+PANDA_SCHEMA+'''.JOBSWAITING4.PANDAID
 UNION ALL
-SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDAARCH.JOBSARCHIVED, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID)
+SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM '''+PANDAARCH_SCHEMA+'''.JOBSARCHIVED, (SELECT ID FROM '''+BP_MON_SCHEMA+'''.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID='''+PANDAARCH_SCHEMA+'''.JOBSARCHIVED.PANDAID)
     '''
     #if isJobsss:
     sqlRequest += ' WHERE '+ codename + '='+codeval
@@ -4242,7 +4231,7 @@ def eventsInfo(request, mode=None, param=None):
 
     cur = connection.cursor()
     cur.execute(
-        "select sum(decode(c.startevent,NULL,c.nevents,endevent-startevent+1)) nevents,c.status from atlas_panda.jedi_datasets d,atlas_panda.jedi_dataset_contents c where d.jeditaskid=c.jeditaskid and d.datasetid=c.datasetid and d.jeditaskid=%s and d.type in ('input','pseudo_input') and d.masterid is null group by c.status;" % (
+        "select sum(decode(c.startevent,NULL,c.nevents,endevent-startevent+1)) nevents,c.status from "+PANDA_SCHEMA+".jedi_datasets d,"+PANDA_SCHEMA+".jedi_dataset_contents c where d.jeditaskid=c.jeditaskid and d.datasetid=c.datasetid and d.jeditaskid=%s and d.type in ('input','pseudo_input') and d.masterid is null group by c.status;" % (
         jeditaskid))
     events = cur.fetchall()
     cur.close()
@@ -4773,7 +4762,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     # if it is ART test, get test name
     art_test = []
     artqueue = {'pandaid': pandaid}
-    art_test.extend(ARTTests.objects.filter(**artqueue).values())
+    if ATLAS_DEPLOYMENT:
+        art_test.extend(ARTTests.objects.filter(**artqueue).values())
 
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
@@ -6865,12 +6855,12 @@ def worldhs06s(request):
         roundflag = True
 
     cur = connection.cursor()
-    cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.GETHS06SSUMMARY('%s'))" % condition)
+    cur.execute("SELECT * FROM table("+BP_MON_SCHEMA+".GETHS06SSUMMARY('%s'))" % condition)
     hspersite = cur.fetchall()
     cur.close()
 
     newcur = connection.cursor()
-    newcur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.GETHS06STOTSUMMARY('%s'))" % condition)
+    newcur.execute("SELECT * FROM table("+BP_MON_SCHEMA+".GETHS06STOTSUMMARY('%s'))" % condition)
     hspernucleus = newcur.fetchall()
     newcur.close()
 
@@ -7223,9 +7213,9 @@ def dashboard(request, view='all'):
 
         sqlRequest = """SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE, RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST FROM 
           (SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, CASE WHEN t2.OBJSTORE_ID > 0 THEN TO_CHAR(t2.OBJSTORE_ID) ELSE t3.destinationse END AS OBJSE 
-          FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 
-          LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID =  t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0) 
-          LEFT JOIN ATLAS_PANDA.filestable4 t3 ON (t3.pandaid = t2.pandaid and  t3.JEDITASKID = t2.JEDITASKID and t3.row_id=t2.ziprow_id) WHERE t1.ES in (1) and t1.CLOUD='WORLD' and t1.MODIFICATIONTIME > (sysdate - interval '13' hour) 
+          FROM """+BP_MON_SCHEMA+""".COMBINED_WAIT_ACT_DEF_ARCH4 t1 
+          LEFT JOIN """+PANDA_SCHEMA+""".JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID =  t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0) 
+          LEFT JOIN """+PANDA_SCHEMA+""".filestable4 t3 ON (t3.pandaid = t2.pandaid and  t3.JEDITASKID = t2.JEDITASKID and t3.row_id=t2.ziprow_id) WHERE t1.ES in (1) and t1.CLOUD='WORLD' and t1.MODIFICATIONTIME > (sysdate - interval '13' hour) 
           AND t3.MODIFICATIONTIME >  (sysdate - interval '13' hour)) WHERE NOT OBJSE IS NULL GROUP BY JOBSTATUS, JOBSTATUS, COMPUTINGSITE, OBJSE order by OBJSE;"""
 
         cur = connection.cursor()
@@ -7597,7 +7587,7 @@ def taskList(request):
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
 
-    tmpTableName = 'ATLAS_PANDABIGMON.TMP_IDS1Debug'
+    tmpTableName = BP_MON_SCHEMA+'.TMP_IDS1Debug'
     if 'jeditaskid__in' in query:
         taskl = query['jeditaskid__in']
         if len(taskl) > 20:
@@ -7808,10 +7798,7 @@ def taskList(request):
 
         random.seed()
 
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-        else:
-            tmpTableName = "TMP_IDS1"
+        tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1"
 
         transactionKey = random.randrange(1000000)
 #        connection.enter_transaction_management()
@@ -7825,7 +7812,7 @@ def taskList(request):
 #        connection.commit()
         new_cur.execute(
             """
-            SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID
+            SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  PANDAID,STATUS FROM """+PANDA_SCHEMA+""".JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID
             """ % (tmpTableName, transactionKey)
         )
         evtable = dictfetchall(new_cur)
@@ -8071,10 +8058,7 @@ def getTaskScoutingInfo(tasks, nmax):
     tasksIdToBeDisplayed = [task['jeditaskid'] for task in taskslToBeDisplayed]
     tquery = {}
 
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
+    tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1"
 
     transactionKey = random.randrange(1000000)
     new_cur = connection.cursor()
@@ -8190,10 +8174,7 @@ def getErrorSummaryForEvents(request):
     if mode == 'drop':
         eventsErrors = []
 
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-        else:
-            tmpTableName = "TMP_IDS1DEBUG"
+        tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1DEBUG"
 
         new_cur = connection.cursor()
         if transactionKey:
@@ -8210,7 +8191,7 @@ def getErrorSummaryForEvents(request):
                   (select pandaid, error_code,
                     sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) as neventsinjob,
                     count(*) as nerrorsinjob
-                  from ATLAS_PANDA.Jedi_events
+                  from """+PANDA_SCHEMA+""".Jedi_events
                   where jeditaskid={} and ERROR_CODE is not null
                   group by error_code, pandaid ) e
                 join
@@ -8231,7 +8212,7 @@ def getErrorSummaryForEvents(request):
                   (select pandaid, error_code,
                     sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) as neventsinjob,
                     count(*) as nerrorsinjob
-                  from ATLAS_PANDA.Jedi_events
+                  from """+PANDA_SCHEMA+""".Jedi_events
                   where jeditaskid={} and ERROR_CODE is not null 
                     and pandaid not in ( select ID from {} where TRANSACTIONKEY={} )
                   group by error_code, pandaid ) e
@@ -8252,7 +8233,7 @@ def getErrorSummaryForEvents(request):
                         sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) as neventsinjob,
                         count(*) as nerrorsinjob,
                         row_number() over (partition by error_code ORDER BY sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) desc) as aff
-                          from ATLAS_PANDA.Jedi_events
+                          from """+PANDA_SCHEMA+""".Jedi_events
                           where jeditaskid=%i and ERROR_CODE is not null
                           group by error_code, pandaid)
                   group by error_code
@@ -8325,10 +8306,8 @@ def getSummaryForTaskList(request):
     for t in tasks:
         taskl.append(t['jeditaskid'])
 
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
+    tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1"
+
     taskEvents = []
     random.seed()
     transactionKey = random.randrange(1000000)
@@ -8632,7 +8611,7 @@ def taskInfo(request, jeditaskid=0):
                 (
                 SELECT /*+ INDEX_RS_ASC(e JEDI_EVENTS_PK) NO_INDEX_FFS(e JEDI_EVENTS_PK) */ 
                 pandaid, e.objstore_id, e.status, count(*) as nevents 
-                FROM atlas_panda.jedi_events e 
+                FROM """+PANDA_SCHEMA+""".jedi_events e 
                 WHERE jeditaskid = {}
                 GROUP BY pandaid, e.objstore_id, e.status 
                 )
@@ -8641,11 +8620,11 @@ def taskInfo(request, jeditaskid=0):
                 FROM jedi_ev, 
                 (
                 select computingsite, computingelement,pandaid
-                from ATLAS_PANDA.JOBSARCHIVED4
+                from """+PANDA_SCHEMA+""".JOBSARCHIVED4
                 where jeditaskid={} 
                 UNION
                 select computingsite, computingelement,pandaid
-                from ATLAS_PANDAARCH.JOBSARCHIVED
+                from """+PANDAARCH_SCHEMA+""".JOBSARCHIVED
                 where jeditaskid={} 
                 ) jobs
                 WHERE 
@@ -9571,7 +9550,7 @@ def getEventsDetails(request, mode='drop', jeditaskid=0):
     valid, response = initRequest(request)
     if not valid: return response
 
-    tmpTableName = 'ATLAS_PANDABIGMON.TMP_IDS1DEBUG'
+    tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1DEBUG"
 
     if 'jeditaskid' in  request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
         jeditaskid = request.session['requestParams']['jeditaskid']
@@ -9591,11 +9570,11 @@ def getEventsDetails(request, mode='drop', jeditaskid=0):
     sqlRequest = """
         select /*+ INDEX_RS_ASC(e JEDI_EVENTS_PK) NO_INDEX_FFS(e JEDI_EVENTS_PK) */
           j.computingsite, j.COMPUTINGELEMENT,e.objstore_id,e.status,count(e.status) as nevents
-          from atlas_panda.jedi_events e
+          from """+PANDA_SCHEMA+""".jedi_events e
             join
-                (select computingsite, computingelement,pandaid from ATLAS_PANDA.JOBSARCHIVED4 where jeditaskid={} {}
+                (select computingsite, computingelement,pandaid from """+PANDA_SCHEMA+""".JOBSARCHIVED4 where jeditaskid={} {}
                 UNION
-                select computingsite, computingelement,pandaid from ATLAS_PANDAARCH.JOBSARCHIVED where jeditaskid={} {}
+                select computingsite, computingelement,pandaid from """+PANDAARCH_SCHEMA+""".JOBSARCHIVED where jeditaskid={} {}
                 ) j
             on (e.jeditaskid={} and e.pandaid=j.pandaid)
         group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""".format(jeditaskid, extrastr, jeditaskid, extrastr, jeditaskid)
@@ -9622,7 +9601,7 @@ def taskchain(request):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     new_cur = connection.cursor()
-    taskChainSQL = "SELECT * FROM table(ATLAS_PANDABIGMON.GETTASKSCHAIN_TEST(%i))" % jeditaskid
+    taskChainSQL = "SELECT * FROM table("+BP_MON_SCHEMA+".GETTASKSCHAIN_TEST(%i))" % jeditaskid
     new_cur.execute(taskChainSQL)
     taskChain = new_cur.fetchall()
     results = ["".join(map(str, r)) for r in taskChain]
@@ -9923,11 +9902,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
 
             random.seed()
 
-            if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-                tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-            else:
-                tmpTableName = "TMP_IDS1DEBUG"
-
+            tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1DEBUG"
             transactionKey = random.randrange(1000000)
 
             new_cur = connection.cursor()
@@ -9942,7 +9917,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
                 """
                 SELECT /*+ cardinality(tmp 10) INDEX_RS_ASC(ev JEDI_EVENTS_PK) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  
                     SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS EVCOUNT, STATUS 
-                FROM ATLAS_PANDA.JEDI_EVENTS ev, %s 
+                FROM """+PANDA_SCHEMA+""".JEDI_EVENTS ev, %s 
                 WHERE TRANSACTIONKEY=%i AND PANDAID = ID AND JEDITASKID=%s 
                 GROUP BY STATUS
                 """ % (tmpTableName, transactionKey, jeditaskidstr)
@@ -10249,36 +10224,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
             if value == '':
                 value = 'None'
             esjobs.append(key)
-           # if err == 'jobdispatcher:100':
-           #     value = re.sub("(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})", "*", value)
-           # elif err == 'exe:68':
-           #     #value = re.sub("","*",value)
-           #     value = value
-          #  elif err == 'pilot:1099':
-          #      if ('STAGEIN FAILED: Get error: Staging input file failed' in value):
-         #           value = 'STAGEIN FAILED: Get error: Staging input file failed'
-          #  v.setdefault(value, []).append(key)
-        #errsByCount[err]['pandalist'] = v
         errsByCountL.append(errsByCount[err])
-
-
-
-       # random.seed()
-
-        #if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        #    tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-        #else:
-        #    tmpTableName = "TMP_IDS1DEBUG"
-
-        #transactionKey = random.randrange(1000000)
-        #            connection.enter_transaction_management()
-        #new_cur = connection.cursor()
-        #executionData = []
-        #for id in esjobs:
-        #    executionData.append((id, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
-        #query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
-        #new_cur.executemany(query, executionData)
-        #            connection.commit()
 
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByCountL = sorted(errsByCountL, key=lambda x: -x['count'])
@@ -11544,7 +11490,7 @@ def ttc(request):
     if len(taskevents) > 0:
         taskev = taskevents[0]
     cur = connection.cursor()
-    cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.GETTASKPROFILE('%s'))" % taskrec['jeditaskid'])
+    cur.execute("SELECT * FROM table("+BP_MON_SCHEMA+".GETTASKPROFILE('%s'))" % taskrec['jeditaskid'])
     taskprofiled = cur.fetchall()
     cur.close()
 
@@ -11827,12 +11773,8 @@ def datasetList(request):
 
 @login_customrequired
 def fileInfo(request):
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        JediDatasetsTableName = "ATLAS_PANDA.JEDI_DATASETS"
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        JediDatasetsTableName = "JEDI_DATASETS"
-        tmpTableName = "TMP_IDS1"
+    JediDatasetsTableName = PANDA_SCHEMA+".JEDI_DATASETS"
+    tmpTableName = BP_MON_SCHEMA+".TMP_IDS1"
 
     random.seed()
     transactionKey = random.randrange(1000000)
@@ -12347,10 +12289,9 @@ def taskNameDict(jobs):
     tasknamedict = {}
     if len(jeditaskidl) > 0:
         random.seed()
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-        else:
-            tmpTableName = "TMP_IDS1"
+
+        tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1DEBUG"
+
         transactionKey = random.randrange(1000000)
         jeditaskidl = [(tid, transactionKey) for tid in jeditaskidl]
         new_cur = connection.cursor()
@@ -12712,15 +12653,9 @@ def addJobMetadata(jobs, require=False):
 
     random.seed()
 
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        metaTableName = "ATLAS_PANDA.METATABLE"
-        metaTableNameArch = "ATLAS_PANDAARCH.METATABLE_ARCH"
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-
-    else:
-        metaTableName = "METATABLE"
-        metaTableNameArch = "METATABLE_ARCH"
-        tmpTableName = "TMP_IDS1"
+    metaTableName = PANDA_SCHEMA+".METATABLE"
+    metaTableNameArch = PANDAARCH_SCHEMA+".METATABLE_ARCH"
+    tmpTableName = BP_MON_SCHEMA+".TMP_IDS1"
 
     transactionKey = random.randrange(1000000)
     new_cur = connection.cursor()
@@ -12791,10 +12726,7 @@ def g4exceptions(request):
 
     if 'amitag' in request.session['requestParams']:
 
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-        else:
-            tmpTableName = "TMP_IDS1"
+        tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1"
 
         transactionKey = random.randrange(1000000)
 #        connection.enter_transaction_management()
@@ -12804,7 +12736,7 @@ def g4exceptions(request):
             tmpTableName, job['pandaid'], transactionKey))  # Backend dependable
  #       connection.commit()
         new_cur.execute(
-            "SELECT JOBPARAMETERS, PANDAID FROM ATLAS_PANDA.JOBPARAMSTABLE WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
+            "SELECT JOBPARAMETERS, PANDAID FROM "+PANDA_SCHEMA+".JOBPARAMSTABLE WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
             tmpTableName, transactionKey))
         mrecs = dictfetchall(new_cur)
 #        connection.commit()
@@ -13099,15 +13031,15 @@ def getBadEventsForTask(request):
             ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb,
             RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDAIDS, 
             count(*) from 
-            atlas_panda.jedi_events where jeditaskid=%d and attemptnr = 1 group by DATASETID, ERROR_CODE """ % jeditaskid
+            """+PANDA_SCHEMA+""".jedi_events where jeditaskid=%d and attemptnr = 1 group by DATASETID, ERROR_CODE """ % jeditaskid
 
     if mode == 'drop':
         plsql = """select DATASETID, ERROR_CODE, RTRIM(XMLAGG(XMLELEMENT(E,DEF_MIN_EVENTID,',').EXTRACT('//text()') 
             ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb, 
             RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDAIDS,
             count(*) from 
-            atlas_panda.jedi_events where jeditaskid=%d and attemptnr = 1 
-            and PANDAID IN (SELECT PANDAID FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS where jeditaskid=%d and type in ('input', 'pseudo_input'))
+            """+PANDA_SCHEMA+""".jedi_events where jeditaskid=%d and attemptnr = 1 
+            and PANDAID IN (SELECT PANDAID FROM """+PANDA_SCHEMA+""".JEDI_DATASET_CONTENTS where jeditaskid=%d and type in ('input', 'pseudo_input'))
             group by DATASETID, ERROR_CODE """ % (jeditaskid, jeditaskid)
 
     cursor.execute(plsql)
@@ -13136,7 +13068,7 @@ def getEventsChunks(request):
 
     sqlRequest = """SELECT OLDPANDAID, NEWPANDAID, MAX(LEV) as LEV, MIN(PTH) as PTH FROM (
     SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV, CONNECT_BY_ISLEAF as IL, SYS_CONNECT_BY_PATH(OLDPANDAID, ',') PTH FROM (
-    SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=%s and RELATIONTYPE='jobset_retry')t1 CONNECT BY OLDPANDAID=PRIOR NEWPANDAID
+    SELECT OLDPANDAID, NEWPANDAID FROm """+PANDA_SCHEMA+""".JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=%s and RELATIONTYPE='jobset_retry')t1 CONNECT BY OLDPANDAID=PRIOR NEWPANDAID
     )t2 GROUP BY OLDPANDAID, NEWPANDAID;""" % str(jeditaskid)
 
     cur = connection.cursor()
