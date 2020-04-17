@@ -837,6 +837,7 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
         if status != 0:
             msg = 'File unpacking failed for file [%s].' % (fname)
             _logger.error(msg)
+            errtxt += msg
 
     #_logger.error("get_rucio_file step2-1 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
@@ -849,6 +850,7 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
         if len(err):
             msg = 'File listing failed for file [%s]: [%s].' % (fname, err)
             _logger.error(msg)
+            errtxt += msg
 
     ### urlbase
     urlbase = get_filebrowser_directory() +'/'+ guid.lower()+'/'+scope
