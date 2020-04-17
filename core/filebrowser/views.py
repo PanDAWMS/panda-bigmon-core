@@ -41,7 +41,7 @@ def index(request):
 
     errors = {}
 
-    #_logger.error("index started - " + datetime.now().strftime("%H:%M:%S") + "  ")
+    _logger.debug("index started - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     ### check that all expected parameters are in URL
     expectedFields = ['guid', 'site', 'scope', 'lfn']
@@ -123,7 +123,7 @@ def index(request):
             except:
                 _logger.warning("ERROR!!! Failed to calculate log tarball size in MB")
 
-    #_logger.error("index step1 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+    _logger.debug("index step1 - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     ### download the file
     files = []
@@ -154,8 +154,8 @@ def index(request):
         }
         return render_to_response('errorPage.html', data, content_type='text/html')
     if not len(files):
-        msg = 'File download failed. [guid=%s, site=%s, scope=%s, lfn=%s]' % \
-            (guid, site, scope, lfn)
+        msg = 'Something went wrong while the log file downloading. [guid=%s, site=%s, scope=%s, lfn=%s] \n' % \
+              (guid, site, scope, lfn)
         _logger.warning(msg)
         errors['download'] = msg
     if len(errtxt):
@@ -163,7 +163,7 @@ def index(request):
             errors['download'] = ''
         errors['download'] += errtxt
 
-#    _logger.error("index step2 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+    _logger.debug("index step2 - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     totalLogSize = 0
     if type(files) is list and len(files) > 0:
@@ -194,15 +194,14 @@ def index(request):
         'HOSTNAME': hostname,
         'totalLogSize': totalLogSize,
         'nfiles': len(files),
-#        , 'new_contents': new_contents
     }
 
-    _logger.error("index step3 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+    _logger.debug("index step3 - " + datetime.now().strftime("%H:%M:%S") + "  ")
     if 'json' not in request.GET:
         return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
     else:
         resp = HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
- #       _logger.error("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+        _logger.debug("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")
         return resp
 
 

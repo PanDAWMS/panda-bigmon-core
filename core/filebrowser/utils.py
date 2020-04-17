@@ -852,7 +852,7 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
         if len(err):
             msg = 'File listing failed for file [%s]: [%s].' % (fname, err)
             _logger.error(msg)
-            errtxt = '\n '.join([errtxt, msg])
+            errtxt = '\n'.join([errtxt, msg])
 
     ### urlbase
     urlbase = get_filebrowser_directory() +'/'+ guid.lower()+'/'+scope
