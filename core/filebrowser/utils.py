@@ -683,7 +683,8 @@ def list_file_directory(logdir, limit=1000):
                 tardir = entry
                 continue
     if not len(tardir):
-        err = "Problem with tarball, could not find expected directory (got %s)." % logdir
+        err = "Problem with tarball, could not find expected directory"
+        _logger.error('{} (got {}).'.format(err, logdir))
         return files, err, tardir
 
     # Now list the contents of the tarball directory:
@@ -809,10 +810,11 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
     logdir = get_fullpath_filebrowser_directory() + '/' + guid.lower()
     #### basename for the file
     #base = os.path.basename(lfn)
-    fname = '%s/%s/%s' % (logdir,scope,lfn)
+    fname = '%s:%s' % (scope, lfn)
+    fpath = '%s/%s/%s' % (logdir, scope, lfn)
 
     ### create directory for files of guid
-    dir, err = create_directory(fname)
+    dir, err = create_directory(fpath)
     if not len(err):
         errtxt += err
 
@@ -833,11 +835,11 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
 
     if unpack:
         ### untar the file
-        status, err = unpack_file(fname)
+        status, err = unpack_file(fpath)
         if status != 0:
             msg = 'File unpacking failed for file [%s].' % (fname)
-            _logger.error(msg)
-            errtxt += msg
+            _logger.error('{} File path is {}.'.format(msg, fpath))
+            errtxt = '/n '.join([errtxt, msg])
 
     #_logger.error("get_rucio_file step2-1 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
@@ -850,7 +852,7 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
         if len(err):
             msg = 'File listing failed for file [%s]: [%s].' % (fname, err)
             _logger.error(msg)
-            errtxt += msg
+            errtxt = '/n '.join([errtxt, msg])
 
     ### urlbase
     urlbase = get_filebrowser_directory() +'/'+ guid.lower()+'/'+scope
