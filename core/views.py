@@ -1771,8 +1771,10 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                     sumd[f] = {}
                 if f in job and (job[f] is None or job[f] == ''):
                     kval = -1 if f in numeric_fields else 'Not specified'
-                else:
+                elif f in job:
                     kval = job[f]
+                else:
+                    kval = 'Not specified'
                 if kval not in sumd[f]:
                     sumd[f][kval] = 0
                 sumd[f][kval] += 1
@@ -4925,7 +4927,7 @@ def userList(request):
             if user['dict']['latest']:
                 user['dict']['latest'] = user['dict']['latest'].strftime(defaultDatetimeFormat)
         sumparams = ['jobstatus', 'prodsourcelabel', 'specialhandling', 'transformation', 'processingtype',
-                     'workinggroup', 'priorityrange', 'jobsetrange']
+                     'workinggroup', 'priorityrange']
         if VOMODE == 'atlas':
             sumparams.append('atlasrelease')
         else:
