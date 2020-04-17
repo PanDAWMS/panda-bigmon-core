@@ -22,6 +22,9 @@ class Cernauth2(BaseOAuth2):
         ('id', 'id'),
         ('expires', 'expires')
     ]
+    ACCESS_TOKEN_METHOD = 'POST'
+    ID_KEY = 'email'
+
 
     def get_user_details(self, response):
          """Return user details from CERN account"""
@@ -64,7 +67,6 @@ class Cernauth2(BaseOAuth2):
 
 
     def request(self, url, method='POST', *args, **kwargs):
-        method = 'POST'
         logger = logging.getLogger('social')
         kwargs.setdefault('headers', {})
         if self.setting('VERIFY_SSL') is not None:
@@ -80,8 +82,8 @@ class Cernauth2(BaseOAuth2):
                 session = SSLHttpAdapter.ssl_adapter_session(self.SSL_PROTOCOL)
                 response = session.request(method, url, *args, **kwargs)
             else:
-                if 'params' in kwargs:
-                    kwargs['data'] = kwargs['params']
+                if 'data' in kwargs:
+                    kwargs['data'] = kwargs['data']
                     del kwargs['params']
                 response = request(method, url, *args, **kwargs)
         except ConnectionError as err:
@@ -163,6 +165,7 @@ class Cernauth2(BaseOAuth2):
                 self.message += subattr+ ':'+ str(newattr[subattr]) + '\n'
     message = ''
     errordesc =''
+
     def social_error_logger(self, errmess):
         try:
             if 'HTTP_REFERER' in self.strategy.request.META:
