@@ -150,7 +150,7 @@
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
     <td><div class="comment more">
         {% for item in fdict.list %}
-            {% if fdict.field == 'jeditaskid' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% if fdict.field == 'jeditaskid' and item.kname != 'Not specified' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% elif fdict.field  == 'jobsetid'%} <a href="{% url 'jobList' %}?jobsetid={{ item.kname }}"> {{ item.kname }}</a> <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% elif fdict.field  == 'harvesterinstance' %} {{ item.kname }} <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% elif fdict.field  == 'durationmin' %} {% if item.kvalue > 0 %} {{ item.kname }} <a href="{{nodurminurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a> {% endif %}

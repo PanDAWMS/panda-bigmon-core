@@ -101,7 +101,8 @@ from core.auth.utils import grant_rights, deny_rights
 from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
-from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, is_job_active, get_tmp_table_name
+from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
+    is_job_active, get_tmp_table_name, get_event_status_summary
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.task import get_job_state_summary_for_tasklist
@@ -601,6 +602,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     if not 'viewParams' in request.session:
         request.session['viewParams'] = viewParams
 
+    extraQueryString = '(1=1) '
+    extraQueryFields = []
+
     LAST_N_HOURS_MAX = 0
 
     for paramName, paramVal in request.session['requestParams'].items():
@@ -613,12 +617,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         jobrequest = request.session['requestParams']['jobname']
         if (('*' in jobrequest) or ('|' in jobrequest)):
             excludeJobNameFromWildCard = False
-    excludeWGFromWildCard = False
-    excludeSiteFromWildCard = False
+
     if 'workinggroup' in request.session['requestParams'] and 'preset' in request.session['requestParams'] and request.session['requestParams']['preset']=='MC':
         # if 'workinggroup' in request.session['requestParams']:
         workinggroupQuery = request.session['requestParams']['workinggroup']
-        extraQueryString = '('
+        extraQueryString += ' AND ('
         for card in workinggroupQuery.split(','):
             if card[0] == '!':
                 extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
@@ -629,29 +632,29 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         elif extraQueryString.endswith('OR'):
             extraQueryString = extraQueryString[:-2]
         extraQueryString += ')'
-        excludeWGFromWildCard = True
+        extraQueryFields.append('workinggroup')
+
     elif 'workinggroup' in request.session['requestParams'] and request.session['requestParams']['workinggroup'] and \
                         '*' not in request.session['requestParams']['workinggroup'] and \
                         ',' not in request.session['requestParams']['workinggroup']:
-        excludeWGFromWildCard = True
+        extraQueryFields.append('workinggroup')
 
     if 'site' in request.session['requestParams'] and (request.session['requestParams']['site'] == 'hpc' or not (
                     '*' in request.session['requestParams']['site'] or '|' in request.session['requestParams']['site'])):
-        excludeSiteFromWildCard = True
+        extraQueryFields.append('site')
 
 
     wildSearchFields = []
     if querytype == 'job':
         for field in Jobsactive4._meta.get_fields():
             if (field.get_internal_type() == 'CharField'):
-                if not (field.name == 'jobstatus' or field.name == 'modificationhost' #or field.name == 'batchid'
-                        or (
-                    excludeJobNameFromWildCard and field.name == 'jobname')):
+                if not (field.name == 'jobstatus' or field.name == 'modificationhost'
+                        or (excludeJobNameFromWildCard and field.name == 'jobname')):
                     wildSearchFields.append(field.name)
     if querytype == 'task':
         for field in JediTasks._meta.get_fields():
             if (field.get_internal_type() == 'CharField'):
-                if not (field.name == 'modificationhost' or (excludeWGFromWildCard and field.name == 'workinggroup') or (excludeSiteFromWildCard and field.name == 'site')):
+                if not (field.name == 'modificationhost' or field.name in extraQueryFields):
                     wildSearchFields.append(field.name)
 
     deepquery = False
@@ -794,11 +797,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if param == 'cloud' and request.session['requestParams'][param] == 'All':
             continue
         elif param == 'harvesterinstance' or param == 'harvesterid':
-             if request.session['requestParams'][param] == 'all':
-                 query['schedulerid__startswith'] = 'harvester'
-             else:
-                 val = request.session['requestParams'][param]
-                 query['schedulerid'] = 'harvester-'+val
+            val = request.session['requestParams'][param]
+            if val == 'Not specified':
+                extraQueryString += " AND ((schedulerid not like 'harvester%%') or (schedulerid = '') or (schedulerid is null))"
+            elif val == 'all':
+                query['schedulerid__startswith'] = 'harvester'
+            else:
+                query['schedulerid'] = 'harvester-'+val
         elif param == 'schedulerid':
              if 'harvester-*' in request.session['requestParams'][param]:
                  query['schedulerid__startswith'] = 'harvester'
@@ -874,12 +879,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     'selection'] += "      <b>The query can not be processed because list of mismatches is not found. Please visit %s/dash/production/?cloudview=region page and then try again</b>" % \
                                     request.session['hostname']
             else:
-                try:
-                    extraQueryString += ' AND ( '
-                except NameError:
-                    extraQueryString = '('
                 for count, cloudSitePair in enumerate(listOfCloudSitesMismatched):
-                    extraQueryString += ' ( (cloud=\'%s\') and (computingsite=\'%s\') ) ' % (
+                    extraQueryString += 'AND ( ( (cloud=\'%s\') and (computingsite=\'%s\') ) ' % (
                     cloudSitePair[1], cloudSitePair[0])
                     if (count < (len(listOfCloudSitesMismatched) - 1)):
                         extraQueryString += ' OR '
@@ -887,12 +888,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         elif param == 'pilotversion' and request.session['requestParams'][param]:
             val = request.session['requestParams'][param]
             if val == 'Not specified':
-                try:
-                    extraQueryString += ' AND ( '
-                except NameError:
-                    extraQueryString = '('
-                extraQueryString += '(pilotid not like \'%%|%%\') or (pilotid is null)'
-                extraQueryString += ')'
+                extraQueryString += ' AND ( (pilotid not like \'%%|%%\') or (pilotid is null) )'
             else:
                 query['pilotid__endswith'] = val
         elif param == 'durationmin' and request.session['requestParams'][param]:
@@ -900,12 +896,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 durationrange = request.session['requestParams'][param].split('-')
             except:
                 continue
-            try:
-                extraQueryString += ' AND ( '
-            except NameError:
-                extraQueryString = '('
             if durationrange[0] == '0' and durationrange[1] == '0':
-                extraQueryString += ' (endtime is NULL and starttime is null) ) '
+                extraQueryString += ' AND (  (endtime is NULL and starttime is null) ) '
             else:
                 extraQueryString += """ 
             (endtime is not NULL and starttime is not null 
@@ -971,7 +963,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         else:
                             query['reqid'] = int(val)
                     elif param == 'site':
-                        if request.session['requestParams'][param] != 'hpc' and excludeSiteFromWildCard:
+                        if request.session['requestParams'][param] != 'hpc' and param in extraQueryFields:
                             query['site__contains'] = request.session['requestParams'][param]
                     elif param == 'eventservice':
                         if request.session['requestParams'][param] == 'eventservice' or \
@@ -1005,7 +997,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         else:
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
-                    if param == 'minramcount':
+                    if request.session['requestParams'][param] == 'Not specified':
+                        extraQueryString += " AND ( {0} is NULL or {0} = '' ) ".format(param)
+                        extraQueryFields.append(param)
+                    elif param == 'minramcount':
                         if 'GB' in request.session['requestParams'][param]:
                             leftlimit, rightlimit = (request.session['requestParams'][param]).split('-')
                             rightlimit = rightlimit[:-2]
@@ -1091,23 +1086,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             elif request.session['requestParams'][param] == 'eventservice' or \
                                             request.session['requestParams'][param] == '1':
                                 query['eventservice'] = 1
-                                try:
-                                    extraQueryString += " not specialhandling like \'%%sc:%%\' "
-                                except NameError:
-                                    extraQueryString = " not specialhandling like \'%%sc:%%\' "
-
+                                extraQueryString += " AND not specialhandling like \'%%sc:%%\' "
                             elif request.session['requestParams'][param] == 'not2':
-                                try:
-                                    extraQueryString += ' AND (eventservice != 2) '
-                                except NameError:
-                                    extraQueryString = '(eventservice != 2)'
+                                extraQueryString += ' AND (eventservice != 2) '
                             else:
                                 query['eventservice__isnull'] = True
                     elif param == 'corecount' and request.session['requestParams'][param] == '1':
-                        try:
-                            extraQueryString += 'AND (corecount = 1 or corecount is NULL)'
-                        except:
-                            extraQueryString = '(corecount = 1 or corecount is NULL) '
+                        extraQueryString += ' AND (corecount = 1 or corecount is NULL) '
 
                     elif param == 'resourcetype' and request.session['requestParams'][param]:
                         if '|' in request.session['requestParams'][param]:
@@ -1149,7 +1134,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if not (currenfField.lower() == 'transformation'):
             if not ((currenfField.lower() == 'cloud') & (
             any(card.lower() == 'all' for card in request.session['requestParams'][currenfField].split('|')))):
-                if not any(currenfField in key for key, value in query.items()):
+                if not any(currenfField in key for key, value in query.items()) and currenfField not in extraQueryFields:
                     wildSearchFields1.add(currenfField)
     wildSearchFields = wildSearchFields1
 
@@ -1757,9 +1742,10 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         flist = fieldlist
     else:
         flist = standard_fields
+
+    numeric_fields = ('attemptnr', 'jeditaskid', 'taskid', 'noutputdatafiles', 'actualcorecount', 'corecount', 'reqid',)
     for job in jobs:
         for f in flist:
-            if f == 'actualcorecount' and job[f] is None: job[f] = 1
             if f == 'pilotversion':
                 if 'pilotid' in job and '|' in job['pilotid']:
                     job[f] = job['pilotid'].split('|')[-1]
@@ -1768,71 +1754,47 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             if f == 'schedulerid':
                 if 'schedulerid' in job and job[f] is not None:
                     if 'harvester' in job[f]:
-                        job[f] = job[f].replace('harvester-','')
-                    #del job[f]
-                    else: del job[f]
-
-            if f in job and job[f]:
-                if f == 'taskid' and int(job[f]) < 1000000 and 'produsername' not in request.session[
-                    'requestParams']: continue
-                if f == 'nucleus' and job[f] is None: continue
-                if f == 'specialhandling':
-                    if not 'specialhandling' in sumd: sumd['specialhandling'] = {}
-                    shl = job['specialhandling'].split()
-                    for v in shl:
-                        if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
-                        sumd['specialhandling'][v] += 1
+                        job[f] = job[f].replace('harvester-', '')
+                    else:
+                        job[f] = 'Not specified'
+            if f == 'taskid' and int(job[f]) < 1000000 and 'produsername' not in request.session['requestParams']:
+                continue
+            elif f == 'specialhandling':
+                if not 'specialhandling' in sumd:
+                    sumd['specialhandling'] = {}
+                shl = job['specialhandling'].split()
+                for v in shl:
+                    if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
+                    sumd['specialhandling'][v] += 1
+            else:
+                if f not in sumd:
+                    sumd[f] = {}
+                if f in job and (job[f] is None or job[f] == ''):
+                    kval = -1 if f in numeric_fields else 'Not specified'
                 else:
-                    if not f in sumd: sumd[f] = {}
-                    if not job[f] in sumd[f]: sumd[f][job[f]] = 0
-                    sumd[f][job[f]] += 1
+                    kval = job[f]
+                if kval not in sumd[f]:
+                    sumd[f][kval] = 0
+                sumd[f][kval] += 1
         for extra in ('jobmode', 'substate', 'outputfiletype', 'durationmin'):
             if extra in job:
-                if not extra in sumd: sumd[extra] = {}
-                if not job[extra] in sumd[extra]: sumd[extra][job[extra]] = 0
+                if extra not in sumd:
+                    sumd[extra] = {}
+                if job[extra] not in sumd[extra]:
+                    sumd[extra][job[extra]] = 0
                 sumd[extra][job[extra]] += 1
     if 'schedulerid' in sumd:
         sumd['harvesterinstance'] = sumd['schedulerid']
         del sumd['schedulerid']
+
     ## event service
     esjobdict = {}
     esjobs = []
     for job in jobs:
         if isEventService(job):
             esjobs.append(job['pandaid'])
-            # esjobdict[job['pandaid']] = {}
-            # for s in eventservicestatelist:
-            #    esjobdict[job['pandaid']][s] = 0
     if len(esjobs) > 0:
-        sumd['eventservicestatus'] = {}
-
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-        else:
-            tmpTableName = "TMP_IDS1"
-
-        transactionKey = random.randrange(1000000)
-
-        new_cur = connection.cursor()
-        executionData = []
-        for id in esjobs:
-            executionData.append((id, transactionKey))
-        query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
-        new_cur.executemany(query, executionData)
-
-        new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM (SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */ PANDAID, STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY = %i AND  PANDAID = ID) t1 GROUP BY STATUS" % (tmpTableName, transactionKey))
-
-        evtable = dictfetchall(new_cur)
-
-        for ev in evtable:
-            evstat = eventservicestatelist[ev['STATUS']]
-            sumd['eventservicestatus'][evstat] = ev['COUNTSTAT']
-            # for ev in evtable:
-            #    evstat = eventservicestatelist[ev['STATUS']]
-            #    if evstat not in sumd['eventservicestatus']:
-            #        sumd['eventservicestatus'][evstat] = 0
-            #    sumd['eventservicestatus'][evstat] += 1
-            #    #esjobdict[ev['PANDAID']][evstat] += 1
+        sumd['eventservicestatus'] = get_event_status_summary(esjobs, eventservicestatelist)
 
     ## convert to ordered lists
     suml = []
@@ -1872,10 +1834,6 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 for i, bin in enumerate(bins):
                     iteml.append({'kname': str(ranges[i]) + '-' + str(ranges[i+1]), 'kvalue':bin})
 
-#        elif f == 'pilotversion':
-#            pilotver =
-#            iteml.append({'kname': , 'kvalue':bin})
-
         else:
             if f in ('priorityrange', 'jobsetrange'):
                 skys = []
@@ -1885,12 +1843,15 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 kys = []
                 for sk in skys:
                     kys.append(sk['key'])
-            elif f in ('attemptnr', 'jeditaskid', 'taskid','noutputdatafiles','actualcorecount','corecount'):
+            elif f in numeric_fields:
                 kys = sorted(kys, key=lambda x: int(x))
             else:
                 kys = sorted(kys)
             for ky in kys:
-                iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
+                if ky == -1:
+                    iteml.append({'kname': 'Not specified', 'kvalue': sumd[f][ky]})
+                else:
+                    iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
             if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
                 iteml = sorted(iteml, key=lambda x: x['kvalue'], reverse=True)
             elif f not in ('priorityrange', 'jobsetrange', 'attemptnr', 'jeditaskid', 'taskid','noutputdatafiles','actualcorecount'):
