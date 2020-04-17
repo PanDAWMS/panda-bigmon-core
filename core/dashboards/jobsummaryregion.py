@@ -20,6 +20,9 @@ from core.schedresource.models import SchedconfigJson
 from core.harvester.models import HarvesterWorkerStats
 from core.pandajob.models import PandaJob
 
+from core.settings.base import PANDA_SCHEMA
+
+
 _logger = logging.getLogger('bigpandamon')
 
 
@@ -362,25 +365,25 @@ def get_job_summary_split(query, extra):
             extra_str += " and (" + fields[qn] + "= '" + qvs + "' )"
 
     # get jobs groupings
-    query_raw = """
+    query_raw = ("""
         select computingsite, resource_type as resourcetype, prodsourcelabel, jobstatus, count(pandaid) as count, sum(rcores) as rcores
         from  (
         select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime, 0 as rcores
-        from ATLAS_PANDA.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and {1}
+        from """+PANDA_SCHEMA+""".JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and {1}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
         case when jobstatus = 'running' then actualcorecount else 0 end as rcores
-        from ATLAS_PANDA.jobsactive4 jav4 where {1}
+        from """+PANDA_SCHEMA+""".jobsactive4 jav4 where {1}
         union
         select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores
-        from ATLAS_PANDA.jobswaiting4 jw4 where {1}
+        from """+PANDA_SCHEMA+""".jobswaiting4 jw4 where {1}
         union
         select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores
-        from ATLAS_PANDA.jobsdefined4 jd4  where {1}
+        from """+PANDA_SCHEMA+""".jobsdefined4 jd4  where {1}
         )
         GROUP BY computingsite, prodsourcelabel, resource_type, jobstatus
         order by computingsite, prodsourcelabel, resource_type, jobstatus
-    """.format(query['modificationtime__castdate__range'][0], extra_str)
+    """).format(query['modificationtime__castdate__range'][0], extra_str)
 
     cur = connection.cursor()
     cur.execute(query_raw)

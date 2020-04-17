@@ -5,6 +5,8 @@ User specific functions
 """
 from django.db import connection
 from urllib.parse import urlencode, unquote, urlparse, urlunparse, parse_qs
+from core.settings.base import ATLAS_DEPLOYMENT, BP_MON_SCHEMA, PANDA_SCHEMA, PANDAARCH_SCHEMA
+
 
 def get_relevant_links(userid, fields):
 
@@ -24,7 +26,7 @@ def get_relevant_links(userid, fields):
               case when url like '%%timestamp=%%' then SUBSTR(url,1,INSTR(url,'timestamp=',1,1)-2)
                    when url like '%%job?pandaid=%%' then REPLACE(url,'job?pandaid=','job/')
                    when url like '%%task?jeditaskid=%%' then REPLACE(url,'task?jeditaskid=','task/') else url end as url
-              from ATLAS_PANDABIGMON.visits
+              from """+BP_MON_SCHEMA+""".visits
               where USERID=%i and url not like '%%/user/%%' and INSTR(url,'/',1,4) != 0
               order by time DESC)
             group by pagegroup,pagename,url)

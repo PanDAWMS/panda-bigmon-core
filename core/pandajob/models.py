@@ -9,6 +9,7 @@
 # into your database.
 
 from .columns_config import COLUMNS, ORDER_COLUMNS, COL_TITLES, FILTERS
+from core.settings.base import BP_MON_SCHEMA
 
 
 from django.db import models
@@ -31,13 +32,13 @@ class Getfailedjobshspec(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID')
     timeinhepspec = models.FloatField(default=None, db_column='TIMEINHEPSPEC')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."GETFAILEDJOBSHSPEC"'
+        db_table = u'"'+BP_MON_SCHEMA+'"."GETFAILEDJOBSHSPEC"'
 
 class Getfailedjobshspecarch(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID')
     timeinhepspec = models.FloatField(default=None, db_column='TIMEINHEPSPEC')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."GETFAILEDJOBSHSPECARCH"'
+        db_table = u'"'+BP_MON_SCHEMA+'"."GETFAILEDJOBSHSPECARCH"'
 
 
 class GetRWWithPrioJedi3DAYS(models.Model):
@@ -104,14 +105,14 @@ class GetRWWithPrioJedi3DAYS(models.Model):
         return self.__dict__[name]
 
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."GETRWWITHPRIOJEDI3DAYS"'
+        db_table = u'"'+BP_MON_SCHEMA+'"."GETRWWITHPRIOJEDI3DAYS"'
 
 
 class RemainedEventsPerCloud3dayswind(models.Model):
     cloud = models.CharField(max_length=10, db_column='CLOUD', blank=True)
     nrem = models.BigIntegerField(db_column='REMNORMEV')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."REMEVPCL3DAYSWIND"'
+        db_table = u'"'+BP_MON_SCHEMA+'"."REMEVPCL3DAYSWIND"'
 
 class JobsWorldView(models.Model):
     nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
@@ -119,7 +120,7 @@ class JobsWorldView(models.Model):
     jobstatus = models.CharField(max_length=45, db_column='JOBSTATUS') # Field name made lowercase.
     countjobsinstate = models.IntegerField(db_column='COUNTJOBSINSTATE')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEW"'
+        db_table = u'"'+BP_MON_SCHEMA+'"."JOBSWORLDVIEW"'
 
 class CombinedWaitActDefArch4(models.Model):
     pandaid = models.BigIntegerField(db_column='PANDAID')
@@ -135,7 +136,7 @@ class CombinedWaitActDefArch4(models.Model):
     isarchive = models.IntegerField(db_column='ISARCHIVE')
     username = models.CharField(max_length=168, db_column='USERNAME')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."COMBINED_WAIT_ACT_DEF_ARCH4"'
+        db_table = u'"'+BP_MON_SCHEMA+'"."COMBINED_WAIT_ACT_DEF_ARCH4"'
 
 class JobsWorldViewTaskType(models.Model):
     nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
@@ -145,7 +146,7 @@ class JobsWorldViewTaskType(models.Model):
     tasktype = models.CharField(max_length=64, db_column='TASKTYPE')
     es = models.IntegerField(db_column='ES')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEWTASKTYPE"'
+        db_table = u'"'+BP_MON_SCHEMA+'"."JOBSWORLDVIEWTASKTYPE"'
 
 
 class PandaJob(models.Model):

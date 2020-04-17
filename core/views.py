@@ -109,7 +109,7 @@ from core.libs.bpuser import get_relevant_links
 from core.libs.site import get_running_jobs_stats
 from django.template.context_processors import csrf
 
-from core.settings.base import ATLAS_DEPLOYMENT, BP_MON_SCHEMA, PANDA_SCHEMA, PANDAARCH_SCHEMA
+from core.settings.base import DEFT_SCHEMA, ATLAS_DEPLOYMENT, BP_MON_SCHEMA, PANDA_SCHEMA, PANDAARCH_SCHEMA
 
 @register.filter(takes_context=True)
 def get_count(dict, key):
@@ -443,17 +443,14 @@ def initRequest(request, callselfmon = True):
             request.session['username'] = userrec[0]['name']
 
     ENV['MON_VO'] = ''
-    request.session['viewParams']['MON_VO'] = ''
-    if 'HTTP_HOST' in request.META:
-        for vo in VOLIST:
-            if request.META['HTTP_HOST'].startswith(vo):
-                VOMODE = vo
-    else:
-        VOMODE = 'atlas'
 
-    ## If DB is Oracle, set vomode to atlas
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+    if ATLAS_DEPLOYMENT:
         VOMODE = 'atlas'
+    else:
+        VOMODE = ''
+
+
+
     ENV['MON_VO'] = VONAME[VOMODE]
     request.session['viewParams']['MON_VO'] = ENV['MON_VO']
     global errorFields, errorCodes, errorStages
@@ -1817,7 +1814,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
 
-        new_cur.execute("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM (SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */ PANDAID, STATUS FROM "+PANDA_SCHEMA+".JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY = %i AND  PANDAID = ID) t1 GROUP BY STATUS" % (tmpTableName, transactionKey))
+        new_cur.execute(("SELECT STATUS, COUNT(STATUS) AS COUNTSTAT FROM (SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */ PANDAID, STATUS FROM "+PANDA_SCHEMA+".JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY = %i AND  PANDAID = ID) t1 GROUP BY STATUS") % (tmpTableName, transactionKey))
 
         evtable = dictfetchall(new_cur)
 
@@ -2315,8 +2312,8 @@ def jobParamList(request):
 
 def jobSummaryDictProto(request, cutsummary, requestToken):
     esjobdict = []
-    sqlRequest = "SELECT ATTR, ATTR_VALUE, NUM_OCCUR FROM "+BP_MON_SCHEMA+".JOBSPAGE_CUMULATIVE_RESULT WHERE " \
-                 "REQUEST_TOKEN=%s AND ATTR_VALUE <> 'END' ORDER BY ATTR, ATTR_VALUE;)" % str(requestToken)
+    sqlRequest = ("SELECT ATTR, ATTR_VALUE, NUM_OCCUR FROM "+BP_MON_SCHEMA+".JOBSPAGE_CUMULATIVE_RESULT WHERE " \
+                 "REQUEST_TOKEN=%s AND ATTR_VALUE <> 'END' ORDER BY ATTR, ATTR_VALUE;)") % str(requestToken)
     cur = connection.cursor()
     cur.execute(sqlRequest)
     rawsummary = cur.fetchall()
@@ -2579,7 +2576,7 @@ def getJobList(request,requesttoken=None):
     njobsmax = display_limit
     cur = connection.cursor()
     if 'requesttoken' in request.GET:
-        sqlRequest = "SELECT * FROM "+BP_MON_SCHEMA+".JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % request.GET[
+        sqlRequest = ("SELECT * FROM "+BP_MON_SCHEMA+".JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s") % request.GET[
         'requesttoken']
         cur.execute(sqlRequest)
         rawsummary = cur.fetchall()
@@ -2587,7 +2584,7 @@ def getJobList(request,requesttoken=None):
         #     request.session['requesttoken'] = request.REQUEST[
         #     'requesttoken']
     else:
-        sqlRequest = "SELECT * FROM "+BP_MON_SCHEMA+".JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s" % int(requesttoken)
+        sqlRequest = ("SELECT * FROM "+BP_MON_SCHEMA+".JOBSPAGE_CUMULATIVE_RESULT WHERE REQUEST_TOKEN=%s") % int(requesttoken)
         cur.execute(sqlRequest)
         rawsummary = cur.fetchall()
         time.sleep(10)
@@ -3071,20 +3068,20 @@ def jobList(request, mode=None, param=None):
             tk = None
 
         if jeditaskid and datasetid and fileid:
-            extraquery_files += """
+            extraquery_files += ("""
                 pandaid in (
                 (select pandaid from """+PANDA_SCHEMA+""".filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
                 union all
                 (select pandaid from """+PANDAARCH_SCHEMA+""".filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
-                ) """.format(jeditaskid, datasetid, fileid, jeditaskid, datasetid, fileid)
+                ) """).format(jeditaskid, datasetid, fileid, jeditaskid, datasetid, fileid)
 
         if 'ecstate' in request.session['requestParams'] and tk and datasetid:
-            extraquery_files += """
+            extraquery_files += ("""
                 pandaid in (
                     (select pandaid from """+PANDA_SCHEMA+""".filestable4 where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from """+BP_MON_SCHEMA+""".TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
                     union all 
                     (select pandaid from """+PANDAARCH_SCHEMA+""".filestable_arch where jeditaskid = {} and datasetid in ( {} ) and fileid in (select id from """+BP_MON_SCHEMA+""".TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
-                    ) """.format(jeditaskid, datasetid, tk, jeditaskid, datasetid, tk)
+                    ) """).format(jeditaskid, datasetid, tk, jeditaskid, datasetid, tk)
         # warning['jobsforfiles'] = 'Only jobs for last 4 days are shown. Support of filtering older jobs associated with files will be implemented soon.'
     elif 'jeditaskid' in request.session['requestParams'] and 'datasetid' in request.session['requestParams']:
         fileid = None
@@ -3097,12 +3094,12 @@ def jobList(request, mode=None, param=None):
         else:
             jeditaskid = None
         if datasetid and jeditaskid:
-            extraquery_files += """
+            extraquery_files += ("""
                 pandaid in (
                 (select pandaid from """+PANDA_SCHEMA+""".filestable4 where jeditaskid = {} and datasetid = {} )
                 union all
                 (select pandaid from """+PANDAARCH_SCHEMA+""".filestable_arch where jeditaskid = {} and datasetid = {})
-                ) """.format(jeditaskid, datasetid, jeditaskid, datasetid)
+                ) """).format(jeditaskid, datasetid, jeditaskid, datasetid)
     else:
         fileid = None
 
@@ -4231,7 +4228,7 @@ def eventsInfo(request, mode=None, param=None):
 
     cur = connection.cursor()
     cur.execute(
-        "select sum(decode(c.startevent,NULL,c.nevents,endevent-startevent+1)) nevents,c.status from "+PANDA_SCHEMA+".jedi_datasets d,"+PANDA_SCHEMA+".jedi_dataset_contents c where d.jeditaskid=c.jeditaskid and d.datasetid=c.datasetid and d.jeditaskid=%s and d.type in ('input','pseudo_input') and d.masterid is null group by c.status;" % (
+        ("select sum(decode(c.startevent,NULL,c.nevents,endevent-startevent+1)) nevents,c.status from "+PANDA_SCHEMA+".jedi_datasets d,"+PANDA_SCHEMA+".jedi_dataset_contents c where d.jeditaskid=c.jeditaskid and d.datasetid=c.datasetid and d.jeditaskid=%s and d.type in ('input','pseudo_input') and d.masterid is null group by c.status;") % (
         jeditaskid))
     events = cur.fetchall()
     cur.close()
@@ -6855,12 +6852,12 @@ def worldhs06s(request):
         roundflag = True
 
     cur = connection.cursor()
-    cur.execute("SELECT * FROM table("+BP_MON_SCHEMA+".GETHS06SSUMMARY('%s'))" % condition)
+    cur.execute(("SELECT * FROM table("+BP_MON_SCHEMA+".GETHS06SSUMMARY('%s'))") % condition)
     hspersite = cur.fetchall()
     cur.close()
 
     newcur = connection.cursor()
-    newcur.execute("SELECT * FROM table("+BP_MON_SCHEMA+".GETHS06STOTSUMMARY('%s'))" % condition)
+    newcur.execute(("SELECT * FROM table("+BP_MON_SCHEMA+".GETHS06STOTSUMMARY('%s'))") % condition)
     hspernucleus = newcur.fetchall()
     newcur.close()
 
@@ -7580,7 +7577,7 @@ def taskList(request):
         else:
             hashtaglistquery = "'" + request.session['requestParams']['hashtag'] + "'"
         hashtaglistquery = hashtaglistquery[:-1] if hashtaglistquery[-1] == ',' else hashtaglistquery
-        extraquery = """JEDITASKID IN ( SELECT HTT.TASKID FROM ATLAS_DEFT.T_HASHTAG H, ATLAS_DEFT.T_HT_TO_TASK HTT WHERE JEDITASKID = HTT.TASKID AND H.HT_ID = HTT.HT_ID AND H.HASHTAG IN ( %s ))""" % (hashtaglistquery)
+        extraquery = ("""JEDITASKID IN ( SELECT HTT.TASKID FROM """+DEFT_SCHEMA+""".T_HASHTAG H, """+DEFT_SCHEMA+""".T_HT_TO_TASK HTT WHERE JEDITASKID = HTT.TASKID AND H.HT_ID = HTT.HT_ID AND H.HASHTAG IN ( %s ))""") % (hashtaglistquery)
 
     if 'tape' in  request.session['requestParams']:
         extraquery = """JEDITASKID IN (SELECT TASKID FROM ATLAS_DEFT.t_production_task where PRIMARY_INPUT in (select DATASET FROM ATLAS_DEFT.T_DATASET_STAGING) )"""
@@ -7628,13 +7625,13 @@ def taskList(request):
     setCacheEntry(request, transactionKey, taskl, 60 * 20, isData=True)
     new_cur = connection.cursor()
     new_cur.execute(
-        """
+        ("""
         select htt.TASKID,
             LISTAGG(h.hashtag, ',') within GROUP (order by htt.taskid) as hashtags
-        from ATLAS_DEFT.T_HASHTAG h, ATLAS_DEFT.T_HT_TO_TASK htt , %s tmp
+        from """+DEFT_SCHEMA+""".T_HASHTAG h, """+DEFT_SCHEMA+""".T_HT_TO_TASK htt , %s tmp
         where TRANSACTIONKEY=%i and h.ht_id = htt.ht_id and tmp.id = htt.taskid
         GROUP BY htt.TASKID
-        """ % (tmpTableName, transactionKey)
+        """) % (tmpTableName, transactionKey)
     )
     taskhashtags = dictfetchall(new_cur)
 
@@ -7811,9 +7808,9 @@ def taskList(request):
 
 #        connection.commit()
         new_cur.execute(
-            """
+            ("""
             SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  PANDAID,STATUS FROM """+PANDA_SCHEMA+""".JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID
-            """ % (tmpTableName, transactionKey)
+            """) % (tmpTableName, transactionKey)
         )
         evtable = dictfetchall(new_cur)
 
@@ -8178,7 +8175,7 @@ def getErrorSummaryForEvents(request):
 
         new_cur = connection.cursor()
         if transactionKey:
-            eequery = """
+            eequery = ("""
             select error_code,
               sum(neventsinjob) as nevents,
               sum(nerrorsinjob) as nerrors,
@@ -8197,9 +8194,9 @@ def getErrorSummaryForEvents(request):
                 join
                   (select ID from {} where TRANSACTIONKEY={} ) j
                 on e.pandaid = j.ID))
-            group by error_code""".format(jeditaskid, tmpTableName, transactionKey)
+            group by error_code""").format(jeditaskid, tmpTableName, transactionKey)
         elif transactionKeyDJ:
-            eequery = """
+            eequery = ("""
             select error_code,
               sum(neventsinjob) as nevents,
               sum(nerrorsinjob) as nerrors,
@@ -8217,7 +8214,7 @@ def getErrorSummaryForEvents(request):
                     and pandaid not in ( select ID from {} where TRANSACTIONKEY={} )
                   group by error_code, pandaid ) e
                 ))
-            group by error_code""".format(jeditaskid, tmpTableName, transactionKeyDJ)
+            group by error_code""").format(jeditaskid, tmpTableName, transactionKeyDJ)
         else:
             data = {"error": "no failed events found"}
             return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
@@ -8227,7 +8224,7 @@ def getErrorSummaryForEvents(request):
         # eventsErrors = JediEvents.objects.filter(**equery).values('error_code').annotate(njobs=Count('pandaid',distinct=True),nevents=Sum('def_max_eventid', field='def_max_eventid-def_min_eventid+1'))
         new_cur = connection.cursor()
         new_cur.execute(
-            """select error_code, sum(neventsinjob) as nevents, sum(nerrorsinjob) as nerrors , count(pandaid) as njobs,
+            ("""select error_code, sum(neventsinjob) as nevents, sum(nerrorsinjob) as nerrors , count(pandaid) as njobs,
                   LISTAGG(case when aff <= 10 then pandaid end,',' ) WITHIN group (order by error_code, aff) as pandaidlist
                   from (select pandaid, error_code,
                         sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) as neventsinjob,
@@ -8237,7 +8234,7 @@ def getErrorSummaryForEvents(request):
                           where jeditaskid=%i and ERROR_CODE is not null
                           group by error_code, pandaid)
                   group by error_code
-            """ % (jeditaskid)
+            """) % (jeditaskid)
         )
         eventsErrorsUP = dictfetchall(new_cur)
     else:
@@ -8606,7 +8603,7 @@ def taskInfo(request, jeditaskid=0):
                 eventsdict.append(eventstatus)
 
             if mode=='nodrop':
-                sqlRequest = """
+                sqlRequest = ("""
                 WITH jedi_ev AS 
                 (
                 SELECT /*+ INDEX_RS_ASC(e JEDI_EVENTS_PK) NO_INDEX_FFS(e JEDI_EVENTS_PK) */ 
@@ -8631,7 +8628,7 @@ def taskInfo(request, jeditaskid=0):
                 jobs.pandaid = jedi_ev.pandaid 
                 GROUP BY 
                 jobs.computingsite, jobs.COMPUTINGELEMENT, jedi_ev.objstore_id, jedi_ev.status
-                """.format(jeditaskid, jeditaskid, jeditaskid)
+                """).format(jeditaskid, jeditaskid, jeditaskid)
                 cur = connection.cursor()
                 cur.execute(sqlRequest)
                 ossummary = cur.fetchall()
@@ -9567,7 +9564,7 @@ def getEventsDetails(request, mode='drop', jeditaskid=0):
                                                                                                transactionKey)
         else:
             return HttpResponse(status=404)
-    sqlRequest = """
+    sqlRequest = ("""
         select /*+ INDEX_RS_ASC(e JEDI_EVENTS_PK) NO_INDEX_FFS(e JEDI_EVENTS_PK) */
           j.computingsite, j.COMPUTINGELEMENT,e.objstore_id,e.status,count(e.status) as nevents
           from """+PANDA_SCHEMA+""".jedi_events e
@@ -9577,7 +9574,7 @@ def getEventsDetails(request, mode='drop', jeditaskid=0):
                 select computingsite, computingelement,pandaid from """+PANDAARCH_SCHEMA+""".JOBSARCHIVED where jeditaskid={} {}
                 ) j
             on (e.jeditaskid={} and e.pandaid=j.pandaid)
-        group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""".format(jeditaskid, extrastr, jeditaskid, extrastr, jeditaskid)
+        group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""").format(jeditaskid, extrastr, jeditaskid, extrastr, jeditaskid)
     cur = connection.cursor()
     cur.execute(sqlRequest)
     ossummary = cur.fetchall()
@@ -9601,7 +9598,7 @@ def taskchain(request):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     new_cur = connection.cursor()
-    taskChainSQL = "SELECT * FROM table("+BP_MON_SCHEMA+".GETTASKSCHAIN_TEST(%i))" % jeditaskid
+    taskChainSQL = ("SELECT * FROM table("+BP_MON_SCHEMA+".GETTASKSCHAIN_TEST(%i))") % jeditaskid
     new_cur.execute(taskChainSQL)
     taskChain = new_cur.fetchall()
     results = ["".join(map(str, r)) for r in taskChain]
@@ -9914,13 +9911,13 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
 
             jeditaskidstr = str(newquery['jeditaskid'])
             new_cur.execute(
-                """
+                ("""
                 SELECT /*+ cardinality(tmp 10) INDEX_RS_ASC(ev JEDI_EVENTS_PK) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  
                     SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS EVCOUNT, STATUS 
                 FROM """+PANDA_SCHEMA+""".JEDI_EVENTS ev, %s 
                 WHERE TRANSACTIONKEY=%i AND PANDAID = ID AND JEDITASKID=%s 
                 GROUP BY STATUS
-                """ % (tmpTableName, transactionKey, jeditaskidstr)
+                """) % (tmpTableName, transactionKey, jeditaskidstr)
             )
 
             evtable = dictfetchall(new_cur)
@@ -11490,7 +11487,7 @@ def ttc(request):
     if len(taskevents) > 0:
         taskev = taskevents[0]
     cur = connection.cursor()
-    cur.execute("SELECT * FROM table("+BP_MON_SCHEMA+".GETTASKPROFILE('%s'))" % taskrec['jeditaskid'])
+    cur.execute(("SELECT * FROM table("+BP_MON_SCHEMA+".GETTASKPROFILE('%s'))") % taskrec['jeditaskid'])
     taskprofiled = cur.fetchall()
     cur.close()
 
@@ -12736,7 +12733,7 @@ def g4exceptions(request):
             tmpTableName, job['pandaid'], transactionKey))  # Backend dependable
  #       connection.commit()
         new_cur.execute(
-            "SELECT JOBPARAMETERS, PANDAID FROM "+PANDA_SCHEMA+".JOBPARAMSTABLE WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
+            ("SELECT JOBPARAMETERS, PANDAID FROM "+PANDA_SCHEMA+".JOBPARAMSTABLE WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)") % (
             tmpTableName, transactionKey))
         mrecs = dictfetchall(new_cur)
 #        connection.commit()
@@ -13027,20 +13024,20 @@ def getBadEventsForTask(request):
     data = []
     cursor = connection.cursor()
 
-    plsql = """select DATASETID, ERROR_CODE, RTRIM(XMLAGG(XMLELEMENT(E,DEF_MIN_EVENTID,',').EXTRACT('//text()') 
+    plsql = ("""select DATASETID, ERROR_CODE, RTRIM(XMLAGG(XMLELEMENT(E,DEF_MIN_EVENTID,',').EXTRACT('//text()') 
             ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb,
             RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDAIDS, 
             count(*) from 
-            """+PANDA_SCHEMA+""".jedi_events where jeditaskid=%d and attemptnr = 1 group by DATASETID, ERROR_CODE """ % jeditaskid
+            """+PANDA_SCHEMA+""".jedi_events where jeditaskid=%d and attemptnr = 1 group by DATASETID, ERROR_CODE """) % jeditaskid
 
     if mode == 'drop':
-        plsql = """select DATASETID, ERROR_CODE, RTRIM(XMLAGG(XMLELEMENT(E,DEF_MIN_EVENTID,',').EXTRACT('//text()') 
+        plsql = ("""select DATASETID, ERROR_CODE, RTRIM(XMLAGG(XMLELEMENT(E,DEF_MIN_EVENTID,',').EXTRACT('//text()') 
             ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb, 
             RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDAIDS,
             count(*) from 
             """+PANDA_SCHEMA+""".jedi_events where jeditaskid=%d and attemptnr = 1 
             and PANDAID IN (SELECT PANDAID FROM """+PANDA_SCHEMA+""".JEDI_DATASET_CONTENTS where jeditaskid=%d and type in ('input', 'pseudo_input'))
-            group by DATASETID, ERROR_CODE """ % (jeditaskid, jeditaskid)
+            group by DATASETID, ERROR_CODE """) % (jeditaskid, jeditaskid)
 
     cursor.execute(plsql)
     evtable = cursor.fetchall()
@@ -13066,10 +13063,10 @@ def getEventsChunks(request):
 
     # We reconstruct here jobsets retries
 
-    sqlRequest = """SELECT OLDPANDAID, NEWPANDAID, MAX(LEV) as LEV, MIN(PTH) as PTH FROM (
+    sqlRequest = ("""SELECT OLDPANDAID, NEWPANDAID, MAX(LEV) as LEV, MIN(PTH) as PTH FROM (
     SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV, CONNECT_BY_ISLEAF as IL, SYS_CONNECT_BY_PATH(OLDPANDAID, ',') PTH FROM (
     SELECT OLDPANDAID, NEWPANDAID FROm """+PANDA_SCHEMA+""".JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=%s and RELATIONTYPE='jobset_retry')t1 CONNECT BY OLDPANDAID=PRIOR NEWPANDAID
-    )t2 GROUP BY OLDPANDAID, NEWPANDAID;""" % str(jeditaskid)
+    )t2 GROUP BY OLDPANDAID, NEWPANDAID;""") % str(jeditaskid)
 
     cur = connection.cursor()
     cur.execute(sqlRequest)

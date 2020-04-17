@@ -22,7 +22,7 @@ from django.contrib.auth.models import AbstractUser
 #import uuid
 #from hashlib import sha1
 #import hmac
-from core.settings.base import BP_MON_SCHEMA
+from core.settings.base import BP_MON_SCHEMA, PANDA_SCHEMA
 
 from django.db import models
 models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
@@ -687,8 +687,7 @@ class JobsStatuslog(models.Model):
     modificationhost = models.CharField(max_length=384, db_column='MODIFICATIONHOST', blank=True)
     modiftime_extended = models.DateTimeField(db_column='MODIFTIME_EXTENDED')
     class Meta:
-        db_table = u'"ATLAS_PANDA"."JOBS_STATUSLOG"'
-
+        db_table = u'"' + PANDA_SCHEMA + '"."JOBS_STATUSLOG"'
 
 class Jobsarchived4WnlistStats(models.Model):
     modificationtime = models.DateTimeField(primary_key=True, db_column='MODIFICATIONTIME')

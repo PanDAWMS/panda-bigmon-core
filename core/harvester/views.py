@@ -269,10 +269,10 @@ def harvesters(request):
             limit = 100
             if 'limit' in request.session['requestParams']:
                 limit = request.session['requestParams']['limit']
-            sqlqueryjobs = """
+            sqlqueryjobs = ("""
             SELECT * FROM (SELECT * from """+PANDA_SCHEMA+""".harvester_rel_jobs_workers where harvesterid like '%s' and workerid in (SELECT workerid FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS
             where harvesterid like '%s' %s %s %s %s %s %s %s)  ORDER by lastupdate DESC) WHERE  rownum <= %s
-            """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
+            """) % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
             computingelement, limit)
 
             cur = connection.cursor()
@@ -355,7 +355,7 @@ def harvesters(request):
             hours = ''
             defaulthours = int(request.session['requestParams']['days']) * 24
 
-        sqlquery = """
+        sqlquery = ("""
         SELECT
         ii.harvester_id,
         ii.description,
@@ -369,7 +369,7 @@ def harvesters(request):
         FROM
         """+PANDA_SCHEMA+""".harvester_instances ii INNER JOIN 
         """+PANDA_SCHEMA+""".harvester_workers ww on ww.harvesterid = ii.harvester_id {0} and ii.harvester_id like '{1}'
-        """.format(hours, str(instance))
+        """).format(hours, str(instance))
 
         cur = connection.cursor()
         cur.execute(sqlquery)
@@ -380,7 +380,7 @@ def harvesters(request):
             instanceinfo = dict(zip(columns, info))
 
         if len(qinstanceinfo) == 0:
-            sqlquery = """
+            sqlquery = ("""
             SELECT
             ii.harvester_id,
             ii.description,
@@ -396,7 +396,7 @@ def harvesters(request):
             """+PANDA_SCHEMA+""".harvester_workers ww on ww.harvesterid = ii.harvester_id and ww.submittime = (select max(submittime) 
         from """+PANDA_SCHEMA+""".harvester_workers 
         where harvesterid like '{0}') and ii.harvester_id like '{0}'
-            """.format(str(instance))
+            """).format(str(instance))
 
             cur = connection.cursor()
             cur.execute(sqlquery)
@@ -416,7 +416,7 @@ def harvesters(request):
             hours = ''
             defaulthours = daysdelta * 24
 
-        harvesterworkersquery = """SELECT * FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS where harvesterid = '{0}' {1} {2} {3} {4} {5} {6} {7}""".format(str(instance), status, computingsite, workerid, lastupdateCache, days, hours, resourcetype, computingelement)
+        harvesterworkersquery = ("""SELECT * FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS where harvesterid = '{0}' {1} {2} {3} {4} {5} {6} {7}""").format(str(instance), status, computingsite, workerid, lastupdateCache, days, hours, resourcetype, computingelement)
         harvester_dicts = query_to_dicts(harvesterworkersquery)
 
         harvester_list = []
@@ -502,10 +502,10 @@ def harvesters(request):
             computingelement = ''
             instance = ''
             if 'instance' not in request.session['requestParams']:
-                sqlqueryinstances = """
+                sqlqueryinstances = ("""
                        SELECT harvesterid
                        FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS where computingsite like '%s' group by harvesterid
-                       """ % (
+                       """) % (
                     request.session['requestParams']['computingsite'])
                 cur = connection.cursor()
                 cur.execute(sqlqueryinstances)
@@ -546,10 +546,10 @@ def harvesters(request):
             limit = 100
             if 'limit' in request.session['requestParams']:
                 limit = request.session['requestParams']['limit']
-            sqlqueryjobs = """
+            sqlqueryjobs = ("""
                    SELECT * FROM (SELECT * from """+PANDA_SCHEMA+""".harvester_rel_jobs_workers where harvesterid in (%s) and workerid in (SELECT workerid FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS
                    where harvesterid in (%s) %s %s %s %s %s %s %s)  ORDER by lastupdate DESC) WHERE  rownum <= %s
-                   """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
+                   """) % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
                           computingelement, limit)
 
             cur = connection.cursor()
@@ -600,11 +600,11 @@ def harvesters(request):
             URL += '&days=' + str(request.session['requestParams']['days'])
             hours = ''
             defaulthours = int(request.session['requestParams']['days']) * 24
-        sqlquery = """
+        sqlquery = ("""
           SELECT * FROM """+BP_MON_SCHEMA+""".HARVESTERWORKERS
           where computingsite like '{0}' {1} {2} {3} {4} and ROWNUM<=1
           order by workerid DESC
-          """.format(str(computingsite),status, workerid, resourcetype,computingelement)
+          """).format(str(computingsite),status, workerid, resourcetype,computingelement)
 
         workersList = []
         cur = connection.cursor()
@@ -621,7 +621,7 @@ def harvesters(request):
             message ="""Computingsite is not found OR no workers for this computingsite or time period. Try using this <a href =/harvesters/?computingsite=%s&days=365>link (last 365 days)</a>""" % (computingsite)
             return HttpResponse(json.dumps({'message':  message}),
                             content_type='text/html')
-        harvesterworkersquery = """SELECT * FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS where computingsite = '{0}' {1} {2} {3} {4} {5} """.format(str(computingsite), status, workerid, days, hours, resourcetype, computingelement)
+        harvesterworkersquery = ("""SELECT * FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS where computingsite = '{0}' {1} {2} {3} {4} {5} """).format(str(computingsite), status, workerid, days, hours, resourcetype, computingelement)
         harvester_dicts = query_to_dicts(harvesterworkersquery)
 
         harvester_list = []
@@ -706,30 +706,30 @@ def harvesters(request):
             computingelement = """AND computingelement like '%s'""" %(str(request.session['requestParams']['computingelement']))
             URL += '&computingelement=' + str(request.session['requestParams']['computingelement'])
 
-        sqlharvester = """
+        sqlharvester = ("""
           SELECT harvesterid,count(*) FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS
           where (%s) %s %s %s %s group by harvesterid
-          """ % (jobsworkersquery, status,  workerid, resourcetype, computingelement)
+          """) % (jobsworkersquery, status,  workerid, resourcetype, computingelement)
 
-        sqlquerystatus = """
+        sqlquerystatus = ("""
           SELECT status,count(*) FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS
           where (%s) %s %s %s %s group by status
-          """ % (jobsworkersquery, status,  workerid, resourcetype, computingelement)
+          """) % (jobsworkersquery, status,  workerid, resourcetype, computingelement)
 
-        sqlqueryresource = """
+        sqlqueryresource = ("""
         SELECT RESOURCETYPE,count(*) FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS
         where (%s) %s %s %s %s group by RESOURCETYPE
-        """ % (jobsworkersquery, status, workerid, resourcetype, computingelement)
+        """) % (jobsworkersquery, status, workerid, resourcetype, computingelement)
 
-        sqlqueryce = """
+        sqlqueryce = ("""
         SELECT COMPUTINGELEMENT,count(*) FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS
         where (%s) %s %s %s %s group by COMPUTINGELEMENT
-        """ % (jobsworkersquery, status, workerid, resourcetype, computingelement)
+        """) % (jobsworkersquery, status, workerid, resourcetype, computingelement)
 
-        sqlquerycomputingsite = """
+        sqlquerycomputingsite = ("""
            SELECT COMPUTINGSITE,count(*) FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS
            where (%s) %s %s %s %s  group by COMPUTINGSITE
-           """ % (jobsworkersquery, status, workerid, resourcetype, computingelement)
+           """) % (jobsworkersquery, status, workerid, resourcetype, computingelement)
 
         cur = connection.cursor()
 
@@ -925,11 +925,11 @@ def workersJSON(request):
 
             fields = ','.join(generalWorkersFields)
 
-            sqlquery = """
+            sqlquery = ("""
             SELECT * FROM (SELECT %s FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS
             where harvesterid like '%s' %s %s %s %s %s %s %s %s
             order by submittime DESC) WHERE ROWNUM<=%s
-            """ % (fields, str(instance), status, computingsite, workerid, lastupdateCache, days, hours, resourcetype, computingelement, display_limit_workers)
+            """) % (fields, str(instance), status, computingsite, workerid, lastupdateCache, days, hours, resourcetype, computingelement, display_limit_workers)
 
             cur = connection.cursor()
             cur.execute(sqlquery)
@@ -959,11 +959,11 @@ def workersJSON(request):
                                     'diagmessage', 'njobs', 'computingelement','jdl']
 
             fields = ','.join(generalWorkersFields)
-            sqlquery = """
+            sqlquery = ("""
              SELECT * FROM (SELECT %s FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS
              where computingsite like '%s' %s %s %s %s %s %s
              order by  submittime  DESC) WHERE ROWNUM <= %s
-             """ % (fields, str(computingsite), status,  workerid, days, hours, resourcetype, computingelement, display_limit_workers)
+             """) % (fields, str(computingsite), status,  workerid, days, hours, resourcetype, computingelement, display_limit_workers)
 
             workers = connection.cursor()
             workers.execute(sqlquery)
@@ -1000,11 +1000,11 @@ def workersJSON(request):
                                     'diagmessage', 'njobs', 'computingelement','jdl']
 
             fields = ','.join(generalWorkersFields)
-            sqlquery = """
+            sqlquery = ("""
                 SELECT * FROM(SELECT %s FROM """+PANDA_SCHEMA+""".HARVESTER_WORKERS
                 where (%s) %s %s %s %s
                 order by submittime DESC) WHERE ROWNUM<=%s
-                """ % (fields, jobsworkersquery, status,  workerid, resourcetype,computingelement, display_limit_workers)
+                """) % (fields, jobsworkersquery, status,  workerid, resourcetype,computingelement, display_limit_workers)
 
             cur = connection.cursor()
             cur.execute(sqlquery)
@@ -1065,7 +1065,7 @@ def getWorkersList(sqlWorkersList):
             """.format(tmpTableName, transactionKey, timezone.now().strftime("%Y-%m-%d"), sqlWorkersList)
     cur.execute(query)
 
-    query = """SELECT ID FROM """+BP_MON_SCHEMA+""".TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}""".format(transactionKey)
+    query = ("""SELECT ID FROM """+BP_MON_SCHEMA+""".TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}""").format(transactionKey)
 
     return transactionKey, query
 
@@ -1081,9 +1081,9 @@ def getWorkersByJobID(pandaid, instance=''):
     if instance !='':
        instancequery = """ AND harvesterid like '%s' """ %(instance)
 
-    sqlquery = """
+    sqlquery = ("""
     select harvesterid, workerid, pandaid from """+PANDA_SCHEMA+""".Harvester_Rel_Jobs_Workers %s %s
-    """ % (pandaid, instancequery)
+    """) % (pandaid, instancequery)
 
     cur = connection.cursor()
     cur.execute(sqlquery)

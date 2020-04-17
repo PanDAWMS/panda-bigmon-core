@@ -1,4 +1,6 @@
 from django.db import models
+from core.settings.base import PANDA_SCHEMA
+
 models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
                                  'primaryColumns', 'secondaryColumns', \
                                  'columnTitles', 'filterFields',)
@@ -27,7 +29,8 @@ class HarvesterWorkers(models.Model):
     computingelement = models.CharField(max_length=128, db_column='COMPUTINGELEMENT', null=False, blank=True)
     njobs = models.IntegerField( db_column='NJOBS', null=False)
     class Meta:
-        db_table = u'"ATLAS_PANDA"."HARVESTER_WORKERS"'
+        db_table = u'"' + PANDA_SCHEMA + '"."HARVESTER_WORKERS"'
+
 
 class HarvesterDialogs (models.Model):
     harvesterid = models.CharField(max_length=50, db_column='HARVESTER_ID', null=False, blank=True)
@@ -38,7 +41,9 @@ class HarvesterDialogs (models.Model):
     messagelevel = models.CharField(max_length=10, db_column='MESSAGELEVEL')
     diagmessage = models.CharField(max_length=500, db_column='DIAGMESSAGE')
     class Meta:
-        db_table = u'"ATLAS_PANDA"."HARVESTER_DIALOGS"'
+        db_table = u'"' + PANDA_SCHEMA + '"."HARVESTER_DIALOGS"'
+
+
 class HarvesterWorkerStats (models.Model):
     harvesterid = models.CharField(max_length=50, db_column='HARVESTER_ID', null=False, blank=True)
     computingsite = models.CharField(max_length=128, db_column='COMPUTINGSITE', null=False, blank=True)
@@ -48,7 +53,8 @@ class HarvesterWorkerStats (models.Model):
     nworkers = models.IntegerField(db_column='N_WORKERS', null=False)
     lastupdate = models.DateTimeField(null=True, db_column='LASTUPDATE', blank=True)
     class Meta:
-        db_table = u'"ATLAS_PANDA"."HARVESTER_WORKER_STATS"'
+        db_table = u'"' + PANDA_SCHEMA + '"."HARVESTER_WORKER_STATS"'
+
 
 class HarvesterRelJobsWorkers (models.Model):
     harvesterid = models.CharField(max_length=50, db_column='HARVESTERID', null=False, blank=True)
@@ -56,7 +62,8 @@ class HarvesterRelJobsWorkers (models.Model):
     pandaid = models.DecimalField(decimal_places=0, max_digits=11, db_column='PANDAID', null=False)
     lastupdate = models.DateTimeField(null=True, db_column='LASTUPDATE', blank=True)
     class Meta:
-        db_table = u'"ATLAS_PANDA"."HARVESTER_REL_JOBS_WORKERS"'
+        db_table = u'"' + PANDA_SCHEMA + '"."HARVESTER_REL_JOBS_WORKERS"'
+
 
 class HarvesterSlots (models.Model):
     pandaqueuename = models.CharField(max_length=50, db_column='PANDAQUEUENAME', null=False, blank=True)
@@ -66,4 +73,5 @@ class HarvesterSlots (models.Model):
     modificationtime = models.DateTimeField(null=True, db_column='MODIFICATIONTIME', blank=True)
     expirationtime = models.DateTimeField(null=True, db_column='EXPIRATIONTIME', blank=True)
     class Meta:
-        db_table = u'"ATLAS_PANDA"."HARVESTER_SLOTS"'
+        db_table = u'"' + PANDA_SCHEMA + '"."HARVESTER_SLOTS"'
+
