@@ -98,10 +98,7 @@ def insert_to_temp_table(list_of_items, transactionKey = -1):
     :return transactionKey and timestamp of instering
     """
 
-    # if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-    #     tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    # else:
-    #     tmpTableName = "TMP_IDS1"
+    tmpTableName = get_tmp_table_name()
 
     if transactionKey == -1:
         random.seed()
@@ -111,10 +108,49 @@ def insert_to_temp_table(list_of_items, transactionKey = -1):
     executionData = []
     for item in list_of_items:
         executionData.append((item, transactionKey))
-    query = """INSERT INTO ATLAS_PANDABIGMON.TMP_IDS1Debug(ID,TRANSACTIONKEY) VALUES (%s,%s)"""
+    query = """INSERT INTO {}(ID,TRANSACTIONKEY) VALUES (%s,%s)""".format(tmpTableName)
     new_cur.executemany(query, executionData)
 
     return transactionKey
+
+
+def get_event_status_summary(pandaids, eventservicestatelist):
+    """
+    Getting event statuses summary for list of pandaids of ES jobs
+    :param pandaids: list
+    :return: dict of status: nevents
+    """
+    summary = {}
+
+    tmpTableName = get_tmp_table_name()
+
+    transactionKey = random.randrange(1000000)
+
+    new_cur = connection.cursor()
+    executionData = []
+    for id in pandaids:
+        executionData.append((id, transactionKey))
+    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    new_cur.executemany(query, executionData)
+
+    new_cur.execute(
+        """
+        SELECT STATUS, COUNT(STATUS) AS COUNTSTAT 
+        FROM (
+            SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */ PANDAID, STATUS 
+            FROM ATLAS_PANDA.JEDI_EVENTS ev, %s 
+            WHERE TRANSACTIONKEY = %i AND  PANDAID = ID
+        ) t1 
+        GROUP BY STATUS""" % (tmpTableName, transactionKey))
+
+    evtable = dictfetchall(new_cur)
+
+    for ev in evtable:
+        evstat = eventservicestatelist[ev['STATUS']]
+        summary[evstat] = ev['COUNTSTAT']
+
+    return summary
+
 
 
 def dictfetchall(cursor):
@@ -187,6 +223,7 @@ def is_job_active(jobststus):
 
     return True
 
+
 def get_tmp_table_name():
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
@@ -198,9 +235,12 @@ def get_tmp_table_name():
 def lower_string(string):
     return string.lower() if isinstance(string, str) else string
 
+
 def lower_dicts_in_list(input_list):
     output_list = []
     for row_dict in input_list:
         out_dict = {lower_string(k): lower_string(v) for k,v in row_dict.items()}
         output_list.append(out_dict)
     return output_list
+
+
