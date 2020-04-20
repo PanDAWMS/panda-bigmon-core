@@ -1848,7 +1848,10 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             elif f in numeric_fields:
                 kys = sorted(kys, key=lambda x: int(x))
             else:
-                kys = sorted(kys)
+                try:
+                    kys = sorted(kys)
+                except:
+                    _logger.exception('Failed to sort list of values for {} attribute \n {}'.format(str(f), str(kys)))
             for ky in kys:
                 if ky == -1:
                     iteml.append({'kname': 'Not specified', 'kvalue': sumd[f][ky]})
