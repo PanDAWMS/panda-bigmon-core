@@ -1840,7 +1840,10 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             if f in ('priorityrange', 'jobsetrange'):
                 skys = []
                 for k in kys:
-                    skys.append({'key': k, 'val': int(k[:k.index(':')])})
+                    if k != 'Not specified':
+                        skys.append({'key': k, 'val': int(k[:k.index(':')])})
+                    else:
+                        skys.append({'key': 'Not specified', 'val': -1})
                 skys = sorted(skys, key=lambda x: x['val'])
                 kys = []
                 for sk in skys:
