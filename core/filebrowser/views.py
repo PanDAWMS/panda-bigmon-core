@@ -6,19 +6,15 @@ import logging
 import re
 import json
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, render
-from django.template import RequestContext, loader
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 from django.template.loader import get_template
 from django.conf import settings
-from django.utils.cache import patch_response_headers
-#from django.core.urlresolvers import reverse
-#from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_filebrowser_vo, \
-get_filebrowser_hostname, remove_folder
+    remove_folder, get_fullpath_filebrowser_directory, list_file_directory
 
 from core.common.models import Filestable4, FilestableArch
-from core.views import DateEncoder, DateTimeEncoder, initSelfMonitor
-from core.libs.cache import setCacheEntry, getCacheEntry
+from core.views import DateTimeEncoder, initSelfMonitor
 from datetime import datetime
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
@@ -338,6 +334,60 @@ def api_single_pandaid(request):
         t = get_template('filebrowser/filebrowser_api_single_pandaid.html')
         context = RequestContext(request, {'data':data})
         return HttpResponse(t.render(context), status=400)
+
+
+def get_job_memory_monitor_output(pandaid):
+    """
+    Download log tarball of a job and return path to a local copy of memory_monitor_output.txt file
+    :param pandaid:
+    :return: mmo_path: str
+    """
+    mmo_path = None
+    files = []
+    scope = ''
+    lfn = ''
+    guid = ''
+    dirprefix = ''
+    tardir = ''
+    query = {}
+    query['type'] = 'log'
+    query['pandaid'] = int(pandaid)
+    values = ['pandaid', 'guid', 'scope', 'lfn']
+    file_properties = []
+
+    file_properties.extend(Filestable4.objects.filter(**query).values(*values))
+    if len(file_properties) == 0:
+        file_properties.extend(FilestableArch.objects.filter(**query).values(*values))
+
+    if len(file_properties):
+        file_properties = file_properties[0]
+        try:
+            guid = file_properties['guid']
+        except:
+            pass
+        try:
+            lfn = file_properties['lfn']
+        except:
+            pass
+        try:
+            scope = file_properties['scope']
+        except:
+            pass
+
+        if guid and lfn and scope:
+            # check if files are already available in common CEPH storage
+            tarball_path = get_fullpath_filebrowser_directory() + '/' + guid.lower() + '/' + scope + '/' + lfn
+            files, err, tardir = list_file_directory(tarball_path, 100)
+            if len(files) == 0 and len(err) > 0:
+                # download tarball
+                files, errtxt, dirprefix, tardir = get_rucio_file(scope, lfn, guid)
+
+            if type(files) is list and len(files) > 0:
+                for f in files:
+                    if f['name'] == 'memory_monitor_output.txt':
+                        mmo_path = tarball_path + '/' + tardir + '/' + 'memory_monitor_output.txt'
+
+    return mmo_path
 
 
 def delete_files(request):

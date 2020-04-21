@@ -282,3 +282,148 @@ function draw_bar_hist(rawdata, divToShow)  {
         });
     return chart
 }
+
+
+function draw_line_chart(rawdata, divid, ext={}) {
+    var formatXAxis = d3.format(".0f");
+
+    let data = rawdata['data'];
+    let details = rawdata['details'];
+
+    let width = getWidth()-20;
+    let height = 300;
+
+    if (ext.size) {width = ext.size[0]; height=ext.size[1];}
+
+    var chart = c3.generate({
+        bindto: '#' + divid,
+        data: {
+            x: data[0][0],
+            columns: data,
+            type: 'line',
+        },
+        point: {
+            show: false,
+        },
+        title: {
+            text: details.title,
+        },
+        axis: {
+            x: {
+                label: {
+                    text: details.xlabel,
+                    position: 'outer-right'
+                },
+                tick: {
+                  count: width/10,
+                  format: function (d) {return formatXAxis(d);},
+                }
+            },
+            y: {
+                // min: 0,
+                padding: {
+                  bottom: 0,
+                },
+                tick: {
+                    format: function (d) { return d; }
+                },
+                label: {
+                  text: details.ylabel,
+                  position: 'outer-middle',
+                }
+            }
+        },
+        tooltip: {
+          format: {
+            title: function (x) { return details.xlabel + ': ' + x; }
+          }
+        },
+        transition: {
+            duration: 0
+        },
+        size: {
+            width: width,
+            height: height,
+        },
+        padding: {
+          right: 20,
+        },
+    });
+    return chart
+}
+
+
+function draw_area_chart(rawdata, divid, ext={}) {
+    var formatXAxis = d3.format(".0f");
+
+    let data = rawdata['data'];
+    let details = rawdata['details'];
+
+    let keys = [];
+    data.forEach(function (row) {
+      keys.push(row[0]);
+    });
+    keys.unshift('x');
+
+    let width = getWidth()-20;
+    let height = 300;
+
+    if (ext.size) {width = ext.size[0]; height=ext.size[1];}
+
+    var chart = c3.generate({
+        bindto: '#' + divid,
+        data: {
+            x: data[0][0],
+            columns: data,
+            type: 'area',
+            groups: [keys]
+        },
+        point: {
+            show: false,
+        },
+        title: {
+            text: details.title,
+        },
+        axis: {
+            x: {
+                label: {
+                    text: details.xlabel,
+                    position: 'outer-right'
+                },
+                tick: {
+                  count: width/10,
+                  format: function (d) {return formatXAxis(d);},
+                }
+            },
+            y: {
+                // min: 0,
+                padding: {
+                  bottom: 0,
+                },
+                tick: {
+                    format: function (d) { return d; }
+                },
+                label: {
+                  text: details.ylabel,
+                  position: 'outer-middle',
+                }
+            }
+        },
+        tooltip: {
+          format: {
+            title: function (x) { return details.xlabel + ': ' + x; }
+          }
+        },
+        transition: {
+            duration: 0
+        },
+        size: {
+            width: width,
+            height: height,
+        },
+        padding: {
+          right: 20,
+        },
+    });
+    return chart
+}

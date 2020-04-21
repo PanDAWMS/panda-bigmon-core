@@ -217,6 +217,21 @@ VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'cor
 VOMODE = ' '
 
 
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+
+
+class DateEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, 'isoformat'):
+            return obj.isoformat()
+        else:
+            return str(obj)
+        return json.JSONEncoder.default(self, obj)
+
+
 def login_customrequired(function):
     def wrap(request, *args, **kwargs):
 
@@ -1267,6 +1282,7 @@ def saveSettings(request):
     else:
         data = {"error": "no jeditaskid supplied"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
+
 
 def dropRetrielsJobs(jobs, jeditaskid, isReturnDroppedPMerge):
     # dropping algorithm for jobs belong to single task
@@ -4819,11 +4835,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         del request.session['TLAST']
         return HttpResponse('not understood', content_type='text/html')
 
-
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, datetime):
-            return o.isoformat()
 
 @login_customrequired
 def userList(request):
@@ -12338,15 +12349,6 @@ def taskNameDict(jobs):
     #    for t in oldtasks:
     #        tasknamedict[t['taskid']] = t['taskname']
     return tasknamedict
-
-
-class DateEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-        else:
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
 
 
 def getFilePathForObjectStore(objectstore, filetype="logs"):

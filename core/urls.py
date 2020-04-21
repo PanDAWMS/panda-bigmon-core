@@ -171,6 +171,8 @@ urlpatterns = [
     re_path('^robots\.txt$', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
 
     re_path(r'^memoryplot/', memmon.getPlots, name='memoryplot'),
+    re_path(r'^prmonplots/(?P<pandaid>.*)/', memmon.prMonPlots, name='prMonPlots'),
+    re_path(r'^getprmonplotsdata/(?P<pandaid>.*)/', memmon.getPrMonPlotsData, name='getPrMonPlotsData'),
 
     ###Images###
     re_path('^img/',coremon_views.image, name='img'),
