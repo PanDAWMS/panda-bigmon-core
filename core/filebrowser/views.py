@@ -378,15 +378,17 @@ def get_job_memory_monitor_output(pandaid):
             # check if files are already available in common CEPH storage
             tarball_path = get_fullpath_filebrowser_directory() + '/' + guid.lower() + '/' + scope + '/' + lfn
             files, err, tardir = list_file_directory(tarball_path, 100)
+            _logger.debug('tarball path is {} \nError message is {} \nGot tardir: {}'.format(tarball_path, err, tardir))
             if len(files) == 0 and len(err) > 0:
                 # download tarball
+                _logger.debug('log tarball has not been downloaded, so downloading it now')
                 files, errtxt, dirprefix, tardir = get_rucio_file(scope, lfn, guid)
-
+                _logger.debug('Got files for dir: {} and tardir: {}. Error message: {}'.format(dirprefix, tardir, errtxt))
             if type(files) is list and len(files) > 0:
                 for f in files:
                     if f['name'] == 'memory_monitor_output.txt':
                         mmo_path = tarball_path + '/' + tardir + '/' + 'memory_monitor_output.txt'
-
+    _logger.debug('Final mmo_path: {}'.format(mmo_path))
     return mmo_path
 
 
