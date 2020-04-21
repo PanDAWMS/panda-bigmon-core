@@ -376,7 +376,7 @@ def get_job_memory_monitor_output(pandaid):
 
         if guid and lfn and scope:
             # check if files are already available in common CEPH storage
-            tarball_path = get_fullpath_filebrowser_directory() + '/' + guid.lower() + '/' + scope + '/' + lfn
+            tarball_path = get_fullpath_filebrowser_directory() + '/' + guid.lower() + '/' + scope + '/'
             files, err, tardir = list_file_directory(tarball_path, 100)
             _logger.debug('tarball path is {} \nError message is {} \nGot tardir: {}'.format(tarball_path, err, tardir))
             if len(files) == 0 and len(err) > 0:
