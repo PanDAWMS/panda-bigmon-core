@@ -416,7 +416,7 @@ def getPrMonPlotsData(request, pandaid=-1):
             raw_data[mi] = raw_data[mi].round(2)
 
         # if number of data points too high we interpolate values on reduced wtime interval frequency
-        N_MAX = 600.
+        N_MAX = 300.
         if len(raw_data['wtime']) > N_MAX:
             new_data = raw_data.copy()
             new_step = math.floor((new_data['wtime'][2] - new_data['wtime'][1])*len(new_data['wtime'])/N_MAX)
