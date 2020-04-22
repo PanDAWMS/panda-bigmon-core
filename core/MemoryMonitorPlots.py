@@ -3,6 +3,7 @@ import io
 import os
 import urllib3
 import logging
+import math
 from datetime import datetime
 from core.common.models import Filestable4
 from core.common.models import FilestableArch
@@ -387,7 +388,6 @@ def getPrMonPlotsData(request, pandaid=-1):
 
     # prepare data for plots
     if not raw_data.empty:
-        raw_data['time'] = pd.to_datetime(raw_data['Time'], unit='s')
         raw_data['wtime_dt'] = raw_data['wtime'].diff()
 
         for mi in metric_groups['io']:
@@ -414,6 +414,16 @@ def getPrMonPlotsData(request, pandaid=-1):
         for mi in metric_groups['io']:
             raw_data[mi] = raw_data[mi]/1024./1024./1024.
             raw_data[mi] = raw_data[mi].round(2)
+
+        # if number of data points too high we interpolate values on reduced wtime interval frequency
+        N_MAX = 600.
+        if len(raw_data['wtime']) > N_MAX:
+            new_data = raw_data.copy()
+            new_step = math.floor((new_data['wtime'][2] - new_data['wtime'][1])*len(new_data['wtime'])/N_MAX)
+            inter_index = pd.RangeIndex(start=new_data['wtime'].min(), stop=new_data['wtime'].max(), step=new_step)
+            new_data.set_index('wtime', inplace=True)
+            raw_data = new_data.reindex(inter_index, method='nearest').interpolate()
+            raw_data['wtime'] = raw_data.index.values
 
         # replace NaN values by 0
         raw_data = raw_data.fillna(0)
