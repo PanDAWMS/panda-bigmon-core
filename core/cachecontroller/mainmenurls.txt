@@ -22,7 +22,7 @@
 /errors/?sortby=count
 /errors/?jobtype=analysis&sortby=count
 /errors/?jobtype=production&sortby=count
-/errors/?sortby=count&prodsourcelabel=rc_test
+/errors/?sortby=count&prodsourcelabel=rc_test2
 /users/?sortby=date&view=database
 /users/?sortby=date&view=dynamic
 /sites/
