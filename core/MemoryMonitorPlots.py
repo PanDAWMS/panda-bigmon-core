@@ -377,7 +377,6 @@ def getPrMonPlotsData(request, pandaid=-1):
     # get memory_monitor_output.txt file
     if pandaid > 0:
         mmo_path = get_job_memory_monitor_output(pandaid)
-        mmo_path = '/afs/cern.ch/user/t/tkorchug/public/memory_monitor_output.txt'
 
         # check if the file exists
         if mmo_path is not None and os.path.exists(mmo_path):
