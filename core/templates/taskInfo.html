@@ -160,6 +160,7 @@
   <div class="dropdownplots">
       <button class="dropdownbutton">Task parameters and help</button>
       <div id="dropdown-plotchoice" class="dropdown-plot">
+          <a onclick="loadStatusLog('{{ jeditaskid }}')">Task status log</a>
           <a href="#jobparams">Job parameters</a>
           {% if jobscoutids.cputimescoutjob|length > 0 or jobscoutids.walltimescoutjob|length > 0 %}
               <a href="#scouts">Scout jobs</a>
@@ -391,6 +392,10 @@
           </div>
       {% endif %}
   {% endif %}
+
+  <p></p>
+
+  <div id="div-statuslog"></div>
 
   <p></p>
 
@@ -663,6 +668,20 @@ function killtasks(taskID, action) {
         // Do nothing!
     }
 }
+
+function loadStatusLog(jeditaskid) {
+
+    $('#div-statuslog').html("<img src='{% static "images/load.gif" %}'>  ");
+    $.ajax({
+        url: '{% url 'gettaskstatuslog' jeditaskid %}',
+        data: '',
+        async: true,
+    }).done(function (response) {
+        $('#div-statuslog').html(response);
+    });
+
+}
+
 
 function showPlots(classname) {
     let el = document.getElementsByClassName(classname);

@@ -53,6 +53,7 @@ from core.common.models import Pandalog
 from core.common.models import JediJobRetryHistory
 from core.common.models import JediTasks
 from core.common.models import JediTasksOrdered
+from core.common.models import TasksStatusLog
 from core.common.models import GetEventsForTask
 from core.common.models import JediTaskparams
 from core.common.models import JediEvents
@@ -13137,6 +13138,7 @@ def getEventsChunks(request):
     return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='application/json')
 
 
+@never_cache
 def getJobStatusLog(request, pandaid = None):
     """
     A view to asynchronously load job states changes history
@@ -13180,6 +13182,50 @@ def getJobStatusLog(request, pandaid = None):
     response = render_to_response('jobStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
+
+
+@never_cache
+def getTaskStatusLog(request, jeditaskid = None):
+    """
+    A view to asynchronously load task states changes history
+    :param request:
+    :param jeditaskid:
+    :return: json contained task states changes history
+    """
+    valid, response = initRequest(request)
+    if not valid: return response
+
+    try:
+        jeditaskid = int(jeditaskid)
+    except:
+        HttpResponse(status=404, content_type='text/html')
+
+    mtimeparam = 'modificationtime'
+    squery = {}
+    squery['jeditaskid'] = jeditaskid
+    statusLog = []
+    statusLog.extend(TasksStatusLog.objects.filter(**squery).order_by(mtimeparam).values())
+
+    if len(statusLog) > 0:
+        for c, item in enumerate(statusLog):
+            if c < len(statusLog)-1:
+                if statusLog[c+1][mtimeparam] is not None and statusLog[c][mtimeparam] is not None:
+                    duration = statusLog[c+1][mtimeparam] - statusLog[c][mtimeparam]
+                    ndays = duration.days
+                    strduration = str(timedelta(seconds=duration.seconds))
+                    statusLog[c]['duration'] = "%s:%s" % (ndays, strduration)
+                else:
+                    statusLog[c]['duration'] = "---"
+            else:
+                statusLog[c]['duration'] = "---"
+
+    for sl in statusLog:
+        sl['modiftime_str'] = sl[mtimeparam].strftime(defaultDatetimeFormat) if sl[mtimeparam] is not None else "---"
+    response = render_to_response('taskStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
+
 ### API ###
 def getSites(request):
     if request.is_ajax():

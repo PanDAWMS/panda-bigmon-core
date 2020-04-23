@@ -1,0 +1,26 @@
+<table>
+<tr>
+    <th class="tablesection">Modification time</th>
+    {% for item in statusLog %}
+        <td>{{ item.modiftime_str }}</td>
+    {% endfor %}
+</tr>
+<tr>
+    <th class="tablesection">States</th>
+    {% for item in statusLog %}
+        <td class="{{ item.status }}_fill">{{ item.status }}</td>
+    {% endfor %}
+</tr>
+<tr>
+    <th class="tablesection">Duration, d:h:m:s</th>
+    {% for item in statusLog %}
+        <td>{{ item.duration }}</td>
+    {% endfor %}
+</tr>
+<tr>
+    <th class="tablesection">Modification host</th>
+    {% for item in statusLog %}
+        <td>{{ item.modificationhost }}</td>
+    {% endfor %}
+</tr>
+</table>

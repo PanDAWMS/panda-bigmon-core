@@ -122,6 +122,7 @@ urlpatterns = [
     re_path(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
 
     re_path(r'^jobstatuslog/(?P<pandaid>.*)/$', coremon_views.getJobStatusLog, name='getjobstatuslog'),
+    re_path(r'^taskstatuslog/(?P<jeditaskid>.*)/$', coremon_views.getTaskStatusLog, name='gettaskstatuslog'),
 
     re_path(r'^savesettings/$', coremon_views.saveSettings, name='saveSettings'),
     #re_path(r'^globalsharesnew/$', coremon_views.globalsharesnew, name='globalsharesnew'),

@@ -604,6 +604,18 @@ class GetEventsForTask(models.Model):
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."GETEVENTSFORTASK"'
 
+
+class TasksStatusLog(models.Model):
+    jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
+    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
+    modificationhost = models.CharField(max_length=384, db_column='MODIFICATIONHOST', blank=True)
+    status = models.CharField(max_length=64, db_column='STATUS', blank=True)
+    attemptnr = models.IntegerField(db_column='ATTEMPTNR', blank=True)
+    reason = models.CharField(max_length=600, db_column='REASON', blank=True)
+    class Meta:
+        db_table = u'"ATLAS_PANDA"."TASKS_STATUSLOG"'
+
+
 class BPUser(AbstractUser):
     is_tester = models.NullBooleanField(db_column='IS_TESTER', null=True, blank=False)
     last_login = models.DateTimeField(db_column='LAST_LOGIN', auto_now_add=True, blank=False)

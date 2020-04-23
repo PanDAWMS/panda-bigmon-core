@@ -93,6 +93,7 @@ def clearComparison(request):
     dump = json.dumps(data, cls=DateEncoder)
     return HttpResponse(dump, content_type='application/json')
 
+
 @login_customrequired
 def compareJobs(request):
     valid, response = initRequest(request)
@@ -140,18 +141,13 @@ def compareJobs(request):
             pandaidsToBeLoad.append(pandaid)
 
     #Loading jobs info in parallel
-    nprocesses = maxNJobs
+    nprocesses = 1
     if len(pandaidsToBeLoad) > 0:
         url_params = [('?json=1&pandaid=' + str(pid)) for pid in pandaidsToBeLoad]
         pool = multiprocessing.Pool(processes=nprocesses)
         jobInfoJSON.extend(pool.map(job_info_getter, url_params))
         pool.close()
         pool.join()
-
-    #Put loaded jobs info to cache
-    for job in jobInfoJSON:
-        setCacheEntry(request, "compareJob_" + str(job.keys()[0]),
-                      json.dumps(job.values()[0], cls=DateEncoder), 60 * 30, isData=True)
 
     compareParamNames = {'produsername': 'Owner', 'reqid': 'Request ID', 'jeditaskid': 'Task ID', 'jobstatus': 'Status',
                      'attemptnr': 'Attempt', 'creationtime': 'Created', 'waittime': 'Time to start', 'duration': 'Duration',
@@ -199,6 +195,11 @@ def compareJobs(request):
                 row[0]['mark'] = 'equal'
             jobsComparisonAll.append(row)
 
+
+    # #Put loaded jobs info to cache
+    # for job in jobInfoJSON:
+    #     setCacheEntry(request, "compareJob_" + str(job.keys()[0]),
+    #                   json.dumps(job.values()[0], cls=DateEncoder), 60 * 30, isData=True)
 
     xurl = extensibleURL(request)
     data = {
