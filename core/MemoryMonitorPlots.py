@@ -365,9 +365,9 @@ def getPrMonPlotsData(request, pandaid=-1):
         'np_nt': {'title': 'Number of processes and threads', 'ylabel': '', 'xlabel': 'Wall time, min'},
         'cpu_rate': {'title': 'CPU rate', 'ylabel': '', 'xlabel': 'Wall time, min'},
         'memory': {'title': 'Memory utilization', 'ylabel': 'Consumed memory, GB', 'xlabel': 'Wall time, min'},
-        'memory_rate': {'title': 'Memory rate', 'ylabel': 'MB/sec', 'xlabel': 'Wall time, min'},
+        'memory_rate': {'title': 'Memory rate', 'ylabel': 'MB/min', 'xlabel': 'Wall time, min'},
         'io': {'title': 'I/O', 'ylabel': 'I/O, GB', 'xlabel': 'Wall time, min'},
-        'io_rate': {'title': 'I/O rate', 'ylabel': 'MB/sec', 'xlabel': 'Wall time, min'},
+        'io_rate': {'title': 'I/O rate', 'ylabel': 'MB/min', 'xlabel': 'Wall time, min'},
     }
 
     msg = ''
@@ -377,6 +377,7 @@ def getPrMonPlotsData(request, pandaid=-1):
     # get memory_monitor_output.txt file
     if pandaid > 0:
         mmo_path = get_job_memory_monitor_output(pandaid)
+        mmo_path = '/afs/cern.ch/user/t/tkorchug/public/memory_monitor_output.txt'
 
         # check if the file exists
         if mmo_path is not None and os.path.exists(mmo_path):
@@ -389,16 +390,17 @@ def getPrMonPlotsData(request, pandaid=-1):
     # prepare data for plots
     if not raw_data.empty:
         raw_data['wtime_dt'] = raw_data['wtime'].diff()
+        raw_data['wtime_min_dt'] = raw_data['wtime_dt']/60.
 
         for mi in metric_groups['io']:
             raw_data[mi + '_rate'] = raw_data[mi].diff()
-            raw_data[mi + '_rate'] /= raw_data['wtime_dt']
+            raw_data[mi + '_rate'] /= raw_data['wtime_min_dt']
             raw_data[mi + '_rate'] /= (1024.*1024.)
             raw_data[mi + '_rate'] = raw_data[mi + '_rate'].round(2)
 
         for mm in metric_groups['memory']:
             raw_data[mm + '_rate'] = raw_data[mm].diff()
-            raw_data[mm + '_rate'] /= raw_data['wtime_dt']
+            raw_data[mm + '_rate'] /= raw_data['wtime_min_dt']
             raw_data[mm + '_rate'] /= 1024.
             raw_data[mm + '_rate'] = raw_data[mm + '_rate'].round(3)
 
@@ -416,7 +418,7 @@ def getPrMonPlotsData(request, pandaid=-1):
             raw_data[mi] = raw_data[mi].round(2)
 
         # if number of data points too high we interpolate values on reduced wtime interval frequency
-        N_MAX = 300.
+        N_MAX = 600.
         if len(raw_data['wtime']) > N_MAX:
             new_data = raw_data.copy()
             new_step = math.floor((new_data['wtime'][2] - new_data['wtime'][1])*len(new_data['wtime'])/N_MAX)
@@ -427,12 +429,12 @@ def getPrMonPlotsData(request, pandaid=-1):
 
         # replace NaN values by 0
         raw_data = raw_data.fillna(0)
-        raw_data['wtime'] = raw_data['wtime']/60
-        raw_data['wtime'] = raw_data['wtime'].round(0)
+        raw_data['wtime_min'] = raw_data['wtime']/60
+        raw_data['wtime_min'] = raw_data['wtime_min'].round(0)
 
         for pname, pdet in plots_details.items():
             plots_data[pname] = {'data': [['x']], 'details': pdet}
-            plots_data[pname]['data'][0].extend(raw_data['wtime'].tolist())
+            plots_data[pname]['data'][0].extend(raw_data['wtime_min'].tolist())
 
         for mc in metric_groups['count']:
             tmp = [legendnames[mc]]
@@ -449,8 +451,14 @@ def getPrMonPlotsData(request, pandaid=-1):
             tmp.extend(raw_data[mm].tolist())
             plots_data['memory']['data'].append(tmp)
 
+            is_cut_rate_plot_data = False
+            if tmp[-1] == 0:
+                is_cut_rate_plot_data = True
+
             tmp = [legendnames[mm]]
             tmp.extend(raw_data[mm + '_rate'].tolist())
+            if is_cut_rate_plot_data:
+                tmp = tmp[:-1]
             plots_data['memory_rate']['data'].append(tmp)
 
         for mi in metric_groups['io']:
@@ -458,8 +466,14 @@ def getPrMonPlotsData(request, pandaid=-1):
             tmp.extend(raw_data[mi].tolist())
             plots_data['io']['data'].append(tmp)
 
+            is_cut_rate_plot_data = False
+            if tmp[-1] == 0:
+                is_cut_rate_plot_data = True
+
             tmp = [legendnames[mi]]
             tmp.extend(raw_data[mi + '_rate'].tolist())
+            if is_cut_rate_plot_data:
+                tmp = tmp[:-1]
             plots_data['io_rate']['data'].append(tmp)
 
     data = {
