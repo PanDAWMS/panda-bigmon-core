@@ -19,7 +19,7 @@
 <span {% if att.name == 'Status' %} class='{{att.value}}' {% endif %}>
 {% if att.name == 'GOC name' %} <a href="{% url 'siteList' %}?gocname={{ att.value }}">{{ att.value }}</a>
 {% else %}
-{% if att.name == 'Queue (nickname)' %} <a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{ att.value }}/full/">{{ att.value }}</a>
+{% if att.name == 'Queue (nickname)' %} <a href="https://atlas-cric.cern.ch/atlas/pandaqueue/detail/{{ att.value }}/full/">{{ att.value }}</a>
 {% else %}
 {% if att.value != 'None' %} {{ att.value }} {% endif %}
 {% endif %}
@@ -42,7 +42,7 @@
 
 {% for queue in queues %}
 <tr>
-<td> <a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{ queue.nickname }}/full/">{{ queue.nickname }}</a></td><td> <span class='{{ queue.status }}'>{{ queue.status }}</span> </td>
+<td> <a href="https://atlas-cric.cern.ch/atlas/pandaqueue/detail/{{ queue.nickname }}/full/">{{ queue.nickname }}</a></td><td> <span class='{{ queue.status }}'>{{ queue.status }}</span> </td>
 <td> {{ queue.lastmod }} </td> <td> {{ queue.comment_field }} </td>
 </tr>
 {% endfor %}
@@ -75,7 +75,7 @@
 </td>
 
 <td>
-<a href="http://atlas-agis.cern.ch/agis/pandablacklisting/table_view/?pandaqueue={{ site.nickname }}" target="_blank">Blacklisting history</a>
+<a href="https://atlas-cric.cern.ch/atlas/pandaqueuestatushistory/list/?pandaqueue={{ site.nickname }}" target="_blank">Blacklisting history</a>
 </td>
 
 <td>
@@ -99,9 +99,9 @@ DDM (Grafana)
 
 <td>
     {% if site.nickname and site.nickname != '' %}
-    <a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{site.nickname}}/full/">Agis link</a>
+    <a href="https://atlas-cric.cern.ch/atlas/pandaqueue/detail/{{site.nickname}}/full/">CRIC link</a>
     {% else %}
-    <a href="http://atlas-agis.cern.ch/agis/pandaqueue/detail/{{site.siteid}}/full/">Agis link</a>
+    <a href="https://atlas-cric.cern.ch/atlas/pandaqueue/detail/{{site.siteid}}/full/">CRIC link</a>
     {% endif %}
 </td>
 
@@ -131,7 +131,7 @@ DDM (Grafana)
 {% if pandaqueue %}
 
 <table>
-<tr class='tablesection'><th colspan=20> {{ site.siteid }} parameters from AGIS/CRIC configuration file</th></tr>
+<tr class='tablesection'><th colspan=20> {{ site.siteid }} parameters from CRIC configuration file</th></tr>
 {% for item in pandaqueue %}
 <tr><th>{{ item.param }} </th><td> {% if item.value != 'None' %} {{ item.value }} {% endif %}</td></tr>
 {% endfor %}

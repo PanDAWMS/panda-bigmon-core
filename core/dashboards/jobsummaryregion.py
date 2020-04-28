@@ -214,12 +214,12 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
     extra_metrics = copy.deepcopy(worker_metrics)
     extra_metrics.append('rcores')
 
-    # get info from AGIS|CRIC
+    # get info from CRIC
     try:
-        panda_queues_dict = get_AGIS_panda_queues()
+        panda_queues_dict = get_CRIC_panda_queues()
     except:
         panda_queues_dict = None
-        _logger.error("[JSR] cannot get json from AGIS")
+        _logger.error("[JSR] cannot get json from CRIC")
 
     if not panda_queues_dict:
         # get data from new SCHEDCONFIGJSON table
@@ -415,13 +415,12 @@ def get_workers_summary_split(query):
     return list(worker_summary)
 
 
-def get_AGIS_panda_queues():
-    """Get PanDA queues config from AGIS"""
+def get_CRIC_panda_queues():
+    """Get PanDA queues config from CRIC"""
     panda_queues_dict = cache.get('pandaQueues')
-
     if not panda_queues_dict:
         panda_queues_dict = {}
-        url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
+        url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
         http = urllib3.PoolManager()
         data = {}
         try:

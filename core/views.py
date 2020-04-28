@@ -304,9 +304,8 @@ def jobSuppression(request):
 
 def getObjectStoresNames():
     global objectStoresNames
-    url = "http://atlas-agis-api.cern.ch/request/ddmendpoint/query/list/?json&preset=dict&json_pretty=1&type[]=OS_ES"
+    url = "https://atlas-cric.cern.ch/api/atlas/ddmendpoint/query/?json&type=OS_ES"
     http = urllib3.PoolManager()
-    data = {}
     try:
         r = http.request('GET', url)
         data = json.loads(r.data.decode('utf-8'))
@@ -4453,7 +4452,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                         f['ruciodatasetname'] = dsets[0]['datasetname']
                         f['datasetname'] = dsets[0]['datasetname']
                     if job['computingsite'] in pandaSites.keys():
-                        _, _, computeSvsAtlasS = getAGISSites()
+                        _, _, computeSvsAtlasS = getCRICSites()
                         f['ddmsite'] = computeSvsAtlasS.get(job['computingsite'], "")
 
                 if 'dst' in f['destinationdblocktoken']:
@@ -5401,22 +5400,18 @@ def siteList(request):
         return HttpResponse(json.dumps(resp, cls=DateEncoder), content_type='application/json')
 
 def get_panda_resource(siterec):
-    url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
+    url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
     http = urllib3.PoolManager()
     data = {}
     try:
         r = http.request('GET', url)
         data = json.loads(r.data.decode('utf-8'))
         for cs in data.keys():
-            # if (data[cs]['siteid']!=data[cs]['panda_resource']):
-            #     print data[cs]['siteid']
             if (data[cs] and siterec.siteid == data[cs]['siteid']):
-            #     # resourcesDict.setdefault(data[cs]['resourcetype'], []).append(cs)
-            #     # resourcesDictSites[data[cs]['siteid']] = data[cs]['panda_resource']
                 return data[cs]['panda_resource']
     except Exception as exc:
         print (exc)
-    #return resourcesDictSites
+
 
 @login_customrequired
 def siteInfo(request, site=''):
@@ -6027,7 +6022,7 @@ def checkUcoreSite(site, usites):
        isUsite = True
     return isUsite
 
-def getAGISSites():
+def getCRICSites():
     sitesUcore = cache.get('sitesUcore')
     sitesHarvester = cache.get('sitesHarvester')
     computevsAtlasCE = cache.get('computevsAtlasCE')
@@ -6035,7 +6030,7 @@ def getAGISSites():
     if not (sitesUcore and sitesHarvester and computevsAtlasCE):
         sitesUcore, sitesHarvester = [], []
         computevsAtlasCE = {}
-        url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
+        url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
         http = urllib3.PoolManager()
         data = {}
         try:
@@ -6062,9 +6057,9 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
     start_time = time.time()
     pilots = getPilotCounts(view)
     query = setupView(request, hours=hours, limit=limit, opmode=view)
-    ucoreComputingSites, harvesterComputingSites, _ = getAGISSites()
+    ucoreComputingSites, harvesterComputingSites, _ = getCRICSites()
 
-    _logger.debug('[dashSummary] Got AGIS json: {}'.format(time.time() - start_time))
+    _logger.debug('[dashSummary] Got CRIC json: {}'.format(time.time() - start_time))
 
     if VOMODE == 'atlas' and len(request.session['requestParams']) == 0:
         cloudinfol = Cloudconfig.objects.filter().exclude(name='CMS').exclude(name='OSG').values('name', 'status')

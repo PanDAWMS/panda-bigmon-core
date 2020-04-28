@@ -14,6 +14,7 @@ from django.db import connection
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.CustomJSONSerializer import DecimalEncoder
 from core.views import initRequest, setupView, login_customrequired, extensibleURL, DateEncoder
+from django.core.cache import cache
 import json
 
 from core.globalshares import GlobalShares
@@ -176,7 +177,7 @@ def get_resources_gshare():
     QUEUED = 'queued'
     PLEDGED = 'pledged'
     IGNORE = 'ignore'
-    resourcesDictSites =get_agis_resources()
+    resourcesDictSites =get_CRIC_resources()
     sqlRequest = """
     SELECT gshare, computingsite, jobstatus_grouped, SUM(HS) 
     FROM (SELECT gshare, computingsite, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing'
@@ -561,7 +562,7 @@ order by gshare,COMPUTINGSITE, corecount, jobstatus
     cur = connection.cursor()
     cur.execute(sqlRequest)
     globalSharesList = cur.fetchall()
-    resources = get_agis_resources()
+    resources = get_CRIC_resources()
     hs06count  = 0
     for gs in globalSharesList:
         if gs[2] == 1:
@@ -639,36 +640,42 @@ class DecimalEncoder(json.JSONEncoder):
             return float(o)
         return super(DecimalEncoder, self).default(o)
 
-def get_agis_resources():
-    url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
-    http = urllib3.PoolManager()
-    data = {}
-    try:
-        resourcesDict = {}
-        resourcesDictSites = {}
-        r = http.request('GET', url)
-        data = json.loads(r.data.decode('utf-8'))
-        for cs in data.keys():
-            resourcesDict.setdefault(data[cs]['resource_type'], []).append(cs)
-            resourcesDictSites[data[cs]['siteid']] = data[cs]['resource_type']
-    except Exception as exc:
-        print (exc)
+def get_CRIC_resources():
+    resourcesDictSites = cache.get('resourcesDictSites')
+    if not (resourcesDictSites):
+        url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
+        http = urllib3.PoolManager()
+        data = {}
+        try:
+            resourcesDict = {}
+            resourcesDictSites = {}
+            r = http.request('GET', url)
+            data = json.loads(r.data.decode('utf-8'))
+            for cs in data.keys():
+                resourcesDict.setdefault(data[cs]['resource_type'], []).append(cs)
+                resourcesDictSites[data[cs]['siteid']] = data[cs]['resource_type']
+            cache.set('resourcesDictSites', resourcesDictSites, 3600)
+        except Exception as exc:
+            print (exc)
     return resourcesDictSites
 
-def get_agis_fairsharepolicy():
-    url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
-    http = urllib3.PoolManager()
-    data = {}
-    try:
-        fairsharepolicyDict = {}
-        fairsharepolicyDictSites = {}
-        r = http.request('GET', url)
-        data = json.loads(r.data.decode('utf-8'))
-        for cs in data.keys():
-            fairsharepolicyDict.setdefault(data[cs]['fairsharepolicy'], []).append(cs)
-            fairsharepolicyDictSites[data[cs]['siteid']] = data[cs]['fairsharepolicy']
-    except Exception as exc:
-        print (exc)
+def get_CRIC_fairsharepolicy():
+    fairsharepolicyDictSites = cache.get('fairsharepolicyDictSites')
+    if not (fairsharepolicyDictSites):
+        url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
+        http = urllib3.PoolManager()
+        data = {}
+        try:
+            fairsharepolicyDict = {}
+            fairsharepolicyDictSites = {}
+            r = http.request('GET', url)
+            data = json.loads(r.data.decode('utf-8'))
+            for cs in data.keys():
+                fairsharepolicyDict.setdefault(data[cs]['fairsharepolicy'], []).append(cs)
+                fairsharepolicyDictSites[data[cs]['siteid']] = data[cs]['fairsharepolicy']
+            cache.set('fairsharepolicyDictSites', fairsharepolicyDictSites, 3600)
+        except Exception as exc:
+            print (exc)
     return fairsharepolicyDictSites
 
 def resourcesType(request):
@@ -677,7 +684,7 @@ def resourcesType(request):
     PLEDGED = 'pledged'
     IGNORE = 'ignore'
     resourcesList = []
-    resourcesDictSites = get_agis_resources()
+    resourcesDictSites = get_CRIC_resources()
     sqlRequest = """SELECT computingsite, jobstatus_grouped, SUM(HS) 
     FROM (SELECT computingsite, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing'
     ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP BY computingsite, jobstatus_grouped"""
@@ -755,7 +762,7 @@ def fairsharePolicy(request):
     PLEDGED = 'pledged'
     IGNORE = 'ignore'
     #sqlrequest ="""select SITEID, fairsharepolicy  from atlas_pandameta.schedconfig"""
-    fairsharepolicyDict = get_agis_fairsharepolicy()
+    fairsharepolicyDict = get_CRIC_fairsharepolicy()
     newfairsharepolicyDict = {}
     fairsharepolicies = fairsharepolicyDict.values()
     for site in fairsharepolicyDict.keys():
