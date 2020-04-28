@@ -601,7 +601,15 @@ function buildQueueSummary(data, divid) {
       {
         sDefaultContent: "---",
         className: "num",
-        render: $.fn.dataTable.render.number( ',', '.'),
+        render: function(data, type, row, meta) {
+          let cellstr = '<a target="_blank" class="';
+          let diffpct = 0;
+          (row[19] !== 0) ? diffpct = (row[7] - row[19])*100./row[19] : diffpct = 0;
+          if (diffpct > 20) {cellstr += 'alert';}
+          else if (diffpct > 10) {cellstr += 'warning';}
+          cellstr += '" href = "{% url 'harvesters' %}?hours=100&status=running&computingsite=' + row[0] + '">' + row[7] + '</a>';
+          return cellstr
+        }
       },
       {
         sDefaultContent: "---",
