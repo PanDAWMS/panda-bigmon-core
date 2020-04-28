@@ -513,6 +513,12 @@ th.vertical {
     color: #355681 !important;
     font-weight: bold;
   }
+  .data-table tbody td > a.alert {
+    color: firebrick !important;
+  }
+  .data-table tbody td > a.warning {
+    color: #FF9933 !important;
+  }
   .data-table .num {
     text-align: right !important;
   }
