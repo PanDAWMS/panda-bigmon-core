@@ -308,6 +308,7 @@
                         <th>Harvester</th>
                         <th>Workerid</th>
                         <th>Pandaid</th>
+                        <th>Jobstatus</th>
                         </thead>
                         <tbody>
 
@@ -768,6 +769,10 @@ query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashbo
                               return '<a href = "{% url 'jobInfo' %}/' + full['pandaid'] + '">' + full['pandaid'] + '</a>'
                           }
                       }
+                  },
+                  {
+                      "data": "jobstatus",
+                      sDefaultContent: ""
                   },
 
               ],

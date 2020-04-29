@@ -278,6 +278,20 @@ def harvestermon(request):
             limit = 100
             if 'limit' in request.session['requestParams']:
                 limit = request.session['requestParams']['limit']
+
+            sqlQueryJobsStates = """
+                        SELECT hw.*, cj.jobstatus FROM (
+                            SELECT * from atlas_panda.harvester_rel_jobs_workers 
+                                where harvesterid like '%s'
+                                    and workerid in (
+                                        SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
+                                            where harvesterid like '%s' %s %s %s %s %s %s %s
+                                                )  
+                            ORDER by lastupdate DESC
+                            ) hw , ATLAS_PANDABIGMON.combined_wait_act_def_arch4 cj
+                        WHERE hw.pandaid = cj.pandaid and rownum <= %s   
+                        """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
+                               computingelement, limit)
             sqlQueryJobs = """
             SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where harvesterid like '%s' and workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
             where harvesterid like '%s' %s %s %s %s %s %s %s)  ORDER by lastupdate DESC) WHERE  rownum <= %s
@@ -285,7 +299,7 @@ def harvestermon(request):
             computingelement, limit)
 
             cur = connection.cursor()
-            cur.execute(sqlQueryJobs)
+            cur.execute(sqlQueryJobsStates)
 
             jobs = cur.fetchall()
 
@@ -571,6 +585,20 @@ def harvestermon(request):
 
             if 'limit' in request.session['requestParams']:
                 limit = request.session['requestParams']['limit']
+
+            sqlQueryJobsStates = """
+            SELECT hw.*, cj.jobstatus FROM (
+                SELECT * from atlas_panda.harvester_rel_jobs_workers 
+                    where harvesterid in (%s)
+                        and workerid in (
+                            SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
+                                where harvesterid in (%s) %s %s %s %s %s %s %s
+                                    )  
+                ORDER by lastupdate DESC
+                ) hw , ATLAS_PANDABIGMON.combined_wait_act_def_arch4 cj
+            WHERE hw.pandaid = cj.pandaid and rownum <= %s   
+            """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
+                          computingelement, limit)
             sqlQueryJobs = """
                    SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where harvesterid in (%s) and 
                    workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
@@ -580,7 +608,7 @@ def harvestermon(request):
                           computingelement, limit)
 
             cur = connection.cursor()
-            cur.execute(sqlQueryJobs)
+            cur.execute(sqlQueryJobsStates)
 
             jobs = cur.fetchall()
 
@@ -1199,6 +1227,7 @@ def query_to_dicts(query_string, *query_args):
         row_dict = dict(izip(col_names, row))
         yield row_dict
     return
+
 
 def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields=''):
     '''
