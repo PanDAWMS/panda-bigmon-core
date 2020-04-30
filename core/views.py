@@ -1783,7 +1783,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             elif f == 'specialhandling':
                 if not 'specialhandling' in sumd:
                     sumd['specialhandling'] = {}
-                shl = job['specialhandling'].split()
+                shl = job['specialhandling'].split() if job['specialhandling'] is not None else []
                 for v in shl:
                     if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
                     sumd['specialhandling'][v] += 1
