@@ -421,7 +421,12 @@ def initRequest(request, callselfmon = True):
     request.session['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
 
     notimerangeurl = extensibleURL(request)
-    timerange_params = ['days', 'hours', 'date_from', 'date_to', 'endtimerange', 'earlierthan', 'earlierthandays']
+    timerange_params = [
+        'days', 'hours',
+        'date_from', 'date_to',
+        'endtimerange', 'endtime_from', 'endtime_to',
+        'earlierthan', 'earlierthandays'
+    ]
     for trp in timerange_params:
         notimerangeurl = removeParam(notimerangeurl, trp, mode='extensible')
     request.session['notimerangeurl'] = notimerangeurl
