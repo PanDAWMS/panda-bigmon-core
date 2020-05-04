@@ -248,6 +248,7 @@ def grafana_api(request):
 
 
     except Exception as ex:
+
         result.append(ex)
     return JsonResponse(result)
 

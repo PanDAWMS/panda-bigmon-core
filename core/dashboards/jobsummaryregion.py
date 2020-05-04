@@ -5,20 +5,22 @@ import json
 import logging
 import urllib3
 import copy
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.db import connection
-from django.db.models import Q, Sum
+from django.db.models import Q, Count
 from django.core.cache import cache
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.views import login_customrequired, initRequest, setupView, DateEncoder
 
 from core.schedresource.models import SchedconfigJson
-from core.harvester.models import HarvesterWorkerStats
+from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers
 from core.pandajob.models import PandaJob
+
+from core.settings.local import defaultDatetimeFormat
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -300,8 +302,13 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
     # get job info
     jsq = get_job_summary_split(query, extra=extra)
 
+    print(datetime.utcnow())
     # get workers info
+    if 'computingsite__in' not in query:
+        # put full list of compitingsites to use index in workers table
+        query['computingsite__in'] = list(set([row['computingsite'] for row in jsq]))
     wsq = get_workers_summary_split(query)
+    print(datetime.utcnow())
 
     # fill template with real values of job states counts
     for row in jsq:
@@ -396,18 +403,22 @@ def get_job_summary_split(query, extra):
 
 def get_workers_summary_split(query):
     """Get statistics of submitted and running Harvester workers"""
-
+    N_HOURS = 100
     wquery = {}
     if 'computingsite__in' in query:
         wquery['computingsite__in'] = query['computingsite__in']
     if 'resourcetype' in query:
         wquery['resourcetype'] = query['resourcetype']
+    wquery['submittime__castdate__range'] = [
+        (datetime.utcnow()-timedelta(hours=N_HOURS)).strftime(defaultDatetimeFormat),
+        datetime.utcnow().strftime(defaultDatetimeFormat)
+    ]
     wquery['status__in'] = ['running', 'submitted']
-    wquery['jobtype__in'] = ['managed', 'user', 'panda']
-    w_running = Sum('nworkers', filter=Q(status__exact='running'))
-    w_submitted = Sum('nworkers', filter=Q(status__exact='submitted'))
-    w_values = ['computingsite', 'resourcetype', 'jobtype']
-    worker_summary = HarvesterWorkerStats.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
+    # wquery['jobtype__in'] = ['managed', 'user', 'panda']
+    w_running = Count('workerid', filter=Q(status__exact='running'))
+    w_submitted = Count('workerid', filter=Q(status__exact='submitted'))
+    w_values = ['computingsite', 'resourcetype', 'jobtype', 'workerid']
+    worker_summary = HarvesterWorkers.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
 
     # Translate prodsourcelabel values to descriptive analy|prod job types
     worker_summary = prodsourcelabel_to_jobtype(worker_summary, field_name='jobtype')

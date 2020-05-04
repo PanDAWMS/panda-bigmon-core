@@ -23,25 +23,28 @@ from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, Har
 from core.settings.local import dbaccess, defaultDatetimeFormat
 
 
-harvWorkerStatuses = [
+harvesterWorkerStatuses = [
     'missed', 'submitted', 'ready', 'running', 'idle', 'finished', 'failed', 'cancelled'
 ]
 
 
 @login_customrequired
 def harvesterWorkersDash(request):
+
     valid, response = initRequest(request)
 
     hours = 24 * 3
+
     if 'days' in request.session['requestParams']:
         days = int(request.session['requestParams']['days'])
         hours = days*24
-    query = setupView(request, hours=hours, wildCardExt=False)
 
+    query = setupView(request, hours=hours, wildCardExt=False)
 
     tquery = {}
     tquery['status__in'] = ['missed', 'submitted', 'idle', 'finished', 'failed', 'cancelled']
     tquery['lastupdate__range'] = query['modificationtime__castdate__range']
+
     if 'harvesterid__in' in query:
         tquery['harvesterid__in'] = query['harvesterid__in']
 
@@ -57,7 +60,7 @@ def harvesterWorkersDash(request):
     for harvesterWorker in harvesterWorkers:
         if not harvesterWorker['computingsite'] in statusesSummary:
             statusesSummary[harvesterWorker['computingsite']] = OrderedDict()
-            for harwWorkStatus in harvWorkerStatuses:
+            for harwWorkStatus in harvesterWorkerStatuses:
                 statusesSummary[harvesterWorker['computingsite']][harwWorkStatus] = 0
         statusesSummary[harvesterWorker['computingsite']][harvesterWorker['status']] = harvesterWorker['status__count']
 
@@ -65,7 +68,7 @@ def harvesterWorkersDash(request):
 
     data = {
         'statusesSummary': statusesSummary,
-        'harvWorkStatuses':harvWorkerStatuses,
+        'harvWorkStatuses':harvesterWorkerStatuses,
         'request': request,
         'hours':hours,
         'viewParams': request.session['viewParams'],
@@ -75,10 +78,11 @@ def harvesterWorkersDash(request):
     response = render_to_response('harvworksummarydash.html', data, content_type='text/html')
     return response
 
-# SELECT COMPUTINGSITE,STATUS, count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS WHERE SUBMITTIME > (sysdate - interval '35' day) group by COMPUTINGSITE,STATUS
 @login_customrequired
-def harvesterWorkList(request):
+def harvesterWorkerList(request):
+
     valid, response = initRequest(request)
+
     query,extra, LAST_N_HOURS_MAX = setupView(request, hours=24*3, wildCardExt=True)
 
     statusDefined = False
@@ -119,6 +123,7 @@ def harvesterWorkList(request):
 def harvesterWorkerInfo(request):
 
     valid, response = initRequest(request)
+
     harvesterid = None
     workerid = None
     workerinfo = {}
@@ -130,6 +135,7 @@ def harvesterWorkerInfo(request):
 
     workerslist = []
     error = None
+
     if harvesterid and workerid:
         tquery = {}
         tquery['harvesterid'] = harvesterid
@@ -142,8 +148,6 @@ def harvesterWorkerInfo(request):
                                                                             'nativestatus','diagmessage','computingelement','njobs',))
 
         if len(workerslist) > 0:
-            # corrJobs = []
-            # corrJobs.extend(HarvesterRelJobsWorkers.objects.filter(**tquery).values('pandaid'))
             workerinfo = workerslist[0]
             workerinfo['corrJobs'] = []
             workerinfo['jobsStatuses'] = {}
@@ -173,7 +177,6 @@ def harvesterWorkerInfo(request):
     else:
         error = "Harvesterid + Workerid is not specified"
 
-
     data = {
         'request': request,
         'error': error,
@@ -195,7 +198,8 @@ def harvesterfm (request):
     return redirect('/harvesters/')
 
 @login_customrequired
-def harvesters(request):
+def harvestermon(request):
+
     valid, response = initRequest(request)
 
     data = getCacheEntry(request, "harvester")
@@ -203,13 +207,15 @@ def harvesters(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('harvesters.html', data, content_type='text/html')
+        response = render_to_response('harvestermon.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
     extra = '1=1'
     xurl = extensibleURL(request)
+
     URL = ''
+
     if 'instance' in request.session['requestParams']:
         instance = request.session['requestParams']['instance']
 
@@ -230,6 +236,7 @@ def harvesters(request):
                 stat['lastupdate'] = datetime.strptime(str(stat['lastupdate']), old_format).strftime(new_format)
                 harvsterworkerstats.append(stat)
             return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='application/json')
+
         if ('pandaids' in request.session['requestParams'] and 'instance' in request.session['requestParams']):
 
             status = ''
@@ -271,14 +278,31 @@ def harvesters(request):
             limit = 100
             if 'limit' in request.session['requestParams']:
                 limit = request.session['requestParams']['limit']
-            sqlqueryjobs = """
+
+            sqlQueryJobsStates = """
+                SELECT hw.*, cj.jobstatus FROM (
+                    SELECT * from atlas_panda.harvester_rel_jobs_workers 
+                        where harvesterid like '%s'
+                            and workerid in (
+                              select workerid from (
+                                SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
+                                    where harvesterid like '%s' %s %s %s %s %s %s %s
+                                    ORDER by lastupdate DESC
+                                )
+                              where rownum <= %s 
+                              )
+                    ) hw , ATLAS_PANDABIGMON.combined_wait_act_def_arch4 cj
+                WHERE hw.pandaid = cj.pandaid 
+                """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
+                               computingelement, limit)
+            sqlQueryJobs = """
             SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where harvesterid like '%s' and workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
             where harvesterid like '%s' %s %s %s %s %s %s %s)  ORDER by lastupdate DESC) WHERE  rownum <= %s
             """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
             computingelement, limit)
 
             cur = connection.cursor()
-            cur.execute(sqlqueryjobs)
+            cur.execute(sqlQueryJobsStates)
 
             jobs = cur.fetchall()
 
@@ -290,6 +314,7 @@ def harvesters(request):
                 harvsterpandaids.append(object)
 
             return HttpResponse(json.dumps(harvsterpandaids, cls=DateTimeEncoder), content_type='application/json')
+
         if ('dialogs' in request.session['requestParams'] and 'instance' in request.session['requestParams']):
             dialogs = []
             tquery = {}
@@ -357,32 +382,33 @@ def harvesters(request):
             hours = ''
             defaulthours = int(request.session['requestParams']['days']) * 24
 
-        sqlquery = """
-        SELECT
-        ii.harvester_id,
-        ii.description,
-        to_char(ii.starttime, 'dd-mm-yyyy hh24:mi:ss') as starttime,
-        to_char(ii.lastupdate, 'dd-mm-yyyy hh24:mi:ss') as lastupdate,
-        ii.owner,
-        ii.hostname,
-        ii.sw_version,
-        ii.commit_stamp,
-        to_char(ww.submittime, 'dd-mm-yyyy hh24:mi:ss') as submittime
-        FROM
-        atlas_panda.harvester_instances ii INNER JOIN 
-        atlas_panda.harvester_workers ww on ww.harvesterid = ii.harvester_id {0} and ii.harvester_id like '{1}'
+        sqlQuery = """
+            SELECT
+            ii.harvester_id,
+            ii.description,
+            to_char(ii.starttime, 'dd-mm-yyyy hh24:mi:ss') as starttime,
+            to_char(ii.lastupdate, 'dd-mm-yyyy hh24:mi:ss') as lastupdate,
+            ii.owner,
+            ii.hostname,
+            ii.sw_version,
+            ii.commit_stamp,
+            to_char(ww.submittime, 'dd-mm-yyyy hh24:mi:ss') as submittime
+            FROM
+            atlas_panda.harvester_instances ii INNER JOIN 
+            atlas_panda.harvester_workers ww on ww.harvesterid = ii.harvester_id {0} and ii.harvester_id like '{1}'
         """.format(hours, str(instance))
 
         cur = connection.cursor()
-        cur.execute(sqlquery)
+        cur.execute(sqlQuery)
         qinstanceinfo = cur.fetchall()
+
         columns = [str(i[0]).lower() for i in cur.description]
         instanceinfo = {}
         for info in qinstanceinfo:
             instanceinfo = dict(zip(columns, info))
 
         if len(qinstanceinfo) == 0:
-            sqlquery = """
+            sqlQuery = """
             SELECT
             ii.harvester_id,
             ii.description,
@@ -401,11 +427,13 @@ def harvesters(request):
             """.format(str(instance))
 
             cur = connection.cursor()
-            cur.execute(sqlquery)
+            cur.execute(sqlQuery)
             qinstanceinfo = cur.fetchall()
             columns = [str(i[0]).lower() for i in cur.description]
+
             for info in qinstanceinfo:
                 instanceinfo = dict(zip(columns, info))
+
             if bool(instanceinfo) != True or instanceinfo['submittime'] is None:
                 message = """Instance is not found OR no workers for this instance or time period"""
                 return HttpResponse(json.dumps({'message': message}),
@@ -418,8 +446,13 @@ def harvesters(request):
             hours = ''
             defaulthours = daysdelta * 24
 
-        harvesterworkersquery = """SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS where harvesterid = '{0}' {1} {2} {3} {4} {5} {6} {7}""".format(str(instance), status, computingsite, workerid, lastupdateCache, days, hours, resourcetype, computingelement)
-        harvester_dicts = query_to_dicts(harvesterworkersquery)
+        harvesterWorkersQuery = """
+        SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS 
+        where harvesterid = '{0}' {1} {2} {3} {4} {5} {6} {7}"""\
+            .format(str(instance), status, computingsite, workerid, lastupdateCache,
+                    days, hours, resourcetype, computingelement)
+
+        harvester_dicts = query_to_dicts(harvesterWorkersQuery)
 
         harvester_list = []
         harvester_list.extend(harvester_dicts)
@@ -436,7 +469,7 @@ def harvesters(request):
 
         generalInstanseInfo = {'HarvesterID': instanceinfo['harvester_id'], 'Description': instanceinfo['description'], 'Starttime': instanceinfo['starttime'],
                                'Owner': instanceinfo['owner'], 'Hostname': instanceinfo['hostname'], 'Lastupdate': instanceinfo['lastupdate'], 'Computingsites':computingsitesDict,
-                               'Statuses':statusesDict,'Resourcetypes': resourcetypesDict, 'Computingelements': computingelementsDict,'Software version': instanceinfo['sw_version'],
+                               'Statuses': statusesDict,'Resourcetypes': resourcetypesDict, 'Computingelements': computingelementsDict,'Software version': instanceinfo['sw_version'],
                                'Jobscount': jobscnt, 'Commit stamp': instanceinfo['commit_stamp']
         }
         generalInstanseInfo = collections.OrderedDict(generalInstanseInfo)
@@ -457,10 +490,12 @@ def harvesters(request):
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
 
-        return render_to_response('harvesters.html', data, content_type='text/html')
+        return render_to_response('harvestermon.html', data, content_type='text/html')
+
     elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
 
         computingsite = request.session['requestParams']['computingsite']
+
         if ('workersstats' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']):
             harvsterworkerstats = []
             tquery = {}
@@ -479,6 +514,7 @@ def harvesters(request):
                 harvsterworkerstats.append(stat)
 
             return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='application/json')
+
         if ('dialogs' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']):
             dialogs = []
             tquery = {}
@@ -494,7 +530,9 @@ def harvesters(request):
                 dialog['creationtime'] = datetime.strptime(str(dialog['creationtime']), old_format).strftime(new_format)
                 dialogs.append(dialog)
             return HttpResponse(json.dumps(dialogs, cls=DateTimeEncoder), content_type='application/json')
+
         if ('pandaids' in request.session['requestParams'] and 'computingsite' in request.session['requestParams']):
+
             status = ''
             computingsite = ''
             workerid = ''
@@ -503,14 +541,15 @@ def harvesters(request):
             resourcetype = ''
             computingelement = ''
             instance = ''
+
             if 'instance' not in request.session['requestParams']:
-                sqlqueryinstances = """
+                sqlQueryInstances = """
                        SELECT harvesterid
                        FROM ATLAS_PANDA.HARVESTER_WORKERS where computingsite like '%s' group by harvesterid
-                       """ % (
-                    request.session['requestParams']['computingsite'])
+                       """ % (request.session['requestParams']['computingsite'])
+
                 cur = connection.cursor()
-                cur.execute(sqlqueryinstances)
+                cur.execute(sqlQueryInstances)
 
                 instances = cur.fetchall()
                 for ins in instances:
@@ -519,7 +558,6 @@ def harvesters(request):
 
             if 'status' in request.session['requestParams']:
                 status = """AND status like '%s'""" % (str(request.session['requestParams']['status']))
-
             if 'computingsite' in request.session['requestParams']:
                 computingsite = """AND computingsite like '%s'""" % (
                     str(request.session['requestParams']['computingsite']))
@@ -533,29 +571,50 @@ def harvesters(request):
                 workerid = """AND workerid in (%s)""" % (request.session['requestParams']['workerid'])
             if 'hours' in request.session['requestParams']:
                 defaulthours = request.session['requestParams']['hours']
-                hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) AS DATE)""" % (
+                hours = """AND submittime >= CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) AS DATE)""" % (
                     defaulthours)
             else:
-                hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) AS DATE) """ % (
+                hours = """AND submittime >= CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) AS DATE) """ % (
                     defaulthours)
             if 'days' in request.session['requestParams']:
-                days = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) AS DATE) """ % (
+                days = """AND submittime >= CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) AS DATE) """ % (
                     request.session['requestParams']['days'])
                 hours = ''
                 defaulthours = int(request.session['requestParams']['days'])*24
+
             harvsterpandaids = []
 
             limit = 100
+
             if 'limit' in request.session['requestParams']:
                 limit = request.session['requestParams']['limit']
-            sqlqueryjobs = """
-                   SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where harvesterid in (%s) and workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
-                   where harvesterid in (%s) %s %s %s %s %s %s %s)  ORDER by lastupdate DESC) WHERE  rownum <= %s
-                   """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
+
+            sqlQueryJobsStates = """
+            SELECT hw.*, cj.jobstatus FROM (
+                SELECT * from atlas_panda.harvester_rel_jobs_workers 
+                    where harvesterid in (%s)
+                        and workerid in (
+                          select workerid from (
+                            SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
+                                where harvesterid in (%s) %s %s %s %s %s %s %s
+                                ORDER by lastupdate DESC
+                            )
+                          where rownum <= %s 
+                          )
+                ) hw , ATLAS_PANDABIGMON.combined_wait_act_def_arch4 cj
+            WHERE hw.pandaid = cj.pandaid   
+            """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
+                          computingelement, limit)
+            sqlQueryJobs = """
+                   SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where harvesterid in (%s) and 
+                   workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
+                   where harvesterid in (%s) %s %s %s %s %s %s %s)  
+                   ORDER by lastupdate DESC) WHERE  rownum <= %s
+            """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
                           computingelement, limit)
 
             cur = connection.cursor()
-            cur.execute(sqlqueryjobs)
+            cur.execute(sqlQueryJobsStates)
 
             jobs = cur.fetchall()
 
@@ -576,6 +635,7 @@ def harvesters(request):
         defaulthours = 24
         resourcetype = ''
         computingelement = ''
+
         if 'status' in request.session['requestParams']:
             status = """AND status like '%s'""" % (str(request.session['requestParams']['status']))
             URL += '&status=' + str(request.session['requestParams']['status'])
@@ -602,17 +662,18 @@ def harvesters(request):
             URL += '&days=' + str(request.session['requestParams']['days'])
             hours = ''
             defaulthours = int(request.session['requestParams']['days']) * 24
-        sqlquery = """
-          SELECT * FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
+        sqlQuery = """
+          SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS
           where computingsite like '{0}' {1} {2} {3} {4} and ROWNUM<=1
           order by workerid DESC
-          """.format(str(computingsite),status, workerid, resourcetype,computingelement)
+          """.format(str(computingsite), status, workerid, resourcetype, computingelement)
 
         workersList = []
         cur = connection.cursor()
-        cur.execute(sqlquery)
+        cur.execute(sqlQuery)
 
         harvesterinfo = cur.fetchall()
+
         columns = [str(i[0]).lower() for i in cur.description]
 
         for worker in harvesterinfo:
@@ -620,10 +681,16 @@ def harvesters(request):
             workersList.append(object)
 
         if len(workersList) == 0:
-            message ="""Computingsite is not found OR no workers for this computingsite or time period. Try using this <a href =/harvesters/?computingsite=%s&days=365>link (last 365 days)</a>""" % (computingsite)
+            message ="""Computingsite is not found OR no workers for this computingsite or time period. 
+            Try using this <a href =/harvesters/?computingsite={0}&days=365>link (last 365 days)</a>""".format(computingsite)
             return HttpResponse(json.dumps({'message':  message}),
                             content_type='text/html')
-        harvesterworkersquery = """SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS where computingsite = '{0}' {1} {2} {3} {4} {5} """.format(str(computingsite), status, workerid, days, hours, resourcetype, computingelement)
+
+        harvesterworkersquery = """
+        SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS 
+        where computingsite = '{0}' {1} {2} {3} {4} {5} """\
+            .format(str(computingsite), status, workerid, days, hours, resourcetype, computingelement)
+
         harvester_dicts = query_to_dicts(harvesterworkersquery)
 
         harvester_list = []
@@ -633,15 +700,25 @@ def harvesters(request):
         harvesteridDict = dict(Counter(harvester['harvesterid'] for harvester in harvester_list))
         computingelementsDict = dict(Counter(harvester['computingelement'] for harvester in harvester_list))
         resourcetypesDict = dict(Counter(harvester['resourcetype'] for harvester in harvester_list))
+
         jobscnt = 0
+
         for harvester in harvester_list:
             if harvester['njobs'] is not None:
                 jobscnt += harvester['njobs']
 
-        generalInstanseInfo = {'Computingsite':workersList[0]['computingsite'], 'Description':workersList[0]['description'], 'Starttime': workersList[0]['insstarttime'],
-                                      'Owner':workersList[0]['owner'], 'Hostname':workersList[0]['hostname'],'Lastupdate':workersList[0]['inslastupdate'], 'Harvesters':harvesteridDict,'Statuses':statusesDict, 'Resourcetypes':resourcetypesDict,'Computingelements':computingelementsDict,'Software version':workersList[0]['sw_version'],'Commit stamp':workersList[0]['commit_stamp']
+        generalInstanseInfo = {'Computingsite': workersList[0]['computingsite'],
+                               # 'Starttime': workersList[0]['insstarttime'],
+                               # 'Hostname': workersList[0]['hostname'],
+                               # 'Lastupdate': workersList[0]['inslastupdate'],
+                               'Harvesters': harvesteridDict,
+                               'Statuses': statusesDict,
+                               'Resourcetypes': resourcetypesDict,
+                               'Computingelements': computingelementsDict,
+                               # 'Software version': workersList[0]['sw_version'],
+                               # 'Commit stamp': workersList[0]['commit_stamp']
         }
-        request.session['viewParams']['selection'] =  'Harvester workers, last %s hours' %(defaulthours)
+        request.session['viewParams']['selection'] = 'Harvester workers, last %s hours' %(defaulthours)
 
         data = {
                 'generalInstanseInfo': generalInstanseInfo,
@@ -658,7 +735,7 @@ def harvesters(request):
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
-        return render_to_response('harvesters.html', data, content_type='text/html')
+        return render_to_response('harvestermon.html', data, content_type='text/html')
     elif 'pandaid' in request.session['requestParams'] and 'computingsite' not in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
 
         pandaid = request.session['requestParams']['pandaid']
@@ -672,21 +749,23 @@ def harvesters(request):
         jobsworkersquery, pandaids = getWorkersByJobID(pandaid)
 
         if jobsworkersquery == '':
-            message = """No workers for this pandaid or time period. Try using this <a href =/harvesters/?pandaid=%s&days=365>link (last 365 days)</a>""" % (
-                    pandaid)
+            message = """
+            No workers for this pandaid or time period. 
+            Try using this <a href =/harvesters/?pandaid={0}&days=365>link (last 365 days)</a>""".format(pandaid)
             return HttpResponse(json.dumps({'message': message}),
                                     content_type='text/html')
         URL += '?pandaid=' + request.session['requestParams']['pandaid']
+
         if 'hours' in request.session['requestParams']:
             defaulthours = request.session['requestParams']['hours']
-            hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) AS DATE) """ % (
+            hours = """AND submittime >= CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) AS DATE) """ % (
             defaulthours)
             URL += '&hours=' + str(request.session['requestParams']['hours'])
         else:
-            hours = """AND submittime > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) AS DATE) """ % (
+            hours = """AND submittime >= CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' hour(3) AS DATE) """ % (
                 defaulthours)
         if 'days' in request.session['requestParams']:
-            days = """AND submittime  > CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) AS DATE) """ % (
+            days = """AND submittime  >= CAST(sys_extract_utc(SYSTIMESTAMP) - interval '%s' day(3) AS DATE) """ % (
             request.session['requestParams']['days'])
             URL += '&days=' + str(request.session['requestParams']['days'])
             hours = ''
@@ -695,6 +774,7 @@ def harvesters(request):
             jobsworkersquery += ' ' + hours
         if days != '':
             jobsworkersquery += ' ' + days
+
         if 'status' in request.session['requestParams']:
             status = """AND status like '%s'""" % (str(request.session['requestParams']['status']))
             URL += '&status=' + str(request.session['requestParams']['status'])
@@ -707,64 +787,65 @@ def harvesters(request):
         if 'computingelement' in request.session['requestParams']:
             computingelement = """AND computingelement like '%s'""" %(str(request.session['requestParams']['computingelement']))
             URL += '&computingelement=' + str(request.session['requestParams']['computingelement'])
-        # sqlquery = """
-        #   SELECT * FROM ATLAS_PANDABIGMON.HARVESTERWORKERS
-        #   where computingsite like '%s' %s %s %s %s and ROWNUM<=1
-        #   order by workerid DESC
-        #   """ % (str(computingsite),status, workerid, resourcetype,computingelement)
-        sqlharvester = """
+
+        sqlQueryHarvester = """
           SELECT harvesterid,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
           where (%s) %s %s %s %s group by harvesterid
           """ % (jobsworkersquery, status,  workerid, resourcetype, computingelement)
 
-        sqlquerystatus = """
+        sqlQueryStatus = """
           SELECT status,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
           where (%s) %s %s %s %s group by status
           """ % (jobsworkersquery, status,  workerid, resourcetype, computingelement)
 
-        sqlqueryresource = """
+        sqlQueryResource = """
         SELECT RESOURCETYPE,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
         where (%s) %s %s %s %s group by RESOURCETYPE
         """ % (jobsworkersquery, status, workerid, resourcetype, computingelement)
 
-        sqlqueryce = """
+        sqlQueryCE = """
         SELECT COMPUTINGELEMENT,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
         where (%s) %s %s %s %s group by COMPUTINGELEMENT
         """ % (jobsworkersquery, status, workerid, resourcetype, computingelement)
 
-        sqlquerycomputingsite = """
+        sqlQueryComputingsite = """
            SELECT COMPUTINGSITE,count(*) FROM ATLAS_PANDA.HARVESTER_WORKERS
            where (%s) %s %s %s %s  group by COMPUTINGSITE
            """ % (jobsworkersquery, status, workerid, resourcetype, computingelement)
 
         cur = connection.cursor()
 
-        cur.execute(sqlharvester)
+        cur.execute(sqlQueryHarvester)
         harvesterids = cur.fetchall()
 
-        cur.execute(sqlquerystatus)
+        cur.execute(sqlQueryStatus)
         statuses = cur.fetchall()
 
-        cur.execute(sqlqueryresource)
+        cur.execute(sqlQueryResource)
         resourcetypes = cur.fetchall()
 
-        cur.execute(sqlqueryce)
+        cur.execute(sqlQueryCE)
         computingelements = cur.fetchall()
 
-        cur.execute(sqlquerycomputingsite)
+        cur.execute(sqlQueryComputingsite)
         computingsites = cur.fetchall()
 
         harvesteridDict = {}
+
         for harvester in harvesterids:
             harvesteridDict[harvester[0]] = harvester[1]
 
         if len(harvesteridDict) == 0:
-            message = """No workers for this pandaid or time period. Try using this <a href =/harvesters/?pandaid=%s&days=365>link (last 365 days)</a>""" % (
+            message = """
+            No workers for this pandaid or time period. 
+            Try using this <a href =/harvesters/?pandaid=%s&days=365>link (last 365 days)
+            </a>""" % (
                     pandaid)
             return HttpResponse(json.dumps({'message': message}),
                                     content_type='text/html')
 
         computingsitesDict = {}
+
         for computingsite in computingsites:
             computingsitesDict[computingsite[0]] = computingsite[1]
 
@@ -804,24 +885,31 @@ def harvesters(request):
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
-        return render_to_response('harvesters.html', data, content_type='text/html')
+        return render_to_response('harvestermon.html', data, content_type='text/html')
     else:
-        sqlquery = """
-      SELECT HARVESTER_ID as HARVID,
-      SW_VERSION,
-      DESCRIPTION,
-      COMMIT_STAMP,
-      to_char(LASTUPDATE, 'dd-mm-yyyy hh24:mi:ss') as LASTUPDATE
-      FROM ATLAS_PANDA.HARVESTER_INSTANCES
+        sqlQuery = """
+          SELECT HARVESTER_ID as HARVID,
+          SW_VERSION,
+          DESCRIPTION,
+          COMMIT_STAMP,
+          to_char(LASTUPDATE, 'dd-mm-yyyy hh24:mi:ss') as LASTUPDATE
+          FROM ATLAS_PANDA.HARVESTER_INSTANCES
         """
         instanceDictionary = []
+
         cur = connection.cursor()
-        cur.execute(sqlquery)
+        cur.execute(sqlQuery)
 
         for instance in cur:
             instanceDictionary.append(
-                {'instance': instance[0], 'sw_version':instance[1],'commit_stamp':instance[2], 'descr': instance[3],'lastupdate':instance[4]})
+                {'instance': instance[0],
+                 'sw_version':instance[1],
+                 'commit_stamp':instance[2],
+                 'descr': instance[3],'lastupdate':instance[4]}
+            )
+
         request.session['viewParams']['selection'] = 'Harvester instances'
+
         data = {
             'instances':instanceDictionary,
             'type': 'instances',
@@ -833,31 +921,37 @@ def harvesters(request):
         #data =json.dumps(data,cls=DateEncoder)
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
-            return render_to_response('harvesters.html', data, content_type='text/html')
+            return render_to_response('harvestermon.html', data, content_type='text/html')
         else:
             return HttpResponse(json.dumps(instanceDictionary, cls=DateTimeEncoder), content_type='application/json')
 
 def isHarvesterJob(pandaid):
+
     jobHarvesterInfo = []
 
-    sqlRequest = '''
+    sqlQuery = """
     SELECT workerid,HARVESTERID, BATCHLOG, COMPUTINGELEMENT FROM (SELECT 
-  a.PANDAID,
-  a.workerid,
-  a.HARVESTERID,
-  b.BATCHLOG,
-  b.COMPUTINGELEMENT
-  FROM ATLAS_PANDA.HARVESTER_REL_JOBS_WORKERS a,
-  ATLAS_PANDA.HARVESTER_WORKERS b
-  WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) where pandaid = {0}
-  '''
-    sqlRequestFull = sqlRequest.format(str(pandaid))
+      a.PANDAID,
+      a.workerid,
+      a.HARVESTERID,
+      b.BATCHLOG,
+      b.COMPUTINGELEMENT
+      FROM ATLAS_PANDA.HARVESTER_REL_JOBS_WORKERS a,
+      ATLAS_PANDA.HARVESTER_WORKERS b
+      WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) where pandaid = {0}
+  """
+    sqlQuery = sqlQuery.format(str(pandaid))
+
     cur = connection.cursor()
-    cur.execute(sqlRequestFull)
+    cur.execute(sqlQuery)
+
     job = cur.fetchall()
+
     if len(job) == 0:
         return False
+
     columns = [str(column[0]).lower() for column in cur.description]
+
     for pid in job:
         jobHarvesterInfo.append(dict(zip(columns, pid)))
 
@@ -1027,16 +1121,21 @@ def workersJSON(request):
 @login_customrequired
 def harvesterslots(request):
     valid, response = initRequest(request)
+
     harvesterslotsList = []
-    harvesterslots=HarvesterSlots.objects.values('pandaqueuename','gshare','resourcetype','numslots','modificationtime','expirationtime')
+    harvesterslots = HarvesterSlots.objects.values('pandaqueuename','gshare','resourcetype','numslots','modificationtime','expirationtime')
+
     old_format = '%Y-%m-%d %H:%M:%S'
     new_format = '%d-%m-%Y %H:%M:%S'
+
     for slot in harvesterslots:
         slot['modificationtime'] = datetime.strptime(str(slot['modificationtime']), old_format).strftime(new_format)
         if slot['expirationtime'] is not None:
             slot['expirationtime'] = datetime.strptime(str(slot['expirationtime']), old_format).strftime(new_format)
         harvesterslotsList.append(slot)
+
     xurl = extensibleURL(request)
+
     data = {
         'harvesterslots': harvesterslotsList,
         'type': 'workers',
@@ -1052,8 +1151,6 @@ def harvesterslots(request):
 def getWorkersList(sqlWorkersList):
 
     cur = connection.cursor()
-    # cur.execute(sqlWorkersList)
-    # workersList = cur.fetchall()
 
     random.seed()
 
@@ -1063,23 +1160,22 @@ def getWorkersList(sqlWorkersList):
         tmpTableName = "TMP_IDS1DEBUG"
 
     transactionKey = random.randrange(1000000)
-    executionData = []
 
-    # for worker in workersList:
-    #     executionData.append((worker, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
-    query = """
+    sqlQuery = """
             INSERT INTO {0} 
             (ID,TRANSACTIONKEY,INS_TIME) 
             select workerid, {1}, TO_DATE('{2}', 'YYYY-MM-DD') from ({3})                   
             """.format(tmpTableName, transactionKey, timezone.now().strftime("%Y-%m-%d"), sqlWorkersList)
-    cur.execute(query)
+    cur.execute(sqlQuery)
 
-    query = """SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}""".format(transactionKey)
+    sqlQuery = """SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}""".format(transactionKey)
 
-    return transactionKey, query
+    return transactionKey, sqlQuery
 
 def getWorkersByJobID(pandaid, instance=''):
+
     instancequery = ''
+
     if '|' in pandaid:
         pandaid = 'where pandaid in (' + pandaid.replace('|', ',') + ')'
     elif ',' in pandaid:
@@ -1087,23 +1183,27 @@ def getWorkersByJobID(pandaid, instance=''):
     else:
         pandaid = 'where pandaid = ' + pandaid
 
-    if instance !='':
+    if instance != '':
        instancequery = """ AND harvesterid like '%s' """ %(instance)
 
-    sqlquery = """
+    sqlQuery = """
     select harvesterid, workerid, pandaid from atlas_panda.Harvester_Rel_Jobs_Workers %s %s
     """ % (pandaid, instancequery)
 
     cur = connection.cursor()
-    cur.execute(sqlquery)
+    cur.execute(sqlQuery)
 
     reljobsworkers = cur.fetchall()
+
     workersList = {}
     pandaidList = {}
+
     for worker in reljobsworkers:
         workersList.setdefault(worker[0], []).append(str(worker[1]))
         pandaidList[worker[0]] = str(worker[2])
+
     jobsworkersquery = ''
+
     instances = workersList.keys()
     cntinstances = len(instances)
 
@@ -1116,6 +1216,7 @@ def getWorkersByJobID(pandaid, instance=''):
             if cntinstances > 1:
                 jobsworkersquery += ' OR '
                 cntinstances = cntinstances - 1
+
     return jobsworkersquery, pandaidList
 
 def query_to_dicts(query_string, *query_args):
@@ -1133,6 +1234,7 @@ def query_to_dicts(query_string, *query_args):
         yield row_dict
     return
 
+
 def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields=''):
     '''
     Get jobs list for the particular harvester instance and worker
@@ -1146,19 +1248,15 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='')
 
     jobsList = []
 
-    qinstance = ''
-    qworkerid = ''
     qjobstatus = ''
 
-
-
     if instance != '':
-            qinstance = 'in (\'' + str(instance) + '\')'
+        qinstance = 'in (\'' + str(instance) + '\')'
     else:
         qinstance = 'is not null'
 
     if workerid != '':
-            qworkerid = 'in (' + str(workerid) + ')'
+        qworkerid = 'in (' + str(workerid) + ')'
     else:
         qworkerid = 'is not null'
 
@@ -1177,7 +1275,7 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='')
         else:
             values = 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','actualcorecount','schedulerid'
 
-    sqlRequest = """
+    sqlQuery = """
     SELECT DISTINCT {2} FROM
     (SELECT {2} FROM ATLAS_PANDA.JOBSARCHIVED4, 
     (select
@@ -1211,10 +1309,10 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='')
     atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID {3})  
     """
 
-    sqlRequest = sqlRequest.format(qinstance, qworkerid, ', '.join(values), qjobstatus)
+    sqlQuery = sqlQuery.format(qinstance, qworkerid, ', '.join(values), qjobstatus)
 
     cur = connection.cursor()
-    cur.execute(sqlRequest)
+    cur.execute(sqlQuery)
 
     jobs = cur.fetchall()
 
@@ -1256,7 +1354,7 @@ def getCeHarvesterJobs(request, computingelment, fields=''):
         else:
             values = 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','actualcorecount','schedulerid'
 
-    sqlRequest = """
+    sqlQuery = """
     SELECT DISTINCT {2} FROM
     (SELECT {2} FROM ATLAS_PANDA.JOBSARCHIVED4, 
     (SELECT jw.pandaid as pid FROM atlas_panda.harvester_rel_jobs_workers jw, atlas_panda.harvester_workers w
@@ -1275,7 +1373,7 @@ def getCeHarvesterJobs(request, computingelment, fields=''):
     WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSACTIVE4.PANDAID 
     UNION ALL 
     SELECT {2} FROM ATLAS_PANDA.JOBSDEFINED4, 
-   (SELECT jw.pandaid as pid FROM atlas_panda.harvester_rel_jobs_workers jw, atlas_panda.harvester_workers w
+    (SELECT jw.pandaid as pid FROM atlas_panda.harvester_rel_jobs_workers jw, atlas_panda.harvester_workers w
     WHERE jw.harvesterid=w.harvesterid AND jw.workerid = w.workerid
     AND w.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE)
     AND jw.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE)
@@ -1299,10 +1397,10 @@ def getCeHarvesterJobs(request, computingelment, fields=''):
     WHERE PIDACTIVE.pid=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID)  
     """
 
-    sqlRequest = sqlRequest.format(computingelment, lastupdated_time, ', '.join(values))
+    sqlQuery = sqlQuery.format(computingelment, lastupdated_time, ', '.join(values))
 
     cur = connection.cursor()
-    cur.execute(sqlRequest)
+    cur.execute(sqlQuery)
 
     jobs = cur.fetchall()
 

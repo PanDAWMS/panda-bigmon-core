@@ -26,6 +26,7 @@ class HarvesterWorkers(models.Model):
     diagmessage = models.CharField(max_length=500, db_column='DIAGMESSAGE', null=False, blank=True)
     computingelement = models.CharField(max_length=128, db_column='COMPUTINGELEMENT', null=False, blank=True)
     njobs = models.IntegerField( db_column='NJOBS', null=False)
+    jobtype = models.CharField(max_length=128, db_column='JOBTYPE', null=False, blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDA"."HARVESTER_WORKERS"'
 

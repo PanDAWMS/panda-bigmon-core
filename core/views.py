@@ -421,7 +421,12 @@ def initRequest(request, callselfmon = True):
     request.session['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
 
     notimerangeurl = extensibleURL(request)
-    timerange_params = ['days', 'hours', 'date_from', 'date_to', 'endtimerange', 'earlierthan', 'earlierthandays']
+    timerange_params = [
+        'days', 'hours',
+        'date_from', 'date_to',
+        'endtimerange', 'endtime_from', 'endtime_to',
+        'earlierthan', 'earlierthandays'
+    ]
     for trp in timerange_params:
         notimerangeurl = removeParam(notimerangeurl, trp, mode='extensible')
     request.session['notimerangeurl'] = notimerangeurl
@@ -1778,7 +1783,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             elif f == 'specialhandling':
                 if not 'specialhandling' in sumd:
                     sumd['specialhandling'] = {}
-                shl = job['specialhandling'].split()
+                shl = job['specialhandling'].split() if job['specialhandling'] is not None else []
                 for v in shl:
                     if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
                     sumd['specialhandling'][v] += 1

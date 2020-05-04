@@ -308,6 +308,7 @@
                         <th>Harvester</th>
                         <th>Workerid</th>
                         <th>Pandaid</th>
+                        <th>Jobstatus</th>
                         </thead>
                         <tbody>
 
@@ -756,7 +757,10 @@ query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashbo
                   },
                   {
                       "data": "workerid",
-                      sDefaultContent: ""
+                      sDefaultContent: "",
+                      render: function (data, type, full, meta) {
+                         return '<a href = "{% url 'harvesterWorkerInfo' %}?harvesterid=' + full['harvesterid'] + '&workerid=' + full['workerid'] + '">' + full['workerid'] + '</a>'
+                      }
                   },
                   {
                       "data": "pandaid",
@@ -769,16 +773,14 @@ query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashbo
                           }
                       }
                   },
+                  {
+                      "data": "jobstatus",
+                      sDefaultContent: ""
+                  },
 
               ],
               "createdRow": function (row, data, index) {
-                  if (data["status"] == 'running') {
-                      $('td', row).eq(0).addClass('running_fill');
-                      $('td', row).eq(1).addClass('running_fill');
-                      $('td', row).eq(2).addClass('running_fill');
-                      $('td', row).eq(3).addClass('running_fill');
-
-                  }
+                  $('td', row).eq(4).addClass(data['jobstatus'] + '_fill');
               },
 
           });

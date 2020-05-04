@@ -29,15 +29,20 @@
 {% block body %}
 
 <div class="callout primary" data-closable>
-    <h5><b>This is a new dashboard page!</b></h5>
-    <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
-    <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
-        Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type. Click on <b>Update</b> button to apply selection.</p>
-    <p>Click the job counts to go to job listings. Use the <b>Search</b> text input on the top of second table to find a PQ by name.</p>
-    <p>If you notice any issue or if you have an advise how to improve the page, please let us know
-        <a class="blacklink" href="mailto:atlas-adc-pandamon-support@cern.ch"><b>atlas-adc-pandamon-support@cern.ch</b></a> !</p>
+  <h5><b>This is a new dashboard page!</b></h5>
+  <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
+  <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
+    Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type.
+    Click on <b>Update</b> button to apply selection.</p>
+  <p>Click the job counts to go to job listings. Click on workers counts to go to harvester workers listings.
+    Use the <b>Search</b> text input on the top of second table to find a PQ by name.</p>
+  <p><b>N running workers</b> column has the next color coding scheme:
+    <span class="alert"><b>dark red</b></span> if N running workers > N running jobs for more than 20%,
+    <span class="warning"><b>orange</b></span> if N running workers > N running jobs for more than 10% and less than 20%.</p>
+  <p>If you notice any issue or if you have an advise how to improve the page, please let us know
+    <a class="blacklink" href="mailto:atlas-adc-pandamon-support@cern.ch"><b>atlas-adc-pandamon-support@cern.ch</b></a> !</p>
   <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-        <span aria-hidden="true">&times;</span>
+    <span aria-hidden="true">&times;</span>
   </button>
 </div>
 
@@ -327,7 +332,7 @@ function buildRegionSummary(data, divid) {
           },
           {
             sDefaultContent: "---",
-            className: "failed num",
+            className: "alert num",
           },
           {
             sDefaultContent: "---",
@@ -596,7 +601,9 @@ function buildQueueSummary(data, divid) {
       {
         sDefaultContent: "---",
         className: "num",
-        render: $.fn.dataTable.render.number( ',', '.'),
+        render: function(data, type, row, meta) {
+            return '<a href = "{% url 'harvesters' %}?hours=100&status=submitted&computingsite=' + row[0] + '">' + row[6] + '</a>';
+        }
       },
       {
         sDefaultContent: "---",
@@ -629,7 +636,7 @@ function buildQueueSummary(data, divid) {
       },
       {
         sDefaultContent: "---",
-        className: "failed num",
+        className: "alert num",
       },
       {
         sDefaultContent: "---",

@@ -60,6 +60,8 @@
 .ok {color:#0a47ff}
 .queued { color:grey }
 .corrupted { color:red }
+.alert { color: firebrick }
+.warning { color: #FF9933}
 
 .corrupted_fill { color:black;  background-color:#FF8174 }
 .alarm_fill { color:black;  background-color:#FF8174 }
