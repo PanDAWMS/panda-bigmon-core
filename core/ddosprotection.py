@@ -17,7 +17,7 @@ _logger = logging.getLogger('bigpandamon')
 class DDOSMiddleware(object):
 
     sleepInterval = 5 #sec
-    maxAllowedJSONRequstesPerHour = 400
+    maxAllowedJSONRequstesPerHour = 600
     notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86', '144.206.131.154',
                               '188.184.90.172' # J..h M......n request
                               ]
