@@ -162,4 +162,3 @@ class DDOSMiddleware(object):
         reqs.rtime = datetime.utcnow()
         reqs.save()
         return response
-
