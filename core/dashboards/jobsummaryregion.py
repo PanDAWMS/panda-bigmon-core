@@ -302,13 +302,11 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
     # get job info
     jsq = get_job_summary_split(query, extra=extra)
 
-    print(datetime.utcnow())
     # get workers info
     if 'computingsite__in' not in query:
         # put full list of compitingsites to use index in workers table
         query['computingsite__in'] = list(set([row['computingsite'] for row in jsq]))
     wsq = get_workers_summary_split(query)
-    print(datetime.utcnow())
 
     # fill template with real values of job states counts
     for row in jsq:
@@ -415,9 +413,9 @@ def get_workers_summary_split(query):
     ]
     wquery['status__in'] = ['running', 'submitted']
     # wquery['jobtype__in'] = ['managed', 'user', 'panda']
-    w_running = Count('workerid', filter=Q(status__exact='running'))
-    w_submitted = Count('workerid', filter=Q(status__exact='submitted'))
-    w_values = ['computingsite', 'resourcetype', 'jobtype', 'workerid']
+    w_running = Count('jobtype', filter=Q(status__exact='running'))
+    w_submitted = Count('jobtype', filter=Q(status__exact='submitted'))
+    w_values = ['computingsite', 'resourcetype', 'jobtype']
     worker_summary = HarvesterWorkers.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
 
     # Translate prodsourcelabel values to descriptive analy|prod job types
