@@ -8914,7 +8914,7 @@ def taskInfo(request, jeditaskid=0):
 
     if taskrec:
 
-        if 'tasktype' in taskrec and taskrec['tasktype'] == 'anal':
+        if 'tasktype' in taskrec:
             tmcj_list = get_top_memory_consumers(taskrec)
             if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
                 warning['memoryleaksuspicion'] = {}

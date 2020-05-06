@@ -357,14 +357,14 @@
     {% endif %}
   {% endif %}
 
-  {% if task.tasktype == 'anal' and warning.memoryleaksuspicion %}
+  {% if warning.memoryleaksuspicion %}
       <p></p>
       <div class="callout warning" data-closable>
         <h5>Warning! {{ warning.memoryleaksuspicion.message }}</h5>
-        <p>At least one of jobs in this task consumed more max RSS than it is available on a computing site. Please check the next top memory consumed jobs and their memory and IO usage plots: </p>
+        <p>At least one of jobs in this task consumed more max PSS than it is limited by a computing site. Please check the next top memory consumed jobs and their memory and IO usage plots: </p>
         <ul>
         {% for job in warning.memoryleaksuspicion.jobs %}
-          <li style="font-size: smaller"> <a class="blacklink bold hover" href="{% url 'jobInfo' job.pandaid %}">{{ job.pandaid }}</a> job consumed {{ job.jobmaxrss }} MB out of {{ job.sitemaxrss }} MB available on <a class="blacklink bold hover" href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a>, see <a class="blacklink bold hover" target="_blank" href="{% url 'memoryplot' %}?pandaid={{ job.pandaid }}">plots</a>
+          <li style="font-size: smaller"> <a class="blacklink bold hover" href="{% url 'jobInfo' job.pandaid %}">{{ job.pandaid }}</a> job consumed {{ job.jobmaxrss }} MB out of {{ job.sitemaxrss }} MB limited by <a class="blacklink bold hover" href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a>, see <a class="blacklink bold hover" target="_blank" href="{% url 'prMonPlots' job.pandaid %}">plots</a>
         {% endfor %}
         </ul>
         <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
