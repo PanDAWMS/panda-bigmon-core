@@ -484,10 +484,10 @@ def get_top_memory_consumers(taskrec):
     select j.jeditaskid, j.pandaid, j.computingsite, j.jobmaxrss, s.maxrss as sitemaxrss, j.jobmaxrss/s.maxrss as maxrssratio, 
         row_number() over (partition by jeditaskid order by j.jobmaxrss/s.maxrss desc) as jobrank
     from atlas_pandameta.schedconfig s,
-    (select pandaid, jeditaskid, computingsite, maxrss/1000 as jobmaxrss from ATLAS_PANDA.jobsarchived4 
+    (select pandaid, jeditaskid, computingsite, maxpss/1000 as jobmaxrss from ATLAS_PANDA.jobsarchived4 
         where jeditaskid = :jdtsid and maxrss is not null
     union
-    select pandaid, jeditaskid, computingsite, maxrss/1000 as jobmaxrss from ATLAS_PANDAARCH.jobsarchived 
+    select pandaid, jeditaskid, computingsite, maxpss/1000 as jobmaxrss from ATLAS_PANDAARCH.jobsarchived 
         where jeditaskid = :jdtsid  and maxrss is not null
     ) j
     where j.computingsite = s.nickname
