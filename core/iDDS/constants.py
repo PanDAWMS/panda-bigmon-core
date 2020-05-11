@@ -19,16 +19,6 @@ SCOPE_LENGTH = 25
 NAME_LENGTH = 255
 
 
-class Sections:
-    Main = 'main'
-    Common = 'common'
-    Clerk = 'clerk'
-    Transformer = 'transformer'
-    Transporter = 'transporter'
-    Carrier = 'carrier'
-    Conductor = 'conductor'
-
-
 class HTTP_STATUS_CODE:
     OK = 200
     Created = 201

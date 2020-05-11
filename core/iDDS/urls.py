@@ -11,5 +11,5 @@ urlpatterns = [
     re_path(r'^transforms/$', idds_views.transforms, name='iddstransforms'),
     re_path(r'^processings/$', idds_views.processings, name='iddprocessings'),
     re_path(r'^contents/$', idds_views.iddsсontents, name='iddsсontents'),
-
+    re_path(r'^getiddsfortask/$', idds_views.getiDDSInfoForTask, name='getiDDSInfoForTask'),
 ]
