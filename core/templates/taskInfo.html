@@ -634,7 +634,7 @@
                 }
             ).then(function (res) {
                 var iddsjson = angular.fromJson(res.data);
-                if  ('data' in iddsjson) {
+                if  (('data' in iddsjson) && (Object.keys(iddsjson['data']).length > 0)){
                     var displaydiv = document.getElementById('iDDsDiv');
                     displaydiv.style.display = "";
                     $scope.iddsjson = iddsjson['data'];
