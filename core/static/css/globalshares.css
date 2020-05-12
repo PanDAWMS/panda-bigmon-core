@@ -86,6 +86,21 @@ table.bp-table tbody tr.l3 {
 
 }
 
+fieldset.inline-input {
+  margin: 0 0 0 4.5rem;
+}
+fieldset.inline-input label {
+  display: inline;
+  margin-right: 0.3rem;
+}
+fieldset.inline-input label input {
+  margin: 0 0.3rem 0.3rem 0;
+}
+fieldset.inline-input legend {
+  display: contents;
+  font-size: 0.875rem;
+}
+
 .tabs.gs {
   border: none;
   background-color: #5e789a;

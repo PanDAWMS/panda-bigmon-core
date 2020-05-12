@@ -30,7 +30,11 @@ def globalshares(request):
     if not valid: return response
     setupView(request, hours=180 * 24, limit=9999999)
     gs, tablerows = __get_hs_leave_distribution()
-    gsPlotData = {'pieChartActualHS06': [], 'barChartActualVSTarget': []}
+    gsPlotData = {
+        'pieChartActualHS06': [],
+        'barChartActualVSTarget': [],
+        'barChartActualVSTargetSplit': {'resourceTypeList': [], 'data': {}}
+    }
 
     for shareName, shareValue in gs.items():
         shareValue['delta'] = shareValue['executing'] - shareValue['pledged']
@@ -43,9 +47,10 @@ def globalshares(request):
                 'Actual': int(shareValue['executing']),
                 'Target': int(shareValue['pledged'])
             })
-
-    gsPlotData['pieChartActualHS06'] = sorted(gsPlotData['pieChartActualHS06'], key=lambda x: x[0])
-    gsPlotData['barChartActualVSTarget'] = sorted(gsPlotData['barChartActualVSTarget'], key=lambda x: -x['Actual'])
+            gsPlotData['barChartActualVSTargetSplit']['data'][str(shareName)] = {
+                'Target': int(shareValue['pledged']),
+                'Actual': {}
+            }
 
     for shareValue in tablerows:
         shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue else None
@@ -72,6 +77,15 @@ def globalshares(request):
             ordtablerows[level1][level2]['childlist'].append(level3)
 
     resources_list, resources_dict = get_resources_gshare()
+
+    # add data to bar plot
+    for gs, rd in resources_dict.items():
+        if gs in gsPlotData['barChartActualVSTargetSplit']['data']:
+            for r, values in rd.items():
+                if 'executing' in values and values['executing'] > 0:
+                    gsPlotData['barChartActualVSTargetSplit']['data'][gs]['Actual'][r] = int(values['executing'])
+                    if r not in gsPlotData['barChartActualVSTargetSplit']['resourceTypeList']:
+                        gsPlotData['barChartActualVSTargetSplit']['resourceTypeList'].append(r)
 
     newTablesRow =[]
     for ordValueLevel1 in sorted(ordtablerows['childlist']):
@@ -123,6 +137,10 @@ def globalshares(request):
                         break
 
     tablerows = newTablesRow
+
+    gsPlotData['pieChartActualHS06'] = sorted(gsPlotData['pieChartActualHS06'], key=lambda x: x[0])
+    gsPlotData['barChartActualVSTarget'] = sorted(gsPlotData['barChartActualVSTarget'], key=lambda x: -x['Actual'])
+    gsPlotData['barChartActualVSTargetSplit']['resourceTypeList'] = sorted(gsPlotData['barChartActualVSTargetSplit']['resourceTypeList'])
 
     del request.session['TFIRST']
     del request.session['TLAST']

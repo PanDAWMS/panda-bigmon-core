@@ -32,9 +32,16 @@
 {% endblock %}
 
 {% block body %}
-  <div class="c3-plots-row row">
-      <div class="column medium-4" id="pieChartGS"></div>
-      <div class="column medium-8" id="barChartGS"></div>
+  <div class="c3-plots-row row" data-ng-controller="chartGSController">
+    <div class="column medium-4" id="pieChartGS"></div>
+    <div class="column medium-8">
+      <fieldset class="inline-input">
+        <legend>Accounted resource types for Actual HS06:</legend>
+        <label ng-repeat="rt in gs.selection.resourceType">
+          <input type="checkbox" ng-model="rt.selected" ng-change="gs.update()">{$ rt.name $}</label>
+      </fieldset>
+      <div id="barChartGSSplit"></div>
+    </div>
   </div>
 
 
@@ -289,35 +296,91 @@
   <script>
     var dt = {};
 
-    var gsPlotData = {{ gsPlotData.pieChartActualHS06|safe }};
-    let pieChartOptions = {
-      colors: 'gs',
-      size:[getWidth()*4/12-40, 20*gsPlotData.length]
-    };
-    var pieChart =  draw_donut(gsPlotData, "pieChartGS", 'Actual HS06', pieChartOptions);
+    var gsPlotData = {{ gsPlotData | safe }};
+    app.controller('chartGSController', function($scope, $window) {
 
-    var gsBarPlotData = {{ gsPlotData.barChartActualVSTarget|safe }};
-    let sbarChartOptions = {
-      colors: 'gs',
-      size: [getWidth()*8/12-40,20*gsPlotData.length],
-      struct: ['GS', 'Actual', 'Target'],
-      labels: ['', 'HS06']
-    };
-    var sbarChart = draw_sbar(gsBarPlotData, 'barChartGS', 'Actual VS Target HS06', sbarChartOptions);
+      $scope.gs = {
+        selection: {
+          resourceType: [],
+        },
+        charts: {
+          pie: {
+            options: {
+              colors: 'gs',
+              size:[getWidth()*4/12-40, 20*gsPlotData.pieChartActualHS06.length]
+            },
+            data: gsPlotData.pieChartActualHS06
+          },
+          barSplit: {
+            options: {
+              colors: 'gs',
+              size: [getWidth()*8/12-40,20*gsPlotData.barChartActualVSTarget.length],
+              labels: ['', 'HS06']
+            },
+            data: []
+          }
+        }
+      };
 
-    window.addEventListener('resize', onWindowResize);
-    function onWindowResize() {
-      // get chart vars to apply resizing
-      let currentWidth = getWidth();
-      if (currentWidth <= 840) {
-        pieChart.resize({width: getWidth() - 40});
-        sbarChart.resize({width: getWidth() - 40});
-      }
-      else {
-        pieChart.resize({width: getWidth() * 4 / 12 - 40});
-        sbarChart.resize({width: getWidth() * 8 / 12 - 40});
-      }
-    }
+      gsPlotData.barChartActualVSTargetSplit.resourceTypeList.forEach(function (item) {
+        $scope.gs.selection.resourceType.push({name: item, selected: true});
+      });
+
+      $scope.gs.selectedItems = function selectedItems() {
+          return $scope.gs.selection.resourceType.filter(obj => obj.selected).map(obj => obj.name);
+      };
+
+      $scope.gs.getSplitData = function getSplitData() {
+        $scope.gs.charts.barSplit.data = [['GS', ], ['Actual',], ['Target',]];
+        let selectedRT = $scope.gs.selectedItems();
+        let tmpList = [];
+        Object.keys(gsPlotData.barChartActualVSTargetSplit.data).forEach(function (gsname) {
+          let tmpDict = {'GS':gsname, 'Actual':0, 'Target':gsPlotData.barChartActualVSTargetSplit.data[gsname].Target};
+          Object.keys(gsPlotData.barChartActualVSTargetSplit.data[gsname].Actual).forEach(function (rtname) {
+            if (selectedRT.includes(rtname)) {
+              tmpDict.Actual += gsPlotData.barChartActualVSTargetSplit.data[gsname].Actual[rtname];
+            }
+          });
+          tmpList.push(tmpDict)
+        });
+        // Sort result list and convert to columns
+        tmpList.sort(function (a,b) {
+          return b.Actual - a.Actual;
+        });
+        tmpList.forEach(function (obj) {
+          $scope.gs.charts.barSplit.data[0].push(obj.GS);
+          $scope.gs.charts.barSplit.data[1].push(obj.Actual);
+          $scope.gs.charts.barSplit.data[2].push(obj.Target);
+        })
+      };
+
+      $scope.gs.update = function update() {
+        $scope.gs.getSplitData();
+        $scope.gs.charts.barSplit.chart.load({
+          columns: $scope.gs.charts.barSplit.data,
+          unload: true,
+        });
+      };
+
+      $scope.gs.getSplitData();
+      $scope.gs.charts.pie.chart = draw_donut($scope.gs.charts.pie.data, "pieChartGS", 'Actual HS06', $scope.gs.charts.pie.options);
+      $scope.gs.charts.barSplit.chart = draw_bar_cat($scope.gs.charts.barSplit.data, 'barChartGSSplit', 'Actual VS Target HS06', $scope.gs.charts.barSplit.options);
+
+      var appWindow = angular.element($window);
+      appWindow.bind('resize', function () {
+        // get chart vars to apply resizing
+        let currentWidth = getWidth();
+        if (currentWidth <= 840) {
+          $scope.gs.charts.pie.chart.resize({width: getWidth() - 40});
+          $scope.gs.charts.barSplit.chart.resize({width: getWidth() - 40});
+        }
+        else {
+          $scope.gs.charts.pie.chart.resize({width: getWidth() * 4 / 12 - 40});
+          $scope.gs.charts.barSplit.chart.resize({width: getWidth() * 8 / 12 - 40});
+        }
+      });
+
+    });
 
     function NumberRound(num) {
         return num.toFixed(2).replace(/./g, function(c, i, a) {return i && c !== "." && ((a.length - i) % 3 === 0) ? ',' + c : c;})
