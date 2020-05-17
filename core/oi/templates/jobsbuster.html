@@ -6,7 +6,7 @@
 {% block subtitle %}Jobs Buster{{ viewParams.selection|safe }}{% endblock %}
 
 {% block time_window %}
-    End time window: <span class="time-window-range">{{ timerange.0 }}</span>
+    Time window: <span class="time-window-range">{{ timerange.0 }}</span>
     - <span class="time-window-range">{{ timerange.1 }}</span> UTC
 {% endblock %}
 
@@ -31,7 +31,15 @@
         <th><h1><a href="?&metric=fails">
             {% if metric == 'fails'%}<u>{% endif %}Order by failures counts{% if metric == 'fails'%}</u>{% endif %}
             </a></h1></th>
-        <th></th>
+        <th>
+            <select id="jobtype">
+                <option value="all" selected="selected" {% if requestParams.computetype == 'all' %} disabled="disabled" {% endif %}>GRID+HPC</option>
+                <option value="grid" {% if requestParams.computetype == 'grid' %} selected="selected" {% endif %}>GRID</option>
+                <option value="hpc" {% if requestParams.computetype == 'hpc' %} selected="selected" {% endif %}>HPC</option>
+            </select>
+
+        </th>
+
     </tr>
 
   </thead>
@@ -135,6 +143,12 @@ $(document).ready(function () {
     });
 
 });
+
+
+$( "#jobtype" ).change(function() {
+    window.location = "{{ urlBase|safe }}" + "computetype="+this.value;
+});
+
 
 </script>
 

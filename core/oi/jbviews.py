@@ -1,8 +1,3 @@
-"""
-Created by Tatiana Korchuganova on 10.10.2019
-Views for Operational Intelligence project
-"""
-
 import json, urllib3
 from datetime import datetime, timedelta
 
@@ -19,6 +14,7 @@ from django import template
 from django.http import HttpResponseRedirect
 import matplotlib
 
+from core.views import removeParam
 
 from django.template.defaulttags import register
 
@@ -53,6 +49,7 @@ def jbhome(request):
 
     # process params
     metric = None
+    computetype = None
     if 'metric' in request.session['requestParams'] and request.session['requestParams']['metric']:
         metric = request.session['requestParams']['metric']
 
@@ -73,6 +70,9 @@ def jbhome(request):
     else:
         jobtype = 'prod'
 
+    if 'computetype' in request.session['requestParams'] and request.session['requestParams']['computetype']:
+        computetype = request.session['requestParams']['computetype']
+
     # getting data from jobbuster API
     base_url = 'http://aipanda030.cern.ch:8010/jobsbuster/api/?'
     url = base_url + 'timewindow={}|{}'.format(
@@ -80,6 +80,9 @@ def jbhome(request):
         round_time(endtime, timedelta(minutes=1)).strftime(OI_DATETIME_FORMAT))
     if metric:
         url += '&metric=' + metric
+    if computetype:
+        url += '&computetype=' + computetype
+
 
     http = urllib3.PoolManager()
     try:
@@ -153,6 +156,8 @@ def jbhome(request):
             'spots':spots,
         }
 
+    url_no_computetype = removeParam(request.get_full_path(), 'computetype')
+
     data = {
         'request': request,
         'requestParams': request.session['requestParams'],
@@ -161,6 +166,7 @@ def jbhome(request):
         'message': message,
         'mesures': [],
         'metric': metric,
+        'urlBase': url_no_computetype + ('&' if url_no_computetype.find('?') > -1 else '?')
         #'plots': plots,
         #'spots': spots,
     }
