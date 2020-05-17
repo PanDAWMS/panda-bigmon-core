@@ -131,6 +131,7 @@ def jbhome(request):
             card['impactfails'] = issue['nFailed_jobs']
             card['name'] = issue['name']
             card['params'] = {}
+            card['errormessages'] = (json.loads(issue['err_messages']))
             urlstr = "https://bigpanda.cern.ch/jobs/?endtimerange=" + str(issue['observation_started']).replace(" ", "T") + "|" + str(issue['observation_finished']).replace(" ", "T")
 
             for key,value in issue['features'].items():

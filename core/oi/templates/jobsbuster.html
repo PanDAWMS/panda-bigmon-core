@@ -19,7 +19,22 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.js"></script>
   <script src="{% static 'js/datatables/moment.min.js' %}"></script>
+
+    <!-- jsPanel CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/jspanel.css" rel="stylesheet">
+    <!-- jsPanel JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/jspanel.js"></script>
+
+    <!-- optional jsPanel extensions -->
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/extensions/modal/jspanel.modal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/extensions/tooltip/jspanel.tooltip.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/extensions/hint/jspanel.hint.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/extensions/layout/jspanel.layout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/extensions/contextmenu/jspanel.contextmenu.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/extensions/dock/jspanel.dock.js"></script>
+
 {% endblock %}
+
 
 {% block body %}
 
@@ -65,19 +80,19 @@
 <div class="tiles small-up-1 medium-up-6 large-up-10">
 {% for problem in spots %}
     <div class="column">
-    <a href="{{ problem.url }}" target="_blank">
-    <div class="card tile warning-light" style="background-color: {{ problem.color }};">
-        <div class="card-divider">
-            <b><b>{{ problem.name }}:</b> lost {{ problem.impactloss }} years / {{ problem.impactfails }} jobs failed</b>
-
-        </div>
-        <div class="card-section">
-        {% for iparam, ivalue in problem.params.items %}
-            <p>{{ iparam }}: <b>{{ ivalue }}</b></p>
-        {% endfor %}
-        </div>
-    </div>
-    </a>
+        <a href="{{ problem.url }}" target="_blank">
+            <div class="card tile warning-light" style="background-color: {{ problem.color }};">
+                <div class="card-divider">
+                    <b><b>{{ problem.name }}:</b> lost {{ problem.impactloss }} years / {{ problem.impactfails }} jobs failed</b>
+                </div>
+                <div class="card-section">
+                {% for iparam, ivalue in problem.params.items %}
+                    <p>{{ iparam }}: <b>{{ ivalue }}</b></p>
+                {% endfor %}
+                </div>
+                   <p></p><p><a onClick='showerrors("{{ problem.errormessages }}")'>show errors</a></p>
+            </div>
+        </a>
     </div>
 {% endfor %}
 {% else %}
@@ -141,7 +156,6 @@ $(document).ready(function () {
             left: 80,
         },
     });
-
 });
 
 
@@ -149,6 +163,18 @@ $( "#jobtype" ).change(function() {
     window.location = "{{ urlBase|safe }}" + "computetype="+this.value;
 });
 
+function showerrors(content) {
+    jsPanel.create({
+    theme:       'primary',
+    headerTitle: 'Errors messages',
+    position:    'center-top 0 58',
+    contentSize: '450 250',
+    content:     '<p>'+content+'</p>',
+    callback: function () {
+        this.content.style.padding = '20px';
+    },
+    });
+}
 
 </script>
 
