@@ -75,6 +75,7 @@
 {% endif %}
 
 <div id="time-window-chart_c3js" style="height: 300px; width: 100%;"></div>
+<input type="hidden" id="myVar" name="variable" value="{{ errormessages }}">
 
 {% if spots|length > 0 %}
 <div class="tiles small-up-1 medium-up-6 large-up-10">
@@ -90,7 +91,7 @@
                     <p>{{ iparam }}: <b>{{ ivalue }}</b></p>
                 {% endfor %}
                 </div>
-                   <p></p><p><a onClick='showerrors("{{ problem.errormessages }}")'>show errors</a></p>
+                   <p></p><p><a onClick='showerrors({{ problem.errormessagesid }})'>show errors</a></p>
             </div>
         </a>
     </div>
@@ -163,13 +164,15 @@ $( "#jobtype" ).change(function() {
     window.location = "{{ urlBase|safe }}" + "computetype="+this.value;
 });
 
-function showerrors(content) {
+var errormessages = JSON.parse(document.getElementById("myVar").value);
+
+function showerrors(id) {
     jsPanel.create({
     theme:       'primary',
     headerTitle: 'Errors messages',
     position:    'center-top 0 58',
     contentSize: '450 250',
-    content:     '<p>'+content+'</p>',
+    content:     '<p>'+JSON.stringify(errormessages[id])+'</p>',
     callback: function () {
         this.content.style.padding = '20px';
     },

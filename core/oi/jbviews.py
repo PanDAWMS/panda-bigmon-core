@@ -114,6 +114,7 @@ def jbhome(request):
 
     resp_dict = None
     timeticks = []
+    errormessages = {}
     if resp_data and 'ticks' in resp_data:
         timeticks = [parse_datetime(tick) for tick in resp_data['ticks']]
         timeticks = ['x'] + [tick.strftime("%Y-%m-%d %H:%M:%S") for tick in timeticks]
@@ -131,7 +132,9 @@ def jbhome(request):
             card['impactfails'] = issue['nFailed_jobs']
             card['name'] = issue['name']
             card['params'] = {}
-            card['errormessages'] = (json.loads(issue['err_messages']))
+            id = str(len(errormessages.keys()))
+            card['errormessagesid'] = id
+            errormessages[id] = json.loads(issue['err_messages'])
             urlstr = "https://bigpanda.cern.ch/jobs/?endtimerange=" + str(issue['observation_started']).replace(" ", "T") + "|" + str(issue['observation_finished']).replace(" ", "T")
 
             for key,value in issue['features'].items():
@@ -167,7 +170,8 @@ def jbhome(request):
         'message': message,
         'mesures': [],
         'metric': metric,
-        'urlBase': url_no_computetype + ('&' if url_no_computetype.find('?') > -1 else '?')
+        'urlBase': url_no_computetype + ('&' if url_no_computetype.find('?') > -1 else '?'),
+        'errormessages': json.dumps(errormessages)
         #'plots': plots,
         #'spots': spots,
     }
