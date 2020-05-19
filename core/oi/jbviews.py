@@ -27,6 +27,15 @@ def to_float(value):
     return float(value)
 
 
+def formatError(json):
+    outstr = ""
+    for errorcat, errormessages in json.items():
+        outstr += '<p>Error cathegory: '+errorcat+'<br />'
+        for message, num in errormessages.items():
+            outstr += 'Error message:<b>' + message + '</b>: ' +str(num)+ '<br />'
+    return outstr
+
+
 @login_customrequired
 def jbhome(request):
 
@@ -134,7 +143,7 @@ def jbhome(request):
             card['params'] = {}
             id = str(len(errormessages.keys()))
             card['errormessagesid'] = id
-            errormessages[id] = json.loads(issue['err_messages'])
+            errormessages[id] = formatError(json.loads(issue['err_messages']))
             urlstr = "https://bigpanda.cern.ch/jobs/?endtimerange=" + str(issue['observation_started']).replace(" ", "T") + "|" + str(issue['observation_finished']).replace(" ", "T")
 
             for key,value in issue['features'].items():
@@ -187,3 +196,4 @@ def jbhome(request):
         setCacheEntry(request, "jobProblem", json.dumps(data, cls=DateEncoder), 60 * CACHE_TIMEOUT)
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
+
