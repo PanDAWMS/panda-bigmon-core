@@ -251,10 +251,6 @@ API: ?jobstatus=XYZ
 -----------
 The 'jobstatus' parameter is the 'jobstatus' field of the jobs tables. Multiple 'jobstatus's can be filtered, comma is the delimiter.
 
-API: ?jobtype=XYZ
------------
-The 'jobtype' parameter is the summarized 'prodsourcelabel' field of the jobs tables. Possible jobtype values are 'production', 'analysis', and 'test'.  Multiple 'jobtype's can be filtered, comma is the delimiter.
-
 The API has 3 HTTP return states: 200, 404, 400.
 
 **Example usage**:
@@ -268,6 +264,26 @@ A single PanDA jobstatus:
 Multiple PanDA jobstates:
   ```
 # curl -H 'Accept: application/json' -H 'Content-Type: application/json' "http://HOSTNAME/status_summary/?jobstatus=defined,activated"
+
+  ```
+
+API: ?jobtype=XYZ
+-----------
+The 'jobtype' parameter is the summarized 'prodsourcelabel' field of the jobs tables. Possible jobtype values are 'production', 'analysis', and 'test'.  Multiple 'jobtype's can be filtered, comma is the delimiter.
+
+The API has 3 HTTP return states: 200, 404, 400.
+
+**Example usage**:
+
+A single PanDA jobtype:
+  ```
+# curl -H 'Accept: application/json' -H 'Content-Type: application/json' "http://HOSTNAME/status_summary/?jobtype=analysis"
+
+  ```
+
+Multiple PanDA jobtype:
+  ```
+# curl -H 'Accept: application/json' -H 'Content-Type: application/json' "http://HOSTNAME/status_summary/?jobtype=analysis,test"
 
   ```
 
