@@ -1,0 +1,166 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+{% load common_tags %}
+
+{% block page_title %}Task profile plots{% endblock %}
+{% block subtitle %}Task profile plot for {{ jeditaskid }} task{% if viewParams.selection %}{{ viewParams.selection }}{% endif %}{% endblock %}
+
+{% block css_page_library %}
+<!-- Load chart.css -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/moment.min.js' %}"></script>
+  <!-- Load chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" charset="utf-8"></script>
+{% endblock %}
+
+{% block body %}
+
+{% if error|length == 0 %}
+  <div data-ng-controller="taskProfileController">
+  <form novalidate class="simple-form">
+  <div class="row form-container">
+  <div class="medium-2 column">
+      <label>Job type:
+      <select id="jobtype__select"
+              ng-model="taskprofile.selection.jobtype"
+              ng-options="jt.value as jt.name for jt in taskprofile.availableOptions.jobtype"
+              multiple >
+      </select>
+      </label>
+  </div>
+  <div class="medium-2 column">
+      <label>Job status:
+      <select id="jobstatus__select"
+              ng-model="taskprofile.selection.jobstatus"
+              ng-options="js.value as js.name for js in taskprofile.availableOptions.jobstatus"
+              multiple >
+      </select>
+      </label>
+  </div>
+  <div class="medium-2 column">
+      <label>Progress unit:
+      <select id="progressunit__select"
+              ng-model="taskprofile.selection.progressunit"
+              ng-options="pu.value as pu.name for pu in taskprofile.availableOptions.progressunit">
+      </select>
+      </label>
+  </div>
+  <div class="medium-1 column">
+      <a class="button primary" ng-click="taskprofile.update()">Update</a>
+  </div>
+  </div>
+  </form>
+  </div>
+
+  <div id="task_profile_placeholder"><img src='{% static "images/load.gif" %}'></div>
+  <canvas id="task_profile_chart" height=100"></canvas>
+{% else %}
+  <p>
+  <div class="callout alert" data-closable>
+    <h5>Something went wrong!</h5>
+    <p>{{ error }}</p>
+    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+          <span aria-hidden="true"><i class="fi-x"></i></span>
+    </button>
+  </div>
+{% endif %}
+
+{% endblock %}
+
+{% block js_body_page %}
+<script src="{% static 'js/draw-plots-chart.js' %}?{% cache_bust "js/draw-plots-chart.js" %}"></script>
+<script>
+var jeditaskid = '{{ jeditaskid }}';
+var request_params = {{ requestParams | safe }};
+app.controller('taskProfileController', ['$scope', '$http', function($scope, $http) {
+    $scope.taskprofile = {
+        selection: {
+            jobtype: ['run'],
+            jobstatus: ['finished'],
+            progressunit: 'jobs',
+        },
+        charts: {},
+        data: [],
+    };
+
+    $scope.taskprofile.availableOptions = {
+        progressunit: [
+          {name:'jobs', value:'jobs',},
+          {name:'events', value:'events',},
+        ],
+        jobtype: [
+          {name:'build', value:'build', },
+          {name:'run', value:'run', },
+          {name:'merge', value:'merge', }
+        ],
+        jobstatus: [
+          {name:'finished', value:'finished',},
+          {name:'failed', value:'failed', },
+          {name:'closed', value:'closed', },
+          {name:'cancelled', value:'cancelled', }
+        ],
+    };
+
+    Object.keys($scope.taskprofile.availableOptions).forEach(value =>  {
+      if (value in request_params && typeof request_params[value] === 'string') {
+        $scope.taskprofile.selection[value] = request_params[value].split(',');
+      }
+    });
+
+    $scope.taskprofile.url = function() {
+      var query = '{% url 'getTaskProfilePlotData' jeditaskid %}?';
+      Object.keys($scope.taskprofile.selection).forEach(key => {
+          if (typeof $scope.taskprofile.selection[key] !== 'string') {
+              query += key + '=' + $scope.taskprofile.selection[key].join(',') + '&';
+          }
+          else {
+              query += key + '=' + $scope.taskprofile.selection[key] + '&';
+          }
+      });
+      query = query.substring(0, query.length - 1);
+      return query
+    };
+
+    $scope.taskprofile.fetch = function() {
+      return $http({
+        method: 'GET',
+        url: $scope.taskprofile.url(),
+      }).then(function successCallback(response) {
+          $('#task_profile_placeholder').html("");
+          $scope.taskprofile.data = response.data.plotData;
+        }, function errorCallback(response) {
+          $('#task_profile_placeholder').html(response.data.error);
+        });
+    };
+
+    $scope.taskprofile.update = function() {
+      let resp = $scope.taskprofile.fetch();
+      resp.then(function (data) {
+        $scope.taskprofile.charts["profile_chart"].data.datasets = $scope.taskprofile.data;
+        $scope.taskprofile.charts["profile_chart"].update();
+      });
+    };
+
+    $scope.taskprofile.buildChart = function (data) {
+      let datasets = data;
+      let options = {};
+      var ctx = document.getElementById("task_profile_chart");
+      var config = prepare_scatter_chart(datasets, options);
+      var chart = new Chart(ctx, config);
+      return chart
+    };
+
+    let resp = $scope.taskprofile.fetch();
+    resp.then(function (data) {
+      $scope.taskprofile.charts["profile_chart"] = $scope.taskprofile.buildChart($scope.taskprofile.data);
+    });
+}]);
+
+
+
+</script>
+{% endblock %}

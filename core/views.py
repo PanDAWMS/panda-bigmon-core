@@ -8436,6 +8436,154 @@ def taskESprofileplot(request):
         # red.save(response, "JPEG")
         # return response
 
+
+@login_customrequired
+def taskProfile(request, jeditaskid=0):
+    """A wrapper page for task profile plot"""
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    try:
+        jeditaskid = int(jeditaskid)
+    except ValueError:
+        msg = 'Provided jeditaskid: {} is not valid, it must be numerical'.format(jeditaskid)
+        _logger.exception(msg)
+        response = HttpResponse(json.dumps(msg), status=400)
+
+    if jeditaskid > 0:
+        task_profile = TaskProgressPlot()
+        task_profile_start = task_profile.get_task_start(taskid=jeditaskid)
+        if 'starttime' in task_profile_start:
+            request.session['viewParams']['selection'] = ', started at ' + task_profile_start['starttime'].strftime(defaultDatetimeFormat)
+        else:
+            msg = 'A task with provided jeditaskid does not exist'.format(jeditaskid)
+            _logger.exception(msg)
+            response = HttpResponse(json.dumps(msg), status=400)
+    else:
+        msg = 'Not valid jeditaskid provided: {}'.format(jeditaskid)
+        _logger.exception(msg)
+        response = HttpResponse(json.dumps(msg), status=400)
+
+    data = {
+        'request': request,
+        'requestParams': request.session['requestParams'],
+        'viewParams': request.session['viewParams'],
+        'jeditaskid': jeditaskid,
+    }
+    response = render_to_response('taskProgressMonitor.html', data, content_type='text/html')
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
+
+# @login_customrequired
+@never_cache
+def taskProfileData(request, jeditaskid=0):
+    """A view that returns data for task profile plot"""
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    try:
+        jeditaskid = int(jeditaskid)
+    except ValueError:
+        msg = 'Provided jeditaskid: {} is not valid, it must be numerical'.format(jeditaskid)
+        _logger.exception(msg)
+        response = HttpResponse(json.dumps(msg), status=400)
+
+    if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype']:
+        request_job_types = request.session['requestParams']['jobtype'].split(',')
+    else:
+        request_job_types = None
+    if 'jobstatus' in request.session['requestParams'] and request.session['requestParams']['jobstatus']:
+        request_job_states = request.session['requestParams']['jobstatus'].split(',')
+    else:
+        request_job_states = None
+    if 'progressunit' in request.session['requestParams'] and request.session['requestParams']['progressunit']:
+        request_progress_unit = request.session['requestParams']['progressunit']
+    else:
+        request_progress_unit = 'jobs'
+
+    # get raw profile data
+    if jeditaskid > 0:
+        task_profile = TaskProgressPlot()
+        task_profile_dict = task_profile.get_raw_task_profile_full(taskid=jeditaskid)
+    else:
+        msg = 'Not valid jeditaskid provided: {}'.format(jeditaskid)
+        _logger.exception(msg)
+        response = HttpResponse(json.dumps(msg), status=400)
+
+    # filter raw data corresponding to request params
+    if request_job_types is not None and len(request_job_types) > 0:
+        for jt, values in task_profile_dict.items():
+            if jt not in request_job_types:
+                task_profile_dict[jt] = []
+    if request_job_states is not None and len(request_job_states) > 0:
+        for jt, values in task_profile_dict.items():
+            temp = []
+            for v in values:
+                if v['jobstatus'] in request_job_states:
+                    temp.append(v)
+            task_profile_dict[jt] = temp
+
+    # convert raw data to format acceptable by chart.js library
+    job_time_names = ['end', 'start', 'creation']
+    job_types = ['build', 'run', 'merge']
+    job_states = ['finished', 'failed', 'closed', 'cancelled']
+    colors = {
+        'creation': {'finished': 'RGBA(176,255,176,0.75)', 'failed': 'RGBA(255,176,176,0.75)',
+                     'closed': 'RGBA(214,214,214,0.75)', 'cancelled': 'RGBA(255,227,177,0.75)'},
+        'start': {'finished': 'RGBA(0,216,0,0.75)', 'failed': 'RGBA(235,0,0,0.75)',
+                  'closed': 'RGBA(100,100,100,0.75)', 'cancelled': 'RGBA(255,165,0,0.75)'},
+        'end': {'finished': 'RGBA(0,100,0,0.75)', 'failed': 'RGBA(137,0,0,0.75)',
+                'closed': 'RGBA(0,0,0,0.75)', 'cancelled': 'RGBA(157,102,0,0.75)'},
+    }
+    markers = {'build': 'triangle', 'run': 'circle', 'merge': 'crossRot'}
+    order_mpx = {
+        'creation': 1,
+        'start': 2,
+        'end': 3,
+        'finished': 4,
+        'failed': 3,
+        'closed': 2,
+        'cancelled': 1,
+    }
+    order_dict = {}
+    for jtn in job_time_names:
+        for js in job_states:
+            order_dict[jtn+'_'+js] = order_mpx[js] * order_mpx[jtn]
+
+    task_profile_data_dict = {}
+    for jt in job_types:
+        if len(task_profile_dict[jt]) > 0:
+            for js in list(set(job_states) & set([r['jobstatus'] for r in task_profile_dict[jt]])):
+                for jtmn in job_time_names:
+                    task_profile_data_dict['_'.join((jtmn, js, jt))] = {
+                        'name': '_'.join((jtmn, js, jt)),
+                        'label': jtmn.capitalize() + ' time of a ' + js + ' ' + jt + ' job',
+                        'pointRadius': round(1 + 4.0 * math.exp(-0.0004*len(task_profile_dict[jt]))),
+                        'backgroundColor': colors[jtmn][js],
+                        'borderColor': colors[jtmn][js],
+                        'pointStyle': markers[jt],
+                        'data': [],
+                    }
+
+    for jt in job_types:
+        if jt in task_profile_dict:
+            rdata = task_profile_dict[jt]
+            for r in rdata:
+                for jtn in job_time_names:
+                    task_profile_data_dict['_'.join((jtn, r['jobstatus'], jt))]['data'].append({
+                        't': r[jtn].strftime(defaultDatetimeFormat),
+                        'y': r['indx'] if request_progress_unit == 'jobs' else r['nevents'],
+                    })
+    # dict -> list
+    task_profile_data = [v for k, v in task_profile_data_dict.items()]
+
+    data = {'plotData': task_profile_data, 'error': ''}
+    return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+
+
 @login_customrequired
 def taskInfo(request, jeditaskid=0):
     try:
