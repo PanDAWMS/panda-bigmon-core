@@ -62,7 +62,8 @@ def subresults_getter(url_params_str):
     A function for getting ART jobs sub results in multithreading mode
     :return: dictionary with sub-results
     """
-    base_url = "http://bigpanda.cern.ch/filebrowser/?json=1"
+    base_url = "http://bigpanda.cern.ch/"
+    fb_path = "filebrowser/?json=1"
     subresults_dict = {}
 
     pandaidstr = url_params_str.split('=')[-1]
@@ -72,14 +73,11 @@ def subresults_getter(url_params_str):
         _logger.exception('Exception was caught while transforming pandaid from str to int.')
         raise
 
-    print('Loading {}'.format(base_url+url_params_str))
-
     http = urllib3.PoolManager()
-    resp = http.request('GET', base_url + url_params_str, timeout=300)
+    resp = http.request('GET', base_url + fb_path + url_params_str, timeout=300)
     if resp and len(resp.data) > 0:
         try:
             data = json.loads(resp.data)
-            HOSTNAME = data['HOSTNAME']
             tardir = data['tardir']
             MEDIA_URL = data['MEDIA_URL']
             dirprefix = data['dirprefix']
@@ -93,9 +91,9 @@ def subresults_getter(url_params_str):
         return {pandaid: subresults_dict}
 
     if len(files) > 0:
-        urlBase = "http://" + HOSTNAME + "/" + MEDIA_URL + dirprefix + "/" + tardir
+        media_path = base_url + MEDIA_URL + dirprefix + "/" + tardir
         for f in files:
-            url = urlBase + "/" + f['name']
+            url = media_path + "/" + f['name']
             response = http.request('GET', url)
             data = json.loads(response.data)
     else:
@@ -130,7 +128,7 @@ def save_subresults(subResultsDict):
         with transaction.atomic():
             for pandaid, data in subResultsDict.items():
                 row = ARTSubResult(pandaid=pandaid,
-                                   subresult=data)
+                                   result=data)
                 row.save()
     except DatabaseError as e:
         print (e)

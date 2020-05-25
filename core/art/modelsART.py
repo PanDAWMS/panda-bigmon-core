@@ -74,6 +74,7 @@ class ARTResults(models.Model):
 class ARTSubResult(models.Model):
     pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
     subresult = models.CharField(max_length=4000, db_column='SUBRESULT_JSON', null=True)
+    result = models.TextField(db_column='RESULT_JSON', blank=True)
 
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ART_SUBRESULT"'
