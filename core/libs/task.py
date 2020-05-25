@@ -476,6 +476,7 @@ def job_summary_for_task_light(taskrec):
 
 
 def get_top_memory_consumers(taskrec):
+
     jeditaskidstr = str(taskrec['jeditaskid'])
     topmemoryconsumedjobs = []
     tmcquerystr = """
@@ -494,10 +495,13 @@ def get_top_memory_consumers(taskrec):
     ) 
     where jobrank <= 3
     """
-    cur = connection.cursor()
-    cur.execute(tmcquerystr, {'jdtsid': jeditaskidstr})
-    tmc_list = cur.fetchall()
-    cur.close()
+    try:
+        cur = connection.cursor()
+        cur.execute(tmcquerystr, {'jdtsid': jeditaskidstr})
+        tmc_list = cur.fetchall()
+        cur.close()
+    except:
+        tmc_list = []
     tmc_names = ['jeditaskid', 'pandaid', 'computingsite', 'jobmaxrss', 'sitemaxrss', 'maxrssratio']
     topmemoryconsumedjobs = [dict(zip(tmc_names, row)) for row in tmc_list]
     return topmemoryconsumedjobs
