@@ -128,7 +128,7 @@ def save_subresults(subResultsDict):
         with transaction.atomic():
             for pandaid, data in subResultsDict.items():
                 row = ARTSubResult(pandaid=pandaid,
-                                   result=data)
+                                   subresult=data)
                 row.save()
     except DatabaseError as e:
         print (e)
