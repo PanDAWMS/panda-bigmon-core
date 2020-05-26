@@ -450,16 +450,10 @@ th.vertical {
     text-align: left;
     margin-left: 0.3rem;
   }
-  .data-table thead {
+  .data-table thead, .data-table tbody, .data-table tfoot {
     border: none;
   }
-  .data-table tbody {
-    border: none;
-  }
-  .data-table tfoot {
-    border: none;
-  }
-  .data-table thead tr {
+  .data-table thead tr, .data-table tbody tr, .data-table tfoot tr {
     border: none;
   }
   .data-table thead th {
@@ -468,6 +462,18 @@ th.vertical {
     border: none;
     text-align: left;
     font-size: 0.875rem;
+    padding: 0.25rem 0.35rem 0.25rem 0.35rem;
+  }
+  .data-table tfoot th {
+    color: #272727;
+    background-color: #fefefe;
+    border: none;
+    text-align: left;
+    font-size: 0.875rem;
+    padding: 0.25rem 1.5rem 0.25rem 0.35rem;
+  }
+  .data-table tfoot th.num {
+    padding: 0.25rem 0.35rem 0.25rem 1.5rem;
   }
   .data-table thead th.vertical {
     height: 6rem;
@@ -476,7 +482,14 @@ th.vertical {
     max-width: 1.8rem;
     min-width: 1.8rem;
   }
-  .data-table div.rotate {
+  .data-table tfoot th.vertical {
+    height: 6rem;
+    padding: 0;
+    width: 3.3rem;
+    max-width: 3.3rem;
+    min-width: 3.3rem;
+  }
+  .data-table div.rotate70 {
            text-align: left;
                margin: 3rem 0 0 0;
                filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083);  /* IE6,IE7 */
@@ -486,6 +499,12 @@ th.vertical {
          -o-transform: rotate(-70.0deg);  /* Opera 10.5 */
     -webkit-transform: rotate(-70.0deg);  /* Safari 3.1+, Chrome */
             transform: rotate(-70.0deg);  /* Standard */
+  }
+  .data-table tfoot div.rotate70 {
+    text-align: right;
+    margin: 0 0 0 -2rem;
+    width: 6rem;
+    padding: 0 1rem 0 0;
   }
   .data-table tbody td {
     border-left: none;
@@ -499,7 +518,7 @@ th.vertical {
   .data-table.nowrap tbody td {
     white-space: nowrap;
   }
-  .data-table.nowrap thead th {
+  .data-table.nowrap thead th, .data-table.nowrap tfoot th {
     white-space: normal !important;
   }
   .data-table tbody td.nowrap {
@@ -533,15 +552,6 @@ th.vertical {
   }
   .data-table tbody tr:nth-child(odd):hover td {
     background-color: #d4dfed !important;
-  }
-
-  .data-table tfoot tr {
-    border: none;
-  }
-  .data-table tfoot th {
-    border: none;
-    background-color: #fefefe;
-    padding: 0.25rem 0.35rem 0.25rem 0.35rem;
   }
 
 /*Style for compare table*/

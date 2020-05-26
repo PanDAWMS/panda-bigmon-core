@@ -109,48 +109,81 @@
 
 <div id="container_rs" style="width: 100%; display: none">
 <table id='regionsummary' class="data-table nowrap hover">
-    <thead>
-    <tr>
-        <th class="text">Region</th>
-        <th class="text">Job type</th>
-        <th class="text">Resource type</th>
-        <th class="num">N submitted workers</th>
-        <th class="num">N running workers</th>
-        <th class="num">N running slots</th>
-        <th class="num">N jobs total</th>
-        <th class="vertical fixed_dash"><div class="rotate">% failure</div></th>
-        {% for js in jobstates %}
-            <th class="vertical fixed_dash"><div class="rotate">{{ js }}</div></th>
-        {% endfor %}
-    </tr>
-    </thead>
-<tbody>
-</tbody>
+  <thead>
+  <tr>
+      <th class="text">Region</th>
+      <th class="text">Job type</th>
+      <th class="text">Resource type</th>
+      <th class="num">N submitted workers</th>
+      <th class="num">N running workers</th>
+      <th class="num">N running slots</th>
+      <th class="num">N jobs total</th>
+      <th class="vertical fixed_dash"><div class="rotate70">% failure</div></th>
+      {% for js in jobstates %}
+          <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+      {% endfor %}
+  </tr>
+  </thead>
+  <tbody>
+  </tbody>
+  <tfoot>
+  <tr>
+      <th class="text">Region</th>
+      <th class="text">Job type</th>
+      <th class="text">Resource type</th>
+      <th class="num">N submitted workers</th>
+      <th class="num">N running workers</th>
+      <th class="num">N running slots</th>
+      <th class="num">N jobs total</th>
+      <th class="vertical fixed_dash"><div class="rotate70">% failure</div></th>
+      {% for js in jobstates %}
+          <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+      {% endfor %}
+  </tr>
+  </tfoot>
 </table>
 </div>
 
 <div id="container_qs" style="width: 100%; display: none">
 <table id='queuesummary' class="data-table nowrap hover">
-    <thead>
-    <tr>
-        <th class="text">Queue name</th>
-        <th class="text">Queue type</th>
-        <th class="text">Region</th>
-        <th class="text">Status</th>
-        <th class="text">Job type</th>
-        <th class="text">Resource type</th>
-        <th class="num">N submitted workers</th>
-        <th class="num">N running workers</th>
-        <th class="num">N running slots</th>
-        <th class="num">N jobs total</th>
-        <th class="num">% failure</th>
-        {% for js in jobstates %}
-            <th class="vertical fixed_dash"><div class="rotate">{{ js }}</div></th>
-        {% endfor %}
-    </tr>
-    </thead>
-<tbody>
-</tbody>
+  <thead>
+  <tr>
+    <th class="text">Queue name</th>
+    <th class="text">Queue type</th>
+    <th class="text">Region</th>
+    <th class="text">Status</th>
+    <th class="text">Job type</th>
+    <th class="text">Resource type</th>
+    <th class="num">N submitted workers</th>
+    <th class="num">N running workers</th>
+    <th class="num">N running slots</th>
+    <th class="num">N jobs total</th>
+    <th class="num">% failure</th>
+    {% for js in jobstates %}
+        <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+    {% endfor %}
+  </tr>
+  </thead>
+  <tbody>
+  </tbody>
+  <tfoot>
+  <tr>
+    <th class="text">Queue name</th>
+    <th class="text">Queue type</th>
+    <th class="text">Region</th>
+    <th class="text">Status</th>
+    <th class="text">Job type</th>
+    <th class="text">Resource type</th>
+    <th class="num">N submitted workers</th>
+    <th class="num">N running workers</th>
+    <th class="num">N running slots</th>
+    <th class="num">N jobs total</th>
+    <th class="num">% failure</th>
+    {% for js in jobstates %}
+        <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+    {% endfor %}
+  </tr>
+  </tfoot>
 </table>
 </div>
 
@@ -265,6 +298,7 @@ function buildRegionSummary(data, divid) {
         "iDisplayLength": -1,
         "lengthChange": false,
         "paging": false,
+        "bFilter": false, // remove search box
         "aaSorting": [[0,'asc']],
         "scrollX": true,
         "autoWidth": true,
