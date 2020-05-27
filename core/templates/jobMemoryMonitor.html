@@ -4,8 +4,8 @@
 {% load static %}
 {% load common_tags %}
 
-{% block page_title %}Memory monitor plots{% endblock %}
-{% block subtitle %}Memory monitor plots for {{ pandaid }} job{% endblock %}
+{% block page_title %}Resource utilization plots{% endblock %}
+{% block subtitle %}Resource utilization plots for {{ pandaid }} job{% endblock %}
 
 {% block css_page_library %}
 <!-- Load c3.css -->
@@ -41,6 +41,7 @@
       </div>
     </div>
   </div>
+  <p>Represented data metrics were collected using <a href="https://github.com/HSF/prmon">prmon</a> program.</p>
 {% else %}
   <p>
   <div class="callout alert" data-closable>

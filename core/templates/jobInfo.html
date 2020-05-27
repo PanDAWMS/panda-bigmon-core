@@ -339,8 +339,7 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
     <button class="dropdownbutton">Memory and IO plots</button>
     <div id="dropdown-plotchoice" class="dropdown-plot">
         {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus ==  'cancelled' or job.jobstatus ==  'aborted' or job.jobstatus == 'merging' %}
-            <a href="{% url 'memoryplot' %}?pandaid={{ job.pandaid }}" target="_blank">Memory and IO plots</a>
-            <a href="{% url 'prMonPlots' job.pandaid %}" target="_blank">Memory and IO plots (New)</a>
+            <a href="{% url 'prMonPlots' job.pandaid %}" target="_blank">Memory and IO plots</a>
         {% endif %}
     </div>
 </div>
