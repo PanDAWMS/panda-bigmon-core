@@ -20,7 +20,7 @@ def checkIddsTask(taskinfo):
 
     if taskinfo['splitrule']:
         splitrule = str(taskinfo['splitrule']).split(',')
-        if 'HPO=1' in splitrule:
+        if 'HO=1' in splitrule:
             taskinfo['idds'] = 1
     if taskinfo['processingtype']:
         if 'hpo' in taskinfo['processingtype']:
