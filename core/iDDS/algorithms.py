@@ -14,3 +14,17 @@ def parse_request(request):
         status = status.strip()
         retdict['reqstatus'] = status
     return retdict
+
+def checkIddsTask(taskinfo):
+    taskinfo['idds'] = 0
+
+    if taskinfo['splitrule']:
+        splitrule = str(taskinfo['splitrule']).split(',')
+        if 'HPO=1' in splitrule:
+            taskinfo['idds'] = 1
+    if taskinfo['processingtype']:
+        if 'hpo' in taskinfo['processingtype']:
+            taskinfo['idds'] = 1
+    if taskinfo['tasktype']:
+        if taskinfo['tasktype'] == "prod":
+            taskinfo['idds'] = 1

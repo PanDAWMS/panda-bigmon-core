@@ -109,6 +109,8 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.bpuser import get_relevant_links
 from core.libs.site import get_running_jobs_stats
+from core.iDDS.algorithms import checkIddsTask
+
 from django.template.context_processors import csrf
 
 @register.filter(takes_context=True)
@@ -9040,6 +9042,7 @@ def taskInfo(request, jeditaskid=0):
         else:
             taskrec['kibanatimeto'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
 
+
     tquery = {}
     tquery['jeditaskid'] = jeditaskid
     tquery['storagetoken__isnull'] = False
@@ -9058,7 +9061,6 @@ def taskInfo(request, jeditaskid=0):
     countfailed = [val['count'] for val in jobsummary if val['name'] == 'finished']
     if len(countfailed) > 0 and countfailed[0] > 0:
         showtaskprof = True
-
 
     if taskrec:
 
@@ -9082,6 +9084,8 @@ def taskInfo(request, jeditaskid=0):
             taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
         if taskrec['ttcrequested']:
             taskrec['ttcrequested'] = taskrec['ttcrequested'].strftime(defaultDatetimeFormat)
+        ### for iDDS
+        checkIddsTask(taskrec)
 
     for dset in dsets:
         dset['creationtime'] = dset['creationtime'].strftime(defaultDatetimeFormat)
