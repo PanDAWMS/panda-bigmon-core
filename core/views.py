@@ -160,9 +160,9 @@ objectStoresSites = {}
 pandaSites = {}
 cloudList = ['CA', 'CERN', 'DE', 'ES', 'FR', 'IT', 'ND', 'NL', 'RU', 'TW', 'UK', 'US']
 
-statelist = ['defined', 'waiting', 'pending', 'assigned', 'throttled',
+statelist = ['pending', 'defined', 'waiting', 'assigned', 'throttled',
              'activated', 'sent', 'starting', 'running', 'holding',
-             'transferring', 'finished', 'failed', 'cancelled', 'merging', 'closed']
+             'transferring', 'merging', 'finished', 'failed', 'cancelled', 'closed']
 sitestatelist = ['defined', 'waiting', 'assigned', 'throttled', 'activated', 'sent', 'starting', 'running', 'holding',
                  'merging', 'transferring', 'finished', 'failed', 'cancelled', 'closed']
 eventservicestatelist = ['ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed', 'fatal','merged', 'corrupted']
