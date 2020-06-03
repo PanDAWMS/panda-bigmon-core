@@ -5,7 +5,7 @@ import matplotlib.dates as md
 
 import os
 from django.db import connection
-from core.common.models import JediTasks
+from core.common.models import JediTasks, TasksStatusLog
 import io
 import matplotlib as mpl
 mpl.use('Agg')
@@ -30,6 +30,12 @@ class TaskProgressPlot:
         else:
             return None
 
+    def get_task_retries(self, taskid):
+        query = {}
+        query['jeditaskid'] = taskid
+        mtimeparam = 'modificationtime'
+        task_status_log = TasksStatusLog.objects.filter(**query).order_by(mtimeparam).values()
+        return task_status_log
 
     def prepare_task_profile(self,frame):
         if len(frame) > 0:
@@ -121,7 +127,7 @@ class TaskProgressPlot:
                 FROM ATLAS_PANDA.JOBSARCHIVED4 
                     WHERE JEDITASKID={0} and JOBSTATUS in ('finished', 'failed', 'closed', 'cancelled') 
                 ) t 
-            ORDER BY pandaid asc
+            ORDER BY endtime asc
         """.format(taskid)
         cur = connection.cursor()
         cur.execute(qstr)
