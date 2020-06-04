@@ -627,6 +627,9 @@ li.list-item > label {
 .form-container .no-bullet {
     margin: 0;
 }
+.form-container .column a.button {
+    margin: 1.5rem 0;
+}
 .form-container fieldset {
     margin-bottom: 0;
     padding-top: 0 !important;

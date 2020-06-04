@@ -38,7 +38,7 @@ function prepare_scatter_chart(datasets, options) {
         yAxes: [{
           scaleLabel: {
             display: true,
-            labelString: 'Number of successfully finished jobs'
+            labelString: options.ylabel,
           },
         }],
       },
@@ -53,19 +53,43 @@ function prepare_scatter_chart(datasets, options) {
           left: 0,
           right: 20,
           top: 0,
-          bottom: 0
+          bottom: 100
         }
       },
-      events: ['click'],
+      events: ['click', 'mousemove'],
       animation: {
         duration: 0 // general animation time
       },
       hover: {
+        // intersect: false,
         animationDuration: 0 // duration of animations when hovering an item
       },
       responsiveAnimationDuration: 0, // animation duration after a resize
+      responsive: false,
       tooltips: {
-        enabled: false,
+        enabled: true,
+        mode: 'point',
+        yAlign: 'top',
+        position: 'nearest',
+        caretPadding: 5,
+        callbacks: {
+          title: function(tooltipItem, data) {
+              var title = tooltipItem[0].label  || '';
+
+              if (title) {
+                  title = 'Time: ' + title + ' UTC';
+              }
+              return title;
+          },
+          label: function(tooltipItem, data) {
+              var label = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].label || '';
+              var dslabel = data.datasets[tooltipItem.datasetIndex].label || '';
+              if (label && dslabel) {
+                  dslabel += ', pandaid: ' + label;
+              }
+              return dslabel;
+          },
+        },
       },
     }
   };

@@ -162,7 +162,7 @@ class TaskProgressPlot:
         fin_i = 0
         fin_ev = 0
         for r in rows:
-            fin_i += 1 if r['jobstatus'] == 'finished' and r['jobtype'] == 'run' else 0
+            fin_i += 1
             fin_ev += r['nevents']
             temp = {}
             for jtm in job_timestamps:
@@ -170,6 +170,7 @@ class TaskProgressPlot:
             temp['nevents'] = fin_ev
             temp['indx'] = fin_i
             temp['jobstatus'] = r['jobstatus']
+            temp['pandaid'] = r['pandaid']
             task_profile_dict[r['jobtype']].append(temp)
 
         return task_profile_dict

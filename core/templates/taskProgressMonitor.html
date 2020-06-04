@@ -15,6 +15,7 @@
   <script src="{% static 'js/datatables/moment.min.js' %}"></script>
   <!-- Load chart.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" charset="utf-8"></script>
+
 {% endblock %}
 
 {% block body %}
@@ -49,15 +50,16 @@
       </select>
       </label>
   </div>
-  <div class="medium-1 column">
+  <div class="medium-1 column align-middle">
       <a class="button primary" ng-click="taskprofile.update()">Update</a>
   </div>
+  <div class="medium-5 column"></div>
   </div>
   </form>
   </div>
 
   <div id="task_profile_placeholder"><img src='{% static "images/load.gif" %}'></div>
-  <canvas id="task_profile_chart"></canvas>
+  <canvas id="task_profile_chart" style="width: 100%; height: 50rem"></canvas>
 {% else %}
   <p>
   <div class="callout alert" data-closable>
@@ -147,9 +149,36 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
 
     $scope.taskprofile.buildChart = function (data) {
       let datasets = data;
-      let options = {};
+      let options = {ylabel: 'Number of ended jobs'};
+      if ($scope.taskprofile.selection.progressunit === 'events') {options.ylabel = 'Number of events';}
       var ctx = document.getElementById("task_profile_chart");
       var config = prepare_scatter_chart(datasets, options);
+      // Crosshairs
+      Chart.defaults.scatter = Chart.defaults.line;
+      Chart.controllers.scatter = Chart.controllers.line.extend({
+         draw: function(ease) {
+            Chart.controllers.line.prototype.draw.call(this, ease);
+
+            if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
+               var activePoint = this.chart.tooltip._active[0],
+                   ctx = this.chart.ctx,
+                   y = activePoint.tooltipPosition().y,
+                   leftX = this.chart.chartArea.left,
+                   rightX = this.chart.chartArea.right
+               ;
+
+               // draw line
+               ctx.save();
+               ctx.beginPath();
+               ctx.moveTo(leftX, y);
+               ctx.lineTo(rightX, y);
+               ctx.lineWidth = 0.1;
+               ctx.strokeStyle = '#000';
+               ctx.stroke();
+               ctx.restore();
+            }
+         }
+      });
       var chart = new Chart(ctx, config);
       return chart
     };

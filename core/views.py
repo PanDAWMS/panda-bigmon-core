@@ -8578,6 +8578,7 @@ def taskProfileData(request, jeditaskid=0):
                     task_profile_data_dict['_'.join((jtn, r['jobstatus'], jt))]['data'].append({
                         't': r[jtn].strftime(defaultDatetimeFormat),
                         'y': r['indx'] if request_progress_unit == 'jobs' else r['nevents'],
+                        'label': r['pandaid'],
                     })
     # dict -> list
     task_profile_data = [v for k, v in task_profile_data_dict.items()]
