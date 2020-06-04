@@ -622,24 +622,33 @@
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script>
-
+    var v = "{{ task.idds_info|safe }}";
     app.controller('iDDSInfoForTaskController', function ($scope, $http) {
-        $scope.iddsjson = "";
+        $scope.iddsjson = ""
+        $scope.idds_info = "";
         $scope.getiDDs = function () {
-
-            $http({
-                    url: '/idds/getiddsfortask/',
-                    method: "GET",
-                    params: {'jeditaskid':{{jeditaskid}}}
-                }
-            ).then(function (res) {
-                var iddsjson = angular.fromJson(res.data);
-                if  (('data' in iddsjson) && (Object.keys(iddsjson['data']).length > 0)){
-                    var displaydiv = document.getElementById('iDDsDiv');
-                    displaydiv.style.display = "";
-                    $scope.iddsjson = iddsjson['data'];
-                }
-            });
+            var idds_info = angular.fromJson(v);
+            if (Object.keys(idds_info).length == 0) {
+                $http({
+                        url: '/idds/getiddsfortask/',
+                        method: "GET",
+                        params: {'jeditaskid':{{ jeditaskid|safe }}}
+                    }
+                ).then(function (res) {
+                    var iddsjson = angular.fromJson(res.data);
+                    if (('data' in iddsjson) && (Object.keys(iddsjson['data']).length > 0)) {
+                        var displaydiv = document.getElementById('iDDsDiv');
+                        displaydiv.style.display = "";
+                        $scope.iddsjson = iddsjson['data'];
+                    }
+                });
+            }
+            else {
+                var iddsjson = idds_info;
+                var displaydiv = document.getElementById('iDDsDiv');
+                displaydiv.style.display = "";
+                $scope.iddsjson = iddsjson;
+            }
         };
         var init = function () {
             $scope.getiDDs();
@@ -655,14 +664,14 @@
             $http({
                     url: '/getstaginginfofortask/',
                     method: "GET",
-                    params: {'jeditaskid':{{jeditaskid}}}
+                    params: {'jeditaskid':{{ jeditaskid|safe }}}
                 }
             ).then(function (res) {
                 $scope.json = angular.fromJson(res.data);
-                if  ({{ jeditaskid }} in $scope.json) {
+                if  ({{ jeditaskid|safe }} in $scope.json) {
                     var displaydiv = document.getElementById('dsStageDiv');
                     displaydiv.style.display = "";
-                    $scope.json = $scope.json[{{ jeditaskid }}];
+                    $scope.json = $scope.json[{{ jeditaskid|safe }}];
                 }
             });
         };

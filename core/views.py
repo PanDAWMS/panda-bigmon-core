@@ -109,7 +109,7 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.bpuser import get_relevant_links
 from core.libs.site import get_running_jobs_stats
-from core.iDDS.algorithms import checkIddsTask
+from core.iDDS.algorithms import checkIfIddsTask, getiDDSInfoForTask
 
 from django.template.context_processors import csrf
 
@@ -8593,7 +8593,7 @@ def taskInfo(request, jeditaskid=0):
         jeditaskid = int(jeditaskid)
     except:
         jeditaskid = re.findall("\d+", jeditaskid)
-        jdtstr =""
+        jdtstr = ""
         for jdt in jeditaskid:
             jdtstr = jdtstr+str(jdt)
         return redirect('/task/'+jdtstr)
@@ -8619,6 +8619,7 @@ def taskInfo(request, jeditaskid=0):
         if datasets is None:
             _logger.error('No datasets data found for task in cache!!! Request: {}'.format(str(request.get_full_path())))
         return HttpResponse(datasets, content_type='application/json')
+
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
 
     # data = None #temporarily turm off caching
@@ -8712,12 +8713,28 @@ def taskInfo(request, jeditaskid=0):
 
     if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
         request.session['requestParams']['jeditaskid'])
+
+    if 'mode' in request.session['requestParams']:
+        mode = request.session['requestParams']['mode']
+    else:
+        mode = 'drop'
+
+
     if jeditaskid == 0:
         return redirect('/tasks')
     if jeditaskid != 0:
 
         query = {'jeditaskid': jeditaskid}
         tasks = JediTasks.objects.filter(**query).values()
+
+        ### iDDS section
+        task_type = checkIfIddsTask(tasks[0])
+        idds_info = None
+
+        if task_type == 'hpo':
+            mode = 'nodrop'
+            idds_info = getiDDSInfoForTask(jeditaskid)
+
         if len(tasks) > 0:
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
 
@@ -8725,12 +8742,6 @@ def taskInfo(request, jeditaskid=0):
             if 'version' not in request.session['requestParams'] or (
                     'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old'):
                 return redirect('/tasknew/' + str(jeditaskid))
-
-            mode = 'drop'
-            if 'mode' in request.session['requestParams'] and request.session['requestParams'][
-                'mode'] == 'drop': mode = 'drop'
-            if 'mode' in request.session['requestParams'] and request.session['requestParams'][
-                'mode'] == 'nodrop': mode = 'nodrop'
 
             extra = jobSuppression(request)
 
@@ -8758,7 +8769,7 @@ def taskInfo(request, jeditaskid=0):
                 eventstatus['count'] = eventssummary[state]
                 eventsdict.append(eventstatus)
 
-            if mode=='nodrop':
+            if mode == 'nodrop':
                 sqlRequest = """
                 WITH jedi_ev AS 
                 (
@@ -8785,6 +8796,7 @@ def taskInfo(request, jeditaskid=0):
                 GROUP BY 
                 jobs.computingsite, jobs.COMPUTINGELEMENT, jedi_ev.objstore_id, jedi_ev.status
                 """.format(jeditaskid, jeditaskid, jeditaskid)
+
                 cur = connection.cursor()
                 cur.execute(sqlRequest)
                 ossummary = cur.fetchall()
@@ -8792,42 +8804,39 @@ def taskInfo(request, jeditaskid=0):
 
                 ossummarynames = ['computingsite', 'computingelement', 'objectstoreid', 'statusindex', 'nevents']
                 objectStoreDict = [dict(zip(ossummarynames, row)) for row in ossummary]
-                for row in objectStoreDict: row['statusname'] = eventservicestatelist[row['statusindex']]
 
-        elif len(tasks) > 0 and 'tasktype' in tasks[0] and tasks[0]['tasktype']  == 'anal':
+                for row in objectStoreDict:
+                    row['statusname'] = eventservicestatelist[row['statusindex']]
+
+        elif len(tasks) > 0 and 'tasktype' in tasks[0] and tasks[0]['tasktype'] == 'anal':
             # Divide jobs into 3 categories: run, build, merge
             extra = '(1=1)'
             jbquery = copy.deepcopy(query)
             jbquery['transformation__icontains'] = 'build'
             exclude = {'processingtype': 'pmerge'}
             jextra = "transformation NOT LIKE \'%%build%%\'"
-            mode = 'drop'
-            if 'mode' in request.session['requestParams']:
-                mode = request.session['requestParams']['mode']
+
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                request, query, exclude=exclude, extra=jextra, mode=mode,algorithm='isOld')
+                request, query, exclude=exclude, extra=jextra, mode=mode, algorithm='isOld')
             plotsDictBuild, jobsummaryBuild, eventssummaryBuild, transactionKeyBuild, jobScoutIDsBuild, hs06sSumBuild = jobSummary2(
-                request, jbquery, exclude={}, extra=extra,  mode=mode, algorithm='isOld')
+                request, jbquery, exclude={}, extra=extra, mode=mode, algorithm='isOld')
             plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary2(
-                request, query, exclude={},extra=extra,  mode=mode, processingtype='pmerge',algorithm='isOld')
+                request, query, exclude={}, extra=extra,  mode=mode, processingtype='pmerge', algorithm='isOld')
         else:
             extra = '(1=1)'
             ## Exclude merge jobs. Can be misleading. Can show failures with no downstream successes.
             exclude = {'processingtype': 'pmerge'}
-            mode = 'drop'
-            if 'mode' in request.session['requestParams']:
-                mode = request.session['requestParams']['mode']
+
             plotsDict, jobsummary, eventssummary, transactionKey, jobScoutIDs, hs06sSum = jobSummary2(
-                request, query, exclude=exclude,extra=extra, mode=mode,algorithm='isOld')
+                request, query, exclude=exclude,extra=extra, mode=mode, algorithm='isOld')
             plotsDictPMERGE, jobsummaryPMERGE, eventssummaryPM, transactionKeyPM, jobScoutIDsPMERGE, hs06sSumPMERGE = jobSummary2(
-                request, query, exclude={},extra=extra,  mode=mode, processingtype='pmerge',algorithm='isOld')
+                request, query, exclude={},extra=extra, mode=mode, processingtype='pmerge', algorithm='isOld')
             if request.user.is_authenticated and request.user.is_tester:
                 if mode == 'drop':
                     tk, droppedList, extra = dropalgorithm.dropRetrielsJobs(jeditaskid, extra=None, isEventTask=False)
                 newplotsDict, newjobsummary, neweventssummary, newtransactionKey, newjobScoutIDs, newhs06sSum = jobSummary2(
-                    request, query, exclude=exclude,extra=extra , mode=mode, algorithm='isNew')
+                    request, query, exclude=exclude, extra=extra, mode=mode, algorithm='isNew')
                 newplotsDictPMERGE, newjobsummaryPMERGE, neweventssummaryPM, newtransactionKeyPM, newjobScoutIDsPMERGE, newhs06sSumPMERGE = jobSummary2(request, query=query, exclude={},extra=extra , mode=mode, processingtype='pmerge', algorithm='isNew')
-
 
     elif 'taskname' in request.session['requestParams']:
         querybyname = {'taskname': request.session['requestParams']['taskname']}
@@ -8882,6 +8891,7 @@ def taskInfo(request, jeditaskid=0):
     taskparams = None
     taskparaml = None
     jobparamstxt = []
+
     if len(taskpars) > 0:
         taskparams = taskpars[0]['taskparams']
         try:
@@ -8949,6 +8959,7 @@ def taskInfo(request, jeditaskid=0):
     neventsUsedTot = 0
     scope = ''
     newdslist = []
+
     if len(dsets) > 0:
         for ds in dsets:
             if len (ds['datasetname']) > 0:
@@ -9043,8 +9054,8 @@ def taskInfo(request, jeditaskid=0):
         else:
             taskrec['kibanatimeto'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
 
-
     tquery = {}
+
     tquery['jeditaskid'] = jeditaskid
     tquery['storagetoken__isnull'] = False
     storagetoken = JediDatasets.objects.filter(**tquery).values('storagetoken')
@@ -9072,7 +9083,8 @@ def taskInfo(request, jeditaskid=0):
                 warning['memoryleaksuspicion'][
                     'message'] = 'Some jobs in this task consumed a lot of memory. We suspect there might be memory leaks.'
                 warning['memoryleaksuspicion']['jobs'] = tmcj_list
-
+        if idds_info is not None:
+            taskrec['idds_info'] = idds_info
         if taskrec['creationdate']:
             if taskrec['creationdate'] < datetime.strptime('2018-02-07', '%Y-%m-%d'):
                 warning['dropmode'] = 'The drop mode is unavailable since the data of job retries was cleaned up. The data shown on the page is in nodrop mode.'
@@ -9085,8 +9097,6 @@ def taskInfo(request, jeditaskid=0):
             taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
         if taskrec['ttcrequested']:
             taskrec['ttcrequested'] = taskrec['ttcrequested'].strftime(defaultDatetimeFormat)
-        ### for iDDS
-        checkIddsTask(taskrec)
 
     for dset in dsets:
         dset['creationtime'] = dset['creationtime'].strftime(defaultDatetimeFormat)
@@ -9131,7 +9141,7 @@ def taskInfo(request, jeditaskid=0):
             attrs.append({'name': 'Status', 'value': taskrec['status']})
         del request.session['TFIRST']
         del request.session['TLAST']
-
+        
         data = {
             'furl': furl,
             'nomodeurl': nomodeurl,
@@ -9142,7 +9152,7 @@ def taskInfo(request, jeditaskid=0):
             'jobsummaryBuild': jobsummaryBuild,
             'plotsDict': plotsDict,
             'taskbrokerage': taskbrokerage,
-            'jobscoutids' : jobScoutIDs,
+            'jobscoutids': jobScoutIDs,
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
@@ -9168,7 +9178,7 @@ def taskInfo(request, jeditaskid=0):
             'transkey': transKey,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
             'newjobsummary_test': newjobsummary,
-            'newjobsummaryPMERGE_test':newjobsummaryPMERGE,
+            'newjobsummaryPMERGE_test': newjobsummaryPMERGE,
             'newjobsummaryESMerge_test': newjobsummaryESMerge,
             'neweventssummary_test': neweventsdict,
             'warning': warning,
@@ -9306,6 +9316,7 @@ def taskInfoNew(request, jeditaskid=0):
             return redirect('/task/' + str(jeditaskid))
 
         mode = 'nodrop'
+
         if 'mode' in request.session['requestParams'] and request.session['requestParams'][
             'mode'] == 'drop': mode = 'drop'
         if 'mode' in request.session['requestParams'] and request.session['requestParams'][

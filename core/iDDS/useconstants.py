@@ -4,11 +4,11 @@ from core.iDDS.constants import RequestStatus, RequestType, TransformType, \
 class SubstitleValue:
 
     substitleMap = {
-        'requests':{'status':{}, 'request_type':{}, 'transform_status':{}, 'in_status':{}, 'out_status':{}},
-        'transforms':{'transform_id_fk__status':{}, 'transform_id_fk__transform_type':{}},
-        'collections':{'status':{}},
-        'processings':{'status':{}},
-        'сontents':{'status':{}},
+        'requests': {'status': {}, 'request_type': {}, 'transform_status': {}, 'in_status': {}, 'out_status': {}},
+        'transforms': {'transform_id_fk__status': {}, 'transform_id_fk__transform_type': {}},
+        'collections': {'status': {}},
+        'processings': {'status': {}},
+        'сontents': {'status': {}},
     }
 
 
@@ -53,7 +53,7 @@ class SubstitleValue:
     def __init__(self):
         for objName, fields in self.substitleMap.items():
             for field in fields.keys():
-                self.substitleMap[objName][field] =  self.substitleValue(objName, field)
+                self.substitleMap[objName][field] = self.substitleValue(objName, field)
 
 
     def substitleValue(self, objName, field):
