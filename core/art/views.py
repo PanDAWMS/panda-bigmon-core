@@ -744,9 +744,6 @@ def registerARTTest(request):
     values = 'pandaid', 'jeditaskid', 'username'
     jobs = []
     jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
-    if len(jobs) == 0:
-        # check archived table
-        jobs.extend(Jobsarchived.objects.filter(**query).values(*values))
     try:
        job = jobs[0]
     except:
