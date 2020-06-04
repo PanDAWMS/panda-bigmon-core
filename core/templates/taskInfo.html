@@ -38,7 +38,14 @@
             <th> Campaign</th> {% endif %}
         <th>Task status</th>{% if task.superstatus %}{% if task.superstatus != task.status %}
         <th> Detailed JEDI status</th>{% endif %} {% endif %}
-        {% if task.dsinfo %}
+        {% if task.idds_info and task.idds_info.scope == 'hpo' %}
+            <th>  HP points |  <span class='finished'>finished</span></th>
+            {% if task.dsinfo %}
+            <th style="white-space: nowrap">HS06*sec<br> Expected<br> Total<br><span
+                    class='done'>done</span><br> <span class='failed'>failed</span></th>
+            {% endif %}
+        {% endif %}
+        {% if task.dsinfo and not task.idds_info %}
             <th> Nevents | <span class='finished'>used</span></th>
             <th style="white-space: nowrap">HS06*sec<br> Expected<br> Total<br><span
                     class='done'>done</span><br> <span class='failed'>failed</span></th>
@@ -74,8 +81,17 @@
                         class="{{ task.status }}_tooltip">{{ task.status }}</a></td>{% endif %} {% else %}
             <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
                class="{{ task.superstatus }}_tooltip">{{ task.status }}</a>{% endif %}</td>
-
-        {% if task.dsinfo %}
+            {% if task.idds_info and task.idds_info.scope == 'hpo' %}
+                <td> {{ task.idds_info.out_total_files }} |
+                    <span class='finished'>{{ task.idds_info.out_processed_files }} ({{ task.idds_info.pctprocessed|floatformat }}%) </span></td>
+                </td>
+                {% if task.dsinfo %}
+                    <td style="text-align:right;"> {{ task.totevhs06 }}<br>{{ task.currenttotevhs06 }}<br><span
+                    class='finished'>{{ task.totevprochs06 }}</span><br><span
+                    class='failed'>{{ task.failedevprochs06 }}</span></td>
+                {% endif %}
+            {% endif %}
+        {% if task.dsinfo and not task.idds_info %}
             <td> {{ task.totev }} |
                 <span class='finished'>{{ task.totevproc }} ({{ task.pctfinished|floatformat }}%)</span></td>
             <td style="text-align:right;"> {{ task.totevhs06 }}<br>{{ task.currenttotevhs06 }}<br><span
@@ -456,7 +472,7 @@
   </table>
   </div>
 
-  {% if task.idds_info %}
+  {% if task.idds == 1 %}
       <div id="iDDsDiv" class="badevents" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
       <table>
           <tr bgcolor='lightcyan'>
@@ -622,7 +638,11 @@
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script>
-    var task_idds_info = {{ task.idds_info|safe }};
+    {% if task.idds_info %}
+        var task_idds_info = {{ task.idds_info|safe }};
+    {% else %}
+        var task_idds_info = "";
+    {% endif %}
     app.controller('iDDSInfoForTaskController', function ($scope, $http) {
         $scope.iddsjson = task_idds_info;
         $scope.getiDDs = function () {

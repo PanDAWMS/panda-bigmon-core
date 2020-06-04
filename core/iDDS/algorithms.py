@@ -50,17 +50,15 @@ def getiDDSInfoForTask(jeditaskid):
             transformationWithNested['transform_status']]
         transformationWithNested['in_status'] = map['requests']['in_status'][transformationWithNested['in_status']]
         transformationWithNested['out_status'] = map['requests']['out_status'][transformationWithNested['out_status']]
+        transformationWithNested['pctprocessed'] = int(100. * transformationWithNested['out_processed_files'] / transformationWithNested['out_total_files'])
     return transformationWithNested
 
 def checkIfIddsTask(taskinfo):
-    taskinfo['idds'] = 0
     if taskinfo['splitrule']:
         split_rule = str(taskinfo['splitrule']).split(',')
         if 'HO=1' in split_rule:
-            taskinfo['idds'] = 1
             return 'hpo'
     if taskinfo['tasktype']:
         if taskinfo['tasktype'] == "prod":
-            taskinfo['idds'] = 1
             return 'idds'
     return None
