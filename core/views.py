@@ -8728,13 +8728,16 @@ def taskInfo(request, jeditaskid=0):
         tasks = JediTasks.objects.filter(**query).values()
 
         ### iDDS section
-        task_type = checkIfIddsTask(tasks[0])
-        idds_info = None
+        if len(tasks) > 0:
+            task_type = checkIfIddsTask(tasks[0])
+            idds_info = None
 
-        if task_type == 'hpo':
-            mode = 'nodrop'
-            idds_info = getiDDSInfoForTask(jeditaskid)
-
+            if task_type == 'hpo':
+                mode = 'nodrop'
+                idds_info = getiDDSInfoForTask(jeditaskid)
+        else:
+            task_type = None
+            idds_info = None
 
         if len(tasks) > 0:
             if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1: eventservice = True
