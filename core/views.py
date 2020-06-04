@@ -9084,6 +9084,10 @@ def taskInfo(request, jeditaskid=0):
                     'message'] = 'Some jobs in this task consumed a lot of memory. We suspect there might be memory leaks.'
                 warning['memoryleaksuspicion']['jobs'] = tmcj_list
         if idds_info is not None:
+            idds_timestamp_names = ['request_created_at', 'request_updated_at', 'out_created_at', 'out_updated_at']
+            for itn in idds_info:
+                if itn in idds_info and isinstance(idds_info[itn], datetime):
+                    idds_info[itn] = idds_info[itn].strftime(defaultDatetimeFormat)
             taskrec['idds_info'] = idds_info
         if taskrec['creationdate']:
             if taskrec['creationdate'] < datetime.strptime('2018-02-07', '%Y-%m-%d'):

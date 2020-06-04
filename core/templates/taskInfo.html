@@ -456,7 +456,7 @@
   </table>
   </div>
 
-  {% if task.idds == 1 %}
+  {% if task.idds_info %}
       <div id="iDDsDiv" class="badevents" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
       <table>
           <tr bgcolor='lightcyan'>
@@ -622,13 +622,11 @@
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script>
-    var v = "{{ task.idds_info|safe }}";
+    var task_idds_info = {{ task.idds_info|safe }};
     app.controller('iDDSInfoForTaskController', function ($scope, $http) {
-        $scope.iddsjson = ""
-        $scope.idds_info = "";
+        $scope.iddsjson = task_idds_info;
         $scope.getiDDs = function () {
-            var idds_info = angular.fromJson(v);
-            if (Object.keys(idds_info).length == 0) {
+            if (Object.keys(task_idds_info).length === 0) {
                 $http({
                         url: '/idds/getiddsfortask/',
                         method: "GET",
@@ -637,21 +635,15 @@
                 ).then(function (res) {
                     var iddsjson = angular.fromJson(res.data);
                     if (('data' in iddsjson) && (Object.keys(iddsjson['data']).length > 0)) {
-                        var displaydiv = document.getElementById('iDDsDiv');
-                        displaydiv.style.display = "";
                         $scope.iddsjson = iddsjson['data'];
                     }
                 });
             }
-            else {
-                var iddsjson = idds_info;
-                var displaydiv = document.getElementById('iDDsDiv');
-                displaydiv.style.display = "";
-                $scope.iddsjson = iddsjson;
-            }
         };
         var init = function () {
             $scope.getiDDs();
+            var displaydiv = document.getElementById('iDDsDiv');
+            displaydiv.style.display = "";
         };
         init();
     });
