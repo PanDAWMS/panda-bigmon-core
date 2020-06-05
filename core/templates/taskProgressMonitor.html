@@ -143,6 +143,12 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
       let resp = $scope.taskprofile.fetch();
       resp.then(function (data) {
         $scope.taskprofile.charts["profile_chart"].data.datasets = $scope.taskprofile.data;
+        if ($scope.taskprofile.selection.progressunit === 'events') {
+          $scope.taskprofile.charts["profile_chart"].config.options.scales.yAxes[0].scaleLabel.labelString = 'Number of events';
+        }
+        else {
+          $scope.taskprofile.charts["profile_chart"].config.options.scales.yAxes[0].scaleLabel.labelString = 'Number of ended jobs';
+        }
         $scope.taskprofile.charts["profile_chart"].update();
       });
     };
