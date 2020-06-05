@@ -3369,6 +3369,9 @@ def jobList(request, mode=None, param=None):
     elif fileid:
         sortby = "fileattemptnr-descending"
         jobs = sorted(jobs, key=lambda x: x['fileattemptnr'], reverse=True)
+    elif 'computingsite' in request.session['requestParams']:
+        sortby = 'time-descending'
+        jobs = sorted(jobs, key=lambda x: x['modificationtime'] if x['modificationtime'] is not None else datetime(1900, 1, 1), reverse=True)
     else:
         sortby = "attemptnr-descending,pandaid-descending"
         jobs = sorted(jobs, key=lambda x: [-x['attemptnr'],-x['pandaid']])
