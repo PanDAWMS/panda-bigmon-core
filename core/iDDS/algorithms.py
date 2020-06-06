@@ -50,7 +50,10 @@ def getiDDSInfoForTask(jeditaskid):
             transformationWithNested['transform_status']]
         transformationWithNested['in_status'] = map['requests']['in_status'][transformationWithNested['in_status']]
         transformationWithNested['out_status'] = map['requests']['out_status'][transformationWithNested['out_status']]
-        transformationWithNested['pctprocessed'] = int(100. * transformationWithNested['out_processed_files'] / transformationWithNested['out_total_files'])
+        try:
+            transformationWithNested['pctprocessed'] = int(100. * transformationWithNested['out_processed_files'] / transformationWithNested['out_total_files'])
+        except:
+            transformationWithNested['pctprocessed'] = 0
     return transformationWithNested
 
 def checkIfIddsTask(taskinfo):
