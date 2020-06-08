@@ -85,7 +85,7 @@ def subresults_getter(url_params_str):
             files = [f for f in files if 'artReport.json' in f['name']]
         except:
             _logger.exception('Exception was caught while seeking artReport.json in logs for PanDA job: {}'.format(str(pandaid)))
-            return {}
+            return {pandaid: subresults_dict}
     else:
         _logger.exception('Exception was caught while downloading logs using Rucio for PanDA job: {}'.format(str(pandaid)))
         return {pandaid: subresults_dict}
@@ -194,11 +194,12 @@ def clear_queue(cur):
 
     return True
 
+
 def get_final_result(job):
     """ A function to determine the real ART test result depending on sub-step results, exitcode and PanDA job state
     0 - succeeded - green
     1 - finished - yellow
-    2 - running - blue
+    2 - active - blue
     3 - failed - red
     """
     finalResultDict = {0: 'succeeded', 1: 'finished', 2: 'active', 3: 'failed'}
