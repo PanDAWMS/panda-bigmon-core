@@ -28,7 +28,7 @@ from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
 
 from core.art.utils import setupView
 
-_logger = logging.getLogger('bigpandamon-error')
+_logger = logging.getLogger('bigpandamon')
 
 @register.filter(takes_context=True)
 def remove_dot(value):
