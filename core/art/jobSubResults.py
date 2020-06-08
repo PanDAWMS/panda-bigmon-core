@@ -8,7 +8,8 @@ from django.db import transaction, DatabaseError
 from core.settings import defaultDatetimeFormat
 import logging
 
-_logger = logging.getLogger('bigpandamon-error')
+_logger_error = logging.getLogger('bigpandamon-error')
+_logger = logging.getLogger('bigpandamon')
 
 def getJobReport(guid, lfn, scope):
     filebrowserURL = "http://bigpanda.cern.ch/filebrowser/"  # This is deployment specific because memory monitoring is intended to work in ATLAS
@@ -97,7 +98,7 @@ def subresults_getter(url_params_str):
             response = http.request('GET', url)
             data = json.loads(response.data)
     else:
-        _logger.warning('No artReport.json file found in log tarball for PanDA job: {}'.format(str(pandaid)))
+        _logger.error('No artReport.json file found in log tarball for PanDA job: {}'.format(str(pandaid)))
         return {pandaid: subresults_dict}
 
     if isinstance(data, dict) and 'art' in data:
@@ -113,7 +114,7 @@ def subresults_getter(url_params_str):
                 resultlist.append({'name': r['name'] if 'name' in r else '', 'result': r['result'] if 'result' in r else r})
             subresults_dict['result'] = resultlist
 
-    print('ART Results for {} is {}'.format(str(pandaid), str(subresults_dict)))
+    _logger.info('ART Results for {} is {}'.format(str(pandaid), str(subresults_dict)))
 
     return {pandaid: subresults_dict}
 
@@ -131,7 +132,7 @@ def save_subresults(subResultsDict):
                                    subresult=data)
                 row.save()
     except DatabaseError as e:
-        print (e)
+        _logger_error.error(e)
         return False
 
     return True
@@ -152,7 +153,7 @@ def lock_nqueuedjobs(cur, nrows):
     try:
         cur.execute(lquery)
     except DatabaseError as e:
-        print (e)
+        _logger_error.error(e)
         raise
 
     return lock_time
@@ -171,7 +172,7 @@ def delete_queuedjobs(cur, lock_time):
     try:
         cur.execute(dquery)
     except DatabaseError as e:
-        print (e)
+        _logger_error.error(e)
         raise
 
     return True
@@ -189,7 +190,7 @@ def clear_queue(cur):
     try:
         cur.execute(cquery)
     except DatabaseError as e:
-        print (e)
+        _logger_error.error(e)
         raise
 
     return True
