@@ -125,15 +125,16 @@ def save_subresults(subResultsDict):
     :param subResultsDict:
     :return: True or False
     """
-    try:
-        with transaction.atomic():
-            for pandaid, data in subResultsDict.items():
+
+    with transaction.atomic():
+        for pandaid, data in subResultsDict.items():
+            try:
                 row = ARTSubResult(pandaid=pandaid,
                                    subresult=data)
                 row.save()
-    except DatabaseError as e:
-        _logger_error.error(e)
-        return False
+            except DatabaseError as e:
+                _logger_error.error(e)
+                return False
 
     return True
 
