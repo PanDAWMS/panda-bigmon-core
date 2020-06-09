@@ -26,6 +26,8 @@ ALLOWED_HOSTS = [
 ### VIRTUALENV
 VIRTUALENV_PATH = '/data/virtualenv37'
 
+IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
+
 ### WSGI
 #WSGI_PATH = VIRTUALENV_PATH + '/pythonpath'
 
