@@ -302,7 +302,7 @@ def artTasks(request):
 def artJobs(request):
     valid, response = initRequest(request)
     if not valid:
-        return HttpResponse(status=401)
+        return response
 
     # getting aggregation order
     if not 'view' in request.session['requestParams'] or (
@@ -317,6 +317,7 @@ def artJobs(request):
     data = getCacheEntry(request, "artJobs")
     # data = None
     if data is not None:
+        _logger.info('Got data from cache: {}s'.format(time.time() - request.session['req_init_time']))
         data = json.loads(data)
         data['request'] = request
         if 'ntaglist' in data:
@@ -333,11 +334,13 @@ def artJobs(request):
                 elif len(ntags) == 1:
                     data['requestParams']['ntag'] = ntags[0]
         response = render_to_response('artJobs.html', data, content_type='text/html')
+        _logger.info('Rendered template with data from cache: {}s'.format(time.time()-request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
     # process URL params to query params
     query = setupView(request, 'job')
+    _logger.info('Set up view: {}s'.format(time.time() - request.session['req_init_time']))
 
     # querying data from dedicated SQL function
     cur = connection.cursor()
@@ -385,6 +388,7 @@ def artJobs(request):
                     'gitlabid', 'outputcontainer', 'maxrss', 'attemptnr', 'maxattempt', 'parentid', 'attemptmark',
                     'inputfileid', 'extrainfo']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
+    _logger.info('Got data from DB: {}s'.format(time.time() - request.session['req_init_time']))
 
     # i=0
     # for job in jobs:
@@ -498,6 +502,7 @@ def artJobs(request):
                 artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][job['ntag'].strftime(artdateformat)]['jobs']) if d['inputfileid'] == job['inputfileid']), None)
             if jobindex is not None:
                 artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][jobindex]['linktopreviousattemptlogs'] = '?scope={}&guid={}&lfn={}&site={}'.format(job['scope'], job['guid'], job['lfn'], job['computingsite'])
+    _logger.info('Prepared data: {}s'.format(time.time() - request.session['req_init_time']))
 
     # transform dict of tests to list of test and sort alphabetically
     artjobslist = {}
@@ -519,6 +524,7 @@ def artJobs(request):
                                               testdirectories[i][j][0].split('src')[1] + '/' + t
                 artjobslist[i][j].append(tdict)
             artjobslist[i][j] = sorted(artjobslist[i][j], key=lambda x: x['testname'].lower())
+    _logger.info('Converted data from dict to list: {}s'.format(time.time() - request.session['req_init_time']))
 
     linktoplots = set(linktoplots)
     xurl = extensibleURL(request)
@@ -550,6 +556,7 @@ def artJobs(request):
         }
         setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artJobs.html', data, content_type='text/html')
+        _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 

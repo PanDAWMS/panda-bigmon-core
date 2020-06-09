@@ -367,6 +367,9 @@ def initRequest(request, callselfmon = True):
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         VOMODE = 'atlas'
         # VOMODE = 'devtest'
+    request.session['req_init_time'] = time.time()
+    _logger.info('Request: {}'.format(request.get_full_path()))
+    _logger.info('Start of request handling: {}'.format(datetime.utcnow()))
     request.session['IS_TESTER'] = False
 
     if VOMODE == 'atlas':
@@ -3029,6 +3032,7 @@ def jobList(request, mode=None, param=None):
             response = render_to_response('jobListES.html', data, content_type='text/html')
         else:
             response = render_to_response('jobList.html', data, content_type='text/html')
+        _logger.info('Rendered template with data from cache: {}'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -3106,11 +3110,11 @@ def jobList(request, mode=None, param=None):
     else:
         fileid = None
 
-    _logger.debug('Specific params processing: {}'.format(time.time()-start_time))
+    _logger.info('Specific params processing: {}'.format(time.time()-request.session['req_init_time']))
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
 
-    _logger.debug('Setup view: {}'.format(time.time() - start_time))
+    _logger.info('Setup view: {}'.format(time.time() - request.session['req_init_time']))
 
     if len(extraquery_files) > 1:
         wildCardExtension += ' AND ' + extraquery_files
@@ -3161,7 +3165,7 @@ def jobList(request, mode=None, param=None):
             else:
                 isJumbo = True
 
-    _logger.debug('Prepare list of retriels if dropmode [Aleksandr method]: {}'.format(time.time() - start_time))
+    _logger.info('Prepare list of retriels if dropmode [Aleksandr method]: {}'.format(time.time() - request.session['req_init_time']))
 
     harvesterjobstatus = ''
 
@@ -3245,7 +3249,7 @@ def jobList(request, mode=None, param=None):
         else:
             thread = None
 
-    _logger.debug('Got jobs: {}'.format(time.time() - start_time))
+    _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     ## If the list is for a particular JEDI task, filter out the jobs superseded by retries
     taskids = {}
@@ -3271,11 +3275,11 @@ def jobList(request, mode=None, param=None):
         end = time.time()
         print(end - start)
         if request.user.is_authenticated and request.user.is_tester:
-            _logger.debug('Started deepcopy: {}'.format(time.time() - start_time))
+            _logger.info('Started deepcopy: {}'.format(time.time() - request.session['req_init_time']))
 
             newjobs = copy.deepcopy(jobs)
 
-            _logger.debug('Finished deep copy: {}'.format(time.time() - start_time))
+            _logger.info('Finished deep copy: {}'.format(time.time() - request.session['req_init_time']))
             if 'eventservice' in request.session['requestParams']:
                 isEventTask = True
                 print ('Event Service!')
@@ -3287,7 +3291,7 @@ def jobList(request, mode=None, param=None):
             end = time.time()
             print(end - start)
 
-    _logger.debug('Done droppping if was requested: {}'.format(time.time() - start_time))
+    _logger.info('Done droppping if was requested: {}'.format(time.time() - request.session['req_init_time']))
 
     #get attemps of file if fileid in request params
     files_attempts_dict = {}
@@ -3315,15 +3319,15 @@ def jobList(request, mode=None, param=None):
                     if jedi_file and 'maxattempt' in jedi_file:
                         job['filemaxattempts'] = jedi_file['maxattempt']
 
-    _logger.debug('Got file attempts: {}'.format(time.time() - start_time))
+    _logger.info('Got file attempts: {}'.format(time.time() - request.session['req_init_time']))
 
     jobs = cleanJobList(request, jobs, doAddMeta=False)
 
-    _logger.debug('Cleaned job list: {}'.format(time.time() - start_time))
+    _logger.info('Cleaned job list: {}'.format(time.time() - request.session['req_init_time']))
 
     jobs = reconstructJobsConsumers(jobs)
 
-    _logger.debug('Reconstructed consumers: {}'.format(time.time() - start_time))
+    _logger.info('Reconstructed consumers: {}'.format(time.time() - request.session['req_init_time']))
 
     njobs = len(jobs)
     jobtype = ''
@@ -3376,7 +3380,7 @@ def jobList(request, mode=None, param=None):
         sortby = "attemptnr-descending,pandaid-descending"
         jobs = sorted(jobs, key=lambda x: [-x['attemptnr'],-x['pandaid']])
 
-    _logger.debug('Sorted joblist: {}'.format(time.time() - start_time))
+    _logger.info('Sorted joblist: {}'.format(time.time() - request.session['req_init_time']))
 
     taskname = ''
     if 'jeditaskid' in request.session['requestParams'] and '|' not in request.session['requestParams']['jeditaskid']:
@@ -3391,12 +3395,12 @@ def jobList(request, mode=None, param=None):
     else:
         user = None
 
-    _logger.debug('Got task names: {}'.format(time.time() - start_time))
+    _logger.info('Got task names: {}'.format(time.time() - request.session['req_init_time']))
 
     ## set up google flow diagram
     flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
 
-    _logger.debug('Built google flow diagram: {}'.format(time.time() - start_time))
+    _logger.info('Built google flow diagram: {}'.format(time.time() - request.session['req_init_time']))
 
     if ('datasets' in request.session['requestParams']) and (request.session['requestParams']['datasets'] == 'yes') and ((
         ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.session['requestParams'])):
@@ -3466,7 +3470,7 @@ def jobList(request, mode=None, param=None):
                 file['fsize'] = int(file['fsize'] / 1000000)
             job['datasets'] = files
 
-    _logger.debug('Got datasets info if requested: {}'.format(time.time() - start_time))
+    _logger.info('Got datasets info if requested: {}'.format(time.time() - request.session['req_init_time']))
 
     # show warning or not
     if njobs <= request.session['JOB_LIMIT']:
@@ -3481,7 +3485,7 @@ def jobList(request, mode=None, param=None):
             if item['field'] == 'jeditaskid':
                 item['list'] = sorted(item['list'], key=lambda k: k['kvalue'], reverse=True)
 
-    _logger.debug('Built standard params attributes summary: {}'.format(time.time() - start_time))
+    _logger.info('Built standard params attributes summary: {}'.format(time.time() - request.session['req_init_time']))
 
     if 'jeditaskid' in request.session['requestParams']:
         if len(jobs) > 0:
@@ -3505,7 +3509,7 @@ def jobList(request, mode=None, param=None):
 
     errsByMessage = get_error_message_summary(jobs)
 
-    _logger.debug('Built error summary: {}'.format(time.time() - start_time))
+    _logger.info('Built error summary: {}'.format(time.time() - request.session['req_init_time']))
 
     # Here we getting extended data for site
     jobsToShow = jobs[:njobsmax]
@@ -3532,7 +3536,7 @@ def jobList(request, mode=None, param=None):
             job['computingsitestatus'] = siteHash[job['computingsite']][0]
             job['computingsitecomment'] = siteHash[job['computingsite']][1]
 
-    _logger.debug('Got extra params for sites: {}'.format(time.time() - start_time))
+    _logger.info('Got extra params for sites: {}'.format(time.time() - request.session['req_init_time']))
 
     if thread != None:
         try:
@@ -3562,7 +3566,7 @@ def jobList(request, mode=None, param=None):
     else:
         jobsTotalCount = int(math.ceil((jobsTotalCount+10000)/10000)*10000)
 
-    _logger.debug('Total jobs count thread finished: {}'.format(time.time() - start_time))
+    _logger.info('Total jobs count thread finished: {}'.format(time.time() - request.session['req_init_time']))
 
     for job in jobsToShow:
         if job['creationtime']:
@@ -3598,7 +3602,7 @@ def jobList(request, mode=None, param=None):
             except:
                 clist = []
 
-    _logger.debug('Got comparison job list for user: {}'.format(time.time() - start_time))
+    _logger.info('Got comparison job list for user: {}'.format(time.time() - request.session['req_init_time']))
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
@@ -3627,7 +3631,7 @@ def jobList(request, mode=None, param=None):
         nodropPartURL = cleanURLFromDropPart(xurl)
         difDropList = dropalgorithm.compareDropAlgorithm(droplist,newdroplist)
 
-        _logger.debug('Extra data preporation done: {}'.format(time.time() - start_time))
+        _logger.info('Extra data preporation done: {}'.format(time.time() - request.session['req_init_time']))
 
         data = {
             'prefix': getPrefix(request),
@@ -3680,14 +3684,14 @@ def jobList(request, mode=None, param=None):
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
 
-        _logger.debug('Cache was set: {}'.format(time.time() - start_time))
+        _logger.info('Cache was set: {}'.format(time.time() - request.session['req_init_time']))
 
         if eventservice:
             response = render_to_response('jobListES.html', data, content_type='text/html')
         else:
             response = render_to_response('jobList.html', data, content_type='text/html')
 
-        _logger.debug('Rendered template: {}'.format(time.time() - start_time))
+        _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
 
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -6069,7 +6073,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
     query = setupView(request, hours=hours, limit=limit, opmode=view)
     ucoreComputingSites, harvesterComputingSites, _ = getCRICSites()
 
-    _logger.debug('[dashSummary] Got CRIC json: {}'.format(time.time() - start_time))
+    _logger.info('[dashSummary] Got CRIC json: {}'.format(time.time() - request.session['req_init_time']))
 
     if VOMODE == 'atlas' and len(request.session['requestParams']) == 0:
         cloudinfol = Cloudconfig.objects.filter().exclude(name='CMS').exclude(name='OSG').values('name', 'status')
@@ -6084,7 +6088,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
     for s in siteinfol:
         siteinfo[s['siteid']] = s['status']
 
-    _logger.debug('[dashSummary] Got list of sites: {}'.format(time.time() - start_time))
+    _logger.info('[dashSummary] Got list of sites: {}'.format(time.time() - request.session['req_init_time']))
 
     extra = "(1=1)"
     if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
@@ -6101,7 +6105,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
     for item in nojobabs:
         nojobabshash[item['site']] = item['dcount']
 
-    _logger.debug('[dashSummary] Got njobsabs for for sites: {}'.format(time.time() - start_time))
+    _logger.info('[dashSummary] Got njobsabs for for sites: {}'.format(time.time() - request.session['req_init_time']))
 
     mismatchedSites = []
     clouds = {}
@@ -6284,11 +6288,11 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
                         if res not in clouds[cloud]['sites'][site]['states'][jobstate]['resources'].keys():
                             clouds[cloud]['sites'][site]['states'][jobstate]['resources'][res] = {'jobstatus__count':0, 'corecount':0}
 
-    _logger.debug('[dashSummary] Precessed data for site summary: {}'.format(time.time() - start_time))
+    _logger.info('[dashSummary] Precessed data for site summary: {}'.format(time.time() - request.session['req_init_time']))
 
     updateCacheWithListOfMismatchedCloudSites(mismatchedSites)
 
-    _logger.debug('[dashSummary] Updated Cache with  mistmatched cloud|sites : {}'.format(time.time() - start_time))
+    _logger.info('[dashSummary] Updated Cache with  mistmatched cloud|sites : {}'.format(time.time() - request.session['req_init_time']))
 
     ## Go through the sites, add any that are missing (because they have no jobs in the interval)
     if cloudview != 'cloud':
@@ -6382,7 +6386,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
 
         fullsummary.append(clouds[cloud])
 
-    _logger.debug('[dashSummary] Finished cloud|sites summary: {}'.format(time.time() - start_time))
+    _logger.info('[dashSummary] Finished cloud|sites summary: {}'.format(time.time() - request.session['req_init_time']))
 
     if 'sortby' in request.session['requestParams']:
         if request.session['requestParams']['sortby'] in statelist:
@@ -6400,7 +6404,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
             for cloud in clouds:
                 clouds[cloud]['summary'] = sorted(clouds[cloud]['summary'], key=lambda x: x['pctfail'], reverse=True)
 
-    _logger.debug('[dashSummary] Sorted cloud|sites summary: {}'.format(time.time() - start_time))
+    _logger.info('[dashSummary] Sorted cloud|sites summary: {}'.format(time.time() - request.session['req_init_time']))
 
     return fullsummary
 
@@ -10623,12 +10627,12 @@ def errorSummary(request):
     if not valid:
         return response
 
-    _logger.debug('Initialized request: {}'.format(time.time() - start_time))
+    _logger.info('Initialized request: {}'.format(time.time() - request.session['req_init_time']))
 
     # Here we try to get cached data
     data = getCacheEntry(request, "errorSummary")
     if data is not None:
-        _logger.debug('Got cached data: {}'.format(time.time() - start_time))
+        _logger.info('Got cached data: {}'.format(time.time() - request.session['req_init_time']))
         data = json.loads(data)
         data['request'] = request
         # Filtering data due to user settings
@@ -10641,9 +10645,9 @@ def errorSummary(request):
                     list[0] = datetime.strptime(list[0],"%Y-%m-%dT%H:%M:%S")
                 except:
                     pass
-        _logger.debug('Processed cached data: {}'.format(time.time() - start_time))
+        _logger.info('Processed cached data: {}'.format(time.time() - request.session['req_init_time']))
         response = render_to_response('errorSummary.html', data, content_type='text/html')
-        _logger.debug('Rendered template from cached data: {}'.format(time.time() - start_time))
+        _logger.info('Rendered template from cached data: {}'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -10722,11 +10726,11 @@ def errorSummary(request):
         xurlsubst = '/errors/?' + updatedRequest + '&'
         xurlsubstNoSite = '/errors/?' + updatedRequestNoSite + '&'
 
-    _logger.debug('Processed specific params: {}'.format(time.time() - start_time))
+    _logger.info('Processed specific params: {}'.format(time.time() - request.session['req_init_time']))
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=limit, wildCardExt=True)
 
-    _logger.debug('Finished set up view: {}'.format(time.time() - start_time))
+    _logger.info('Finished set up view: {}'.format(time.time() - request.session['req_init_time']))
 
     if not testjobs and 'jobstatus' not in request.session['requestParams']:
         query['jobstatus__in'] = ['failed', 'holding']
@@ -10767,26 +10771,26 @@ def errorSummary(request):
     else:
         thread = None
 
-    _logger.debug('Got jobs: {}'.format(time.time() - start_time))
+    _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta=False)
 
-    _logger.debug('Cleaned jobs list: {}'.format(time.time() - start_time))
+    _logger.info('Cleaned jobs list: {}'.format(time.time() - request.session['req_init_time']))
 
     error_message_summary = get_error_message_summary(jobs)
 
-    _logger.debug('Prepared new error message summary: {}'.format(time.time() - start_time))
+    _logger.info('Prepared new error message summary: {}'.format(time.time() - request.session['req_init_time']))
 
     njobs = len(jobs)
     tasknamedict = taskNameDict(jobs)
 
-    _logger.debug('Got taskname for jobs: {}'.format(time.time() - start_time))
+    _logger.info('Got taskname for jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     ## Build the error summary.
     errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
                                                                                       testjobs)
 
-    _logger.debug('Error summary built: {}'.format(time.time() - start_time))
+    _logger.info('Error summary built: {}'.format(time.time() - request.session['req_init_time']))
 
     ## Build the state summary and add state info to site error summary
     # notime = True
@@ -10810,14 +10814,14 @@ def errorSummary(request):
                 if s in sitestates[sitename]: site[s] = sitestates[sitename][s]
             if 'pctfail' in sitestates[sitename]: site['pctfail'] = sitestates[sitename]['pctfail']
 
-    _logger.debug('Built errors by site summary: {}'.format(time.time() - start_time))
+    _logger.info('Built errors by site summary: {}'.format(time.time() - request.session['req_init_time']))
 
     taskname = ''
     if not testjobs:
         ## Build the task state summary and add task state info to task error summary
         taskstatesummary = dashTaskSummary(request, hours, limit=limit, view=jobtype)
 
-        _logger.debug('Prepared data for errors by task summary: {}'.format(time.time() - start_time))
+        _logger.info('Prepared data for errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
 
         taskstates = {}
         for task in taskstatesummary:
@@ -10835,7 +10839,7 @@ def errorSummary(request):
         if 'jeditaskid' in request.session['requestParams']:
             taskname = getTaskName('jeditaskid', request.session['requestParams']['jeditaskid'])
 
-    _logger.debug('Built errors by task summary: {}'.format(time.time() - start_time))
+    _logger.info('Built errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
 
     if 'sortby' in request.session['requestParams']:
         sortby = request.session['requestParams']['sortby']
@@ -10843,7 +10847,7 @@ def errorSummary(request):
         sortby = 'alpha'
     flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
 
-    _logger.debug('Built google diagram: {}'.format(time.time() - start_time))
+    _logger.info('Built google diagram: {}'.format(time.time() - request.session['req_init_time']))
 
     if thread is not None:
         try:
@@ -10857,7 +10861,7 @@ def errorSummary(request):
         except: jobsErrorsTotalCount = -1
     else: jobsErrorsTotalCount = -1
 
-    _logger.debug('Finished thread counting total number of jobs: {}'.format(time.time() - start_time))
+    _logger.info('Finished thread counting total number of jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     listPar =[]
     for key, val in request.session['requestParams'].items():
@@ -10875,7 +10879,7 @@ def errorSummary(request):
         jobsErrorsTotalCount = int(math.ceil((jobsErrorsTotalCount+10000)/10000)*10000)
     request.session['max_age_minutes'] = 6
 
-    _logger.debug('Formed list of params: {}'.format(time.time() - start_time))
+    _logger.info('Formed list of params: {}'.format(time.time() - request.session['req_init_time']))
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
@@ -10893,7 +10897,7 @@ def errorSummary(request):
         del request.session['TFIRST']
         del request.session['TLAST']
 
-        _logger.debug('Extra data preparation for template: {}'.format(time.time() - start_time))
+        _logger.info('Extra data preparation for template: {}'.format(time.time() - request.session['req_init_time']))
 
         data = {
             'prefix': getPrefix(request),
@@ -10932,14 +10936,14 @@ def errorSummary(request):
         data.update(getContextVariables(request))
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
 
-        _logger.debug('Set cache: {}'.format(time.time() - start_time))
+        _logger.info('Set cache: {}'.format(time.time() - request.session['req_init_time']))
 
         # Filtering data due to user settings
         if request.user.is_authenticated and request.user.is_tester:
             data = filterErrorData(request, data)
         response = render_to_response('errorSummary.html', data, content_type='text/html')
 
-        _logger.debug('Rendered template: {}'.format(time.time() - start_time))
+        _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
 
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response

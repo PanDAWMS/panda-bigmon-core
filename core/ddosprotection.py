@@ -39,9 +39,7 @@ class DDOSMiddleware(object):
     def __init__(self, get_response):
         self.get_response = get_response
 
-
     def __call__(self, request):
-
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         try:
             x_referer = request.META.get('HTTP_REFERER')
@@ -87,7 +85,7 @@ class DDOSMiddleware(object):
             useragent = None
 
         if (not x_forwarded_for is None) and x_forwarded_for in self.restrictedIPs:
-            _logger.debug('[DDOS protection] got request from agent: {}'.format(useragent))
+            _logger.info('[DDOS protection] got request from agent: {}'.format(useragent))
             countRestictedrequests = []
             startdate = datetime.utcnow() - timedelta(hours=1)
             enddate = datetime.utcnow()
@@ -101,7 +99,7 @@ class DDOSMiddleware(object):
                 AllRequests.objects.filter(**eiquery).values('remote').exclude(urlview='/grafana/').annotate(
                     Count('remote')))
             if len(countRestictedrequests) > 0 and 'remote__count' in countRestictedrequests[0]:
-                _logger.debug('[DDOS protection] found number of non rejected request for last minute: {}'.format(countRestictedrequests[0]['remote__count']))
+                _logger.info('[DDOS protection] found number of non rejected request for last minute: {}'.format(countRestictedrequests[0]['remote__count']))
                 if countRestictedrequests[0]['remote__count'] > self.maxAllowedJSONRequstesParallel:
                     reqs.is_rejected = 1
                     reqs.save()
