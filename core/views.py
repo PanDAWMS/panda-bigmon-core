@@ -121,7 +121,6 @@ def get_count(dict, key):
 def get_tk(dict, key):
     return dict[key]['tk']
 
-
 @register.filter(takes_context=True)
 def get_item(dictionary, key):
     return dictionary.get(key)
@@ -5457,8 +5456,10 @@ def siteInfo(request, site=''):
     panda_queue = []
     pqquery = {'pandaqueue': site}
     panda_queues = SchedconfigJson.objects.filter(**pqquery).values()
+    panda_queue_type = None
     if len(panda_queues) > 0:
         panda_queue_dict = json.loads(panda_queues[0]['data'])
+        panda_queue_type = panda_queue_dict['type']
         for par, val in panda_queue_dict.items():
             val = ', '.join([str(subpar) + ' = ' + str(subval) for subpar, subval in val.items()]) if isinstance(val, dict) else val
             panda_queue.append({'param': par, 'value': val})
@@ -5536,12 +5537,13 @@ def siteInfo(request, site=''):
             'request': request,
             'viewParams': request.session['viewParams'],
             'site': siterec,
-            'panda_resource':panda_resource,
+            'panda_resource': panda_resource,
             'queues': sites,
             'colnames': colnames,
             'attrs': attrs,
             'incidents': incidents,
             'name': site,
+            'pq_type': panda_queue_type,
             'njobhours': njobhours,
             'built': datetime.now().strftime("%H:%M:%S"),
             'pandaqueue': panda_queue,
