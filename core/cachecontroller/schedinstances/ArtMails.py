@@ -24,5 +24,5 @@ class ArtDevMails(BaseURLTasksProvider):
     def getpayload(self):
         self.logger.info("getpayload started")
         urlsQueue = queue.PriorityQueue(-1)
-        urlsQueue.put((self.BASIC_PRIORITY, '/art/senddevartreport/'))
+        urlsQueue.put((self.BASIC_PRIORITY, '/art/senddevartreport/?json'))
         return urlsQueue
