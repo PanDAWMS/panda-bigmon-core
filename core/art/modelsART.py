@@ -100,6 +100,7 @@ class ARTTests(models.Model):
     nightly_tag_display = models.CharField(max_length=32, db_column='NIGHTLY_TAG_DISPLAY', null=True)
     package = models.CharField(max_length=32, db_column='PACKAGE', null=False, blank=True)
     extrainfo = models.CharField(max_length=1000, db_column='EXTRA_INFO', null=True, blank=True)
+    created = models.DateTimeField(null=True, db_column='CREATED')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ART_TESTS"'
 

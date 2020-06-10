@@ -14,7 +14,7 @@ from django.db import connection
 from django.views.decorators.csrf import csrf_exempt
 from django.template.defaulttags import register
 from django.db.models.functions import Concat, Substr
-from django.db.models import Value as V
+from django.db.models import Value as V, F
 
 
 from core.views import login_customrequired, initRequest, extensibleURL, removeParam
@@ -913,7 +913,7 @@ def sendArtReport(request):
             summaryPerRecipient[email] = {}
         if package in artjobsdictpackage.keys():
             summaryPerRecipient[email][package] = artjobsdictpackage[package]
-    subject = 'ART jobs status report'
+    subject = '[BigPanDAmon][ART] GRID ART jobs status report'
 
     maxTries = 1
     for recipient, summary in summaryPerRecipient.items():
@@ -932,4 +932,50 @@ def sendArtReport(request):
     return HttpResponse(json.dumps({'isSent': isSent, 'nTries': i}), content_type='application/json')
 
 
+def sendDevArtReport(request):
+    """
+    A view to send special report to ART developer
+    :param request:
+    :return: json
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+    isSent = False
+    template = 'templated_email/artDevReport.html'
+    subject = '[BigPanDAmon][ART] Run on specific day tests'
+
+    query = {'created__castdate__range': [datetime.utcnow() - timedelta(hours=1), datetime.utcnow()]}
+    exquery = {'nightly_tag__exact': F('nightly_tag_display')}
+
+    tests = list(ARTTests.objects.filter(**query).exclude(**exquery).values())
+
+    if len(tests) > 0:
+        for test in tests:
+            test['artlink'] = 'https://bigpanda.cern.ch/art/jobs/?package={}&branch={}&ntag={}'.format(
+                test['package'],
+                '/'.join((test['nightly_release_short'], test['project'], test['platform'])),
+                test['nightly_tag_display'][:10],
+            )
+            test['joblink'] = 'https://bigpanda.cern.ch/job/{}/'.format(test['pandaid'])
+
+        rquery = {}
+        rquery['report'] = 'artdev'
+        recipientslist = list(ReportEmails.objects.filter(**rquery).values('email'))
+
+        maxTries = 1
+        for recipient in recipientslist:
+            isSent = False
+            i = 0
+            while not isSent:
+                i += 1
+                if i > 1:
+                    time.sleep(10)
+                isSent = send_mail_art(template, subject, tests, recipient)
+                # put 10 seconds delay to bypass the message rate limit of smtp server
+                time.sleep(10)
+                if i >= maxTries:
+                    break
+
+    return HttpResponse(json.dumps({'isSent': isSent}), content_type='application/json')
 
