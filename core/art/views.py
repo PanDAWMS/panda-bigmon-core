@@ -24,7 +24,7 @@ from core.art.modelsART import ARTTests, ReportEmails, ARTResultsQueue
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
 from core.common.models import Filestable4, FilestableArch
 from core.libs.cache import setCacheEntry, getCacheEntry
-from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
+from core.pandajob.models import CombinedWaitActDefArch4
 
 from core.art.utils import setupView
 
@@ -64,11 +64,11 @@ def art(request):
 
     # limit results by N days
     N_DAYS_LIMIT = 90
-    extrastr = " (TO_DATE(SUBSTR(NIGHTLY_TAG, 0, INSTR(NIGHTLY_TAG, 'T')-1), 'YYYY-MM-DD') > sysdate - {}) ".format(N_DAYS_LIMIT)
+    tquery['created__castdate__range'] = [datetime.utcnow() - timedelta(days=N_DAYS_LIMIT), datetime.utcnow()]
 
-    packages = ARTTests.objects.filter(**tquery).extra(where=[extrastr]).values('package').distinct().order_by('package')
-    branches = ARTTests.objects.filter(**tquery).extra(where=[extrastr]).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
-    ntags = ARTTests.objects.values('nightly_tag').annotate(nightly_tag_date=Substr('nightly_tag', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
+    packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
+    branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
+    ntags = ARTTests.objects.values('nightly_tag_display').annotate(nightly_tag_date=Substr('nightly_tag_display', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
 
     # a workaround for a splitted DF into a lot of separate packages
     package_list = [p['package'] for p in packages]
