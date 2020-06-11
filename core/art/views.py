@@ -684,6 +684,9 @@ def registerARTTest(request):
     nightly_tag_display = None
     extra_info = {}
 
+    # log all the req params for debug
+    _logger.debug('[ART] registerARTtest requestParams: ' + str(request.session['requestParams']))
+
     ### Checking whether params were provided
     if 'requestParams' in request.session and 'pandaid' in request.session['requestParams'] and 'testname' in request.session['requestParams']:
         pandaid = request.session['requestParams']['pandaid']
@@ -765,11 +768,13 @@ def registerARTTest(request):
        job = jobs[0]
     except:
         data = {'exit_code': -1, 'message': "Provided pandaid does not exists"}
+        _logger.warning(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
     ### Checking whether provided pandaid is art job
     if 'username' in job and job['username'] != 'artprod':
         data = {'exit_code': -1, 'message': "Provided pandaid is not art job"}
+        _logger.warning(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
     ### Preparing params to register art job
