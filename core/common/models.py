@@ -585,6 +585,7 @@ class JediTasksBase(models.Model):
     usejumbo = models.CharField(max_length=10, db_column='USEJUMBO', blank=True)
     diskio = models.IntegerField(null=True, db_column='DISKIO', blank=True)
     diskiounit = models.CharField(max_length=96, db_column='DISKIOUNIT', blank=True)
+    container_name = models.CharField(max_length=200, db_column='CONTAINER_NAME', blank=True)
     class Meta:
         abstract = True
 

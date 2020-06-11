@@ -270,7 +270,7 @@ class PandaJob(models.Model):
     diskio = models.BigIntegerField(null=True, db_column='DISKIO', blank=True) # Field name made lowercase.
     memoryleak = models.BigIntegerField(null=True, db_column='MEMORY_LEAK', blank=True)
     memoryleakx2 = models.BigIntegerField(null=True, db_column='MEMORY_LEAK_X2', blank=True)
-    containername = models.CharField(max_length=765, db_column='CONTAINER_NAME', blank=True)
+    container_name = models.CharField(max_length=765, db_column='CONTAINER_NAME', blank=True)
 
     def __str__(self):
         return 'PanDA:' + str(self.pandaid)
