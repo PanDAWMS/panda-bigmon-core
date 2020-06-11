@@ -802,7 +802,8 @@ def registerARTTest(request):
                                                 project=project,
                                                 platform=platform,
                                                 package=package,
-                                                extrainfo=json.dumps(extra_info)
+                                                extrainfo=json.dumps(extra_info),
+                                                created=datetime.utcnow()
                                                 )
             insertRow.save()
             data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}
