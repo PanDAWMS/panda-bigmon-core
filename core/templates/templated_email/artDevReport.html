@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head></head>
+<body>
+<h2>ART dev report generated at {{ built }}</h2>
+<h4>List of recent "Run on specific day" tests:</h4>
+{% for item in summary %}
+  <h6>PanDA ID: {{ item.pandaid }}, {{ item.joblink | safe }}, {{ item.artlink | safe }}</h6> {% for key, value in item.items %}{% if key != 'joblink' and key != 'artlink' %}
+    {{ key }}: {{ value }} {% endif %}{% endfor %}
+{% endfor %}
+</body>
+</html>

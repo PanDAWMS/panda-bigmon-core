@@ -40,9 +40,20 @@
                   <li class="artmenu-item"><input id="{{ t }}" class="ntag" type="checkbox"><label for="{{ t }}">{{ t }}</label></li>
               {% endfor %}
               <li><label>Last nightlies:<input type="number" class="ntag" id="ntag_lastnightlies" value="7"></label></li>
-{#              <li><label>Last days:<input type="number" class="ntag" id="ntag_days"></label></li>#}
-              <li><label>From:<input type="date" class="ntag-text" id="ntag_from" min="2017-06-08"></label></li>
-              <li><label>To:<input type="date" class="ntag-text" id="ntag_to"></label></li>
+              <li class="input-group">
+                <span class="input-group-label">From</span>
+                <input class="input-group-field ntag-text" type="text" id="ntag_from">
+                <div class="input-group-button">
+                  <button type="button" class="hollow button alert" onclick="clearInput('ntag_from')"><i class="fi fi-x"></i></button>
+                </div>
+              </li>
+              <li class="input-group">
+                <span class="input-group-label">To</span>
+                <input class="input-group-field ntag-text" type="text" id="ntag_to">
+                <div class="input-group-button">
+                  <button type="button" class="hollow button alert" onclick="clearInput('ntag_to')"><i class="fi fi-x"></i></button>
+                </div>
+              </li>
           </ul>
       </fieldset>
   </div>
@@ -65,7 +76,7 @@
   <div class="large-1 columns">
     <fieldset class="fieldset artmenu">
           <legend>Search</legend>
-          <a onclick="searchResults()" class="button">Show me results!</a>
+          <a onclick="searchResults()" class="button">Show results!</a>
       </fieldset>
   </div>
 </div>
@@ -158,6 +169,29 @@ function toggleExtraOptions(eoid, jid) {
     j = document.getElementById(jid);
     eo.style.display = (j.checked) ? "" : "none";
 }
+
+function clearInput(id) {
+  document.getElementById(id).value = "";
+}
+
+$(function(){
+    let today = new Date();
+    let todayStr = today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate();
+    $('#ntag_from').fdatepicker({
+        format: 'yyyy-mm-dd',
+        disableDblClickSelection: true,
+        language: 'en',
+        startDate: '2017-06-08',
+        endDate: todayStr,
+    });
+    $('#ntag_to').fdatepicker({
+        format: 'yyyy-mm-dd',
+        disableDblClickSelection: true,
+        language: 'en',
+        startDate: '2017-06-08',
+        endDate: todayStr,
+    });
+});
 
 </script>
 {% endblock %}

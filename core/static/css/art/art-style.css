@@ -4,13 +4,14 @@
 }
 
 /* ART Main Menu styles */
+/* --------------------------------------------------------------------------------------------------- */
 fieldset.artmenu {
     margin: 1rem 0.3rem;
     padding: 0.5rem 0.5rem;
 }
 
 li.artmenu-item {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.3rem;
 }
 
 li.artmenu-item > input {
@@ -21,6 +22,26 @@ li.artmenu-item > input {
 li.artmenu-item > label {
     vertical-align: middle;
 }
+
+fieldset.artmenu li.input-group {
+  font-size: 0.875rem;
+}
+
+fieldset.artmenu li.input-group span.input-group-label {
+  max-width: 3rem;
+  min-width: 3rem;
+  padding: 0 0.3rem;
+}
+
+fieldset.artmenu li.input-group button.hollow.alert {
+  border-color: #cacaca;
+  border-left: 0;
+}
+
+
+
+/* ART clickable containers */
+/* --------------------------------------------------------------------------------------------------- */
 
 .with-link-to-logs {
     margin: auto;
@@ -37,10 +58,11 @@ li.artmenu-item > label {
     display: inline-flex;
 }
 
+
 /* stats divs*/
 .clickable {
     background-color: transparent;
-    width: 120px;
+    width: 110px;
     line-height: 21px;
     position: relative;
     font-size: 0;
@@ -186,7 +208,7 @@ li.artmenu-item > label {
 
 /*extra links style*/
 .extra-links {
-    width: 170px;
+    width: 190px;
     text-align: left;
 }
 
@@ -200,7 +222,8 @@ li.artmenu-item > label {
     font-size: 14px;
 }
 
-/*Accordion for pages*/
+/* Accordion for pages */
+/* --------------------------------------------------------------------------------------------------- */
 
 .columns .accordion-art-container {
     padding-left: 0;
@@ -304,7 +327,6 @@ li.artmenu-item > label {
 
 .no-border .cell {
     border: none;
-    text-align: center;
     white-space: nowrap;
 }
 
@@ -317,8 +339,16 @@ li.artmenu-item > label {
     border: none;
 }
 
+.cell.extra-info {
+    line-height: 1.8rem;
+}
+
 .left-aligned {
     text-align: left;
+}
+
+.right-aligned {
+    text-align: right;
 }
 
 .right-aligned-ntag {
@@ -458,12 +488,13 @@ li.artmenu-item > label {
 
 
 /* test sub results traffic lights */
+/* --------------------------------------------------------------------------------------------------- */
 
 .testsubresultscontainer {
     margin: auto;
     clear: both;
     overflow: auto;
-    width: 210px;
+    width: 200px;
     display:table;
     text-align: right;
     z-index: 2;

@@ -20,7 +20,7 @@ vertical-align: top;
 width:10em;
 }
 
-a:link {
+a, a:link {
   color: #0a47ff;
 }
 
@@ -119,6 +119,16 @@ hr {
     width: 100%;
     max-width: 100%;
 }
+
+.callout p {
+  font-size: 0.875rem;
+  margin-bottom: 0.7rem;
+}
+.callout ul li {
+  font-size: 0.875rem;
+}
+
+
 .killbutton {
   display: inline-block;
   min-width: 100px;
@@ -616,6 +626,9 @@ li.list-item > label {
 }
 .form-container .no-bullet {
     margin: 0;
+}
+.form-container .column a.button {
+    margin: 1.5rem 0;
 }
 .form-container fieldset {
     margin-bottom: 0;

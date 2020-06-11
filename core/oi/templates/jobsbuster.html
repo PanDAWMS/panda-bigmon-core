@@ -172,7 +172,7 @@ function showerrors(id) {
     headerTitle: 'Errors messages',
     position:    'center-top 0 58',
     contentSize: '450 250',
-    content:     '<p>'+JSON.stringify(errormessages[id])+'</p>',
+    content:     errormessages[id],
     callback: function () {
         this.content.style.padding = '20px';
     },

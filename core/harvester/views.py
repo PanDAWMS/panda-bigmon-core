@@ -295,11 +295,6 @@ def harvestermon(request):
                 WHERE hw.pandaid = cj.pandaid 
                 """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
                                computingelement, limit)
-            sqlQueryJobs = """
-            SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where harvesterid like '%s' and workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
-            where harvesterid like '%s' %s %s %s %s %s %s %s)  ORDER by lastupdate DESC) WHERE  rownum <= %s
-            """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
-            computingelement, limit)
 
             cur = connection.cursor()
             cur.execute(sqlQueryJobsStates)
@@ -309,7 +304,6 @@ def harvestermon(request):
             columns = [str(i[0]).lower() for i in cur.description]
 
             for job in jobs:
-                object = {}
                 object = dict(zip(columns, job))
                 harvsterpandaids.append(object)
 
@@ -605,13 +599,6 @@ def harvestermon(request):
             WHERE hw.pandaid = cj.pandaid   
             """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
                           computingelement, limit)
-            sqlQueryJobs = """
-                   SELECT * FROM (SELECT * from atlas_panda.harvester_rel_jobs_workers where harvesterid in (%s) and 
-                   workerid in (SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
-                   where harvesterid in (%s) %s %s %s %s %s %s %s)  
-                   ORDER by lastupdate DESC) WHERE  rownum <= %s
-            """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
-                          computingelement, limit)
 
             cur = connection.cursor()
             cur.execute(sqlQueryJobsStates)
@@ -662,6 +649,7 @@ def harvestermon(request):
             URL += '&days=' + str(request.session['requestParams']['days'])
             hours = ''
             defaulthours = int(request.session['requestParams']['days']) * 24
+
         sqlQuery = """
           SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS
           where computingsite like '{0}' {1} {2} {3} {4} and ROWNUM<=1

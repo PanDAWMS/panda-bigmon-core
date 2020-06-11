@@ -74,6 +74,7 @@ class ARTResults(models.Model):
 class ARTSubResult(models.Model):
     pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
     subresult = models.CharField(max_length=4000, db_column='SUBRESULT_JSON', null=True)
+    result = models.TextField(db_column='RESULT_JSON', blank=True)
 
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ART_SUBRESULT"'
@@ -95,9 +96,11 @@ class ARTTests(models.Model):
     nightly_release_short = models.CharField(max_length=24, db_column='NIGHTLY_RELEASE_SHORT', null=True)
     project = models.CharField(max_length=256, db_column='PROJECT', null=True)
     platform = models.CharField(max_length=150, db_column='PLATFORM', null=True)
-    nightly_tag = models.CharField(max_length=20, db_column='NIGHTLY_TAG', null=True)
+    nightly_tag = models.CharField(max_length=32, db_column='NIGHTLY_TAG', null=True)
+    nightly_tag_display = models.CharField(max_length=32, db_column='NIGHTLY_TAG_DISPLAY', null=True)
     package = models.CharField(max_length=32, db_column='PACKAGE', null=False, blank=True)
     extrainfo = models.CharField(max_length=1000, db_column='EXTRA_INFO', null=True, blank=True)
+    created = models.DateTimeField(null=True, db_column='CREATED')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ART_TESTS"'
 

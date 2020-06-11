@@ -26,6 +26,8 @@ ALLOWED_HOSTS = [
 ### VIRTUALENV
 VIRTUALENV_PATH = '/data/virtualenv37'
 
+IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
+
 ### WSGI
 #WSGI_PATH = VIRTUALENV_PATH + '/pythonpath'
 
@@ -117,26 +119,28 @@ STATIC_URL = URL_PATH_PREFIX + STATIC_URL_BASE
 
 FILTER_UI_ENV = {
     ### default number of days of shown jobs active in last N days
-    'DAYS': 30, \
+    'DAYS': 30,
     ### default number of days for user activity of shown jobs active in last N days
-    'USERDAYS': 3, \
+    'USERDAYS': 3,
     ### max number of days of shown jobs active in last N days
-    'MAXDAYS': 300, \
+    'MAXDAYS': 300,
     ### max number of days for user activity of shown jobs active in last N days
-    'USERMAXDAYS': 60, \
+    'USERMAXDAYS': 60,
     ### default number of hours of shown jobs active in last N hours
-    'HOURS': 2, \
+    'HOURS': 2,
     ### wildcard for string pattern in filter form
-    'WILDCARDS': ['*'], \
+    'WILDCARDS': ['*'],
     ### wildcard for integer interval in filter form
-    'INTERVALWILDCARDS': [':'], \
+    'INTERVALWILDCARDS': [':'],
     ###
-    'EXPAND_BUTTON': { "mDataProp": None, "sTitle": "Details", \
-                       "sClass": "control center", "bVisible": True, \
-                       "bSortable": False, \
-                       "sDefaultContent": '<img src="' + STATIC_URL + \
-                                '/images/details_open.png' + '">' \
-            }, \
+    'EXPAND_BUTTON': {
+        "mDataProp": None,
+        "sTitle": "Details",
+        "sClass": "control center",
+        "bVisible": True,
+        "bSortable": False,
+        "sDefaultContent": '<img src="' + STATIC_URL + '/images/details_open.png' + '">',
+        },
 }
 #DEBUG=True
 #LOG_ROOT = '/data/bigpandamon_virtualhosts/core/logs'
@@ -147,7 +151,6 @@ LOG_SIZE = 1000000000
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-#    'disable_existing_loggers': True,
     'filters': {
         'require_debug_false': {
             '()': 'django.utils.log.RequireDebugFalse'
@@ -158,6 +161,14 @@ LOGGING = {
             'level':'DEBUG',
             'class':'logging.NullHandler',
         },
+        'logfile-django': {
+            'level':'DEBUG',
+            'class':'logging.handlers.RotatingFileHandler',
+            'filename': LOG_ROOT + "/logfile.django",
+            'maxBytes': LOG_SIZE,
+            'backupCount': 2,
+            'formatter': 'verbose',
+        },
         'logfile-bigpandamon': {
             'level':'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
@@ -166,13 +177,13 @@ LOGGING = {
             'backupCount': 2,
             'formatter': 'verbose',
         },
-        'logfile-django': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
-            'filename': LOG_ROOT + "/logfile.django",
+        'logfile-info': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_ROOT + "/logfile.info",
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
-            'formatter': 'verbose',
+            'formatter': 'full',
         },
         'logfile-error': {
             'level': 'ERROR',
@@ -241,14 +252,12 @@ LOGGING = {
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
-#            'class': 'django.utils.log.AdminEmailHandler'
             'class':'logging.StreamHandler',
         }
     },
     'loggers': {
         'django.request': {
             'handlers': ['mail_admins'],
-#            'level': 'ERROR',
             'level': 'DEBUG',
             'propagate': True,
         },
@@ -273,7 +282,7 @@ LOGGING = {
             'level':'DEBUG',
         },
         'bigpandamon': {
-            'handlers': ['logfile-bigpandamon'],
+            'handlers': ['logfile-bigpandamon', 'logfile-info', 'logfile-error'],
             'level': 'DEBUG',
         },
         'bigpandamon-error': {
@@ -299,8 +308,11 @@ LOGGING = {
         },
     },
     'formatters': {
+        'full': {
+            'format': '{asctime} {module} {filename}:{lineno:d} {funcName} pid{process:d} {levelname} {message}',
+            'style': '{',
+        },
         'verbose': {
-#            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
             'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
         },
         'simple': {
@@ -322,11 +334,11 @@ LOGGING = {
 
 ENV = {
     ### Application name
-    'APP_NAME': "PanDA Monitor", \
+    'APP_NAME': "PanDA Monitor",
     ### Page title default
-    'PAGE_TITLE': "PanDA Monitor", \
+    'PAGE_TITLE': "PanDA Monitor",
     ### Menu item separator
-    'SEPARATOR_MENU_ITEM': "         ", \
+    'SEPARATOR_MENU_ITEM': "         ",
     ### Navigation chain item separator
-    'SEPARATOR_NAVIGATION_ITEM': "   &#187;   " , \
+    'SEPARATOR_NAVIGATION_ITEM': "   &#187;   ",
 }

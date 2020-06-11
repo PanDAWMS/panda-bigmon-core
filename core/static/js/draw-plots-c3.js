@@ -12,6 +12,7 @@ function getWidth() {
 
 
 function draw_donut(data, divid, title, ext={}) {
+
     let colors_all = [
         "#62c9ae","#52cad7","#d5a9e4","#e38924","#9bd438","#438760","#ca46ce","#e08284","#4ba930",
         "#a191d6","#57a3cf","#476be2","#85713b","#e35625","#a5be48","#a0c284","#498635","#e135ac","#d6c175","#dc82e1",
@@ -44,6 +45,9 @@ function draw_donut(data, divid, title, ext={}) {
         },
         donut: {
             title: title,
+            label: {
+                format: function (d) { return d3.format(',.3s')(d);}
+            },
         },
         tooltip: {
             format: {
@@ -64,7 +68,67 @@ function draw_donut(data, divid, title, ext={}) {
     return plot
 }
 
+function draw_bar_cat(data, divid, title, ext) {
+    let width = 300;
+    let height = 200;
+    let labels = ['',''];
+    if (ext.size) {width = ext.size[0]; height=ext.size[1]}
+    if (ext.labels) {labels = ext.labels}
+    let colors = {};
+    if (ext.colors === 'gs') {
+        colors = {
+            Actual: '#1f77b4',
+            Target: '#2ca02c',
+        }
+    }
+    var chart = c3.generate({
+        bindto: '#' + divid,
+        data: {
+            x: data[0][0],
+            columns: data,
+            type: 'bar',
+            colors: colors,
+        },
+        padding: {
+          right: 20
+        },
+        bar: {
+            width: {
+                ratio: 0.6
+            }
+        },
+        legend: {
+             show: false
+        },
+        axis: {
+            x: {
+                type: 'category',
+                tick: {
+                    rotate: -60,
+                    multiline: false,
+                }
+            },
+            y: {
+                tick: {
+                    format: function (d) { return d3.format(',.3s')(d); }
+                },
+                label: {
+                  text: labels[1],
+                  position: 'outer-middle'
+                }
+            }
+        },
+        size: {
+            width: width,
+            height: height,
+        },
+        title: {
+          text: title
+        },
 
+    });
+    return chart
+}
 
 function draw_sbar(data, divid, title, ext) {
     let width = 300;

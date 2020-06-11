@@ -14,4 +14,5 @@ urlpatterns = [
     re_path(r'^updatejoblist/$', art_views.updateARTJobList),
     re_path(r'^registerarttest/$', art_views.registerARTTest),
     re_path(r'^sendartreport/$', art_views.sendArtReport),
+    re_path(r'^senddevartreport/$', art_views.sendDevArtReport),
     ]

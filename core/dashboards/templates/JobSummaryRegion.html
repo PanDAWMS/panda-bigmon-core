@@ -34,6 +34,8 @@
   <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
     Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type.
     Click on <b>Update</b> button to apply selection.</p>
+  <p><b>By default the view is minimized</b>, i.e. some short transient states and Harvester workers summary numbers are hidden.
+    Press <b>Show details</b> buttons to see all the states of jobs and workers.</p>
   <p>Click the job counts to go to job listings. Click on workers counts to go to harvester workers listings.
     Use the <b>Search</b> text input on the top of second table to find a PQ by name.</p>
   <p><b>N running workers</b> column has the next color coding scheme:
@@ -109,48 +111,81 @@
 
 <div id="container_rs" style="width: 100%; display: none">
 <table id='regionsummary' class="data-table nowrap hover">
-    <thead>
-    <tr>
-        <th class="text">Region</th>
-        <th class="text">Job type</th>
-        <th class="text">Resource type</th>
-        <th class="num">N submitted workers</th>
-        <th class="num">N running workers</th>
-        <th class="num">N running slots</th>
-        <th class="num">N jobs total</th>
-        <th class="vertical fixed_dash"><div class="rotate">% failure</div></th>
-        {% for js in jobstates %}
-            <th class="vertical fixed_dash"><div class="rotate">{{ js }}</div></th>
-        {% endfor %}
-    </tr>
-    </thead>
-<tbody>
-</tbody>
+  <thead>
+  <tr>
+      <th class="text">Region</th>
+      <th class="text">Job type</th>
+      <th class="text">Resource type</th>
+      <th class="num">N submitted workers</th>
+      <th class="num">N running workers</th>
+      <th class="num">N running slots</th>
+      <th class="num">N jobs total</th>
+      <th class="num">% failure</th>
+      {% for js in jobstates %}
+          <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+      {% endfor %}
+  </tr>
+  </thead>
+  <tbody>
+  </tbody>
+  <tfoot>
+  <tr>
+      <th class="text">Region</th>
+      <th class="text">Job type</th>
+      <th class="text">Resource type</th>
+      <th class="num">N submitted workers</th>
+      <th class="num">N running workers</th>
+      <th class="num">N running slots</th>
+      <th class="num">N jobs total</th>
+      <th class="num">% failure</th>
+      {% for js in jobstates %}
+          <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+      {% endfor %}
+  </tr>
+  </tfoot>
 </table>
 </div>
 
 <div id="container_qs" style="width: 100%; display: none">
 <table id='queuesummary' class="data-table nowrap hover">
-    <thead>
-    <tr>
-        <th class="text">Queue name</th>
-        <th class="text">Queue type</th>
-        <th class="text">Region</th>
-        <th class="text">Status</th>
-        <th class="text">Job type</th>
-        <th class="text">Resource type</th>
-        <th class="num">N submitted workers</th>
-        <th class="num">N running workers</th>
-        <th class="num">N running slots</th>
-        <th class="num">N jobs total</th>
-        <th class="num">% failure</th>
-        {% for js in jobstates %}
-            <th class="vertical fixed_dash"><div class="rotate">{{ js }}</div></th>
-        {% endfor %}
-    </tr>
-    </thead>
-<tbody>
-</tbody>
+  <thead>
+  <tr>
+    <th class="text">Queue name</th>
+    <th class="text">Queue type</th>
+    <th class="text">Region</th>
+    <th class="text">Status</th>
+    <th class="text">Job type</th>
+    <th class="text">Resource type</th>
+    <th class="num">N submitted workers</th>
+    <th class="num">N running workers</th>
+    <th class="num">N running slots</th>
+    <th class="num">N jobs total</th>
+    <th class="num">% failure</th>
+    {% for js in jobstates %}
+        <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+    {% endfor %}
+  </tr>
+  </thead>
+  <tbody>
+  </tbody>
+  <tfoot>
+  <tr>
+    <th class="text">Queue name</th>
+    <th class="text">Queue type</th>
+    <th class="text">Region</th>
+    <th class="text">Status</th>
+    <th class="text">Job type</th>
+    <th class="text">Resource type</th>
+    <th class="num">N submitted workers</th>
+    <th class="num">N running workers</th>
+    <th class="num">N running slots</th>
+    <th class="num">N jobs total</th>
+    <th class="num">% failure</th>
+    {% for js in jobstates %}
+        <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+    {% endfor %}
+  </tr>
+  </tfoot>
 </table>
 </div>
 
@@ -161,6 +196,7 @@
 
 var select_params = {{ selectParams | safe }};
 var request_params = {{ requestParams | safe }};
+var err_threshold = 15;
 
 app.controller('JobSummaryRegionController', ['$scope', function($scope) {
     $scope.dash = {
@@ -265,6 +301,7 @@ function buildRegionSummary(data, divid) {
         "iDisplayLength": -1,
         "lengthChange": false,
         "paging": false,
+        "bFilter": false, // remove search box
         "aaSorting": [[0,'asc']],
         "scrollX": true,
         "autoWidth": true,
@@ -272,13 +309,13 @@ function buildRegionSummary(data, divid) {
         "buttons": [
           {
             extend: 'colvisGroup',
-            text: 'Hide short transient states',
-            hide: [ 8, 9, 10, 11, 12, 14, 15, 17, 18, 19, 22, 23 ]
+            text: 'Minimize view',
+            hide: [ 3,4,5,8,9,10,12,14,15,17,22,23 ],
           },
           {
             extend: 'colvisGroup',
-            text: 'Show all',
-            show: ':hidden'
+            text: 'Show details',
+            show: ':hidden',
           }
         ],
         "aoColumns": [
@@ -333,6 +370,14 @@ function buildRegionSummary(data, divid) {
           {
             sDefaultContent: "---",
             className: "alert num",
+            render: function (data, type, row, meta) {
+              if (data > err_threshold) {
+                return '<b>' + data + '</b>'
+              }
+              else {
+                return data
+              }
+            },
           },
           {
             sDefaultContent: "---",
@@ -528,6 +573,7 @@ function buildRegionSummary(data, divid) {
           },
         ],
     });
+    regionsTable.columns( [3,4,5,8,9,10,12,14,15,17,22,23] ).visible( false );
     regionsTable.buttons().container()
         .appendTo( '#regionsummary_wrapper .small-6.columns:eq(0)' );
     return regionsTable
@@ -545,12 +591,12 @@ function buildQueueSummary(data, divid) {
     "buttons": [
       {
         extend: 'colvisGroup',
-        text: 'Hide short transient states',
-        hide: [ 11, 12, 13, 14, 15, 17, 18, 20, 21, 22, 25, 26 ]
+        text: 'Minimize view',
+        hide: [ 6,7,8,11,12,13,15,17,18,20,25,26 ]
       },
       {
         extend: 'colvisGroup',
-        text: 'Show all',
+        text: 'Show details',
         show: ':hidden'
       }
     ],
@@ -561,7 +607,18 @@ function buildQueueSummary(data, divid) {
         "render": function(data, type, row, meta) {
             let link = '<a href = "{% url 'siteInfo' %}' + row[0] + '/">'+row[0]+'</a>';
             link += ' <a target="_blank" href="https://monit-grafana.cern.ch/d/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite=' + row[0] + '&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1"><div class="tooltip-upper"><img src="/static/images/grafana.png" width=14 height=14 border=0><span class="tooltip-text">Link to Jobs accountig dashboard in Grafana</span></div></a>\n';
-            link += ' <a onclick=\'PopUpGrafana("SITE=' + row[0] + '&SIZE=medium", "' + row[0] +  '", "day")\' style="padding-right:16px;"><div class="tooltip-upper"><img src="/static/images/grafana-black.png" width=14 height=14 border=0><span class="tooltip-text">Slots of running jobs (Pop-up window)</span></div></a>\n';
+            link += ' <a onclick=\'PopUpGrafana("SITE=' + row[0] + '&SIZE=medium", "' + row[0] +  '", "day")\'><div class="tooltip-upper"><img src="/static/images/grafana-black.png" width=14 height=14 border=0><span class="tooltip-text">Slots of running jobs (Pop-up window)</span></div></a>\n';
+            if (row[1] == 'production') {
+                link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/f3042400-aa4d-11ea-88a6-cd72c8759873?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:\'Job%20brokerage\',filters:!((\'$state\':(store:appState),meta:(alias:!n,disabled:!f,index:\'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4\',key:site.keyword,negate:!f,params:(query:' + row[0] + ',type:phrase),type:phrase,value:' + row[0] + '),query:(match:(site.keyword:(query:' + row[0] + ',type:phrase)))),(\'$state\':(store:appState),meta:(alias:!n,disabled:!f,index:\'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4\',key:l_type.keyword,negate:!f,params:(query:prod,type:phrase),type:phrase,value:prod),query:(match:(l_type.keyword:(query:prod,type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,useMargins:!f),panels:!((gridData:(h:2,i:\'4\',w:3,x:0,y:0),id:e9b265f0-6627-11e7-9c82-4bf763932475,panelIndex:\'4\',type:visualization,version:\'6.2.4\'),(gridData:(h:8,i:\'5\',w:12,x:0,y:18),id:c3a4f160-50aa-11e9-a744-833d910adbcf,panelIndex:\'5\',type:visualization,version:\'6.2.4\'),(gridData:(h:6,i:\'6\',w:3,x:0,y:5),id:\'991ce6b0-aa5d-11ea-88a6-cd72c8759873\',panelIndex:\'6\',type:visualization,version:\'6.2.4\'),(gridData:(h:11,i:\'7\',w:9,x:3,y:0),id:\'5c7b65a0-aa5e-11ea-88a6-cd72c8759873\',panelIndex:\'7\',type:visualization,version:\'6.2.4\'),(gridData:(h:7,i:\'8\',w:12,x:0,y:11),id:b7c043e0-aa5e-11ea-88a6-cd72c8759873,panelIndex:\'8\',type:search,version:\'6.2.4\'),(gridData:(h:3,i:\'9\',w:3,x:0,y:2),id:\'6c76ff00-aa68-11ea-88a6-cd72c8759873\',panelIndex:\'9\',type:visualization,version:\'6.2.4\')),query:(language:lucene,query:(query_string:(analyze_wildcard:!t,default_field:\'*\',lowercase_expanded_terms:!f,query:\'*\'))),timeRestore:!t,title:jedilogs_jobbrokerage,viewMode:view)"><div class="tooltip-upper"><img src="/static/images/kibana-logo_full.png" width=14 height=14 border=0><span class="tooltip-text">Link to Brokerage actions (dashboard) in Kibana</span></div></a>\n';
+            }
+            else if (row[1] == 'analysis')
+            {
+                link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/f3042400-aa4d-11ea-88a6-cd72c8759873?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:\'Job%20brokerage\',filters:!((\'$state\':(store:appState),meta:(alias:!n,disabled:!f,index:\'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4\',key:site.keyword,negate:!f,params:(query:' + row[0] + ',type:phrase),type:phrase,value:' + row[0] + '),query:(match:(site.keyword:(query:' + row[0] + ',type:phrase)))),(\'$state\':(store:appState),meta:(alias:!n,disabled:!f,index:\'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4\',key:l_type.keyword,negate:!f,params:(query:analy,type:phrase),type:phrase,value:analy),query:(match:(l_type.keyword:(query:analy,type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,useMargins:!f),panels:!((gridData:(h:2,i:\'4\',w:3,x:0,y:0),id:e9b265f0-6627-11e7-9c82-4bf763932475,panelIndex:\'4\',type:visualization,version:\'6.2.4\'),(gridData:(h:8,i:\'5\',w:12,x:0,y:18),id:c3a4f160-50aa-11e9-a744-833d910adbcf,panelIndex:\'5\',type:visualization,version:\'6.2.4\'),(gridData:(h:6,i:\'6\',w:3,x:0,y:5),id:\'991ce6b0-aa5d-11ea-88a6-cd72c8759873\',panelIndex:\'6\',type:visualization,version:\'6.2.4\'),(gridData:(h:11,i:\'7\',w:9,x:3,y:0),id:\'5c7b65a0-aa5e-11ea-88a6-cd72c8759873\',panelIndex:\'7\',type:visualization,version:\'6.2.4\'),(gridData:(h:7,i:\'8\',w:12,x:0,y:11),id:b7c043e0-aa5e-11ea-88a6-cd72c8759873,panelIndex:\'8\',type:search,version:\'6.2.4\'),(gridData:(h:3,i:\'9\',w:3,x:0,y:2),id:\'6c76ff00-aa68-11ea-88a6-cd72c8759873\',panelIndex:\'9\',type:visualization,version:\'6.2.4\')),query:(language:lucene,query:(query_string:(analyze_wildcard:!t,default_field:\'*\',lowercase_expanded_terms:!f,query:\'*\'))),timeRestore:!t,title:jedilogs_jobbrokerage,viewMode:view)"><div class="tooltip-upper"><img src="/static/images/kibana-logo_full.png" width=14 height=14 border=0><span class="tooltip-text">Link to Brokerage actions (dashboard) in Kibana</span></div></a>\n';
+            }
+            else if (row[1] == 'unified')
+            {
+                link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana_rw/app/kibana#/dashboard/f3042400-aa4d-11ea-88a6-cd72c8759873?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:\'Job%20brokerage\',filters:!((\'$state\':(store:appState),meta:(alias:!n,disabled:!f,index:\'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4\',key:site.keyword,negate:!f,params:(query:' + row[0] + ',type:phrase),type:phrase,value:' + row[0] + '),query:(match:(site.keyword:(query:' + row[0] + ',type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,useMargins:!f),panels:!((gridData:(h:2,i:\'4\',w:3,x:0,y:0),id:e9b265f0-6627-11e7-9c82-4bf763932475,panelIndex:\'4\',type:visualization,version:\'6.2.4\'),(gridData:(h:8,i:\'5\',w:12,x:0,y:18),id:c3a4f160-50aa-11e9-a744-833d910adbcf,panelIndex:\'5\',type:visualization,version:\'6.2.4\'),(gridData:(h:6,i:\'6\',w:3,x:0,y:5),id:\'991ce6b0-aa5d-11ea-88a6-cd72c8759873\',panelIndex:\'6\',type:visualization,version:\'6.2.4\'),(gridData:(h:11,i:\'7\',w:9,x:3,y:0),id:\'5c7b65a0-aa5e-11ea-88a6-cd72c8759873\',panelIndex:\'7\',type:visualization,version:\'6.2.4\'),(gridData:(h:7,i:\'8\',w:12,x:0,y:11),id:b7c043e0-aa5e-11ea-88a6-cd72c8759873,panelIndex:\'8\',type:search,version:\'6.2.4\'),(gridData:(h:3,i:\'9\',w:3,x:0,y:2),id:\'6c76ff00-aa68-11ea-88a6-cd72c8759873\',panelIndex:\'9\',type:visualization,version:\'6.2.4\')),query:(language:lucene,query:(query_string:(analyze_wildcard:!t,default_field:\'*\',lowercase_expanded_terms:!f,query:\'*\'))),timeRestore:!t,title:jedilogs_jobbrokerage,viewMode:view)"><div class="tooltip-upper"><img src="/static/images/kibana-logo_full.png" width=14 height=14 border=0><span class="tooltip-text">Link to Brokerage actions (dashboard) in Kibana</span></div></a>\n';
+            }
             return link
         }
       },
@@ -637,6 +694,14 @@ function buildQueueSummary(data, divid) {
       {
         sDefaultContent: "---",
         className: "alert num",
+        render: function (data, type, row, meta) {
+          if (data > err_threshold) {
+            return '<b>' + data + '</b>'
+          }
+          else {
+            return data
+          }
+        },
       },
       {
         sDefaultContent: "---",
@@ -830,6 +895,7 @@ function buildQueueSummary(data, divid) {
       },
     ],
   });
+  queuesTable.columns( [ 6,7,8,11,12,13,15,17,18,20,25,26 ] ).visible( false );
   queuesTable.buttons().container()
     .appendTo( '#queuesummary_wrapper .small-6.columns:eq(0)' );
   return queuesTable
@@ -852,7 +918,32 @@ function PopUpGrafana(ref, site) {
 </script>
 {% endblock %}
 
+{% block help %}
+<div class="callout success">
+  <p>This page summarizes recent job status for regions and queues.</p>
+  <p>
+  <ul>
+  {% if show == 'all' or  job.jobstatus == 'pending' %} <li>  Status <b class='pending'>pending</b> indicates that the job record has been injected into the PanDA DB but PanDA has not yet dealt with it. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'defined' %} <li>  Status <b class='defined'>defined</b> indicates that the job has been received by PanDA and the process of assigning it for execution has begun. {% endif %}
+  {% if show == 'all' or job.jobstatus == 'waiting' %} <li>  Status <b class='waiting'>waiting</b> indicates that data handling preparations for the job are underway and have to be completed before the job can be activated. {% endif %}
+  {% if show == 'all' or job.jobstatus == 'assigned' %} <li>  Status <b class='assigned'>assigned</b> indicates the job has been assigned to a site and preparations to have the input data ready are underway (e.g. subscriptions, tape staging). {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'throttled' %} <li>  Status <b class='throttled'>throttled</b> indicates that dispatch of the job has been postponed due to heavy network use by other jobs. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'activated' %} <li>  Status <b class='activated'>activated</b> indicates that the job is ready to be dispatched to a pilot at the site where it will run. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'sent' %} <li>  Status <b class='sent'>sent</b> indicates that the job was sent to a pilot for execution but the pilot has not yet acknowledged receipt. If this state persists for any length of time, all is not well with the job.{% endif %}
+  {% if show == 'all' or  job.jobstatus == 'starting' %} <li>  Status <b class='starting'>starting</b> indicates that the job has been picked up for execution but not yet launched by a pilot on a worker node. Used in environments where pilots don't directly pick up jobs (e.g. Nordugrid). {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'running' %} <li>  Status <b class='running'>running</b> indicates that the job is running at its execution site. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'holding' %} <li>  Status <b class='holding'>holding</b> indicates that the job has completed but output validation and processing (eg. registering outputs in datasets) is still underway. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'transferring' %} <li>  Status <b class='transferring'>transferring</b> indicates that transferring of outputs to their final destination after job completion is underway. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'merging' %} <li>  Status <b class='transferring'>merging</b> indicates that job is waiting while the correspondent merge job is done and merged files are transferred to the final destination. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'finished' %} <li>  Status <b class='finished'>finished</b> indicates that the job has successfully completed. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'failed' %} <li>  Status <b class='failed'>failed</b> indicates that the job has failed at some stage. Information on where the error occurred and with what error condition can be found in the job parameters table. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'cancelled' %} <li>  Status <b class='cancelled'>cancelled</b> indicates that the job has been cancelled, either by the user or by the system. Further information may be available in the job parameters table. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'closed' %} <li>  Status <b class='closed'>closed</b> terminated by the system before completing the allocated workload. E.g., killed to be reassigned to another site.{% endif %}
+  </ul>
+  </p>
 
+</div>
+{% endblock %}
 
 
 

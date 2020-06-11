@@ -132,14 +132,14 @@ def setupView(request, querytype='task'):
         if 'taskid' in request.session['requestParams']:
             querystr += '(a.TASK_ID = ' + request.session['requestParams']['taskid'] + ' ) AND '
         if 'ntags' in request.session['requestParams'] or ('nlastnightlies' in request.session['requestParams'] and len(datelist) > 0):
-            querystr += '((SUBSTR(NIGHTLY_TAG, 0, INSTR(NIGHTLY_TAG, \'\'T\'\')-1)) IN ('
+            querystr += '((SUBSTR(NIGHTLY_TAG_DISPLAY, 0, INSTR(NIGHTLY_TAG_DISPLAY, \'\'T\'\')-1)) IN ('
             for datei in datelist:
                 querystr += '\'\'' + datei.strftime(artdateformat) + '\'\', '
             if querystr.endswith(', '):
                 querystr = querystr[:len(querystr) - 2]
             querystr += ')) AND '
         if 'ntag_full' in request.session['requestParams']:
-            querystr += '(UPPER(NIGHTLY_TAG) = \'\'' + request.session['requestParams']['ntag_full'] + '\'\') AND'
+            querystr += '(UPPER(NIGHTLY_TAG_DISPLAY) = \'\'' + request.session['requestParams']['ntag_full'] + '\'\') AND'
         if querystr.endswith('AND '):
             querystr = querystr[:len(querystr)-4]
         else:
@@ -186,7 +186,7 @@ def find_last_n_nightlies(request, limit=7):
         if querystr.endswith(', '):
             querystr = querystr[:len(querystr) - 2]
         querystr += ')'
-    ndates = ARTTests.objects.filter(**nquery).extra(where=[querystr]).annotate(ndate=Substr('nightly_tag', 1, 10)).values('ndate').order_by('-ndate').distinct()[:limit]
+    ndates = ARTTests.objects.filter(**nquery).extra(where=[querystr]).annotate(ndate=Substr('nightly_tag_display', 1, 10)).values('ndate').order_by('-ndate').distinct()[:limit]
 
     datelist = []
     for datestr in ndates:

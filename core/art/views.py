@@ -14,7 +14,7 @@ from django.db import connection
 from django.views.decorators.csrf import csrf_exempt
 from django.template.defaulttags import register
 from django.db.models.functions import Concat, Substr
-from django.db.models import Value as V
+from django.db.models import Value as V, F
 
 
 from core.views import login_customrequired, initRequest, extensibleURL, removeParam
@@ -24,11 +24,11 @@ from core.art.modelsART import ARTTests, ReportEmails, ARTResultsQueue
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
 from core.common.models import Filestable4, FilestableArch
 from core.libs.cache import setCacheEntry, getCacheEntry
-from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
+from core.pandajob.models import CombinedWaitActDefArch4
 
 from core.art.utils import setupView
 
-_logger = logging.getLogger('bigpandamon-error')
+_logger = logging.getLogger('bigpandamon')
 
 @register.filter(takes_context=True)
 def remove_dot(value):
@@ -64,11 +64,11 @@ def art(request):
 
     # limit results by N days
     N_DAYS_LIMIT = 90
-    extrastr = " (TO_DATE(SUBSTR(NIGHTLY_TAG, 0, INSTR(NIGHTLY_TAG, 'T')-1), 'YYYY-MM-DD') > sysdate - {}) ".format(N_DAYS_LIMIT)
+    tquery['created__castdate__range'] = [datetime.utcnow() - timedelta(days=N_DAYS_LIMIT), datetime.utcnow()]
 
-    packages = ARTTests.objects.filter(**tquery).extra(where=[extrastr]).values('package').distinct().order_by('package')
-    branches = ARTTests.objects.filter(**tquery).extra(where=[extrastr]).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
-    ntags = ARTTests.objects.values('nightly_tag').annotate(nightly_tag_date=Substr('nightly_tag', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
+    packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
+    branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
+    ntags = ARTTests.objects.values('nightly_tag_display').annotate(nightly_tag_date=Substr('nightly_tag_display', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
 
     # a workaround for a splitted DF into a lot of separate packages
     package_list = [p['package'] for p in packages]
@@ -302,7 +302,7 @@ def artTasks(request):
 def artJobs(request):
     valid, response = initRequest(request)
     if not valid:
-        return HttpResponse(status=401)
+        return response
 
     # getting aggregation order
     if not 'view' in request.session['requestParams'] or (
@@ -317,6 +317,7 @@ def artJobs(request):
     data = getCacheEntry(request, "artJobs")
     # data = None
     if data is not None:
+        _logger.info('Got data from cache: {}s'.format(time.time() - request.session['req_init_time']))
         data = json.loads(data)
         data['request'] = request
         if 'ntaglist' in data:
@@ -333,11 +334,13 @@ def artJobs(request):
                 elif len(ntags) == 1:
                     data['requestParams']['ntag'] = ntags[0]
         response = render_to_response('artJobs.html', data, content_type='text/html')
+        _logger.info('Rendered template with data from cache: {}s'.format(time.time()-request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
     # process URL params to query params
     query = setupView(request, 'job')
+    _logger.info('Set up view: {}s'.format(time.time() - request.session['req_init_time']))
 
     # querying data from dedicated SQL function
     cur = connection.cursor()
@@ -385,6 +388,7 @@ def artJobs(request):
                     'gitlabid', 'outputcontainer', 'maxrss', 'attemptnr', 'maxattempt', 'parentid', 'attemptmark',
                     'inputfileid', 'extrainfo']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
+    _logger.info('Got data from DB: {}s'.format(time.time() - request.session['req_init_time']))
 
     # i=0
     # for job in jobs:
@@ -498,6 +502,7 @@ def artJobs(request):
                 artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][job['ntag'].strftime(artdateformat)]['jobs']) if d['inputfileid'] == job['inputfileid']), None)
             if jobindex is not None:
                 artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][jobindex]['linktopreviousattemptlogs'] = '?scope={}&guid={}&lfn={}&site={}'.format(job['scope'], job['guid'], job['lfn'], job['computingsite'])
+    _logger.info('Prepared data: {}s'.format(time.time() - request.session['req_init_time']))
 
     # transform dict of tests to list of test and sort alphabetically
     artjobslist = {}
@@ -519,6 +524,7 @@ def artJobs(request):
                                               testdirectories[i][j][0].split('src')[1] + '/' + t
                 artjobslist[i][j].append(tdict)
             artjobslist[i][j] = sorted(artjobslist[i][j], key=lambda x: x['testname'].lower())
+    _logger.info('Converted data from dict to list: {}s'.format(time.time() - request.session['req_init_time']))
 
     linktoplots = set(linktoplots)
     xurl = extensibleURL(request)
@@ -550,6 +556,7 @@ def artJobs(request):
         }
         setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artJobs.html', data, content_type='text/html')
+        _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -665,7 +672,7 @@ def registerARTTest(request):
     """
     valid, response = initRequest(request)
     if not valid:
-        return HttpResponse(status=401)
+        return response
     pandaid = -1
     jeditaskid = -1
     testname = ''
@@ -674,7 +681,11 @@ def registerARTTest(request):
     project = None
     package = None
     nightly_tag = None
+    nightly_tag_display = None
     extra_info = {}
+
+    # log all the req params for debug
+    _logger.debug('[ART] registerARTtest requestParams: ' + str(request.session['requestParams']))
 
     ### Checking whether params were provided
     if 'requestParams' in request.session and 'pandaid' in request.session['requestParams'] and 'testname' in request.session['requestParams']:
@@ -682,41 +693,50 @@ def registerARTTest(request):
         testname = request.session['requestParams']['testname']
     else:
         data = {'exit_code': -1, 'message': "There were not recieved any pandaid and testname"}
-        _logger.error(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), content_type='application/json')
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
 
     if 'nightly_release_short' in request.session['requestParams']:
         nightly_release_short = request.session['requestParams']['nightly_release_short']
     else:
         data = {'exit_code': -1, 'message': "No nightly_release_short provided"}
-        _logger.error(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), content_type='application/json')
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
+
     if 'platform' in request.session['requestParams']:
         platform = request.session['requestParams']['platform']
     else:
         data = {'exit_code': -1, 'message': "No platform provided"}
-        _logger.error(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), content_type='application/json')
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
+
     if 'project' in request.session['requestParams']:
         project = request.session['requestParams']['project']
     else:
         data = {'exit_code': -1, 'message': "No project provided"}
-        _logger.error(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), content_type='application/json')
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
+
     if 'package' in request.session['requestParams']:
         package = request.session['requestParams']['package']
     else:
         data = {'exit_code': -1, 'message': "No package provided"}
-        _logger.error(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), content_type='application/json')
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
+
     if 'nightly_tag' in request.session['requestParams']:
         nightly_tag = request.session['requestParams']['nightly_tag']
     else:
         data = {'exit_code': -1, 'message': "No nightly_tag provided"}
-        _logger.error(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), content_type='application/json')
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
 
     ### Processing extra params
+    if 'nightly_tag_display' in request.session['requestParams']:
+        nightly_tag_display = request.session['requestParams']['nightly_tag_display']
+    else:
+        nightly_tag_display = request.session['requestParams']['nightly_tag']
+
     if 'html' in request.session['requestParams']:
         extra_info['html'] = request.session['requestParams']['html']
 
@@ -725,18 +745,18 @@ def registerARTTest(request):
         pandaid = int(pandaid)
     except:
         data = {'exit_code': -1, 'message': "Illegal pandaid was recieved"}
-        _logger.error(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), content_type='application/json')
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
     if pandaid < 0:
         data = {'exit_code': -1, 'message': "Illegal pandaid was recieved"}
-        _logger.error(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), content_type='application/json')
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
     if not str(testname).startswith('test_'):
         data = {'exit_code': -1, 'message': "Illegal test name was recieved"}
-        _logger.error(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), content_type='application/json')
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
     ### Checking if provided pandaid exists in panda db
     query={}
@@ -744,19 +764,18 @@ def registerARTTest(request):
     values = 'pandaid', 'jeditaskid', 'username'
     jobs = []
     jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
-    if len(jobs) == 0:
-        # check archived table
-        jobs.extend(Jobsarchived.objects.filter(**query).values(*values))
     try:
        job = jobs[0]
     except:
         data = {'exit_code': -1, 'message': "Provided pandaid does not exists"}
-        return HttpResponse(json.dumps(data), content_type='application/json')
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
     ### Checking whether provided pandaid is art job
     if 'username' in job and job['username'] != 'artprod':
         data = {'exit_code': -1, 'message': "Provided pandaid is not art job"}
-        return HttpResponse(json.dumps(data), content_type='application/json')
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
     ### Preparing params to register art job
 
@@ -784,22 +803,24 @@ def registerARTTest(request):
                                                 testname=testname,
                                                 nightly_release_short=nightly_release_short,
                                                 nightly_tag=nightly_tag,
+                                                nightly_tag_display=nightly_tag_display,
                                                 project=project,
                                                 platform=platform,
                                                 package=package,
-                                                extrainfo=json.dumps(extra_info)
+                                                extrainfo=json.dumps(extra_info),
+                                                created=datetime.utcnow()
                                                 )
             insertRow.save()
             data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}
-            _logger.error(data['message'] + str(request.session['requestParams']))
+            _logger.info(data['message'] + str(request.session['requestParams']))
         except:
             data = {'exit_code': 0, 'message': "Provided pandaid is already registered (pk violated)"}
             _logger.error(data['message'] + str(request.session['requestParams']))
     else:
         data = {'exit_code': 0, 'message': "Provided pandaid is already registered"}
-        _logger.error(data['message'] + str(request.session['requestParams']))
+        _logger.warning(data['message'] + str(request.session['requestParams']))
 
-    return HttpResponse(json.dumps(data), content_type='application/json')
+    return HttpResponse(json.dumps(data), status=200, content_type='application/json')
 
 
 def sendArtReport(request):
@@ -898,7 +919,7 @@ def sendArtReport(request):
             summaryPerRecipient[email] = {}
         if package in artjobsdictpackage.keys():
             summaryPerRecipient[email][package] = artjobsdictpackage[package]
-    subject = 'ART jobs status report'
+    subject = '[BigPanDAmon][ART] GRID ART jobs status report'
 
     maxTries = 1
     for recipient, summary in summaryPerRecipient.items():
@@ -917,4 +938,50 @@ def sendArtReport(request):
     return HttpResponse(json.dumps({'isSent': isSent, 'nTries': i}), content_type='application/json')
 
 
+def sendDevArtReport(request):
+    """
+    A view to send special report to ART developer
+    :param request:
+    :return: json
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+    isSent = False
+    template = 'templated_email/artDevReport.html'
+    subject = '[BigPanDAmon][ART] Run on specific day tests'
+
+    query = {'created__castdate__range': [datetime.utcnow() - timedelta(hours=1), datetime.utcnow()]}
+    exquery = {'nightly_tag__exact': F('nightly_tag_display')}
+
+    tests = list(ARTTests.objects.filter(**query).exclude(**exquery).values())
+
+    if len(tests) > 0:
+        for test in tests:
+            test['artlink'] = 'https://bigpanda.cern.ch/art/jobs/?package={}&branch={}&ntag={}'.format(
+                test['package'],
+                '/'.join((test['nightly_release_short'], test['project'], test['platform'])),
+                test['nightly_tag_display'][:10],
+            )
+            test['joblink'] = 'https://bigpanda.cern.ch/job/{}/'.format(test['pandaid'])
+
+        rquery = {}
+        rquery['report'] = 'artdev'
+        recipientslist = list(ReportEmails.objects.filter(**rquery).values('email'))
+
+        maxTries = 1
+        for recipient in recipientslist:
+            isSent = False
+            i = 0
+            while not isSent:
+                i += 1
+                if i > 1:
+                    time.sleep(10)
+                isSent = send_mail_art(template, subject, tests, recipient)
+                # put 10 seconds delay to bypass the message rate limit of smtp server
+                time.sleep(10)
+                if i >= maxTries:
+                    break
+
+    return HttpResponse(json.dumps({'isSent': isSent}), content_type='application/json')
 

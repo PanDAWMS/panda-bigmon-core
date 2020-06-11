@@ -10,11 +10,12 @@ from datetime import datetime, timedelta
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.db import connection
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
 from django.core.cache import cache
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.views import login_customrequired, initRequest, setupView, DateEncoder
+from core.views import statelist as job_states_order
 
 from core.schedresource.models import SchedconfigJson
 from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers
@@ -50,25 +51,6 @@ def dashboard(request):
         response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-
-    job_states_order = [
-        'defined',
-        'waiting',
-        'pending',
-        'assigned',
-        'throttled',
-        'activated',
-        'sent',
-        'starting',
-        'running',
-        'holding',
-        'merging',
-        'transferring',
-        'finished',
-        'failed',
-        'cancelled',
-        'closed'
-    ]
 
     if 'splitby' in request.session['requestParams'] and request.session['requestParams']['splitby']:
         split_by = request.session['requestParams']['splitby']
@@ -194,6 +176,7 @@ def dashboard(request):
         'regions': jsr_regions_list,
         'queues': jsr_queues_list,
         'timerange': jquery['modificationtime__castdate__range'],
+        'show': 'all',
     }
 
     response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
@@ -368,19 +351,21 @@ def get_job_summary_split(query, extra):
 
     # get jobs groupings
     query_raw = """
-        select computingsite, resource_type as resourcetype, prodsourcelabel, jobstatus, count(pandaid) as count, sum(rcores) as rcores
+        select computingsite, resource_type as resourcetype, prodsourcelabel, jobstatus, 
+            count(pandaid) as count, sum(rcores) as rcores, round(sum(walltime)) as walltime
         from  (
-        select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime, 0 as rcores
+        select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime, 0 as rcores,
+            case when jobstatus in ('finished', 'failed') then (ja4.endtime-ja4.starttime)*60*60*24 else 0 end as walltime
         from ATLAS_PANDA.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and {1}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
-        case when jobstatus = 'running' then actualcorecount else 0 end as rcores
+        case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime
         from ATLAS_PANDA.jobsactive4 jav4 where {1}
         union
-        select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores
+        select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores, 0 as walltime
         from ATLAS_PANDA.jobswaiting4 jw4 where {1}
         union
-        select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores
+        select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores, 0 as walltime
         from ATLAS_PANDA.jobsdefined4 jd4  where {1}
         )
         GROUP BY computingsite, prodsourcelabel, resource_type, jobstatus
@@ -390,7 +375,7 @@ def get_job_summary_split(query, extra):
     cur = connection.cursor()
     cur.execute(query_raw)
     job_summary_tuple = cur.fetchall()
-    job_summary_header = ['computingsite', 'resourcetype', 'prodsourcelabel', 'jobstatus', 'count', 'rcores']
+    job_summary_header = ['computingsite', 'resourcetype', 'prodsourcelabel', 'jobstatus', 'count', 'rcores', 'walltime']
     summary = [dict(zip(job_summary_header, row)) for row in job_summary_tuple]
 
     # Translate prodsourcelabel values to descriptive analy|prod job types
@@ -399,7 +384,7 @@ def get_job_summary_split(query, extra):
     return summary
 
 
-def get_workers_summary_split(query):
+def get_workers_summary_split(query, **kwargs):
     """Get statistics of submitted and running Harvester workers"""
     N_HOURS = 100
     wquery = {}
@@ -407,16 +392,24 @@ def get_workers_summary_split(query):
         wquery['computingsite__in'] = query['computingsite__in']
     if 'resourcetype' in query:
         wquery['resourcetype'] = query['resourcetype']
-    wquery['submittime__castdate__range'] = [
-        (datetime.utcnow()-timedelta(hours=N_HOURS)).strftime(defaultDatetimeFormat),
-        datetime.utcnow().strftime(defaultDatetimeFormat)
-    ]
-    wquery['status__in'] = ['running', 'submitted']
-    # wquery['jobtype__in'] = ['managed', 'user', 'panda']
-    w_running = Count('jobtype', filter=Q(status__exact='running'))
-    w_submitted = Count('jobtype', filter=Q(status__exact='submitted'))
-    w_values = ['computingsite', 'resourcetype', 'jobtype']
-    worker_summary = HarvesterWorkers.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
+
+    if 'source' in kwargs and kwargs['source'] == 'HarvesterWorkers':
+        wquery['submittime__castdate__range'] = [
+            (datetime.utcnow()-timedelta(hours=N_HOURS)).strftime(defaultDatetimeFormat),
+            datetime.utcnow().strftime(defaultDatetimeFormat)
+        ]
+        wquery['status__in'] = ['running', 'submitted']
+        # wquery['jobtype__in'] = ['managed', 'user', 'panda']
+        w_running = Count('jobtype', filter=Q(status__exact='running'))
+        w_submitted = Count('jobtype', filter=Q(status__exact='submitted'))
+        w_values = ['computingsite', 'resourcetype', 'jobtype']
+        worker_summary = HarvesterWorkers.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
+    else:
+        wquery['jobtype__in'] = ['managed', 'user', 'panda']
+        w_running = Sum('nworkers', filter=Q(status__exact='running'))
+        w_submitted = Sum('nworkers', filter=Q(status__exact='submitted'))
+        w_values = ['computingsite', 'resourcetype', 'jobtype']
+        worker_summary = HarvesterWorkerStats.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
 
     # Translate prodsourcelabel values to descriptive analy|prod job types
     worker_summary = prodsourcelabel_to_jobtype(worker_summary, field_name='jobtype')
