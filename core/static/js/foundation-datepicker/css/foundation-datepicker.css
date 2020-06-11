@@ -55,11 +55,11 @@
     background: #fff;
     cursor: pointer; }
     .datepicker td.active.day, .datepicker td.active.year {
-      background: #2ba6cb; }
+      background: #b0c4de; }
     .datepicker td.old, .datepicker td.new {
       color: #999; }
     .datepicker td span.active {
-      background: #2ba6cb; }
+      background: #b0c4de; }
     .datepicker td.day.disabled {
       color: #eee; }
     .datepicker td span.month.disabled, .datepicker td span.year.disabled {
@@ -79,11 +79,11 @@
     background: #fff;
     cursor: pointer; }
     .datepicker th.active.day, .datepicker th.active.year {
-      background: #2ba6cb; }
+      background: #b0c4de; }
     .datepicker th.date-switch {
       width: 145px; }
     .datepicker th span.active {
-      background: #2ba6cb; }
+      background: #b0c4de; }
   .datepicker .cw {
     font-size: 10px;
     width: 12px;

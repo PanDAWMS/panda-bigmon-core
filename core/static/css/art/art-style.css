@@ -4,6 +4,7 @@
 }
 
 /* ART Main Menu styles */
+/* --------------------------------------------------------------------------------------------------- */
 fieldset.artmenu {
     margin: 1rem 0.3rem;
     padding: 0.5rem 0.5rem;
@@ -22,6 +23,26 @@ li.artmenu-item > label {
     vertical-align: middle;
 }
 
+fieldset.artmenu li.input-group {
+  font-size: 0.875rem;
+}
+
+fieldset.artmenu li.input-group span.input-group-label {
+  max-width: 3rem;
+  min-width: 3rem;
+  padding: 0 0.3rem;
+}
+
+fieldset.artmenu li.input-group button.hollow.alert {
+  border-color: #cacaca;
+  border-left: 0;
+}
+
+
+
+/* ART clickable containers */
+/* --------------------------------------------------------------------------------------------------- */
+
 .with-link-to-logs {
     margin: auto;
     background-color: transparent;
@@ -36,6 +57,7 @@ li.artmenu-item > label {
     max-width: 165px; /*120 px for status boxes +45px for cut ntag  */
     display: inline-flex;
 }
+
 
 /* stats divs*/
 .clickable {
@@ -200,7 +222,8 @@ li.artmenu-item > label {
     font-size: 14px;
 }
 
-/*Accordion for pages*/
+/* Accordion for pages */
+/* --------------------------------------------------------------------------------------------------- */
 
 .columns .accordion-art-container {
     padding-left: 0;
@@ -465,6 +488,7 @@ li.artmenu-item > label {
 
 
 /* test sub results traffic lights */
+/* --------------------------------------------------------------------------------------------------- */
 
 .testsubresultscontainer {
     margin: auto;
