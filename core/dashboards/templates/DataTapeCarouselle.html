@@ -129,30 +129,11 @@
 
 {% endblock %}
 
-{% comment %}
-                     <tbody>
-                 <tr ng-repeat="n in detailstable">
-                     <td>{$ n[0] $}</td>
-                     <td>{$ n[1] $}</td>
-                     <td><a href="{% url 'taskInfo' %}{$ n[2] $}">{$ n[2] $}</a></td>
-                     <td>{$ n[3] $}</td>
-                     <td>{$ n[4] $}</td>
-                     <td>{$ n[5] $}</td>
-                     <td>{$ n[6] $}</td>
-                     <td>{$ n[7] $}</td>
-                     <td>{$ n[8] $}</td>
-                     <td>{$ n[9] $}</td>
-                     <td><a target="_blank" href="https://rucio-ui.cern.ch/rule?rule_id={$ n[10] $}">{$ n[10] $}</a></td>
-                 </tr>
-                 </tbody>
-
-{% endcomment %}
-
 {% block js_body_page %}
   <script src="{% static 'js/hideCells.js' %}"></script>
-  <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}"></script>
-
+  <script type="text/javascript" src='https://www.google.com/jsapi?autoload={"modules":[{"name":"visualization","version":"1.1","packages":["sankey","corechart"]}]}'></script>
   <script type="text/javascript">
+  google.load("visualization", "1.1", {packages: ["sankey","corechart"]});
     app.service('Service', ['$http', service])
        .controller('dataviewctrl', ['$scope','Service', controller]);
 
@@ -260,8 +241,6 @@
                         maxZoomIn: 4.0
                       },
                   };
-        var chartACTCH = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
-        var chartETCH = new google.visualization.ColumnChart(document.getElementById('chartETCH_div'));
 
         var optionsETCH = {
                       title: 'Elapsed time (h)',
@@ -278,8 +257,6 @@
 
                   };
 
-
-        var chartPRCH = new google.visualization.Histogram(document.getElementById('chartPRCH_div'));
         var optionsPRCH = {
                       title: 'Progress of selected stagings (%)',
                       legend: { position: 'none' },
@@ -292,6 +269,7 @@
                       },
         };
 
+
         $scope.processResponce = function(response) {
             response.data.submittime = response.data.submittime.map(function (row) {
                return [
@@ -299,6 +277,10 @@
                         row[1]
                   ];
                });
+            var chartACTCH = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
+            var chartETCH = new google.visualization.ColumnChart(document.getElementById('chartETCH_div'));
+            var chartPRCH = new google.visualization.Histogram(document.getElementById('chartPRCH_div'));
+
              var dataACTCH = google.visualization.arrayToDataTable(response.data.submittime);
              chartACTCH.draw(dataACTCH, optionsACTCH);
 
