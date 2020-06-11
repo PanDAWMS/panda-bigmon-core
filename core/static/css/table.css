@@ -532,6 +532,9 @@ th.vertical {
     color: #355681 !important;
     font-weight: bold;
   }
+  .data-table td.bold {
+    font-weight: bold;
+  }
   .data-table tbody td > a.alert {
     color: firebrick !important;
   }
