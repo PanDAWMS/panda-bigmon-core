@@ -2,11 +2,7 @@ import os
 from os.path import dirname, join
 
 import core
-#import core.filebrowser
-#import core.pbm
-
-from core import admin
-
+from core import filebrowser, pbm, admin
 from core.settings.local import dbaccess, MY_SECRET_KEY, LOG_ROOT
 
 ALLOWED_HOSTS = [
@@ -32,13 +28,11 @@ IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
 #WSGI_PATH = VIRTUALENV_PATH + '/pythonpath'
 
 ### DB_ROUTERS for atlas's prodtask
-DATABASE_ROUTERS = [\
-    'core.dbrouter.ProdMonDBRouter', \
-    'core.pbm.dbrouter.PandaBrokerageMonDBRouter', \
+DATABASE_ROUTERS = [
+    'core.dbrouter.ProdMonDBRouter',
+    'core.pbm.dbrouter.PandaBrokerageMonDBRouter',
 ]
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-
 
 
 TEMPLATES = [
@@ -92,18 +86,8 @@ SECRET_KEY = MY_SECRET_KEY
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
-# DATABASES = {
-# #    'default': {
-# #        'ENGINE': 'django.db.backends.', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-# #        'NAME': '',                      # Or path to database file if using sqlite3.
-# #        'USER': '',                      # Not used with sqlite3.
-# #        'PASSWORD': '',                  # Not used with sqlite3.
-# #        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-# #        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
-# #    }
-#     'default': defaultDatabase
-# }
 DATABASES = dbaccess
+
 
 ### URL_PATH_PREFIX for multi-developer apache/wsgi instance
 ### on EC2: URL_PATH_PREFIX = '/bigpandamon' or URL_PATH_PREFIX = '/developersprefix'
@@ -142,10 +126,7 @@ FILTER_UI_ENV = {
         "sDefaultContent": '<img src="' + STATIC_URL + '/images/details_open.png' + '">',
         },
 }
-#DEBUG=True
-#LOG_ROOT = '/data/bigpandamon_virtualhosts/core/logs'
-#LOG_ROOT = '/data/wenaus/logs'
-#LOG_ROOT = '/afs/cern.ch/user/a/aaleksee/panda-bigmon-core/log'
+
 
 LOG_SIZE = 1000000000
 LOGGING = {
@@ -154,7 +135,10 @@ LOGGING = {
     'filters': {
         'require_debug_false': {
             '()': 'django.utils.log.RequireDebugFalse'
-        }
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
     },
     'handlers': {
         'null': {
@@ -253,18 +237,24 @@ LOGGING = {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class':'logging.StreamHandler',
-        }
+        },
+        'console': {
+            'level': 'INFO',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'full'
+        },
     },
     'loggers': {
         'django.request': {
-            'handlers': ['mail_admins'],
+            'handlers': ['mail_admins', 'logfile-django'],
             'level': 'DEBUG',
             'propagate': True,
         },
         'django': {
-            'handlers':['logfile-django','logfile-error'],
+            'handlers': ['logfile-django', 'logfile-error'],
             'propagate': True,
-            'level':'DEBUG',
+            'level': 'DEBUG',
         },
         'django.template': {
             'handlers': ['logfile-template'],
@@ -282,7 +272,7 @@ LOGGING = {
             'level':'DEBUG',
         },
         'bigpandamon': {
-            'handlers': ['logfile-bigpandamon', 'logfile-info', 'logfile-error'],
+            'handlers': ['logfile-bigpandamon', 'logfile-info', 'logfile-error', 'console'],
             'level': 'DEBUG',
         },
         'bigpandamon-error': {
@@ -302,7 +292,7 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'social':{
-            'handlers': ['logfile-error','social'],
+            'handlers': ['logfile-error', 'social'],
             'level': 'DEBUG',
             'propagate': True,
         },

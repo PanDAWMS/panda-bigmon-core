@@ -442,6 +442,8 @@ def initRequest(request, callselfmon = True):
     if 'debug' in request.GET and request.GET['debug'] == 'insider':
         request.session['debug'] = True
         djangosettings.DEBUG = True
+    elif djangosettings.DEBUG is True:
+        request.session['debug'] = True
     else:
         request.session['debug'] = False
         djangosettings.DEBUG = False
