@@ -5604,28 +5604,19 @@ def siteSummary(query, notime=True, extra="(1=1)"):
     if notime:
         if 'modificationtime__castdate__range' in querynotime:
             del querynotime['modificationtime__castdate__range']
-    # summary.extend(Jobsactive4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus').extra(where=[extra]).annotate(
-    #     Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
-    # summary.extend(Jobsdefined4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus').extra(where=[extra]).annotate(
-    #     Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
-    # summary.extend(Jobswaiting4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus').extra(where=[extra]).annotate(
-    #     Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
-    # summary.extend(Jobsarchived4.objects.filter(**query).values('cloud', 'computingsite', 'jobstatus').extra(where=[extra]).annotate(
-    #     Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
+    ejquery = {'jobstatus__in': ['failed', 'finished', 'closed', 'cancelled']}
+    jvalues = ('cloud', 'computingsite', 'jobstatus', 'resourcetype', 'corecount')
+    orderby = ('cloud', 'computingsite', 'jobstatus')
     summaryResources.extend(
-        Jobsactive4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus', 'resourcetype','corecount').extra(
-            where=[extra]).annotate(
-            Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
+        Jobsactive4.objects.filter(**querynotime).exclude(**ejquery).values(*jvalues).extra(where=[extra]).annotate(Count('jobstatus')).order_by(*orderby))
     summaryResources.extend(
-        Jobsdefined4.objects.filter(**querynotime).values('cloud', 'computingsite', 'jobstatus', 'resourcetype','corecount').extra(
-            where=[extra]).annotate(
-            Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
-    summaryResources.extend(Jobswaiting4.objects.filter(**querynotime).values('cloud', 'computingsite','jobstatus', 'resourcetype','corecount').extra(where=[extra]).annotate(
-        Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
+        Jobsactive4.objects.filter(**query).filter(**ejquery).values(*jvalues).extra(where=[extra]).annotate(Count('jobstatus')).order_by(*orderby))
     summaryResources.extend(
-        Jobsarchived4.objects.filter(**query).values('cloud', 'computingsite', 'jobstatus', 'resourcetype','corecount').extra(
-            where=[extra]).annotate(
-            Count('jobstatus')).order_by('cloud', 'computingsite', 'jobstatus'))
+        Jobsdefined4.objects.filter(**querynotime).values(*jvalues).extra(where=[extra]).annotate(Count('jobstatus')).order_by(*orderby))
+    summaryResources.extend(
+        Jobswaiting4.objects.filter(**querynotime).values(*jvalues).extra(where=[extra]).annotate(Count('jobstatus')).order_by(*orderby))
+    summaryResources.extend(
+        Jobsarchived4.objects.filter(**query).values(*jvalues).extra(where=[extra]).annotate(Count('jobstatus')).order_by(*orderby))
 
     summaryResourcesDict = {}
     actualcorecount = 0
@@ -5634,53 +5625,20 @@ def siteSummary(query, notime=True, extra="(1=1)"):
             actualcorecount = 1
         else:
             actualcorecount = sumS['corecount']
+
         if sumS['cloud'] not in summaryResourcesDict:
-            summaryResourcesDict[sumS['cloud']] ={}
-            if sumS['computingsite'] not in summaryResourcesDict[sumS['cloud']]:
-                summaryResourcesDict[sumS['cloud']][sumS['computingsite']] = {}
-                if sumS['jobstatus'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']]:
-                    summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']] = {}
-                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']]:
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {}
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
-                else:
-                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
-                        sumS['jobstatus']]:
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resourcetype']] = {}
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
-        else:
-            if sumS['computingsite'] not in summaryResourcesDict[sumS['cloud']]:
-                summaryResourcesDict[sumS['cloud']][sumS['computingsite']] = {}
-                if sumS['jobstatus'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']]:
-                    summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']] = {}
-                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']]:
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {}
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
-                else:
-                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
-                        sumS['jobstatus']]:
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resourcetype']] = {}
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
-            else:
-                if sumS['jobstatus'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']]:
-                    summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']] = {}
-                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
-                        sumS['jobstatus']]:
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resourcetype']] = {}
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
-                else:
-                    if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][
-                        sumS['jobstatus']]:
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resourcetype']] = {}
-                        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][
-                            sumS['resourcetype']] = {'jobstatus__count':sumS['jobstatus__count'],'corecount':actualcorecount}
+            summaryResourcesDict[sumS['cloud']] = {}
+        if sumS['computingsite'] not in summaryResourcesDict[sumS['cloud']]:
+            summaryResourcesDict[sumS['cloud']][sumS['computingsite']] = {}
+        if sumS['jobstatus'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']]:
+            summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']] = {}
+        if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']]:
+            summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {
+                'jobstatus__count': 0,
+                'corecount': actualcorecount
+            }
+        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']]['jobstatus__count'] += sumS['jobstatus__count']
+
     summaryList = []
     obj = {}
     for cloud in summaryResourcesDict.keys():
@@ -6122,7 +6080,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
             if rec['computingsite'] in homeCloud:
                 cloud = homeCloud[rec['computingsite']]
             else:
-                print ("ERROR cloud not known", rec)
+                _logger.info("ERROR ComputingSite {} not found in Shedconfig, adding to mismatched sites".format(rec['computingsite']), rec)
                 mismatchedSites.append([rec['computingsite'], rec['cloud']])
                 cloud = ''
         else:
@@ -6139,7 +6097,6 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         totstates[jobstatus] += count
 
         if cloud not in clouds:
-            print ("Cloud:" + cloud)
             clouds[cloud] = {}
             clouds[cloud]['name'] = cloud
             if cloud in cloudinfo: clouds[cloud]['status'] = cloudinfo[cloud]
