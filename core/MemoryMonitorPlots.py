@@ -165,17 +165,29 @@ def getPrMonPlotsData(request, pandaid=-1):
         # check if the file exists
         if mmo_path is not None and os.path.exists(mmo_path):
             # load the data from file
-            raw_data = pd.read_csv(mmo_path, sep='\t')
+            raw_data = pd.read_csv(mmo_path, delim_whitespace=True)
         else:
             msg = """No memory monitor output file found in a job log tarball. 
                      It can happen if a job failed and logs were not saved 
                      or a life time of storing job logs are already expired."""
             _logger.warning(msg)
 
+    # rename columns if old memory monitor is used
+    if not raw_data.empty:
+        raw_data = raw_data.rename(str.lower, axis='columns')
+        raw_data = raw_data.rename(columns={'rbytes': 'read_bytes', 'wbytes': 'write_bytes'})
+        if 'time' in raw_data.columns:
+            tstart = raw_data['time'].min()
+            raw_data['wtime'] = raw_data['time'].apply(lambda x: x - tstart)
+
     # prepare data for plots
     if not raw_data.empty:
         raw_data['wtime_dt'] = raw_data['wtime'].diff()
         raw_data['wtime_min_dt'] = raw_data['wtime_dt']/60.
+
+        # update metrics groups depending on available metrics in memory output file
+        for mgn, mgl in metric_groups.items():
+            metric_groups[mgn] = list(set(mgl) & set(raw_data.columns))
 
         for mi in metric_groups['io']:
             raw_data[mi + '_rate'] = raw_data[mi].diff()
@@ -260,6 +272,14 @@ def getPrMonPlotsData(request, pandaid=-1):
             if is_cut_rate_plot_data:
                 tmp = tmp[:-1]
             plots_data['io_rate']['data'].append(tmp)
+
+    # remove plot if no data
+    remove_list = []
+    for pn, pdata in plots_data.items():
+        if len(pdata['data']) == 1:
+            remove_list.append(pn)
+    for i in remove_list:
+        del plots_data[i]
 
     data = {
         'plotsDict': plots_data,
