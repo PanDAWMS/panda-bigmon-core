@@ -1145,6 +1145,12 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 siteListForRegion.append(str(sn))
         query['computingsite__in'] = siteListForRegion
 
+    if opmode in ['analysis', 'production'] and querytype == 'job':
+        if opmode.startswith('analy'):
+            query['prodsourcelabel__in'] = ['panda', 'user']
+        elif opmode.startswith('prod'):
+            query['prodsourcelabel__in'] = ['managed']
+
     if (wildCardExt == False):
         return query
 
@@ -6088,9 +6094,6 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         else:
             cloud = rec['cloud']
         site = rec['computingsite']
-        if view.find('test') < 0:
-            if view != 'analysis' and site.startswith('ANALY'): continue
-            if view == 'analysis' and not site.startswith('ANALY'): continue
         jobstatus = rec['jobstatus']
         count = rec['jobstatus__count']
         resources = rec['resource']
