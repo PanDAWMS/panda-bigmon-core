@@ -349,7 +349,7 @@ def get_job_summary_split(query, extra):
         elif qn in fields:
             extra_str += " and (" + fields[qn] + "= '" + qvs + "' )"
 
-    # get jobs groupings
+    # get jobs groupings, the jobsactive4 table can keep failed analysis jobs for up to 7 days, so splitting the query
     query_raw = """
         select computingsite, resource_type as resourcetype, prodsourcelabel, jobstatus, 
             count(pandaid) as count, sum(rcores) as rcores, round(sum(walltime)) as walltime
@@ -360,7 +360,12 @@ def get_job_summary_split(query, extra):
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
         case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime
-        from ATLAS_PANDA.jobsactive4 jav4 where {1}
+        from ATLAS_PANDA.jobsactive4 jav4 where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and 
+            jobstatus in ('failed', 'finished', 'closed', 'cancelled') and {1}
+        union
+        select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
+        case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime
+        from ATLAS_PANDA.jobsactive4 jav4 where jobstatus not in ('failed', 'finished', 'closed', 'cancelled') and {1}
         union
         select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores, 0 as walltime
         from ATLAS_PANDA.jobswaiting4 jw4 where {1}
