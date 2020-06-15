@@ -20,25 +20,33 @@
 {% block body %}
 
 {% if columns %}
-  <table>
+
+  <table data-ng-app="" data-ng-controller="iDDSGeneralInfo">
     <tr bgcolor='lightcyan'>
         <th colspan=20> {{ jeditaskid }} task: {{ taskname }} </th>
     </tr>
     <tr bgcolor='lightcyan'>
         <th>Task ID</th>
         {% if task.deftreqid %}
-            <th> Request</th> {% endif %}
+            <th> Request</th>
+        {% endif %}
         {% if task.reqid != task.jeditaskid and not task.deftreqid %}
-            <th>Jobset</th>{% endif %}
+            <th>Jobset</th>
+        {% endif %}
         <th>Type</th>
         <th>Working Group</th>
         <th>User</th>
         <th>Destination</th>
         {% if task.campaign %}
-            <th> Campaign</th> {% endif %}
-        <th>Task status</th>{% if task.superstatus %}{% if task.superstatus != task.status %}
-        <th> Detailed JEDI status</th>{% endif %} {% endif %}
-        {% if task.idds_info and task.idds_info.scope == 'hpo' %}
+            <th> Campaign</th>
+        {% endif %}
+        <th>Task status</th>
+        {% if task.superstatus %}
+        {% if task.superstatus != task.status %}
+        <th> Detailed JEDI status</th>
+        {% endif %}
+        {% endif %}
+        {% if task.idds_info and task.idds_info.task_type == 'hpo' %}
             <th>  HP points |  <span class='finished'>finished</span></th>
             {% if task.dsinfo %}
             <th style="white-space: nowrap">HS06*sec<br> Expected<br> Total<br><span
@@ -57,34 +65,49 @@
         <th>Priority</th>
         <th>Parent</th>
         {% if task.ticketid %}
-            <th>Tracker</th> {% endif %}
+            <th>Tracker</th>
+        {% endif %}
     </tr>
     <tr>
         <td><a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
                target="_blank">{{ task.jeditaskid }}</a></td>
         {% if task.deftreqid %}
             <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/"
-                   target="_blank">{{ task.deftreqid }}</a></td> {% endif %}
+                   target="_blank">{{ task.deftreqid }}</a></td>
+        {% endif %}
         {% if task.reqid != task.jeditaskid and not task.deftreqid %}
-            <td>{{ task.reqid }}</td>{% endif %}
+            <td>{{ task.reqid }}</td>
+        {% endif %}
         <td>{% if task.tasktype == 'anal' %} analy {% else %} {{ task.tasktype }} {% endif %}</td>
         <td>{% if task.workinggroup %} {{ task.workinggroup }} {% endif %} </td>
         <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
         <td>{{ task.destination }}</td>
         {% if task.campaign %}
-            <td><a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a></td> {% endif %}
-        <td class='{{ task.status }}_fill'>{% if task.superstatus %}
+            <td><a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a></td>
+        {% endif %}
+        <td class='{{ task.status }}_fill'>
+            {% if task.superstatus %}
             <b><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
                   class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</a></b>
             {% if task.superstatus != task.status %}
                 <td class='{{ task.status }}'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
                         class="{{ task.status }}_tooltip">{{ task.status }}</a></td>{% endif %} {% else %}
             <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
-               class="{{ task.superstatus }}_tooltip">{{ task.status }}</a>{% endif %}</td>
-            {% if task.idds_info and task.idds_info.scope == 'hpo' %}
-                <td> {{ task.idds_info.out_total_files }} |
-                    <span class='finished'>{{ task.idds_info.out_processed_files }} ({{ task.idds_info.pctprocessed|floatformat }}%) </span></td>
+               class="{{ task.superstatus }}_tooltip">{{ task.status }}</a>
+            {% endif %}
+        </td>
+            {% if task.idds_info and task.idds_info.task_type == 'hpo' %}
+                <td>
+                <div ng-show="loading">LOADING...</div>
+                <div ng-cloak ng-show="!loading">
+                <span ng-bind="iddsjson.out_total_files">
+                    <span>{$ iddsjson.out_total_files $}</span>
+                </span>
+                    <span>{$ iddsjson.out_total_files $}</span> |
+                    <span class='finished'><span>{$ iddsjson.out_total_files $}</span> (<span>{$ iddsjson.pctprocessed $}</span>%) </span>
+                </div>
                 </td>
+
                 {% if task.dsinfo %}
                     <td style="text-align:right;"> {{ task.totevhs06 }}<br>{{ task.currenttotevhs06 }}<br><span
                     class='finished'>{{ task.totevprochs06 }}</span><br><span
@@ -472,7 +495,7 @@
   </table>
   </div>
 
-  {% if task.idds == 1 %}
+  {% if task.idds_info %}
       <div id="iDDsDiv" class="badevents" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
       <table>
           <tr bgcolor='lightcyan'>
@@ -638,15 +661,10 @@
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script>
-    {% if task.idds_info %}
-        var task_idds_info = {{ task.idds_info|safe }};
-    {% else %}
-        var task_idds_info = "";
-    {% endif %}
-    app.controller('iDDSInfoForTaskController', function ($scope, $http) {
-        $scope.iddsjson = task_idds_info;
+
+    app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
+        $scope.iddsjson = "";
         $scope.getiDDs = function () {
-            if (Object.keys(task_idds_info).length === 0) {
                 $http({
                         url: '/idds/getiddsfortask/',
                         method: "GET",
@@ -656,9 +674,10 @@
                     var iddsjson = angular.fromJson(res.data);
                     if (('data' in iddsjson) && (Object.keys(iddsjson['data']).length > 0)) {
                         $scope.iddsjson = iddsjson['data'];
+                        idds_data = iddsjson['data'];
+                        $rootScope.$emit('idds_info', idds_data);
                     }
                 });
-            }
         };
         var init = function () {
             $scope.getiDDs();
@@ -667,8 +686,14 @@
         };
         init();
     });
-
-
+    app.controller('iDDSGeneralInfo', function($rootScope, $scope) {
+        $scope.loading = true;
+        $rootScope.$on('idds_info', function(event, data) {
+            $scope.iddsjson = data;
+            console.log(data);
+            $scope.loading = false;
+        });
+    });
     app.controller('StagingDSController', function ($scope, $http) {
         $scope.json = "";
         $scope.getStagingDS = function () {

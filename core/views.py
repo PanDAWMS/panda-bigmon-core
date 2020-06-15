@@ -109,7 +109,7 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.bpuser import get_relevant_links
 from core.libs.site import get_running_jobs_stats
-from core.iDDS.algorithms import checkIfIddsTask, getiDDSInfoForTask
+from core.iDDS.algorithms import checkIfIddsTask
 
 from django.template.context_processors import csrf
 
@@ -8705,7 +8705,9 @@ def taskInfo(request, jeditaskid=0):
 
             if task_type == 'hpo':
                 mode = 'nodrop'
-                idds_info = getiDDSInfoForTask(jeditaskid)
+                idds_info = {'task_type': 'hpo'}
+            else:
+                idds_info = {'task_type': 'idds'}
         else:
             task_type = None
             idds_info = None
@@ -9058,15 +9060,13 @@ def taskInfo(request, jeditaskid=0):
                 warning['memoryleaksuspicion'][
                     'message'] = 'Some jobs in this task consumed a lot of memory. We suspect there might be memory leaks.'
                 warning['memoryleaksuspicion']['jobs'] = tmcj_list
-        if task_type is not None:
-            taskrec['idds'] = 1
-            if idds_info is not None:
-                idds_timestamp_names = ['request_created_at', 'request_updated_at', 'out_created_at', 'out_updated_at']
-                for itn in idds_info:
-                    if itn in idds_info and isinstance(idds_info[itn], datetime):
-                        idds_info[itn] = idds_info[itn].strftime(defaultDatetimeFormat)
-                taskrec['idds_info'] = idds_info
-        
+        if task_type is not None and idds_info is not None:
+                # idds_timestamp_names = ['request_created_at', 'request_updated_at', 'out_created_at', 'out_updated_at']
+                # for itn in idds_info:
+                #     if itn in idds_info and isinstance(idds_info[itn], datetime):
+                #         idds_info[itn] = idds_info[itn].strftime(defaultDatetimeFormat)
+            taskrec['idds_info'] = idds_info
+
         if taskrec['creationdate']:
             if taskrec['creationdate'] < datetime.strptime('2018-02-07', '%Y-%m-%d'):
                 warning['dropmode'] = 'The drop mode is unavailable since the data of job retries was cleaned up. The data shown on the page is in nodrop mode.'
@@ -13102,9 +13102,9 @@ def grafana_image(request):
         for urlw in whitelist:
             pattern = "^((http[s]?):\/)?\/?([^:\/\s]+"+urlw+")"
             urlConfim = re.findall(pattern,url)
-            if (len(urlConfim)>0):
+            if (len(urlConfim) > 0):
                 break
-        if (len(urlConfim)==0):
+        if (len(urlConfim) == 0):
             return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
         try:
             data = getCacheEntry(request, "grafanaimagewrap")
@@ -13117,7 +13117,7 @@ def grafana_image(request):
                 grafana_token = GRAFANA['Authorization']
             import requests
             headers = {"Authorization": grafana_token}
-            r = requests.get(url, headers = headers)
+            r = requests.get(url, headers=headers)
             r.raise_for_status()
             with io.BytesIO(r.content) as f:
                 with Image.open(f) as img:
