@@ -52,12 +52,13 @@
             <th style="white-space: nowrap">HS06*sec<br> Expected<br> Total<br><span
                     class='done'>done</span><br> <span class='failed'>failed</span></th>
             {% endif %}
-        {% endif %}
-        {% if task.dsinfo and not task.idds_info %}
+        {% else %}
+        {% if task.dsinfo %}
             <th> Nevents | <span class='finished'>used</span></th>
             <th style="white-space: nowrap">HS06*sec<br> Expected<br> Total<br><span
                     class='done'>done</span><br> <span class='failed'>failed</span></th>
             <th> Ninputfiles | <span class='finished'>finished</span> | <span class='failed'>failed</span></th>
+        {% endif %}
         {% endif %}
         <th>Created</th>
         <th>Modified</th>
@@ -113,8 +114,8 @@
                     class='finished'>{{ task.totevprochs06 }}</span><br><span
                     class='failed'>{{ task.failedevprochs06 }}</span></td>
                 {% endif %}
-            {% endif %}
-        {% if task.dsinfo and not task.idds_info %}
+        {% else %}
+        {% if task.dsinfo %}
             <td> {{ task.totev }} |
                 <span class='finished'>{{ task.totevproc }} ({{ task.pctfinished|floatformat }}%)</span></td>
             <td style="text-align:right;"> {{ task.totevhs06 }}<br>{{ task.currenttotevhs06 }}<br><span
@@ -125,6 +126,7 @@
                 {% if task.dsinfo.nfilesfailed > 0 %} |
                     <span class='failed'>{{ task.dsinfo.nfilesfailed }} ({{ task.dsinfo.pctfailed|floatformat }}%)</span>  {% endif %}
             </td>
+        {% endif %}
         {% endif %}
         <td>{{ task.creationdate }}</td>
         <td>{{ task.modificationtime }}</td>
