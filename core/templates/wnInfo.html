@@ -153,21 +153,22 @@
 <thead>
 <tr>
 <th> WN </th>
-<th class="num"> nSlots </th>
-<th class="num"> nJobs </th>
-<th class="num"> defined </th>
-<th class="num"> waiting</th>
-<th class="num"> throttled </th>
-<th class="num"> sent </th>
-<th class="num"> starting </th>
-<th class="num"> running </th>
-<th class="num"> holding </th>
-<th class="num"> merging </th>
-<th class="num"> transferring </th>
-<th class="num"> finished </th>
-<th class="num"> failed </th>
-<th class="num"> cancelled </th>
-<th class="num"> closed </th>
+<th class="num"> N slots </th>
+<th class="num"> N running cores </th>
+<th class="num"> N jobs </th>
+<th class="vertical fixed_dash"><div class="rotate70">defined</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">waiting</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">throttled</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">sent</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">starting</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">running</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">holding</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">merging</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">transferring</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">finished</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">failed</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">cancelled</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">closed</div></th>
 <th class="num"> % failed </th>
 <th> outliers </th>
 </tr>
@@ -254,23 +255,23 @@ $(document).ready(function () {
 <thead>
 <tr>
 <th> WN </th>
-<th class="num"> nSlots </th>
-<th class="num"> nRunningCores </th>
+<th class="num"> N slots </th>
+<th class="num"> N running cores </th>
 <th class="num"> Running min RAM count, GB</th>
-<th class="num"> nJobs </th>
-<th class="num"> defined </th>
-<th class="num"> waiting</th>
-<th class="num"> throttled </th>
-<th class="num"> sent </th>
-<th class="num"> starting </th>
-<th class="num"> running </th>
-<th class="num"> holding </th>
-<th class="num"> merging </th>
-<th class="num"> transferring </th>
-<th class="num"> finished </th>
-<th class="num"> failed </th>
-<th class="num"> cancelled </th>
-<th class="num"> closed </th>
+<th class="num"> N jobs </th>
+<th class="vertical fixed_dash"><div class="rotate70">defined</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">waiting</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">throttled</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">sent</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">starting</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">running</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">holding</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">merging</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">transferring</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">finished</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">failed</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">cancelled</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">closed</div></th>
 <th class="num"> % failed </th>
 <th> outliers </th>
 </tr>
@@ -284,7 +285,7 @@ $(document).ready(function () {
 <td class="num">{{ wn.rminramcount  }} </td>
 <td class="num"><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
-{% if state.name != 'assigned' and state.name != 'activated' %}
+{% if state.name != 'assigned' and state.name != 'activated' and state.name != 'pending' %}
 <td class="num">{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% else %} - {% endif %} </td>
 {% endif %}
 {% endfor %}
