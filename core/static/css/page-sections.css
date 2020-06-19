@@ -388,6 +388,9 @@ a.close-x-sign:hover {
     color: #0a0a0a !important;
 }
 
+
+/* pure CSS tooltips */
+
 .tooltip-upper {
     position: relative;
     display: inline-block;
@@ -395,21 +398,24 @@ a.close-x-sign:hover {
 
 .tooltip-upper .tooltip-text {
     visibility: hidden;
-    min-width: 150px;
-    max-width: 400px;
+    overflow: visible;
+    min-width: 200px;
+    max-width: 200px;
     background-color: #0a0a0a;
     color: #fff;
     text-align: center;
-    font-style: normal;
-    border-radius: 6px;
+    font-weight: normal;
+    white-space: pre-wrap;
+    height: auto;
+    border-radius: 3px;
     padding: 5px 2px;
     position: absolute;
-    z-index: 1000;
+    z-index: 10000;
     bottom: 125%;
     left: 50%;
-    margin-left: -75px;
+    margin-left: -100px;
     opacity: 0;
-    transition: opacity 0.5s;
+    transition: opacity 0s;
 }
 
 .tooltip-upper .tooltip-text::after {
@@ -428,7 +434,63 @@ a.close-x-sign:hover {
     opacity: 1;
 }
 
+/* Tooltip right for datatable where horizontal scroll cut off upper tooltip  */
 
+.tooltip-right {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-right .tooltip-text {
+  visibility: hidden;
+  min-width: 100px;
+  max-width: 400px;
+  background-color: #0a0a0a;
+  color: #fff;
+  text-align: left;
+  font-weight: normal;
+  font-size: 0.8rem;
+  /*white-space: pre-wrap;*/
+  /*height: auto;*/
+  border-radius: 3px;
+  padding: 0.3rem 0.7rem;
+  position: absolute;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0s;
+
+  top: 50%;
+  bottom: auto;
+  left: calc(100% + 0.4rem);
+  -ms-transform: translateY(-50%);
+      transform: translateY(-50%);
+}
+
+.tooltip-right .tooltip-text::before {
+    content: "";
+    position: absolute;
+    display: block;
+    width: 0;
+    height: 0;
+    border: inset 0.3rem;
+    border-left-width: 0;
+    border-right-style: solid;
+    border-color: transparent #0a0a0a transparent transparent;
+    top: 50%;
+    bottom: auto;
+    left: -0.25rem;
+    -ms-transform: translateY(-50%);
+        transform: translateY(-50%);
+}
+
+.tooltip-right:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+
+
+/* Cards */
 .card-tabs .card-divider {
     display: -webkit-flex;
     display: -ms-flexbox;
