@@ -1842,8 +1842,8 @@ def jobSummaryDict(request, jobs, fieldlist=None):
 
 
 
-    #sumd['processor_type'] = {'GPU': len(list(filter(lambda x: 'gpu' in x['cmtconfig'], jobs))),
-    #                          'CPU': len(list(filter(lambda x: not 'gpu' in x['cmtconfig'], jobs)))}
+    sumd['processor_type'] = {'GPU': len(list(filter(lambda x: 'gpu' in x['cmtconfig'], jobs))),
+                              'CPU': len(list(filter(lambda x: not 'gpu' in x['cmtconfig'], jobs)))}
 
     ## convert to ordered lists
     suml = []
@@ -5110,7 +5110,7 @@ def userInfo(request, user=''):
     limit = 5000
     query = setupView(request, hours=72, limit=limit, querytype='job')
     jobs = []
-    values = 'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock',
+    values = 'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'container_name', 'cmtconfig'
 
     if userQueryJobs is None:
         query['produsername__icontains'] = user.strip()
