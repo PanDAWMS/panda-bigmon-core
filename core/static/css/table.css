@@ -535,6 +535,9 @@ th.vertical {
   .data-table td.bold {
     font-weight: bold;
   }
+  .data-table td.icons3 {
+    padding-right: 3rem;
+  }
   .data-table tbody td > a.alert {
     color: firebrick !important;
   }

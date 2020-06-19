@@ -150,7 +150,7 @@
 <table id='queuesummary' class="data-table nowrap hover">
   <thead>
   <tr>
-    <th class="text">Queue name</th>
+    <th class="text icons3">Queue name</th>
     <th class="text">Queue type</th>
     <th class="text">Region</th>
     <th class="text">Status</th>
@@ -170,7 +170,7 @@
   </tbody>
   <tfoot>
   <tr>
-    <th class="text">Queue name</th>
+    <th class="text icons3">Queue name</th>
     <th class="text">Queue type</th>
     <th class="text">Region</th>
     <th class="text">Status</th>
@@ -600,7 +600,7 @@ function buildQueueSummary(data, divid) {
     "columns": [
       {
         sDefaultContent: "---",
-        className: "text",
+        className: "text icons3",
         "render": function(data, type, row, meta) {
             let link = '<a href = "{% url 'siteInfo' %}' + row[0] + '/">'+row[0]+'</a>';
             link += ' <a target="_blank" href="https://monit-grafana.cern.ch/d/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite=' + row[0] + '&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1"><div class="tooltip-upper"><img src="/static/images/grafana.png" width=14 height=14 border=0><span class="tooltip-text">Link to Jobs accountig dashboard in Grafana</span></div></a>\n';
