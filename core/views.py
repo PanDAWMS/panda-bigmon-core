@@ -644,6 +644,15 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if (('*' in jobrequest) or ('|' in jobrequest)):
             excludeJobNameFromWildCard = False
 
+    processor_type = request.session['requestParams'].get('processor_type', None)
+    if processor_type:
+        if processor_type.lower() == 'cpu':
+            extraQueryString += " AND (cmtconfig not like '%%gpu%%')"
+        if processor_type.lower() == 'gpu':
+            extraQueryString += " AND (cmtconfig like '%%gpu%%')"
+
+
+
     if 'workinggroup' in request.session['requestParams'] and 'preset' in request.session['requestParams'] and request.session['requestParams']['preset']=='MC':
         # if 'workinggroup' in request.session['requestParams']:
         workinggroupQuery = request.session['requestParams']['workinggroup']
@@ -1830,6 +1839,11 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             esjobs.append(job['pandaid'])
     if len(esjobs) > 0:
         sumd['eventservicestatus'] = get_event_status_summary(esjobs, eventservicestatelist)
+
+
+
+    sumd['processor_type'] = {'GPU': len(list(filter(lambda x: 'gpu' in x['cmtconfig'], jobs))),
+                              'CPU': len(list(filter(lambda x: not 'gpu' in x['cmtconfig'], jobs)))}
 
     ## convert to ordered lists
     suml = []
@@ -3135,9 +3149,9 @@ def jobList(request, mode=None, param=None):
         'json' in request.session['requestParams']):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     elif eventservice:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt',  'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype', 'schedulerid', 'pilotid', 'computingelement', 'container_name'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt',  'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype', 'schedulerid', 'pilotid', 'computingelement', 'container_name', 'cmtconfig'
     else:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype','schedulerid', 'pilotid', 'computingelement', 'container_name'
+        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype','schedulerid', 'pilotid', 'computingelement', 'container_name', 'cmtconfig'
 
     JOB_LIMITS = request.session['JOB_LIMIT']
     totalJobs = 0
