@@ -38,6 +38,11 @@
     Press <b>Show details</b> buttons to see all the states of jobs and workers.</p>
   <p>Click the job counts to go to job listings. Click on workers counts to go to harvester workers listings.
     Use the <b>Search</b> text input on the top of second table to find a PQ by name.</p>
+  <p>Click on PQ name to go to a BigPanDA site info page. Next to a PQ name there are 3 links:
+    <img src="{% static '/images/grafana.png' %}" width=14 height=14 border=0> goes to Jobs accounting for a PQ at MONIT Grafana;
+    <img src="{% static '/images/grafana-black.png' %}" width=14 height=14 border=0> - Jobs monitoring for a PQ at MONIT Grafana (Eric's monitoring);
+    <img src="{% static '/images/kibana-logo.png' %}" width=14 height=14 border=0> - recent brokerage actions related to a PQ at Kibana.
+  </p>
   <p><b>N running workers</b> column has the next color coding scheme:
     <span class="alert"><b>dark red</b></span> if N running workers > N running jobs for more than 20%,
     <span class="warning"><b>orange</b></span> if N running workers > N running jobs for more than 10% and less than 20%.</p>
