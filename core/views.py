@@ -4487,7 +4487,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                         f['ruciodatasetname'] = dsets[0]['datasetname']
                         f['datasetname'] = dsets[0]['datasetname']
                     if job['computingsite'] in pandaSites.keys():
-                        _, _, computeSvsAtlasS = getCRICSites()
+                        _, _, _, computeSvsAtlasS = getCRICSites()
                         f['ddmsite'] = computeSvsAtlasS.get(job['computingsite'], "")
 
                 if 'dst' in f['destinationdblocktoken']:
@@ -6021,17 +6021,19 @@ def checkUcoreSite(site, usites):
 def getCRICSites():
     sitesUcore = cache.get('sitesUcore')
     sitesHarvester = cache.get('sitesHarvester')
+    sitesType = cache.get('sitesType')
     computevsAtlasCE = cache.get('computevsAtlasCE')
 
-    if not (sitesUcore and sitesHarvester and computevsAtlasCE):
+    if not (sitesUcore and sitesHarvester and computevsAtlasCE and sitesType):
         sitesUcore, sitesHarvester = [], []
-        computevsAtlasCE = {}
+        computevsAtlasCE, sitesType = {}, {}
         url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
         http = urllib3.PoolManager()
         data = {}
         try:
             r = http.request('GET', url)
             data = json.loads(r.data.decode('utf-8'))
+
             for cs in data.keys():
                 if 'unifiedPandaQueue' in data[cs]['catchall'] or 'ucore' in data[cs]['capability']:
                     sitesUcore.append(data[cs]['siteid'])
@@ -6039,21 +6041,24 @@ def getCRICSites():
                     sitesHarvester.append(data[cs]['siteid'])
                 if 'panda_site' in data[cs]:
                     computevsAtlasCE[cs] = data[cs]['atlas_site']
+                if 'type' in data[cs]:
+                    sitesType[cs] = data[cs]['type']
         except Exception as exc:
-            print (exc)
+            print(exc)
 
         cache.set('sitesUcore', sitesUcore, 3600)
         cache.set('sitesHarvester', sitesHarvester, 3600)
+        cache.set('sitesType', sitesType, 3600)
         cache.set('computevsAtlasCE', computevsAtlasCE, 3600)
 
-    return sitesUcore, sitesHarvester, computevsAtlasCE
+    return sitesUcore, sitesHarvester, sitesType, computevsAtlasCE
 
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
     start_time = time.time()
     pilots = getPilotCounts(view)
     query = setupView(request, hours=hours, limit=limit, opmode=view)
-    ucoreComputingSites, harvesterComputingSites, _ = getCRICSites()
+    ucoreComputingSites, harvesterComputingSites, typeComputingSites, _ = getCRICSites()
 
     _logger.info('[dashSummary] Got CRIC json: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -6155,6 +6160,9 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
             if site in harvesterComputingSites:
                 clouds[cloud]['sites'][site]['isHarvester'] = True
 
+            if site in typeComputingSites.keys():
+                clouds[cloud]['sites'][site]['type'] = typeComputingSites[site]
+
             clouds[cloud]['sites'][site]['states'] = {}
             for state in sitestatelist:
                 clouds[cloud]['sites'][site]['states'][state] = {}
@@ -6163,7 +6171,7 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
         clouds[cloud]['sites'][site]['count'] += count
         clouds[cloud]['sites'][site]['states'][jobstatus]['count'] += count
 
-        if checkUcoreSite(site,ucoreComputingSites):
+        if checkUcoreSite(site, ucoreComputingSites):
             if 'resources' not in clouds[cloud]['sites'][site]['states'][jobstatus]:
                 clouds[cloud]['sites'][site]['states'][jobstatus]['resources'] = {}
                 clouds[cloud]['sites'][site]['states'][jobstatus]['resources'] = resources
@@ -6186,6 +6194,8 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
                         clouds[cloud]['sites'][ressite]['name'] = ressite
                         clouds[cloud]['sites'][ressite]['nojobabs'] = -1
                         clouds[cloud]['sites'][ressite]['parent'] = site
+                        clouds[cloud]['sites'][ressite]['parent_type'] = typeComputingSites[site]
+
                         if site in siteinfo:
                             clouds[cloud]['sites'][ressite]['status'] = siteinfo[site]
                         else:
@@ -7112,7 +7122,7 @@ def dashboard(request, view='all'):
                 if jobs['nucleus'] in nucleus:
                     if jobs['computingsite'] in nucleus[jobs['nucleus']]:
                         nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] += jobs['countjobsinstate']
-                        if (jobs['jobstatus'] in ('finished', 'failed','merging')):
+                        if (jobs['jobstatus'] in ('finished','failed','merging')):
                             nucleus[jobs['nucleus']][jobs['computingsite']]['events'+ jobs['jobstatus']] += jobs['counteventsinstate']
 
                     else:
@@ -13122,6 +13132,7 @@ def grafana_image(request):
             return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
         try:
             data = getCacheEntry(request, "grafanaimagewrap")
+
             if data is not None:
                 data = base64.b64decode(data)
                 response = HttpResponse(data, content_type='image/jpg')
