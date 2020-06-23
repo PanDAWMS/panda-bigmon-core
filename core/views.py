@@ -12193,12 +12193,21 @@ def fileList(request):
         dsets = JediDatasets.objects.filter(datasetid=datasetid).values()
         if len(dsets) > 0:
             datasetname = dsets[0]['datasetname']
+    else:
+        data = {
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            "errormessage": "No datasetid or datasetname was provided",
+        }
+        return render_to_response('errorPage.html', data, content_type='text/html')
 
     extraparams = ''
     if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
         query['procstatus'] = request.session['requestParams']['procstatus']
         extraparams += '&procstatus=' + request.session['requestParams']['procstatus']
 
+    nfilestotal = 0
+    nfilesunique = 0
     if int(datasetid) > 0:
         query['datasetid'] = datasetid
         nfilestotal = JediDatasetContents.objects.filter(**query).count()
