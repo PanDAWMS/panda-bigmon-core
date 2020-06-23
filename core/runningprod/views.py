@@ -14,7 +14,7 @@ from core.settings import defaultDatetimeFormat
 from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
 from core.views import login_customrequired, initRequest, setupView, DateEncoder, removeParam, taskSummaryDict, preprocessWildCardString
 
-from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType
+from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots
 from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
 
 
@@ -22,12 +22,13 @@ from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsMo
 def runningProdTasks(request):
     valid, response = initRequest(request)
     if not valid:
-        return HttpResponse(status=401)
+        return response
 
-    if ('dt' in request.session['requestParams'] and 'tk' in request.session['requestParams']):
+    if 'dt' in request.session['requestParams'] and 'tk' in request.session['requestParams']:
         tk = request.session['requestParams']['tk']
         data = getCacheEntry(request, tk, isData=True)
         return HttpResponse(data, content_type='application/json')
+
     # Here we try to get cached data
     data = getCacheEntry(request, "runningProdTasks")
     # data = None
@@ -175,6 +176,16 @@ def runningProdTasks(request):
     slots = 0
     aslots = 0
     ages = []
+
+    task_list = clean_running_task_list(task_list)
+
+    plots_dict = prepare_plots(task_list, productiontype=productiontype)
+
+
+
+
+
+
     neventsAFIItasksSum = {}
     neventsFStasksSum = {}
     neventsByProcessingType = {}
@@ -187,6 +198,7 @@ def runningProdTasks(request):
     neventsRunningTotSum = 0
     rjobs1coreTot = 0
     rjobs8coreTot = 0
+
     for task in task_list:
         task['rjobs'] = 0 if task['rjobs'] is None else task['rjobs']
         task['percentage'] = 0 if task['percentage'] is None else round(100 * task['percentage'],1)
@@ -239,7 +251,7 @@ def runningProdTasks(request):
             for outputtype in outputtypes:
                 task['outputtypes'] += outputtype.split('_')[1] + ' ' if '_' in outputtype else ''
         if productiontype == 'MC':
-            if  task['simtype'] == 'AFII':
+            if task['simtype'] == 'AFII':
                 if not task['processingtype'] in neventsAFIItasksSum.keys():
                     neventsAFIItasksSum[str(task['processingtype'])] = 0
                 neventsAFIItasksSum[str(task['processingtype'])] += task['nevents'] if task['nevents'] is not None else 0
