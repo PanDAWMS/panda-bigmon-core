@@ -45,11 +45,6 @@ urlpatterns = [
     re_path(r'^jobs/(.*)/$', coremon_views.jobList, name='jobList'),
     re_path(r'^jobs/(.*)/(.*)/$', coremon_views.jobList, name='jobList'),
 
-    re_path(r'^jobsss/$', coremon_views.jobListP, name='jobListP'),
-    re_path(r'^jobsss/(.*)/$', coremon_views.jobListP, name='jobListP'),
-    re_path(r'^jobsss/(.*)/(.*)/$', coremon_views.jobListP, name='jobListP'),
-    re_path(r'^jobssupt/$', coremon_views.jobListPDiv, name='jobListPDiv'),
-
     re_path(r'^job$', coremon_views.jobInfo, name='jobInfo'),
     re_path(r'^job/(.*)/$', coremon_views.jobInfo, name='jobInfo'),
     re_path(r'^job/(.*)/(.*)/$', coremon_views.jobInfo, name='jobInfo'),
