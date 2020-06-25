@@ -1795,9 +1795,10 @@ def jobSummaryDict(request, jobs, fieldlist=None):
         sumd['eventservicestatus'] = get_event_status_summary(esjobs, eventservicestatelist)
 
 
-
-    sumd['processor_type'] = {'GPU': len(list(filter(lambda x: 'gpu' in x['cmtconfig'], jobs))),
-                              'CPU': len(list(filter(lambda x: not 'gpu' in x['cmtconfig'], jobs)))}
+    sumd['processor_type'] = {
+        'GPU': len(list(filter(lambda x: 'gpu' in x['cmtconfig'], jobs))),
+        'CPU': len(list(filter(lambda x: not 'gpu' in x['cmtconfig'], jobs)))
+    }
 
     ## convert to ordered lists
     suml = []
@@ -2436,9 +2437,30 @@ def jobList(request, mode=None, param=None):
         'json' in request.session['requestParams']):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     elif eventservice:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt',  'jobname', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid', 'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice' , 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype', 'schedulerid', 'pilotid', 'computingelement', 'container_name', 'cmtconfig'
+        values = (
+            'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus',
+            'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease',
+            'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime',
+            'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag',
+            'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode',
+            'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag',
+            'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr',
+            'maxattempt',  'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'jobmetrics', 'reqid',
+            'minramcount', 'statechangetime', 'jobsubstatus', 'eventservice', 'nevents', 'gshare', 'noutputdatafiles',
+            'parentid', 'actualcorecount', 'resourcetype', 'schedulerid', 'pilotid', 'container_name', 'cmtconfig')
     else:
-        values = 'corecount','jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','attemptnr','actualcorecount', 'resourcetype','schedulerid', 'pilotid', 'computingelement', 'container_name', 'cmtconfig'
+        values = (
+            'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus',
+            'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease',
+            'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime',
+            'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag',
+            'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode',
+            'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag',
+            'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr',
+            'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount',
+            'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents', 'gshare',
+            'noutputdatafiles', 'parentid', 'actualcorecount', 'resourcetype','schedulerid', 'pilotid',
+            'container_name', 'cmtconfig')
 
     JOB_LIMITS = request.session['JOB_LIMIT']
     totalJobs = 0
@@ -2486,13 +2508,22 @@ def jobList(request, mode=None, param=None):
     elif 'statenotupdated' in request.session['requestParams']:
         jobs = stateNotUpdated(request, values=values, wildCardExtension=wildCardExtension)
     elif 'harvesterinstance' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
-        jobs = getHarvesterJobs(request, instance=request.session['requestParams']['harvesterinstance'],
-                                workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
+        jobs = getHarvesterJobs(request,
+                                instance=request.session['requestParams']['harvesterinstance'],
+                                workerid=request.session['requestParams']['workerid'],
+                                jobstatus=harvesterjobstatus,
+                                fields=values)
     elif 'harvesterid' in request.session['requestParams'] and 'workerid' in request.session['requestParams']:
-        jobs = getHarvesterJobs(request, instance=request.session['requestParams']['harvesterid'],
-                                workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
+        jobs = getHarvesterJobs(request,
+                                instance=request.session['requestParams']['harvesterid'],
+                                workerid=request.session['requestParams']['workerid'],
+                                jobstatus=harvesterjobstatus,
+                                fields=values)
     elif ('harvesterinstance' not in request.session['requestParams'] and 'harvesterid' not in request.session['requestParams']) and 'workerid' in request.session['requestParams']:
-        jobs = getHarvesterJobs(request, workerid=request.session['requestParams']['workerid'], jobstatus=harvesterjobstatus)
+        jobs = getHarvesterJobs(request,
+                                workerid=request.session['requestParams']['workerid'],
+                                jobstatus=harvesterjobstatus,
+                                fields=values)
     elif 'harvesterce' in request.session['requestParams']:
         jobs = getCeHarvesterJobs(request, computingelment=request.session['requestParams']['harvesterce'])
     else:
@@ -11449,12 +11480,21 @@ def fileList(request):
         dsets = JediDatasets.objects.filter(datasetid=datasetid).values()
         if len(dsets) > 0:
             datasetname = dsets[0]['datasetname']
+    else:
+        data = {
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            "errormessage": "No datasetid or datasetname was provided",
+        }
+        return render_to_response('errorPage.html', data, content_type='text/html')
 
     extraparams = ''
     if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
         query['procstatus'] = request.session['requestParams']['procstatus']
         extraparams += '&procstatus=' + request.session['requestParams']['procstatus']
 
+    nfilestotal = 0
+    nfilesunique = 0
     if int(datasetid) > 0:
         query['datasetid'] = datasetid
         nfilestotal = JediDatasetContents.objects.filter(**query).count()

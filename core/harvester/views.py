@@ -1223,7 +1223,7 @@ def query_to_dicts(query_string, *query_args):
     return
 
 
-def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields=''):
+def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='', **kwargs):
     '''
     Get jobs list for the particular harvester instance and worker
     :param request: request object
@@ -1235,7 +1235,7 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='')
     '''
 
     jobsList = []
-
+    renamed_fields = {'resourcetype': 'resource_type'}
     qjobstatus = ''
 
     if instance != '':
@@ -1249,7 +1249,11 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='')
         qworkerid = 'is not null'
 
     if fields != '':
-        values = fields
+        values = list(fields)
+        for k, v in renamed_fields.items():
+            if k in values:
+                values.remove(k)
+                values.append(v)
     else:
         if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
@@ -1261,7 +1265,18 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='')
                 elif f.name !='jobparameters' and f.name != 'metadata':
                     values.append(f.name)
         else:
-            values = 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','actualcorecount','schedulerid'
+            values = (
+                'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime',
+                'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime',
+                'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid',
+                'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag',
+                'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode',
+                'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag',
+                'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage',
+                'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock',
+                'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss',
+                'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','actualcorecount',
+                'schedulerid')
 
     sqlQuery = """
     SELECT DISTINCT {2} FROM
