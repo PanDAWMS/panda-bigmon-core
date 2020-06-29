@@ -1,4 +1,9 @@
 
+// Replace the confusing G (for Giga) with  the more recognizable B (for Billion) in default SI prefixes.
+function hFormat(num) {
+    var siFormat = d3.format(",.3s");
+return siFormat(num).replace("G", "B");
+}
 
 function getWidth() {
   return Math.min(
@@ -10,17 +15,10 @@ function getWidth() {
   );
 }
 
+var formatStats = d3.format(".3s");
 
 function draw_donut(data, divid, title, ext={}) {
-
-    let colors_all = [
-        "#62c9ae","#52cad7","#d5a9e4","#e38924","#9bd438","#438760","#ca46ce","#e08284","#4ba930",
-        "#a191d6","#57a3cf","#476be2","#85713b","#e35625","#a5be48","#a0c284","#498635","#e135ac","#d6c175","#dc82e1",
-        "#7458df","#e8875c","#b36eee","#5bdd61","#c39438","#d4c926","#dd74b6","#cf4482","#9e6c28","#86cd6f","#af511c",
-        "#6759bd","#a45d4d","#5c94e5","#e28fb1","#ec2c6b","#4fd08e","#9d43ba","#7a8435","#6b699b","#7f84ea","#8d5cac",
-        "#c94860","#d9a276","#a05981","#cd5644","#b3439b","#4569b1","#d9b63a","#dc3238"];
     let colors = {};
-    for (let i=0; i<data.length; i++) {colors[data[i][0]] = colors_all[i]}
     if (ext.colors === 'states') {
         colors = {
             actual: '#ff7f0e',
@@ -29,12 +27,26 @@ function draw_donut(data, divid, title, ext={}) {
             failed: '#d62728',
         }
     }
+    else if (ext.colors !== null && typeof ext.colors === 'object') {
+        colors = ext.colors;
+    }
+    else {
+       let colors_all = [
+        "#62c9ae","#52cad7","#d5a9e4","#e38924","#9bd438","#438760","#ca46ce","#e08284","#4ba930",
+        "#a191d6","#57a3cf","#476be2","#85713b","#e35625","#a5be48","#a0c284","#498635","#e135ac","#d6c175","#dc82e1",
+        "#7458df","#e8875c","#b36eee","#5bdd61","#c39438","#d4c926","#dd74b6","#cf4482","#9e6c28","#86cd6f","#af511c",
+        "#6759bd","#a45d4d","#5c94e5","#e28fb1","#ec2c6b","#4fd08e","#9d43ba","#7a8435","#6b699b","#7f84ea","#8d5cac",
+        "#c94860","#d9a276","#a05981","#cd5644","#b3439b","#4569b1","#d9b63a","#dc3238"];
+       for (let i=0; i<data.length; i++) {colors[data[i][0]] = colors_all[i]}
+    }
     let width = 600;
     let height = 300;
     if (ext.size) {
         width = ext.size[0];
         height = ext.size[1];
     }
+    let legend_position = 'right';
+    if (ext.legend_position) {legend_position = ext.legend_position;}
 
     var plot = c3.generate({
         bindto: '#' + divid,
@@ -46,18 +58,19 @@ function draw_donut(data, divid, title, ext={}) {
         donut: {
             title: title,
             label: {
-                format: function (d) { return d3.format(',.3s')(d);}
+                format: function (d) { return hFormat(d);},
+                threshold: 0.08,
             },
         },
         tooltip: {
             format: {
                 value: function (value, ratio, id) {
-                    return d3.format(',.3s')(value)  + ' [' + d3.format(".1%")(ratio) + ']';
+                    return hFormat(value)  + ' [' + d3.format(".1%")(ratio) + ']';
                 }
             }
         },
         legend: {
-            position: 'right',
+            position: legend_position,
             show: true
         },
         size: {
@@ -66,6 +79,87 @@ function draw_donut(data, divid, title, ext={}) {
         },
     });
     return plot
+}
+
+function draw_bar(data, divid, title, ext) {
+    let width = 300;
+    let height = 200;
+    if (ext.size) {width = ext.size[0]; height=ext.size[1]}
+    let colors = {};
+    let axis_labels = ['', ''];
+    if (ext.labels) {axis_labels = ext.labels;}
+    var chart = c3.generate({
+        bindto: '#' + divid,
+        data: {
+            x: data[0][0],
+            columns: data,
+            type: 'bar',
+            colors: colors,
+        },
+        padding: {
+          right: 20
+        },
+        bar: {
+            width: {
+                ratio: 0.6
+            }
+        },
+        legend: {
+             show: false
+        },
+        axis: {
+            x: {
+                label: {
+                    text: axis_labels[0],
+                    position: 'outer-right',
+                },
+                type: 'category',
+                tick: {
+                  count: width / 20,
+                  multiline: false,
+                }
+            },
+            y: {
+                label: {
+                  text: axis_labels[1],
+                  position: 'outer-middle'
+                }
+            }
+        },
+        size: {
+            width: width,
+            height: height,
+        },
+        title: {
+          text: title
+        },
+
+    });
+
+    if (ext.stats) {
+      let statistics = [
+        {type: "\u03BC", val: formatStats(ext.stats[0])},
+        {type: "\u03C3", val: formatStats(ext.stats[1])},
+        ];
+      var chart_svg = d3.select('#' + divid + " svg");
+      var statlegend = chart_svg.selectAll(".statlegend")
+        .data(statistics)
+        .enter()
+        .append("g")
+        .attr("class", "statlegend")
+        .attr("transform", function (d, i) {
+          return "translate(" + (width - 40) + ", " + ((i + 1) * 15) + ")";
+        });
+
+      statlegend.append("text")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("class", "stattext")
+        .text(function (d) {
+          return d.type + "=" + d.val;
+        });
+    }
+    return chart
 }
 
 function draw_bar_cat(data, divid, title, ext) {
@@ -477,6 +571,71 @@ function draw_area_chart(rawdata, divid, ext={}) {
           format: {
             title: function (x) { return details.xlabel + ': ' + x; }
           }
+        },
+        transition: {
+            duration: 0
+        },
+        size: {
+            width: width,
+            height: height,
+        },
+        padding: {
+          right: 20,
+        },
+    });
+    return chart
+}
+
+
+function draw_multi_line(data, divid, title, ext) {
+    let width = 500;
+    let height = 200;
+    if (ext.size) {width = ext.size[0]; height=ext.size[1]}
+    let colors = {};
+    if (ext.colors) {colors = ext.colors;}
+    let axis_labels = [data[0][0], ''];
+    if (ext.labels) {axis_labels = ext.labels;}
+    var chart = c3.generate({
+        bindto: '#' + divid,
+        data: {
+            x: data[0][0],
+            xFormat: '%Y-%m-%d %H:%M:%S',
+            columns: data,
+            type: 'line',
+            colors: colors,
+        },
+        point: {
+            show: false,
+        },
+        title: {
+            text: title,
+        },
+        axis: {
+            x: {
+                type: 'timeseries',
+                tick: {
+                    format: '%Y-%m-%d %H:%M:%S',
+                    rotate: -30,
+                    count: width/10,
+                },
+                label: {
+                    text: axis_labels[0],
+                    position: 'outer-right'
+                },
+            },
+            y: {
+                // min: 0,
+                padding: {
+                  bottom: 0,
+                },
+                tick: {
+                    format: function (d) { return hFormat(d); }
+                },
+                label: {
+                  text: axis_labels[1],
+                  position: 'outer-middle',
+                }
+            }
         },
         transition: {
             duration: 0

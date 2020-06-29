@@ -21,8 +21,9 @@ def clean_running_task_list(task_list):
         task['nevents'] = task['nevents'] if task['nevents'] is not None else 0
         task['neventsused'] = task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
         task['neventstobeused'] = task['neventstobeused'] if 'neventstobeused' in task and task['neventstobeused'] is not None else 0
-        task['neventswaiting'] = task['neventstobeused']
         task['neventsrunning'] = task['neventsrunning'] if 'neventsrunning' in task and task['neventsrunning'] is not None else 0
+        task['neventswaiting'] = task['neventstobeused']
+        task['neventsdone'] = task['neventsused']
         task['slots'] = task['slots'] if task['slots'] else 0
         task['aslots'] = task['aslots'] if task['aslots'] else 0
 
@@ -80,41 +81,45 @@ def prepare_plots(task_list, productiontype=''):
     :param productiontype: str
     :return:
     """
+    plots_groups = {
+        'main': ['nevents_sum_status', 'aslots_by_processingtype', 'age_hist'],
+        'main_preset': [],
+        'extra': []
+    }
     plots_dict = {
-        'neventsByStatus': {
+        'nevents_sum_status': {
             'data': [],
-            'title': '',
+            'title': 'Event status',
             'options': {}
         },
-        'neventsByTaskStatus': {
+        'nevents_by_status': {
             'data': [],
-            'title': '',
+            'title': 'Task status',
             'options': {}
         },
-        'neventsByTaskPriority': {
+        'nevents_by_priority': {
             'data': [],
-            'title': '',
+            'title': 'Task priority',
             'options': {}
         },
-        'neventsByProcessingType': {
+        'nevents_by_processingtype': {
             'data': [],
-            'title': '',
+            'title': 'Processing type',
             'options': {}
         },
-
-        'taskAge': {
+        'aslots_by_processingtype': {
             'data': [],
-            'title': '',
+            'title': 'Processing type',
             'options': {}
+        },
+        'age_hist': {
+            'data': [],
+            'title': 'Task age histogram',
+            'options': {'labels': ['Task age, days', 'Number of tasks']}
         },
     }
 
     plots_data = {
-        'sum': {
-            'neventswaiting': 0,
-            'neventsrunning': 0,
-            'neventsused': 0,
-        },
         'group_by': {
             'nevents': {
                 'processingtype': {},
@@ -128,40 +133,85 @@ def prepare_plots(task_list, productiontype=''):
         'hist': {
             'age': {
                 'stats': {},
-                'rawdata': []
+                'rawdata': [],
+            },
+        },
+        'sum': {
+            'nevents': {
+                'status': {
+                    'waiting': 0,
+                    'running': 0,
+                    'done': 0,
+                }
             }
-        }
+        },
     }
 
     if productiontype == 'MC':
-        plots_data['group_by']['nevents']['FS_processingtype'] = {}
-        plots_data['group_by']['nevents']['AFII_processingtype'] = {}
+        plots_data['group_by']['nevents']['simtype'] = {}
+        plots_data['group_by_by'] = {
+            'nevents': {
+                'simtype_processingtype': {}
+            }
+        }
+        plots_dict['nevents_by_simtype'] = {
+            'data': [],
+            'title': 'Simulation type',
+            'options': {}
+        }
+        plots_dict['nevents_by_simtype_by_processingtype'] = {}
+        plots_groups['main_preset'].extend(['nevents_by_simtype', 'nevents_by_processingtype'])
     elif productiontype == 'DPD':
         plots_data['group_by']['nevents']['outputdatatype'] = {}
         plots_data['group_by']['aslots']['outputdatatype'] = {}
+        plots_dict['nevents_by_outputdatatype'] = {
+            'data': [],
+            'title': 'Output data type',
+            'options': {}
+        }
+        plots_dict['aslots_by_outputdatatype'] = {
+            'data': [],
+            'title': 'Output data type',
+            'options': {}
+        }
+        plots_groups['main_preset'].extend(['nevents_by_outputdatatype', 'aslots_by_outputdatatype'])
+    else:
+        plots_groups['main_preset'].extend(['nevents_by_processingtype',])
 
+    # collect data for plots
     for task in task_list:
         for plot_type, pdict in plots_data.items():
             if plot_type == 'sum':
-                for param in pdict.keys():
-                    plots_data[plot_type][param] += task[param] if param in task else 0
+                for sumparam, byparams in pdict.items():
+                    for byparam, keys in byparams.items():
+                        if byparam == 'status':
+                            for key in keys:
+                                plots_data[plot_type][sumparam][byparam][key] += task[sumparam+key] if sumparam+key in task else 0
             elif plot_type == 'group_by':
                 for sumparam, byparams in pdict.items():
-                    for byparam in byparams.keys():
+                    for byparam in byparams:
                         if task[byparam] not in plots_data[plot_type][sumparam][byparam]:
                             plots_data[plot_type][sumparam][byparam][task[byparam]] = 0
                         plots_data[plot_type][sumparam][byparam][task[byparam]] += task[sumparam]
+            elif plot_type == 'group_by_by':
+                for sumparam, byparams in pdict.items():
+                    for param in byparams:
+                        byby_params = param.split('_')
+                        if task[byby_params[0]] not in plots_data[plot_type][sumparam][param]:
+                            plots_data[plot_type][sumparam][param][task[byby_params[0]]] = {}
+                        if task[byby_params[1]] not in plots_data[plot_type][sumparam][param][task[byby_params[0]]]:
+                            plots_data[plot_type][sumparam][param][task[byby_params[0]]][task[byby_params[1]]] = 0
+                        plots_data[plot_type][sumparam][param][task[byby_params[0]]][task[byby_params[1]]] += task[sumparam]
             elif plot_type == 'hist':
                 for param in pdict.keys():
                     plots_data[plot_type][param]['rawdata'].append(task[param])
 
+    # build histograms
     N_BIN_MAX = 100
     for pname, pdata in plots_data['hist'].items():
         rawdata = pdata['rawdata']
         if len(rawdata) > 0:
-            plots_data['hist'][pname]['stats'] = []
-            plots_data['hist'][pname]['stats'].append(np.average(rawdata))
-            plots_data['hist'][pname]['stats'].append(np.std(rawdata))
+            plots_data['hist'][pname]['stats'] = [np.average(rawdata), np.std(rawdata)]
             try:
                 bins, ranges = np.histogram(rawdata, bins='auto')
             except MemoryError:
@@ -169,7 +219,7 @@ def prepare_plots(task_list, productiontype=''):
             if len(ranges) > N_BIN_MAX + 1:
                 bins, ranges = np.histogram(rawdata, bins=N_BIN_MAX)
 
-            plots_data['hist'][pname]['data'] = [[pname], ['N tasks']]
+            plots_data['hist'][pname]['data'] = [['x'], ['N tasks']]
             plots_data['hist'][pname]['data'][0].extend(list(np.ceil(ranges)))
             plots_data['hist'][pname]['data'][1].extend(list(np.histogram(rawdata, ranges)[0]))
         else:
@@ -178,10 +228,59 @@ def prepare_plots(task_list, productiontype=''):
             except:
                 pass
 
+    # inject plots data to plot dict
+    to_delete = []
+    extra_plots = {}
+    for pname, pdict in plots_dict.items():
+        if pname.count('_by') == 2:
+            [sumparam, byparam, bybyparam] = pname.split('_by_')
+            if sumparam in plots_data['group_by_by'] and byparam+'_'+bybyparam in plots_data['group_by_by'][sumparam]:
+                for key, kdict in plots_data['group_by_by'][sumparam][byparam+'_'+bybyparam].items():
+                    extra_plots[sumparam+'_'+key+'_by_'+bybyparam] = {
+                        'data': [[k, v] for k, v in plots_data['group_by_by'][sumparam][byparam+'_'+bybyparam][key].items()],
+                        'title': key,
+                        'options': {
+                            'total': sum(plots_data['group_by_by'][sumparam][byparam+'_'+bybyparam][key].values())
+                        },
+                    }
+                    plots_groups['extra'].append(sumparam+'_'+key+'_by_'+bybyparam)
+            to_delete.append(pname)
+        elif pname.count('_by') == 1:
+            [sumparam, byparam] = pname.split('_by_')
+            if sumparam in plots_data['group_by'] and byparam in plots_data['group_by'][sumparam]:
+                plots_dict[pname]['data'] = [[k, v] for k, v in plots_data['group_by'][sumparam][byparam].items() if v > 0]
+                plots_dict[pname]['options']['total'] = sum(plots_data['group_by'][sumparam][byparam].values())
+        elif '_hist' in pname:
+            param = pname.split('_')[0]
+            if param in plots_data['hist']:
+                plots_dict[pname]['data'] = plots_data['hist'][param]['data']
+                plots_dict[pname]['options']['stats'] = plots_data['hist'][param]['stats']
+        elif '_sum_' in pname:
+            [sumparam, byparam] = pname.split('_sum_')
+            if sumparam in plots_data['sum'] and byparam in plots_data['sum'][sumparam]:
+                plots_dict[pname]['data'] = [[k, v] for k, v in plots_data['sum'][sumparam][byparam].items() if v > 0]
+                plots_dict[pname]['options']['total'] = sum(plots_data['sum'][sumparam][byparam].values())
 
-            
+        # check if plot is in one of main groups
+        if pname not in plots_groups['main'] and pname not in plots_groups['main_preset'] and pname not in to_delete:
+            plots_groups['extra'].append(pname)
 
-    return plots_dict
+    plots_dict.update(extra_plots)
+    for key in to_delete:
+        try:
+            del plots_dict[key]
+        except KeyError:
+            pass
+
+    # divide  plots by groups
+    plots = {}
+    for plots_group, pnames in plots_groups.items():
+        plots[plots_group] = {}
+        for pname in pnames:
+            if pname in plots_dict:
+                plots[plots_group][pname] = plots_dict[pname]
+
+    return plots
 
 
 def prepareNeventsByProcessingType(task_list):

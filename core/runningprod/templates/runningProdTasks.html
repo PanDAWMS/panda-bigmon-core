@@ -1,18 +1,23 @@
 {% extends "_base_core.html" %}
 {% load humanize %}
 {% load static %}
+{% load common_tags %}
 {% block page_title %} PanDA tasks{% endblock %}
 {% block subtitle %}Running production task list
 {% endblock %}
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
 {% endblock %}
 {% block js_head_page_library %}
   <script src="{% static 'js/humanize.min.js' %}"></script>
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
   <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
-  <script src="{% static 'js/d3.v3.min.js' %}"></script>
+  <!-- Load d3.js and c3.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
 {% endblock %}
 
 {% block body %}
@@ -172,47 +177,90 @@
   <div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
   <p>
 
-  {% if tasks %}
+  {% if gsum.ntasks > 0 %}
 
     <table class="minimalistic-table unstriped stack">
       <thead>
         <tr>
-            <th> Events <a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>
+            <th> Events: {{ gsum.nevents | intword }} in total, extra plots [<a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>]
                 {% if 'preset' in requestParams or 'processingtype' in requestParams or requestParams|length == 0 %}
                     , <a id="nEventsTrendLink" onclick="toggleHistoricalTrend('nEventsLineChart', 'nEventsTrendLink')"> show historical trend</a>
                 {% endif %}
             </th>
-            <th> Allocated slots</th>
+            <th> Allocated slots: {{ gsum.aslots | intcomma }} in total</th>
             <th> Task age</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-            <td>
-                <div class="row">
-                {% if neventsByStatus|length > 0 %}<div class="d3splot" id="pieChartByStatus" style="float:left"></div>{% endif %}
-                {% if requestParams.preset == 'MC' %}
-                    {% if neventsFStasksSum|length > 0 %}<div class="d3splot" id="pieChartFS" style="float:left"></div>{% endif %}
-                    {% if neventsAFIItasksSum|length > 0 %}<div class="d3splot" id="pieChartAFII" style="float:left"></div>{% endif %}
-                {% else %}
-                    {% if neventsByProcessingType|length > 0 %}<div class="d3splot" id="pieChartByProcessingType" style="float:left"></div>{% endif %}
-                {% endif %}
-                </div>
-                <div id="extraplots" class="row" style="display: none">
-                    {% if neventsByTaskStatus|length > 0 %}<div class="d3splot" id="pieChartByTaskStatus" style="float:left"></div>{% endif %}
-                    {% if neventsByTaskPriority|length > 0 %}<div class="d3splot" id="pieChartByTaskPriority" style="float:left"></div>{% endif %}
-                </div>
-            </td>
-            <td>
-                {% if aslotsByType|length > 0 %}<div class="d3splot" id="pieChartSlotsByProcessingType"></div>{% endif %}
-            </td>
-            <td>
-              {% if plotageshistogram == 1 %}
-                  <div class="d3splot" id="sumPlot"></div>
-              {% else %}
-                  <p> All tasks age is 0 days </p>
+          <td>
+            {% for pgroup, pgdict in plots.items %}
+              {% if pgroup == 'main' or pgroup == 'main_preset' %}
+                {% for pname in pgdict.keys %}
+                  {% if 'nevents' in pname %}
+                    <div class="c3-chart-block" id="{{ pname }}"></div>
+                  {% endif %}
+                {% endfor %}
               {% endif %}
-            </td>
+            {% endfor %}
+          </td>
+          <td>
+            {% for pgroup, pgdict in plots.items %}
+              {% if pgroup == 'main' or pgroup == 'main_preset' %}
+                {% for pname in pgdict.keys %}
+                  {% if 'aslots' in pname %}
+                    <div class="c3-chart-block" id="{{ pname }}"></div>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </td>
+          <td>
+            {% for pgroup, pgdict in plots.items %}
+              {% if pgroup == 'main' or pgroup == 'main_preset' %}
+                {% for pname in pgdict.keys %}
+                  {% if 'hist' in pname %}
+                    <div class="c3-chart-block" id="{{ pname }}"></div>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </td>
+        </tr>
+        <tr id="extraplots" style="display: none">
+          <td>
+            {% for pgroup, pgdict in plots.items %}
+              {% if pgroup == 'extra' %}
+                {% for pname in pgdict.keys %}
+                  {% if 'nevents' in pname %}
+                    <div class="c3-chart-block" id="{{ pname }}"></div>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </td>
+          <td>
+            {% for pgroup, pgdict in plots.items %}
+              {% if pgroup == 'extra' %}
+                {% for pname in pgdict.keys %}
+                  {% if 'aslots' in pname %}
+                    <div class="c3-chart-block" id="{{ pname }}"></div>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </td>
+          <td>
+            {% for pgroup, pgdict in plots.items %}
+              {% if pgroup == 'extra' %}
+                {% for pname in pgdict.keys %}
+                  {% if 'hist' in pname %}
+                    <div class="c3-chart-block" id="{{ pname }}"></div>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </td>
         </tr>
       </tbody>
     </table>
@@ -220,7 +268,7 @@
     <div id="nEventsLineChart" class="row d3splot" style="display: none; margin: 0"></div>
 
     <table id = 'tasklist' class="data-table nowrap">
-        <caption>{{ ntasks }} tasks listed</caption>
+        <caption>{{ gsum.ntasks }} tasks listed</caption>
         <thead>
         <tr>
             <th>Campaign</th>
@@ -236,7 +284,7 @@
             <th>Evts total</th>
             <th>Evts done</th>
             <th>Evts running</th>
-            <th>Evts to be used</th>
+            <th>Evts waiting</th>
             <th>%</th>
             <th>Failed files</th>
             <th>Priority</th>
@@ -273,44 +321,74 @@
 {% block js_body_page %}
 
 <script src="{% static 'js/d3jsplot.js' %}"></script>
-<script>
-  $(document).ready(function () {
-      var ages = {{ ages|safe }};
-      var productiontype = {{ productiontype | safe }};
-      var plotageshistogram = {{ plotageshistogram }};
-      if (plotageshistogram == 1) {
-          pandamonProdRunTaskSumPlotFunc(ages, "#sumPlot", 'Task age histogram', 24, productiontype);
-      }
-      var neventsByStatus ={{ neventsByStatus|safe }};
-      runningProdTasksPieChartFunc(neventsByStatus, "#pieChartByStatus", 'N Events');
-      var neventsFStasksSum ={{ neventsFStasksSum|safe }};
-      var neventsAFIItasksSum ={{ neventsAFIItasksSum|safe }};
-      var neventsByProcessingType ={{ neventsByProcessingType|safe }};
-      var neventsByTaskStatus ={{ neventsByTaskStatus|safe }};
-      var neventsByTaskPriority ={{ neventsByTaskPriority|safe }};
-      if (productiontype == 'MC') {
-          runningProdTasksPieChartFunc(neventsFStasksSum, "#pieChartFS", 'FS');
-          runningProdTasksPieChartFunc(neventsAFIItasksSum, "#pieChartAFII", 'AFII');
-      }
-      else {
-          runningProdTasksPieChartFunc(neventsByProcessingType, "#pieChartByProcessingType", 'N Events')
-      }
-      runningProdTasksPieChartFunc(neventsByTaskStatus, "#pieChartByTaskStatus", 'N Events');
-      runningProdTasksPieChartFunc(neventsByTaskPriority, "#pieChartByTaskPriority", 'N Events');
-      var slots = {{ aslotsByType|safe }};
-      runningProdTasksPieChartFunc(slots, '#pieChartSlotsByProcessingType', 'Slots');
+<script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 
-      var preset = {{ productiontype|safe }};
-      if (preset === 'MC') {
-          taskListMCTable();
-      }
-      else if (preset === 'DPD') {
-          taskListDPDTable();
+<script>
+var plots_dict = {{ plots | safe }};
+var charts = {};
+$(document).ready(function () {
+
+  Object.keys(plots_dict).forEach(pgroup => {
+    Object.keys(plots_dict[pgroup]).forEach(item => {
+      let options = plots_dict[pgroup][item]['options'];
+      if (item.indexOf('hist') > -1) {
+        options['size'] = [500, 260];
+        charts[item] = draw_bar(plots_dict[pgroup][item]['data'], item, plots_dict[pgroup][item]['title'], options)
       }
       else {
-          taskListDataTable();
+        options['size'] = [200,260];
+        if (plots_dict[pgroup][item]['data'].length > 4) {
+          options['size'][1] = options['size'][1] + plots_dict[pgroup][item]['data'].length * 20 / 4;
+        }
+        options['legend_position'] = 'bottom';
+        if (item.indexOf('processingtype') > -1) {
+          options['colors'] = {
+            'evgen': '#ff7f0e',
+            'pile': '#d62728',
+            'simul': '#1f77b4',
+            'recon': '#2ca02c',
+            'reprocessing': '#9467bd',
+            'deriv': '#bcbd22',
+            'merge': '#17becf',
+            'eventIndex': '#e377c2',
+            'overlay': '#3b8e67',
+            'archive': '#4a4a4a'
+          };
+        }
+        else if (item.indexOf('status') > -1) {
+          options['colors'] =  {
+            'done': '#207f20',
+            'running': '#34a934',
+            'waiting': '#c7c7c7',
+            'assigning': '#099999',
+            'exhausted': '#FF9933',
+            'paused': '#808080',
+            'throttled': '#deb900',
+            'pending': '#a9a9a9',
+            'ready': '#3b8e67',
+            'registered': '#4a4a4a',
+            'scouting': '#47D147',
+            'broken': '#b22222',
+            'passed': '#1a1a1a',
+            'defined': '#2174bb',
+          };
+        }
+        charts[item] = draw_donut(plots_dict[pgroup][item]['data'], item, plots_dict[pgroup][item]['title'], options)
       }
+    })
   });
+
+  var preset = {{ productiontype|safe }};
+  if (preset === 'MC') {
+      taskListMCTable();
+  }
+  else if (preset === 'DPD') {
+      taskListDPDTable();
+  }
+  else {
+      taskListDataTable();
+  }
+});
 
   function toggleByID(id, idplus) {
       if ($("#" + id).is(':visible')){
@@ -340,35 +418,64 @@
               var preset = {{ productiontype|safe }};
               var processingtype = "{{ requestParams.processingtype  }}";
               if (processingtype.length > 0) {
-                  params = 'processingtype='+ processingtype;
+                  params += 'processingtype='+ processingtype;
               }
               else {
                   if (preset === 'MC') {
-                      params = 'processingtype=evgen|pile|simul|recon';
+                      params += 'processingtype=evgen|pile|simul|recon';
                   }
                   else if (preset === 'DPD') {
-                      params = 'processingtype=merge|deriv';
+                      params += 'processingtype=merge|deriv';
                   }
                   else if (preset === 'DATA') {
-                      params = 'processingtype=reprocessing';
+                      params += 'processingtype=reprocessing';
                   }
-                  else {
-                      params = '';
-                  }
+                  params += '&';
               }
               var title = 'Nevents trend for last 7 days';
               if (params.length > 0) {
                   title += ', taken into account all active tasks with ' + params;
-                  params += '&'
+                  params += '&';
               }
-              params += 'json';
+              params += 'view=separated&json';
+              let options = {
+                size: [getWidth()-40, 460],
+                labels: ['Timestamp, UTC', 'Number of events'],
+                colors: {
+                  'done': '#207f20',
+                  'running': '#34a934',
+                  'waiting': '#c7c7c7',
+                  'evgen_running': '#ff7f0e',
+                  'pile_running': '#d62728',
+                  'simul_running': '#1f77b4',
+                  'recon_running': '#2ca02c',
+                  'reprocessing_running': '#9467bd',
+                  'deriv_running': '#bcbd22',
+                  'merge_running': '#17becf',
+                  'eventIndex_running': '#e377c2',
+                  'overlay_running': '#3b8e67',
+                  'archive_running': '#9e6721',
+                  'evgen_waiting': '#ffbb78',
+                  'pile_waiting': '#ff9896',
+                  'simul_waiting': '#aec7e8',
+                  'recon_waiting': '#98df8a',
+                  'reprocessing_waiting': '#c5b0d5',
+                  'deriv_waiting': '#dbdb8d',
+                  'merge_waiting': '#9edae5',
+                  'eventIndex_waiting': '#f7b6d2',
+                  'overlay_waiting': '#a1d9bf',
+                  'archive_waiting': '#d2b177',
+                  'total_running': '#000000',
+                  'total_waiting': '#7f7f7f',
+                }
+              };
               $.ajax({
                   url: {% url 'prodNeventsTrend' %},
                   data: params,
                   dataType:'json',
                   success: function(response) {
                   var plotData = response;
-                  multiLineChartFunc(plotData, '#nEventsLineChart', title);
+                  charts['nEventsLineChart'] = draw_multi_line(plotData, 'nEventsLineChart', title, options);
                   }
               });
 
