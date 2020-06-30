@@ -41,12 +41,9 @@ def clean_running_task_list(task_list):
         if 'reqid' in task and 'jeditaskid' in task and task['reqid'] == task['jeditaskid']:
             task['reqid'] = None
         if 'runnumber' in task:
-            task['inputdataset'] = task['runnumber']
+            task['inputdataset'] = int(task['runnumber'])
         else:
             task['inputdataset'] = None
-
-        if task['inputdataset'] and task['inputdataset'].startswith('00'):
-            task['inputdataset'] = task['inputdataset'][2:]
 
         task['outputtypes'] = ''
         if 'outputdatasettype' in task:
@@ -82,7 +79,7 @@ def prepare_plots(task_list, productiontype=''):
     :return:
     """
     plots_groups = {
-        'main': ['nevents_sum_status', 'aslots_by_processingtype', 'age_hist'],
+        'main': ['nevents_sum_status', 'nevents_by_processingtype', 'aslots_by_processingtype', 'age_hist'],
         'main_preset': [],
         'extra': []
     }
@@ -160,7 +157,7 @@ def prepare_plots(task_list, productiontype=''):
             'options': {}
         }
         plots_dict['nevents_by_simtype_by_processingtype'] = {}
-        plots_groups['main_preset'].extend(['nevents_by_simtype', 'nevents_by_processingtype'])
+        plots_groups['main_preset'].extend(['nevents_by_simtype'])
     elif productiontype == 'DPD':
         plots_data['group_by']['nevents']['outputdatatype'] = {}
         plots_data['group_by']['aslots']['outputdatatype'] = {}
@@ -174,9 +171,9 @@ def prepare_plots(task_list, productiontype=''):
             'title': 'Output data type',
             'options': {}
         }
-        plots_groups['main_preset'].extend(['nevents_by_outputdatatype', 'aslots_by_outputdatatype'])
-    else:
-        plots_groups['main_preset'].extend(['nevents_by_processingtype',])
+        plots_groups['main_preset'].extend(['aslots_by_outputdatatype'])
+        plots_groups['extra'].extend(['nevents_by_outputdatatype'])
+
 
     # collect data for plots
     for task in task_list:

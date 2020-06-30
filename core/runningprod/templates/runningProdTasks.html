@@ -22,17 +22,12 @@
 
 {% block body %}
   <div>
-    {% if requestParams.campaign %}<br><b>Campaign:</b> {{ requestParams.campaign }} {% endif %}
-    {% if requestParams.status %}<br><b>Status:</b> {{ requestParams.status }} {% endif %}
     {% if requestParams.corecount %}<br><b>Core count:</b> {{ requestParams.corecount }} {% endif %}
     {% if requestParams.username %}<br><b>User name:</b> {{ requestParams.username }} {% endif %}
     {% if requestParams.inputdataset %}<br><b>Input dataset:</b> {{ requestParams.inputdataset }} {% endif %}
     {% if requestParams.reqid %}<br><b>Request ID:</b> {{ requestParams.reqid }} {% endif %}
     {% if requestParams.ptag %}<br><b>pTag:</b> {{ requestParams.ptag }} {% endif %}
-    {% if requestParams.workinggroup %}<br><b>Working group:</b> {{ requestParams.workinggroup }} {% endif %}
-    {% if requestParams.processingtype %}<br><b>Processingtype:</b> {{ requestParams.processingtype }} {% endif %}
     {% if requestParams.site %}<br><b>Site:</b> {{ requestParams.site }} {% endif %}
-    {% if requestParams.gshare %}<br><b>Global Share:</b> {{ requestParams.gshare }} {% endif %}
   <p></p>
   </div>
 
