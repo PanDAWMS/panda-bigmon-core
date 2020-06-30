@@ -20,6 +20,15 @@ vertical-align: top;
 width:10em;
 }
 
+body {
+  position: relative;
+  height: 100vh;
+}
+
+p {
+  line-height: inherit;
+}
+
 a, a:link {
   color: #0a47ff;
 }
@@ -783,3 +792,77 @@ li.list-item > label {
   .card.bp-container .card-section {
     padding: 0;
     margin: 0; }
+
+
+
+
+/* ---------------------------------------------------------- */
+/* Footer */
+/* ---------------------------------------------------------- */
+.body-content {
+  min-height: calc(100vh - 66px - 87px - 0px);
+}
+
+footer {
+  width: 100%;
+  display: inline-block;
+  font-size: 14px;
+}
+
+.footer-wrap {
+  height: 66px;
+}
+.sub-footer {
+  height: 22px;
+  background-color: #DDDDDD;
+  font-size: 85%;
+}
+  .sub-footer.row {
+    margin: 0;
+  }
+  .sub-footer p {
+    margin: 0;
+    padding: 2px 0.7rem;
+  }
+.footer {
+  height: 44px;
+  background-color: #333;
+  color: #fefefe;
+}
+  .footer.row {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .footer.row .columns {
+    margin: 0;
+    padding: 0;
+    height: inherit;
+    background-color: #333;
+  }
+  .footer.row .columns > img {
+      max-width: 100%;
+      max-height: 100%;
+  }
+  .footer.row .columns p {
+    padding: 0.7rem;
+    color: #fefefe;
+    margin: 0;
+  }
+  .footer.row .columns p a {
+    margin: 0;
+    padding: 0;
+    color: #fefefe;
+    font-weight: bold;
+     border-bottom: 1px dotted;
+  }
+  .footer.row .columns p a > img {
+    height: 17px;
+    vertical-align: top;
+  }
+  .footer.row .columns:last-child:not(:first-child), .sub-footer.row .column:last-child:not(:first-child) {
+    text-align: right;
+  }
+  .footer.row .columns:first-child > p {
+    display: inline;
+  }
