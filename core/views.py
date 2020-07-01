@@ -9578,9 +9578,9 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs, **kwargs):
     errHistL = []
     if 'errHist' in kwargs and kwargs['errHist'] is True:
         # histogram of errors vs. time, for plotting
-        if len(jobs) > 0:
-            df = pd.DataFrame([{'modificationtime': j['modificationtime'], 'pandaid': j['pandaid']} for j in jobs if 'modificationtime' in j and j['jobstatus'] == 'failed'])
-
+        jobs_failed = [{'modificationtime': j['modificationtime'], 'pandaid': j['pandaid']} for j in jobs if 'modificationtime' in j and j['jobstatus'] == 'failed']
+        if len(jobs_failed) > 0:
+            df = pd.DataFrame(jobs_failed)
             df['modificationtime'] = pd.to_datetime(df['modificationtime'])
             df = df.groupby(pd.Grouper(freq='10T', key='modificationtime')).count()
             errHistL = [df.reset_index()['modificationtime'].tolist(), df['pandaid'].values.tolist()]
