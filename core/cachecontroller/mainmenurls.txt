@@ -20,9 +20,9 @@
 /jobs/?jobtype=eventservice&display_limit=100
 /jobs/?jobtype=test&display_limit=100
 /jobs/?harvesterid=all&display_limit=100
-/errors/?sortby=count
-/errors/?jobtype=analysis&sortby=count
-/errors/?jobtype=production&sortby=count
+/errors/?sortby=count&display_limit=20
+/errors/?jobtype=analysis&sortby=count&display_limit=20
+/errors/?jobtype=production&sortby=count&display_limit=20
 /errors/?sortby=count&prodsourcelabel=rc_test2
 /users/?sortby=date&view=database
 /users/?sortby=date&view=dynamic

@@ -169,7 +169,7 @@
         <li class="has-submenu">
         <a href="#">Errors</a>
         <ul class="submenu menu vertical">
-            <li><a href="{% url 'errorSummary' %}?sortby=count">All</a></li>
+            <li><a href="{% url 'errorSummary' %}?sortby=count&display_limit=20">All</a></li>
             {% if viewParams.MON_VO == 'ATLAS' %}
                 <li><a href="{% url 'errorSummary' %}?jobtype=analysis&sortby=count&display_limit=20">Analysis</a></li>
                 <li><a href="{% url 'errorSummary' %}?jobtype=production&sortby=count&display_limit=20">Production</a></li>
