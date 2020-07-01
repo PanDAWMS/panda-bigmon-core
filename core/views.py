@@ -9576,15 +9576,19 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
 
     sumd = {}
     ## histogram of errors vs. time, for plotting
-    df = pd.DataFrame([{'modificationtime': j['modificationtime'], 'pandaid': j['pandaid']} for j in jobs if 'modificationtime' in j and j['jobstatus'] == 'failed'])
-    df['modificationtime'] = pd.to_datetime(df['modificationtime'])
-    df = df.groupby(pd.Grouper(freq='10T', key='modificationtime')).count()
-    errHistL = [df.reset_index()['modificationtime'].tolist(), df['pandaid'].values.tolist()]
-    errHistL[0] = [t.strftime(defaultDatetimeFormat) for t in errHistL[0]]
-    errHistL[0].insert(0, 'Timestamp')
-    errHistL[1].insert(0, 'Number of failed jobs')
+    errHistL = []
+    if len(jobs) > 0:
+        df = pd.DataFrame([{'modificationtime': j['modificationtime'], 'pandaid': j['pandaid']} for j in jobs if 'modificationtime' in j and j['jobstatus'] == 'failed'])
+
+        df['modificationtime'] = pd.to_datetime(df['modificationtime'])
+        df = df.groupby(pd.Grouper(freq='10T', key='modificationtime')).count()
+        errHistL = [df.reset_index()['modificationtime'].tolist(), df['pandaid'].values.tolist()]
+        errHistL[0] = [t.strftime(defaultDatetimeFormat) for t in errHistL[0]]
+        errHistL[0].insert(0, 'Timestamp')
+        errHistL[1].insert(0, 'Number of failed jobs')
 
     flist = standard_errorfields
+
     print(len(jobs))
     for job in jobs:
         if not testjobs:
