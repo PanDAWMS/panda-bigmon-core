@@ -7,6 +7,7 @@ import copy
 import itertools, random
 import numpy as np
 from io import BytesIO
+import pandas as pd
 
 import math
 
@@ -9575,7 +9576,13 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
 
     sumd = {}
     ## histogram of errors vs. time, for plotting
-    errHist = {}
+    df = pd.DataFrame([{'modificationtime': j['modificationtime'], 'pandaid': j['pandaid']} for j in jobs if 'modificationtime' in j and j['jobstatus'] == 'failed'])
+    df['modificationtime'] = pd.to_datetime(df['modificationtime'])
+    df = df.groupby(pd.Grouper(freq='10T', key='modificationtime')).count()
+    errHistL = [df.reset_index()['modificationtime'].tolist(), df['pandaid'].values.tolist()]
+    errHistL[0] = [t.strftime(defaultDatetimeFormat) for t in errHistL[0]]
+    errHistL[0].insert(0, 'Timestamp')
+    errHistL[1].insert(0, 'Number of failed jobs')
 
     flist = standard_errorfields
     print(len(jobs))
@@ -9597,14 +9604,6 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
             if taskid in tasknamedict:
                 taskname = tasknamedict[taskid]
             tasktype = 'taskid'
-
-        if 'modificationtime' in job and job['jobstatus'] == 'failed':
-            tm = job['modificationtime']
-            if tm is not None:
-                tm = tm - timedelta(minutes=tm.minute % 30, seconds=tm.second, microseconds=tm.microsecond)
-                if not tm in errHist: errHist[tm] = 1
-                else:
-                    errHist[tm] += 1
 
         ## Overall summary
         for f in flist:
@@ -9811,12 +9810,6 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         for item in suml:
             item['list'] = sorted(item['list'], key=lambda x: -x['kvalue'])
-
-    kys = errHist.keys()
-    kys = sorted(kys)
-    errHistL = []
-    for k in kys:
-        errHistL.append([k, errHist[k]])
 
     return errsByCountL, errsBySiteL, errsByUserL, errsByTaskL, suml, errHistL
 

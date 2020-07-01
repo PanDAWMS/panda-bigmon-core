@@ -162,6 +162,62 @@ function draw_bar(data, divid, title, ext) {
     return chart
 }
 
+
+function draw_bar_timeseries(data, divid, ext) {
+    let width = 300;
+    let height = 200;
+    if (ext.size) {width = ext.size[0]; height=ext.size[1]}
+    let colors = {};
+    if (ext.colors !== null && typeof ext.colors === 'object') {
+      colors = ext.colors;
+    }
+    let axis_labels = ['', ''];
+    if (ext.labels) {axis_labels = ext.labels;}
+    let title = '';
+    if (ext.title) {title = ext.title;}
+    var chart = c3.generate({
+        bindto: '#' + divid,
+        data: {
+            x: data[0][0],
+            xFormat: '%Y-%m-%d %H:%M:%S',
+            columns: data,
+            type: 'bar',
+            colors: colors,
+        },
+        title: {
+            text: title,
+        },
+        axis: {
+            x: {
+                type: 'timeseries',
+                tick: {
+                    format: '%Y-%m-%d %H:%M:%S',
+                    rotate: -30,
+                },
+                label: {
+                    text: axis_labels[0],
+                    position: 'outer-right'
+                },
+            },
+            y: {
+                label: {
+                  text: axis_labels[1],
+                  position: 'outer-middle'
+                }
+            }
+        },
+        legend: {
+             show: false
+        },
+        size: {
+            width: width,
+            height: height,
+        },
+
+    });
+    return chart
+}
+
 function draw_bar_cat(data, divid, title, ext) {
     let width = 300;
     let height = 200;
