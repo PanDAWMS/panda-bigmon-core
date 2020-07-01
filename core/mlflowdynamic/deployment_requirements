@@ -1,0 +1,4 @@
+sudo yum install libyaml-devel
+
+openshift
+kubernetes
