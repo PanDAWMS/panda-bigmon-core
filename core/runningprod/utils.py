@@ -78,35 +78,46 @@ def prepare_plots(task_list, productiontype=''):
     :param productiontype: str
     :return:
     """
+    ev_states = ['waiting', 'running', 'done']
     plots_groups = {
-        'main': ['nevents_sum_status', 'nevents_by_processingtype', 'aslots_by_processingtype', 'age_hist'],
+        'main': ['nevents_sum_status', 'age_hist'],
         'main_preset': [],
-        'extra': []
+        'extra': ['nevents_by_status', 'nevents_by_priority']
     }
     plots_dict = {
         'nevents_sum_status': {
             'data': [],
-            'title': 'Event status',
+            'title': 'Evts by status',
             'options': {}
         },
         'nevents_by_status': {
             'data': [],
-            'title': 'Task status',
+            'title': 'Evts by task status',
             'options': {}
         },
         'nevents_by_priority': {
             'data': [],
-            'title': 'Task priority',
+            'title': 'Evts by task priority',
             'options': {}
         },
         'nevents_by_processingtype': {
             'data': [],
-            'title': 'Processing type',
+            'title': 'Evts by type',
+            'options': {}
+        },
+        'nevents_by_cutcampaign': {
+            'data': [],
+            'title': 'Evts by campaign',
             'options': {}
         },
         'aslots_by_processingtype': {
             'data': [],
-            'title': 'Processing type',
+            'title': 'Slots by type',
+            'options': {}
+        },
+        'aslots_by_cutcampaign': {
+            'data': [],
+            'title': 'Slots by campaign',
             'options': {}
         },
         'age_hist': {
@@ -122,9 +133,11 @@ def prepare_plots(task_list, productiontype=''):
                 'processingtype': {},
                 'status': {},
                 'priority': {},
+                'cutcampaign': {},
             },
             'aslots': {
-                'processingtype': {}
+                'processingtype': {},
+                'cutcampaign': {},
             },
         },
         'hist': {
@@ -153,26 +166,44 @@ def prepare_plots(task_list, productiontype=''):
         }
         plots_dict['nevents_by_simtype'] = {
             'data': [],
-            'title': 'Simulation type',
+            'title': 'Evts by sim type',
             'options': {}
         }
         plots_dict['nevents_by_simtype_by_processingtype'] = {}
-        plots_groups['main_preset'].extend(['nevents_by_simtype'])
+        plots_groups['main_preset'].extend(['nevents_by_simtype', 'nevents_by_processingtype', 'aslots_by_processingtype'])
+        plots_groups['extra'].extend(['nevents_by_cutcampaign', 'aslots_by_cutcampaign'])
+    elif productiontype == 'DATA':
+        plots_groups['main_preset'].extend(['nevents_by_cutcampaign', 'aslots_by_cutcampaign'])
+        plots_groups['extra'].extend(['nevents_by_processingtype', 'aslots_by_processingtype'])
     elif productiontype == 'DPD':
         plots_data['group_by']['nevents']['outputdatatype'] = {}
         plots_data['group_by']['aslots']['outputdatatype'] = {}
         plots_dict['nevents_by_outputdatatype'] = {
             'data': [],
-            'title': 'Output data type',
+            'title': 'Evts by output type',
             'options': {}
         }
         plots_dict['aslots_by_outputdatatype'] = {
             'data': [],
-            'title': 'Output data type',
+            'title': 'Slots by output type',
             'options': {}
         }
-        plots_groups['main_preset'].extend(['aslots_by_outputdatatype'])
-        plots_groups['extra'].extend(['nevents_by_outputdatatype'])
+
+        plots_data['group_by_by'] = {
+            'nevents': {
+                'outputdatatype_evstatus': {}
+            }
+        }
+        plots_dict['nevents_by_outputdatatype_by_evstatus'] = {
+            'data': [],
+            'title': 'Event states by output type',
+            'options': {'type': 'sbar', 'labels': ['', 'Number of events']}
+        }
+
+        plots_groups['main_preset'].extend(['aslots_by_outputdatatype','nevents_by_outputdatatype_by_evstatus'])
+        plots_groups['extra'].extend(['nevents_by_outputdatatype'], )
+    else:
+        plots_groups['main_preset'].extend(['nevents_by_processingtype', 'aslots_by_processingtype'])
 
 
     # collect data for plots
@@ -184,6 +215,9 @@ def prepare_plots(task_list, productiontype=''):
                         if byparam == 'status':
                             for key in keys:
                                 plots_data[plot_type][sumparam][byparam][key] += task[sumparam+key] if sumparam+key in task else 0
+            elif plot_type == 'hist':
+                for param in pdict.keys():
+                    plots_data[plot_type][param]['rawdata'].append(task[param])
             elif plot_type == 'group_by':
                 for sumparam, byparams in pdict.items():
                     for byparam in byparams:
@@ -194,17 +228,29 @@ def prepare_plots(task_list, productiontype=''):
                 for sumparam, byparams in pdict.items():
                     for param in byparams:
                         byby_params = param.split('_')
-                        if task[byby_params[0]] not in plots_data[plot_type][sumparam][param]:
-                            plots_data[plot_type][sumparam][param][task[byby_params[0]]] = {}
-                        if task[byby_params[1]] not in plots_data[plot_type][sumparam][param][task[byby_params[0]]]:
-                            plots_data[plot_type][sumparam][param][task[byby_params[0]]][task[byby_params[1]]] = 0
-                        plots_data[plot_type][sumparam][param][task[byby_params[0]]][task[byby_params[1]]] += task[sumparam]
-            elif plot_type == 'hist':
-                for param in pdict.keys():
-                    plots_data[plot_type][param]['rawdata'].append(task[param])
+                        if byby_params[0] == 'evstatus':
+                            for es in ev_states:
+                                if es not in plots_data[plot_type][sumparam][param]:
+                                    plots_data[plot_type][sumparam][param][es] = {}
+                                if task[byby_params[1]] not in plots_data[plot_type][sumparam][param][es]:
+                                    plots_data[plot_type][sumparam][param][es][task[byby_params[1]]] = 0
+                                plots_data[plot_type][sumparam][param][es][task[byby_params[1]]] += task[sumparam+es]
+                        elif byby_params[1] == 'evstatus':
+                            if task[byby_params[0]] not in plots_data[plot_type][sumparam][param]:
+                                plots_data[plot_type][sumparam][param][task[byby_params[0]]] = {}
+                            for es in ev_states:
+                                if es not in plots_data[plot_type][sumparam][param][task[byby_params[0]]]:
+                                    plots_data[plot_type][sumparam][param][task[byby_params[0]]][es] = 0
+                                plots_data[plot_type][sumparam][param][task[byby_params[0]]][es] += task[sumparam+es]
+                        else:
+                            if task[byby_params[0]] not in plots_data[plot_type][sumparam][param]:
+                                plots_data[plot_type][sumparam][param][task[byby_params[0]]] = {}
+                            if task[byby_params[1]] not in plots_data[plot_type][sumparam][param][task[byby_params[0]]]:
+                                plots_data[plot_type][sumparam][param][task[byby_params[0]]][task[byby_params[1]]] = 0
+                            plots_data[plot_type][sumparam][param][task[byby_params[0]]][task[byby_params[1]]] += task[sumparam]
 
     # build histograms
-    N_BIN_MAX = 100
+    N_BIN_MAX = 50
     for pname, pdata in plots_data['hist'].items():
         rawdata = pdata['rawdata']
         if len(rawdata) > 0:
@@ -216,8 +262,9 @@ def prepare_plots(task_list, productiontype=''):
             if len(ranges) > N_BIN_MAX + 1:
                 bins, ranges = np.histogram(rawdata, bins=N_BIN_MAX)
 
+            mranges = [sum(ranges[i:i + 2])/2 for i in range(len(ranges) - 2 + 1)]
             plots_data['hist'][pname]['data'] = [['x'], ['N tasks']]
-            plots_data['hist'][pname]['data'][0].extend(list(np.ceil(ranges)))
+            plots_data['hist'][pname]['data'][0].extend(list(np.floor(mranges)))
             plots_data['hist'][pname]['data'][1].extend(list(np.histogram(rawdata, ranges)[0]))
         else:
             try:
@@ -232,16 +279,34 @@ def prepare_plots(task_list, productiontype=''):
         if pname.count('_by') == 2:
             [sumparam, byparam, bybyparam] = pname.split('_by_')
             if sumparam in plots_data['group_by_by'] and byparam+'_'+bybyparam in plots_data['group_by_by'][sumparam]:
-                for key, kdict in plots_data['group_by_by'][sumparam][byparam+'_'+bybyparam].items():
-                    extra_plots[sumparam+'_'+key+'_by_'+bybyparam] = {
-                        'data': [[k, v] for k, v in plots_data['group_by_by'][sumparam][byparam+'_'+bybyparam][key].items()],
-                        'title': key,
-                        'options': {
-                            'total': sum(plots_data['group_by_by'][sumparam][byparam+'_'+bybyparam][key].values())
-                        },
-                    }
-                    plots_groups['extra'].append(sumparam+'_'+key+'_by_'+bybyparam)
-            to_delete.append(pname)
+                if 'options' in plots_dict[pname] and 'type' in plots_dict[pname]['options'] and plots_dict[pname]['options']['type'] == 'sbar':
+                    tlist = []
+                    for key, kdict in plots_data['group_by_by'][sumparam][byparam + '_' + bybyparam].items():
+                        if sum([v for v in kdict.values()]) > 0:
+                            tdict = kdict
+                            tdict[byparam] = key
+                            tlist.append(tdict)
+                    # sort by sum of events
+                    tlist = sorted(tlist, key=lambda x: -sum([x[es] for es in ev_states]))
+                    # convert into list of lists
+                    data_list = [[byparam]]
+                    data_list.extend([[es] for es in ev_states])
+                    for row in tlist:
+                        data_list[0].append(row[byparam])
+                        for i, es in enumerate(ev_states):
+                            data_list[i + 1].append(row[es])
+                    plots_dict[pname]['data'] = data_list
+                else:
+                    for key, kdict in plots_data['group_by_by'][sumparam][byparam+'_'+bybyparam].items():
+                        extra_plots[sumparam+'_'+key+'_by_'+bybyparam] = {
+                            'data': [[k, v] for k, v in plots_data['group_by_by'][sumparam][byparam+'_'+bybyparam][key].items()],
+                            'title': key,
+                            'options': {
+                                'total': sum(plots_data['group_by_by'][sumparam][byparam+'_'+bybyparam][key].values())
+                            },
+                        }
+                        plots_groups['extra'].append(sumparam+'_'+key+'_by_'+bybyparam)
+                    to_delete.append(pname)
         elif pname.count('_by') == 1:
             [sumparam, byparam] = pname.split('_by_')
             if sumparam in plots_data['group_by'] and byparam in plots_data['group_by'][sumparam]:
@@ -258,9 +323,9 @@ def prepare_plots(task_list, productiontype=''):
                 plots_dict[pname]['data'] = [[k, v] for k, v in plots_data['sum'][sumparam][byparam].items() if v > 0]
                 plots_dict[pname]['options']['total'] = sum(plots_data['sum'][sumparam][byparam].values())
 
-        # check if plot is in one of main groups
-        if pname not in plots_groups['main'] and pname not in plots_groups['main_preset'] and pname not in to_delete:
-            plots_groups['extra'].append(pname)
+        # # check if plot is in one of main groups
+        # if pname not in plots_groups['main'] and pname not in plots_groups['main_preset'] and pname not in to_delete:
+        #     plots_groups['extra'].append(pname)
 
     plots_dict.update(extra_plots)
     for key in to_delete:

@@ -28,7 +28,6 @@
     {% if requestParams.reqid %}<br><b>Request ID:</b> {{ requestParams.reqid }} {% endif %}
     {% if requestParams.ptag %}<br><b>pTag:</b> {{ requestParams.ptag }} {% endif %}
     {% if requestParams.site %}<br><b>Site:</b> {{ requestParams.site }} {% endif %}
-  <p></p>
   </div>
 
   <table class="minimalistic-table">
@@ -150,16 +149,16 @@
               </select>
           </td>
           <td>
-              <input type="checkbox" id="hpc" name="hpc" value="hpc" onchange="onSubElementChoice()"
-              {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC
+              <label><input type="checkbox" id="hpc" name="hpc" value="hpc" onchange="onSubElementChoice()"
+                      {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC</label>
           </td>
           <td>
-              <input type="checkbox" id="es" name="es" value="1" onchange="onSubElementChoice()"
-              {% if requestParams.eventservice == '1' %} checked {% endif %}>ES
+              <label><input type="checkbox" id="es" name="es" value="1" onchange="onSubElementChoice()"
+                      {% if requestParams.eventservice == '1' %} checked {% endif %}>ES</label>
           </td>
           <td>
-              <input type="checkbox" id="jumbo" name="jumbo" value="1" onchange="onSubElementChoice()"
-              {% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo
+              <label><input type="checkbox" id="jumbo" name="jumbo" value="1" onchange="onSubElementChoice()"
+                      {% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo</label>
           </td>
           <td>
               <a onclick="go()" class="button primary">Go!</a>
@@ -168,13 +167,13 @@
     </tbody>
   </table>
 
-  <p>
+
   <div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
-  <p>
+
 
   {% if gsum.ntasks > 0 %}
 
-    <table class="minimalistic-table unstriped stack">
+    <table class="unstriped stack minimalistic-table">
       <thead>
         <tr>
             <th> Events: {{ gsum.nevents | intword }} in total, extra plots [<a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>]
@@ -183,7 +182,7 @@
                 {% endif %}
             </th>
             <th> Allocated slots: {{ gsum.aslots | intcomma }} in total</th>
-            <th> Task age</th>
+            <th class="mid"> Task age</th>
         </tr>
       </thead>
       <tbody>
@@ -223,35 +222,11 @@
           </td>
         </tr>
         <tr id="extraplots" style="display: none">
-          <td>
+          <td colspan="3">
             {% for pgroup, pgdict in plots.items %}
               {% if pgroup == 'extra' %}
                 {% for pname in pgdict.keys %}
-                  {% if 'nevents' in pname %}
-                    <div class="c3-chart-block" id="{{ pname }}"></div>
-                  {% endif %}
-                {% endfor %}
-              {% endif %}
-            {% endfor %}
-          </td>
-          <td>
-            {% for pgroup, pgdict in plots.items %}
-              {% if pgroup == 'extra' %}
-                {% for pname in pgdict.keys %}
-                  {% if 'aslots' in pname %}
-                    <div class="c3-chart-block" id="{{ pname }}"></div>
-                  {% endif %}
-                {% endfor %}
-              {% endif %}
-            {% endfor %}
-          </td>
-          <td>
-            {% for pgroup, pgdict in plots.items %}
-              {% if pgroup == 'extra' %}
-                {% for pname in pgdict.keys %}
-                  {% if 'hist' in pname %}
-                    <div class="c3-chart-block" id="{{ pname }}"></div>
-                  {% endif %}
+                  <div class="c3-chart-block" id="{{ pname }}"></div>
                 {% endfor %}
               {% endif %}
             {% endfor %}
@@ -340,13 +315,22 @@ $(document).ready(function () {
     Object.keys(plots_dict[pgroup]).forEach(item => {
       let options = plots_dict[pgroup][item]['options'];
       if (item.indexOf('hist') > -1) {
-        options['size'] = [500, 260];
+        options['size'] = [440, 260];
         charts[item] = draw_bar(plots_dict[pgroup][item]['data'], item, plots_dict[pgroup][item]['title'], options)
       }
+      else if (options.type && options.type === 'sbar') {
+        options['size'] = [440, 260];
+        options['colors'] = {
+          'done': '#207f20',
+          'running': '#34a934',
+          'waiting': '#c7c7c7',
+        };
+        charts[item] = draw_bar_cat(plots_dict[pgroup][item]['data'], item, plots_dict[pgroup][item]['title'], options)
+      }
       else {
-        options['size'] = [200,260];
-        if (plots_dict[pgroup][item]['data'].length > 4) {
-          options['size'][1] = options['size'][1] + plots_dict[pgroup][item]['data'].length * 20 / 4;
+        options['size'] = [210,260];
+        if (plots_dict[pgroup][item]['data'].length > 3) {
+          options['size'][1] = options['size'][1] + plots_dict[pgroup][item]['data'].length * 20 / 3;
         }
         options['legend_position'] = 'bottom';
         if (item.indexOf('processingtype') > -1) {
@@ -360,7 +344,8 @@ $(document).ready(function () {
             'merge': '#17becf',
             'eventIndex': '#e377c2',
             'overlay': '#3b8e67',
-            'archive': '#4a4a4a'
+            'archive': '#4a4a4a',
+            'skim': '#62c9ae',
           };
         }
         else if (item.indexOf('status') > -1) {
@@ -376,6 +361,7 @@ $(document).ready(function () {
             'ready': '#3b8e67',
             'registered': '#4a4a4a',
             'scouting': '#47D147',
+            'aborting': '#ff9896',
             'broken': '#b22222',
             'passed': '#1a1a1a',
             'defined': '#2174bb',

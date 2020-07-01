@@ -175,6 +175,10 @@ function draw_bar_cat(data, divid, title, ext) {
             Target: '#2ca02c',
         }
     }
+    else if (ext.colors !== null && typeof ext.colors === 'object') {
+        colors = ext.colors;
+    }
+
     var chart = c3.generate({
         bindto: '#' + divid,
         data: {
@@ -204,7 +208,7 @@ function draw_bar_cat(data, divid, title, ext) {
             },
             y: {
                 tick: {
-                    format: function (d) { return d3.format(',.3s')(d); }
+                    format: function (d) { return hFormat(d); }
                 },
                 label: {
                   text: labels[1],
