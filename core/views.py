@@ -9567,7 +9567,7 @@ def jobStateSummary(jobs):
     return statecount
 
 
-def errorSummaryDict(request, jobs, tasknamedict, testjobs):
+def errorSummaryDict(request, jobs, tasknamedict, testjobs, **kwargs):
     """ take a job list and produce error summaries from it """
     errsByCount = {}
     errsBySite = {}
@@ -9575,17 +9575,18 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs):
     errsByTask = {}
 
     sumd = {}
-    ## histogram of errors vs. time, for plotting
     errHistL = []
-    if len(jobs) > 0:
-        df = pd.DataFrame([{'modificationtime': j['modificationtime'], 'pandaid': j['pandaid']} for j in jobs if 'modificationtime' in j and j['jobstatus'] == 'failed'])
+    if 'errHist' in kwargs and kwargs['errHist'] is True:
+        # histogram of errors vs. time, for plotting
+        if len(jobs) > 0:
+            df = pd.DataFrame([{'modificationtime': j['modificationtime'], 'pandaid': j['pandaid']} for j in jobs if 'modificationtime' in j and j['jobstatus'] == 'failed'])
 
-        df['modificationtime'] = pd.to_datetime(df['modificationtime'])
-        df = df.groupby(pd.Grouper(freq='10T', key='modificationtime')).count()
-        errHistL = [df.reset_index()['modificationtime'].tolist(), df['pandaid'].values.tolist()]
-        errHistL[0] = [t.strftime(defaultDatetimeFormat) for t in errHistL[0]]
-        errHistL[0].insert(0, 'Timestamp')
-        errHistL[1].insert(0, 'Number of failed jobs')
+            df['modificationtime'] = pd.to_datetime(df['modificationtime'])
+            df = df.groupby(pd.Grouper(freq='10T', key='modificationtime')).count()
+            errHistL = [df.reset_index()['modificationtime'].tolist(), df['pandaid'].values.tolist()]
+            errHistL[0] = [t.strftime(defaultDatetimeFormat) for t in errHistL[0]]
+            errHistL[0].insert(0, 'Timestamp')
+            errHistL[1].insert(0, 'Number of failed jobs')
 
     flist = standard_errorfields
 
@@ -10091,7 +10092,7 @@ def errorSummary(request):
 
     ## Build the error summary.
     errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
-                                                                                      testjobs)
+                                                                                      testjobs, errHist=True)
 
     _logger.info('Error summary built: {}'.format(time.time() - request.session['req_init_time']))
 
