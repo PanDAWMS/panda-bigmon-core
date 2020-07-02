@@ -959,6 +959,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             for field in JediTasks._meta.get_fields():
                 # for param in requestParams:
                 if param == field.name:
+                    if request.session['requestParams'][param] == 'Not specified':
+                        extraQueryString += " AND ( {0} is NULL or {0} = '' ) ".format(param)
+                        extraQueryFields.append(param)
                     if param == 'ramcount':
                         if 'GB' in request.session['requestParams'][param]:
                             leftlimit, rightlimit = (request.session['requestParams'][param]).split('-')
@@ -1992,10 +1995,10 @@ def taskSummaryDict(request, tasks, fieldlist=None):
 
     for task in tasks:
         for f in flist:
-            if 'tasktype' in request.session['requestParams'] and request.session['requestParams'][
-                'tasktype'].startswith('analy'):
-                ## Remove the noisy useless parameters in analysis listings
-                if flist in ('reqid', 'stream', 'tag'): continue
+            if 'tasktype' in request.session['requestParams'] and request.session['requestParams']['tasktype'].startswith('analy'):
+                # Remove the noisy useless parameters in analysis listings
+                if flist in ('reqid', 'stream', 'tag'):
+                    continue
 
             if 'taskname' in task and len(task['taskname'].split('.')) == 5:
                 if f == 'project':
@@ -2024,21 +2027,20 @@ def taskSummaryDict(request, tasks, fieldlist=None):
                             tag = tagl[-1]
                             if not tag in sumd[f]: sumd[f][tag] = 0
                             sumd[f][tag] += 1
-
-
-
-                            #                            for tag in tagl:
-                            #                                if not tag in sumd[f]: sumd[f][tag] = 0
-                            #                                sumd[f][tag] += 1
                     except:
                         pass
-            if f in task and task[f]:
+            if f in task:
                 val = task[f]
+                if val is None or val == '':
+                    val = 'Not specified'
                 # if val == 'anal': val = 'analy'
-                if not f in sumd: sumd[f] = {}
-                if not val in sumd[f]: sumd[f][val] = 0
+                if f not in sumd:
+                    sumd[f] = {}
+                if val not in sumd[f]:
+                    sumd[f][val] = 0
                 sumd[f][val] += 1
-    ## convert to ordered lists
+
+    # convert to ordered lists
     suml = []
     for f in sumd:
         itemd = {}

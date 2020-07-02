@@ -7,6 +7,7 @@ import urllib3
 import copy
 from datetime import datetime, timedelta
 
+from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.db import connection
@@ -16,6 +17,7 @@ from django.core.cache import cache
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.views import login_customrequired, initRequest, setupView, DateEncoder
 from core.views import statelist as job_states_order
+from core.utils import is_json_request
 
 from core.schedresource.models import SchedconfigJson
 from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers
@@ -154,35 +156,42 @@ def dashboard(request):
     else:
         xurl += '?'
 
-    # overwrite view selection params
-    view_params_str = '<b>Manually entered params</b>: '
-    supported_params = {f.verbose_name: '' for f in PandaJob._meta.get_fields()}
-    interactive_params = ['hours', 'days', 'date_from', 'date_to', 'timestamp',
-                        'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region']
-    for pn, pv in request.session['requestParams'].items():
-        if pn not in interactive_params and pn in supported_params:
-            view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
-    request.session['viewParams']['selection'] = view_params_str if not view_params_str.endswith(': ') else ''
+    if is_json_request(request):
+        data = {
 
-    data = {
-        'request': request,
-        'viewParams': request.session['viewParams'],
-        'requestParams': request.session['requestParams'],
-        'built': datetime.now().strftime("%H:%M:%S"),
-        'hours': hours,
-        'xurl': xurl,
-        'selectParams': select_params_dict,
-        'jobstates': job_states_order,
-        'regions': jsr_regions_list,
-        'queues': jsr_queues_list,
-        'timerange': jquery['modificationtime__castdate__range'],
-        'show': 'all',
-    }
+        }
+        dump = json.dumps(data, cls=DateEncoder)
+        return HttpResponse(dump, content_type='application/json')
+    else:
+        # overwrite view selection params
+        view_params_str = '<b>Manually entered params</b>: '
+        supported_params = {f.verbose_name: '' for f in PandaJob._meta.get_fields()}
+        interactive_params = ['hours', 'days', 'date_from', 'date_to', 'timestamp',
+                            'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region']
+        for pn, pv in request.session['requestParams'].items():
+            if pn not in interactive_params and pn in supported_params:
+                view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
+        request.session['viewParams']['selection'] = view_params_str if not view_params_str.endswith(': ') else ''
 
-    response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
-    setCacheEntry(request, "JobSummaryRegion", json.dumps(data, cls=DateEncoder), 60 * 20)
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    return response
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
+            'hours': hours,
+            'xurl': xurl,
+            'selectParams': select_params_dict,
+            'jobstates': job_states_order,
+            'regions': jsr_regions_list,
+            'queues': jsr_queues_list,
+            'timerange': jquery['modificationtime__castdate__range'],
+            'show': 'all',
+        }
+
+        response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
+        setCacheEntry(request, "JobSummaryRegion", json.dumps(data, cls=DateEncoder), 60 * 20)
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
 
 
 def get_job_summary_region(query, job_states_order, extra='(1=1)'):
