@@ -1993,6 +1993,7 @@ def taskSummaryDict(request, tasks, fieldlist=None):
     """ Return a dictionary summarizing the field values for the chosen most interesting fields """
     sumd = {}
     logger = logging.getLogger('bigpandamon-error')
+    numeric_fields_task = ['reqid', 'corecount', 'taskpriority', 'workqueue_id']
 
     if fieldlist:
         flist = fieldlist
@@ -2053,7 +2054,6 @@ def taskSummaryDict(request, tasks, fieldlist=None):
         itemd['field'] = f
         iteml = []
         kys = sumd[f].keys()
-        kys =sorted(kys)
         if f != 'ramcount':
             for ky in kys:
                 iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
@@ -2061,13 +2061,19 @@ def taskSummaryDict(request, tasks, fieldlist=None):
         else:
             newvalues = {}
             for ky in kys:
-                roundedval = int(ky / 1000)
+                if ky != 'Not specified':
+                    roundedval = int(ky / 1000)
+                else:
+                    roundedval = -1
                 if roundedval in newvalues:
                     newvalues[roundedval] += sumd[f][ky]
                 else:
                     newvalues[roundedval] = sumd[f][ky]
             for ky in newvalues:
-                iteml.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
+                if ky > 0:
+                    iteml.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
+                else:
+                    iteml.append({'kname': 'Not specified', 'kvalue': newvalues[ky]})
             iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
         itemd['list'] = iteml
         suml.append(itemd)
