@@ -155,12 +155,16 @@
             {% elif fdict.field  == 'harvesterinstance' %} {{ item.kname }} <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% elif fdict.field  == 'durationmin' %} {% if item.kvalue > 0 %} {{ item.kname }} <a href="{{nodurminurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a> {% endif %}
             {% elif fdict.field == 'produsername' %} <a href="{% url 'userInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
-            {% else %}
-                {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
-                {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
-                    <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
-                                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}> ({{ item.kvalue }}) </a>
+            {% elif fdict.field == 'eventservicestatus' %} ({{ item.kvalue }})
+            {% elif fdict.field == 'container_name' and request.session.xurls and fdict.field in request.session.xurls %} {{ item.kname }} <a href="{{ request.session.xurls.container_name }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
+            {% elif fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'>{{ item.kname }}</span>
+                {% if item.kname == 'closed:toreassign' %}
+                  <a href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign">({{ item.kvalue }})</a>
+                {% else %}
+                  <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
                 {% endif %}
+            {% else %}
+                {{ item.kname }} <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
             {% endif %}
         {% endfor %}
         </div>

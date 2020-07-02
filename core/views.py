@@ -951,9 +951,15 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 if parname in errfield_map_dict.keys():
                     query[errfield_map_dict[parname]] = request.session['requestParams'][param]
 
-        elif param == 'container':
-            if request.session['requestParams'][param] == 'true':
-                extraQueryString += " AND (container_name IS NOT NULL ) "
+        elif param == 'container_name' and request.session['requestParams']['container_name'] == 'all':
+            extraQueryString += " AND (container_name IS NOT NULL ) "
+            # remove from wildcard search fields
+            wildSearchFields.remove('container_name')
+            # add a new no_container_name xurl to request session
+            if 'xurl' not in request.session:
+                request.session['xurls'] = {}
+            request.session['xurls']['container_name'] = removeParam(extensibleURL(request), 'container_name', mode='extensible')
+            continue
 
         if querytype == 'task':
             for field in JediTasks._meta.get_fields():

@@ -49,7 +49,11 @@
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
 {% for item in fdict.list %}
 <span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}} {{item.kname}}_tooltip' {% endif %}> {{ item.kname }} </span>
-<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
+{% if not request.session.xurls or fdict.field not in request.session.xurls %}
+    <a href="{{ xurl }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
+{% else %}
+    <a href="{{ request.session.xurls|get_item:fdict.field }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
+{% endif %}
 {% endfor %}
 </td></tr>
 {% endfor %}
