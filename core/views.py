@@ -951,6 +951,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 if parname in errfield_map_dict.keys():
                     query[errfield_map_dict[parname]] = request.session['requestParams'][param]
 
+        elif param == 'container':
+            if request.session['requestParams'][param] == 'true':
+                extraQueryString += " AND (container_name IS NOT NULL ) "
 
         if querytype == 'task':
             for field in JediTasks._meta.get_fields():
