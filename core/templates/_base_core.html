@@ -139,7 +139,7 @@
                 <li><a href="{% url 'taskList' %}?tasktype=anal&display_limit=300">Analysis</a></li>
                 <li><a href="{% url 'taskList' %}?tasktype=prod&display_limit=300">Production</a></li>
                 <li><a href="{% url 'taskList' %}?eventservice=eventservice&display_limit=300">Event service</a></li>
-                <li><a href="{% url 'taskList' %}?conainer_name=all&display_limit=300">Containerized</a></li>
+                <li><a href="{% url 'taskList' %}?container_name=all&display_limit=300">Containerized</a></li>
                 <li><a>Running production</a>
                     <ul class="submenu menu">
                         <li><a href="{% url 'runningProdTasks' %}">All</a></li>
@@ -161,7 +161,7 @@
                 <li><a href="{% url 'jobList' %}?jobtype=production&display_limit=100">Production</a></li>
                 <li><a href="{% url 'jobList' %}?jobtype=groupproduction&display_limit=100">Group production</a></li>
                 <li><a href="{% url 'jobList' %}?jobtype=eventservice&display_limit=100">Event service</a></li>
-                <li><a href="{% url 'jobList' %}?conainer_name=all&display_limit=300">Containerized</a></li>
+                <li><a href="{% url 'jobList' %}?container_name=all&display_limit=300">Containerized</a></li>
                 <li><a href="{% url 'status_summary-index' %}">Status Summary</a></li>
             {% endif %}
             <li><a href="{% url 'jobList' %}?jobtype=test&display_limit=100">Test</a></li>
