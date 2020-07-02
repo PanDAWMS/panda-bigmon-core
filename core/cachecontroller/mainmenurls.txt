@@ -13,12 +13,14 @@
 /tasks/?tasktype=prod&display_limit=300
 /tasks/?eventservice=1&display_limit=300
 /tasks/?eventservice=eventservice&display_limit=300
+/tasks/?conainer_name=all&display_limit=300
 /jobs/?display_limit=100
 /jobs/?jobtype=analysis&display_limit=100
 /jobs/?jobtype=production&display_limit=100
 /jobs/?jobtype=groupproduction&display_limit=100
 /jobs/?jobtype=eventservice&display_limit=100
 /jobs/?jobtype=test&display_limit=100
+/jobs/?conainer_name=all&display_limit=300
 /jobs/?harvesterid=all&display_limit=100
 /errors/?sortby=count&display_limit=20
 /errors/?jobtype=analysis&sortby=count&display_limit=20
