@@ -321,6 +321,10 @@ class PandaJob(models.Model):
                 )
         return fields
 
+    def get_fields_by_type(self, ftype='integer'):
+        field_list = [str(f.name) for f in self._meta.fields if ftype in str(f.description).lower()]
+        return field_list
+
     class Meta:
         abstract = True
         allColumns = COLUMNS['PanDAjob-all']

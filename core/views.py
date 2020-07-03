@@ -508,18 +508,24 @@ def initRequest(request, callselfmon = True):
             pval = pval.replace("\'", '')
             if p.lower() != 'batchid':  # Special requester exception
                 pval = pval.replace('#', '')
+
             ## is it int, if it's supposed to be?
             if p.lower() in (
-            'days', 'hours', 'limit', 'display_limit', 'taskid', 'jeditaskid', 'jobsetid', 'reqid', 'corecount', 'taskpriority',
-            'priority', 'attemptnr', 'statenotupdated', 'tasknotupdated','corepower','wansourcelimit','wansinklimit','nqueue','nodes','queuehours','memory','maxtime','space',
-            'maxinputsize','timefloor','depthboost','idlepilotsupression','pilotlimit','transferringlimit','cachedse','stageinretry','stageoutretry','maxwdir','minmemory','maxmemory','minrss',
-            'maxrss','mintime',):
+                'days', 'hours', 'limit', 'display_limit', 'taskid', 'jeditaskid', 'jobsetid', 'reqid', 'corecount',
+                'taskpriority', 'priority', 'attemptnr', 'statenotupdated', 'tasknotupdated', 'corepower',
+                'wansourcelimit', 'wansinklimit', 'nqueue', 'nodes', 'queuehours', 'memory', 'maxtime', 'space',
+                'maxinputsize', 'timefloor', 'depthboost', 'idlepilotsupression', 'pilotlimit', 'transferringlimit',
+                'cachedse', 'stageinretry', 'stageoutretry', 'maxwdir', 'minmemory', 'maxmemory', 'minrss',
+                'maxrss', 'mintime',):
                 try:
                     requestVal = request.GET[p]
                     if '|' in requestVal:
                         values = requestVal.split('|')
                         for value in values:
                             i = int(value)
+                    elif requestVal == 'Not specified':
+                        # allow 'Not specified' value for int parameters
+                        i = requestVal
                     else:
                         i = int(requestVal)
                 except:
@@ -832,6 +838,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if param in ('hours', 'days'): continue
         if param == 'cloud' and request.session['requestParams'][param] == 'All':
             continue
+        if request.session['requestParams'][param] == 'Not specified':
+            extraQueryString += " AND ( {0} is NULL or {0} = '' ) ".format(param)
+            extraQueryFields.append(param)
+            continue
         elif param == 'harvesterinstance' or param == 'harvesterid':
             val = request.session['requestParams'][param]
             if val == 'Not specified':
@@ -965,9 +975,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             for field in JediTasks._meta.get_fields():
                 # for param in requestParams:
                 if param == field.name:
-                    if request.session['requestParams'][param] == 'Not specified':
-                        extraQueryString += " AND ( {0} is NULL or {0} = '' ) ".format(param)
-                        extraQueryFields.append(param)
                     if param == 'ramcount':
                         if 'GB' in request.session['requestParams'][param]:
                             leftlimit, rightlimit = (request.session['requestParams'][param]).split('-')
@@ -1045,10 +1052,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         else:
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
-                    if request.session['requestParams'][param] == 'Not specified':
-                        extraQueryString += " AND ( {0} is NULL or {0} = '' ) ".format(param)
-                        extraQueryFields.append(param)
-                    elif param == 'minramcount':
+                    if param == 'minramcount':
                         if 'GB' in request.session['requestParams'][param]:
                             leftlimit, rightlimit = (request.session['requestParams'][param]).split('-')
                             rightlimit = rightlimit[:-2]
@@ -2040,7 +2044,7 @@ def taskSummaryDict(request, tasks, fieldlist=None):
                 val = task[f]
                 if val is None or val == '':
                     val = 'Not specified'
-                # if val == 'anal': val = 'analy'
+                if val == 'anal': val = 'analy'
                 if f not in sumd:
                     sumd[f] = {}
                 if val not in sumd[f]:
@@ -2070,7 +2074,7 @@ def taskSummaryDict(request, tasks, fieldlist=None):
                 else:
                     newvalues[roundedval] = sumd[f][ky]
             for ky in newvalues:
-                if ky > 0:
+                if ky >= 0:
                     iteml.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
                 else:
                     iteml.append({'kname': 'Not specified', 'kvalue': newvalues[ky]})
