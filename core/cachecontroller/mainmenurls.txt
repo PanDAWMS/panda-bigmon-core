@@ -42,3 +42,6 @@
 /errorsscat/
 /artmonitview
 /new/dash/
+/new/dash/?jobtype=analy&splitby=jobtype
+/new/dash/?jobtype=prod&splitby=jobtype
+/new/dash/?jobtype=test&splitby=jobtype
