@@ -369,7 +369,6 @@ def initRequest(request, callselfmon = True):
         # VOMODE = 'devtest'
     request.session['req_init_time'] = time.time()
     _logger.info('Request: {}'.format(request.get_full_path()))
-    _logger.info('Start of request handling: {}'.format(datetime.utcnow()))
     request.session['IS_TESTER'] = False
 
     if VOMODE == 'atlas':

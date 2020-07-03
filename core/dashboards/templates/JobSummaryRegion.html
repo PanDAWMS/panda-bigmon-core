@@ -262,7 +262,11 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
     }
 
     $scope.update = function(selection) {
-        var query = '{{ xurl | safe }}';
+        var query = '{% url 'dashRegion' %}?';
+        if ('date_from' in request_params && 'date_to' in request_params) {
+          query += 'date_from=' + request_params.date_from + '&';
+          query += 'date_to=' + request_params.date_to  + '&';
+        }
         Object.keys(selection).forEach(function (key) {
             if (key === 'splitby') {
                 let subquery = 'splitby=';

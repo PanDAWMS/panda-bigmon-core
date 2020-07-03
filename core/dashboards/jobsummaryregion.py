@@ -46,7 +46,7 @@ def dashboard(request):
 
     # Here we try to get cached data
     data = getCacheEntry(request, "JobSummaryRegion")
-    data = None
+    # data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -157,8 +157,14 @@ def dashboard(request):
         xurl += '?'
 
     if is_json_request(request):
+        extra_info_params = ['links', ]
+        extra_info = {ep: False for ep in extra_info_params}
+        if 'extra' in request.session['requestParams'] and 'links' in request.session['requestParams']['extra']:
+            extra_info['links'] = True
+        jsr_queues_dict, jsr_regions_dict = prettify_json_output(jsr_queues_dict, jsr_regions_dict, hours=hours, extra=extra_info)
         data = {
-
+            'regions': jsr_regions_dict,
+            'queues': jsr_queues_dict,
         }
         dump = json.dumps(data, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
@@ -167,7 +173,7 @@ def dashboard(request):
         view_params_str = '<b>Manually entered params</b>: '
         supported_params = {f.verbose_name: '' for f in PandaJob._meta.get_fields()}
         interactive_params = ['hours', 'days', 'date_from', 'date_to', 'timestamp',
-                            'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region']
+                              'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region']
         for pn, pv in request.session['requestParams'].items():
             if pn not in interactive_params and pn in supported_params:
                 view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
@@ -473,3 +479,74 @@ def prodsourcelabel_to_jobtype(list_of_dict, field_name='prodsourcelabel'):
             new_list_of_dict.append(row)
 
     return new_list_of_dict
+
+
+def prettify_json_output(jsr_queues_dict, jsr_regions_dict, **kwargs):
+    """
+    Remove queues|regions with 0 jobs, add links to jobs page if requested
+    :param jsr_queues_dict:
+    :param jsr_regions_dict:
+    :return:
+    """
+    region_summary = {}
+    queue_summary = {}
+
+    is_add_link = False
+    if 'extra' in kwargs and 'links' in kwargs['extra'] and kwargs['extra']['links'] is True:
+        is_add_link = True
+    if 'hours' in kwargs:
+        hours = kwargs['hours']
+    else:
+        hours = 12
+
+    base_url = 'https://bigpanda.cern.ch'
+    jobs_path = '/jobs/?hours=' + str(hours)
+
+    for rn, rdict in jsr_regions_dict.items():
+        for jt, jtdict in rdict.items():
+            for rt, rtdict in jtdict.items():
+                if sum([rtdict[js] for js in job_states_order if js in rtdict]) > 0:
+                    if rn not in region_summary:
+                        region_summary[rn] = {}
+                    if jt not in region_summary[rn]:
+                        region_summary[rn][jt] = {}
+                    if rt not in region_summary[rn][jt]:
+                        region_summary[rn][jt][rt] = []
+                    for js in job_states_order:
+                        temp_dict = {
+                            'jobstatus': js,
+                            'count': rtdict[js]
+                        }
+                        if is_add_link:
+                            temp_dict['job_link'] = base_url + jobs_path + '&region=' + rn + '&jobstatus=' + js
+                            if jt != 'all':
+                                temp_dict['job_link'] += '&jobtype=' + jt
+                            if rt != 'all':
+                                temp_dict['job_link'] += '&resourcetype=' + rt
+                        region_summary[rn][jt][rt].append(temp_dict)
+
+    for qn, qdict in jsr_queues_dict.items():
+        for jt, jtdict in qdict['summary'].items():
+            for rt, rtdict in jtdict.items():
+                if sum([rtdict[js] for js in job_states_order if js in rtdict]) > 0:
+                    if qn not in queue_summary:
+                        queue_summary[qn] = qdict['pq_params']
+                        queue_summary[qn]['job_summary'] = {}
+                    if jt not in queue_summary[qn]['job_summary']:
+                        queue_summary[qn]['job_summary'][jt] = {}
+                    if rt not in queue_summary[qn]['job_summary'][jt]:
+                        queue_summary[qn]['job_summary'][jt][rt] = []
+                    for js in job_states_order:
+                        temp_dict = {
+                            'jobstatus': js,
+                            'count': rtdict[js]
+                        }
+                        if is_add_link:
+                            temp_dict['job_link'] = base_url + jobs_path + '&computingsite=' + qn + '&jobstatus=' + js
+                            if jt != 'all':
+                                temp_dict['job_link'] += '&jobtype=' + jt
+                            if rt != 'all':
+                                temp_dict['job_link'] += '&resourcetype=' + rt
+                        queue_summary[qn]['job_summary'][jt][rt].append(temp_dict)
+
+    return queue_summary, region_summary
