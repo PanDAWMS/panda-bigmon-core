@@ -38,7 +38,7 @@ class occlicalls:
         time.sleep(5)
         resp = self.openshift_action("07-nginx-svc.yml", 'v1', 'Service')
         time.sleep(5)
-        resp = self.openshift_action("08-route.yml", 'route.openshift.io/v1', 'Route')
+        resp = self.openshift_action("08-route.yml", 'v1', 'Route')
 
 
     def openshift_action(self, yml_file_name, api_version, kind):
