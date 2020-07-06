@@ -98,6 +98,7 @@ class occlicalls:
         elif isinstance(inputObj, str):
             return inputObj.replace('randomstring', instance)
         else:
+            # e.g. int data type - do nothing
             return inputObj
 
 
