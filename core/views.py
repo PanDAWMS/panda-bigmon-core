@@ -10528,6 +10528,9 @@ def esatlasPandaLoggerJson(request):
 
     if 'esHost' in ES:
         esHost = ES['esHost']
+        ### ToDO remove it
+        newhost = ES['esHost']
+        newhost = newhost[:8] + '7' + newhost[8:]
     if 'esPort' in ES:
         esPort = ES['esPort']
     if 'esUser' in ES:
@@ -10536,7 +10539,7 @@ def esatlasPandaLoggerJson(request):
         esPassword = ES['esPassword']
 
     es = Elasticsearch(
-        [{'host': esHost, 'port': int(esPort)}],
+        [{'host': newhost, 'port': int(esPort)}],
         http_auth=(esUser,esPassword),
         use_ssl=True,
         verify_certs=False,
@@ -10595,6 +10598,10 @@ def esatlasPandaLogger(request):
 
     if 'esHost' in ES:
         esHost = ES['esHost']
+        ### ToDo remove it
+        newhost = ES['esHost']
+        newhost = newhost[:8] + '7' + newhost[8:]
+
     if 'esPort' in ES:
         esPort = ES['esPort']
     if 'esUser' in ES:
@@ -10603,7 +10610,7 @@ def esatlasPandaLogger(request):
         esPassword = ES['esPassword']
 
     es = Elasticsearch(
-        [{'host': esHost, 'port': int(esPort)}],
+        [{'host': newhost, 'port': int(esPort)}],
         http_auth=(esUser,esPassword),
         use_ssl=True,
         verify_certs=False,
