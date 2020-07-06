@@ -2,17 +2,20 @@ import json, socket, random, string
 from core.settings.local import OC_TOKEN, OC_ENDPOINT, OC_NAMESPACE
 import requests
 from typing import Dict
-
+from os import path
 from kubernetes import client, config
 from openshift.dynamic import DynamicClient
+import yaml
+import time
 
 class occlicalls:
     TIME_OUT_FOR_QUERY = 60 * 5
     URL_CONFIGMAPS = "https://{endpoint}/api/v1/namespaces/{namespace}/configmaps".format(endpoint=OC_ENDPOINT,
                                                                                                   namespace=OC_NAMESPACE)
     configuration = client.Configuration()
-    configuration.host = OC_ENDPOINT
+    configuration.host = "https://"+OC_ENDPOINT
     configuration.debug = True
+    configuration.verify_ssl = False
     configuration.api_key = {"authorization": OC_TOKEN}
     configuration.api_key_prefix['authorization'] = 'Bearer'
 
@@ -20,12 +23,31 @@ class occlicalls:
         client.ApiClient(configuration=configuration)
     )
 
+
     def __init__(self):
-        self.INSTANCE = ''.join(random.choices(string.ascii_uppercase +
+        self.INSTANCE = ''.join(random.choices(string.ascii_lowercase +
                                                string.digits, k=7))
+
 
     def get_instance(self):
         return self.INSTANCE
+
+    def openshift_actions(self):
+        time.sleep(5)
+        resp = self.openshift_action("06-deploymentconfig.yml", 'apps.openshift.io/v1', 'DeploymentConfig')
+        time.sleep(5)
+        resp = self.openshift_action("07-nginx-svc.yml", 'v1', 'Service')
+        time.sleep(5)
+        resp = self.openshift_action("08-route.yml", 'route.openshift.io/v1', 'Route')
+
+
+    def openshift_action(self, yml_file_name, api_version, kind):
+        with open(path.join(path.dirname(__file__), yml_file_name)) as f:
+            dep = yaml.safe_load(f)
+            self.patchConfig(dep, self.INSTANCE)
+            handle = self.ocp_client.resources.get(api_version=api_version, kind=kind)
+            resp = handle.create(body=dep, namespace=OC_NAMESPACE)
+            return resp
 
     def register_config_map(self):
         data = {
@@ -38,6 +60,7 @@ class occlicalls:
         }
         self.create_config_map(configmap_name="nginx-redirection-{instance_path}".format(instance_path= self.INSTANCE),
                                labels=labels, data=data)
+
 
     def create_config_map(
         self,
@@ -64,11 +87,23 @@ class occlicalls:
         return configmap_name
 
 
+    def patchConfig(self, inputObj, instance):
+        if isinstance(inputObj, dict):
+            inputObj.update((k, self.patchConfig(v, instance)) for k, v in inputObj.items())
+            return inputObj
+        elif isinstance(inputObj, list):
+            for i in range(len(inputObj)):
+                inputObj[i] = self.patchConfig(inputObj[i], instance)
+            return inputObj
+        elif isinstance(inputObj, str):
+            return inputObj.replace('randomstring', instance)
+        else:
+            return inputObj
+
 
 if __name__ == "__main__":
     ocwrap = occlicalls()
+    time.sleep(5)
     ocwrap.register_config_map()
-
-
-
+    ocwrap.openshift_actions()
 

@@ -1,0 +1,20 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  creationTimestamp: null
+  labels:
+    app: bigpanda-mlflow
+    instance: randomstring
+    name: bigpanda-mlflow-route-randomstring
+  name: bigpanda-mlflow-route-randomstring
+spec:
+  host: ""
+  path: "/randomstring/"
+  tls:
+    termination: edge
+  to:
+    kind: Service
+    name: nginx-redirection-randomstring
+    weight: null
+status:
+  ingress: null
