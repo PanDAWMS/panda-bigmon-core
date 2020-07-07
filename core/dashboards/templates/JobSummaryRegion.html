@@ -114,7 +114,9 @@
 </div>
 </div>
 
-<div id="container_rs" style="width: 100%; display: none">
+<div class="card bp-container-simple" id="container_rs" style="display: none; font-size: 0.875rem">
+<div class="card-divider"><p>Region summary:</p></div>
+<div class="card-section">
 <table id='regionsummary' class="data-table nowrap hover">
   <thead>
   <tr>
@@ -150,8 +152,11 @@
   </tfoot>
 </table>
 </div>
+</div>
 
-<div id="container_qs" style="width: 100%; display: none">
+<div class="card bp-container-simple" id="container_qs" style="display: none; font-size: 0.875rem">
+<div class="card-divider"><p>Queue summary:</p></div>
+<div class="card-section">
 <table id='queuesummary' class="data-table nowrap hover">
   <thead>
   <tr>
@@ -192,6 +197,7 @@
   </tr>
   </tfoot>
 </table>
+</div>
 </div>
 
 {% endblock %}
@@ -923,8 +929,27 @@ function PopUpGrafana(ref, site, montype = 'jaccounting') {
 {% endblock %}
 
 {% block help %}
-<div class="callout success">
-  <p>This page summarizes recent job status for regions and queues.</p>
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Job summary help:</p></div>
+<div class="card-section">
+  <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
+  <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
+    Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type.
+    Click on <b>Update</b> button to apply selection.</p>
+  <p><b>By default the view is minimized</b>, i.e. some short transient states and Harvester workers summary numbers are hidden.
+    Press <b>Show details</b> buttons to see all the states of jobs and workers.</p>
+  <p>Click the job counts to go to job listings. Click on workers counts to go to harvester workers listings.
+    Use the <b>Search</b> text input on the top of second table to find a PQ by name.</p>
+  <p>Click on PQ name to go to a BigPanDA site info page. Next to a PQ name there are 3 links:</p>
+  <p><ul class="no-bullet">
+    <li><img src="{% static '/images/grafana.png' %}" width=14 height=14 border=0> goes to Jobs accounting for a PQ at MONIT Grafana;
+    <li><img src="{% static '/images/grafana-black.png' %}" width=14 height=14 border=0> opens a new tab with rendered plot of Jobs monitoring for a PQ at MONIT Grafana (Eric's monitoring);
+    <li><img src="{% static '/images/kibana-logo.png' %}" width=14 height=14 border=0> goes to recent brokerage actions related to a PQ at Kibana.
+  </ul></p>
+  <p><b>N running workers</b> column has the next color coding scheme:
+    <span class="alert"><b>dark red</b></span> if N running workers > N running jobs for more than 20%,
+    <span class="warning"><b>orange</b></span> if N running workers > N running jobs for more than 10% and less than 20%.</p>
+  <p><b>Job states description:</b></p>
   <p>
   <ul>
   {% if show == 'all' or  job.jobstatus == 'pending' %} <li>  Status <b class='pending'>pending</b> indicates that the job record has been injected into the PanDA DB but PanDA has not yet dealt with it. {% endif %}
@@ -946,6 +971,7 @@ function PopUpGrafana(ref, site, montype = 'jaccounting') {
   </ul>
   </p>
 
+</div>
 </div>
 {% endblock %}
 

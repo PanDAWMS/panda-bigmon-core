@@ -692,24 +692,31 @@ li.list-item > label {
 .form-container {
     max-width: 100%;
 }
-.form-container .column {
-    padding: 0.7rem 0.3rem;
-}
-.form-container .no-bullet {
-    margin: 0;
-}
-.form-container .column a.button {
-    margin: 1.5rem 0;
-}
-.form-container fieldset {
-    margin-bottom: 0;
-    padding-top: 0 !important;
-}
-.form-container fieldset legend {
-    padding-top: 0.7rem;
-    margin-bottom: 0;
-    font-size: 0.875rem;
-}
+  .form-container .column {
+      padding: 0.7rem 0.3rem;
+  }
+  .form-container .no-bullet {
+      margin: 0;
+  }
+  .form-container .column a.button {
+      margin: 1.5rem 0;
+  }
+  .form-container fieldset {
+      margin-bottom: 0;
+      padding-top: 0 !important;
+  }
+  .form-container fieldset legend {
+      padding-top: 0.7rem;
+      margin-bottom: 0;
+      font-size: 0.875rem;
+  }
+  .form-container select, .form-container select > option[selected] {
+    font-weight: bold;
+  }
+  .form-container select > option {
+    font-weight: normal;
+  }
+
 
 
 .c3-plots-row {
@@ -746,7 +753,40 @@ li.list-item > label {
   .card.bp-container-simple .card-section {
     padding: 0.3rem 0;
     margin: 0;
+    color: #0a0a0a;
   }
+  .card.bp-container-simple .card-section > p {
+    margin: 0.3rem 0.7rem;
+  }
+  .card.bp-container-simple .card-section > ul {
+    margin: 0 0.7rem 0.3rem 1.5rem;
+  }
+  .card.bp-container-simple .card-section > .dataTables_wrapper {
+    padding: 0 0.3rem;
+    margin: 0;
+  }
+
+.card.bp-container-simple.secondary {
+  border: 1px solid #d3deed;
+}
+  .card.bp-container-simple.secondary .card-divider {
+    background-color: #d3deed;
+    color: #0a0a0a;
+  }
+
+.card.bp-container-simple.help {
+  border: 1px solid #4ba173;
+  font-size: 0.875rem;
+}
+  .card.bp-container-simple.help .card-divider {
+    background-color: #4ba173;
+    color: #fefefe;
+  }
+  .card.bp-container-simple.help .card-section {
+    background-color: #f5fdf9;
+    color: #0a0a0a;
+  }
+
 
 
 .card.bp-container {
