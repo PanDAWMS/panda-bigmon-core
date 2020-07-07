@@ -94,6 +94,8 @@ def globalshares(request):
                 ord1Short = re.sub('\[(.*)\]', '', ordValueLevel1).rstrip().lower()
                 shareValue['level'] = 'level1'
                 shareValue['gshare'] = ord1Short.replace(' ', '_')
+                if len(ordtablerows[ordValueLevel1]['childlist']) == 0:
+                    shareValue['link'] = '?gshare={}&display_limit=100'.format(ord1Short)
                 newTablesRow.append(shareValue)
                 tablerows.remove(shareValue)
                 if len(ordtablerows[ordValueLevel1]['childlist']) == 0:
