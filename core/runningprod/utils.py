@@ -40,7 +40,7 @@ def clean_running_task_list(task_list):
             task['cutcampaign'] = task['campaign'].split(':')[0]
         if 'reqid' in task and 'jeditaskid' in task and task['reqid'] == task['jeditaskid']:
             task['reqid'] = None
-        if 'runnumber' in task:
+        if 'runnumber' in task and task['runnumber']:
             task['inputdataset'] = int(task['runnumber'])
         else:
             task['inputdataset'] = None
