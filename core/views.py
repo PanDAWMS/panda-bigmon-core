@@ -1759,7 +1759,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
     for job in jobs:
         for f in flist:
             if f == 'pilotversion':
-                if 'pilotid' in job and '|' in job['pilotid']:
+                if 'pilotid' in job and job['pilotid'] and '|' in job['pilotid']:
                     job[f] = job['pilotid'].split('|')[-1]
                 else:
                     job[f] = 'Not specified'
