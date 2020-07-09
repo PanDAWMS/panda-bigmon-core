@@ -6315,17 +6315,17 @@ def dashboard(request, view='all'):
         cloudview = 'region'
     elif view != 'production' and view != 'all':
         cloudview = 'N/A'
-    if ('version' not in request.session['requestParams'] or request.session['requestParams']['version'] != 'old') \
-            and view in ('all', 'production', 'analysis') and cloudview == 'region' \
-            and 'es' not in request.session['requestParams'] and 'mode' not in request.session['requestParams'] \
-            and not is_json_request(request):
-        # do redirect
-        if view == 'production':
-            return redirect('/dash/region/?jobtype=prod&splitby=jobtype')
-        elif view == 'analysis':
-            return redirect('/dash/region/?jobtype=analy&splitby=jobtype')
-        elif view == 'all':
-            return redirect('/dash/region/')
+    # if ('version' not in request.session['requestParams'] or request.session['requestParams']['version'] != 'old') \
+    #         and view in ('all', 'production', 'analysis') and cloudview == 'region' \
+    #         and 'es' not in request.session['requestParams'] and 'mode' not in request.session['requestParams'] \
+    #         and not is_json_request(request):
+    #     # do redirect
+    #     if view == 'production':
+    #         return redirect('/dash/region/?jobtype=prod&splitby=jobtype')
+    #     elif view == 'analysis':
+    #         return redirect('/dash/region/?jobtype=analy&splitby=jobtype')
+    #     elif view == 'all':
+    #         return redirect('/dash/region/')
 
 #    data = getCacheEntry(request, "dashboard", skipCentralRefresh=True)
     data = getCacheEntry(request, "dashboard")
