@@ -406,6 +406,7 @@ def artJobs(request):
     reportTo = {'mail': [], 'jira': {}}
     gitlabids = list(sorted(set([x['gitlabid'] for x in jobs if 'gitlabid' in x and x['gitlabid'] is not None])))
     linktoplots = []
+    link_prefix = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/'
 
     artjobsdict={}
 
@@ -466,8 +467,11 @@ def artJobs(request):
                         job['extrainfo'] = json.loads(job['extrainfo'])
                     except:
                         job['extrainfo'] = {}
-                if 'html' in job['extrainfo']:
-                    jobdict['htmllink'] = jobdict['linktext'] + '/' + job['extrainfo']['html']
+                if 'html' in job['extrainfo'] and job['extrainfo']['html']:
+                    if job['extrainfo']['html'].startswith('http'):
+                        jobdict['htmllink'] = job['extrainfo']['html'] + jobdict['linktext']
+                    else:
+                        jobdict['htmllink'] = link_prefix + jobdict['linktext'] + '/' + job['extrainfo']['html']
 
                 finalresult, extraparams = get_final_result(job)
 

@@ -143,7 +143,7 @@
                                                               <a  class="to-logs blacklink" target="_blank" href="https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{{job.linktext}}/"><i class="fi-clipboard tooltip-upper"><span class="tooltip-text">Link to ART EOS copy area</span></i></a>
                                                           {% endif %}
                                                           {% if job.finalresult != 'active' and job.htmllink %}
-                                                              <a  class="to-logs blacklink" target="_blank" href="https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{{job.htmllink}}/"><i class="fi-graph-bar tooltip-upper"><span class="tooltip-text">Link to result HTML</span></i></a>
+                                                              <a  class="to-logs blacklink" target="_blank" href="{{job.htmllink}}"><i class="fi-graph-bar tooltip-upper"><span class="tooltip-text">Link to result HTML</span></i></a>
                                                           {% endif %}
                                                       </div>
                                                     </div>
