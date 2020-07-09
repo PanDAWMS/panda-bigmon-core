@@ -7,17 +7,9 @@ import urllib3
 import copy
 from datetime import datetime, timedelta
 
-from django.http import HttpResponse
-from django.shortcuts import render_to_response
-from django.utils.cache import patch_response_headers
 from django.db import connection
 from django.db.models import Q, Count, Sum
 from django.core.cache import cache
-
-from core.libs.cache import getCacheEntry, setCacheEntry
-from core.views import login_customrequired, initRequest, setupView, DateEncoder
-from core.views import statelist as job_states_order
-from core.utils import is_json_request
 
 from core.schedresource.models import SchedconfigJson
 from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers
@@ -27,55 +19,21 @@ from core.settings.local import defaultDatetimeFormat
 
 _logger = logging.getLogger('bigpandamon')
 
+job_states_order = [
+    'pending', 'defined', 'waiting', 'assigned', 'throttled',
+    'activated', 'sent', 'starting', 'running', 'holding',
+    'transferring', 'merging', 'finished', 'failed', 'cancelled', 'closed']
 
-@login_customrequired
-def dashboard(request):
+
+def prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict, **kwargs):
     """
-    A new job summary dashboard for regions that allows to split jobs in Grand Unified Queue
-    by analy|prod and resource types
-    Regions column order:
-        region, status, job type, resource type, Njobstotal, [Njobs by status]
-    Queues column order:
-        queue name, type [GU, U, Simple], region, status, job type, resource type, Njobstotal, [Njobs by status]
-    :param request: request
-    :return: HTTP response
+    Convert dict of region job summary to list
+    :param dict of region job summary, dict of queue job summary
+    :return: list of region job summary, list of queue job summary
     """
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-
-    # Here we try to get cached data
-    data = getCacheEntry(request, "JobSummaryRegion")
-    # data = None
-    if data is not None:
-        data = json.loads(data)
-        data['request'] = request
-        response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-
-    if 'splitby' in request.session['requestParams'] and request.session['requestParams']['splitby']:
-        split_by = request.session['requestParams']['splitby']
-    else:
-        split_by = None
-
-    if 'hours' in request.session['requestParams'] and request.session['requestParams']['hours']:
-        hours = int(request.session['requestParams']['hours'])
-    else:
-        hours = 12
-
-    jquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='job', wildCardExt=True)
-
-    # add queue related request params to query dict
-    if 'queuetype' in request.session['requestParams'] and request.session['requestParams']['queuetype']:
-        jquery['queuetype'] = request.session['requestParams']['queuetype']
-    if 'queuestatus' in request.session['requestParams'] and request.session['requestParams']['queuestatus']:
-        jquery['queuestatus'] = request.session['requestParams']['queuestatus']
-
-    # get job summary data
-    jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery, job_states_order, extra=wildCardExtension)
-
-    # transform dict to list and filter out rows depending on split by request param
+    split_by = None
+    if 'split_by' in kwargs and kwargs['split_by']:
+        split_by = kwargs['split_by']
     jsr_queues_list = []
     jsr_regions_list = []
     for pq, params in jsr_queues_dict.items():
@@ -144,60 +102,7 @@ def dashboard(request):
                     elif 'jobtype' not in split_by and 'resourcetype' in split_by:
                         if jt == 'all' and rt != 'all':
                             jsr_regions_list.append(row)
-
-    select_params_dict = {}
-    select_params_dict['region'] = sorted(list(set([r[0] for r in jsr_regions_list])))
-    select_params_dict['queuetype'] = sorted(list(set([pq[1] for pq in jsr_queues_list])))
-    select_params_dict['queuestatus'] = sorted(list(set([pq[3] for pq in jsr_queues_list])))
-
-    xurl = request.get_full_path()
-    if xurl.find('?') > 0:
-        xurl += '&'
-    else:
-        xurl += '?'
-
-    if is_json_request(request):
-        extra_info_params = ['links', ]
-        extra_info = {ep: False for ep in extra_info_params}
-        if 'extra' in request.session['requestParams'] and 'links' in request.session['requestParams']['extra']:
-            extra_info['links'] = True
-        jsr_queues_dict, jsr_regions_dict = prettify_json_output(jsr_queues_dict, jsr_regions_dict, hours=hours, extra=extra_info)
-        data = {
-            'regions': jsr_regions_dict,
-            'queues': jsr_queues_dict,
-        }
-        dump = json.dumps(data, cls=DateEncoder)
-        return HttpResponse(dump, content_type='application/json')
-    else:
-        # overwrite view selection params
-        view_params_str = '<b>Manually entered params</b>: '
-        supported_params = {f.verbose_name: '' for f in PandaJob._meta.get_fields()}
-        interactive_params = ['hours', 'days', 'date_from', 'date_to', 'timestamp',
-                              'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region']
-        for pn, pv in request.session['requestParams'].items():
-            if pn not in interactive_params and pn in supported_params:
-                view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
-        request.session['viewParams']['selection'] = view_params_str if not view_params_str.endswith(': ') else ''
-
-        data = {
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            'built': datetime.now().strftime("%H:%M:%S"),
-            'hours': hours,
-            'xurl': xurl,
-            'selectParams': select_params_dict,
-            'jobstates': job_states_order,
-            'regions': jsr_regions_list,
-            'queues': jsr_queues_list,
-            'timerange': jquery['modificationtime__castdate__range'],
-            'show': 'all',
-        }
-
-        response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
-        setCacheEntry(request, "JobSummaryRegion", json.dumps(data, cls=DateEncoder), 60 * 20)
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
+    return jsr_queues_list, jsr_regions_list
 
 
 def get_job_summary_region(query, job_states_order, extra='(1=1)'):
@@ -208,7 +113,7 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
     jsr_queues_dict = {}
     jsr_regions_dict = {}
 
-    job_types = ['analy', 'prod', 'test']
+    job_types = ['analy', 'prod']
     resource_types = ['SCORE', 'MCORE', 'SCORE_HIMEM', 'MCORE_HIMEM']
     worker_metrics = ['nwrunning', 'nwsubmitted']
     extra_metrics = copy.deepcopy(worker_metrics)
@@ -466,11 +371,10 @@ def prodsourcelabel_to_jobtype(list_of_dict, field_name='prodsourcelabel'):
         'panda': 'analy',
         'user': 'analy',
         'managed': 'prod',
-        'prod_test': 'test',
-        'ptest': 'test',
-        'install': 'test',
-        'rc_alrb': 'test',
-        'rc_test2': 'test',
+        'prod_test': 'prod',
+        'ptest': 'prod',
+        'rc_alrb': 'prod',
+        'rc_test2': 'prod',
     }
     new_list_of_dict = []
     for row in list_of_dict:

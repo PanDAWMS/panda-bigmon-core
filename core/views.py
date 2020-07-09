@@ -37,7 +37,7 @@ from django.db import connection
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import defaultDatetimeFormat
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
-    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, JobsWorldViewTaskType, CombinedWaitActDefArch4
+    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, JobsWorldViewTaskType, CombinedWaitActDefArch4, PandaJob
 from core.schedresource.models import Schedconfig, SchedconfigJson
 from core.common.models import Filestable4
 from core.common.models import Datasets
@@ -100,6 +100,7 @@ from decimal import *
 from django.contrib.auth import logout as auth_logout
 from core.auth.utils import grant_rights, deny_rights
 
+from core.utils import is_json_request
 from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
@@ -111,6 +112,7 @@ from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.bpuser import get_relevant_links
 from core.libs.site import get_running_jobs_stats
 from core.iDDS.algorithms import checkIfIddsTask
+from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 
 from django.template.context_processors import csrf
 
@@ -891,7 +893,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             if jobtype.startswith('anal'):
                 query['prodsourcelabel__in'] = ['panda', 'user']
             elif jobtype.startswith('prod'):
-                query['prodsourcelabel__in'] = ['managed']
+                query['prodsourcelabel__in'] = ['managed', 'prod_test', 'ptest', 'rc_alrb', 'rc_test2']
             elif jobtype == 'groupproduction':
                 query['prodsourcelabel'] = 'managed'
                 query['workinggroup__isnull'] = False
@@ -900,8 +902,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             elif jobtype == 'esmerge':
                 query['eventservice'] = 2
             elif jobtype == 'test' or jobtype.find('test') >= 0:
-                query['prodsourcelabel__in'] = ['prod_test', 'ptest', 'install', 'rc_alrb', 'rc_test2']
-
+                query['produsername'] = 'gangarbt'
 
         elif param in ('tag',) and querytype == 'task':
             val = request.session['requestParams'][param]
@@ -6299,10 +6300,32 @@ def worldhs06s(request):
 
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
+
 @login_customrequired
 def dashboard(request, view='all'):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
+
+    # if it is region|cloud view redirect to new dash
+    cloudview = 'region'
+    if 'cloudview' in request.session['requestParams']:
+        cloudview = request.session['requestParams']['cloudview']
+    if view == 'analysis':
+        cloudview = 'region'
+    elif view != 'production' and view != 'all':
+        cloudview = 'N/A'
+    if ('version' not in request.session['requestParams'] or request.session['requestParams']['version'] != 'old') \
+            and view in ('all', 'production', 'analysis') and cloudview == 'region' \
+            and 'es' not in request.session['requestParams'] and 'mode' not in request.session['requestParams'] \
+            and not is_json_request(request):
+        # do redirect
+        if view == 'production':
+            return redirect('/dash/region/?jobtype=prod&splitby=jobtype')
+        elif view == 'analysis':
+            return redirect('/dash/region/?jobtype=analy&splitby=jobtype')
+        elif view == 'all':
+            return redirect('/dash/region/')
 
 #    data = getCacheEntry(request, "dashboard", skipCentralRefresh=True)
     data = getCacheEntry(request, "dashboard")
@@ -6405,13 +6428,6 @@ def dashboard(request, view='all'):
             errthreshold = 10
         vosummary = []
 
-    cloudview = 'region'
-    if 'cloudview' in request.session['requestParams']:
-        cloudview = request.session['requestParams']['cloudview']
-    if view == 'analysis':
-        cloudview = 'region'
-    elif view != 'production' and view != 'all':
-        cloudview = 'N/A'
     if view == 'production' and (cloudview == 'world' or cloudview == 'cloud'): #cloud view is the old way of jobs distributing;
         # just to avoid redirecting
         if 'modificationtime__castdate__range' in query:
@@ -6706,6 +6722,117 @@ def dashboard(request, view='all'):
             }
 
             return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+
+
+@login_customrequired
+def dashRegion(request):
+    """
+    A new job summary dashboard for regions that allows to split jobs in Grand Unified Queue
+    by analy|prod and resource types
+    Regions column order:
+        region, status, job type, resource type, Njobstotal, [Njobs by status]
+    Queues column order:
+        queue name, type [GU, U, Simple], region, status, job type, resource type, Njobstotal, [Njobs by status]
+    :param request: request
+    :return: HTTP response
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    if request.path.startswith('/new/dash/'):
+        return redirect(request.get_full_path().replace('/new/dash/', '/dash/region/'))
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "JobSummaryRegion")
+    # data = None
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+    if 'splitby' in request.session['requestParams'] and request.session['requestParams']['splitby']:
+        split_by = request.session['requestParams']['splitby']
+    else:
+        split_by = None
+
+    if 'hours' in request.session['requestParams'] and request.session['requestParams']['hours']:
+        hours = int(request.session['requestParams']['hours'])
+    else:
+        hours = 12
+
+    jquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='job', wildCardExt=True)
+
+    # add queue related request params to query dict
+    if 'queuetype' in request.session['requestParams'] and request.session['requestParams']['queuetype']:
+        jquery['queuetype'] = request.session['requestParams']['queuetype']
+    if 'queuestatus' in request.session['requestParams'] and request.session['requestParams']['queuestatus']:
+        jquery['queuestatus'] = request.session['requestParams']['queuestatus']
+
+    # get job summary data
+    jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery, statelist, extra=wildCardExtension)
+
+    if is_json_request(request):
+        extra_info_params = ['links', ]
+        extra_info = {ep: False for ep in extra_info_params}
+        if 'extra' in request.session['requestParams'] and 'links' in request.session['requestParams']['extra']:
+            extra_info['links'] = True
+        jsr_queues_dict, jsr_regions_dict = prettify_json_output(jsr_queues_dict, jsr_regions_dict, hours=hours, extra=extra_info)
+        data = {
+            'regions': jsr_regions_dict,
+            'queues': jsr_queues_dict,
+        }
+        dump = json.dumps(data, cls=DateEncoder)
+        return HttpResponse(dump, content_type='application/json')
+    else:
+        # transform dict to list and filter out rows depending on split by request param
+        jsr_queues_list, jsr_regions_list = prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict,
+                                                                       split_by=split_by)
+
+        # prepare lists of unique values for drop down menus
+        select_params_dict = {}
+        select_params_dict['region'] = sorted(list(set([r[0] for r in jsr_regions_list])))
+        select_params_dict['queuetype'] = sorted(list(set([pq[1] for pq in jsr_queues_list])))
+        select_params_dict['queuestatus'] = sorted(list(set([pq[3] for pq in jsr_queues_list])))
+
+        xurl = request.get_full_path()
+        if xurl.find('?') > 0:
+            xurl += '&'
+        else:
+            xurl += '?'
+
+        # overwrite view selection params
+        view_params_str = '<b>Manually entered params</b>: '
+        supported_params = {f.verbose_name: '' for f in PandaJob._meta.get_fields()}
+        interactive_params = ['hours', 'days', 'date_from', 'date_to', 'timestamp',
+                              'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region']
+        for pn, pv in request.session['requestParams'].items():
+            if pn not in interactive_params and pn in supported_params:
+                view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
+        request.session['viewParams']['selection'] = view_params_str if not view_params_str.endswith(': ') else ''
+
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
+            'hours': hours,
+            'xurl': xurl,
+            'selectParams': select_params_dict,
+            'jobstates': statelist,
+            'regions': jsr_regions_list,
+            'queues': jsr_queues_list,
+            'timerange': jquery['modificationtime__castdate__range'],
+            'show': 'all',
+        }
+
+        response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
+        setCacheEntry(request, "JobSummaryRegion", json.dumps(data, cls=DateEncoder), 60 * 20)
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
 
 @login_customrequired
 def dashAnalysis(request):

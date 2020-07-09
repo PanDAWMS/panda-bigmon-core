@@ -30,6 +30,11 @@
 
 <div class="callout primary" data-closable>
   <h5><b>This is a new dashboard page!</b></h5>
+  <p>The old one is still available, via the links:
+    <a class="blacklink" href="{% url 'dashboard' %}?version=old"><b>all</b></a>,
+    <a class="blacklink" href="{% url 'dashProduction' %}?version=old"><b>production</b></a>,
+    <a class="blacklink" href="{% url 'dashAnalysis' %}?version=old"><b>analysis</b></a>. But it will be decommissioned soon.
+  </p>
   <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
   <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
     Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type.
@@ -232,7 +237,6 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
           {name:'all', value:'', query: ''},
           {name:'analy', value:'analy', query: 'jobtype=analy&'},
           {name:'prod', value:'prod', query: 'jobtype=prod&'},
-          {name:'test', value:'test', query: 'jobtype=test&'}
         ],
         resourcetype: [
           {name:'all', value:'', query: ''},

@@ -99,19 +99,11 @@
         <a href="#">Dash</a>
         <ul class="submenu menu vertical">
             {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a>New region view</a>
+                <li><a>Region view</a>
                     <ul class="submenu menu">
                         <li><a href="{% url 'dashRegion' %}">All jobs</a></li>
                         <li><a href="{% url 'dashRegion' %}?jobtype=analy&splitby=jobtype">Analysis jobs</a></li>
                         <li><a href="{% url 'dashRegion' %}?jobtype=prod&splitby=jobtype">Production jobs</a></li>
-                        <li><a href="{% url 'dashRegion' %}?jobtype=test&splitby=jobtype">Test jobs</a></li>
-                    </ul>
-                </li>
-                <li><a>Region view</a>
-                    <ul class="submenu menu">
-                        <li><a href="{% url 'dashboard' %}">All jobs</a></li>
-                        <li><a href="{% url 'dashAnalysis' %}">Analysis jobs</a></li>
-                        <li><a href="{% url 'dashProduction' %}?cloudview=region">Production jobs</a></li>
                         <li><a href="{% url 'dashProduction' %}?cloudview=region&es=true">Event Service jobs</a></li>
                     </ul>
                 </li>

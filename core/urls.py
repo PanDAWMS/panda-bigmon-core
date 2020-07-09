@@ -127,7 +127,8 @@ urlpatterns = [
     re_path(r'^report/$', coremon_views.report, name='report'),
     re_path(r'^serverstatushealth/$', coremon_views.serverStatusHealth, name='serverStatusHealth'),
 
-    re_path(r'^new/dash/$', jsr_views.dashboard, name='dashRegion'),
+    re_path(r'^new/dash/$', coremon_views.dashRegion, name='dashRegionNew'),
+    re_path(r'^dash/region/$', coremon_views.dashRegion, name='dashRegion'),
 
     re_path(r'^csrftoken/$', coremon_views.getCSRFToken, name='getCSRFToken'),
 
