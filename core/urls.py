@@ -81,7 +81,6 @@ urlpatterns = [
     re_path(r'^preprocess/$', coremon_views.preProcess, name='preprocess'),
     re_path(r'^g4exceptions/$', coremon_views.g4exceptions, name='g4exceptions'),
     re_path(r'^errorslist/$', coremon_views.summaryErrorsList, name='summaryErrorsList'),
-    re_path(r'^worldjobs/$', coremon_views.worldjobs, name='worldjobs'),
     re_path(r'^getbadeventsfortask/$', coremon_views.getBadEventsForTask, name='getbadeventsfortask'),
     re_path(r'^getstaginginfofortask/$', dtcdboard.getStagingInfoForTask, name='getStagingInfoForTask'),
     re_path(r'^getdtcsubmissionhist/$', dtcdboard.getDTCSubmissionHist, name='getDTCSubmissionHist'),
