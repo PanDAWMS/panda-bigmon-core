@@ -48,6 +48,7 @@
     <img src="{% static '/images/grafana-black.png' %}" width=14 height=14 border=0> - Jobs monitoring for a PQ at MONIT Grafana (Eric's monitoring);
     <img src="{% static '/images/kibana-logo.png' %}" width=14 height=14 border=0> - recent brokerage actions related to a PQ at Kibana.
   </p>
+  <p>Click on a PQ status to go to blacklisting history at CRIC UI.</p>
   <p><b>N running workers</b> column has the next color coding scheme:
     <span class="alert"><b>dark red</b></span> if N running workers > N running jobs for more than 20%,
     <span class="warning"><b>orange</b></span> if N running workers > N running jobs for more than 10% and less than 20%.</p>
@@ -650,7 +651,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "text",
         render: function(data, type, row, meta) {
-            return '<span class="' + row[3] + '">' + row[3] + '</span>'
+            return '<a href="https://atlas-cric.cern.ch/atlas/pandaqueuestatushistory/list/?pandaqueue=' + row[0] + '" target="_blank"><div class="tooltip-right"><span class="' + row[3] + '">' + row[3] + '</span><span class="tooltip-text">Blacklisting history (CRIC)</span></div></a>'
         }
 
       },
@@ -956,6 +957,7 @@ function PopUpGrafana(ref, site, montype = 'jaccounting') {
     <li><img src="{% static '/images/grafana-black.png' %}" width=14 height=14 border=0> opens a new tab with rendered plot of Jobs monitoring for a PQ at MONIT Grafana (Eric's monitoring);
     <li><img src="{% static '/images/kibana-logo.png' %}" width=14 height=14 border=0> goes to recent brokerage actions related to a PQ at Kibana.
   </ul></p>
+  <p>Click on a PQ status to go to blacklisting history at CRIC UI.</p>
   <p><b>N running workers</b> column has the next color coding scheme:
     <span class="alert"><b>dark red</b></span> if N running workers > N running jobs for more than 20%,
     <span class="warning"><b>orange</b></span> if N running workers > N running jobs for more than 10% and less than 20%.</p>
