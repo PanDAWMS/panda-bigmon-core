@@ -1,0 +1,602 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA {{view}} {{ requestParams.mode }} dashboard{% endblock %}
+
+{% block time_window %}
+    Modification time window: <span class="time-window-range">{{ timerange.0 }}</span>
+    - <span class="time-window-range">{{ timerange.1 }}</span> UTC
+{% endblock %}
+
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <link rel="stylesheet" href="{% static "js/datatables/Buttons-1.2.4/css/buttons.foundation.min.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/Buttons-1.2.4/js/dataTables.buttons.min.js' %}"></script>
+  <script src="{% static 'js/datatables/Buttons-1.2.4/js/buttons.foundation.min.js' %}"></script>
+  <script src="{% static 'js/datatables/Buttons-1.2.4/js/buttons.colVis.min.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+
+
+{% block body %}
+
+<div class="callout primary" data-closable>
+  <h5><b>This is a new world dashboard page!</b></h5>
+  <p>The old one is still available, via the links:
+    <a class="blacklink" href="{% url 'dashboard' %}?version=old"><b>all</b></a>,
+    <a class="blacklink" href="{% url 'dashProduction' %}?version=old"><b>production</b></a>,
+    <a class="blacklink" href="{% url 'dashAnalysis' %}?version=old"><b>analysis</b></a>. But it will be decommissioned soon.
+  </p>
+  <p>This page summarizes recent job status for nuclei and satellites. The time limit is not applied for jobs in active states.</p>
+  <p>If you notice any issue or if you have an advise how to improve the page, please let us know
+    <a class="blacklink" href="mailto:atlas-adc-pandamon-support@cern.ch"><b>atlas-adc-pandamon-support@cern.ch</b></a> !</p>
+  <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+{% if viewParams.selection %}
+  {{ viewParams.selection|safe }}
+{% endif %}
+
+
+<div class="card bp-container-simple" id="container_ns" style="display: none; font-size: 0.875rem">
+<div class="card-divider"><p>Region summary:</p></div>
+<div class="card-section">
+<table id='nucleussummary' class="data-table nowrap hover">
+  <thead>
+  <tr>
+      <th class="text">Nucleus</th>
+      <th class="num">N jobs total</th>
+      <th class="num">% failure</th>
+      {% for js in jobstates %}
+          <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+      {% endfor %}
+  </tr>
+  </thead>
+  <tbody>
+  </tbody>
+  <tfoot>
+  <tr>
+      <th class="text">Nucleus</th>
+      <th class="num">N jobs total</th>
+      <th class="num">% failure</th>
+      {% for js in jobstates %}
+          <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+      {% endfor %}
+  </tr>
+  </tfoot>
+</table>
+</div>
+</div>
+
+<div class="card bp-container-simple" id="container_ss" style="display: none; font-size: 0.875rem">
+<div class="card-divider"><p>Queue summary:</p></div>
+<div class="card-section">
+<table id='satellitesummary' class="data-table nowrap hover">
+  <thead>
+  <tr>
+    <th class="text icons3">Satellite</th>
+    <th class="text">Nucleus</th>
+    <th class="num">N jobs total</th>
+    <th class="num">% failure</th>
+    {% for js in jobstates %}
+        <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+    {% endfor %}
+  </tr>
+  </thead>
+  <tbody>
+  </tbody>
+  <tfoot>
+  <tr>
+    <th class="text icons3">Satellite</th>
+    <th class="text">Nucleus</th>
+    <th class="num">N jobs total</th>
+    <th class="num">% failure</th>
+    {% for js in jobstates %}
+        <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+    {% endfor %}
+  </tr>
+  </tfoot>
+</table>
+</div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+var request_params = {{ requestParams | safe }};
+var err_threshold = 15;
+
+$(document).ready(function () {
+    var nucleussummary = {{ nuclei|safe }};
+    var nucleiTable = buildNucleusSummary(nucleussummary, 'nucleussummary');
+    $('#container_ns').css( 'display', 'block' );
+    nucleiTable.columns.adjust().draw();
+
+    var satellitesummary = {{ satellites|safe }};
+    var satellitesTable = buildSatelliteSummary(satellitesummary, 'satellitesummary');
+    $('#container_ss').css( 'display', 'block' );
+    satellitesTable.columns.adjust().draw();
+});
+
+function buildNucleusSummary(data, divid) {
+    var nucleiTable = $('#' + divid).DataTable({
+        "iDisplayLength": -1,
+        "lengthChange": false,
+        "paging": false,
+        "bFilter": false, // remove search box
+        "aaSorting": [[0,'asc']],
+        "scrollX": true,
+        "autoWidth": true,
+        "data": data,
+        "aoColumns": [
+          {
+            sDefaultContent: "---",
+            className: "text",
+            "render": function(data, type, row, meta) {
+                return '<a href = "{{ xurl }}nucleus=' + row[0] + '">'+row[0]+'</a>'
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '">'+row[1]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "alert num",
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.0 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.0 }}' + '">'+row[3]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.1 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.1 }}' + '">'+row[4]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.2 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.2 }}' + '">'+row[5]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.3 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.3 }}' + '">'+row[6]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.4 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.4 }}' + '">'+row[7]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.5 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.5 }}' + '">'+row[8]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.6 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.6 }}' + '">'+row[9]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.7 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.7 }}' + '">'+row[10]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.8 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.8 }}' + '">'+row[11]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.9 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.9 }}' + '">'+row[12]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.10 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.10 }}' + '">'+row[13]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.11 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.11 }}' + '">'+row[14]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.12 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.12 }}' + '">'+row[15]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.13 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.13 }}' + '">'+row[16]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.14 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.14 }}' + '">'+row[17]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.15 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0]) ? url_link += '&nucleus=' + row[0]: url_link += '';
+                url_link += '&jobstatus=' + '{{ jobstates.15 }}' + '">'+row[18]+'</a>';
+                return url_link
+            }
+          },
+        ],
+        "createdRow": function (row, data, index) {
+          if (data[2] > err_threshold) {
+            $('td', row).eq(2).addClass('bold');
+          }
+        },
+    });
+    return nucleiTable
+}
+
+function buildSatelliteSummary(data, divid) {
+  let lengthMenu = [[10, 20, 50, 100, -1], [10, 20, 50, 100, "All"]];
+  let iDisplayLength = 20;
+  if ('display_limit' in request_params) {
+    lengthMenu = [[10, request_params.display_limit, -1], [10, request_params.display_limit, "All"]]
+    iDisplayLength = request_params.display_limit;
+  }
+  var satellitesTable = $('#' + divid).DataTable({
+    "iDisplayLength": iDisplayLength,
+    "lengthMenu": lengthMenu,
+    "paging": true,
+    "aaSorting": [[0,'asc']],
+    "scrollX": true,
+    "autoWidth": true,
+    "data": data,
+    "columns": [
+      {
+        sDefaultContent: "---",
+        className: "text icons3",
+        "render": function(data, type, row, meta) {
+            let link = '<a href = "{% url 'siteInfo' %}' + row[0] + '/">'+row[0]+'</a>';
+            return link
+        }
+      },
+      {
+        sDefaultContent: "---",
+        className: "text",
+        "render": function(data, type, row, meta) {
+            return '<a href = "{{ xurl }}nucleus=' + row[1] + '">'+row[1]+'</a>'
+        }
+      },
+      {
+        sDefaultContent: "---",
+        className: "num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '">'+row[2]+'</a>';
+            return url_link
+        }
+      },
+      {
+        sDefaultContent: "---",
+        className: "alert num",
+      },
+      {
+        sDefaultContent: "---",
+        className: "{{ jobstates.0 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.0 }}' + '">'+row[4]+'</a>';
+            return url_link
+        }
+      },
+      {
+        sDefaultContent: "---",
+        className: "{{ jobstates.1 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.1 }}' + '">'+row[5]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.2 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.2 }}' + '">'+row[6]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.3 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.3 }}' + '">'+row[7]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.4 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.4 }}' + '">'+row[8]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.5 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.5 }}' + '">'+row[9]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.6 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.6 }}' + '">'+row[10]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.7 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.7 }}' + '">'+row[11]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.8 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.8 }}' + '">'+row[12]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.9 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.9 }}' + '">'+row[13]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.10 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.10 }}' + '">'+row[14]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.11 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.11 }}' + '">'+row[15]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.12 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.12 }}' + '">'+row[16]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.13 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.13 }}' + '">'+row[17]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.14 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.14 }}' + '">'+row[18]+'</a>';
+            return url_link
+        }
+      },
+      {
+        {#"data": "region",#}
+        sDefaultContent: "---",
+        className: "{{ jobstates.15 }}_fill num",
+        "render": function(data, type, row, meta) {
+            let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
+            (row[1]) ? url_link += '&nucleus=' + row[1]: url_link += '';
+            url_link += '&jobstatus=' + '{{ jobstates.15 }}' + '">'+row[19]+'</a>';
+            return url_link
+        }
+      },
+    ],
+    "createdRow": function (row, data, index) {
+      if (data[3] > err_threshold) {
+        $('td', row).eq(3).addClass('bold');
+      }
+    },
+  });
+  return satellitesTable
+}
+
+</script>
+{% endblock %}
+
+{% block help %}
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Job summary help:</p></div>
+<div class="card-section">
+  <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
+  <p><b>Job states description:</b></p>
+  <p>
+  <ul>
+  {% if show == 'all' or  job.jobstatus == 'pending' %} <li>  Status <b class='pending'>pending</b> indicates that the job record has been injected into the PanDA DB but PanDA has not yet dealt with it. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'defined' %} <li>  Status <b class='defined'>defined</b> indicates that the job has been received by PanDA and the process of assigning it for execution has begun. {% endif %}
+  {% if show == 'all' or job.jobstatus == 'waiting' %} <li>  Status <b class='waiting'>waiting</b> indicates that data handling preparations for the job are underway and have to be completed before the job can be activated. {% endif %}
+  {% if show == 'all' or job.jobstatus == 'assigned' %} <li>  Status <b class='assigned'>assigned</b> indicates the job has been assigned to a site and preparations to have the input data ready are underway (e.g. subscriptions, tape staging). {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'throttled' %} <li>  Status <b class='throttled'>throttled</b> indicates that dispatch of the job has been postponed due to heavy network use by other jobs. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'activated' %} <li>  Status <b class='activated'>activated</b> indicates that the job is ready to be dispatched to a pilot at the site where it will run. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'sent' %} <li>  Status <b class='sent'>sent</b> indicates that the job was sent to a pilot for execution but the pilot has not yet acknowledged receipt. If this state persists for any length of time, all is not well with the job.{% endif %}
+  {% if show == 'all' or  job.jobstatus == 'starting' %} <li>  Status <b class='starting'>starting</b> indicates that the job has been picked up for execution but not yet launched by a pilot on a worker node. Used in environments where pilots don't directly pick up jobs (e.g. Nordugrid). {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'running' %} <li>  Status <b class='running'>running</b> indicates that the job is running at its execution site. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'holding' %} <li>  Status <b class='holding'>holding</b> indicates that the job has completed but output validation and processing (eg. registering outputs in datasets) is still underway. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'transferring' %} <li>  Status <b class='transferring'>transferring</b> indicates that transferring of outputs to their final destination after job completion is underway. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'merging' %} <li>  Status <b class='transferring'>merging</b> indicates that job is waiting while the correspondent merge job is done and merged files are transferred to the final destination. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'finished' %} <li>  Status <b class='finished'>finished</b> indicates that the job has successfully completed. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'failed' %} <li>  Status <b class='failed'>failed</b> indicates that the job has failed at some stage. Information on where the error occurred and with what error condition can be found in the job parameters table. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'cancelled' %} <li>  Status <b class='cancelled'>cancelled</b> indicates that the job has been cancelled, either by the user or by the system. Further information may be available in the job parameters table. {% endif %}
+  {% if show == 'all' or  job.jobstatus == 'closed' %} <li>  Status <b class='closed'>closed</b> terminated by the system before completing the allocated workload. E.g., killed to be reassigned to another site.{% endif %}
+  </ul>
+  </p>
+
+</div>
+</div>
+{% endblock %}
+
+
+
+
+
+

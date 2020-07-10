@@ -113,6 +113,7 @@ from core.libs.bpuser import get_relevant_links
 from core.libs.site import get_running_jobs_stats
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
+from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus
 
 from django.template.context_processors import csrf
 
@@ -6315,7 +6316,7 @@ def dashboard(request, view='all'):
         cloudview = 'region'
     elif view != 'production' and view != 'all':
         cloudview = 'N/A'
-        
+
     if ('version' not in request.session['requestParams'] or request.session['requestParams']['version'] != 'old') \
             and view in ('all', 'production', 'analysis') and cloudview == 'region' \
             and 'es' not in request.session['requestParams'] and 'mode' not in request.session['requestParams'] \
@@ -6831,6 +6832,70 @@ def dashRegion(request):
 
         response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
         setCacheEntry(request, "JobSummaryRegion", json.dumps(data, cls=DateEncoder), 60 * 20)
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+
+@login_customrequired
+def dashNucleus(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "JobSummaryNucleus")
+    # data = None
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('JobSummaryNucleus.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+    if 'hours' in request.session['requestParams'] and request.session['requestParams']['hours']:
+        hours = int(request.session['requestParams']['hours'])
+    else:
+        hours = 12
+
+    query, extra, nhours = setupView(request, hours=hours, limit=999999, wildCardExt=True)
+
+    # get summary data
+    jsn_nucleus_dict, jsn_satellite_dict = get_job_summary_nucleus(
+        query,
+        extra=extra,
+        job_states_order=copy.deepcopy(statelist)
+    )
+
+    if is_json_request(request):
+        pass
+    else:
+        # convert dict -> list
+        jsn_nucleus_list, jsn_satellite_list = prepare_job_summary_nucleus(
+            jsn_nucleus_dict,
+            jsn_satellite_dict,
+            job_states_order=copy.deepcopy(statelist)
+        )
+
+        xurl = request.get_full_path()
+        if xurl.find('?') > 0:
+            xurl += '&'
+        else:
+            xurl += '?'
+
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
+            'jobstates': statelist,
+            'show': 'all',
+            'hours': hours,
+            'xurl': xurl,
+            'nuclei': jsn_nucleus_list,
+            'satellites': jsn_satellite_list,
+        }
+        response = render_to_response('JobSummaryNucleus.html', data, content_type='text/html')
+        setCacheEntry(request, "JobSummaryNucleus", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
