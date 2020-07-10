@@ -4,7 +4,7 @@
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
-{% block subtitle %}PanDA {{view}} {{ requestParams.mode }} dashboard{% endblock %}
+{% block subtitle %}PanDA world jobs dashboard{% endblock %}
 
 {% block time_window %}
     Modification time window: <span class="time-window-range">{{ timerange.0 }}</span>
@@ -30,11 +30,6 @@
 
 <div class="callout primary" data-closable>
   <h5><b>This is a new world dashboard page!</b></h5>
-  <p>The old one is still available, via the links:
-    <a class="blacklink" href="{% url 'dashboard' %}?version=old"><b>all</b></a>,
-    <a class="blacklink" href="{% url 'dashProduction' %}?version=old"><b>production</b></a>,
-    <a class="blacklink" href="{% url 'dashAnalysis' %}?version=old"><b>analysis</b></a>. But it will be decommissioned soon.
-  </p>
   <p>This page summarizes recent job status for nuclei and satellites. The time limit is not applied for jobs in active states.</p>
   <p>If you notice any issue or if you have an advise how to improve the page, please let us know
     <a class="blacklink" href="mailto:atlas-adc-pandamon-support@cern.ch"><b>atlas-adc-pandamon-support@cern.ch</b></a> !</p>
