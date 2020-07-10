@@ -1,10 +1,4 @@
-/dash/
-/dash/analysis/
-/dash/production/
-/dash/production/?cloudview=region
-/dash/production/?cloudview=world
 /workingGroups/
-/worldjobs/
 /dash/objectstore/
 /dash/analysis/?mode=task
 /dash/production/?mode=task
@@ -44,3 +38,4 @@
 /dash/region/
 /dash/region/?jobtype=analy&splitby=jobtype
 /dash/region/?jobtype=prod&splitby=jobtype
+/dash/world/
