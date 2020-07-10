@@ -3,10 +3,15 @@
 Created by Tatiana Korchuganova on 2020-07-10
 """
 import copy
+import logging
 
-from django.db.models import Count, Sum
+from django.db import connection
+from django.db.models import Count
+from django.db.utils import DatabaseError
 
 from core.pandajob.models import CombinedWaitActDefArch4
+
+_logger = logging.getLogger('bigpandamon')
 
 
 def prepare_job_summary_nucleus(jsn_nucleus_dict, jsn_satellite_dict, **kwargs):
@@ -30,6 +35,8 @@ def prepare_job_summary_nucleus(jsn_nucleus_dict, jsn_satellite_dict, **kwargs):
     for nuc, sattelites in jsn_satellite_dict.items():
         for sat, summary in sattelites.items():
             row = [sat, nuc]
+            row.append(round(summary['hs06s_used']/1000) if 'hs06s_used' in summary else 0)
+            row.append(round(summary['hs06s_failed']/1000) if 'hs06s_failed' in summary else 0)
             row.append(sum([v for k, v in summary.items() if k in job_states_order]))
             if summary['failed'] + summary['finished'] > 0:
                 row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
@@ -44,6 +51,8 @@ def prepare_job_summary_nucleus(jsn_nucleus_dict, jsn_satellite_dict, **kwargs):
 
     for nuc, summary in jsn_nucleus_dict.items():
         row = [nuc]
+        row.append(round(summary['hs06s_used']/1000) if 'hs06s_used' in summary else 0)
+        row.append(round(summary['hs06s_failed']/1000) if 'hs06s_failed' in summary else 0)
         row.append(sum([v for k, v in summary.items() if k in job_states_order]))
         if summary['failed'] + summary['finished'] > 0:
             row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
@@ -77,9 +86,11 @@ def get_job_summary_nucleus(query, **kwargs):
         extra = kwargs['extra']
     else:
         extra = '(1=1)'
+    is_add_hs06s = False
+    if 'hs06s' in kwargs and kwargs['hs06s']:
+        is_add_hs06s = True
 
     final_job_states = ['finished', 'failed', 'cancelled', 'closed', 'merging']
-    final_es_job_states = ('finished', 'failed', 'merging')
 
     values = ['nucleus', 'computingsite', 'jobstatus']
 
@@ -101,8 +112,7 @@ def get_job_summary_nucleus(query, **kwargs):
     job_summary.extend(
         CombinedWaitActDefArch4.objects.filter(**query_archive).values(*values).extra(where=[extra]).annotate(
             countjobsinstate=Count('jobstatus')
-        ).annotate(
-            counteventsinstate=Sum('nevents'))
+        )
     )
 
     jsn_satellite_dict = {}
@@ -116,11 +126,7 @@ def get_job_summary_nucleus(query, **kwargs):
                     for js in job_states_order:
                         if js not in jsn_satellite_dict[row['nucleus']][row['computingsite']]:
                             jsn_satellite_dict[row['nucleus']][row['computingsite']][js] = 0
-                        if js in final_es_job_states:
-                            jsn_satellite_dict[row['nucleus']][row['computingsite']]['events'+js] = 0
                 jsn_satellite_dict[row['nucleus']][row['computingsite']][row['jobstatus']] += row['countjobsinstate']
-                if row['jobstatus'] in final_es_job_states:
-                    jsn_satellite_dict[row['nucleus']][row['computingsite']]['events' + row['jobstatus']] += row['counteventsinstate']
 
     jsn_nucleus_dict = {}
     for nuc, satellites in jsn_satellite_dict.items():
@@ -132,6 +138,75 @@ def get_job_summary_nucleus(query, **kwargs):
                     jsn_nucleus_dict[nuc][js] = 0
                 jsn_nucleus_dict[nuc][js] += count
 
+    if is_add_hs06s:
+        hs06s_nucleus_dict, hs06s_satellite_dict = get_world_hs06_summary(query, extra=extra)
+
+        for nuc, satellites in hs06s_satellite_dict.items():
+            for sat, summary in satellites.items():
+                if nuc in jsn_satellite_dict and sat in jsn_satellite_dict[nuc]:
+                    jsn_satellite_dict[nuc][sat]['hs06s_used'] = summary['hs06s_used']
+                    jsn_satellite_dict[nuc][sat]['hs06s_failed'] = summary['hs06s_failed']
+
+        for nuc, summary in hs06s_nucleus_dict.items():
+            if nuc in jsn_nucleus_dict:
+                jsn_nucleus_dict[nuc]['hs06s_used'] = summary['hs06s_used']
+                jsn_nucleus_dict[nuc]['hs06s_failed'] = summary['hs06s_failed']
+
     return jsn_nucleus_dict, jsn_satellite_dict
 
 
+def get_world_hs06_summary(query, **kwargs):
+
+    if 'extra' in kwargs:
+        extra = kwargs['extra']
+        extra = extra.replace("'", "\'\'")
+    else:
+        extra = '(1=1)'
+
+    extra += """ 
+        AND modificationtime > TO_DATE(\'\'{0}\'\',\'\'{2}\'\') 
+        AND modificationtime < TO_DATE(\'\'{1}\'\',\'\'{2}\'\')
+        """.format(
+            query['modificationtime__castdate__range'][0],
+            query['modificationtime__castdate__range'][1],
+            'YYYY-MM-DD HH24:MI:SS'
+    )
+
+    try:
+        cur = connection.cursor()
+        cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.GETHS06SSUMMARY('{}'))".format(extra))
+        hspersite = cur.fetchall()
+        cur.close()
+    except DatabaseError:
+        _logger.exception('Internal Server Error to get HS06s summary from GETHS06SSUMMARY SQL function')
+        raise
+
+    keys = ['nucleus', 'computingsite', 'hs06s_used', 'hs06s_failed']
+    world_HS06s_summary = [dict(zip(keys, row)) for row in hspersite]
+
+    sum_params = ['hs06s_used', 'hs06s_failed']
+    hs06s_satellite_dict = {}
+    if len(world_HS06s_summary) > 0:
+        for row in world_HS06s_summary:
+            if row['nucleus'] is not None and row['nucleus'] != '':
+                if row['nucleus'] not in hs06s_satellite_dict:
+                    hs06s_satellite_dict[row['nucleus']] = {}
+                if row['computingsite'] not in hs06s_satellite_dict[row['nucleus']]:
+                    hs06s_satellite_dict[row['nucleus']][row['computingsite']] = {}
+                    for sp in sum_params:
+                        if sp not in hs06s_satellite_dict[row['nucleus']][row['computingsite']]:
+                            hs06s_satellite_dict[row['nucleus']][row['computingsite']][sp] = 0
+                        if row[sp] is not None:
+                            hs06s_satellite_dict[row['nucleus']][row['computingsite']][sp] += row[sp]
+
+    hs06s_nucleus_dict = {}
+    for nuc, satellites in hs06s_satellite_dict.items():
+        if nuc not in hs06s_nucleus_dict:
+            hs06s_nucleus_dict[nuc] = {}
+        for sat, summary in satellites.items():
+            for sp, value in summary.items():
+                if sp not in hs06s_nucleus_dict[nuc]:
+                    hs06s_nucleus_dict[nuc][sp] = 0
+                hs06s_nucleus_dict[nuc][sp] += value
+
+    return hs06s_nucleus_dict, hs06s_satellite_dict

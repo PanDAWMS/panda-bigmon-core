@@ -113,7 +113,7 @@ from core.libs.bpuser import get_relevant_links
 from core.libs.site import get_running_jobs_stats
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
-from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus
+from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
 
 from django.template.context_processors import csrf
 
@@ -6863,11 +6863,20 @@ def dashNucleus(request):
     jsn_nucleus_dict, jsn_satellite_dict = get_job_summary_nucleus(
         query,
         extra=extra,
-        job_states_order=copy.deepcopy(statelist)
+        job_states_order=copy.deepcopy(statelist),
+        hs06s=True
     )
 
+    get_world_hs06_summary(query, extra=extra)
+
     if is_json_request(request):
-        pass
+        data = {
+            'nucleuses': jsn_satellite_dict,
+            'nucleussummary': jsn_nucleus_dict,
+            'statelist': copy.deepcopy(statelist),
+            'built': datetime.now().strftime(defaultDatetimeFormat),
+        }
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
         # convert dict -> list
         jsn_nucleus_list, jsn_satellite_list = prepare_job_summary_nucleus(
@@ -6882,6 +6891,13 @@ def dashNucleus(request):
         else:
             xurl += '?'
 
+        # overwrite view selection params
+        view_params_str = '<b>Params</b>: '
+        supported_params = {f.verbose_name: '' for f in PandaJob._meta.get_fields()}
+        for pn, pv in request.session['requestParams'].items():
+            if pn in supported_params:
+                view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
+        request.session['viewParams']['selection'] = view_params_str if not view_params_str.endswith(': ') else ''
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -6890,6 +6906,7 @@ def dashNucleus(request):
             'jobstates': statelist,
             'show': 'all',
             'hours': hours,
+            'timerange': query['modificationtime__castdate__range'],
             'xurl': xurl,
             'nuclei': jsn_nucleus_list,
             'satellites': jsn_satellite_list,

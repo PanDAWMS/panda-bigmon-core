@@ -99,8 +99,6 @@ urlpatterns = [
     re_path(r'^nview/$', nview.nviewDemo, name='BuildN'),
     re_path(r'^testsview/$', testsview.testviewDemo, name='TestsRes'),
     re_path(r'^compsview/$', compsview.compviewDemo, name='CompsRes'),
-                  #    re_path(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
-#    re_path(r'^worldjobs/production/$', coremon_views.dashWorldProduction, name='dashWorldProduction'),
 
     re_path(r'^worldhs06s/$', coremon_views.worldhs06s, name='worldHS06s'),
     re_path(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),
@@ -129,7 +127,7 @@ urlpatterns = [
 
     re_path(r'^new/dash/$', coremon_views.dashRegion, name='dashRegionNew'),
     re_path(r'^dash/region/$', coremon_views.dashRegion, name='dashRegion'),
-    re_path(r'^dash/nucleus/$', coremon_views.dashNucleus, name='dashNucleus'),
+    re_path(r'^dash/world/$', coremon_views.dashNucleus, name='dashWorld'),
 
     re_path(r'^csrftoken/$', coremon_views.getCSRFToken, name='getCSRFToken'),
 
