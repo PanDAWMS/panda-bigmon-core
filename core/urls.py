@@ -100,7 +100,7 @@ urlpatterns = [
     re_path(r'^testsview/$', testsview.testviewDemo, name='TestsRes'),
     re_path(r'^compsview/$', compsview.compviewDemo, name='CompsRes'),
 
-    re_path(r'^worldhs06s/$', coremon_views.worldhs06s, name='worldHS06s'),
+
     re_path(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),
     re_path(r'^descendentjoberrsinfo/$', coremon_views.descendentjoberrsinfo, name='descendentjoberrsinfo'),
     re_path(r'^taskssummary/$', coremon_views.getSummaryForTaskList, name='taskListSummary'),
