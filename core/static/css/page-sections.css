@@ -775,15 +775,15 @@ li.list-item > label {
   }
 
 .card.bp-container-simple.help {
-  border: 1px solid #4ba173;
+  border: 1px solid #bce0cd;
   font-size: 0.875rem;
 }
   .card.bp-container-simple.help .card-divider {
-    background-color: #4ba173;
-    color: #fefefe;
+    background-color: #bce0cd;
+    color: #0a0a0a;
   }
   .card.bp-container-simple.help .card-section {
-    background-color: #f5fdf9;
+    background-color: #fefefe;
     color: #0a0a0a;
   }
 
