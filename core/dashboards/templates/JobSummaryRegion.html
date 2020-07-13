@@ -38,6 +38,9 @@
   <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
   <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
     Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type.
+      I.e. if you check the <b>split by job type</b> checkbox, you will get up to 2 rows in tables for each Region/PQ showing number of production and analysis jobs separately.
+      If you check the <b>split by resource type</b> checkbox, you will get up to 4 rows in tables for each Region/PQ showing number of jobs using SCORE, MCORE, SCORE_HIMEM and MCORE_HIMEM resources separately.
+      If you check both checkboxes, you will get up to 8 rows for each Region/PQ showing split statistics of jobs.
     Click on <b>Update</b> button to apply selection.</p>
   <p><b>By default the view is minimized</b>, i.e. some short transient states and Harvester workers summary numbers are hidden.
     Press <b>Show details</b> buttons to see all the states of jobs and workers.</p>
@@ -968,6 +971,9 @@ function PopUpGrafana(site, prod_source = 'All', res_cap = 'All', montype = 'jac
   <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
   <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
     Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type.
+      I.e. if you check the <b>split by job type</b> checkbox, you will get up to 2 rows in tables for each Region/PQ showing number of production and analysis jobs separately.
+      If you check the <b>split by resource type</b> checkbox, you will get up to 4 rows in tables for each Region/PQ showing number of jobs using SCORE, MCORE, SCORE_HIMEM and MCORE_HIMEM resources separately.
+      If you check both checkboxes, you will get up to 8 rows for each Region/PQ showing split statistics of jobs.
     Click on <b>Update</b> button to apply selection.</p>
   <p><b>By default the view is minimized</b>, i.e. some short transient states and Harvester workers summary numbers are hidden.
     Press <b>Show details</b> buttons to see all the states of jobs and workers.</p>
