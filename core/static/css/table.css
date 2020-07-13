@@ -549,7 +549,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     font-weight: bold;
   }
   .data-table td.icons3 {
-    padding-right: 3rem;
+    padding-right: 3.5rem;
   }
   .data-table tbody td > a.alert {
     color: firebrick !important;

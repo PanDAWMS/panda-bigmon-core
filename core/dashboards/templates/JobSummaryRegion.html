@@ -630,9 +630,9 @@ function buildQueueSummary(data, divid) {
         "render": function(data, type, row, meta) {
             let link = '<a href = "{% url 'siteInfo' %}' + row[0] + '/">'+row[0]+'</a>';
             link += ' <a target="_blank" href="https://monit-grafana.cern.ch/d/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite=' + row[0] + '&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1"><div class="tooltip-right"><img src="/static/images/grafana.png" width=14 height=14 border=0><span container="body" class="tooltip-text">Jobs accounting (MONIT Grafana)</span></div></a>\n';
-            link += ' <a onclick=\'PopUpGrafana("SITE=' + row[0] + '&SIZE=medium", "' + row[0] +  '", "day")\'><div class="tooltip-right"><img src="/static/images/grafana-black.png" width=14 height=14 border=0><span class="tooltip-text">Jobs monitoring (rendered Grafana plot)</span></div></a>\n';
+            link += ' <a onclick=\'PopUpGrafana("' + row[0] + '", "' + row[4] +  '", "' + row[5] +  '", "jmonit")\'><div class="tooltip-right"><img src="/static/images/grafana-black.png" width=14 height=14 border=0><span class="tooltip-text">Jobs monitoring (rendered Grafana plot)</span></div></a>\n';
             link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/f3042400-aa4d-11ea-88a6-cd72c8759873?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:\'Job%20brokerage\',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,useMargins:!f),panels:!((gridData:(h:2,i:\'4\',w:3,x:0,y:0),id:e9b265f0-6627-11e7-9c82-4bf763932475,panelIndex:\'4\',type:visualization,version:\'6.2.4\'),(gridData:(h:8,i:\'5\',w:12,x:0,y:18),id:c3a4f160-50aa-11e9-a744-833d910adbcf,panelIndex:\'5\',type:visualization,version:\'6.2.4\'),(gridData:(h:6,i:\'6\',w:3,x:0,y:5),id:\'991ce6b0-aa5d-11ea-88a6-cd72c8759873\',panelIndex:\'6\',type:visualization,version:\'6.2.4\'),(gridData:(h:11,i:\'7\',w:9,x:3,y:0),id:\'5c7b65a0-aa5e-11ea-88a6-cd72c8759873\',panelIndex:\'7\',type:visualization,version:\'6.2.4\'),(gridData:(h:7,i:\'8\',w:12,x:0,y:11),id:b7c043e0-aa5e-11ea-88a6-cd72c8759873,panelIndex:\'8\',type:search,version:\'6.2.4\'),(gridData:(h:3,i:\'9\',w:3,x:0,y:2),id:\'6c76ff00-aa68-11ea-88a6-cd72c8759873\',panelIndex:\'9\',type:visualization,version:\'6.2.4\')),query:(language:lucene,query:\'site.keyword:%20%2F' + row[0] + '%5C%2F.*%2F%20OR%20site.keyword:%20%22' + row[0] + '%22\'),timeRestore:!t,title:jedilogs_jobbrokerage,viewMode:view)"><div class="tooltip-right"><img src="/static/images/kibana-logo.png" width=14 height=14 border=0><span class="tooltip-text">Brokerage actions (Kibana)</span></div></a>\n';
-
+            link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/a312a030-8b0e-11e8-a7e3-ffbb2f24f6b4?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:\'\',filters:!((\'$state\':(store:appState),meta:(alias:!n,disabled:!f,index:\'09f5a610-6810-11e9-a744-833d910adbcf\',key:computingsite.keyword,negate:!f,params:(query:' + row[0] + ',type:phrase),type:phrase,value:' + row[0] + '),query:(match:(computingsite.keyword:(query:' + row[0] + ',type:phrase))))))" ><div class="tooltip-right"><img src="/static/images/kibana-logo-black.png" width=14 height=14 border=0><span container="body" class="tooltip-text">Harvester particular computingsite dashboard (Kibana)</span> </div></a>';
             return link
         }
       },
@@ -913,28 +913,50 @@ function buildQueueSummary(data, divid) {
 }
 
 var newWinGrafana;
-function PopUpGrafana(ref, site, montype = 'jaccounting') {
-    var prt = 'https://';
-    var strFeatures="toolbar=no,status=no,menubar=no,location=no,scrollbars=no,resizable=no,height=1000,width=1000";
-    if (!newWinGrafana || newWinGrafana.closed) {
-        newWinGrafana = window.open(ref,'TellObj', strFeatures);
-        if (!newWinGrafana.opener) {newWinGrafana.opener = window; }
-    if (montype == 'jaccounting') {
-        newWinGrafana.document.write('<img src="{% url 'grafana' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite='+site+'&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1&panelId=138&width=1000&height=500&tz=Europe%2FBerlin" id="show_image"><p>');
-    }
-    else {
-        newWinGrafana.document.write("<html><head>");
-        newWinGrafana.document.write("<meta http-equiv='Content-Type' content='text/html; charset=windows-1251'>");
-        newWinGrafana.document.write("<title>"+ site +"</title></head>");
-        newWinGrafana.document.write("<body>");
-        newWinGrafana.document.write('<img src="{% url 'grafana' %}?url=https://monit-grafana.cern.ch/render/d-solo/VbKvjL2Zk/jobs-monitoring?orgId=17&from=now-24h/h&to=now&var-retention=10m&var-cloud=All&var-tier=All&var-federation=All&var-nucleus=All&var-site=All&var-queue=' + site + '&var-queue_state=All&var-prod_source=All&var-resource=All&var-resource_type=All&var-type=All&var-states=All&var-pilot_manager=All&var-pilot_version=All&var-harvester=All&var-workflow=All&var-frontier=All&var-fts_server=All&var-container_type=All&var-pledge=All&panelId=8&width=1400&height=1400&tz=Europe%2FZurich&timeout=3600" id="show_image" style="width:900px;height:900px;"><p>');
-        newWinGrafana.document.write('<a target=\"_blank\" href = \"https://monit-grafana.cern.ch/d/VbKvjL2Zk/jobs-monitoring?orgId=17&from=now-24h%2Fh&to=now&var-retention=10m&var-cloud=All&var-tier=All&var-federation=All&var-nucleus=All&var-site=All&var-queue='+ site +'&var-queue_state=All&var-prod_source=All&var-resource=All&var-resource_type=All&var-type=All&var-states=All&var-pilot_manager=All&var-pilot_version=All&var-harvester=All&var-workflow=All&var-frontier=All&var-fts_server=All&var-container_type=All&var-pledge=All\">Jobs monitoring dashboard</a>');
-        newWinGrafana.document.write("</body>");
-    }
-    newWinGrafana.document.close();
-    } else {
-        if (window.focus) {newWinGrafana.focus()}
-    }
+function PopUpGrafana(site, prod_source = 'All', res_cap = 'All', montype = 'jaccounting') {
+  let title = 'PQ: ' + site + ', job type: ' + prod_source + ', resource type: '+ res_cap;
+  switch (prod_source) {
+    case 'all':
+      prod_source = 'All';
+      break;
+    case 'analy':
+      prod_source = 'user';
+      break;
+    case 'prod':
+      prod_source = 'managed';
+      break;
+    default:
+      prod_source = 'All'
+  }
+  if (res_cap === 'all') { res_cap = 'All'; }
+  let tmstp = new Date();
+  let strFeatures="toolbar=no,titlebar=no,status=no,menubar=no,location=no,scrollbars=no,resizable=no,height=600,width=1000";
+  if (!newWinGrafana || newWinGrafana.closed) {
+      newWinGrafana = window.open('', title + ', built at' + tmstp, strFeatures);
+      if (!newWinGrafana.opener) {newWinGrafana.opener = window; }
+  if (montype === 'jaccounting') {
+      newWinGrafana.document.write('<img src="{% url 'grafana' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite='+site+'&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1&panelId=138&width=1000&height=500&tz=Europe%2FBerlin" id="show_image"><p>');
+  }
+  else {
+      newWinGrafana.document.write("<html><head>");
+      newWinGrafana.document.write("<meta http-equiv='Content-Type' content='text/html; charset=windows-1251'>");
+      newWinGrafana.document.write("<title>"+ title +"</title></head>");
+      newWinGrafana.document.write("<body>");
+      newWinGrafana.document.write('<img id="show_image" src="{% url 'grafana' %}?url=https://monit-grafana.cern.ch/render/d-solo/VbKvjL2Zk/jobs-monitoring?orgId=17&from=now-24h/h&to=now&var-retention=10m&var-cloud=All&var-tier=All&var-federation=All&var-nucleus=All&var-site=All&var-queue=' + site + '&var-queue_state=All&var-prod_source=' + prod_source + '&var-resource=' + res_cap + '&var-resource_type=All&var-type=All&var-states=All&var-pilot_manager=All&var-pilot_version=All&var-harvester=All&var-workflow=All&var-frontier=All&var-fts_server=All&var-container_type=All&var-pledge=All&panelId=8&width=1400&height=1400&tz=Europe%2FZurich&timeout=3600" id="show_image" style="width:900px;height:600px;"><p>');
+      newWinGrafana.document.write('<a target="_blank" href="https://monit-grafana.cern.ch/d/VbKvjL2Zk/jobs-monitoring?orgId=17&from=now-24h%2Fh&to=now&var-retention=10m&var-cloud=All&var-tier=All&var-federation=All&var-nucleus=All&var-site=All&var-queue='+ site +'&var-queue_state=All&var-prod_source=' + prod_source + '&var-resource=' + res_cap + '&var-resource_type=All&var-type=All&var-states=All&var-pilot_manager=All&var-pilot_version=All&var-harvester=All&var-workflow=All&var-frontier=All&var-fts_server=All&var-container_type=All&var-pledge=All">Jobs monitoring dashboard</a>');
+      newWinGrafana.document.write('<p><input type="button" onclick=reloadImage("show_image"); value="Reload">');
+      newWinGrafana.document.write('<input type=button value="Close" onclick="window.close();return false;">');
+      newWinGrafana.document.write('</body>');
+
+      var script_ri_el = newWinGrafana.document.createElement("script");
+      var script_ri = newWinGrafana.document.createTextNode("function reloadImage(id) { let base_src = document.getElementById(id).src; let tmstp = new Date(); document.getElementById(id).src = base_src + '&_?=' + tmstp.toISOString(); }");
+      script_ri_el.appendChild(script_ri);
+      newWinGrafana.document.head.appendChild(script_ri_el);
+  }
+  newWinGrafana.document.close();
+  } else {
+      if (window.focus) {newWinGrafana.focus()}
+  }
 }
 </script>
 {% endblock %}
