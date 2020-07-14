@@ -136,6 +136,9 @@ hr {
 .callout ul li {
   font-size: 0.875rem;
 }
+.callout pre {
+  font-size: 0.875rem;
+}
 
 
 .killbutton {
