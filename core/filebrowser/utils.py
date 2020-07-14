@@ -704,16 +704,15 @@ def list_file_directory(logdir, limit=1000):
         _logger.debug('Walking through directory:')
         for walk_root, walk_dirs, walk_files in os.walk(os.path.join(logdir, tardir), followlinks=False):
             #_logger.error("walk - " + datetime.now().strftime("%H:%M:%S") + "  " + os.path.join(logdir, tardir))
-            _logger.debug('Walk root: {}, walk_dirs: {}, walk_files: {}'.format(walk_root, walk_dirs, walk_files))
-
             for name in walk_files:
                 contents.append(os.path.join(walk_root, name))
                 if len(contents) > limit:
                     dobrake = True
+                    _logger.debug('Number of files added to contents reached the limit : {}'.format(limit))
                     break
             if dobrake:
                 break
-        _logger.debug('Contents: \n '.format(contents))
+        _logger.debug('Contents: \n {}'.format(contents))
         fileStats = {}
         linkStats = {}
         linkName = {}
@@ -740,9 +739,10 @@ def list_file_directory(logdir, limit=1000):
                     f_content['modification'] = str(time.strftime(filebrowserDateTimeFormat, time.gmtime(fileStats[f][8])))
                     f_content['size'] = fileStats[f][6]
                     f_content['name'] = os.path.basename(f)
-                    f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f))
-                    _logger.debug('Dirname of file: {}. Got it by regex replacing of {} in {}'.format(f_content['dirname'], os.path.join(logdir, tardir), os.path.dirname(f)))
+                    f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f) + '/')
+                    f_content['dirname'] = f_content['dirname'][:-1] if f_content['dirname'].endswith('/') else f_content['dirname']
             files.append(f_content)
+            _logger.debug('Files to be shown: \n {}'.format(files))
     except OSError as errMsg:
         msg = "Error in filesystem call:" + str(errMsg)
         _logger.error(msg)
