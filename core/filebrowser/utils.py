@@ -701,11 +701,14 @@ def list_file_directory(logdir, limit=1000):
     try:
         contents = []
         dobrake = False
+        _logger.debug('Walking through directory:')
         for walk_root, walk_dirs, walk_files in os.walk(os.path.join(logdir, tardir), followlinks=False):
             #_logger.error("walk - " + datetime.now().strftime("%H:%M:%S") + "  " + os.path.join(logdir, tardir))
+            _logger.debug('Walk root: {}, walk_dirs: {}, walk_files: {}'.format(walk_root, walk_dirs, walk_files))
 
             for name in walk_files:
                 contents.append(os.path.join(walk_root, name))
+                _logger.debug('File {} {} added to contents'.format(walk_root, name))
                 if len(contents) > limit:
                     dobrake = True
                     break
