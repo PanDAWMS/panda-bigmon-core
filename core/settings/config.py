@@ -284,7 +284,7 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'bigpandamon-filebrowser':{
-            'handlers': ['logfile-filebrowser'],
+            'handlers': ['logfile-filebrowser', 'logfile-error'],
             'level': 'DEBUG',
         },
         'bigpandamon-pbm':{
