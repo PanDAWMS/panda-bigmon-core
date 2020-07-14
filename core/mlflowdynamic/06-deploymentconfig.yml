@@ -27,7 +27,10 @@ spec:
         instance: randomstring
     spec:
       containers:
-      - image: docker-registry.default.svc:5000/test-mlflow-bigpanda/bigpanda-mlflow:latest
+      - env:
+          - name: MLARTEFACTS_SOURCE
+            value: MLARTEFACTSVAL
+        image: docker-registry.default.svc:5000/test-mlflow-bigpanda/bigpanda-mlflow:latest
         name: default-container
         resources: {}
       - image: nginx:stable-alpine

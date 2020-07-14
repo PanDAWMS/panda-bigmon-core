@@ -24,27 +24,25 @@ class occlicalls:
     )
 
 
-    def __init__(self):
+    def __init__(self, taskid):
         self.INSTANCE = ''.join(random.choices(string.ascii_lowercase +
                                                string.digits, k=7))
+        self.taskid = taskid
 
 
     def get_instance(self):
         return self.INSTANCE
 
     def openshift_actions(self):
-        #time.sleep(5)
         resp = self.openshift_action("06-deploymentconfig.yml", 'apps.openshift.io/v1', 'DeploymentConfig')
-        #time.sleep(5)
         resp = self.openshift_action("07-nginx-svc.yml", 'v1', 'Service')
-        #time.sleep(5)
         resp = self.openshift_action("08-route.yml", 'v1', 'Route')
 
 
     def openshift_action(self, yml_file_name, api_version, kind):
         with open(path.join(path.dirname(__file__), yml_file_name)) as f:
             dep = yaml.safe_load(f)
-            self.patchConfig(dep, self.INSTANCE)
+            self.patchConfig(dep, self.INSTANCE, str(self.taskid))
             handle = self.ocp_client.resources.get(api_version=api_version, kind=kind)
             resp = handle.create(body=dep, namespace=OC_NAMESPACE)
             return resp
@@ -87,23 +85,27 @@ class occlicalls:
         return configmap_name
 
 
-    def patchConfig(self, inputObj, instance):
+    def patchConfig(self, inputObj, instance, taskid):
         if isinstance(inputObj, dict):
-            inputObj.update((k, self.patchConfig(v, instance)) for k, v in inputObj.items())
+            inputObj.update((k, self.patchConfig(v, instance, taskid)) for k, v in inputObj.items())
             return inputObj
         elif isinstance(inputObj, list):
             for i in range(len(inputObj)):
-                inputObj[i] = self.patchConfig(inputObj[i], instance)
+                inputObj[i] = self.patchConfig(inputObj[i], instance, taskid)
             return inputObj
         elif isinstance(inputObj, str):
-            return inputObj.replace('randomstring', instance)
+            if 'MLARTEFACTSVAL' in inputObj:
+                return inputObj.replace('MLARTEFACTSVAL', 'https://bigpanda.cern.ch/idds/downloadlog/?workloadid='+taskid)
+            if 'randomstring' in inputObj:
+                return inputObj.replace('randomstring', instance)
+            return inputObj
         else:
             # e.g. int data type - do nothing
             return inputObj
 
 
 if __name__ == "__main__":
-    ocwrap = occlicalls()
+    ocwrap = occlicalls(21492864)
     #time.sleep(5)
     ocwrap.register_config_map()
     ocwrap.openshift_actions()
