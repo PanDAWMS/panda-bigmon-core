@@ -607,11 +607,26 @@
         };
 
         $scope.update = function() {
-            var query = notimerangeurl;
-            var timeparamname = (location.pathname.indexOf('jobsbuster') > -1) ? 'endtime' : 'date';
-
-            query += timeparamname + '_from=' + $scope.timewindow.selection.from + '&';
-            query += timeparamname + '_to=' + $scope.timewindow.selection.to;
+            let query = notimerangeurl;
+            if (location.pathname.indexOf('jobsbuster') > -1) {
+              let timeparamname = 'endtime';
+              query += timeparamname + '_from=' + $scope.timewindow.selection.from + '&';
+              query += timeparamname + '_to=' + $scope.timewindow.selection.to;
+            }
+            else {
+              switch ($scope.timewindow.data.quick) {
+                case 'hours':
+                  query += 'hours=' + $scope.timewindow.data.hours;
+                  break;
+                case 'days':
+                  query += 'days=' + $scope.timewindow.data.days;
+                  break;
+                case 'custom':
+                  query += 'date_from=' + $scope.timewindow.selection.from + '&';
+                  query += 'date_to=' + $scope.timewindow.selection.to;
+                  break;
+              }
+            }
             window.location = query;
         };
       }]);
