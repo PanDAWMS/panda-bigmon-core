@@ -759,7 +759,7 @@ def list_file_directory(logdir, limit=1000):
     if status != 0:
         return files, output, tardir
     else:
-        return files, '', tardir
+        return files, err, tardir
 
 
 def fetch_file(pfn, guid, unpack=True, listfiles=True):
