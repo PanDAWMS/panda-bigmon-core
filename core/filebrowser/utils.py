@@ -683,7 +683,7 @@ def list_file_directory(logdir, limit=1000):
                 tardir = entry
                 continue
     if not len(tardir):
-        err = "Problem with tarball, could not find expected tarball directory"
+        err = "Problem with tarball, could not find expected tarball directory. "
         _logger.warning('{} (got {}).'.format(err, logdir))
         # try to show any xml, json and txt files that are not in tarball directory
         filtered_filelist = []
@@ -696,6 +696,9 @@ def list_file_directory(logdir, limit=1000):
             _logger.error('{} (got {}).'.format(err, logdir))
             _logger.debug('Contents of untared log file: \n {}'.format(filelist))
             return files, err, tardir
+        else:
+            err += "However, a few files has been found in a topdir, so showing them."
+            _logger.info('A few files found in a topdir, will show them to user')
 
     # Now list the contents of the tarball directory:
     try:

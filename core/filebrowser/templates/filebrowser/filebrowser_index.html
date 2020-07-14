@@ -45,6 +45,14 @@
 </div>
 
 {% if files %}
+{% if errors.download %}
+  <div class="callout warning" data-closable>
+  <h5><b>Warning</b></h5>
+  <p>
+    <pre>{{errors.download}}</pre>
+  </p>
+  </div>
+{% endif %}
 <div><span style="color: navy; font-weight: bold;">File listing</span></div>
 <br/>
 <table id="filelist" class="data-table left-aligned nowrap">
