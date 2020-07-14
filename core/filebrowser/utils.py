@@ -708,13 +708,12 @@ def list_file_directory(logdir, limit=1000):
 
             for name in walk_files:
                 contents.append(os.path.join(walk_root, name))
-                _logger.debug('File {} {} added to contents'.format(walk_root, name))
                 if len(contents) > limit:
                     dobrake = True
                     break
             if dobrake:
                 break
-        _logger.debug(contents)
+        _logger.debug('Contents: \n '.format(contents))
         fileStats = {}
         linkStats = {}
         linkName = {}
@@ -742,6 +741,7 @@ def list_file_directory(logdir, limit=1000):
                     f_content['size'] = fileStats[f][6]
                     f_content['name'] = os.path.basename(f)
                     f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f))
+                    _logger.debug('Dirname of file: {}. Got it by regex replacing of {} in {}'.format(f_content['dirname'], os.path.join(logdir, tardir), os.path.dirname(f)))
             files.append(f_content)
     except OSError as errMsg:
         msg = "Error in filesystem call:" + str(errMsg)
