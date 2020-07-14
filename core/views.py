@@ -109,8 +109,7 @@ from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, pa
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.task import get_job_state_summary_for_tasklist
-from core.libs.bpuser import get_relevant_links
-from core.libs.site import get_running_jobs_stats
+from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
@@ -1241,42 +1240,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         extraQueryString = '1=1'
 
     return (query, extraQueryString, LAST_N_HOURS_MAX)
-
-
-def saveUserSettings(request, page):
-
-    if page == 'errors':
-        errorspage_tables = ['jobattrsummary', 'errorsummary', 'siteerrorsummary', 'usererrorsummary',
-                            'taskerrorsummary']
-        preferences = {}
-        if 'jobattr' in request.session['requestParams']:
-            preferences["jobattr"] = request.session['requestParams']['jobattr'].split(",")
-            try:
-                del request.session['requestParams']['jobattr']
-            except:
-                pass
-        else:
-            preferences["jobattr"] = standard_errorfields
-        if 'tables' in request.session['requestParams']:
-            preferences['tables'] = request.session['requestParams']['tables'].split(",")
-            try:
-                del request.session['requestParams']['tables']
-            except:
-                pass
-        else:
-            preferences['tables'] = errorspage_tables
-        query = {}
-        query['page']= str(page)
-        if request.user.is_authenticated:
-            userids = BPUser.objects.filter(email=request.user.email).values('id')
-            userid = userids[0]['id']
-            try:
-                userSetting = BPUserSettings.objects.get(page=page, userid=userid)
-                userSetting.preferences = json.dumps(preferences)
-                userSetting.save(update_fields=['preferences'])
-            except BPUserSettings.DoesNotExist:
-                userSetting = BPUserSettings(page=page, userid=userid, preferences=json.dumps(preferences))
-                userSetting.save()
 
 
 def saveSettings(request):
@@ -9942,11 +9905,6 @@ def errorSummary(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    # if 'jobattr' in request.session['requestParams'] or 'tables' in request.session['requestParams']:
-    #     saveUserSettings(request,'errors')
-        # if request.GET:
-        #     addGetRequestParams(request)
-
     testjobs = False
     if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams'][
         'prodsourcelabel'].lower().find('test') >= 0:
@@ -10263,72 +10221,6 @@ def errorSummary(request):
                          'produserid': job['produserid']})
         return HttpResponse(json.dumps(resp), content_type='application/json')
 
-
-def filterErrorData(request, data):
-    defaultErrorsPreferences = {}
-    defaultErrorsPreferences['jobattr'] = standard_errorfields
-
-    defaultErrorsPreferences['tables'] = {
-        'jobattrsummary': 'Job attribute summary',
-        'errorsummary': 'Overall error summary',
-        'siteerrorsummary': 'Site error summary',
-        'usererrorsummary': 'User error summary',
-        'taskerrorsummary': 'Task error summary'
-    }
-    userids = BPUser.objects.filter(email=request.user.email).values('id')
-    userid = userids[0]['id']
-    try:
-        userSetting = BPUserSettings.objects.get(page='errors', userid=userid)
-        userPreferences = json.loads(userSetting.preferences)
-    except:
-        saveUserSettings(request, 'errors')
-        userSetting = BPUserSettings.objects.get(page='errors', userid=userid)
-        userPreferences = json.loads(userSetting.preferences)
-        # userPreferences = defaultErrorsPreferences
-    userPreferences['defaulttables'] = defaultErrorsPreferences['tables']
-    userPreferences['defaultjobattr'] = defaultErrorsPreferences['jobattr']
-   ###TODO Temporary fix. Need to redesign
-    userPreferences['jobattr'].append('reqid')
-    userPreferences['jobattr'].append('computingelement')
-
-    data['userPreferences'] = userPreferences
-    if 'tables' in userPreferences:
-        if 'jobattrsummary' in userPreferences['tables']:
-            if 'jobattr' in userPreferences:
-                sumd_new = []
-                for attr in userPreferences['jobattr']:
-                    for field in data['sumd']:
-                        if attr == field['field']:
-                            sumd_new.append(field)
-                            continue
-                data['sumd'] = sorted(sumd_new, key=lambda x: x['field'])
-        else:
-            try:
-                del data['sumd']
-            except:
-                pass
-        if 'errorsummary' not in userPreferences['tables']:
-            try:
-                del data['errsByCount']
-            except:
-                pass
-        if 'siteerrorsummary' not in userPreferences['tables']:
-            try:
-                del data['errsBySite']
-            except:
-                pass
-        if 'usererrorsummary' not in userPreferences['tables']:
-            try:
-                del data['errsByUser']
-            except:
-                pass
-        if 'taskerrorsummary' not in userPreferences['tables']:
-            try:
-                del data['errsByTask']
-            except:
-                pass
-
-    return data
 
 
 def removeParam(urlquery, parname, mode='complete'):
@@ -12437,6 +12329,7 @@ def image(request):
             return redirect('/static/images/404-not-found-site.gif')
     else:
         return redirect('/static/images/error_z0my4n.png')
+
 
 def grafana_image(request):
     if ('url' in request.GET):
