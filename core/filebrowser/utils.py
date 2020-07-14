@@ -683,16 +683,25 @@ def list_file_directory(logdir, limit=1000):
                 tardir = entry
                 continue
     if not len(tardir):
-        err = "Problem with tarball, could not find expected directory"
-        _logger.error('{} (got {}).'.format(err, logdir))
-        return files, err, tardir
+        err = "Problem with tarball, could not find expected tarball directory"
+        _logger.warning('{} (got {}).'.format(err, logdir))
+        # try to show any xml, json and txt files that are not in tarball directory
+        filtered_filelist = []
+        if len(filelist) > 0:
+            for entry in filelist:
+                if entry.endswith('.xml') or entry.endswith('.json') or entry.endswith('.txt'):
+                    filtered_filelist.append(entry)
+        if len(filtered_filelist) == 0:
+            err += ' Tried to look for files in top dir, but found nothing'
+            _logger.error('{} (got {}).'.format(err, logdir))
+            _logger.debug('Contents of untared log file: \n {}'.format(filelist))
+            return files, err, tardir
 
     # Now list the contents of the tarball directory:
     try:
         contents = []
         dobrake = False
-        for walk_root, walk_dirs, walk_files in \
-            os.walk(os.path.join(logdir, tardir), followlinks=False):
+        for walk_root, walk_dirs, walk_files in os.walk(os.path.join(logdir, tardir), followlinks=False):
             #_logger.error("walk - " + datetime.now().strftime("%H:%M:%S") + "  " + os.path.join(logdir, tardir))
 
             for name in walk_files:
