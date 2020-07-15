@@ -3,17 +3,17 @@
 """
 import json
 import logging
-import urllib3
 import copy
 from datetime import datetime, timedelta
 
 from django.db import connection
 from django.db.models import Q, Count, Sum
-from django.core.cache import cache
 
 from core.schedresource.models import SchedconfigJson
 from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers
 from core.pandajob.models import PandaJob
+
+from core.schedresource.utils import get_CRIC_panda_queues
 
 from core.settings.local import defaultDatetimeFormat
 
@@ -340,28 +340,6 @@ def get_workers_summary_split(query, **kwargs):
     worker_summary = prodsourcelabel_to_jobtype(worker_summary, field_name='jobtype')
 
     return list(worker_summary)
-
-
-def get_CRIC_panda_queues():
-    """Get PanDA queues config from CRIC"""
-    panda_queues_dict = cache.get('pandaQueues')
-    if not panda_queues_dict:
-        panda_queues_dict = {}
-        url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
-        http = urllib3.PoolManager()
-        data = {}
-        try:
-            r = http.request('GET', url)
-            data = json.loads(r.data.decode('utf-8'))
-            for pq, params in data.items():
-                if 'vo_name' in params and params['vo_name'] == 'atlas':
-                    panda_queues_dict[pq] = params
-        except Exception as exc:
-            print (exc)
-
-        cache.set('pandaQueues', panda_queues_dict, 3600)
-
-    return panda_queues_dict
 
 
 def prodsourcelabel_to_jobtype(list_of_dict, field_name='prodsourcelabel'):
