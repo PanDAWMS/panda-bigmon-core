@@ -1,7 +1,6 @@
 """
 
 """
-import json
 import logging
 import copy
 from datetime import datetime, timedelta
@@ -9,11 +8,10 @@ from datetime import datetime, timedelta
 from django.db import connection
 from django.db.models import Q, Count, Sum
 
-from core.schedresource.models import SchedconfigJson
 from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers
 from core.pandajob.models import PandaJob
 
-from core.schedresource.utils import get_CRIC_panda_queues
+from core.schedresource.utils import get_panda_queues
 
 from core.settings.local import defaultDatetimeFormat
 
@@ -119,25 +117,8 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
     extra_metrics = copy.deepcopy(worker_metrics)
     extra_metrics.append('rcores')
 
-    # get info from CRIC
-    try:
-        panda_queues_dict = get_CRIC_panda_queues()
-    except:
-        panda_queues_dict = None
-        _logger.error("[JSR] cannot get json from CRIC")
-
-    if not panda_queues_dict:
-        # get data from new SCHEDCONFIGJSON table
-        panda_queues_list = []
-        panda_queues_dict = {}
-        panda_queues_list.extend(SchedconfigJson.objects.values())
-        if len(panda_queues_list) > 0:
-            for pq in panda_queues_list:
-                try:
-                    panda_queues_dict[pq['pandaqueue']] = json.loads(pq['data'])
-                except:
-                    panda_queues_dict[pq['pandaqueue']] = None
-                    _logger.error("[JSR] cannot load json from SCHEDCONFIGJSON table for {} PanDA queue".format(pq['pandaqueue']))
+    # get PQ info
+    panda_queues_dict = get_panda_queues()
 
     regions_list = list(set([params['cloud'] for pq, params in panda_queues_dict.items()]))
 
