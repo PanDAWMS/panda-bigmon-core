@@ -154,7 +154,7 @@
           {% if vomode == 'atlas' %}
               {% if task.tasktype == 'prod' %}
                   <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
-                     target="_blank">Prod Task view (to manage task)</a>Z
+                     target="_blank">Prod Task view (to manage task)</a>
                   <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
               {% elif  task.tasktype == 'anal' %}
                   <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=analysis&task_id={{ task.jeditaskid }}"
