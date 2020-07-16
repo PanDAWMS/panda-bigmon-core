@@ -424,7 +424,7 @@ def job_summary_for_task_light(taskrec):
     """
     jeditaskidstr = str(taskrec['jeditaskid'])
     statelistlight = ['defined', 'assigned', 'activated', 'starting', 'running', 'holding', 'transferring', 'finished',
-                      'failed']
+                      'failed', 'cancelled']
     estypes = ['es', 'esmerge', 'jumbo']
     jobSummaryLight = {}
     jobSummaryLightSplitted = {}
@@ -462,8 +462,9 @@ def job_summary_for_task_light(taskrec):
 
     for row in js_count_list:
         if row['state'] in statelistlight:
-            jobSummaryLight[row['state']] += row['count']
-            if row['es'] in estypes:
+            if not (row['state'] == 'cancelled' and row['es'] in ('es', 'esmerge')):
+                jobSummaryLight[row['state']] += row['count']
+            if row['es'] in estypes and not (row['state'] == 'cancelled' and row['es'] in ('es', 'esmerge')):
                 jobSummaryLightSplitted[row['es']][row['state']] += row['count']
 
     # dict -> list for template
