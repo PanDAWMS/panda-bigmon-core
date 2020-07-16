@@ -135,6 +135,7 @@ INSTALLED_APPS_BIGPANDAMON_CORE = (
     'core.pbm.templatetags',
     #    'core.graphic', #NOT-IMPLEMENTED
     'core.gspread',
+    'core.mlflowdynamic',
     'django.contrib.staticfiles',
 )
 COMMON_INSTALLED_APPS = \
@@ -191,6 +192,7 @@ INSTALLED_APPS_BIGPANDAMON_core = (
     'core.buildmonitor',
     'core.oi',
     'core.iDDS',
+    'core.mlflowdynamic',
 )
 
 INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_core

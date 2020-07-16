@@ -44,7 +44,6 @@ TEMPLATES = [
             join(dirname(core.__file__), 'templates'),
             join(dirname(core.filebrowser.__file__), 'templates'),
             join(dirname(core.pbm.__file__), 'templates'),
-
         ],
         'OPTIONS': {
             'context_processors': [

@@ -19,19 +19,19 @@ class occlicalls:
     configuration.api_key = {"authorization": OC_TOKEN}
     configuration.api_key_prefix['authorization'] = 'Bearer'
 
-    ocp_client = DynamicClient(
-        client.ApiClient(configuration=configuration)
-    )
-
 
     def __init__(self, taskid):
         self.INSTANCE = ''.join(random.choices(string.ascii_lowercase +
-                                               string.digits, k=7))
+                                                string.digits, k=7))
+        #self.INSTANCE = str(taskid)
         self.taskid = taskid
-
+        self.ocp_client = DynamicClient(
+            client.ApiClient(configuration=self.configuration)
+        )
 
     def get_instance(self):
         return self.INSTANCE
+
 
     def openshift_actions(self):
         resp = self.openshift_action("06-deploymentconfig.yml", 'apps.openshift.io/v1', 'DeploymentConfig')
@@ -58,6 +58,7 @@ class occlicalls:
         }
         self.create_config_map(configmap_name="nginx-redirection-{instance_path}".format(instance_path= self.INSTANCE),
                                labels=labels, data=data)
+        return self.INSTANCE
 
 
     def create_config_map(
@@ -70,7 +71,7 @@ class occlicalls:
         v1_configmaps = self.ocp_client.resources.get(
             api_version="v1", kind="ConfigMap"
         )
-        v1_configmaps.create(
+        resp = v1_configmaps.create(
             body={
                 "apiVersion": "v1",
                 "kind": "ConfigMap",
@@ -104,9 +105,7 @@ class occlicalls:
             return inputObj
 
 
-if __name__ == "__main__":
-    ocwrap = occlicalls(21492864)
-    #time.sleep(5)
-    ocwrap.register_config_map()
-    ocwrap.openshift_actions()
+#ocwrap = occlicalls(21492864)
+#ocwrap.register_config_map()
+#ocwrap.openshift_actions()
 
