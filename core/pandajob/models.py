@@ -134,6 +134,8 @@ class CombinedWaitActDefArch4(models.Model):
     nevents = models.IntegerField(db_column='NEVENTS')
     isarchive = models.IntegerField(db_column='ISARCHIVE')
     username = models.CharField(max_length=168, db_column='USERNAME')
+    resourcetype = models.CharField(max_length=64, db_column='RESOURCE_TYPE')
+    eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."COMBINED_WAIT_ACT_DEF_ARCH4"'
 

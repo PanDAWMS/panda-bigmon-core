@@ -60,3 +60,40 @@ def get_CRIC_panda_queues():
         cache.set('pandaQueues', panda_queues_dict, 3600)
 
     return panda_queues_dict
+
+
+def get_object_stores():
+    object_stores_dict = cache.get('objectStores')
+    if not object_stores_dict:
+        object_stores_dict = {}
+        url = "https://atlas-cric.cern.ch/api/atlas/ddmendpoint/query/?json&type=OS_"
+        http = urllib3.PoolManager()
+        try:
+            r = http.request('GET', url)
+            data = json.loads(r.data.decode('utf-8'))
+
+        except Exception as exc:
+            _logger.exception(exc)
+            data = {}
+
+        for OSname, OSdescr in data.items():
+            if "resource" in OSdescr and "bucket_id" in OSdescr["resource"]:
+                object_stores_dict[OSdescr["resource"]["bucket_id"]] = {
+                    'name': OSname,
+                    'site': OSdescr["site"],
+                    'region': OSdescr['cloud'],
+                }
+                object_stores_dict[OSdescr["resource"]["id"]] = {
+                    'name': OSname,
+                    'site': OSdescr["site"],
+                    'region': OSdescr['cloud'],
+                }
+                object_stores_dict[OSdescr["id"]] = {
+                    'name': OSname,
+                    'site': OSdescr["site"],
+                    'region': OSdescr['cloud'],
+                }
+
+        cache.set('objectStores', object_stores_dict, 3600)
+
+    return object_stores_dict

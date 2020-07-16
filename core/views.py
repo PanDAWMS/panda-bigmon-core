@@ -113,6 +113,7 @@ from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
+from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
 
 from django.template.context_processors import csrf
 
@@ -1140,6 +1141,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                 extraQueryString += " AND not specialhandling like \'%%sc:%%\' "
                             elif request.session['requestParams'][param] == 'not2':
                                 extraQueryString += ' AND (eventservice != 2) '
+                            elif request.session['requestParams'][param] == 'all':
+                                query['eventservice__isnull'] = False
+                                continue
                             else:
                                 query['eventservice__isnull'] = True
                     elif param == 'corecount' and request.session['requestParams'][param] == '1':
@@ -6635,6 +6639,111 @@ def dashNucleus(request):
         setCacheEntry(request, "JobSummaryNucleus", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
+
+@login_customrequired
+def dashES(request):
+    """
+    A new ES job summary dashboard
+    :param request: request
+    :return: HTTP response
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "JobSummaryRegion")
+    # data = None
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('EventService.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+    if 'splitby' in request.session['requestParams'] and request.session['requestParams']['splitby']:
+        split_by = request.session['requestParams']['splitby']
+    else:
+        split_by = None
+
+    if 'hours' in request.session['requestParams'] and request.session['requestParams']['hours']:
+        hours = int(request.session['requestParams']['hours'])
+    else:
+        hours = 12
+
+    jquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='job', wildCardExt=True)
+
+    # add queue related request params to  pqquery dict
+    pqquery = dict()
+    if 'queuetype' in request.session['requestParams'] and request.session['requestParams']['queuetype']:
+        pqquery['queuetype'] = request.session['requestParams']['queuetype']
+    if 'queuestatus' in request.session['requestParams'] and request.session['requestParams']['queuestatus']:
+        pqquery['queuestatus'] = request.session['requestParams']['queuestatus']
+
+    # get job summary data
+    jsr_queues_dict, jsr_regions_dict = get_es_job_summary_region(jquery, extra=wildCardExtension, pqquery=pqquery)
+
+    if is_json_request(request):
+        extra_info_params = ['links', ]
+        extra_info = {ep: False for ep in extra_info_params}
+        if 'extra' in request.session['requestParams'] and 'links' in request.session['requestParams']['extra']:
+            extra_info['links'] = True
+        jsr_queues_dict, jsr_regions_dict = prettify_json_output(jsr_queues_dict, jsr_regions_dict, hours=hours, extra=extra_info)
+        data = {
+            'regions': jsr_regions_dict,
+            'queues': jsr_queues_dict,
+        }
+        dump = json.dumps(data, cls=DateEncoder)
+        return HttpResponse(dump, content_type='application/json')
+    else:
+        # transform dict to list and filter out rows depending on split by request param
+        jsr_queues_list, jsr_regions_list = prepare_es_job_summary_region(jsr_queues_dict, jsr_regions_dict,
+                                                                       split_by=split_by)
+
+        # prepare lists of unique values for drop down menus
+        select_params_dict = {}
+        select_params_dict['region'] = sorted(list(set([r[0] for r in jsr_regions_list])))
+        select_params_dict['queuetype'] = sorted(list(set([pq[1] for pq in jsr_queues_list])))
+        select_params_dict['queuestatus'] = sorted(list(set([pq[3] for pq in jsr_queues_list])))
+
+        xurl = request.get_full_path()
+        if xurl.find('?') > 0:
+            xurl += '&'
+        else:
+            xurl += '?'
+
+        # overwrite view selection params
+        view_params_str = '<b>Manually entered params</b>: '
+        supported_params = {f.verbose_name: '' for f in PandaJob._meta.get_fields()}
+        interactive_params = ['hours', 'days', 'date_from', 'date_to', 'timestamp',
+                              'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region']
+        for pn, pv in request.session['requestParams'].items():
+            if pn not in interactive_params and pn in supported_params:
+                view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
+        request.session['viewParams']['selection'] = view_params_str if not view_params_str.endswith(': ') else ''
+
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
+            'hours': hours,
+            'xurl': xurl,
+            'selectParams': select_params_dict,
+            'jobstates': statelist,
+            'regions': jsr_regions_list,
+            'queues': jsr_queues_list,
+            'timerange': jquery['modificationtime__castdate__range'],
+            'show': 'all',
+        }
+
+        response = render_to_response('EventService.html', data, content_type='text/html')
+        setCacheEntry(request, "EventService", json.dumps(data, cls=DateEncoder), 60 * 20)
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+
 
 
 @login_customrequired
