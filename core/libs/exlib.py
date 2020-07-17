@@ -5,6 +5,23 @@ from dateutil.parser import parse
 from datetime import datetime
 from core.settings.local import dbaccess
 
+def getDataSetsForATask(taskid, type = None):
+    query = {
+        'jeditaskid': taskid
+    }
+    if type:
+        query['type']=type
+    ret = []
+    dsets = JediDatasets.objects.filter(**query).values()
+    for dset in dsets:
+        ret.append({
+            'datasetname': dset['datasetname'],
+            'type': dset['type']
+        })
+    return ret
+
+
+
 
 def fileList(jobs):
     newjobs = []

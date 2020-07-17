@@ -1,10 +1,12 @@
-from rucio.client import Client
+from rucio.client import Client, downloadclient
 import logging
 from core.common.models import RucioAccounts
 from django.utils import timezone
 from datetime import datetime, timedelta
 import os
 from .utils import get_rucio_account, get_x509_proxy
+from core.filebrowser.utils import get_fullpath_filebrowser_directory, get_filebrowser_directory
+import uuid
 
 class ruciowrapper(object):
     if 'RUCIO_ACCOUNT' not in os.environ:
@@ -18,6 +20,17 @@ class ruciowrapper(object):
             self.client = Client()
         except Exception as e:
             logging.error('Failed to initiate Rucio client:' + str(e))
+
+    def download_ds(self, ds_name):
+        try:
+            dclient = downloadclient.DownloadClient(self.client)
+            basedir = get_filebrowser_directory() +'/'+ str(uuid.uuid4())+'/'
+            dclient.download_dids([{'did':ds_name,
+                                    'base_dir':basedir}])
+        except Exception as e:
+            logging.error('Failed to get accounts' + str(e))
+            return {'exception':str(e)}
+        return {'exception':None, 'basedir':basedir}
 
     def getRucioAccountByDN(self, DN):
         values = ['rucio_account', 'create_time']

@@ -14,4 +14,5 @@ urlpatterns = [
     re_path(r'^contents/$', idds_views.iddsсontents, name='iddsсontents'),
     re_path(r'^getiddsfortask/$', idds_views.getiDDSInfoForTaskRequest, name='getiDDSInfoForTask'),
     re_path(r'^downloadlog/$', logsretrieval.downloadlog, name='downloadlog'),
+    re_path(r'^downloadhpometrics/$', logsretrieval.downloadhpometrics, name='downloadlog'),
 ]
