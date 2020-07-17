@@ -3,7 +3,7 @@ kind: DeploymentConfig
 metadata:
   creationTimestamp: null
   name: bigpanda-mlflow-randomstring
-  namespace: test-mlflow-bigpanda
+  namespace: bigpanda-mlflow
   labels:
     name: bigpanda-mlflow-randomstring
     app: bigpanda-mlflow
@@ -30,7 +30,7 @@ spec:
       - env:
           - name: MLARTEFACTS_SOURCE
             value: MLARTEFACTSVAL
-        image: docker-registry.default.svc:5000/test-mlflow-bigpanda/bigpanda-mlflow:latest
+        image: docker-registry.default.svc:5000/bigpanda-mlflow/bigpanda-mlflow:latest
         name: default-container
         resources: {}
       - image: nginx:stable-alpine
@@ -64,7 +64,7 @@ spec:
       from:
         kind: ImageStreamTag
         name: bigpanda-mlflow:latest
-        namespace: test-mlflow-bigpanda
+        namespace: bigpanda-mlflow
       lastTriggeredImage: null
     type: ImageChange
 status:

@@ -7,7 +7,7 @@ metadata:
     instance: randomstring
     name: bigpanda-mlflow-route-randomstring
   name: bigpanda-mlflow-route-randomstring
-  namespace: test-mlflow-bigpanda
+  namespace: bigpanda-mlflow
 spec:
   host: ""
   path: "/randomstring/"

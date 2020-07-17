@@ -10,7 +10,7 @@ from datetime import datetime
 
 class MLFlowProxyView(ProxyView):
     deployment_label = 'm35fqfq/'
-    upstream = 'https://test-mlflow-bigpanda.web.cern.ch/'
+    upstream = 'https://bigpanda-mlflow.web.cern.ch/'
 
 
     def patch_path(self, path, taskid, instance_url):
