@@ -34,69 +34,67 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict, **kwargs):
     for pq, params in jsr_queues_dict.items():
         for jt, resourcetypes in params['summary'].items():
             for rt, summary in resourcetypes.items():
-                if sum([v for k, v in summary.items() if k in const.JOB_STATES]) > 0 or 1==1:  # filter out rows with 0 jobs
-                    row = list()
-                    row.append(pq)
-                    row.append(params['pq_params']['pqtype'])
-                    row.append(params['pq_params']['region'])
-                    row.append(params['pq_params']['status'])
-                    row.append(jt)
-                    row.append(rt)
-                    row.append(summary['nwsubmitted'])
-                    row.append(summary['nwrunning'])
-                    row.append(summary['rcores'])
-                    row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
-                    if summary['failed'] + summary['finished'] > 0:
-                        row.append(round(100.0*summary['failed']/(summary['failed'] + summary['finished']), 1))
-                    else:
-                        row.append(0)
-                    for js in const.JOB_STATES:
-                        row.append(summary[js])
+                row = list()
+                row.append(pq)
+                row.append(params['pq_params']['pqtype'])
+                row.append(params['pq_params']['region'])
+                row.append(params['pq_params']['status'])
+                row.append(jt)
+                row.append(rt)
+                row.append(summary['nwsubmitted'])
+                row.append(summary['nwrunning'])
+                row.append(summary['rcores'])
+                row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
+                if summary['failed'] + summary['finished'] > 0:
+                    row.append(round(100.0*summary['failed']/(summary['failed'] + summary['finished']), 1))
+                else:
+                    row.append(0)
+                for js in const.JOB_STATES:
+                    row.append(summary[js])
 
-                    if split_by is None:
-                        if jt == 'all' and rt == 'all':
-                            jsr_queues_list.append(row)
-                    elif 'jobtype' in split_by and 'resourcetype' in split_by:
-                        if jt != 'all' and rt != 'all':
-                            jsr_queues_list.append(row)
-                    elif 'jobtype' in split_by and 'resourcetype' not in split_by:
-                        if jt != 'all' and rt == 'all':
-                            jsr_queues_list.append(row)
-                    elif 'jobtype' not in split_by and 'resourcetype' in split_by:
-                        if jt == 'all' and rt != 'all':
-                            jsr_queues_list.append(row)
+                if split_by is None:
+                    if jt == 'all' and rt == 'all':
+                        jsr_queues_list.append(row)
+                elif 'jobtype' in split_by and 'resourcetype' in split_by:
+                    if jt != 'all' and rt != 'all':
+                        jsr_queues_list.append(row)
+                elif 'jobtype' in split_by and 'resourcetype' not in split_by:
+                    if jt != 'all' and rt == 'all':
+                        jsr_queues_list.append(row)
+                elif 'jobtype' not in split_by and 'resourcetype' in split_by:
+                    if jt == 'all' and rt != 'all':
+                        jsr_queues_list.append(row)
 
     for reg, jobtypes in jsr_regions_dict.items():
         for jt, resourcetypes in jobtypes.items():
             for rt, summary in resourcetypes.items():
-                if sum([v for k, v in summary.items() if k in const.JOB_STATES]) > 0:  # filter out rows with 0 jobs
-                    row = list()
-                    row.append(reg)
-                    row.append(jt)
-                    row.append(rt)
-                    row.append(summary['nwsubmitted'])
-                    row.append(summary['nwrunning'])
-                    row.append(summary['rcores'])
-                    row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
-                    if summary['failed'] + summary['finished'] > 0:
-                        row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
-                    else:
-                        row.append(0)
-                    for js in const.JOB_STATES:
-                        row.append(summary[js])
+                row = list()
+                row.append(reg)
+                row.append(jt)
+                row.append(rt)
+                row.append(summary['nwsubmitted'])
+                row.append(summary['nwrunning'])
+                row.append(summary['rcores'])
+                row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
+                if summary['failed'] + summary['finished'] > 0:
+                    row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
+                else:
+                    row.append(0)
+                for js in const.JOB_STATES:
+                    row.append(summary[js])
 
-                    if split_by is None:
-                        if jt == 'all' and rt == 'all':
-                            jsr_regions_list.append(row)
-                    elif 'jobtype' in split_by and 'resourcetype' in split_by:
-                        if jt != 'all' and rt != 'all':
-                            jsr_regions_list.append(row)
-                    elif 'jobtype' in split_by and 'resourcetype' not in split_by:
-                        if jt != 'all' and rt == 'all':
-                            jsr_regions_list.append(row)
-                    elif 'jobtype' not in split_by and 'resourcetype' in split_by:
-                        if jt == 'all' and rt != 'all':
-                            jsr_regions_list.append(row)
+                if split_by is None:
+                    if jt == 'all' and rt == 'all':
+                        jsr_regions_list.append(row)
+                elif 'jobtype' in split_by and 'resourcetype' in split_by:
+                    if jt != 'all' and rt != 'all':
+                        jsr_regions_list.append(row)
+                elif 'jobtype' in split_by and 'resourcetype' not in split_by:
+                    if jt != 'all' and rt == 'all':
+                        jsr_regions_list.append(row)
+                elif 'jobtype' not in split_by and 'resourcetype' in split_by:
+                    if jt == 'all' and rt != 'all':
+                        jsr_regions_list.append(row)
     return jsr_queues_list, jsr_regions_list
 
 
@@ -105,15 +103,6 @@ def get_job_summary_region(query, **kwargs):
     :param query: dict of query params for jobs retrieving
     :return: dict of groupings
     """
-    if 'extra' in kwargs and len(kwargs['extra']) > 1:
-        extra = kwargs['extra']
-    else:
-        extra = '(1=1)'
-    if 'region' in kwargs and kwargs['region'] != 'all':
-        region = kwargs['region']
-    else:
-        region = 'all'
-
     jsr_queues_dict = {}
     jsr_regions_dict = {}
 
@@ -128,8 +117,25 @@ def get_job_summary_region(query, **kwargs):
 
     regions_list = list(set([params['cloud'] for pq, params in panda_queues_dict.items()]))
 
+    if 'extra' in kwargs and len(kwargs['extra']) > 1:
+        extra = kwargs['extra']
+    else:
+        extra = '(1=1)'
+    if 'region' in kwargs and kwargs['region'] != 'all':
+        region = kwargs['region']
+        regions_list = [region]
+    else:
+        region = 'all'
+    if 'jobtype' in kwargs and kwargs['jobtype'] != 'all':
+        jobtype = kwargs['jobtype']
+        job_types = [kwargs['jobtype']]
+    else:
+        jobtype = 'all'
+
     # filter out queues by queue related selection params
     pq_to_remove = []
+    if jobtype != 'all':
+        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if not is_jobtype_match_queue(jobtype, params)])
     if region != 'all':
         pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['cloud'] != region])
     if 'queuestatus' in query:
