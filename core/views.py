@@ -891,9 +891,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         elif param == 'jobtype':
             jobtype = request.session['requestParams']['jobtype']
             if jobtype.startswith('anal'):
-                query['prodsourcelabel__in'] = ['panda', 'user']
+                query['prodsourcelabel__in'] = ['panda', 'user', 'rc_alrb', 'rc_test2']
+                query['transformation__startswith'] = 'http'
             elif jobtype.startswith('prod'):
                 query['prodsourcelabel__in'] = ['managed', 'prod_test', 'ptest', 'rc_alrb', 'rc_test2']
+                query['transformation__endswith'] = '.py'
             elif jobtype == 'groupproduction':
                 query['prodsourcelabel'] = 'managed'
                 query['workinggroup__isnull'] = False
