@@ -517,7 +517,7 @@ def initRequest(request, callselfmon = True):
                 'wansourcelimit', 'wansinklimit', 'nqueue', 'nodes', 'queuehours', 'memory', 'maxtime', 'space',
                 'maxinputsize', 'timefloor', 'depthboost', 'idlepilotsupression', 'pilotlimit', 'transferringlimit',
                 'cachedse', 'stageinretry', 'stageoutretry', 'maxwdir', 'minmemory', 'maxmemory', 'minrss',
-                'maxrss', 'mintime',):
+                'maxrss', 'mintime', 'nlastnightlies',):
                 try:
                     requestVal = request.GET[p]
                     if '|' in requestVal:
