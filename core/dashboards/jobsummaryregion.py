@@ -252,6 +252,10 @@ def get_job_summary_split(query, extra):
             extra_str += "))"
         elif '__icontains' in qn or '__contains' in qn and qn.replace('__icontains', '').replace('__contains', '') in fields:
             extra_str += " and (" + fields[qn.replace('__icontains', '').replace('__contains', '')] + " LIKE '%%" + qvs + "%%')"
+        elif '__startswith' in qn and qn.replace('__startswith', '') in fields:
+            extra_str += " and (" + fields[qn.replace('__startswith', '')] + " LIKE '" + qvs + "%%')"
+        elif '__endswith' in qn and qn.replace('__endswith', '') in fields:
+            extra_str += " and (" + fields[qn.replace('__endswith', '')] + " LIKE '%%" + qvs + "')"
         elif qn in fields:
             extra_str += " and (" + fields[qn] + "= '" + qvs + "' )"
 
