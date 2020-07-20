@@ -6498,7 +6498,7 @@ def dashRegion(request):
         jquery['queuestatus'] = request.session['requestParams']['queuestatus']
 
     # get job summary data
-    jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery, statelist, extra=wildCardExtension)
+    jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery, extra=wildCardExtension)
 
     if is_json_request(request):
         extra_info_params = ['links', ]

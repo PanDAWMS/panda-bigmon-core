@@ -10,6 +10,7 @@ from django.db.models import Count
 from django.db.utils import DatabaseError
 
 from core.pandajob.models import CombinedWaitActDefArch4
+import core.constants as const 
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -21,13 +22,6 @@ def prepare_job_summary_nucleus(jsn_nucleus_dict, jsn_satellite_dict, **kwargs):
     :param jsn_satellite_dict:
     :return: jsn_nucleus_list, jsn_satellite_list
     """
-    if 'job_states_order' in kwargs:
-        job_states_order = kwargs['job_states_order']
-    else:
-        job_states_order = [
-            'pending', 'defined', 'waiting', 'assigned', 'throttled',
-            'activated', 'sent', 'starting', 'running', 'holding',
-            'transferring', 'merging', 'finished', 'failed', 'cancelled', 'closed']
 
     jsn_nucleus_list = []
     jsn_satellite_list = []
@@ -37,12 +31,12 @@ def prepare_job_summary_nucleus(jsn_nucleus_dict, jsn_satellite_dict, **kwargs):
             row = [sat, nuc]
             row.append(round(summary['hs06s_used']/1000) if 'hs06s_used' in summary else 0)
             row.append(round(summary['hs06s_failed']/1000) if 'hs06s_failed' in summary else 0)
-            row.append(sum([v for k, v in summary.items() if k in job_states_order]))
+            row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
             if summary['failed'] + summary['finished'] > 0:
                 row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
             else:
                 row.append(0)
-            for js in job_states_order:
+            for js in const.JOB_STATES:
                 if js in summary:
                     row.append(summary[js])
                 else:
@@ -53,12 +47,12 @@ def prepare_job_summary_nucleus(jsn_nucleus_dict, jsn_satellite_dict, **kwargs):
         row = [nuc]
         row.append(round(summary['hs06s_used']/1000) if 'hs06s_used' in summary else 0)
         row.append(round(summary['hs06s_failed']/1000) if 'hs06s_failed' in summary else 0)
-        row.append(sum([v for k, v in summary.items() if k in job_states_order]))
+        row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
         if summary['failed'] + summary['finished'] > 0:
             row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
         else:
             row.append(0)
-        for js in job_states_order:
+        for js in const.JOB_STATES:
             if js in summary:
                 row.append(summary[js])
             else:
@@ -75,13 +69,6 @@ def get_job_summary_nucleus(query, **kwargs):
     :return: jsn_nucleus_dict, jsn_satellite_dict
     """
 
-    if 'job_state_order' in kwargs:
-        job_states_order = kwargs['job_states_order']
-    else:
-        job_states_order = [
-            'pending', 'defined', 'waiting', 'assigned', 'throttled',
-            'activated', 'sent', 'starting', 'running', 'holding',
-            'transferring', 'merging', 'finished', 'failed', 'cancelled', 'closed']
     if 'extra' in kwargs:
         extra = kwargs['extra']
     else:
@@ -90,18 +77,16 @@ def get_job_summary_nucleus(query, **kwargs):
     if 'hs06s' in kwargs and kwargs['hs06s']:
         is_add_hs06s = True
 
-    final_job_states = ['finished', 'failed', 'cancelled', 'closed', 'merging']
-
     values = ['nucleus', 'computingsite', 'jobstatus']
 
     # This is done for consistency with /jobs/ results
     query_archive = copy.deepcopy(query)
-    query_archive['jobstatus__in'] = final_job_states
+    query_archive['jobstatus__in'] = const.JOB_STATES_FINAL
 
     query_active = copy.deepcopy(query)
     if 'modificationtime__castdate__range' in query_active:
         del query_active['modificationtime__castdate__range']
-    query_active['jobstatus__in'] = [s for s in job_states_order if s not in final_job_states]
+    query_active['jobstatus__in'] = [s for s in const.JOB_STATES if s not in const.JOB_STATES_FINAL]
 
     job_summary = []
     job_summary.extend(
@@ -123,7 +108,7 @@ def get_job_summary_nucleus(query, **kwargs):
                     jsn_satellite_dict[row['nucleus']] = {}
                 if row['computingsite'] not in jsn_satellite_dict[row['nucleus']]:
                     jsn_satellite_dict[row['nucleus']][row['computingsite']] = {}
-                    for js in job_states_order:
+                    for js in const.JOB_STATES:
                         if js not in jsn_satellite_dict[row['nucleus']][row['computingsite']]:
                             jsn_satellite_dict[row['nucleus']][row['computingsite']][js] = 0
                 jsn_satellite_dict[row['nucleus']][row['computingsite']][row['jobstatus']] += row['countjobsinstate']

@@ -39,7 +39,8 @@ JOB_STATES_FINAL = (
     'finished',
     'failed',
     'cancelled',
-    'closed'
+    'closed',
+    'merging'
 )
 
 RESOURCE_CAPABILITIES = (
