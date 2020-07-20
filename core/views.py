@@ -6484,6 +6484,11 @@ def dashRegion(request):
     else:
         split_by = None
 
+    if 'region' in request.session['requestParams'] and request.session['requestParams']['region']:
+        region = request.session['requestParams']['region']
+    else:
+        region = 'all'
+
     if 'hours' in request.session['requestParams'] and request.session['requestParams']['hours']:
         hours = int(request.session['requestParams']['hours'])
     else:
@@ -6498,7 +6503,7 @@ def dashRegion(request):
         jquery['queuestatus'] = request.session['requestParams']['queuestatus']
 
     # get job summary data
-    jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery, extra=wildCardExtension)
+    jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery, extra=wildCardExtension, region=region)
 
     if is_json_request(request):
         extra_info_params = ['links', ]

@@ -100,12 +100,20 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict, **kwargs):
     return jsr_queues_list, jsr_regions_list
 
 
-def get_job_summary_region(query, extra='(1=1)'):
+def get_job_summary_region(query, **kwargs):
     """
     :param query: dict of query params for jobs retrieving
-    :param extra: str
     :return: dict of groupings
     """
+    if 'extra' in kwargs and len(kwargs['extra']) > 1:
+        extra = kwargs['extra']
+    else:
+        extra = '(1=1)'
+    if 'region' in kwargs and kwargs['region'] != 'all':
+        region = kwargs['region']
+    else:
+        region = 'all'
+
     jsr_queues_dict = {}
     jsr_regions_dict = {}
 
@@ -122,6 +130,8 @@ def get_job_summary_region(query, extra='(1=1)'):
 
     # filter out queues by queue related selection params
     pq_to_remove = []
+    if region != 'all':
+        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['cloud'] != region])
     if 'queuestatus' in query:
         pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['status'] != query['queuestatus']])
     if 'queuetype' in query:
@@ -189,8 +199,7 @@ def get_job_summary_region(query, extra='(1=1)'):
 
     # fill template with real values of job states counts
     for row in jsq:
-        _logger.info(row)
-        if row['computingsite'] in jsr_queues_dict and row['jobtype'] in job_types and row['resourcetype'] in resource_types and row['jobstatus'] in const.JOB_STATES and 'count' in row:
+        if row['computingsite'] in jsr_queues_dict and row['jobtype'] in jsr_queues_dict[row['computingsite']]['summary'] and row['resourcetype'] in resource_types and row['jobstatus'] in const.JOB_STATES and 'count' in row:
             jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']][row['resourcetype']][row['jobstatus']] += int(row['count'])
             jsr_queues_dict[row['computingsite']]['summary']['all'][row['resourcetype']][row['jobstatus']] += int(row['count'])
             jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']]['all'][row['jobstatus']] += int(row['count'])
@@ -215,7 +224,7 @@ def get_job_summary_region(query, extra='(1=1)'):
 
     # fill template with real values of n workers stats
     for row in wsq:
-        if row['computingsite'] in jsr_queues_dict and row['jobtype'] in job_types and row['resourcetype'] in resource_types:
+        if row['computingsite'] in jsr_queues_dict and row['jobtype'] in jsr_queues_dict[row['computingsite']]['summary'] and row['resourcetype'] in resource_types:
             for wm in worker_metrics:
                 jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']][row['resourcetype']][wm] += int(row[wm])
                 jsr_queues_dict[row['computingsite']]['summary']['all'][row['resourcetype']][wm] += int(row[wm])
@@ -248,40 +257,45 @@ def get_job_summary_split(query, extra):
 
     # get jobs groupings, the jobsactive4 table can keep failed analysis jobs for up to 7 days, so splitting the query
     query_raw = """
-        select computingsite, resource_type as resourcetype, prodsourcelabel, jobstatus, 
+        select computingsite, resource_type as resourcetype, prodsourcelabel, transform, jobstatus, 
             count(pandaid) as count, sum(rcores) as rcores, round(sum(walltime)) as walltime
         from  (
         select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime, 0 as rcores,
-            case when jobstatus in ('finished', 'failed') then (ja4.endtime-ja4.starttime)*60*60*24 else 0 end as walltime
+            case when jobstatus in ('finished', 'failed') then (ja4.endtime-ja4.starttime)*60*60*24 else 0 end as walltime,
+            case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from ATLAS_PANDA.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and {1}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
-        case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime
+            case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
+            case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from ATLAS_PANDA.jobsactive4 jav4 where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and 
             jobstatus in ('failed', 'finished', 'closed', 'cancelled') and {1}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
-        case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime
+            case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
+            case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from ATLAS_PANDA.jobsactive4 jav4 where jobstatus not in ('failed', 'finished', 'closed', 'cancelled') and {1}
         union
-        select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores, 0 as walltime
+        select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores, 0 as walltime,
+            case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from ATLAS_PANDA.jobswaiting4 jw4 where {1}
         union
-        select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores, 0 as walltime
+        select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores, 0 as walltime,
+            case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from ATLAS_PANDA.jobsdefined4 jd4  where {1}
         )
-        GROUP BY computingsite, prodsourcelabel, resource_type, jobstatus
-        order by computingsite, prodsourcelabel, resource_type, jobstatus
+        GROUP BY computingsite, prodsourcelabel, transform, resource_type, jobstatus
+        order by computingsite, prodsourcelabel, transform, resource_type, jobstatus
     """.format(query['modificationtime__castdate__range'][0], extra_str)
 
     cur = connection.cursor()
     cur.execute(query_raw)
     job_summary_tuple = cur.fetchall()
-    job_summary_header = ['computingsite', 'resourcetype', 'prodsourcelabel', 'jobstatus', 'count', 'rcores', 'walltime']
+    job_summary_header = ['computingsite', 'resourcetype', 'prodsourcelabel', 'transform', 'jobstatus', 'count', 'rcores', 'walltime']
     summary = [dict(zip(job_summary_header, row)) for row in job_summary_tuple]
 
     # Translate prodsourcelabel values to descriptive analy|prod job types
-    summary = prodsourcelabel_to_jobtype(summary)
+    summary = identify_jobtype(summary)
 
     return summary
 
@@ -314,13 +328,18 @@ def get_workers_summary_split(query, **kwargs):
         worker_summary = HarvesterWorkerStats.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
 
     # Translate prodsourcelabel values to descriptive analy|prod job types
-    worker_summary = prodsourcelabel_to_jobtype(worker_summary, field_name='jobtype')
+    worker_summary = identify_jobtype(worker_summary, field_name='jobtype')
 
     return list(worker_summary)
 
 
-def prodsourcelabel_to_jobtype(list_of_dict, field_name='prodsourcelabel'):
-    """Translate prodsourcelabel values to descriptive analy|prod job types"""
+def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
+    """
+    Translate prodsourcelabel values to descriptive analy|prod job types
+    The base param is prodsourcelabel, but to identify which HC test template a job belong to we need transformation.
+    If transformation ends with '.py' - prod, if it is PanDA server URL - analy.
+    Using this as complementary info to make a decision.
+    """
 
     psl_to_jt = {
         'panda': 'analy',
@@ -329,12 +348,20 @@ def prodsourcelabel_to_jobtype(list_of_dict, field_name='prodsourcelabel'):
         'prod_test': 'prod',
         'ptest': 'prod',
         'rc_alrb': 'analy',
-        'rc_test2': 'prod',
+        'rc_test2': 'analy',
     }
+
+    trsfrm_to_jt = {
+        'run': 'analy',
+        'py': 'prod',
+    }
+
     new_list_of_dict = []
     for row in list_of_dict:
         if field_name in row and row[field_name] in psl_to_jt.keys():
             row['jobtype'] = psl_to_jt[row[field_name]]
+            if 'transform' in row and row['transform'] in trsfrm_to_jt and row[field_name] in ('rc_alrb', 'rc_test2'):
+                row['jobtype'] = trsfrm_to_jt[row['transform']]
             new_list_of_dict.append(row)
 
     return new_list_of_dict
