@@ -839,10 +839,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if param in ('hours', 'days'): continue
         if param == 'cloud' and request.session['requestParams'][param] == 'All':
             continue
-        if request.session['requestParams'][param] == 'Not specified':
-            extraQueryString += " AND ( {0} is NULL or {0} = '' ) ".format(param)
-            extraQueryFields.append(param)
-            continue
         elif param == 'harvesterinstance' or param == 'harvesterid':
             val = request.session['requestParams'][param]
             if val == 'Not specified':
@@ -977,6 +973,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             for field in JediTasks._meta.get_fields():
                 # for param in requestParams:
                 if param == field.name:
+                    if request.session['requestParams'][param] == 'Not specified':
+                        extraQueryString += " AND ( {0} is NULL or {0} = '' ) ".format(param)
+                        extraQueryFields.append(param)
+                        continue
                     if param == 'ramcount':
                         if 'GB' in request.session['requestParams'][param]:
                             leftlimit, rightlimit = (request.session['requestParams'][param]).split('-')
@@ -1054,6 +1054,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         else:
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
+                    if request.session['requestParams'][param] == 'Not specified':
+                        extraQueryString += " AND ( {0} is NULL or {0} = '' ) ".format(param)
+                        extraQueryFields.append(param)
+                        continue
                     if param == 'minramcount':
                         if 'GB' in request.session['requestParams'][param]:
                             leftlimit, rightlimit = (request.session['requestParams'][param]).split('-')
