@@ -8464,14 +8464,12 @@ def taskInfo(request, jeditaskid=0):
         showtaskprof = True
 
     if taskrec:
+        tmcj_list = get_top_memory_consumers(taskrec)
+        if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
+            warning['memoryleaksuspicion'] = {}
+            warning['memoryleaksuspicion']['message'] = 'Some jobs in this task consumed a lot of memory. We suspect there might be memory leaks.'
+            warning['memoryleaksuspicion']['jobs'] = tmcj_list
 
-        if 'tasktype' in taskrec:
-            tmcj_list = get_top_memory_consumers(taskrec)
-            if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
-                warning['memoryleaksuspicion'] = {}
-                warning['memoryleaksuspicion'][
-                    'message'] = 'Some jobs in this task consumed a lot of memory. We suspect there might be memory leaks.'
-                warning['memoryleaksuspicion']['jobs'] = tmcj_list
         if task_type is not None and idds_info is not None:
                 # idds_timestamp_names = ['request_created_at', 'request_updated_at', 'out_created_at', 'out_updated_at']
                 # for itn in idds_info:
