@@ -509,6 +509,11 @@ def get_top_memory_consumers(taskrec):
     tmc_names = ['jeditaskid', 'pandaid', 'computingsite', 'jobmaxrss', 'jobmaxpss_percore',
                  'sitemaxrss', 'sitemaxrss_percore', 'maxrssratio']
     topmemoryconsumedjobs = [dict(zip(tmc_names, row)) for row in tmc_list]
+    for row in topmemoryconsumedjobs:
+        try:
+            row['maxrssratio'] = int(row['maxrssratio'])
+        except:
+            row['maxrssratio'] = 0
     return topmemoryconsumedjobs
 
 
