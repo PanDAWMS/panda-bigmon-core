@@ -1,9 +1,9 @@
 {% extends "_base_core.html" %}
-{% load static %}
+{% load static %}{% load common_tags %}
 
 {% block page_title %}ART nightly tests{% endblock %}
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}">
+{% block css_page %}
+    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
 {% endblock %}
 {% block subtitle %}Select menu{% endblock %}
 {% block body %}
@@ -39,9 +39,21 @@
               {% for t in ntags %}
                   <li class="artmenu-item"><input id="{{ t }}" class="ntag" type="checkbox"><label for="{{ t }}">{{ t }}</label></li>
               {% endfor %}
-              <li><label>Last days:<input type="number" class="ntag" id="ntag_days" value="7"></label></li>
-              <li><label>From:<input type="date" class="ntag-text" id="ntag_from" min="2017-06-08"></label></li>
-              <li><label>To:<input type="date" class="ntag-text" id="ntag_to"></label></li>
+              <li><label>Last nightlies:<input type="number" class="ntag" id="ntag_lastnightlies" value="7"></label></li>
+              <li class="input-group">
+                <span class="input-group-label">From</span>
+                <input class="input-group-field ntag-text" type="text" id="ntag_from">
+                <div class="input-group-button">
+                  <button type="button" class="hollow button alert" onclick="clearInput('ntag_from')"><i class="fi fi-x"></i></button>
+                </div>
+              </li>
+              <li class="input-group">
+                <span class="input-group-label">To</span>
+                <input class="input-group-field ntag-text" type="text" id="ntag_to">
+                <div class="input-group-button">
+                  <button type="button" class="hollow button alert" onclick="clearInput('ntag_to')"><i class="fi fi-x"></i></button>
+                </div>
+              </li>
           </ul>
       </fieldset>
   </div>
@@ -64,11 +76,14 @@
   <div class="large-1 columns">
     <fieldset class="fieldset artmenu">
           <legend>Search</legend>
-          <a onclick="searchResults()" class="button">Show me results!</a>
+          <a onclick="searchResults()" class="button">Show results!</a>
       </fieldset>
   </div>
 </div>
 
+{% endblock %}
+
+{% block js_body_page %}
 <script>
 
 function searchResults() {
@@ -76,7 +91,7 @@ function searchResults() {
     var branchStr=getParamStr("branch");
     var ntagStr=getParamStr("ntag");
     var viewStr=getParamStr("view");
-    var days=getDateFromInput("ntag_days");
+    var nlastnightlies=getDateFromInput("ntag_lastnightlies");
     var ntag_from = getDateFromInput('ntag_from');
     var ntag_to = getDateFromInput('ntag_to');
     var extraoptionStr = getParamStr('extraoption');
@@ -97,7 +112,7 @@ function searchResults() {
         default:
             query = '{% url 'art-mainPage' %}';
     }
-    if ((packageStr.length>1) || (branchStr.length>1) || (ntagStr.length>1) || (ntag_from.length>1) || (ntag_to.length>1) || (days.length>0) || (extraoptionStr.length>1 )   ) {
+    if ((packageStr.length>1) || (branchStr.length>1) || (ntagStr.length>1) || (ntag_from.length>1) || (ntag_to.length>1) || (nlastnightlies.length>0) || (extraoptionStr.length>1 )   ) {
         query += "?";
         if (packageStr.length > 1) {
             query += "package=" + packageStr + "&"
@@ -119,8 +134,8 @@ function searchResults() {
         else if (ntagStr.length > 1 && ntagStr.indexOf(',') > -1) {
             query += "ntags=" + ntagStr + "&";
         }
-        else if (days.length>0) {
-            query += "days=" + days + "&"
+        else if (nlastnightlies.length>0) {
+            query += "nlastnightlies=" + nlastnightlies + "&"
         }
         if (extraoptionStr.length > 1) {
             query += 'extra=' + extraoptionStr + "&";
@@ -154,6 +169,29 @@ function toggleExtraOptions(eoid, jid) {
     j = document.getElementById(jid);
     eo.style.display = (j.checked) ? "" : "none";
 }
+
+function clearInput(id) {
+  document.getElementById(id).value = "";
+}
+
+$(function(){
+    let today = new Date();
+    let todayStr = today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate();
+    $('#ntag_from').fdatepicker({
+        format: 'yyyy-mm-dd',
+        disableDblClickSelection: true,
+        language: 'en',
+        startDate: '2017-06-08',
+        endDate: todayStr,
+    });
+    $('#ntag_to').fdatepicker({
+        format: 'yyyy-mm-dd',
+        disableDblClickSelection: true,
+        language: 'en',
+        startDate: '2017-06-08',
+        endDate: todayStr,
+    });
+});
 
 </script>
 {% endblock %}

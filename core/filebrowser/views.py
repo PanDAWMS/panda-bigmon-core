@@ -6,19 +6,15 @@ import logging
 import re
 import json
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, render
-from django.template import RequestContext, loader
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 from django.template.loader import get_template
 from django.conf import settings
-from django.utils.cache import patch_response_headers
-#from django.core.urlresolvers import reverse
-#from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_filebrowser_vo, \
-get_filebrowser_hostname, remove_folder
+    remove_folder, get_fullpath_filebrowser_directory, list_file_directory
 
 from core.common.models import Filestable4, FilestableArch
-from core.views import DateEncoder, DateTimeEncoder, initSelfMonitor, endSelfMonitor
-from core.libs.cache import setCacheEntry, getCacheEntry
+from core.views import DateTimeEncoder, initSelfMonitor
 from datetime import datetime
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
@@ -41,7 +37,7 @@ def index(request):
 
     errors = {}
 
-    #_logger.error("index started - " + datetime.now().strftime("%H:%M:%S") + "  ")
+    _logger.debug("index started - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     ### check that all expected parameters are in URL
     expectedFields = ['guid', 'site', 'scope', 'lfn']
@@ -116,11 +112,14 @@ def index(request):
             fsize = FilestableArch.objects.filter(**lquery).values('fsize', 'fileid')
         if len(fsize) > 0:
             try:
-                sizemb = round(int([f['fsize'] for f in fsize if f['fileid'] == fileid][0])/1000/1000)
+                if fileid > 0:
+                    sizemb = round(int([f['fsize'] for f in fsize if f['fileid'] == fileid][0])/1000/1000)
+                else:
+                    sizemb = round(int([f['fsize'] for f in fsize][0])/1000/1000)
             except:
-                pass
+                _logger.warning("ERROR!!! Failed to calculate log tarball size in MB")
 
-    #_logger.error("index step1 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+    _logger.debug("index step1 - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     ### download the file
     files = []
@@ -151,8 +150,8 @@ def index(request):
         }
         return render_to_response('errorPage.html', data, content_type='text/html')
     if not len(files):
-        msg = 'File download failed. [guid=%s, site=%s, scope=%s, lfn=%s]' % \
-            (guid, site, scope, lfn)
+        msg = 'Something went wrong while the log file downloading. [guid=%s, site=%s, scope=%s, lfn=%s] \n' % \
+              (guid, site, scope, lfn)
         _logger.warning(msg)
         errors['download'] = msg
     if len(errtxt):
@@ -160,7 +159,7 @@ def index(request):
             errors['download'] = ''
         errors['download'] += errtxt
 
-#    _logger.error("index step2 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+    _logger.debug("index step2 - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     totalLogSize = 0
     if type(files) is list and len(files) > 0:
@@ -191,19 +190,14 @@ def index(request):
         'HOSTNAME': hostname,
         'totalLogSize': totalLogSize,
         'nfiles': len(files),
-#        , 'new_contents': new_contents
     }
 
-    _logger.error("index step3 - " + datetime.now().strftime("%H:%M:%S") + "  ")
-    try:
-        endSelfMonitor(request)
-    except:
-        _logger.exception('Failed to end self monitor')
+    _logger.debug("index step3 - " + datetime.now().strftime("%H:%M:%S") + "  ")
     if 'json' not in request.GET:
         return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
     else:
         resp = HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
- #       _logger.error("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+        _logger.debug("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")
         return resp
 
 
@@ -340,6 +334,62 @@ def api_single_pandaid(request):
         t = get_template('filebrowser/filebrowser_api_single_pandaid.html')
         context = RequestContext(request, {'data':data})
         return HttpResponse(t.render(context), status=400)
+
+
+def get_job_memory_monitor_output(pandaid):
+    """
+    Download log tarball of a job and return path to a local copy of memory_monitor_output.txt file
+    :param pandaid:
+    :return: mmo_path: str
+    """
+    mmo_path = None
+    files = []
+    scope = ''
+    lfn = ''
+    guid = ''
+    dirprefix = ''
+    tardir = ''
+    query = {}
+    query['type'] = 'log'
+    query['pandaid'] = int(pandaid)
+    values = ['pandaid', 'guid', 'scope', 'lfn']
+    file_properties = []
+
+    file_properties.extend(Filestable4.objects.filter(**query).values(*values))
+    if len(file_properties) == 0:
+        file_properties.extend(FilestableArch.objects.filter(**query).values(*values))
+
+    if len(file_properties):
+        file_properties = file_properties[0]
+        try:
+            guid = file_properties['guid']
+        except:
+            pass
+        try:
+            lfn = file_properties['lfn']
+        except:
+            pass
+        try:
+            scope = file_properties['scope']
+        except:
+            pass
+
+        if guid and lfn and scope:
+            # check if files are already available in common CEPH storage
+            tarball_path = get_fullpath_filebrowser_directory() + '/' + guid.lower() + '/' + scope + '/'
+            files, err, tardir = list_file_directory(tarball_path, 100)
+            _logger.debug('tarball path is {} \nError message is {} \nGot tardir: {}'.format(tarball_path, err, tardir))
+            if len(files) == 0 and len(err) > 0:
+                # download tarball
+                _logger.debug('log tarball has not been downloaded, so downloading it now')
+                files, errtxt, dirprefix, tardir = get_rucio_file(scope, lfn, guid)
+                _logger.debug('Got files for dir: {} and tardir: {}. Error message: {}'.format(dirprefix, tardir, errtxt))
+            if type(files) is list and len(files) > 0:
+                for f in files:
+                    if f['name'] == 'memory_monitor_output.txt':
+                        mmo_path = tarball_path + '/' + tardir + '/' + 'memory_monitor_output.txt'
+    _logger.debug('Final mmo_path: {}'.format(mmo_path))
+    return mmo_path
 
 
 def delete_files(request):

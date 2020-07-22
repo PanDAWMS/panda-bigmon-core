@@ -148,6 +148,6 @@ def __main__() :
     try:
         result = requests.post(serverToPost, files=dict(file=(xmlFile)))
     finally:
-        print result
+        print (result)
 
 __main__()

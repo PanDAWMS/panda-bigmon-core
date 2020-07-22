@@ -4,16 +4,21 @@
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA {{view}} {{ requestParams.mode }} dashboard{{ viewParams.selection|safe }}
 {% endblock %}
-{% block extra_css %}
-    <style>
-        .parent{
-         background-color: #e6f7ff !important;
-        }
-    </style>
-{% endblock %}
 {% block body %}
 
 {{ viewParams.header }}
+
+{% if cloudview == 'region' %}
+<div class="callout alert large" data-closable>
+    <h5>Please participate in testing
+        <a class="blacklink" href="{% url 'dashRegion' %}{% if view == 'analysis' %}?jobtype=analy&splitby=jobtype{% elif view == 'production' %}?jobtype=prod&splitby=jobtype{% endif %}"><b>a new nicer and faster dashboard page</b></a>,
+        where a number of interactive filters are available and e.g. job counts for GU queues can be split by both job and resource types:
+        <a class="blacklink" href="{% url 'dashRegion' %}{% if view == 'analysis' %}?jobtype=analy&splitby=jobtype{% elif view == 'production' %}?jobtype=prod&splitby=jobtype{% endif %}"><b>https://bigpanda.cern.ch/new/dash/{% if view == 'analysis' %}?jobtype=analy&splitby=jobtype{% elif view == 'production' %}?jobtype=prod&splitby=jobtype{% endif %}</b></a></h5>
+  <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
 
 {% if requestParams.sortby %} <p><b>Sorted by: {{ requestParams.sortby }} </b><p> {% endif %}
 
@@ -440,7 +445,7 @@ of all jobs
 {% for cloud in summary %}
 <tr height=10 colspan=12></tr>
 <tr>
-<th  bgcolor=whitesmoke> {% if cloud.name != 'All' %}{% if cloud.name != '' %}<a href="#cloud_{{ cloud.name }}"><span class="{{cloud.status}}">{{ cloud.name }}</span></a> <a onclick='PopUp("SITE={% if view == 'analysis' %}{{ cloud.name }}_analy{% else %}{{cloud.name }}{% endif %}&SIZE=medium", "{% if view == 'analysis' %}{{ cloud.name }}_analy{% else %}{{ cloud_name }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assigned {% endif %} {% else %}  All clouds {% endif %}</th>
+<th  bgcolor=whitesmoke> {% if cloud.name != 'All' %}{% if cloud.name != '' %}<a href="#cloud_{{ cloud.name }}"><span class="{{cloud.status}}">{{ cloud.name }}</span></a> <a onclick='PopUp("SITE={% if view == 'analysis' %}CLOUD_{{ cloud.name }}_analy{% else %}CLOUD_{{cloud.name }}{% endif %}&SIZE=medium", "{% if view == 'analysis' %}CLOUD_{{ cloud.name }}_analy{% else %}CLOUD_{{ cloud_name }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>{% else %} Failed before site assigned {% endif %} {% else %} All clouds {% endif %}</th>
 <th  bgcolor=whitesmoke> <span class="{{cloud.status}}">{{ cloud.status }}</span> </th>
 <th  bgcolor=whitesmoke align='right'>{{ cloud.count }}</th>
 {% if cloudview == 'region' %}
@@ -505,14 +510,30 @@ of all jobs
     {% else %}
     <tr  {% if site.status == 'offline' or site.status == 'brokeroff'%} class="hideofflinerow" {% endif %}>
     {% endif %}
-    <td> {% if site.name %} {% if site.parent %}{{ site.parent }} [{{ site.resource }}] <div>  <a onclick='PopUp("SITE={% if view == 'analysis' %}{{ site.parent }}{% else %}{{ site.parent }}{% endif %}&SIZE=medium&RESOURCE={{ site.resource }}", "{% if view == 'analysis' %}{{ site.parent }}{% else %}{{ site.parent }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>{% else %}<a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a> <a onclick='PopUp("SITE={% if view == 'analysis' %}{{ site.name }}{% else %}{{ site.name }}{% endif %}&SIZE=medium", "{% if view == 'analysis' %}{{ site.name }}{% else %}{{ site.name }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>
-        {% if 'isHarvester' in site and site.isHarvester %}<a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/a312a030-8b0e-11e8-a7e3-ffbb2f24f6b4?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-12h,mode:quick,to:now))&_a=(description:'',filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'09f5a610-6810-11e9-a744-833d910adbcf',key:computingsite.keyword,negate:!f,params:(query:{{ site.name }},type:phrase),type:phrase,value:{{ site.name }}),query:(match:(computingsite.keyword:(query:{{ site.name }},type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),panels:!((gridData:(h:3,i:'1',w:2,x:0,y:0),id:'23173650-843f-11e8-a7e3-ffbb2f24f6b4',panelIndex:'1',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'2',w:5,x:2,y:0),id:'263969e0-8b0e-11e8-a7e3-ffbb2f24f6b4',panelIndex:'2',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'3',w:6,x:0,y:6),id:'50bf08a0-8b0e-11e8-a7e3-ffbb2f24f6b4',panelIndex:'3',type:visualization,version:'6.2.4'),(gridData:(h:4,i:'5',w:6,x:0,y:9),id:a9207bf0-843d-11e8-a7e3-ffbb2f24f6b4,panelIndex:'5',type:visualization,version:'6.2.4'),(gridData:(h:4,i:'6',w:6,x:6,y:9),id:'6a9a1ee0-bb60-11e8-b0c4-a33eb2fc4911',panelIndex:'6',type:visualization,version:'6.2.4'),(gridData:(h:4,i:'7',w:6,x:0,y:13),id:d5fec150-bb5f-11e8-b0c4-a33eb2fc4911,panelIndex:'7',type:visualization,version:'6.2.4'),(gridData:(h:4,i:'8',w:6,x:6,y:13),id:fd3c1d70-bb60-11e8-b0c4-a33eb2fc4911,panelIndex:'8',type:visualization,version:'6.2.4'),(gridData:(h:7,i:'9',w:12,x:0,y:23),id:ed01a550-bb61-11e8-b0c4-a33eb2fc4911,panelIndex:'9',type:search,version:'6.2.4'),(gridData:(h:3,i:'10',w:6,x:6,y:3),id:ac172890-bb65-11e8-a7e3-ffbb2f24f6b4,panelIndex:'10',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'11',w:5,x:7,y:0),id:'5a658b00-bbe1-11e8-a7e3-ffbb2f24f6b4',panelIndex:'11',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'12',w:6,x:6,y:6),id:'92c0b300-bbe4-11e8-a7e3-ffbb2f24f6b4',panelIndex:'12',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'14',w:6,x:0,y:3),id:'970d6a40-bcc8-11e8-b0c4-a33eb2fc4911',panelIndex:'14',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'15',w:6,x:0,y:17),id:a7b38f30-cd5f-11e8-9c62-c3475f7c9464,panelIndex:'15',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'16',w:6,x:6,y:17),id:'6d062730-fa69-11e8-92bb-b7deb199b33d',panelIndex:'16',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'17',w:6,x:0,y:20),id:'06fbe480-fc98-11e8-92bb-b7deb199b33d',panelIndex:'17',type:visualization,version:'6.2.4')),query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20particular%20computingsite',viewMode:view)" ><div class="tooltip-upper"><img src="/static/images/kibana-logo.png" width=14 height=14 border=0><span class="tooltip-text">Link to "Harvester particular computingsite" Kibana dashboard</span></div> </a> {% endif %}
-        {% endif %} {% else %} Failed before site assignment{% endif %}</div>
+    <td>
+        {% if site.name %}
+            {% if site.parent %}
+                {{ site.parent }} [{{ site.resource }}]
+                <div class="inline-div">
+                <a onclick='PopUp("SITE={% if view == 'analysis' %}{{ site.parent }}{% else %}{{ site.parent }}{% endif %}&SIZE=medium&RESOURCE={{ site.resource }}{% if 'parent_type' in site %}{% if site.parent_type == 'analysis' %}&LABEL=user{% elif site.parent_type == 'production'%}&LABEL=managed{% endif %}{% endif %}", "{% if view == 'analysis' %}{{ site.parent }}{% else %}{{ site.parent }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>
+                    <a target="_blank" href="https://monit-grafana.cern.ch/d/5iI1ddfWz/jobs-monitoring-ig?orgId=17&var-retention=1h&var-cloud=All&var-tier=All&var-federation=All&var-nucleus=All&var-site=All&var-queue={{site.parent}}&var-queue_state=online&var-resource={{site.resource}}&var-states=All&var-type=All&var-pilot_manager=All&var-pilot_version=All&var-harvester=All&var-workflow=All&var-frontier=All&var-fts_server=All&var-container_type=All&var-pledge=All"><div class="tooltip-upper"><img src="/static/images/grafana.png" width=14 height=14 border=0><span class="tooltip-text">Link to Jobs monitoring dashboard in Grafana</span></div></a>
+            {% else %}
+                    <a href="{% url 'siteInfo' site.name %}"><span class="{{ site.status }}">{{ site.name }}</span></a>
+                    <a onclick='PopUp("SITE={% if view == 'analysis' %}{{ site.name }}{% else %}{{ site.name }}{% endif %}&SIZE=medium{% if 'type' in site %}{% if site.ype == 'analysis' %}&LABEL=user{% elif site.type == 'production'%}&LABEL=managed{% endif %}{% endif %}", "{% if view == 'analysis' %}{{ site.name }}{% else %}{{ site.name }}{% endif %}", "day")'><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>
+                {% if 'isHarvester' in site and site.isHarvester %}
+                    <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/a312a030-8b0e-11e8-a7e3-ffbb2f24f6b4?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'09f5a610-6810-11e9-a744-833d910adbcf',key:computingsite.keyword,negate:!f,params:(query:{{site.name}},type:phrase),type:phrase,value:{{site.name}}),query:(match:(computingsite.keyword:(query:{{site.name}},type:phrase))))))" ><div class="tooltip-upper"><img src="/static/images/kibana-logo.png" width=14 height=14 border=0><span class="tooltip-text">Link to "Harvester particular computingsite" Kibana dashboard</span> </div></a>
+                {% endif %}
+                    <a target="_blank" href="https://monit-grafana.cern.ch/d/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite={{ site.name }}&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1"><div class="tooltip-upper"><img src="/static/images/grafana.png" width=14 height=14 border=0><span class="tooltip-text">Link to Jobs accountig dashboard in Grafana</span></div></a>
+                    <a onclick='PopUpGrafana("SITE={% if view == 'analysis' %}{{ site.name }}{% else %}{{ site.name }}{% endif %}&SIZE=medium", "{% if view == 'analysis' %}{{ site.name }}{% else %}{{ site.name }}{% endif %}", "day")'><div class="tooltip-upper"><img src="/static/images/grafana-black.png" width=14 height=14 border=0><span class="tooltip-text">Slots of running jobs (Pop-up window)</span></div></a>
+                </div>
+            {% endif %}
+        {% else %}
+            Failed before site assignment
+        {% endif %}
     {% if site.sumres and 1 == 0 %}
         <br/><hr style="height:1px; background-color: #0a0a0a; margin: auto" size=1>
-    {% for res in site.sumres%}
-        {{ res }}
-        <br/>
+    {% for res in site.sumres %}
+        {{ res }} <br/>
     {% endfor %}
     {% endif %}
 
@@ -569,29 +590,53 @@ of all jobs
 </p>
 {% endif %}
 
-<script language="javascript"> var newWin;function PopUp(ref, site, type) {
-var prt = 'http://'
-if ("https:" == document.location.protocol) {
-    prt = 'https://'
-} else {
-    prt = 'http://'
-}
-var strFeatures="toolbar=no,status=no,menubar=no,location=no"
-strFeatures=strFeatures+",scrollbars=no,resizable=no,height=500,width=500"
-if (!newWin || newWin.closed) {newWin = window.open(ref,'TellObj',strFeatures);
-if (!newWin.opener) {newWin.opener = window; }
+<script language="javascript">
+    var newWin;
+    var newWinGrafana;
+    function PopUp(ref, site, type) {
+        var prt = 'http://'
+        if ("https:" == document.location.protocol) {
+            prt = 'https://'
+        } else {
+            prt = 'http://'
+        }
+        var strFeatures="toolbar=no,status=no,menubar=no,location=no"
+        strFeatures=strFeatures+",scrollbars=no,resizable=no,height=500,width=500"
+        if (!newWin || newWin.closed) {newWin = window.open(ref,'TellObj',strFeatures);
+        if (!newWin.opener) {newWin.opener = window; }
 
-newWin.document.write('<img src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=day&'+ref+'" id="show_image"><p>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=hour&'+ref+'"; value=Hour>');;
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=day&'+ref+'"; value=Day>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=week&'+ref+'"; value=Week>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=month&'+ref+'"; value=Month>');
-newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=year&'+ref+'"; value=Year>');
-newWin.document.write('<p><input type=button value="Close" onclick="window.close();return false;">');
-newWin.document.close(); 
-}else { 
-    if (window.focus) {newWin.focus()}; 
-} }</script>
+        newWin.document.write('<img src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=day&'+ref+'" id="show_image"><p>');
+        newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=hour&'+ref+'"; value=Hour>');;
+        newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=day&'+ref+'"; value=Day>');
+        newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=week&'+ref+'"; value=Week>');
+        newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=month&'+ref+'"; value=Month>');
+        newWin.document.write('<input type=button onclick=document.getElementById("show_image").src="http://panglia.lcg.triumf.ca/site/graph.php?TIME=year&'+ref+'"; value=Year>');
+        newWin.document.write('<p><input type=button value="Close" onclick="window.close();return false;">');
+        newWin.document.close();
+        } else {
+            if (window.focus) {newWin.focus()};
+        }
+    }
+    function PopUpGrafana(ref, site) {
+        var prt = 'http://'
+        if ("https:" == document.location.protocol) {
+            prt = 'https://'
+        } else {
+            prt = 'http://'
+        }
+        var strFeatures="toolbar=no,status=no,menubar=no,location=no"
+        strFeatures=strFeatures+",scrollbars=no,resizable=no,height=800,width=1100"
+        if (!newWinGrafana || newWinGrafana.closed) {
+            newWinGrafana = window.open(ref,'TellObj', strFeatures);
+            if (!newWinGrafana.opener) {newWinGrafana.opener = window; }
+
+        newWinGrafana.document.write('<img src="{% url 'grafana' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite='+site+'&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1&panelId=138&width=1000&height=500&tz=Europe%2FBerlin" id="show_image"><p>');
+        newWinGrafana.document.close();
+        } else {
+            if (window.focus) {newWinGrafana.focus()};
+        }
+    }
+</script>
 
 {% endblock %}
 

@@ -5,7 +5,7 @@ import matplotlib.dates as md
 
 import os
 from django.db import connection
-from core.common.models import JediTasks
+from core.common.models import JediTasks, TasksStatusLog
 import io
 import matplotlib as mpl
 mpl.use('Agg')
@@ -30,6 +30,12 @@ class TaskProgressPlot:
         else:
             return None
 
+    def get_task_retries(self, taskid):
+        query = {}
+        query['jeditaskid'] = taskid
+        mtimeparam = 'modificationtime'
+        task_status_log = TasksStatusLog.objects.filter(**query).order_by(mtimeparam).values()
+        return task_status_log
 
     def prepare_task_profile(self,frame):
         if len(frame) > 0:
@@ -49,7 +55,7 @@ class TaskProgressPlot:
     def get_raw_task_profile_fresh(self,taskid):
         cur = connection.cursor()
         cur.execute("SELECT  * FROM ("
-                    "SELECT DISTINCT starttime, creationtime, endtime, pandaid, jeditaskid, EVENTSERVICE FROM JOBSARCHIVED WHERE JEDITASKID={0} and JOBSTATUS='finished' UNION ALL "
+                    "SELECT DISTINCT starttime, creationtime, endtime, pandaid, jeditaskid, EVENTSERVICE FROM JOBSARCHIVED WHERE JEDITASKID={0} and JOBSTATUS='finished' UNION "
                     "SELECT DISTINCT starttime, creationtime, endtime, pandaid, jeditaskid, EVENTSERVICE FROM JOBSARCHIVED4 WHERE JEDITASKID={0} and JOBSTATUS='finished'"
                     ")t ORDER BY pandaid asc".format(taskid))
         rows = cur.fetchall()
@@ -103,6 +109,72 @@ class TaskProgressPlot:
                     }
         else:
             None
+
+    def get_raw_task_profile_full(self, taskid):
+        """
+        A method to form a non ES task profile
+        :param taskid:
+        :return:
+        """
+        qstr = """
+            SELECT starttime, creationtime, endtime, pandaid, processingtype, transformation, nevents, jobstatus
+            FROM (
+                SELECT starttime, creationtime, endtime, pandaid, processingtype, transformation, nevents, jobstatus 
+                FROM ATLAS_PANDAARCH.JOBSARCHIVED 
+                    WHERE JEDITASKID={0} and JOBSTATUS in ('finished', 'failed', 'closed', 'cancelled') 
+                UNION
+                SELECT starttime, creationtime, endtime, pandaid, processingtype, transformation, nevents, jobstatus  
+                FROM ATLAS_PANDA.JOBSARCHIVED4 
+                    WHERE JEDITASKID={0} and JOBSTATUS in ('finished', 'failed', 'closed', 'cancelled') 
+                ) t 
+            ORDER BY endtime asc
+        """.format(taskid)
+        cur = connection.cursor()
+        cur.execute(qstr)
+        rows = cur.fetchall()
+        tp_names = ['start', 'creation', 'end', 'pandaid', 'processingtype', 'transformation', 'nevents',
+                    'jobstatus', 'indx']
+        rows = [dict(zip(tp_names, row)) for row in rows]
+
+        # add clear jobtype field and overwrite nevents to 0 for unfinished and build/merge jobs
+        job_types = ['build', 'run', 'merge']
+        job_timestamps = ['creation', 'start', 'end']
+        for r in rows:
+            if 'build' in r['transformation']:
+                r['jobtype'] = 'build'
+            elif r['processingtype'] == 'pmerge':
+                r['jobtype'] = 'merge'
+            else:
+                r['jobtype'] = 'run'
+
+            if r['jobtype'] in ('build', 'merge'):
+                r['nevents'] = 0
+            if r['jobstatus'] in ('failed', 'closed', 'cancelled'):
+                r['nevents'] = 0
+
+            if r['start'] is None:
+                r['start'] = r['creation']
+
+        # create task profile dict
+        task_profile_dict = {}
+        for jt in job_types:
+            task_profile_dict[jt] = []
+        fin_i = 0
+        fin_ev = 0
+        for r in rows:
+            fin_i += 1
+            fin_ev += r['nevents']
+            temp = {}
+            for jtm in job_timestamps:
+                temp[jtm] = r[jtm]
+            temp['nevents'] = fin_ev
+            temp['indx'] = fin_i
+            temp['jobstatus'] = r['jobstatus']
+            temp['pandaid'] = r['pandaid']
+            task_profile_dict[r['jobtype']].append(temp)
+
+        return task_profile_dict
+
 
     def get_es_raw_task_profile_fresh(self,taskid):
         cur = connection.cursor()

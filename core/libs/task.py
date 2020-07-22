@@ -8,7 +8,7 @@ from django.db import connection
 from django.db.models import Count
 from core.common.models import JediEvents, JediDatasetContents
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
-from core.libs.exlib import dictfetchall
+from core.libs.exlib import dictfetchall, insert_to_temp_table
 from core.settings.local import defaultDatetimeFormat
 
 
@@ -424,7 +424,7 @@ def job_summary_for_task_light(taskrec):
     """
     jeditaskidstr = str(taskrec['jeditaskid'])
     statelistlight = ['defined', 'assigned', 'activated', 'starting', 'running', 'holding', 'transferring', 'finished',
-                      'failed']
+                      'failed', 'cancelled']
     estypes = ['es', 'esmerge', 'jumbo']
     jobSummaryLight = {}
     jobSummaryLightSplitted = {}
@@ -462,8 +462,9 @@ def job_summary_for_task_light(taskrec):
 
     for row in js_count_list:
         if row['state'] in statelistlight:
-            jobSummaryLight[row['state']] += row['count']
-            if row['es'] in estypes:
+            if not (row['state'] == 'cancelled' and row['es'] in ('es', 'esmerge')):
+                jobSummaryLight[row['state']] += row['count']
+            if row['es'] in estypes and not (row['state'] == 'cancelled' and row['es'] in ('es', 'esmerge')):
                 jobSummaryLightSplitted[row['es']][row['state']] += row['count']
 
     # dict -> list for template
@@ -474,31 +475,45 @@ def job_summary_for_task_light(taskrec):
 
     return jobsummarylight, jobsummarylightsplitted
 
+
 def get_top_memory_consumers(taskrec):
+
     jeditaskidstr = str(taskrec['jeditaskid'])
     topmemoryconsumedjobs = []
     tmcquerystr = """
-    select jeditaskid, pandaid, computingsite, jobmaxrss, sitemaxrss, maxrssratio 
+    select jeditaskid, pandaid, computingsite, jobmaxpss, jobmaxpss_percore, sitemaxrss, sitemaxrss_percore, maxpssratio 
     from (
-    select j.jeditaskid, j.pandaid, j.computingsite, j.jobmaxrss, s.maxrss as sitemaxrss, j.jobmaxrss/s.maxrss as maxrssratio, 
-        row_number() over (partition by jeditaskid order by j.jobmaxrss/s.maxrss desc) as jobrank
-    from atlas_pandameta.schedconfig s,
-    (select pandaid, jeditaskid, computingsite, maxrss/1000 as jobmaxrss from ATLAS_PANDA.jobsarchived4 
-        where jeditaskid = :jdtsid and maxrss is not null
-    union
-    select pandaid, jeditaskid, computingsite, maxrss/1000 as jobmaxrss from ATLAS_PANDAARCH.jobsarchived 
-        where jeditaskid = :jdtsid  and maxrss is not null
-    ) j
-    where j.computingsite = s.nickname
+        select j.jeditaskid, j.pandaid, j.computingsite, j.jobmaxpss, j.jobmaxpss_percore, s.maxrss as sitemaxrss, 
+            s.maxrss/s.corecount as sitemaxrss_percore, j.jobmaxpss_percore/(s.maxrss/s.corecount) as maxpssratio, 
+            row_number() over (partition by jeditaskid order by j.jobmaxpss_percore/(s.maxrss/s.corecount) desc) as jobrank
+        from atlas_pandameta.schedconfig s,
+        (select pandaid, jeditaskid, computingsite, maxpss/1000 as jobmaxpss, maxpss/1000/actualcorecount as jobmaxpss_percore 
+        from ATLAS_PANDA.jobsarchived4 
+            where jeditaskid = :jdtsid and maxrss is not null
+        union
+        select pandaid, jeditaskid, computingsite, maxpss/1000 as jobmaxpss, maxpss/1000/actualcorecount as jobmaxpss_percore 
+        from ATLAS_PANDAARCH.jobsarchived 
+            where jeditaskid = :jdtsid  and maxrss is not null
+        ) j
+        where j.computingsite = s.nickname
     ) 
     where jobrank <= 3
     """
-    cur = connection.cursor()
-    cur.execute(tmcquerystr, {'jdtsid': jeditaskidstr})
-    tmc_list = cur.fetchall()
-    cur.close()
-    tmc_names = ['jeditaskid', 'pandaid', 'computingsite', 'jobmaxrss', 'sitemaxrss', 'maxrssratio']
+    try:
+        cur = connection.cursor()
+        cur.execute(tmcquerystr, {'jdtsid': jeditaskidstr})
+        tmc_list = cur.fetchall()
+        cur.close()
+    except:
+        tmc_list = []
+    tmc_names = ['jeditaskid', 'pandaid', 'computingsite', 'jobmaxrss', 'jobmaxpss_percore',
+                 'sitemaxrss', 'sitemaxrss_percore', 'maxrssratio']
     topmemoryconsumedjobs = [dict(zip(tmc_names, row)) for row in tmc_list]
+    for row in topmemoryconsumedjobs:
+        try:
+            row['maxrssratio'] = int(row['maxrssratio'])
+        except:
+            row['maxrssratio'] = 0
     return topmemoryconsumedjobs
 
 
@@ -542,3 +557,54 @@ def get_harverster_workers_for_task(jeditaskid):
     harv_workers_names = ['harvesterid', 'workerid', 'sumevents', 'batchid', 'walltime', 'ncore', 'njobs']
     harv_workers_list = [dict(zip(harv_workers_names, row)) for row in harv_workers]
     return harv_workers_list
+
+
+def get_job_state_summary_for_tasklist(tasks):
+    """
+    Getting job state summary for list of tasks. Nodrop mode only
+    :return: taskJobStateSummary : dictionary
+    """
+
+    taskids = [int(task['jeditaskid']) for task in tasks]
+    trans_key = insert_to_temp_table(taskids)
+
+    jsquery = """
+        select  jeditaskid, jobstatus, count(pandaid) as njobs from (
+        (
+        select jeditaskid, pandaid, jobstatus from atlas_pandabigmon.combined_wait_act_def_arch4 
+            where jeditaskid in (select id from ATLAS_PANDABIGMON.TMP_IDS1Debug where TRANSACTIONKEY = :tk )
+        )
+        union all
+        (
+        select jeditaskid, pandaid, jobstatus from atlas_pandaarch.jobsarchived 
+            where jeditaskid in (select id from ATLAS_PANDABIGMON.TMP_IDS1Debug where TRANSACTIONKEY = :tk )
+        minus
+        select jeditaskid, pandaid, jobstatus from atlas_pandaarch.jobsarchived 
+            where jeditaskid in (select id from ATLAS_PANDABIGMON.TMP_IDS1Debug where TRANSACTIONKEY = :tk ) 
+                and pandaid in (
+                    select pandaid from atlas_pandabigmon.combined_wait_act_def_arch4 
+                        where jeditaskid in (select id from ATLAS_PANDABIGMON.TMP_IDS1Debug where TRANSACTIONKEY = :tk )
+            )
+        )
+        )
+        group by jeditaskid, jobstatus
+        """
+    cur = connection.cursor()
+    cur.execute(jsquery, {'tk': trans_key})
+    js_count_bytask = cur.fetchall()
+    cur.close()
+
+    js_count_bytask_names = ['jeditaskid', 'jobstatus', 'count']
+    js_count_bytask_list = [dict(zip(js_count_bytask_names, row)) for row in js_count_bytask]
+
+    # list -> dict
+    js_count_bytask_dict = {}
+    for row in js_count_bytask_list:
+        if row['jeditaskid'] not in js_count_bytask_dict:
+            js_count_bytask_dict[row['jeditaskid']] = {}
+        if row['jobstatus'] not in js_count_bytask_dict[row['jeditaskid']]:
+            js_count_bytask_dict[row['jeditaskid']][row['jobstatus']] = 0
+        js_count_bytask_dict[row['jeditaskid']][row['jobstatus']] += int(row['count'])
+
+    return js_count_bytask_dict
+

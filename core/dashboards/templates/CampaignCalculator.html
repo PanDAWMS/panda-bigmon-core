@@ -3,106 +3,25 @@
 {% load static %}
 {% load humanize %}
 
-{% block page_title %}Campaing duration calculator{% endblock %}
-{% block subtitle %}Campaing duration calculator <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+{% block page_title %}Campaign duration calculator{% endblock %}
+{% block subtitle %}Campaign duration calculator {{ viewParams.selection|safe }} {% endblock %}
 
 
-{% block extra_css %}
-    <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
 {% endblock %}
-{% block extra_js %}
-    <script src="{% static 'js/hideCells.js' %}"></script>
-    <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
+{% block css_page %}
+  <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 {% endblock %}
 
 {% block body %}
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
-    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <script src="{% static 'js/humanize.min.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
-
-    <script type="text/javascript">
-        var app = angular.module('dataviewapp', []).config(function ($interpolateProvider) {
-            $interpolateProvider.startSymbol('{$');
-            $interpolateProvider.endSymbol('$}');
-        })
-            .config(['$compileProvider', function ($compileProvider) {
-        $compileProvider.debugInfoEnabled(false);
-        }]) .service('Service', ['$http', service])
-            .controller('dataviewctrl', ['$scope', 'Service',controller]);
-
-        function service($http, $scope){
-            var get = function(requestparams) {
-             return $http({
-              method: 'GET',
-              url: '{% url 'campaignPredictionInfo' %}'+requestparams,
-              cache: false
-            })};
-            return {
-              get: get
-            }
-        }
-
-        function controller($scope, Service){
-            $scope.camp = {{ campaigns_info|safe }};
-            $scope.subcamp = new Array(0);
-            $scope.selectedCampaign = '';
-            $scope.selectedSubCampaign = '';
-            $scope.showload = false;
-
-            $scope.loadInfoCampaign = function(){
-                var request = "?campaign=" +$scope.selectedCampaign+ "&subcampaign="+$scope.selectedSubCampaign;
-                $scope.showload = true;
-                Service.get(request).then($scope.processResponceInfo);
-            };
-
-            $scope.processResponceInfo = function(response){
-                response = response.data;
-                $scope.remainingForSubmitting = response['remainingForSubmitting'];
-                $scope.remainingForMaxPossible = response['remainingForMaxPossible'];
-                $scope.numberOfDoneEventsPerStep = response['numberOfDoneEventsPerStep'];
-                $scope.numberOfSubmittedEventsPerStep = response['numberOfSubmittedEventsPerStep'];
-                $scope.numberOfRemainingEventsPerStep = response['numberOfRemainingEventsPerStep'];
-                $scope.numberOfTotalEventsPerStep = response['numberOfTotalEventsPerStep'];
-                $scope.steps = response['steps'];
-                $scope.subcampaign = response['subcampaign'];
-                $scope.campaign = response['campaign'];
-                $scope.progressForSubmitted = response['progressForSubmitted'];
-                $scope.stepWithMaxEvents = response['stepWithMaxEvents'];
-                $scope.eventsPerDay = response['eventsPerDay'];
-                $scope.progressForMax = response['progressForMax'];
-                $scope.showload = false;
-            };
-
-            $scope.updateSubCampaign = function(){
-                if ($scope.camp[$scope.selectedCampaign].length > 0)
-                    $scope.subcamp = $scope.camp[$scope.selectedCampaign];
-                else $scope.subcamp = new Array(0);
-            };
-
-            $scope.doshowrem = function(step){
-                if ($scope.numberOfRemainingEventsPerStep[step] == "0")
-                    return false;
-                return true;
-            };
-
-            $scope.doshowsub = function(step){
-                if (step in $scope.remainingForSubmitting)
-                    return true;
-                return false;
-            };
-
-            $scope.doshowsubmax = function(step){
-                if ((step in $scope.remainingForSubmitting) && (step != $scope.stepWithMaxEvents))
-                    return true;
-                return false;
-            };
-
-        }
-    </script>
-
     <div class="large-12 columns" ng-app="dataviewapp" data-ng-controller="dataviewctrl">
      <div class="row">
          <div id="selectionpane" class="small-6 columns">
@@ -145,5 +64,80 @@
 
     </div>
 
+{% endblock %}
 
+{% block js_body_page %}
+<script src="{% static 'js/hideCells.js' %}"></script>
+<script>
+    app.service('Service', ['$http', service])
+        .controller('dataviewctrl', ['$scope', 'Service',controller]);
+
+    function service($http, $scope){
+        var get = function(requestparams) {
+         return $http({
+          method: 'GET',
+          url: '{% url 'campaignPredictionInfo' %}'+requestparams,
+          cache: false
+        })};
+        return {
+          get: get
+        }
+    }
+
+    function controller($scope, Service){
+        $scope.camp = {{ campaigns_info|safe }};
+        $scope.subcamp = new Array(0);
+        $scope.selectedCampaign = '';
+        $scope.selectedSubCampaign = '';
+        $scope.showload = false;
+
+        $scope.loadInfoCampaign = function(){
+            var request = "?campaign=" +$scope.selectedCampaign+ "&subcampaign="+$scope.selectedSubCampaign;
+            $scope.showload = true;
+            Service.get(request).then($scope.processResponceInfo);
+        };
+
+        $scope.processResponceInfo = function(response){
+            response = response.data;
+            $scope.remainingForSubmitting = response['remainingForSubmitting'];
+            $scope.remainingForMaxPossible = response['remainingForMaxPossible'];
+            $scope.numberOfDoneEventsPerStep = response['numberOfDoneEventsPerStep'];
+            $scope.numberOfSubmittedEventsPerStep = response['numberOfSubmittedEventsPerStep'];
+            $scope.numberOfRemainingEventsPerStep = response['numberOfRemainingEventsPerStep'];
+            $scope.numberOfTotalEventsPerStep = response['numberOfTotalEventsPerStep'];
+            $scope.steps = response['steps'];
+            $scope.subcampaign = response['subcampaign'];
+            $scope.campaign = response['campaign'];
+            $scope.progressForSubmitted = response['progressForSubmitted'];
+            $scope.stepWithMaxEvents = response['stepWithMaxEvents'];
+            $scope.eventsPerDay = response['eventsPerDay'];
+            $scope.progressForMax = response['progressForMax'];
+            $scope.showload = false;
+        };
+
+        $scope.updateSubCampaign = function(){
+            if ($scope.camp[$scope.selectedCampaign].length > 0)
+                $scope.subcamp = $scope.camp[$scope.selectedCampaign];
+            else $scope.subcamp = new Array(0);
+        };
+
+        $scope.doshowrem = function(step){
+            if ($scope.numberOfRemainingEventsPerStep[step] == "0")
+                return false;
+            return true;
+        };
+
+        $scope.doshowsub = function(step){
+            if (step in $scope.remainingForSubmitting)
+                return true;
+            return false;
+        };
+
+        $scope.doshowsubmax = function(step){
+            if ((step in $scope.remainingForSubmitting) && (step != $scope.stepWithMaxEvents))
+                return true;
+            return false;
+        };
+    }
+</script>
 {% endblock %}

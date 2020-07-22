@@ -1,14 +1,15 @@
 
 
-import urllib, urllib3, json, math
+import urllib3, json, math
 import numpy as np
 from datetime import datetime
 from core.art.modelsART import ARTSubResult
-from django.db import connection, transaction, DatabaseError
+from django.db import transaction, DatabaseError
 from core.settings import defaultDatetimeFormat
 import logging
 
-_logger = logging.getLogger('bigpandamon-error')
+_logger_error = logging.getLogger('bigpandamon-error')
+_logger = logging.getLogger('bigpandamon')
 
 def getJobReport(guid, lfn, scope):
     filebrowserURL = "http://bigpanda.cern.ch/filebrowser/"  # This is deployment specific because memory monitoring is intended to work in ATLAS
@@ -38,6 +39,7 @@ def getJobReport(guid, lfn, scope):
 
     return data
 
+
 def getARTjobSubResults(data):
     jobSubResult = {}
 
@@ -61,7 +63,8 @@ def subresults_getter(url_params_str):
     A function for getting ART jobs sub results in multithreading mode
     :return: dictionary with sub-results
     """
-    base_url = "http://bigpanda.cern.ch/filebrowser/?json=1"
+    base_url = "http://bigpanda.cern.ch/"
+    fb_path = "filebrowser/?json=1"
     subresults_dict = {}
 
     pandaidstr = url_params_str.split('=')[-1]
@@ -71,32 +74,35 @@ def subresults_getter(url_params_str):
         _logger.exception('Exception was caught while transforming pandaid from str to int.')
         raise
 
-    print('Loading {}'.format(base_url+url_params_str))
-
     http = urllib3.PoolManager()
-    resp = http.request('GET', base_url + url_params_str)
-    if resp and len(resp.data) > 0:
+    resp = http.request('GET', base_url + fb_path + url_params_str, timeout=300)
+    if resp and resp.status == 200 and len(resp.data) > 0:
         try:
             data = json.loads(resp.data)
-            HOSTNAME = data['HOSTNAME']
             tardir = data['tardir']
             MEDIA_URL = data['MEDIA_URL']
             dirprefix = data['dirprefix']
             files = data['files']
-            files = [f for f in files if 'jobReport.json' in f['name']]
+            files = [f for f in files if 'artReport.json' in f['name']]
         except:
-            _logger.exception('Exception was caught while seeking jobReport.json in logs for PanDA job: {}'.format(str(pandaid)))
-            return {}
+            _logger.exception('Exception was caught while seeking artReport.json in logs for PanDA job: {}'.format(str(pandaid)))
+            return {pandaid: subresults_dict}
+    elif resp and resp.status == 429:
+        _logger.info('Too many requests to filebrowser, return None for now, will try in next loop. PanDA job : {}'.format(str(pandaid)))
+        return {pandaid: None}
     else:
         _logger.exception('Exception was caught while downloading logs using Rucio for PanDA job: {}'.format(str(pandaid)))
-        return {}
+        return {pandaid: subresults_dict}
 
-    urlBase = "http://" + HOSTNAME + "/" + MEDIA_URL + dirprefix + "/" + tardir
-
-    for f in files:
-        url = urlBase + "/" + f['name']
-        response = http.request('GET', url)
-        data = json.loads(response.data)
+    if len(files) > 0:
+        media_path = base_url + MEDIA_URL + dirprefix + "/" + tardir
+        for f in files:
+            url = media_path + "/" + f['name']
+            response = http.request('GET', url)
+            data = json.loads(response.data)
+    else:
+        _logger.error('No artReport.json file found in log tarball for PanDA job: {}'.format(str(pandaid)))
+        return {pandaid: subresults_dict}
 
     if isinstance(data, dict) and 'art' in data:
         subresults_dict = data['art']
@@ -111,19 +117,7 @@ def subresults_getter(url_params_str):
                 resultlist.append({'name': r['name'] if 'name' in r else '', 'result': r['result'] if 'result' in r else r})
             subresults_dict['result'] = resultlist
 
-    print('ART Results for {} is {}'.format(str(pandaid), str(subresults_dict)))
-
-
-    # clean up ART test logs from media/filebrowser/ where guid is folder name
-    # guid = None
-    # try:
-    #     guid = url_params_str.split('=')[1].split('&')[0]
-    # except:
-    #     _logger.exception('Exception was caught while getting GUID by parsing URL params str: {}'.format(url_params_str))
-    #     pass
-    # if guid is not None:
-    #     urlClean = "http://" + HOSTNAME + '/filebrowser/delete/?json=1&guid=' + guid
-    #     http.request('GET', urlClean)
+    _logger.info('ART Results for {} is {}'.format(str(pandaid), str(subresults_dict)))
 
     return {pandaid: subresults_dict}
 
@@ -134,15 +128,16 @@ def save_subresults(subResultsDict):
     :param subResultsDict:
     :return: True or False
     """
-    try:
-        with transaction.atomic():
-            for pandaid, data in subResultsDict.items():
+
+    with transaction.atomic():
+        for pandaid, data in subResultsDict.items():
+            try:
                 row = ARTSubResult(pandaid=pandaid,
                                    subresult=data)
                 row.save()
-    except DatabaseError as e:
-        print (e)
-        return False
+            except DatabaseError as e:
+                _logger_error.error(e)
+                return False
 
     return True
 
@@ -162,7 +157,7 @@ def lock_nqueuedjobs(cur, nrows):
     try:
         cur.execute(lquery)
     except DatabaseError as e:
-        print (e)
+        _logger_error.error(e)
         raise
 
     return lock_time
@@ -181,7 +176,7 @@ def delete_queuedjobs(cur, lock_time):
     try:
         cur.execute(dquery)
     except DatabaseError as e:
-        print (e)
+        _logger_error.error(e)
         raise
 
     return True
@@ -199,26 +194,28 @@ def clear_queue(cur):
     try:
         cur.execute(cquery)
     except DatabaseError as e:
-        print (e)
+        _logger_error.error(e)
         raise
 
     return True
 
+
 def get_final_result(job):
     """ A function to determine the real ART test result depending on sub-step results, exitcode and PanDA job state
-    0 - done - green
+    0 - succeeded - green
     1 - finished - yellow
-    2 - running - blue
+    2 - active - blue
     3 - failed - red
     """
-    finalResultDict = {0: 'done', 1: 'finished', 2: 'active', 3: 'failed'}
+    finalResultDict = {0: 'succeeded', 1: 'finished', 2: 'active', 3: 'failed'}
     extraParamsDict = {
         'testexitcode': None,
         'subresults': None,
         'testdirectory': None,
         'reportjira': None,
         'reportmail': None,
-        'description': None
+        'description': None,
+        'linktoplots': None,
         }
     finalresult = ''
     if job['jobstatus'] == 'finished':
@@ -253,6 +250,10 @@ def get_final_result(job):
         pass
     try:
         extraParamsDict['description'] = job['result']['description'] if 'description' in job['result'] else None
+    except:
+        pass
+    try:
+        extraParamsDict['linktoplots'] = job['result']['url'] if 'url' in job['result'] else None
     except:
         pass
 

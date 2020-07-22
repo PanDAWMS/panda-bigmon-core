@@ -51,18 +51,17 @@
   color: #FFFFFF;
 }
 
-.tableFilter{
+.tableFilter {
 vertical-align: top;
 }
-.tableFilter.td{
-vertical-align: top;
-}
-
-.tdF{
+.tableFilter.td {
 vertical-align: top;
 }
 
-.inputW{
+.tdF {
+vertical-align: top;
+}
+
+.inputW {
 width:10em;
 }
-

@@ -133,6 +133,9 @@ class CombinedWaitActDefArch4(models.Model):
     es = models.IntegerField(db_column='ES')
     nevents = models.IntegerField(db_column='NEVENTS')
     isarchive = models.IntegerField(db_column='ISARCHIVE')
+    username = models.CharField(max_length=168, db_column='USERNAME')
+    resourcetype = models.CharField(max_length=64, db_column='RESOURCE_TYPE')
+    eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."COMBINED_WAIT_ACT_DEF_ARCH4"'
 
@@ -267,7 +270,9 @@ class PandaJob(models.Model):
     raterbytes = models.BigIntegerField(null=True, db_column='RATERBYTES', blank=True) # Field name made lowercase.
     ratewbytes = models.BigIntegerField(null=True, db_column='RATEWBYTES', blank=True) # Field name made lowercase.
     diskio = models.BigIntegerField(null=True, db_column='DISKIO', blank=True) # Field name made lowercase.
-
+    memoryleak = models.BigIntegerField(null=True, db_column='MEMORY_LEAK', blank=True)
+    memoryleakx2 = models.BigIntegerField(null=True, db_column='MEMORY_LEAK_X2', blank=True)
+    container_name = models.CharField(max_length=765, db_column='CONTAINER_NAME', blank=True)
 
     def __str__(self):
         return 'PanDA:' + str(self.pandaid)
@@ -317,6 +322,10 @@ class PandaJob(models.Model):
                   }
                 )
         return fields
+
+    def get_fields_by_type(self, ftype='integer'):
+        field_list = [str(f.name) for f in self._meta.fields if ftype in str(f.description).lower()]
+        return field_list
 
     class Meta:
         abstract = True

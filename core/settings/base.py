@@ -1,9 +1,13 @@
-from os.path import dirname, join
-
-from core import common
 import core
-from core import filebrowser
-from core import pbm
+try:
+    from core.settings.local import DEBUG
+except ImportError:
+    DEBUG = False
+try:
+    from core.settings.local import ENABLE_DEBUG_TOOLBAR
+except ImportError:
+    ENABLE_DEBUG_TOOLBAR = False
+
 
 ADMINS = (
     ('Sergey Podolsky', 'spadolski@bnl.gov'),
@@ -37,8 +41,7 @@ STATICFILES_FINDERS = (
 MIDDLEWARE = (
     'core.ddosprotection.DDOSMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
-    'htmlmin.middleware.HtmlMinifyMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+#    'htmlmin.middleware.HtmlMinifyMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     #'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -108,8 +111,6 @@ INSTALLED_APPS_DJANGO_FRAMEWORK = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
-#### django-debug-toolbar
-#    'debug_toolbar',
 )
 
 SESSION_SERIALIZER = "core.libs.CustomJSONSerializer.CustomJSONSerializer"
@@ -135,12 +136,11 @@ INSTALLED_APPS_BIGPANDAMON_CORE = (
     #    'core.graphic', #NOT-IMPLEMENTED
     'core.gspread',
     'django.contrib.staticfiles',
-    'debug_toolbar',
 )
 COMMON_INSTALLED_APPS = \
     INSTALLED_APPS_DJANGO_FRAMEWORK + \
     INSTALLED_APPS_DJANGO_PLUGINS
-INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_CORE
+# INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_CORE
 
 
 ### Django.js config
@@ -162,24 +162,6 @@ VERSIONS = {
 #    join(dirname(core.pbm.__file__), 'templates'),
 #)
 
-
-
-DEBUG_TOOLBAR_PATCH_SETTINGS = False
-INTERNAL_IPS =('127.0.0.1', '192.168.0.1', '188.184.69.142')
-#DEBUG = True
-DEBUG_TOOLBAR_CONFIG = {'INTERCEPT_REDIRECTS': False,}
-DEBUG_TOOLBAR_PANELS = (
-    'debug_toolbar.panels.versions.VersionsPanel',
-    # Throwing AttributeError: 'module' object has no attribute 'getrusage'
-    'debug_toolbar.panels.timer.TimerPanel',
-    #'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
-    'debug_toolbar.panels.headers.HeadersPanel',
-    'debug_toolbar.panels.request.RequestPanel',
-    'debug_toolbar.panels.templates.TemplatesPanel',
-    'debug_toolbar.panels.sql.SQLPanel',
-    'debug_toolbar.panels.signals.SignalsPanel',
-    #'debug_toolbar.panels.logger.LoggingPanel',
-)
 
 
 INSTALLED_APPS_BIGPANDAMON_core = (
@@ -207,9 +189,34 @@ INSTALLED_APPS_BIGPANDAMON_core = (
     'core.dashboards',
     'core.globalpage',
     'core.buildmonitor',
+    'core.oi',
+    'core.iDDS',
 )
+
 INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_core
 
+if DEBUG and ENABLE_DEBUG_TOOLBAR:
+    MIDDLEWARE += (
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+    )
+    INSTALLED_APPS += (
+        'debug_toolbar',
+    )
+    DEBUG_TOOLBAR_PATCH_SETTINGS = False
+    INTERNAL_IPS = ('127.0.0.1', '192.168.0.1', '188.184.69.142')
+    DEBUG_TOOLBAR_CONFIG = {'INTERCEPT_REDIRECTS': False, }
+    DEBUG_TOOLBAR_PANELS = (
+        'debug_toolbar.panels.versions.VersionsPanel',
+        # Throwing AttributeError: 'module' object has no attribute 'getrusage'
+        'debug_toolbar.panels.timer.TimerPanel',
+        # 'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel',
+        'debug_toolbar.panels.headers.HeadersPanel',
+        'debug_toolbar.panels.request.RequestPanel',
+        'debug_toolbar.panels.templates.TemplatesPanel',
+        'debug_toolbar.panels.sql.SQLPanel',
+        'debug_toolbar.panels.signals.SignalsPanel',
+        # 'debug_toolbar.panels.logger.LoggingPanel',
+    )
 
 ROOT_URLCONF = 'core.urls'
 
@@ -219,3 +226,4 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 AUTH_USER_MODEL = 'common.BPUser'
 
+DKB_CAMPAIGN_URL = 'http://aiatlas172.cern.ch:5080/campaign/stat'

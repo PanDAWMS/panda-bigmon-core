@@ -5,7 +5,6 @@ from django.conf import settings
 from django.urls import re_path, include
 
 from core import views as coremon_views
-from core import dpviews as dpviews
 from core import MemoryMonitorPlots as memmon
 
 
@@ -18,13 +17,12 @@ from core.grafana import StaginDSProgress as dsProgressView
 from core.globalshares import views as globalshares
 from core.dashboards import dtcdboard as dtcdboard
 from core.dashboards import campaignprediction as campaignprediction
+from core.dashboards import campaingprogressDKB
+from core.dashboards import jobsummaryregion as jsr_views
+from core.libs import tasksPlots as tasksPlots
 
-
-from core.runningprod import views as runningprod_views
-from core.errorsscattering import views as errorsscat_views
 from core.compare import views as compare_views
 
-from core.globalpage import views as globalpage
 from core.buildmonitor import viewsglobal as globalview
 from core.buildmonitor import viewsartmonit as artmonitview
 from core.buildmonitor import viewsci as ciview
@@ -46,11 +44,6 @@ urlpatterns = [
     re_path(r'^jobs/$', coremon_views.jobList, name='jobList'),
     re_path(r'^jobs/(.*)/$', coremon_views.jobList, name='jobList'),
     re_path(r'^jobs/(.*)/(.*)/$', coremon_views.jobList, name='jobList'),
-
-    re_path(r'^jobsss/$', coremon_views.jobListP, name='jobListP'),
-    re_path(r'^jobsss/(.*)/$', coremon_views.jobListP, name='jobListP'),
-    re_path(r'^jobsss/(.*)/(.*)/$', coremon_views.jobListP, name='jobListP'),
-    re_path(r'^jobssupt/$', coremon_views.jobListPDiv, name='jobListPDiv'),
 
     re_path(r'^job$', coremon_views.jobInfo, name='jobInfo'),
     re_path(r'^job/(.*)/$', coremon_views.jobInfo, name='jobInfo'),
@@ -88,7 +81,6 @@ urlpatterns = [
     re_path(r'^preprocess/$', coremon_views.preProcess, name='preprocess'),
     re_path(r'^g4exceptions/$', coremon_views.g4exceptions, name='g4exceptions'),
     re_path(r'^errorslist/$', coremon_views.summaryErrorsList, name='summaryErrorsList'),
-    re_path(r'^worldjobs/$', coremon_views.worldjobs, name='worldjobs'),
     re_path(r'^getbadeventsfortask/$', coremon_views.getBadEventsForTask, name='getbadeventsfortask'),
     re_path(r'^getstaginginfofortask/$', dtcdboard.getStagingInfoForTask, name='getStagingInfoForTask'),
     re_path(r'^getdtcsubmissionhist/$', dtcdboard.getDTCSubmissionHist, name='getDTCSubmissionHist'),
@@ -96,6 +88,9 @@ urlpatterns = [
     re_path(r'^datacardash/$', dtcdboard.dataCarouselleDashBoard, name='dataCarouselleDashBoard'),
     re_path(r'^campaignpredictiondash/$', campaignprediction.campaignPredictionDash, name='campaignPredictionDash'),
     re_path(r'^campaignpredictioninfo/$', campaignprediction.campaignPredictionInfo, name='campaignPredictionInfo'),
+
+    re_path(r'^campprog/$', campaingprogressDKB.campaignProgressDash, name='campaignProgressDash'),
+
     re_path(r'^globalpage/$', globalview.globalviewDemo, name='BuildGlobal'),
     re_path(r'^globalview/$', globalview.globalviewDemo, name='BuildGlobal'),
     re_path(r'^artmonitview/$', artmonitview.artmonitviewDemo, name='BuildARTMonit'),
@@ -103,15 +98,8 @@ urlpatterns = [
     re_path(r'^nview/$', nview.nviewDemo, name='BuildN'),
     re_path(r'^testsview/$', testsview.testviewDemo, name='TestsRes'),
     re_path(r'^compsview/$', compsview.compviewDemo, name='CompsRes'),
-                  #    re_path(r'^worldjobs/analysis/$', coremon_views.dashWorldAnalysis, name='dashWorldAnalysis'),
-#    re_path(r'^worldjobs/production/$', coremon_views.dashWorldProduction, name='dashWorldProduction'),
 
-    re_path(r'^runningmcprodtasks/$', runningprod_views.runningMCProdTasks, name='runningMCProdTasks'),
-    re_path(r'^runningprodtasks/$', runningprod_views.runningProdTasks, name='runningProdTasks'),
-    re_path(r'^runningdpdprodtasks/$', runningprod_views.runningDPDProdTasks, name='runningDPDProdTasks'),
-    re_path(r'^prodeventstrend/$', runningprod_views.prodNeventsTrend, name='prodNeventsTrend'),
-    re_path(r'^runningprodrequests/$', runningprod_views.runningProdRequests, name='runningProdRequests'),
-    re_path(r'^worldhs06s/$', coremon_views.worldhs06s, name='worldHS06s'),
+
     re_path(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),
     re_path(r'^descendentjoberrsinfo/$', coremon_views.descendentjoberrsinfo, name='descendentjoberrsinfo'),
     re_path(r'^taskssummary/$', coremon_views.getSummaryForTaskList, name='taskListSummary'),
@@ -120,26 +108,40 @@ urlpatterns = [
     re_path(r'^ganttTaskChain/$', coremon_views.ganttTaskChain, name='ganttTaskChain'),
     re_path(r'^taskprofileplot/$', coremon_views.taskprofileplot, name='taskprofileplot'),
     re_path(r'^taskesprofileplot/$', coremon_views.taskESprofileplot, name='taskesprofileplot'),
+    re_path(r'^taskprofile/(?P<jeditaskid>.*)/$', coremon_views.taskProfile, name='taskProfileMonitor'),
+    re_path(r'^taskprofiledata/(?P<jeditaskid>.*)/$', coremon_views.taskProfileData, name='getTaskProfilePlotData'),
     re_path(r'^eventsinfo/$', coremon_views.eventsInfo, name='eventsInfo'),
     re_path(r'^statpixel/$', coremon_views.statpixel, name='statpixel'),
     re_path(r'^killtasks/$', coremon_views.killtasks, name='killtasks'),
     re_path(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
 
     re_path(r'^jobstatuslog/(?P<pandaid>.*)/$', coremon_views.getJobStatusLog, name='getjobstatuslog'),
+    re_path(r'^taskstatuslog/(?P<jeditaskid>.*)/$', coremon_views.getTaskStatusLog, name='gettaskstatuslog'),
 
     re_path(r'^savesettings/$', coremon_views.saveSettings, name='saveSettings'),
     #re_path(r'^globalsharesnew/$', coremon_views.globalsharesnew, name='globalsharesnew'),
                        #    re_path(r'^preprocessdata/$', coremon_views.preprocessData, name='preprocessdata'),
-    ### data product catalog prototyping
-    re_path(r'^dp/$', dpviews.doRequest, name='doRequest'),
     re_path(r'^report/$', coremon_views.report, name='report'),
     re_path(r'^serverstatushealth/$', coremon_views.serverStatusHealth, name='serverStatusHealth'),
 
-                  ### ART nightly tests
+    re_path(r'^new/dash/$', coremon_views.dashRegion, name='dashRegionNew'),
+    re_path(r'^dash/region/$', coremon_views.dashRegion, name='dashRegion'),
+    re_path(r'^dash/world/$', coremon_views.dashNucleus, name='dashWorld'),
+    re_path(r'^dash/es/$', coremon_views.dashES, name='dashES'),
+
+    re_path(r'^csrftoken/$', coremon_views.getCSRFToken, name='getCSRFToken'),
+
+    ### ART nightly tests
     re_path(r'^art/', include('core.art.urls_art')),
 
+    ### OI related views
+    re_path(r'^oi/', include('core.oi.urls')),
 
+    ### IDDS related views
+    re_path(r'^idds/', include('core.iDDS.urls')),
 
+    ### Running Prod tasks
+    re_path('', include('core.runningprod.urls_runningprod')),
 
     ### filebrowser
     re_path(r'^filebrowser/', include('core.filebrowser.urls'), name='filebrowser'),
@@ -155,6 +157,7 @@ urlpatterns = [
     #### JSON for Datatables
     re_path(r'^datatable/data/jeditaskid',coremon_views.esatlasPandaLoggerJson, name='dataTableJediTaskId'),
     re_path(r'^datatable/data/errorSummaryList', coremon_views.summaryErrorsListJSON, name='summaryErrorsListJSON'),
+    re_path(r'^datatable/data/errorMessagesSummaryList', coremon_views.summaryErrorMessagesListJSON, name='summaryErrorMessagesListJSON'),
     ###self monitor
     #re_path(r'^admin/', include('core.admin.urls', namespace='admin')),
 
@@ -166,6 +169,8 @@ urlpatterns = [
     re_path('^robots\.txt$', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
 
     re_path(r'^memoryplot/', memmon.getPlots, name='memoryplot'),
+    re_path(r'^prmonplots/(?P<pandaid>.*)/', memmon.prMonPlots, name='prMonPlots'),
+    re_path(r'^getprmonplotsdata/(?P<pandaid>.*)/', memmon.getPrMonPlotsData, name='getPrMonPlotsData'),
 
     ###Images###
     re_path('^img/',coremon_views.image, name='img'),
@@ -184,17 +189,18 @@ urlpatterns = [
     re_path(r'^testip/$', coremon_views.testip, name='testip'),
     re_path(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
 
-    re_path(r'^taskserrorsscat/$', errorsscat_views.tasksErrorsScattering, name='tasksErrorsScattering'),
-    re_path(r'^errorsscat/$', errorsscat_views.errorsScattering, name='errorsScattering'),
-    re_path(r'^errorsscat/(?P<cloud>.*)/(?P<reqid>.*)/$', errorsscat_views.errorsScatteringDetailed, name='errorsScatteringDetailed'),
+    ### ErrorsScattering matrix
+    re_path('', include('core.errorsscattering.urls_errorsscattering')),
+
     ###Monitor###
     re_path(r'^bigpandamonitor/$', monitor_views.monitorJson, name='bigpandamonitor'),
+
     ####HARVESTER####
     re_path(r'^harvesterworkersdash/$', harvester.harvesterWorkersDash, name='harvesterworkersdash'),
-    re_path(r'^harvesterworkerslist/$', harvester.harvesterWorkList, name='harvesterworkerslist'),
+    re_path(r'^harvesterworkerslist/$', harvester.harvesterWorkerList, name='harvesterworkerslist'),
     re_path(r'^harvesterworkerinfo/$', harvester.harvesterWorkerInfo, name='harvesterWorkerInfo'),
     re_path(r'^harvestertest/$', harvester.harvesterfm, name='harvesterfm'),
-    re_path(r'^harvesters/$', harvester.harvesters, name='harvesters'),
+    re_path(r'^harvesters/$', harvester.harvestermon, name='harvesters'),
     re_path(r'^harvesters/slots/$', harvester.harvesterslots, name='harvesterslots'),
     re_path(r'^workers/$', harvester.workersJSON, name='workers'),
     re_path(r'^workersfortask/$', coremon_views.getHarversterWorkersForTask, name='workersfortask'),
@@ -217,7 +223,7 @@ urlpatterns = [
     re_path(r'^staginprogress/', dsProgressView.getStageProfileData, name='staginprogress'),
     re_path(r'^staginprogressplot/', dsProgressView.getDATASetsProgressPlot, name='staginprogressplot'),
 
-                  ###Compare###
+    ###Compare###
     re_path(r'^compare/jobs/$', compare_views.compareJobs, name='compareJobs'),
     re_path(r'^deletefromcomparison/$', compare_views.deleteFromComparison),
     re_path(r'^addtocomparison/$', compare_views.addToComparison),
@@ -225,15 +231,20 @@ urlpatterns = [
 
     ###API###
     re_path(r'^api/get_sites/', coremon_views.getSites, name='getsites'),
+    re_path(r'^api/tasks_plots$', tasksPlots.getJobsData, name='tasksplots'),
+    re_path(r'^api/get_hc_tests/', coremon_views.get_hc_tests, name='gethctests'),
 
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
 if settings.DEBUG:
-    import debug_toolbar
-    urlpatterns += [
-        # re_path(r'^__debug__/', include(debug_toolbar.urls)),
-    ]
+    try:
+        import debug_toolbar
+        urlpatterns += [
+            re_path(r'^__debug__/', include(debug_toolbar.urls)),
+        ]
+    except ImportError:
+        pass
 
 
 

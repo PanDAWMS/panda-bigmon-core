@@ -10,7 +10,7 @@ from django.db import connection
 from django.utils.cache import patch_response_headers
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.exlib import dictfetchall
-from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, DateEncoder, setCacheData
+from core.views import login_customrequired, initRequest, setupView, DateEncoder, setCacheData
 from core.common.models import JediTasksOrdered
 from core.schedresource.models import Schedconfig
 from core.settings.local import dbaccess
@@ -42,18 +42,25 @@ def getStagingInfoForTask(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
     return response
 
-def getBinnedData(listData, additionalList = None):
+def getBinnedData(listData, additionalList1 = None, additionalList2 = None):
     isTimeNotDelta = True
-    timesadd = None
+    timesadd1 = None
+    timesadd2 = None
+
     try:
         times = pd.to_datetime(listData)
-        if additionalList:
-            timesadd = pd.to_datetime(additionalList)
+        if additionalList1:
+            timesadd1 = pd.to_datetime(additionalList1)
+        if additionalList2:
+            timesadd2 = pd.to_datetime(additionalList2)
+
     except:
         times = pd.to_timedelta(listData)
         isTimeNotDelta = False
-        if additionalList:
-            timesadd = pd.to_timedelta(additionalList)
+        if additionalList1:
+            timesadd1 = pd.to_timedelta(additionalList1)
+        if additionalList2:
+            timesadd2 = pd.to_timedelta(additionalList2)
 
     #if not timesadd is None:
     #    mergedIndex = times.union(timesadd)
@@ -65,27 +72,43 @@ def getBinnedData(listData, additionalList = None):
         "Count1": [1 for _ in listData]
     }, index=times)
 
-    if not timesadd is None:
+    if not timesadd1 is None:
         dfadd = pd.DataFrame({
-            "Count2": [1 for _ in additionalList]
-        }, index=timesadd)
+            "Count2": [1 for _ in additionalList1]
+        }, index=timesadd1)
         result = pd.concat([df, dfadd])
     else:
         result = df
-        
+
+    if not timesadd2 is None:
+        dfadd = pd.DataFrame({
+            "Count3": [1 for _ in additionalList2]
+        }, index=timesadd2)
+        result = pd.concat([result, dfadd])
 
     grp = result.groupby([pd.Grouper(freq="24h")]).count()
     values = grp.values.tolist()
     if isTimeNotDelta:
-        index = grp.index.to_pydatetime().tolist()  # an ndarray method, you probably shouldn't depend on this
+        index = grp.index.to_pydatetime().tolist()
     else:
-        index = (grp.index / pd.Timedelta(hours=1)).tolist()  # an ndarray method, you probably shouldn't depend on this
+        index = (grp.index / pd.Timedelta(hours=1)).tolist()
 
-    if not additionalList is None and len(additionalList) == 0:
+    if not additionalList1 is None and len(additionalList1) == 0:
         tmpval = []
         for item in values:
-            tmpval.append([item[0], 0])
+            if additionalList2:
+                tmpval.append([item[0], 0, item[1]])
+            else:
+                tmpval.append([item[0], 0])
         values = tmpval
+
+    if not additionalList2 is None and len(additionalList2) == 0:
+        tmpval = []
+        if len(values) > 1:  # temp fix, to be looked closer
+            for item in values:
+                tmpval.append([item[0], item[1], 0])
+        values = tmpval
+
 
     data = []
     for time, count in zip(index, values):
@@ -98,7 +121,7 @@ def getDTCSubmissionHist(request):
     valid, response = initRequest(request)
     staginData = getStagingData(request)
 
-    timelistQueued = []
+    timelistSubmitted = []
 
     progressDistribution = []
     summarytableDict = {}
@@ -107,28 +130,38 @@ def getDTCSubmissionHist(request):
     detailsTable = []
     timelistIntervalfin = []
     timelistIntervalact = []
+    timelistIntervalqueued = []
+
 
     for task, dsdata in staginData.items():
         epltime = None
-        timelistQueued.append(dsdata['start_time'])
-        if dsdata['end_time']:
-            epltime = dsdata['end_time'] - dsdata['start_time']
-            timelistIntervalfin.append(epltime)
-        else:
-            epltime = timezone.now() - dsdata['start_time']
-            timelistIntervalact.append(epltime)
+        timelistSubmitted.append(dsdata['start_time'])
 
-        dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_90pdone":0, "files_rem":0, "files_done":0})
-        if dsdata['end_time'] != None:
-            dictSE["ds_done"]+=1
-        else:
-            dictSE["ds_active"]+=1
-            if dsdata['staged_files'] >= dsdata['total_files']*0.9:
-                dictSE["ds_90pdone"] += 1
-        progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
+        dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_queued":0, "ds_90pdone":0, "files_rem":0, "files_q":0, "files_done":0})
 
         dictSE["files_done"] += dsdata['staged_files']
         dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
+
+        # Build the summary by SEs and create lists for histograms
+        if dsdata['end_time'] != None:
+            dictSE["ds_done"]+=1
+            epltime = dsdata['end_time'] - dsdata['start_time']
+            timelistIntervalfin.append(epltime)
+
+        elif dsdata['status'] != 'queued':
+            epltime = timezone.now() - dsdata['start_time']
+            timelistIntervalact.append(epltime)
+            dictSE["ds_active"]+=1
+            if dsdata['staged_files'] >= dsdata['total_files']*0.9:
+                dictSE["ds_90pdone"] += 1
+        elif dsdata['status'] == 'queued':
+            dictSE["ds_queued"] += 1
+            dictSE["files_q"] += (dsdata['total_files'] - dsdata['staged_files'])
+            epltime = timezone.now() - dsdata['start_time']
+            timelistIntervalqueued.append(epltime)
+
+        progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
+
         summarytableDict[dsdata['source_rse']] = dictSE
         selectCampaign.append({"name": dsdata['campaign'], "value": dsdata['campaign'], "selected": "0"})
         selectSource.append({"name": dsdata['source_rse'], "value": dsdata['source_rse'], "selected": "0"})
@@ -152,8 +185,9 @@ def getDTCSubmissionHist(request):
     # #arr1 = [["EplTime"]]
     # arr.extend([[x] for x in timedelta.tolist()])
 
-    binnedActFinData = getBinnedData(timelistIntervalact, timelistIntervalfin)
-    eplTime = [['Time', 'Active staging', 'Finished staging']] + [[time, data[0], data[1]] for (time, data) in binnedActFinData]
+    binnedActFinData = getBinnedData(timelistIntervalact, additionalList1 = timelistIntervalfin, additionalList2 = timelistIntervalqueued)
+    eplTime = [['Time', 'Act. staging', 'Fin. staging', 'Q. staging']] + [[time, data[0], data[1], data[2]] for (time, data) in binnedActFinData]
+    #, 'Queued staging'
 
     finalvalue = {"epltime": eplTime}
 
@@ -161,7 +195,7 @@ def getDTCSubmissionHist(request):
     arr.extend([[x*100] for x in progressDistribution])
     finalvalue["progress"] = arr
 
-    binnedSubmData = getBinnedData(timelistQueued)
+    binnedSubmData = getBinnedData(timelistSubmitted)
     finalvalue["submittime"] = [['Time', 'Count']] + [[time, data[0]] for (time, data) in binnedSubmData]
     finalvalue["progresstable"] = summarytableList
 
@@ -170,7 +204,10 @@ def getDTCSubmissionHist(request):
         {"name":"Last 12 hours", "value":"hours12", "selected":"0"},
         {"name":"Last day", "value":"hours24", "selected":"0"},
         {"name":"Last week","value":"hours168", "selected":"0"},
-        {"name":"Last month","value":"hours720", "selected":"0"}]
+        {"name":"Last month","value":"hours720", "selected":"0"},
+        {"name": "Last 3 months", "value": "hours2160", "selected": "0"},
+        {"name": "Last 6 months", "value": "hours4320", "selected": "0"}
+    ]
 
     hours = ""
     if 'hours' in request.session['requestParams']:
@@ -246,7 +283,7 @@ def getStagingData(request):
         selection += " AND t3.campaign in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ")"
 
     if not jeditaskid:
-        selection += " AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or END_TIME is NULL)" \
+        selection += " AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or (END_TIME is NULL and not (t1.STATUS = 'done')))" \
                      % (timewindow[0], timewindow[1])
 
     new_cur.execute(
@@ -259,6 +296,8 @@ def getStagingData(request):
     )
     datasets = dictfetchall(new_cur)
     for dataset in datasets:
-        dataset = {k.lower(): v for k, v in dataset.items()}
-        data[dataset['taskid']] = dataset
+        # Sort out requests by request on February 19, 2020
+        if dataset['STATUS'] in ('staging', 'queued', 'done'):
+            dataset = {k.lower(): v for k, v in dataset.items()}
+            data[dataset['taskid']] = dataset
     return data

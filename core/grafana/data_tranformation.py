@@ -34,12 +34,38 @@ def stacked_hist(series, group_by=None, split_series=None):
     return plot_data
 
 
-def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
-
+def pledges_merging(data, pledges, coeff, pledges_dict, federations_info, type='dst_federation'):
     if type == 'dst_federation':
         pl_type = 'real_federation'
         for fed in data['results'][0]['series']:
-            #fed['values'][-1][1] = 0
+            # fed['values'][-1][1] = 0
+            if fed['tags'][type] not in federations_info:
+                federations_info[fed['tags'][type]] = {}
+            if fed['tags']['computingsite'] not in federations_info[fed['tags'][type]]:
+               federations_info[fed['tags'][type]][fed['tags']['computingsite']] = \
+                   {'site': fed['tags']['dst_experiment_site'],
+                    'computingsite': fed['tags']['computingsite'],
+                    'tier': fed['tags']['dst_tier'],
+                    'sum_hs06sec': int(round(float(sum_calculate(fed['values'], 1) / 86400))),
+                    'sum_count': sum_calculate(fed['values'], 2),
+                    'sum_cpuconsumptiontime': int(round(float(sum_calculate(fed['values'], 3) / 86400))),
+                    'sum_walltime': int(round(float(sum_calculate(fed['values'], 4) / 86400)))
+                   }
+            else:
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['site'] \
+                    = fed['tags']['dst_experiment_site']
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['computingsite'] \
+                    = fed['tags']['computingsite']
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['tier'] \
+                    = fed['tags']['dst_tier']
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['sum_hs06sec'] \
+                    += int(round(float(sum_calculate(fed['values'], 1) / 86400)))
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['sum_count'] \
+                    = sum_calculate(fed['values'], 2)
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['sum_cpuconsumptiontime'] \
+                    += int(round(float(sum_calculate(fed['values'], 3) / 86400)))
+                federations_info[fed['tags'][type]][fed['tags']['computingsite']]['sum_walltime'] \
+                    += int(round(float(sum_calculate(fed['values'], 4) / 86400)))
             if fed['tags'][type] not in pledges_dict:
                 pledges_dict[fed['tags'][type]] = {}
                 pledges_dict[fed['tags'][type]]['tier'] = fed['tags']['dst_tier']
@@ -49,7 +75,7 @@ def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
                 pledges_dict[fed['tags'][type]]['hs06sec'] += value[1]
 
         for fed in pledges['results'][0]['series']:
-            #fed['values'][-1][1] = 0
+            # fed['values'][-1][1] = 0
             if fed['tags'][pl_type] not in pledges_dict:
                 pledges_dict[fed['tags'][pl_type]] = {}
                 if fed['tags']['tier'] == 'Tier 0':
@@ -64,12 +90,12 @@ def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
                 pledges_dict[fed['tags'][pl_type]]["pledges"] = 0
             for value in fed['values']:
                 pledges_dict[fed['tags'][pl_type]]['pledges'] += value[1]
-
+        return pledges_dict, federations_info
     if type == 'dst_country':
         pl_type = 'country'
 
         for fed in data['results'][0]['series']:
-            #fed['values'][-1][1] = 0
+            # fed['values'][-1][1] = 0
             if fed['tags'][type] == "United States of America":
                 fed['tags'][type] = "USA"
             if fed['tags'][type] not in pledges_dict:
@@ -87,7 +113,7 @@ def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
                     pledges_dict[fed['tags'][type]]['hs06sec'] += value[1]
 
         for fed in pledges['results'][0]['series']:
-            #fed['values'][-1][1] = 0
+            # fed['values'][-1][1] = 0
             if fed['tags'][pl_type] not in pledges_dict:
                 # fed['values'][1] = fed['values'][2]
                 # pledges_dict[fed['tags'][pl_type]]['pledges'] = 0
@@ -108,4 +134,11 @@ def pledges_merging(data, pledges, coeff, pledges_dict, type='dst_federation'):
                     fed['tags'][pl_type] = 'CERN'
                 for value in fed['values']:
                     pledges_dict[fed['tags'][pl_type]]['pledges'] += value[1]
-    return pledges_dict
+        return pledges_dict
+
+
+def sum_calculate(data, column_number):
+    sum_for_column = 0
+    for value in data:
+        sum_for_column += value[column_number]
+    return sum_for_column

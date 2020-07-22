@@ -1,0 +1,12 @@
+<tr class="helpsection"><th><a name="artHelp"></a> {{ helptitle }} </th></tr>
+<tr><td class="helplight">
+
+{% if viewParams.MON_VO == 'ATLAS' %}
+    <p>This page shows the work results of Job Buster application. For more info please look at the recent
+        <a target="_blank" href="https://indico.cern.ch/event/846346/contributions/3599605/attachments/1924977/3185709/Jobs_Buster_update_11_Oct_analytics_meeting.pdf">talk</a>.</p>
+        <p>For each spotted peak of job failures a top of recognized job clusters are shown.
+        The color coding depends on an impact factor - walltime * cores loss.
+        Each tile is clickable and goes to jobs selection.</p>
+    <p><sup>*</sup> First number is the walltime lost within the peak. Second is the same value calculated over all analysed statistics</p>
+{% endif %}
+</td>

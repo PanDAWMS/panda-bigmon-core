@@ -4,15 +4,11 @@
 
 {% block page_title %}Harvester workers summary{% endblock %}
 {% block title %}PanDA monitor{% endblock %}
-{% block subtitle %}PanDA Harvester Workers Summary<font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
+{% block subtitle %}PanDA Harvester Workers Summary {{ viewParams.selection|safe }}  {% endblock %}
+{% block js_head_page_library %}
+  <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+{% endblock %}
 {% block body %}
- <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
- <script>
- 	$(document).ready(function() {
-	    $(".comment").shorten();
-	});
- </script>
-
     <table>
         <tr>
             <th colspan=24>Harvester worker info</th>
@@ -67,5 +63,12 @@
                 {% endfor %}
             {% endif %}
     </table>
+{% endblock %}
 
+{% block js_body_page %}
+ <script>
+ 	$(document).ready(function() {
+	    $(".comment").shorten();
+	});
+ </script>
 {% endblock %}
