@@ -221,7 +221,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   build_time_cell=t_build+'==='+s_checkout+s_config+s_inst
                   combo_c=str(nc_er)+' ('+str(nc_pb)+')'  
                   combo_t=str(nt_er)+' ('+str(nt_pb)+')'
-                  if nt_er == 'N/A': combo_t='N/A (N/A)'
+                  if nt_er == 'N/A': combo_t='N/A(N/A)'
 #                  mrlink_a="<a href=\""+mrlink+"\">"+gitbr+"</a>" 
                   [i_checkout,i_inst,i_config,i_cv_serv,i_cv_clie]=map(lambda x: di_res.get(str(x),str(x)), [s_checkout,s_inst,s_config,ss_cv_serv,ss_cv_clie])
                   if i_checkout == None or i_checkout == "None" : i_checkout=radiooff_icon; 
@@ -230,7 +230,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   link_to_testsRes=reverse('TestsRes')
                   link_to_compsRes=reverse('CompsRes')
                   i_combo_t="<a href=\""+link_to_testsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"&proj="+pjname+"\">"+combo_t+"</a>"
-                  if combo_t == 'N/A (N/A)': i_combo_t=combo_t
+                  if combo_t == 'N/A(N/A)': i_combo_t=combo_t
                   i_combo_c="<a href=\""+link_to_compsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"&proj="+pjname+"\">"+combo_c+"</a>"
                   if tt_cv_serv != 'N/A' : i_combo_cv_serv=tt_cv_serv+i_cv_serv
                   else: i_combo_cv_serv=i_cv_serv
