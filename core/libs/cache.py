@@ -118,3 +118,41 @@ def preparePlotData(data):
     else:
         newPlotData = oldPlotData
     return newPlotData
+
+
+### Managing static cache
+
+def get_last_static_file_update_date(filename):
+    """
+    Get the last update time of static files
+    :param absolute_path: path to static files
+    :return:
+    """
+    try:
+        import os
+        from datetime import datetime
+    except ImportError:
+        raise
+    try:
+        from core.settings import BASE_DIR, STATIC_URL
+    except ImportError:
+        BASE_DIR = None
+        STATIC_URL = None
+    absolute_path = BASE_DIR + STATIC_URL if BASE_DIR and STATIC_URL else None
+    if absolute_path and filename:
+        timestamp = os.path.getmtime(absolute_path + str(filename))
+        # timestamp = max(map(lambda x: os.path.getmtime(x[0]), os.walk(os.path.join(absolute_path, 'static'))))
+        try:
+            timestamp = datetime.utcfromtimestamp(int(timestamp))
+        except ValueError:
+            return ""
+        lastupdatetime = timestamp.strftime('%Y%m%d%H%M%S')
+    else:
+        lastupdatetime = datetime.now().strftime('%Y%m%d%H%M%S')
+    return lastupdatetime
+
+
+def get_version(filename):
+    """Form vesrion of static by last update date"""
+    lastupdate = get_last_static_file_update_date(filename)
+    return '_v_={lastupdate}'.format(lastupdate=lastupdate)

@@ -1,20 +1,19 @@
 {% extends "_base_core.html" %}
-
-{% load staticfiles %}
+{% load common_tags %}
+{% load static %}
 {% block page_title %} {{ jeditaskid }} ES task {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
-{% block extra_css %}
+{% block css_page_library %}
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <style>
-        #inputfilestable_wrapper .row {
-            max-width: 99%;
-        }
-    </style>
 {% endblock %}
-
-
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.rowsGroup.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script src="{% static 'js/d3.v3.min.js' %}"></script>
+{% endblock %}
 {% block subtitle %}PanDA Event Service task {{ jeditaskid }} {% if task.site %} at {{ task.site }} {% endif %} {% endblock %}
-
 
 {% block body %}
 
@@ -137,15 +136,15 @@
                         <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
                     {% endif %}    {% endif %}
 
-                <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,logLevel,message),filters:!(),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4&type=histogram">Task
+                <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc&type=histogram">Task
                     brokerage </a>
 
-                <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,message),filters:!(),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4&type=histogram">Job
+                <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc&type=histogram">Job
                     brokerage </a>
 
-                <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc))">Action
+                <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc))">Action
                     logger</a>
-                <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'5cff0440-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'logName.keyword:%22panda.log.RetrialModule%22%20AND%20fields.type:%22retrialmodule%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',desc))">Retrial
+                <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'logName.keyword:%22panda.log.RetrialModule%22%20AND%20fields.type:%22retrialmodule%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',desc))">Retrial
                     Module logger</a>
 
                 <a href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}">Error summary</a>
@@ -464,57 +463,6 @@
             {% endif %}
         </div>
 
-
-{#        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>#}
-{#        <div class="badevents" ng-app="taskESApps" ng-controller="taskEventsController" style="display:none;">#}
-{#            <p>#}
-{#            <table class="fresh-table">#}
-{#              <thead>#}
-{#                <tr>#}
-{#                    <th colspan=4>Exhausted events</th>#}
-{#                </tr>#}
-{#              </thead>#}
-{#                <tr>#}
-{#                    <th>Error</th>#}
-{#                    <th>Count</th>#}
-{#                    <th>PandaIDs</th>#}
-{#                    <th>Events</th>#}
-{#                </tr>#}
-{##}
-{#                <tbody ng-repeat="row in eventsrows">#}
-{#                <tr>#}
-{#                    <td>{$ row.ERROR_CODE $}</td>#}
-{#                    <td>{$ row.COUNT $}</td>#}
-{#                    <td>{$ row.PANDAIDS.join(', ') $}</td>#}
-{#                    <td>{$ row.EVENTS.join(', ') $}</td>#}
-{#                </tr>#}
-{#                </tbody>#}
-{#            </table>#}
-{#        </div>#}
-{##}
-{#        <script>#}
-{#            var app = angular.module('taskESApps', []).config(function ($interpolateProvider) {#}
-{#                $interpolateProvider.startSymbol('{$');#}
-{#                $interpolateProvider.endSymbol('$}');#}
-{#            });#}
-{##}
-{#            app.controller('taskEventsController', function ($scope, $http) {#}
-{#                $scope.eventsrows = [];#}
-{##}
-{#                $http({#}
-{#                    url: '{% url 'getbadeventsfortask' %}?jeditaskid={{ jeditaskid }}&mode={{ requestParams.mode }}',#}
-{#                    method: "GET",#}
-{#                }).then(function successCallback(response) {#}
-{#                    $scope.eventsrows = response.data;#}
-{#                }, function errorCallback(response) {#}
-{##}
-{#                });#}
-{##}
-{#            });#}
-{#        </script>#}
-
-
-
         {% if task.errordialog %}
             <p>
             {% if logtxt %}
@@ -810,12 +758,8 @@
 {% endblock %}
 
 
-{% block extra_js_bottombody %}
-    <script src="{% static 'js/humanize.min.js' %}"></script>
-    <script type="text/javascript" src="/static/js/d3jsplot.js?version=1"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% block js_body_page %}
+  <script src="{% static 'js/d3jsplot.js' %}?"></script>
 
     <script>
         function toggleDetailDisplay(className) {
@@ -835,7 +779,6 @@
             element1.style.display = "";
             }
         }
-
 
 
         function clearDivById(id) {
@@ -1297,9 +1240,7 @@
                     $("#plots").show();
                 $('#plots').goTo();
                 loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');
-            };
-
-
+            }
         })
 
     </script>

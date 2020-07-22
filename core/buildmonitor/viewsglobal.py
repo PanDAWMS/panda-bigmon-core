@@ -119,7 +119,7 @@ def globalviewDemo(request):
                 kk_transf = re.sub('/','_',k46) 
                 key_transf = kk_transf+'_'+kk
                 string_vv = '<span style="color: blue">' + str(vv['active']) + '</span>'
-                string_vv = string_vv + ',<B><span style="color: green">'+ str(vv['done']) +'</span></B>,'
+                string_vv = string_vv + ',<B><span style="color: green">'+ str(vv['succeeded']) +'</span></B>,'
                 string_vv = string_vv + '<span style="color: maroon">' + str(vv['finished']) + '</span>'
                 string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>' 
                 dict_cache_transf[key_transf] = [string_vv, k46]

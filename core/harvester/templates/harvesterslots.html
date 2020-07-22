@@ -1,29 +1,30 @@
 {% extends "_base_core.html" %}
 {% load humanize %}
 {% load static %}
+{% load common_tags %}
 
 {% block page_title %}Harvester monitor page{% endblock %}
 {% block title %}PanDA monitor{% endblock %}
-{% block subtitle %}Harvester slots <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
-{% block extra_css %}
-  <link rel="stylesheet" type="text/css" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
-    <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
-  <style type="text/css">
-       #harvesterslots_wrapper .row {
-            max-width: 99%;
-        }
+{% block subtitle %}Harvester slots {{ viewParams.selection|safe }} {% endblock %}
 
-</style>
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
+  <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
 {% endblock %}
-{% block extra_js %}
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
-    <script src="/static/js/d3jsplot.js"></script>
-    <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
-    <script type="text/javascript" src="/static/js/datatables/moment.min.js"></script>
-    <script type="text/javascript" src="/static/js/datatables/datetime-moment.js"></script>
-    <script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>
+
+{% block css_page %}
+  <link rel="stylesheet" href="{% static "css/harvester.css" %}?{% cache_bust "css/harvester.css" %}">
+{% endblock %}
+
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/moment.min.js' %}"></script>
+  <script src="{% static 'js/datatables/datetime-moment.js' %}"></script>
+  <script src="{% static 'js/datatables/datetime.js' %}"></script>
+  <script src="{% static 'js/datatables/jquery-ui.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.rowsGroup.js' %}"></script>
+  <script src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
 {% endblock %}
 
 {% block body %}
@@ -60,10 +61,15 @@
 </td>
 </tr>
 {% endfor %}
-</table><script>
-            $(document).ready(function () {
-                $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');
-                $('#harvesterslots').dataTable({"iDisplayLength": 100, responsive: true,});
-{#                $('#harvesterinstances').addClass("data-table bluelinks")#}
-            });</script>
+</table>
+
+{% endblock %}
+
+{% block js_body_page %}
+  <script>
+    $(document).ready(function () {
+        $.fn.dataTable.moment('DD-MM-YYYY HH:mm:ss');
+        $('#harvesterslots').dataTable({"iDisplayLength": 100, responsive: true,});
+    });
+  </script>
 {% endblock %}

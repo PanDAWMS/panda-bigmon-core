@@ -243,8 +243,8 @@
 {% endif %}
 
 
-<table>
-<tr class='tablesection'><th colspan=20> {{ jobList|length }} recent jobs {% if display_limit_jobs < njobs %}
+<table style="max-width: 100%">
+<tr class='tablesection'><th colspan=12> {{ jobList|length }} recent jobs {% if display_limit_jobs < njobs %}
 Only the most recent {{ display_limit_jobs }} jobs are shown. <a href="{{ url_nolimit_jobs }}">Remove the limit</a>
 {% endif %}
             Note that with JEDI, tasks are the best tool to monitor the progress of your submissions! <a href="#doc"><span class='helpdark'>See the help section below.</span></a>
@@ -278,17 +278,16 @@ Only the most recent {{ display_limit_jobs }} jobs are shown. <a href="{{ url_no
 		<td><font size=-1>{{ job.modificationtime }}</font></td>
 		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a></font></td>
 		<td>{{ job.currentpriority }}</td>
-		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
+		<td class="wrap">{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
 		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}
 		</td>
-	<tr><td colspan=11 class='whitecell'> <font size=-1>Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}{% if job.taskid > 0 %}&taskid={{ job.taskid }}{% endif %}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&produsername={{ job.produsername }}&sortby=attemptnr">{{ job.jobname }}</a></font> </td></tr>
+	<tr><td colspan="11" class='whitecell'> <font size=-1>Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}{% if job.taskid > 0 %}&taskid={{ job.taskid }}{% endif %}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&produsername={{ job.produsername }}&sortby=attemptnr">{{ job.jobname }}</a></font> </td></tr>
 	</tr>
-	<tr><td colspan="20" class='highlightcell'> Datasets:     {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br>    {% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
+	<tr><td colspan="11" class='highlightcell'> Datasets:     {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br>    {% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
 
 
     {% endfor %}
 </table>
-
 {% else %}
 
 <p>

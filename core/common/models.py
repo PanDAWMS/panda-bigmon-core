@@ -585,6 +585,12 @@ class JediTasksBase(models.Model):
     usejumbo = models.CharField(max_length=10, db_column='USEJUMBO', blank=True)
     diskio = models.IntegerField(null=True, db_column='DISKIO', blank=True)
     diskiounit = models.CharField(max_length=96, db_column='DISKIOUNIT', blank=True)
+    container_name = models.CharField(max_length=200, db_column='CONTAINER_NAME', blank=True)
+
+    def get_fields_by_type(self, ftype='integer'):
+        field_list = [str(f.name) for f in self._meta.fields if ftype in str(f.description).lower()]
+        return field_list
+
     class Meta:
         abstract = True
 
@@ -603,6 +609,18 @@ class GetEventsForTask(models.Model):
     totev = models.BigIntegerField(db_column='totev')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."GETEVENTSFORTASK"'
+
+
+class TasksStatusLog(models.Model):
+    jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
+    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
+    modificationhost = models.CharField(max_length=384, db_column='MODIFICATIONHOST', blank=True)
+    status = models.CharField(max_length=64, db_column='STATUS', blank=True)
+    attemptnr = models.IntegerField(db_column='ATTEMPTNR', blank=True)
+    reason = models.CharField(max_length=600, db_column='REASON', blank=True)
+    class Meta:
+        db_table = u'"ATLAS_PANDA"."TASKS_STATUSLOG"'
+
 
 class BPUser(AbstractUser):
     is_tester = models.NullBooleanField(db_column='IS_TESTER', null=True, blank=False)
@@ -1535,23 +1553,6 @@ class Visits(models.Model):
         db_table= u'"ATLAS_PANDABIGMON"."VISITS"'
 
 
-class RequestStat(models.Model):
-    id = models.IntegerField(primary_key=True, db_column='ID')
-    server = models.CharField(max_length=40, db_column='server')
-    remote = models.CharField(max_length=40, db_column='remote')
-    qtime = models.DateTimeField(db_column='qtime', blank=True, null=True)
-    qduration = models.DateTimeField(db_column='qduration', blank=True, null=True)
-    duration = models.IntegerField(db_column='duration')
-    load = models.CharField(max_length=40, db_column='load')
-    mem = models.CharField(max_length=40, db_column='mem')
-    urls = models.CharField(max_length=2500, db_column='url')
-    description = models.CharField(max_length=12000, db_column='description')
-    referrer = models.CharField(max_length=4000, db_column='referrer')
-    useragent = models.CharField(max_length=250, db_column='useragent')
-
-    class Meta:
-        db_table = u'request_stats'
-
 class RucioAccounts(models.Model):
     id = models.IntegerField(primary_key=True, db_column='ID')
     certificatedn = models.CharField(max_length=40, db_column='CERTIFICATEDN')
@@ -1566,13 +1567,18 @@ class AllRequests(models.Model):
     server = models.CharField(max_length=40, db_column='server')
     remote = models.CharField(max_length=40, db_column='remote')
     qtime = models.DateTimeField(db_column='qtime')
+    rtime = models.DateTimeField(db_column='rtime')
     url = models.CharField(max_length=2500, db_column='url')
     referrer = models.CharField(max_length=4000, db_column='referrer')
     useragent = models.CharField(max_length=250, db_column='useragent')
     is_rejected = models.IntegerField(db_column='is_rejected')
     urlview = models.CharField(max_length=40, db_column='urlview')
+    load = models.FloatField(db_column='LOAD')
+    mem = models.FloatField(db_column='MEM')
+    dbactivesess = models.IntegerField(db_column='DBACTIVESESS')
+    dbtotalsess = models.IntegerField(db_column='DBTOTALSESS')
     class Meta:
-        db_table = u'all_requests'
+        db_table = u'"ATLAS_PANDABIGMON"."ALL_REQUESTS_DAILY"'
 
 
 class Savedpages(models.Model):

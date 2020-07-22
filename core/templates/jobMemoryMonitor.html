@@ -1,0 +1,104 @@
+
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+{% load common_tags %}
+
+{% block page_title %}Resource utilization plots{% endblock %}
+{% block subtitle %}Resource utilization plots for {{ pandaid }} job{% endblock %}
+
+{% block css_page_library %}
+<!-- Load c3.css -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block js_head_page_library %}
+  <!-- Load d3.js and c3.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.js"></script>
+{% endblock %}
+
+{% block body %}
+
+{% if error|length == 0 %}
+  <div class="card bp-container-simple">
+    <div class="card-divider">
+      <p>Resource utilization plots:</p>
+    </div>
+    <div class="card-section">
+      <div id="prmon_plots_placeholder"></div>
+      <div class="row c3-plots-row">
+        <div class="column small-12 medium-6 c3-chart-block" id="np_nt_chart"></div>
+        <div class="column small-12 medium-6 c3-chart-block" id="cpu_rate_chart"></div>
+      </div>
+      <div class="row c3-plots-row">
+        <div class="column small-12 medium-6 c3-chart-block" id="memory_chart"></div>
+        <div class="column small-12 medium-6 c3-chart-block" id="io_chart"></div>
+      </div>
+      <div class="row c3-plots-row">
+        <div class="column small-12 medium-6 c3-chart-block" id="memory_rate_chart"></div>
+        <div class="column small-12 medium-6 c3-chart-block" id="io_rate_chart"></div>
+      </div>
+    </div>
+  </div>
+  <p>Represented data metrics were collected using <a href="https://github.com/HSF/prmon">prmon</a> program.</p>
+{% else %}
+  <p>
+  <div class="callout alert" data-closable>
+    <h5>Something went wrong!</h5>
+    <p>{{ error }}</p>
+    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+          <span aria-hidden="true"><i class="fi-x"></i></span>
+    </button>
+  </div>
+{% endif %}
+
+{% endblock %}
+
+{% block js_body_page %}
+<script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+<script>
+  var charts = {};
+  window.addEventListener('resize', onWindowResize);
+  $(document).ready(function () {
+    let divid = 'prmon_plots_placeholder';
+    let pandaid = '{{ pandaid }}';
+    $('#' + divid).html("<img src='{% static "images/load.gif" %}'>  ");
+    $.ajax({
+      url: '{% url 'getPrMonPlotsData' pandaid %}',
+      data: {},
+      async: true
+    })
+    .done(function (response) {
+        $('#' + divid).html("");
+      if (response.error.length > 0) {$('#' + divid).html(response.error);}
+      else {
+        charts = buildPlots(response.plotsDict);
+      }
+    });
+  });
+
+  function buildPlots(data) {
+    let values = data;
+    let options = {};
+    options.size = [getWidth()/2-20, 300];
+    Object.keys(values).forEach(function (key) {
+      if (key !== 'cpu_rate' ) {
+        charts[key + "_chart"] = draw_line_chart(values[key], key + "_chart", options);
+      }
+      else {
+        charts[key + "_chart"] = draw_area_chart(values[key], key + "_chart", options);
+      }
+    });
+    return charts
+  }
+
+  function onWindowResize() {
+    // get chart vars to apply resizing
+    Object.keys(charts).forEach(function (key) {
+      charts[key].resize({width:getWidth()/2-20});
+    })
+  }
+
+</script>
+{% endblock %}

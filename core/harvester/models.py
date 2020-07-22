@@ -26,6 +26,7 @@ class HarvesterWorkers(models.Model):
     diagmessage = models.CharField(max_length=500, db_column='DIAGMESSAGE', null=False, blank=True)
     computingelement = models.CharField(max_length=128, db_column='COMPUTINGELEMENT', null=False, blank=True)
     njobs = models.IntegerField( db_column='NJOBS', null=False)
+    jobtype = models.CharField(max_length=128, db_column='JOBTYPE', null=False, blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDA"."HARVESTER_WORKERS"'
 
@@ -44,6 +45,7 @@ class HarvesterWorkerStats (models.Model):
     computingsite = models.CharField(max_length=128, db_column='COMPUTINGSITE', null=False, blank=True)
     resourcetype = models.CharField(max_length=128, db_column='RESOURCETYPE', null=False, blank=True)
     status = models.CharField(max_length=80, db_column='STATUS', null=False, blank=True)
+    jobtype = models.CharField(max_length=128, db_column='JOBTYPE', null=False, blank=True)
     nworkers = models.IntegerField(db_column='N_WORKERS', null=False)
     lastupdate = models.DateTimeField(null=True, db_column='LASTUPDATE', blank=True)
     class Meta:

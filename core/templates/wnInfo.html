@@ -1,8 +1,27 @@
 {% extends "_base_core.html" %}
-
+{% load static %}
+{% load humanize %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA WN {{ wnname }}@{{ site }} {% endblock %}
 {% block subtitle %}PanDA WN slot performance {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at {{ site }}{{ viewParams.selection|safe }}
 {% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <style>
+        #wn_table_wrapper .row {
+            max-width: 99%;
+        }
+        #wn_slot_table_wrapper .row {
+            max-width: 99%;
+        }
+    </style>
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+
 {% block body %}
 
 {{ viewParams.header }}
@@ -23,8 +42,6 @@
     <div class='section'>Worker node slot performance {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at <a href="{% url 'siteInfo' site %}">{{ site }}</a></div>
 {% endif %}
 
-{% if requestParams.sortby %} <p><b>Sorted by: {{ requestParams.sortby }} </b><p> {% endif %}
-
 {% if wnPlotFailed %}
 
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
@@ -32,6 +49,13 @@
       google.load("visualization", "1", {packages:["corechart"]});
       google.setOnLoadCallback(drawChart);
       function drawChart() {
+        var windowwidth = $('#chart_div').width();
+        var plotwidth = 2.5 * parseInt('{{ wnPlotFailed|length }}');
+        var plotwidth2 = 2.5 * parseInt('{{ wnPlotFinished|length }}');
+        var title_appx = '';
+        var title_appx2 = '';
+        if (plotwidth < windowwidth) {plotwidth = windowwidth} else {title_appx += ' (not all the bins fit in window size, please scroll horizontally to see all of them)'}
+        if (plotwidth2 < windowwidth) {plotwidth2 = windowwidth} else {title_appx2 += ' (not all the bins fit in window size, please scroll horizontally to see all of them)'}
 {% if wnPlotFailed|length > 0 %}
 
         var data = google.visualization.arrayToDataTable([
@@ -41,11 +65,24 @@
           ['{{ wn }}', {{ count }}],
 {% endfor %}
 
-            ])
+            ]);
         var options = {
-          title: 'Failed jobs per WN slot',
+          title: 'Failed jobs per WN slot' + title_appx,
           legend: { position: 'none' },
-          hAxis: {title: 'WN slot (empty bins suppressed)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
+          hAxis: {
+              title: 'WN slot (empty bins suppressed)',
+              titleTextStyle: {color: 'black'},
+              textStyle: { fontSize:10},},
+          width: plotwidth,
+          height: 400,
+          chartArea: {
+              width:plotwidth,
+              left:100,
+              top:40,
+              height:250
+          },
+          bar: {groupWidth: '100%'},
+          colors: ['firebrick'],
         };
 
         var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
@@ -60,11 +97,24 @@
           ['{{ wn }}', {{ count }}],
 {% endfor %}
 
-            ])
+            ]);
         var options2 = {
-          title: 'Finished jobs per WN slot',
+          title: 'Finished jobs per WN slot' + title_appx2,
           legend: { position: 'none' },
-          hAxis: {title: 'WN (empty bins suppressed)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
+          hAxis: {
+              title: 'WN (empty bins suppressed)',
+              titleTextStyle: {color: 'black'},
+              textStyle: { fontSize:10},},
+          width: plotwidth2,
+          height: 400,
+          chartArea: {
+              width:plotwidth2,
+              left:100,
+              top:40,
+              height:250
+          },
+          bar: {groupWidth: '100%'},
+          colors: ['forestgreen']
         };
 
         var chart2 = new google.visualization.ColumnChart(document.getElementById('chart_div2'));
@@ -84,57 +134,73 @@
   </button>
 </div>
 {% endif %}
-
-    <div id="chart_div" style="height: 500px;"></div>
+    <div id="chart_wrapper" style="width: 100%; overflow-x: scroll; overflow-y: hidden">
+    <div id="chart_div"></div>
+    </div>
 {% endif %}
 {% if wnPlotFinished|length > 0 %}
-    <div id="chart_div2" style="height: 500px;"></div>
+    <div id="chart_wrapper" style="width: 100%; overflow-x: scroll; overflow-y: hidden">
+    <div id="chart_div2"></div>
+    </div>
 {% endif %}
 
 {% endif %}
 
 {% if wnname and wnname != 'all' %}
+<h5>Slot info for worker node {{ wnname }} at {{ site }}</h5>
 
-<table>
-<tr class='tablesection'><th colspan=20> Slot info for worker node {{ wnname }} at {{ site }}</th></tr>
-<tr class='tablesection'>
+<table id="wn_slot_table" class="data-table nowrap">
+<thead>
+<tr>
 <th> WN </th>
-<th> nSlots </th>
-<th> nJobs </th>
-<th> <a href="{{nosorturl}}?sortby=defined">defined</a> </th>
-<th> <a href="{{nosorturl}}?sortby=waiting">waiting</a> </th>
-<th> <a href="{{nosorturl}}?sortby=throttled">throttled</a> </th>
-<th> <a href="{{nosorturl}}?sortby=sent">sent</a> </th>
-<th> <a href="{{nosorturl}}?sortby=starting">starting</a> </th>
-<th> <a href="{{nosorturl}}?sortby=running">running</a> </th>
-<th> <a href="{{nosorturl}}?sortby=holding">holding</a> </th>
-<th> <a href="{{nosorturl}}?sortby=merging">merging</a> </th>
-<th> <a href="{{nosorturl}}?sortby=transferring">transferring</a> </th>
-<th> <a href="{{nosorturl}}?sortby=finished">finished</a> </th>
-<th> <a href="{{nosorturl}}?sortby=failed">failed</a> </th>
-<th> <a href="{{nosorturl}}?sortby=cancelled">cancelled</a> </th>
-<th> <a href="{{nosorturl}}?sortby=closed">closed</a> </th>
-<th> <a href="{{nosorturl}}?sortby=pctfail">% failed</a> </th>
+<th class="num"> N slots </th>
+<th class="num"> N running cores </th>
+<th class="num"> N jobs </th>
+<th class="vertical fixed_dash"><div class="rotate70">defined</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">waiting</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">throttled</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">sent</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">starting</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">running</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">holding</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">merging</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">transferring</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">finished</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">failed</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">cancelled</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">closed</div></th>
+<th class="num"> % failed </th>
 <th> outliers </th>
 </tr>
-
+</thead>
+<tbody>
 {% for wn in summary %}
-<tr {% if wn.outlier != '' %} class='warning' {% endif %}>
-<th> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </th>
-<td>{{ wn.slotcount  }} </td>
-<td><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
+<tr>
+<td> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </td>
+<td class="num">{{ wn.slotcount }} </td>
+<td class="num">{{ wn.rcores }} </td>
+<td class="num"><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
 {% if state.name != 'assigned' and state.name != 'activated' %}
-<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% endif %} </td>
+<td class="num">{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% else %}-{% endif %} </td>
 {% endif %}
 {% endfor %}
-<td> {% if wn.pctfail > errthreshold %} <font color=red>{{ wn.pctfail  }}</font> {% else %} {{ wn.pctfail  }} {% endif %} </td>
+<td class="num"> {% if wn.pctfail > errthreshold %} <span class="failed">{{ wn.pctfail }}</span> {% else %} {{ wn.pctfail  }} {% endif %} </td>
 <td> {% if wn.outlier != '' %} <span class='warning'> {{ wn.outlier }} </span> {% endif %} </td>
 </tr>
 {% endfor %}
-
+</tbody>
 </table>
-
+<script>
+$(document).ready(function () {
+    var wnSlotTable = $('#wn_slot_table').dataTable({
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "scrollX": true,
+        "aaSorting": [[0, 'asc']],
+    });
+});
+</script>
 
 {% else %}
 
@@ -182,47 +248,65 @@
 {% endfor %}
 </table>
 {% endcomment %}
-
+    
 {% if summary %}
-<table>
-<tr class='tablesection'><th colspan=20> WN summary for {{ site }} </th></tr>
-<tr bgcolor="lightcyan">
+    <h5>WN summary for {{ site }}</h5>
+<table id="wn_table" class="data-table nowrap">
+<thead>
+<tr>
 <th> WN </th>
-<th> nSlots </th>
-<th> nJobs </th>
-<th> <a href="{{nosorturl}}?sortby=defined">defined</a> </th>
-<th> <a href="{{nosorturl}}?sortby=waiting">waiting</a> </th>
-<th> <a href="{{nosorturl}}?sortby=throttled">throttled</a> </th>
-<th> <a href="{{nosorturl}}?sortby=sent">sent</a> </th>
-<th> <a href="{{nosorturl}}?sortby=starting">starting</a> </th>
-<th> <a href="{{nosorturl}}?sortby=running">running</a> </th>
-<th> <a href="{{nosorturl}}?sortby=holding">holding</a> </th>
-<th> <a href="{{nosorturl}}?sortby=merging">merging</a> </th>
-<th> <a href="{{nosorturl}}?sortby=transferring">transferring</a> </th>
-<th> <a href="{{nosorturl}}?sortby=finished">finished</a> </th>
-<th> <a href="{{nosorturl}}?sortby=failed">failed</a> </th>
-<th> <a href="{{nosorturl}}?sortby=cancelled">cancelled</a> </th>
-<th> <a href="{{nosorturl}}?sortby=closed">closed</a> </th>
-<th> <a href="{{nosorturl}}?sortby=pctfail">% failed</a> </th>
+<th class="num"> N slots </th>
+<th class="num"> N running cores </th>
+<th class="num"> Running min RAM count, GB</th>
+<th class="num"> N jobs </th>
+<th class="vertical fixed_dash"><div class="rotate70">defined</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">waiting</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">throttled</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">sent</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">starting</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">running</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">holding</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">merging</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">transferring</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">finished</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">failed</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">cancelled</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">closed</div></th>
+<th class="num"> % failed </th>
 <th> outliers </th>
 </tr>
-
+</thead>
+<tbody>
 {% for wn in summary %}
-<tr {% if wn.outlier != '' %} class='warning' {% endif %}>
-<th> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </th>
-<td>{{ wn.slotcount  }} </th>
-<td><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
+<tr>
+<td> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </td>
+<td class="num">{{ wn.slotcount }} </td>
+<td class="num">{{ wn.rcores }} </td>
+<td class="num">{{ wn.rminramcount  }} </td>
+<td class="num"><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
-{% if state.name != 'assigned' and state.name != 'activated' %}
-<td>{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% endif %} </td>
+{% if state.name != 'assigned' and state.name != 'activated' and state.name != 'pending' %}
+<td class="num">{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100"> <span class="{{ state.name }}"> {{ state.count }}</span></a> {% else %} - {% endif %} </td>
 {% endif %}
 {% endfor %}
-<td> {% if wn.pctfail > errthreshold %} <font color=red>{{ wn.pctfail  }}</font> {% else %} {{ wn.pctfail  }} {% endif %} </th>
-<td> {% if wn.outlier != '' %} <span class='warning'> {{ wn.outlier }} </span> {% endif %} </td>
+<td class="num"> {% if wn.pctfail > errthreshold %} <span class="failed">{{ wn.pctfail  }}</span> {% else %} {{ wn.pctfail  }} {% endif %} </td>
+<td> {% if wn.outlier != '' %} <span class="warning"> {{ wn.outlier }} </span> {% endif %} </td>
 </tr>
 {% endfor %}
-
+</tbody>
 </table>
+
+<script>
+$(document).ready(function () {
+    var wnTable = $('#wn_table').dataTable({
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "scrollX": true,
+        "aaSorting": [[0, 'asc']],
+    });
+});
+</script>
+
 {% endif %}
 
 {% endif %}

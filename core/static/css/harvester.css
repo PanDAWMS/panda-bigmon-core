@@ -1,0 +1,58 @@
+
+#workerList p {
+    display: none;
+}
+
+#loadMore {
+    color: #0a47ff;
+    cursor: pointer;
+}
+
+#loadMore:hover {
+    color: black;
+}
+
+#loadAll {
+    color: #0a47ff;
+    cursor: pointer;
+}
+
+#loadAll:hover {
+    color: black;
+}
+
+#reloadDialogs {
+    color: #0a47ff;
+    cursor: pointer;
+}
+
+#reloadDialogs:hover {
+    color: black;
+}
+
+#reloadWorkers {
+    color: #0a47ff;
+    cursor: pointer;
+}
+
+#reloadWorkers:hover {
+    color: black;
+}
+
+#reloadWorkersList {
+    color: #0a47ff;
+    cursor: pointer;
+}
+
+#reloadWorkersList:hover {
+    color: black;
+}
+
+#reloadJobs {
+    color: #0a47ff;
+    cursor: pointer;
+}
+
+#reloadJobs:hover {
+    color: black;
+}

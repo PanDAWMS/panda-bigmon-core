@@ -200,6 +200,15 @@ class Schedconfig(models.Model):
         db_table = u'schedconfig'
 
 
+class SchedconfigJson(models.Model):
+    pandaqueue = models.CharField(max_length=180, db_column='PANDA_QUEUE', primary_key=True)
+    data = models.TextField(db_column='DATA', blank=True)
+    lastupdate = models.DateField(db_column='LAST_UPDATE')
+
+    class Meta:
+        db_table = u'"ATLAS_PANDA"."SCHEDCONFIG_JSON"'
+
+
 class Schedinstance(models.Model):
     name = models.CharField(max_length=180, db_column='NAME')
     nickname = models.CharField(max_length=180, db_column='NICKNAME', primary_key=True)

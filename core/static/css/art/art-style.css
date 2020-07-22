@@ -1,16 +1,17 @@
 .row {
     max-width: 100%;
-    margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 
 /* ART Main Menu styles */
+/* --------------------------------------------------------------------------------------------------- */
 fieldset.artmenu {
     margin: 1rem 0.3rem;
     padding: 0.5rem 0.5rem;
 }
 
 li.artmenu-item {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.3rem;
 }
 
 li.artmenu-item > input {
@@ -22,11 +23,32 @@ li.artmenu-item > label {
     vertical-align: middle;
 }
 
+fieldset.artmenu li.input-group {
+  font-size: 0.875rem;
+}
+
+fieldset.artmenu li.input-group span.input-group-label {
+  max-width: 3rem;
+  min-width: 3rem;
+  padding: 0 0.3rem;
+}
+
+fieldset.artmenu li.input-group button.hollow.alert {
+  border-color: #cacaca;
+  border-left: 0;
+}
+
+
+
+/* ART clickable containers */
+/* --------------------------------------------------------------------------------------------------- */
+
 .with-link-to-logs {
     margin: auto;
     background-color: transparent;
     max-width: 500px; /*250 px for status box with tar index and link to logs, +250px for sub results  */
     display: inline-flex;
+    white-space: normal;
 }
 
 .with-ntagfull {
@@ -36,10 +58,11 @@ li.artmenu-item > label {
     display: inline-flex;
 }
 
+
 /* stats divs*/
 .clickable {
     background-color: transparent;
-    width: 120px;
+    width: 110px;
     line-height: 21px;
     position: relative;
     font-size: 0;
@@ -72,6 +95,19 @@ li.artmenu-item > label {
   color: black;
   font-size: 14px;
   font-weight: bold;
+}
+
+.clickable .succeeded {
+  text-align: center;
+  vertical-align: middle;
+  height: 100%;
+  width: 25%;
+  display: inline-block;
+  background: #3adb76;
+  color: black;
+  font-size: 14px;
+  font-weight: bold;
+
 
 }
 .clickable .failed {
@@ -119,8 +155,21 @@ li.artmenu-item > label {
   font-size: 14px;
   font-weight: bold;
   border-color: #3adb76;
-
 }
+
+.clickable .succeeded_job {
+  text-align: center;
+  vertical-align: middle;
+  height: 100%;
+  width: 100%;
+  display: inline-block;
+  background: #3adb76;
+  color: black;
+  font-size: 14px;
+  font-weight: bold;
+  border-color: #3adb76;
+}
+
 .clickable .active_job {
   text-align: center;
   vertical-align: middle;
@@ -159,7 +208,7 @@ li.artmenu-item > label {
 
 /*extra links style*/
 .extra-links {
-    width: 170px;
+    width: 190px;
     text-align: left;
 }
 
@@ -173,7 +222,8 @@ li.artmenu-item > label {
     font-size: 14px;
 }
 
-/*Accordion for pages*/
+/* Accordion for pages */
+/* --------------------------------------------------------------------------------------------------- */
 
 .columns .accordion-art-container {
     padding-left: 0;
@@ -277,7 +327,7 @@ li.artmenu-item > label {
 
 .no-border .cell {
     border: none;
-    text-align: center;
+    white-space: nowrap;
 }
 
 .no-border .cell-left {
@@ -289,8 +339,16 @@ li.artmenu-item > label {
     border: none;
 }
 
+.cell.extra-info {
+    line-height: 1.8rem;
+}
+
 .left-aligned {
     text-align: left;
+}
+
+.right-aligned {
+    text-align: right;
 }
 
 .right-aligned-ntag {
@@ -430,12 +488,13 @@ li.artmenu-item > label {
 
 
 /* test sub results traffic lights */
+/* --------------------------------------------------------------------------------------------------- */
 
 .testsubresultscontainer {
     margin: auto;
     clear: both;
     overflow: auto;
-    width: 210px;
+    width: 200px;
     display:table;
     text-align: right;
     z-index: 2;
@@ -546,6 +605,10 @@ li.artmenu-item > label {
 }
 
 .art-legend.done_job {
+    background: #3adb76;
+}
+
+.art-legend.succeeded_job {
     background: #3adb76;
 }
 
