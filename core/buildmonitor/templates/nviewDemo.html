@@ -52,6 +52,7 @@ These nightly jobs build <B>{{ project }}</B> on <B>{{ platform }}</B>
                 <th>CVMFS<BR>(on server)</th>
                 <th>CVMFS<BR>(on client)</th>
                 <th>Host</th>
+                <th>Image<BR>(developing)</th>
      </thead>
      <tbody></tbody>
 </table>
@@ -81,11 +82,11 @@ var ndisplayTable = $('#NSummary').dataTable({
                  var v10=($('td:eq(8)',row).text().split(" "))[0];
                  if ( v8 > 6 ) { $('td:eq(6)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( v8 > 0 ) { $('td:eq(6)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( /\s/.test(v8) )  { $('td:eq(6)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( /\D/.test(v8) )  { $('td:eq(6)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(6)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
                  if ( v10 > 0 && v10 <=5 ) { $('td:eq(8)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( v10 > 5 ) { $('td:eq(8)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v10 != 'N/A' )  { $('td:eq(8)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( ! /\D/.test(v10) )  { $('td:eq(8)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(8)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
 
 /*

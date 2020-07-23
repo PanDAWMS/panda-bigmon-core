@@ -32,7 +32,7 @@ def globalviewDemo(request):
     majorwarn_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span style="display:inline-block;" title="WARNING" class="DataTables_sort_icon css_right ui-icon ui-icon-lightbulb">ICON35</span></div>'
     error_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span style="display:inline-block;" title="ERROR" class="DataTables_sort_icon css_right ui-icon ui-icon-circle-close">ICON36</span></div>'
     radiooff_icon='<div class="ui-widget ui-state-default" style="display:inline-block";> <span title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
-    di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
+    di_res = {'-1': clock_icon, 'N/A': radiooff_icon, '0': check_icon, '1': error_icon, '2': majorwarn_icon,'3': error_icon, '4': minorwarn_icon, '10': clock_icon}
 
     query = """
     select n.nname as \"BRANCH\", n.ngroup as \"GROUP\", platf.pl,
@@ -54,7 +54,7 @@ def globalviewDemo(request):
     TO_CHAR(j.ecvkv,'DD-MON HH24:MI') as \"CVMCL\", j.SCVKV as \"S.CVMCL\",
     platf.lartwebarea,
     TO_CHAR(j.ela,'DD-MON HH24:MI') as \"LA\",
-    j.erla,j.sula
+    j.erla,j.sula, j.eim, j.sim
     from nightlies@ATLR.CERN.CH n inner join
       ( releases@ATLR.CERN.CH a inner join
         ( jobstat@ATLR.CERN.CH j inner join projects@ATLR.CERN.CH p on j.projid = p.projid) on a.nid=j.nid and a.relid=j.relid )
@@ -73,9 +73,6 @@ def globalviewDemo(request):
           """
     new_cur.execute(query)
     result = new_cur.fetchall()
-
-    di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
-    
     first_row = result[0]
     rows_s = []
     dd = defaultdict(list)
@@ -127,6 +124,9 @@ def globalviewDemo(request):
     reslt3 = []
     for row in reslt2:
         list9 = []
+        m_ncompl =  row[16]
+        if m_ncompl == None or m_ncompl == 'N/A' or m_ncompl <= 0:
+            row[17]='N/A'; row[18]='N/A';
         a0001 = str(row[17]) + ' (' + str(row[18]) + ')'
         m_tcompl = row[19]
         if m_tcompl == None or m_tcompl == 'N/A' or m_tcompl <= 0:
@@ -152,10 +152,11 @@ def globalviewDemo(request):
         lartwebarea=row[29]
         if lartwebarea == None or lartwebarea == '': lartwebarea="http://atlas-computing.web.cern.ch/atlas-computing/links/distDir\
 ectory/gitwww/GITWebArea/nightlies"        
-        erla=row[31];sula=row[32]
+        erla=row[31];sula=row[32]; eim=row[33]; sim=row[34]
         if erla == None or erla == '': erla='N/A'
         if sula == None or sula == '': sula='N/A'
-
+        if eim == None or eim == '': eim='N/A'
+        if sim == None or sim == '': sim='N/A'
         brname = row[0]
         link_brname = brname
         link_to_ciInfo = reverse('BuildCI')
@@ -184,6 +185,15 @@ ectory/gitwww/GITWebArea/nightlies"
             loares="<a href=\""+lartwebarea+"/"+branch+"/"+row[14]+"/"+row[15]+"/"+row[2]+"/"+row[15]+"/art.log.html\">"
             local_art_res=loares+local_art_res+"</a>"
 
+        image_res='N/A'
+        if sim == 'N/A' or eim == 'N/A':
+            image_res='N/A'
+        elif sim == 0 or sim == 1 or sim == 2 or sim == 3 or sim == 4:
+            image_res = di_res.get(str(sim), str(sim))
+            if isinstance(eim, datetime):
+                image_res = image_res+" "+eim.strftime('%d-%b %H:%M').upper()
+        else:
+            image_res = di_res.get(str(sim), str(sim))
         list9.append(row[1]);
         list9.append(link_brname);
         list9.append(row[14]);
@@ -193,7 +203,9 @@ ectory/gitwww/GITWebArea/nightlies"
         list9.append(local_art_res);
         list9.append(val_cache_transf);
         list9.append(tt_cv_clie);
-        list9.append(row[33]);
+        list9.append(image_res);
+        list9.append(row[35]);
+
         reslt3.append(list9)
 
 #    if dict_from_cache:

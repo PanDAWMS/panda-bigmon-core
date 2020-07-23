@@ -80,6 +80,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
 #                <th>Pct. of Successful<BR>CTest tests<BR>(no warnings)</th>
 #                <th>CVMFS time</th>
 #                <th>Host</th>
+#                <th>Image</th>
     new_cur.execute(query)
     result = new_cur.fetchall()
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
@@ -114,7 +115,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       if lartwebarea == None or lartwebarea == '': lartwebarea="http://atlas-computing.web.cern.ch/atlas-computing/links/distDirectory/gitwww/GITWebArea/nightlies"
 #      print("JIDX",jid_sel)
 #
-      query01="select to_char(jid),projname,stat,eb,sb,ei,si,ecv,ecvkv,suff,scv,scvkv,scb,sib,sco,ela,sla,erla,sula,hname from jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
+      query01="select to_char(jid),projname,stat,eb,sb,ei,si,ecv,ecvkv,suff,scv,scvkv,scb,sib,sco,ela,sla,erla,sula,eim,sim,hname from jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
       new_cur.execute(query01)
       reslt1 = new_cur.fetchall()
       lenres=len(reslt1)
@@ -124,10 +125,14 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           if erla == None or erla == '': erla='N/A'
           sula=reslt1[0][18]
           if sula == None or sula == '': sula='N/A'
-          hname=reslt1[0][19]
+          eim = reslt1[0][19]
+          if eim == None or eim == '': eim = 'N/A'
+          sim = reslt1[0][20]
+          if sim == None or sim == '': sim = 'N/A'
+          hname=reslt1[0][21]
           if re.search(r'\.',hname):
               hname=(re.split(r'\.',hname))[0]
-          row_cand=[rname,t_start,'NO NEW<BR>CODE','N/A','N/A','CANCELLED','N/A','N/A','N/A','N/A','N/A','N/A','N/A',hname]
+          row_cand=[rname,t_start,'NO NEW<BR>CODE','N/A','N/A','CANCELLED','N/A','N/A','N/A','N/A','N/A','N/A','N/A',hname,'N/A']
           rows_s.append(row_cand)
       else: 
           query1="select to_char(jid),projname,ncompl,pccompl,npb,ner,pcpb,pcer from cstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
@@ -159,7 +164,11 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   if erla == None or erla == '': erla='N/A'
                   sula=row01[18]
                   if sula == None or sula == '': sula='N/A'
-                  hname=row01[19]
+                  eim=row01[19]
+                  if eim == None or eim == '': eim='N/A'
+                  sim=row01[20]
+                  if sim == None or sim == '': sim='N/A'
+                  hname=row01[21]
                   t_cv_serv=row01[7]
                   t_cv_clie=row01[8]
                   s_cv_serv=row01[10]
@@ -245,7 +254,17 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                       branch=arrk[0]
                       loares="<a href=\""+lartwebarea+"/"+branch+"/"+rname+"/"+pjname+"/"+ar_sel+"/"+pjname+"/art.log.html\">"
                       local_art_res=loares+local_art_res+"</a>"
-                  row_cand=[rname,t_start,i_checkout,i_inst,i_config,t_build,i_combo_c,t_test,i_combo_t,local_art_res,val_cache_transf,i_combo_cv_serv,tt_cv_clie,hname]
+
+                  image_res = 'N/A'
+                  if sim == 'N/A' or eim == 'N/A':
+                      image_res = 'N/A'
+                  elif sim == 0 or sim == 1 or sim == 2 or sim == 3 or sim == 4:
+                      image_res = di_res.get(str(sim), str(sim))
+                      if isinstance(eim, datetime):
+                          image_res = image_res + " " + eim.strftime('%d-%b %H:%M').upper()
+                  else:
+                      image_res = di_res.get(str(sim), str(sim))
+                  row_cand=[rname,t_start,i_checkout,i_inst,i_config,t_build,i_combo_c,t_test,i_combo_t,local_art_res,val_cache_transf,i_combo_cv_serv,tt_cv_clie,hname,image_res]
                   rows_s.append(row_cand)
 
     data={"nightly": nname, "rel": rname, "platform": ar_sel, "project": pjname, 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}
