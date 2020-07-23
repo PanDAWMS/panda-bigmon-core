@@ -120,6 +120,9 @@ fieldset.inline-input legend {
   .tabs.gs li.tabs-title a:hover, .tabs.gs li.tabs-title a[aria-selected="true"] {
     background-color: #333333;
   }
+  .tabs-content {
+    margin-bottom: 0.7rem;
+  }
   .tabs-content .tabs-panel {
     padding: 0.3rem 0;
     border-right: 1px solid #5e789a;
