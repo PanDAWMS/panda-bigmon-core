@@ -6498,6 +6498,10 @@ def dashRegion(request):
         jobtype = request.session['requestParams']['jobtype']
     else:
         jobtype = 'all'
+    if 'resourcetype' in request.session['requestParams'] and request.session['requestParams']['resourcetype']:
+        resourcetype = request.session['requestParams']['resourcetype']
+    else:
+        resourcetype = 'all'
 
     jquery, extra_str, hours = setupView(request, limit=9999999, querytype='job', wildCardExt=True)
 
@@ -6508,7 +6512,11 @@ def dashRegion(request):
         jquery['queuestatus'] = request.session['requestParams']['queuestatus']
 
     # get job summary data
-    jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery, extra=extra_str, region=region, jobtype=jobtype)
+    jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery,
+                                                               extra=extra_str,
+                                                               region=region, 
+                                                               jobtype=jobtype,
+                                                               resourcetype=resourcetype)
 
     if is_json_request(request):
         extra_info_params = ['links', ]

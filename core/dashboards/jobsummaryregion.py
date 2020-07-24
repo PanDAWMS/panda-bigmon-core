@@ -131,6 +131,12 @@ def get_job_summary_region(query, **kwargs):
         job_types = [kwargs['jobtype']]
     else:
         jobtype = 'all'
+    if 'resourcetype' in kwargs and kwargs['resourcetype'] != 'all':
+        resourcetype = kwargs['jobtype']
+        resource_types = [kwargs['resourcetype']]
+    else:
+        resourcetype = 'all'
+
 
     # filter out queues by queue related selection params
     pq_to_remove = []
