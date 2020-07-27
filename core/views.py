@@ -8472,7 +8472,7 @@ def taskInfo(request, jeditaskid=0):
         showtaskprof = True
 
     if taskrec:
-        if task_type:
+        if 'tasktype' in taskrec and taskrec['tasktype']:
             tmcj_list = get_top_memory_consumers(taskrec)
             if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
                 warning['memoryleaksuspicion'] = {}
