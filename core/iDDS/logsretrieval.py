@@ -31,8 +31,8 @@ def get_hpo_metrics_ds(taskid):
 def archive_metric_files(basedir):
     with tarfile.open(basedir +'/'+ 'download.tar.gz', 'w') as archive:
         for i in os.listdir(basedir):
-            archive.add(i, filter=lambda x: x if 'metric' in x.name else None)
-
+            if 'metric' in i:
+                archive.add(basedir+'/'+i, arcname=i)
 
 def downloadhpometrics(request):
     initRequest(request)

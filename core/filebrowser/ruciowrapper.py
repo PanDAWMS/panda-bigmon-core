@@ -24,13 +24,13 @@ class ruciowrapper(object):
     def download_ds(self, ds_name):
         try:
             dclient = downloadclient.DownloadClient(self.client)
-            basedir = get_fullpath_filebrowser_directory() +'/'+ str(uuid.uuid4())+'/'
+            basedir = get_fullpath_filebrowser_directory() +'/'+ str(uuid.uuid3(uuid.NAMESPACE_URL, ds_name))+'/'
             dclient.download_dids([{'did':ds_name,
                                     'base_dir':basedir}])
         except Exception as e:
             logging.error('Failed to download: ' + ds_name +' ' + str(e))
             return {'exception': 'Failed to download: ' + ds_name +' ' + str(e)}
-        return {'exception':None, 'basedir':basedir}
+        return {'exception':None, 'basedir':basedir+'/'+ds_name}
 
     def getRucioAccountByDN(self, DN):
         values = ['rucio_account', 'create_time']
