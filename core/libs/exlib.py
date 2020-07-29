@@ -109,6 +109,43 @@ def fileList(jobs):
     return newjobs
 
 
+def get_file_info(job_list, **kwargs):
+    """
+    Enrich job_list dicts by file information. By default: filename (lfn) and size
+    :param job_list: list of dicts
+    :return: job_list
+    """
+    file_info = []
+    fquery = {}
+    if 'type' in kwargs and kwargs['type']:
+        filetype = kwargs['type']
+        fquery['type'] = kwargs['type']
+    fvalues = ('pandaid', 'type', 'lfn', 'fsize')
+
+    pandaids = []
+    if len(job_list) > 0:
+        pandaids.extend([job['pandaid'] for job in job_list if 'pandaid' in job and job['pandaid']])
+
+    if len(pandaids) > 0:
+        tk = insert_to_temp_table(pandaids)
+        extra = "pandaid in (select ID from {} where TRANSACTIONKEY = {})".format(get_tmp_table_name(), tk)
+
+        file_info.extend(Filestable4.objects.filter(**fquery).extra(where=[extra]).values(*fvalues))
+
+    file_info_dict = {}
+    if len(file_info) > 0:
+        for file in file_info:
+            if file['pandaid'] not in file_info_dict:
+                file_info_dict[file['pandaid']] = file
+
+        for job in job_list:
+            if job['pandaid'] in file_info_dict:
+                job[file_info_dict[job['pandaid']]['type'] + 'filename'] = file_info_dict[job['pandaid']]['lfn']
+                job[file_info_dict[job['pandaid']]['type'] + 'filesize'] = file_info_dict[job['pandaid']]['fsize']
+
+    return job_list
+
+
 def insert_to_temp_table(list_of_items, transactionKey = -1):
     """Inserting to temp table
     :param list_of_items

@@ -105,7 +105,7 @@ from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
-    is_job_active, get_tmp_table_name, get_event_status_summary
+    is_job_active, get_tmp_table_name, get_event_status_summary, get_file_info
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.task import get_job_state_summary_for_tasklist
@@ -12934,6 +12934,7 @@ def get_hc_tests(request):
         'noutputdatafiles',
         'resourcetype',
         'eventservice',
+        'transformation',
         ]
 
     jvalues = ['pilottiming',]
@@ -12942,6 +12943,7 @@ def get_hc_tests(request):
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
     query['produsername'] = 'gangarbt'
+    query['cloud'] = 'RU'
     excluded_time_query = copy.deepcopy(query)
     if 'modificationtime__castdate__range' in excluded_time_query:
         del excluded_time_query['modificationtime__castdate__range']
@@ -12962,6 +12964,11 @@ def get_hc_tests(request):
     if is_archive_only or is_archive:
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
 
+    try:
+        jobs = get_file_info(jobs, type='input')
+    except:
+        _logger.warning('Failed to get info of input files')
+
     for job in jobs:
         test = {}
         test['errorinfo'] = errorInfo(job)
@@ -12975,6 +12982,9 @@ def get_hc_tests(request):
         except:
             pilot_timings = [''] * 5
         test.update(dict(zip(pilot_timings_names, pilot_timings)))
+
+        test['inputfilename'] = job['inputfilename'] if 'inputfilename' in job else None
+        test['inputfilesizemb'] = round(job['inputfilesize'] / 1000000., 2) if 'inputfilesize' in job and isinstance(job['inputfilesize'], int) else None
 
         for f in fields:
             test[f] = job[f]
