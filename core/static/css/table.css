@@ -560,6 +560,10 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   .data-table .num {
     text-align: right !important;
   }
+  .data-table td.num_dt {
+    text-align: right !important;
+    padding-right: 0.7rem;
+  }
   .data-table .text {
     text-align: left !important;
   }
