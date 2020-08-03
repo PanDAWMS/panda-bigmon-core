@@ -84,7 +84,8 @@ function searchTaskBr() {
 {% endfor %}
 </td><td>
 {% for key,level in levels.items %}
-<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName%22{{ name }}%22%20AND%20fields.type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('timeEvent',asc))" target="_blank">
+<a href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'logName:%22{{ name }}%22%20AND%20fields.type:%22{{type}}%22%20AND%20logLevel:%22{{level.logLevel}}%22')),sort:!('timeEvent',asc))" target="_blank">
+
 <span class="{% if  level.logLevel|lower == "error" %}errspan {% else %}{{ level.logLevel|lower }}{% endif %}">{{ level.logLevel }}</span>({{ level.lcount }})
 </a>
 {% endfor %}

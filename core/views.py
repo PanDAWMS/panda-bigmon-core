@@ -12945,6 +12945,7 @@ def get_hc_tests(request):
     query['produsername'] = 'gangarbt'
     query['cloud'] = 'RU'
     excluded_time_query = copy.deepcopy(query)
+
     if 'modificationtime__castdate__range' in excluded_time_query:
         del excluded_time_query['modificationtime__castdate__range']
 
@@ -12985,6 +12986,18 @@ def get_hc_tests(request):
 
         test['inputfilename'] = job['inputfilename'] if 'inputfilename' in job else None
         test['inputfilesizemb'] = round(job['inputfilesize'] / 1000000., 2) if 'inputfilesize' in job and isinstance(job['inputfilesize'], int) else None
+
+        wallclocktime = get_job_walltime(job)
+
+        if wallclocktime is not None:
+            test['wallclocktime'] = wallclocktime
+            if wallclocktime > 0:
+                test['cpuefficiency'] = round(job['cpuconsumptiontime']/test['wallclocktime'], 3)
+            else:
+                test['cpuefficiency'] = 0
+        else:
+            test['wallclocktime'] = 0
+            test['cpuefficiency'] = 0
 
         for f in fields:
             test[f] = job[f]
