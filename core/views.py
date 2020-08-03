@@ -12981,7 +12981,8 @@ def get_hc_tests(request):
         try:
             pilot_timings = [int(pti) for pti in job['pilottiming'].split('|')]
         except:
-            pilot_timings = [''] * 5
+            pilot_timings = ['0'] * 5
+            
         test.update(dict(zip(pilot_timings_names, pilot_timings)))
 
         test['inputfilename'] = job['inputfilename'] if 'inputfilename' in job else None
