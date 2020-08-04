@@ -12970,11 +12970,14 @@ def get_hc_tests(request):
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
     if is_archive_only or is_archive:
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
+    _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
+    # getting input file info for jobs
     try:
         jobs = get_file_info(jobs, type='input', is_archive=is_archive)
     except:
         _logger.warning('Failed to get info of input files')
+    _logger.info('Got input file info for jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     for job in jobs:
         test = {}
@@ -13015,8 +13018,6 @@ def get_hc_tests(request):
     return response
 
 
-#import logging
-#logging.basicConfig()
 @never_cache
 def loginauth2(request):
     if 'next' in request.GET:
@@ -13028,6 +13029,7 @@ def loginauth2(request):
     response = render_to_response('login.html', {'request': request, 'next':next,}, content_type='text/html')
     response.delete_cookie('sessionid')
     return response
+
 
 def loginerror(request):
     warning = """The login to BigPanDA monitor is failed. Cleaning of your browser cookies might help. 
@@ -13043,10 +13045,12 @@ def testauth(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
+
 def logout(request):
     """Logs out user"""
     auth_logout(request)
     return redirect('/')
+
 
 def testip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
