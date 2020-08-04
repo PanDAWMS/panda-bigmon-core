@@ -12949,12 +12949,18 @@ def get_hc_tests(request):
     if 'modificationtime__castdate__range' in excluded_time_query:
         del excluded_time_query['modificationtime__castdate__range']
 
+    # we change time param from modificationtime to :
+    timeparamname = 'statechangetime'
+    if 'modificationtime__castdate__range' in query:
+        query[timeparamname + '__castdate__range'] = query['modificationtime__castdate__range']
+        del query['modificationtime__castdate__range']
+
     is_archive_only = False
     is_archive = False
-    modtimerange = [parse_datetime(mt) for mt in query['modificationtime__castdate__range']]
-    if modtimerange[0] < datetime.utcnow()-timedelta(days=4) and modtimerange[1] < datetime.utcnow()-timedelta(days=4):
+    timerange = [parse_datetime(mt) for mt in query[timeparamname + '__castdate__range']]
+    if timerange[0] < datetime.utcnow()-timedelta(days=4) and timerange[1] < datetime.utcnow()-timedelta(days=4):
         is_archive_only = True
-    if modtimerange[0] < datetime.utcnow() - timedelta(days=3):
+    if timerange[0] < datetime.utcnow() - timedelta(days=3):
         is_archive = True
 
     if not is_archive_only:
@@ -12966,7 +12972,7 @@ def get_hc_tests(request):
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
 
     try:
-        jobs = get_file_info(jobs, type='input')
+        jobs = get_file_info(jobs, type='input', is_archive=is_archive)
     except:
         _logger.warning('Failed to get info of input files')
 

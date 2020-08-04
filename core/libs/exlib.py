@@ -118,8 +118,10 @@ def get_file_info(job_list, **kwargs):
     file_info = []
     fquery = {}
     if 'type' in kwargs and kwargs['type']:
-        filetype = kwargs['type']
         fquery['type'] = kwargs['type']
+    is_archive = False
+    if 'is_archive' in kwargs and kwargs['is_archive']:
+        is_archive = kwargs['is_archive']
     fvalues = ('pandaid', 'type', 'lfn', 'fsize')
 
     pandaids = []
@@ -131,6 +133,9 @@ def get_file_info(job_list, **kwargs):
         extra = "pandaid in (select ID from {} where TRANSACTIONKEY = {})".format(get_tmp_table_name(), tk)
 
         file_info.extend(Filestable4.objects.filter(**fquery).extra(where=[extra]).values(*fvalues))
+
+        if is_archive:
+            file_info.extend(FilestableArch.objects.filter(**fquery).extra(where=[extra]).values(*fvalues))
 
     file_info_dict = {}
     if len(file_info) > 0:
