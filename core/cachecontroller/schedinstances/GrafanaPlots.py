@@ -9,7 +9,7 @@ class GrafanaPlots(BaseURLTasksProvider):
     lock = threading.RLock()
     logger = logging.getLogger(__name__ + ' GrafanaPlots')
     plots_es = [
-        'https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?&panelId=96&orgId=17&width=1000&height=1000',
+        'https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=96&orgId=17&width=1000&height=1000',
         'https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=97&orgId=17&width=1000&height=1000',
         'https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=95&orgId=17&width=1000&height=1000',
         'https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=103&orgId=17&width=1000&height=1000',
@@ -23,7 +23,7 @@ class GrafanaPlots(BaseURLTasksProvider):
         'https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=106&orgId=17&width=1000&height=1000',
     ]
     plots_influxdb = [
-        'https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?&orgId=17&panelId=81&width=1000&height=1000',
+        'https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=81&orgId=17&width=1000&height=1000',
         'https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=83&orgId=17&width=1000&height=1000',
         'https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=82&orgId=17&width=1000&height=1000',
         'https://monit-grafana.cern.ch/render/d-solo/000000806/adc-live-page-stats?panelId=84&orgId=17&width=1000&height=1000',
