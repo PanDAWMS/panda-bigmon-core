@@ -105,7 +105,7 @@ from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
-    is_job_active, get_tmp_table_name, get_event_status_summary, get_file_info
+    is_job_active, get_tmp_table_name, get_event_status_summary, get_file_info, get_job_queuetime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
 from core.libs.task import get_job_state_summary_for_tasklist
@@ -12935,6 +12935,8 @@ def get_hc_tests(request):
         'resourcetype',
         'eventservice',
         'transformation',
+        'modificationhost',
+        'batchid'
         ]
 
     jvalues = ['pilottiming',]
@@ -12998,6 +13000,7 @@ def get_hc_tests(request):
         test['inputfilesizemb'] = round(job['inputfilesize'] / 1000000., 2) if 'inputfilesize' in job and isinstance(job['inputfilesize'], int) else None
 
         wallclocktime = get_job_walltime(job)
+        queuetime = get_job_queuetime(job)
 
         if wallclocktime is not None:
             test['wallclocktime'] = wallclocktime
@@ -13008,6 +13011,11 @@ def get_hc_tests(request):
         else:
             test['wallclocktime'] = 0
             test['cpuefficiency'] = 0
+
+        if queuetime is not None:
+            test['queuetime'] = queuetime
+        else:
+            test['queuetime'] = 0
 
         for f in fields:
             test[f] = job[f]

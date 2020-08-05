@@ -302,4 +302,23 @@ def lower_dicts_in_list(input_list):
         output_list.append(out_dict)
     return output_list
 
+def get_job_queuetime(job):
+    """
+    :param job: dict of job params, starttime and creationtime is obligatory
+    :return: queuetime in seconds or None if not enough data provided
+    """
+    queueutime = None
 
+    if 'starttime' in job and job['starttime'] is not None:
+        starttime = parse_datetime(job['starttime']) if not isinstance(job['starttime'], datetime) else job['starttime']
+    else:
+        starttime = None
+    if 'endtime' in job and job['endtime'] is not None:
+        creationtime = parse_datetime(job['creationtime']) if not isinstance(job['creationtime'], datetime) else job['creationtime']
+    else:
+        creationtime = None
+
+    if starttime and creationtime:
+        queueutime = (starttime-creationtime).total_seconds()
+
+    return queueutime
