@@ -8910,7 +8910,10 @@ def taskInfo(request, jeditaskid=0):
     if taskrec:
 
         if 'tasktype' in taskrec and taskrec['tasktype'] == 'anal':
-            tmcj_list = get_top_memory_consumers(taskrec)
+            if ATLAS_DEPLOYMENT:
+                tmcj_list = get_top_memory_consumers(taskrec)
+            else:
+                tmcj_list = []
             if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
                 warning['memoryleaksuspicion'] = {}
                 warning['memoryleaksuspicion'][
@@ -9734,7 +9737,7 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
             duration = max(job['endtime'] - job['starttime'], timedelta(seconds=0))
             job['duration'] = duration.days * 24 * 3600 + duration.seconds
             if job['hs06sec'] is None:
-                if job['computingsite'] in pandaSites:
+                if job['computingsite'] in pandaSites and pandaSites[job['computingsite']]['corepower']:
                     job['hs06sec'] = (job['duration']) * float(pandaSites[job['computingsite']]['corepower']) * job[
                     'actualcorecount']
                 else:
@@ -9742,9 +9745,10 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
             if job['nevents'] and job['nevents'] > 0:
                 cpuTimeCurrent.append(job['hs06sec'] / job['nevents'])
                 job['walltimeperevent'] = round(job['duration'] * job['actualcorecount'] / (job['nevents']*1.0), 2)
-            hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
-            hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
-            hs06sSum['total'] += job['hs06sec']
+            if 'hs06sec' in job:
+                hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
+                hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
+                hs06sSum['total'] += job['hs06sec']
 
     jobs = newjobs
 
