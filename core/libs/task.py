@@ -10,7 +10,7 @@ from core.common.models import JediEvents, JediDatasetContents
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 from core.libs.exlib import dictfetchall, insert_to_temp_table
 from core.settings.local import defaultDatetimeFormat
-
+from core.settings.base import DEFT_SCHEMA, ATLAS_DEPLOYMENT, BP_MON_SCHEMA, PANDA_SCHEMA, PANDAARCH_SCHEMA
 
 def job_summary_for_task(request, query, pandaSites, statelist, extra="(1=1)", isEventServiceFlag=False):
     """An attempt to rewrite it moving dropping to db request level"""
@@ -484,10 +484,10 @@ def get_top_memory_consumers(taskrec):
     select j.jeditaskid, j.pandaid, j.computingsite, j.jobmaxrss, s.maxrss as sitemaxrss, j.jobmaxrss/s.maxrss as maxrssratio, 
         row_number() over (partition by jeditaskid order by j.jobmaxrss/s.maxrss desc) as jobrank
     from atlas_pandameta.schedconfig s,
-    (select pandaid, jeditaskid, computingsite, maxrss/1000 as jobmaxrss from ATLAS_PANDA.jobsarchived4 
+    (select pandaid, jeditaskid, computingsite, maxrss/1000 as jobmaxrss from """+PANDA_SCHEMA+""".jobsarchived4 
         where jeditaskid = :jdtsid and maxrss is not null
     union
-    select pandaid, jeditaskid, computingsite, maxrss/1000 as jobmaxrss from ATLAS_PANDAARCH.jobsarchived 
+    select pandaid, jeditaskid, computingsite, maxrss/1000 as jobmaxrss from """+PANDAARCH_SCHEMA+""".jobsarchived 
         where jeditaskid = :jdtsid  and maxrss is not null
     ) j
     where j.computingsite = s.nickname
