@@ -15,6 +15,24 @@ function getWidth() {
   );
 }
 
+function getPlotWidth() {
+  // calculate plot width
+  let padding = 20;
+  let nplot_thresholds = [
+    {page_width_px: 1800, n_plots: 3},
+    {page_width_px: 1300, n_plots: 2},
+    {page_width_px: 800, n_plots: 1},
+  ];
+  let page_width = getWidth();
+  let nplots = 3;
+  let i = 0;
+  while (i <= nplot_thresholds.length && page_width < nplot_thresholds[i].page_width_px) {
+    nplots = nplot_thresholds[i].n_plots;
+    i++;
+  }
+  return page_width/nplots - padding;
+}
+
 var formatStats = d3.format(".3s");
 
 function draw_donut(data, divid, title, ext={}) {
@@ -416,7 +434,7 @@ function draw_bar_hist(rawdata, divToShow)  {
         legend_height = 15 * (data.length - data_legend_to_hide.length) / 4;
         details.title += ' [only top-20 sites listed in legend]'
     }
-    let width = getWidth()/3-20;
+    let width = getPlotWidth();
     let height = 300 + legend_height;
 
 
@@ -479,6 +497,9 @@ function draw_bar_hist(rawdata, divToShow)  {
             width: width,
             height: height,
         },
+        padding: {
+            right: 40,
+        },
     });
 
     var chart_svg = d3.select('#' + divToShow + " svg");
@@ -488,7 +509,7 @@ function draw_bar_hist(rawdata, divToShow)  {
         .append("g")
         .attr("class", "statlegend")
         .attr("transform", function (d, i) {
-            return "translate(" + (width - 40) + ", " + ((i + 1) * 15) + ")";
+            return "translate(" + (width - 40) + ", " + (15 + (i + 1) * 15) + ")";
         });
 
     statlegend.append("text")

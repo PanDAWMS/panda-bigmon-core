@@ -750,7 +750,7 @@ li.list-item > label {
     background-color: #5e789a;
     color: #fefefe;
     font-weight: bold;
-    font-size: inherit;
+    font-size: 0.9rem;
     justify-content: space-between;
   }
   .card.bp-container-simple .card-section {

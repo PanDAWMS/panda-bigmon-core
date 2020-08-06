@@ -8476,7 +8476,8 @@ def taskInfo(request, jeditaskid=0):
             tmcj_list = get_top_memory_consumers(taskrec)
             if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
                 warning['memoryleaksuspicion'] = {}
-                warning['memoryleaksuspicion']['message'] = 'Some jobs in this task consumed a lot of memory. We suspect there might be memory leaks.'
+                warning['memoryleaksuspicion']['message'] = 'Some jobs in this task consumed a lot of memory. '
+                warning['memoryleaksuspicion']['message'] += 'We suspect there might be memory leaks or some misconfiguration.'
                 warning['memoryleaksuspicion']['jobs'] = tmcj_list
 
         if task_type is not None and idds_info is not None:
@@ -9338,20 +9339,20 @@ def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEven
 
     plotsNames = ['maxpss', 'maxpsspercore', 'nevents', 'walltime', 'walltimeperevent', 'hs06s', 'cputime', 'cputimeperevent', 'maxpssf', 'maxpsspercoref', 'walltimef', 'hs06sf', 'cputimef', 'cputimepereventf']
     plotDetails = {
-        'maxpss': {'title': 'Maximum PSS histogram (finished jobs)', 'xlabel': 'MaxPSS, KB'},
-        'maxpsspercore': {'title': 'Maximum PSS per core histogram (finished jobs)', 'xlabel': 'MaxPSS per core, KB'},
-        'nevents': {'title': 'Number of events histogram', 'xlabel': 'N events'},
-        'walltime': {'title': 'Walltime histogram (finished jobs)', 'xlabel': 'walltime, s'},
-        'walltimeperevent': {'title': 'Walltime per event histogram (finished jobs)', 'xlabel': 'walltime per event, s'},
-        'hs06s': {'title': 'HS06s histogram (finished jobs)', 'xlabel': 'HS06s'},
-        'cputime': {'title': 'CPU time histogram (finished jobs)', 'xlabel': 'CPU time, s'},
-        'cputimeperevent': {'title': 'CPU time per event histogram (finished jobs)', 'xlabel': 'CPU time, s'},
-        'maxpssf': {'title': 'Maximum PSS histogram (failed jobs)', 'xlabel': 'MaxPSS, kB'},
-        'maxpsspercoref': {'title': 'Maximum PSS per core histogram (failed jobs)', 'xlabel': 'MaxPSS per core, KB'},
-        'walltimef': {'title': 'Walltime histogram (failed jobs)', 'xlabel': 'walltime, s'},
-        'hs06sf': {'title': 'HS06s histogram (failed jobs)', 'xlabel': 'HS06s'},
-        'cputimef': {'title': 'CPU time histogram (failed jobs)', 'xlabel': 'CPU time, s'},
-        'cputimepereventf': {'title': 'CPU time per event histogram (failed jobs)', 'xlabel': 'CPU time, s'},
+        'maxpss': {'title': 'Max PSS (finished jobs)', 'xlabel': 'MaxPSS, KB'},
+        'maxpsspercore': {'title': 'Max PSS/core (finished jobs)', 'xlabel': 'MaxPSS per core, KB'},
+        'nevents': {'title': 'Number of events', 'xlabel': 'N events'},
+        'walltime': {'title': 'Walltime (finished jobs)', 'xlabel': 'Walltime, s'},
+        'walltimeperevent': {'title': 'Walltime/event (finished jobs)', 'xlabel': 'Walltime per event, s'},
+        'hs06s': {'title': 'HS06s (finished jobs)', 'xlabel': 'HS06s'},
+        'cputime': {'title': 'CPU time (finished jobs)', 'xlabel': 'CPU time, s'},
+        'cputimeperevent': {'title': 'CPU time/event (finished jobs)', 'xlabel': 'CPU time, s'},
+        'maxpssf': {'title': 'Maximum PSS (failed jobs)', 'xlabel': 'MaxPSS, kB'},
+        'maxpsspercoref': {'title': 'Max PSS/core (failed jobs)', 'xlabel': 'MaxPSS per core, KB'},
+        'walltimef': {'title': 'Walltime (failed jobs)', 'xlabel': 'walltime, s'},
+        'hs06sf': {'title': 'HS06s (failed jobs)', 'xlabel': 'HS06s'},
+        'cputimef': {'title': 'CPU time (failed jobs)', 'xlabel': 'CPU time, s'},
+        'cputimepereventf': {'title': 'CPU time/event (failed jobs)', 'xlabel': 'CPU time, s'},
     }
 
     plotsDict = {}

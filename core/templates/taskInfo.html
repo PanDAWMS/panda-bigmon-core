@@ -513,7 +513,9 @@
 
 
   {% if datasets %}
-      <h4>Dataset processing information</h4>
+    <div class="card bp-container-simple secondary" id="container_dst">
+    <div class="card-divider"><p>Dataset processing information:</p></div>
+    <div class="card-section">
       <table class="data-table left-aligned nowrap" id="datasetstable">
           <thead>
           <tr>
@@ -530,6 +532,8 @@
           </thead>
           <tbody></tbody>
       </table>
+    </div>
+    </div>
   {% else %}
       <p>No datasets were found for this task</p>
   {% endif %}
@@ -662,7 +666,7 @@
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script>
-
+    var jobconsump_charts = {};
     app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
         $scope.iddsjson = "";
         $scope.getiDDs = function () {
@@ -682,8 +686,10 @@
         };
         var init = function () {
             $scope.getiDDs();
-            var displaydiv = document.getElementById('iDDsDiv');
-            displaydiv.style.display = "";
+            if ($scope.iddsjson.length > 0) {
+                var displaydiv = document.getElementById('iDDsDiv');
+                displaydiv.style.display = "";
+            }
         };
         init();
     });
@@ -719,14 +725,11 @@
         init();
     });
 
-    var jobconsump_charts;
-    window.addEventListener('resize', onWindowResize);
-
     $(document).ready(function () {
         buildDatasetsTable();
         var url = window.location.href;
         if (url.indexOf("#jobsconsumptionplots") > -1) {
-            jobconsump_charts = showPlots('c3-chart-block');
+            showPlots('c3-chart-block');
             {#        $('#jobsconsumptionplots').goTo();#}
         }
     });
@@ -789,7 +792,7 @@ function showPlots(classname) {
     else {
         toggleDetailDisplay(classname);
     }
-    }
+}
 
 function buildJCPlots() {
     var charts = {};
@@ -914,12 +917,6 @@ function buildDatasetsTable() {
   })
 }
 
-function onWindowResize() {
-    // get chart vars to apply resizing
-    Object.keys(jobconsump_charts).forEach(function (key) {
-      jobconsump_charts[key].resize({width:getWidth()/3-20});
-    })
-}
 
 </script>
 
