@@ -139,7 +139,7 @@ def getDTCSubmissionHist(request):
 
         dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_queued":0, "ds_90pdone":0, "files_rem":0, "files_q":0, "files_done":0})
 
-        if dsdata['occurence'] == 1:
+        if dsdata['occurence'] == 1 or not dsdata['rse']:
             dictSE["files_done"] += dsdata['staged_files']
             dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
 
