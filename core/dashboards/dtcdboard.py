@@ -139,26 +139,27 @@ def getDTCSubmissionHist(request):
 
         dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_queued":0, "ds_90pdone":0, "files_rem":0, "files_q":0, "files_done":0})
 
-        dictSE["files_done"] += dsdata['staged_files']
-        dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
+        if dsdata['occurence'] == 1:
+            dictSE["files_done"] += dsdata['staged_files']
+            dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
 
-        # Build the summary by SEs and create lists for histograms
-        if dsdata['end_time'] != None:
-            dictSE["ds_done"]+=1
-            epltime = dsdata['end_time'] - dsdata['start_time']
-            timelistIntervalfin.append(epltime)
+            # Build the summary by SEs and create lists for histograms
+            if dsdata['end_time'] != None:
+                dictSE["ds_done"]+=1
+                epltime = dsdata['end_time'] - dsdata['start_time']
+                timelistIntervalfin.append(epltime)
 
-        elif dsdata['status'] != 'queued':
-            epltime = timezone.now() - dsdata['start_time']
-            timelistIntervalact.append(epltime)
-            dictSE["ds_active"]+=1
-            if dsdata['staged_files'] >= dsdata['total_files']*0.9:
-                dictSE["ds_90pdone"] += 1
-        elif dsdata['status'] == 'queued':
-            dictSE["ds_queued"] += 1
-            dictSE["files_q"] += (dsdata['total_files'] - dsdata['staged_files'])
-            epltime = timezone.now() - dsdata['start_time']
-            timelistIntervalqueued.append(epltime)
+            elif dsdata['status'] != 'queued':
+                epltime = timezone.now() - dsdata['start_time']
+                timelistIntervalact.append(epltime)
+                dictSE["ds_active"]+=1
+                if dsdata['staged_files'] >= dsdata['total_files']*0.9:
+                    dictSE["ds_90pdone"] += 1
+            elif dsdata['status'] == 'queued':
+                dictSE["ds_queued"] += 1
+                dictSE["files_q"] += (dsdata['total_files'] - dsdata['staged_files'])
+                epltime = timezone.now() - dsdata['start_time']
+                timelistIntervalqueued.append(epltime)
 
         progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
 
@@ -288,8 +289,8 @@ def getStagingData(request):
 
     new_cur.execute(
         """
-                SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE, t1.TOTAL_FILES, 
-                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign, t3.PR_ID FROM ATLAS_DEFT.T_DATASET_STAGING t1
+                SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE as RSE, t1.TOTAL_FILES, 
+                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign, t3.PR_ID, ROW_NUMBER() OVER(PARTITION BY t1.RSE ORDER BY t1.start_time DESC) AS occurence FROM ATLAS_DEFT.T_DATASET_STAGING t1
                 INNER join ATLAS_DEFT.T_ACTION_STAGING t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID
                 INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID %s 
         """ % selection
