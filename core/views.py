@@ -3056,7 +3056,7 @@ def jobList(request, mode=None, param=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-def importToken(request,errsByCount):
+def importToken(request, errsByCount):
     newErrsByCount = []
     random.seed()
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
@@ -10537,10 +10537,10 @@ def esatlasPandaLoggerJson(request):
     res = es.search(index=logindexjedi + str(today), stored_fields=['jediTaskID', 'type', 'logLevel'], body={
         "aggs": {
             "jediTaskID": {
-                "terms": {"field": "jediTaskID", "size": 100000000},
+                "terms": {"field": "jediTaskID", "size": 500},
                 "aggs": {
                     "type": {
-                        "terms": {"field": "fields.type.keyword", "size": 100},
+                        "terms": {"field": "fields.type.keyword"},
                         "aggs": {
                             "logLevel": {
                                 "terms": {"field": "logLevel.keyword"}
@@ -10551,7 +10551,7 @@ def esatlasPandaLoggerJson(request):
             }
         }
     })
-
+    print('query completed')
     jdListFinal = []
     for agg in res['aggregations']['jediTaskID']['buckets']:
         jdlist = {}
