@@ -4758,7 +4758,7 @@ def get_panda_resource(siterec):
             if (data[cs] and siterec.siteid == data[cs]['siteid']):
                 return data[cs]['panda_resource']
     except Exception as exc:
-        print (exc)
+        print(exc)
 
 
 @login_customrequired
@@ -12885,6 +12885,7 @@ def get_hc_tests(request):
 
     jobs = []
     tests = []
+    panda_queues = []
 
     pilot_timings_names = ['timegetjob', 'timestagein', 'timepayload', 'timestageout', 'timetotal_setup']
     error_fields = [
@@ -12973,6 +12974,15 @@ def get_hc_tests(request):
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
     if is_archive_only or is_archive:
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
+
+    sflist = ('siteid', 'gocname', 'status', 'cloud', 'tier', 'corepower')
+    panda_queues.extend(Schedconfig.objects.filter(cloud=query['cloud']).values(*sflist))
+    panda_queues_info = {}
+    for queue in panda_queues:
+        siteid = queue['siteid']
+        panda_queues_info[siteid] = {}
+        del queue['siteid']
+        panda_queues_info[siteid] = queue
     _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     # getting input file info for jobs
@@ -13020,6 +13030,11 @@ def get_hc_tests(request):
 
         for f in fields:
             test[f] = job[f]
+        for f in panda_queues_info[job['computingsite']]:
+            if f == 'gocname':
+                test['site'] = panda_queues_info[job['computingsite']][f]
+            else:
+                test[f] = panda_queues_info[job['computingsite']][f]
         tests.append(test)
 
     data = {'tests': tests}
