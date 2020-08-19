@@ -8459,7 +8459,6 @@ def taskInfo(request, jeditaskid=0):
 
         del tasks
         del columns
-        del ds
         if taskrec:
             taskrec['creationdate'] = taskrec['creationdate']
             taskrec['modificationtime'] = taskrec['modificationtime']
