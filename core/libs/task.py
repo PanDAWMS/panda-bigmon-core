@@ -6,7 +6,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from django.db import connection
 from django.db.models import Count
-from core.common.models import JediEvents, JediDatasetContents
+from core.common.models import JediEvents, JediDatasetContents, JediDatasets
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 from core.libs.exlib import dictfetchall, insert_to_temp_table
 from core.settings.local import defaultDatetimeFormat
@@ -315,6 +315,68 @@ def event_summary_for_task(mode, query, transactionKeyDroppedJobs):
         eventslist.append(eventstatus)
 
     return eventslist
+
+
+def datasets_for_task(jeditaskid):
+    """
+    Getting list of datasets corresponding to a task and file state summary
+    :param jeditaskid: int
+    :return: dsets: list of dicts
+    :return: dsinfo: dict
+    """
+    dsets = []
+    dsinfo = {}
+    dsquery = {}
+    dsquery['jeditaskid'] = jeditaskid
+
+    dsets = JediDatasets.objects.filter(**dsquery).values()
+
+    nfiles = 0
+    nfinished = 0
+    nfailed = 0
+    neventsTot = 0
+    neventsUsedTot = 0
+    scope = ''
+    newdslist = []
+
+    if len(dsets) > 0:
+        for ds in dsets:
+            if len(ds['datasetname']) > 0:
+                if not str(ds['datasetname']).startswith('user'):
+                    scope = str(ds['datasetname']).split('.')[0]
+                else:
+                    scope = '.'.join(str(ds['datasetname']).split('.')[:2])
+                if ':' in scope:
+                    scope = str(scope).split(':')[0]
+                ds['scope'] = scope
+            newdslist.append(ds)
+            if ds['type'] not in ['input', 'pseudo_input']: continue
+            if ds['masterid']: continue
+            if not ds['nevents'] is None and int(ds['nevents']) > 0:
+                neventsTot += int(ds['nevents'])
+            if not ds['neventsused'] is None and int(ds['neventsused']) > 0:
+                neventsUsedTot += int(ds['neventsused'])
+
+            if int(ds['nfiles']) > 0:
+                ds['percentfinished'] = int(100. * int(ds['nfilesfinished']) / int(ds['nfiles']))
+                nfiles += int(ds['nfiles'])
+                nfinished += int(ds['nfilesfinished'])
+                nfailed += int(ds['nfilesfailed'])
+
+        dsets = newdslist
+        dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
+
+
+        dsinfo['nfiles'] = nfiles
+        dsinfo['nfilesfinished'] = nfinished
+        dsinfo['nfilesfailed'] = nfailed
+        dsinfo['pctfinished'] = int(100. * nfinished / nfiles) if nfiles > 0 else 0
+        dsinfo['pctfailed'] = int(100. * nfailed / nfiles) if nfiles > 0 else 0
+
+        dsinfo['neventsTot'] = neventsTot
+        dsinfo['neventsUsedTot'] = neventsUsedTot
+
+    return dsets, dsinfo
 
 
 def input_summary_for_task(taskrec, dsets):

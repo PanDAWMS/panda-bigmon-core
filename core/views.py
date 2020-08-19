@@ -107,7 +107,7 @@ from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_tmp_table_name, get_event_status_summary, get_file_info, get_job_queuetime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
-    job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task
+    job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.iDDS.algorithms import checkIfIddsTask
@@ -7992,11 +7992,11 @@ def taskInfo(request, jeditaskid=0):
     furl = request.get_full_path()
     nomodeurl = removeParam(furl, 'mode')
     nomodeurl = extensibleURL(request, nomodeurl)
-    if not valid: return response
-    # Here we try to get cached data. We get any cached data is available
-    # data = None
+    if not valid:
+        return response
 
-    if ('dt' in request.session['requestParams'] and 'transkey' in request.session['requestParams']):
+    # Here we try to get cached data. We get any cached data is available
+    if 'dt' in request.session['requestParams'] and 'transkey' in request.session['requestParams']:
         tk = request.session['requestParams']['transkey']
         datasets = getCacheEntry(request, tk, isData=True)
         if datasets is None:
@@ -8006,15 +8006,20 @@ def taskInfo(request, jeditaskid=0):
                 commondata = json.loads(commondata)
                 if commondata is not None:
                     datasets = commondata['datasets'] if 'datasets' in commondata else None
-                    datasets = json.dumps(datasets)
+                    datasets = json.dumps(datasets, cls=DateTimeEncoder)
         if datasets is None:
             _logger.error('No datasets data found for task in cache!!! Request: {}'.format(str(request.get_full_path())))
+            _logger.info("Getting datasets info from DB")
+
+            datasets, dsinfo = datasets_for_task(jeditaskid)
+            datasets = json.dumps(datasets, cls=DateTimeEncoder)
+
         return HttpResponse(datasets, content_type='application/json')
 
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
 
-    # data = None #temporarily turm off caching
-
+    # temporarily turn off caching
+    # data = None
     if data is not None:
         data = json.loads(data)
         if data is not None:
@@ -8344,74 +8349,17 @@ def taskInfo(request, jeditaskid=0):
                 loglist = (logout.splitlines())[::-1]
                 logtxt = '\n'.join(loglist)
 
-    dsquery = {}
-    dsquery['jeditaskid'] = jeditaskid
+    # get datasets list and summary
+    dsets, dsinfo = datasets_for_task(jeditaskid)
+    if taskrec:
+        taskrec['dsinfo'] = dsinfo
 
-    dsets = JediDatasets.objects.filter(**dsquery).values()
-    dsinfo = None
-    nfiles = 0
-    nfinished = 0
-    nfailed = 0
-    neventsTot = 0
-    neventsUsedTot = 0
-    scope = ''
-    newdslist = []
-
-    if len(dsets) > 0:
-        for ds in dsets:
-            if len (ds['datasetname']) > 0:
-                if not str(ds['datasetname']).startswith('user'):
-                    scope = str(ds['datasetname']).split('.')[0]
-                else:
-                    scope = '.'.join(str(ds['datasetname']).split('.')[:2])
-                if ':' in scope:
-                    scope = str(scope).split(':')[0]
-                ds['scope'] = scope
-            newdslist.append(ds)
-            if ds['type'] not in ['input', 'pseudo_input']: continue
-            if ds['masterid']: continue
-            if not ds['nevents'] is None and int(ds['nevents']) > 0:
-                neventsTot += int(ds['nevents'])
-            if not ds['neventsused'] is None and int(ds['neventsused']) > 0:
-                neventsUsedTot += int(ds['neventsused'])
-
-            if int(ds['nfiles']) > 0:
-                ds['percentfinished'] = int(100. * int(ds['nfilesfinished']) / int(ds['nfiles']))
-                nfiles += int(ds['nfiles'])
-                nfinished += int(ds['nfilesfinished'])
-                nfailed += int(ds['nfilesfailed'])
-
-        dsets = newdslist
-        dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
-        if nfiles > 0:
-            dsinfo = {}
-            dsinfo['nfiles'] = nfiles
-            dsinfo['nfilesfinished'] = nfinished
-            dsinfo['nfilesfailed'] = nfailed
-            dsinfo['pctfinished'] = int(100. * nfinished / nfiles)
-            dsinfo['pctfailed'] = int(100. * nfailed / nfiles)
-    else: ds = []
-    if taskrec: taskrec['dsinfo'] = dsinfo
-
-    ## get dataset types
-    dstypesd = {}
-    for ds in dsets:
-        dstype = ds['type']
-        if dstype not in dstypesd: dstypesd[dstype] = 0
-        dstypesd[dstype] += 1
-    dstkeys = dstypesd.keys()
-    dstkeys = sorted(dstkeys)
-    dstypes = []
-    for dst in dstkeys:
-        dstd = {'type': dst, 'count': dstypesd[dst]}
-        dstypes.append(dstd)
-
-    ## get input containers
+    # get input containers
     inctrs = []
     if taskparams and 'dsForIN' in taskparams:
         inctrs = taskparams['dsForIN'].split(',')
 
-    ## get output containers
+    # get output containers
     cquery = {}
     cquery['jeditaskid'] = jeditaskid
     cquery['type__in'] = ('output', 'log')
@@ -8424,15 +8372,11 @@ def taskInfo(request, jeditaskid=0):
 
     # getBrokerageLog(request)
 
-    # neventsTot = 0
-    # neventsUsedTot = 0
-
     if taskrec:
-        taskrec['totev'] = neventsTot
-        taskrec['totevproc'] = neventsUsedTot
+        taskrec['totev'] = dsinfo['neventsTot']
+        taskrec['totevproc'] = dsinfo['neventsUsedTot']
         taskrec['pctfinished'] = (100 * taskrec['totevproc'] / taskrec['totev']) if (taskrec['totev'] > 0) else ''
-        taskrec['totevhs06'] = (neventsTot) * taskrec['cputime'] if (
-        taskrec['cputime'] is not None and neventsTot > 0) else None
+        taskrec['totevhs06'] = dsinfo['neventsTot'] * taskrec['cputime'] if (taskrec['cputime'] is not None and dsinfo['neventsTot'] > 0) else None
         # if taskrec['pctfinished']<=20 or hs06sSum['total']==0:
         #     taskrec['totevhs06'] = (neventsTot)*taskrec['cputime'] if (taskrec['cputime'] is not None and neventsTot > 0) else None
         # else:
@@ -8571,7 +8515,6 @@ def taskInfo(request, jeditaskid=0):
             'jeditaskid': jeditaskid,
             'logtxt': logtxt,
             'datasets': dsets,
-            'dstypes': dstypes,
             'inctrs': inctrs,
             'outctrs': outctrs,
             'vomode': VOMODE,
