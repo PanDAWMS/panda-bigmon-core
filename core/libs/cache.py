@@ -169,7 +169,7 @@ def set_cache_timeout(request):
     pattern_to_timeout = {
         '/errors/': 5,
         '/dashboard/': 5,
-        'timestamp': 0.15,
+        'timestamp': 1,
     }
     request.session['max_age_minutes'] = default_timeout_min
     for p, t in pattern_to_timeout.items():
