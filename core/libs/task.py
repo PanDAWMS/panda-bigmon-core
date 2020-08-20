@@ -366,15 +366,14 @@ def datasets_for_task(jeditaskid):
         dsets = newdslist
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
 
+    dsinfo['nfiles'] = nfiles
+    dsinfo['nfilesfinished'] = nfinished
+    dsinfo['nfilesfailed'] = nfailed
+    dsinfo['pctfinished'] = int(100. * nfinished / nfiles) if nfiles > 0 else 0
+    dsinfo['pctfailed'] = int(100. * nfailed / nfiles) if nfiles > 0 else 0
 
-        dsinfo['nfiles'] = nfiles
-        dsinfo['nfilesfinished'] = nfinished
-        dsinfo['nfilesfailed'] = nfailed
-        dsinfo['pctfinished'] = int(100. * nfinished / nfiles) if nfiles > 0 else 0
-        dsinfo['pctfailed'] = int(100. * nfailed / nfiles) if nfiles > 0 else 0
-
-        dsinfo['neventsTot'] = neventsTot
-        dsinfo['neventsUsedTot'] = neventsUsedTot
+    dsinfo['neventsTot'] = neventsTot
+    dsinfo['neventsUsedTot'] = neventsUsedTot
 
     return dsets, dsinfo
 
