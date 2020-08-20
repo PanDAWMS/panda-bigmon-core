@@ -8,6 +8,7 @@ from django.core.cache import cache
 
 notcachedRemoteAddress = ['188.184.185.129', '188.184.116.46']
 
+
 def deleteCacheTestData(request,data):
 ### Filtering data
     if request.user.is_authenticated() and request.user.is_tester:
@@ -23,6 +24,7 @@ def deleteCacheTestData(request,data):
 import socket
 import uuid
 import logging
+
 
 def cacheIsAvailable(request):
     hostname = "bigpanda-redis.cern.ch"
@@ -45,6 +47,7 @@ def cacheIsAvailable(request):
         logger.error(message)
         pass
     return False
+
 
 def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False):
     # isCache = cacheIsAvailable(request)
@@ -109,6 +112,7 @@ def setCacheEntry(request, viewType, data, timeout, isData = False):
     else:
         None
 
+
 def preparePlotData(data):
     oldPlotData = data
     if isinstance(oldPlotData, dict):
@@ -120,8 +124,7 @@ def preparePlotData(data):
     return newPlotData
 
 
-### Managing static cache
-
+# Managing static cache
 def get_last_static_file_update_date(filename):
     """
     Get the last update time of static files
@@ -153,6 +156,23 @@ def get_last_static_file_update_date(filename):
 
 
 def get_version(filename):
-    """Form vesrion of static by last update date"""
+    """Form version of static file by last update date"""
     lastupdate = get_last_static_file_update_date(filename)
     return '_v_={lastupdate}'.format(lastupdate=lastupdate)
+
+
+def set_cache_timeout(request):
+    """ Set cache timeout for a browser depending on request"""
+
+    default_timeout_min = 10
+    request_path = request.get_full_path()
+    pattern_to_timeout = {
+        '/errors/': 5,
+        '/dashboard/': 5,
+        'timestamp': 0.15,
+    }
+    request.session['max_age_minutes'] = default_timeout_min
+    for p, t in pattern_to_timeout.items():
+        if p in request_path:
+            request.session['max_age_minutes'] = t
+

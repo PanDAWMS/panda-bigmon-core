@@ -103,7 +103,7 @@ from core.auth.utils import grant_rights, deny_rights
 from core.utils import is_json_request
 from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table
-from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry
+from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, set_cache_timeout
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_tmp_table_name, get_event_status_summary, get_file_info, get_job_queuetime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
@@ -452,14 +452,14 @@ def initRequest(request, callselfmon = True):
 
     if len(hostname) > 0: request.session['hostname'] = hostname
 
-    ##self monitor
+    #self monitor
     if callselfmon:
         initSelfMonitor(request)
 
-    ## Set default page lifetime in the http header, for the use of the front end cache
-    request.session['max_age_minutes'] = 10
+    # Set default page lifetime in the http header, for the use of the front end cache
+    set_cache_timeout(request)
 
-    ## Is it an https connection with a legit cert presented by the user?
+    # Is it an https connection with a legit cert presented by the user?
     if 'SSL_CLIENT_S_DN' in request.META or 'HTTP_X_SSL_CLIENT_S_DN' in request.META:
         if 'SSL_CLIENT_S_DN' in request.META:
             request.session['userdn'] = request.META['SSL_CLIENT_S_DN']
@@ -6389,7 +6389,6 @@ def dashboard(request, view='all'):
                 if cloud['name'] in rwData.keys():
                     rw[cloud['name']] = rwData[cloud['name']]
 
-        request.session['max_age_minutes'] = 6
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
             'json' not in request.session['requestParams'])) or ('keephtml' in request.session['requestParams']):
             xurl = extensibleURL(request)
@@ -10195,7 +10194,7 @@ def errorSummary(request):
         jobsErrorsTotalCount = None
     else:
         jobsErrorsTotalCount = int(math.ceil((jobsErrorsTotalCount+10000)/10000)*10000)
-    request.session['max_age_minutes'] = 6
+
 
     _logger.info('Formed list of params: {}'.format(time.time() - request.session['req_init_time']))
 
