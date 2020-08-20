@@ -5,6 +5,7 @@ import hashlib
 from django.utils import encoding
 from django.conf import settings as djangosettings
 from django.core.cache import cache
+from core.utils import is_json_request
 
 notcachedRemoteAddress = ['188.184.185.129', '188.184.116.46']
 
@@ -53,10 +54,7 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
     # isCache = cacheIsAvailable(request)
     isCache = True
     if isCache:
-        is_json = False
-
-        #logger = logging.getLogger('bigpandamon-error')
-        #logger.error(request.META.get('HTTP_X_FORWARDED_FOR'))
+        is_json = is_json_request(request)
 
         # We do this check to always rebuild cache for the page when it called from the crawler
         if (('HTTP_X_FORWARDED_FOR' in request.META) and (request.META['HTTP_X_FORWARDED_FOR'] in notcachedRemoteAddress) and
@@ -65,17 +63,15 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
             return None
 
         request._cache_update_cache = False
-        if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
-                'json' in request.GET)):
-            is_json = True
         key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
-        if isData==False:
+        if isData == False:
             try:
                 if request.method == "POST":
                     path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path() + '?' + request.body)))
                 else:
                     path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-            except: path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+            except:
+                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
             cache_key = '%s.%s' % (key_prefix, path.hexdigest())
             return cache.get(cache_key, None)
         else:
@@ -91,14 +87,14 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
 def setCacheEntry(request, viewType, data, timeout, isData = False):
     # isCache = cacheIsAvailable(request)
     isCache = True
+    # do not cache data for 'refreshed' pages
+    if 'requestParams' in request.session and 'timestamp' in request.session['requestParams']:
+        isCache = False
     if isCache:
-        is_json = False
+        is_json = is_json_request(request)
         request._cache_update_cache = False
-        if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
-                    'json' in request.GET)):
-            is_json = True
         key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
-        if isData==False:
+        if isData == False:
             try:
                 if request.method == "POST":
                     path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path() + '?' + request.body)))
@@ -109,8 +105,6 @@ def setCacheEntry(request, viewType, data, timeout, isData = False):
         else:
             cache_key = '%s' % (key_prefix)
         cache.set(cache_key, data, timeout)
-    else:
-        None
 
 
 def preparePlotData(data):
@@ -169,7 +163,7 @@ def set_cache_timeout(request):
     pattern_to_timeout = {
         '/errors/': 5,
         '/dashboard/': 5,
-        'timestamp': 1,
+        'timestamp': 0,
     }
     request.session['max_age_minutes'] = default_timeout_min
     for p, t in pattern_to_timeout.items():

@@ -466,7 +466,7 @@
 
     <div class="column small-6 medium-3 large-2 right">
         {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
-        {% if built != None %} {{ built }}, {% endif %} <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}"> Refresh</a>
+        {% if built != None %} {{ built }}, {% endif %} <a onclick="refreshPage('{{ request.session.notimestampurl }}')"> Refresh</a>
     </div>
 </div>
 <!-- End sub-title -->
@@ -699,6 +699,11 @@
           }
 
           window.location = urlBase + url;
+      }
+
+      function refreshPage(notimeurl) {
+        let d = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit'});
+        window.location = notimeurl + 'timestamp=' + d;
       }
 
       function clearComparisonList(object) {
