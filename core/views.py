@@ -1858,6 +1858,9 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                 iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
 
         itemd['list'] = iteml
+        if f in ('actualcorecount', ):
+            itemd['stats'] = {}
+            itemd['stats']['sum'] = sum([x['kname'] * x['kvalue'] for x in iteml if isinstance(x['kname'], int)])
         suml.append(itemd)
         suml = sorted(suml, key=lambda x: x['field'])
     return suml, esjobdict

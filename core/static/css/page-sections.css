@@ -88,6 +88,15 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
     height: 500px;
 }
 
+.label {
+  border-radius: 0.8rem;
+}
+table tr th p {
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+}
+
 a.uservisits {
     color: black;
     font-family: 'Muli', sans-serif;

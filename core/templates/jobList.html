@@ -1,5 +1,5 @@
 {% extends "_base_core.html" %}
-{% load static %}
+{% load static %}{% load humanize %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
 {% block subtitle %}PanDA jobs {{ viewParams.selection|safe }}
 {% if showwarn and njobs%}
@@ -147,7 +147,10 @@
 <table>
 <tr class='tablesection'><th colspan=20> Job attribute summary, sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
 {% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
+<tr><th>
+  <p>{{ fdict.field }} ({{ fdict.list|length }})</p>
+  {% if fdict.stats %}{% if fdict.stats.sum %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum | intcomma }}</span>{% endif %}{% endif %}
+</th>
     <td><div class="comment more">
         {% for item in fdict.list %}
             {% if fdict.field == 'jeditaskid' and item.kname != 'Not specified' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
