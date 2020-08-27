@@ -681,15 +681,12 @@
                         $scope.iddsjson = iddsjson['data'];
                         idds_data = iddsjson['data'];
                         $rootScope.$emit('idds_info', idds_data);
+                        $('#iDDsDiv').show();
                     }
                 });
         };
         var init = function () {
             $scope.getiDDs();
-            if ($scope.iddsjson.length > 0) {
-                var displaydiv = document.getElementById('iDDsDiv');
-                displaydiv.style.display = "";
-            }
         };
         init();
     });
