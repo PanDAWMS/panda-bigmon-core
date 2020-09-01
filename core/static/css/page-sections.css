@@ -149,6 +149,9 @@ hr {
   font-size: 0.875rem;
 }
 
+div.normal {
+  font-size: 0.875rem;
+}
 
 .killbutton {
   display: inline-block;

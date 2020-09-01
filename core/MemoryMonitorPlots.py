@@ -8,6 +8,8 @@ from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
 from django.shortcuts import render_to_response, redirect
 
+from core.pandajob.models import Jobsarchived4, Jobsarchived
+
 from core.views import initRequest, login_customrequired
 from core.filebrowser.views import get_job_memory_monitor_output
 
@@ -56,6 +58,17 @@ def prMonPlots(request, pandaid=-1):
         pandaid = -1
         msg = 'No pandaid provided!'
 
+    processor_type = 'cpu'
+    if pandaid > 0:
+        job = Jobsarchived4.objects.filter(pandaid=pandaid).values('pandaid', 'cmtconfig')
+        if len(job) == 0:
+            job = Jobsarchived.objects.filter(pandaid=pandaid).values('pandaid', 'cmtconfig')
+
+        if len(job) > 0:
+            job = job[0]
+            if 'cmtconfig' in job and 'gpu' in job['cmtconfig']:
+                processor_type = 'gpu'
+
     plots_list = [
         'np_nt',
         'cpu_rate',
@@ -65,11 +78,15 @@ def prMonPlots(request, pandaid=-1):
         'io_rate',
     ]
 
+    if processor_type == 'gpu':
+        plots_list.extend(['ng', 'gpu_memory', 'gpu_pct'])
+
     data = {
         'request': request,
         'viewParams': request.session['viewParams'],
         'requestParams': request.session['requestParams'],
         'pandaid': pandaid,
+        'processor_type': processor_type,
         'built': datetime.now().strftime("%H:%M:%S"),
         'plotsList': plots_list,
         "error": msg,
@@ -92,13 +109,21 @@ def getPrMonPlotsData(request, pandaid=-1):
 
     # Definition of prmon labels/units for beautification from:
     # https://github.com/HSF/prmon/blob/master/package/scripts/prmon_plot.py
-    axisunits = {'vmem': 'kb', 'pss': 'kb', 'rss': 'kb', 'swap': 'kb',
+    axisunits = {'vmem': 'kb',
+                 'pss': 'kb',
+                 'rss': 'kb',
+                 'swap': 'kb',
                  'utime': 'sec', 'stime': 'sec', 'wtime': 'sec',
                  'rchar': 'b', 'wchar': 'b',
                  'read_bytes': 'b', 'write_bytes': 'b',
                  'rx_packets': '1', 'tx_packets': '1',
                  'rx_bytes': 'b', 'tx_bytes': 'b',
-                 'nprocs': '1', 'nthreads': '1'}
+                 'nprocs': '1', 'nthreads': '1',
+                 'gpufbmem': 'kb',
+                 'gpumempct': '%',
+                 'gpusmpct': '%',
+                 'ngpus': '1'
+                 }
 
     axisnames = {'vmem': 'Memory',
                  'pss': 'Memory',
@@ -116,7 +141,12 @@ def getPrMonPlotsData(request, pandaid=-1):
                  'rx_bytes': 'Network',
                  'tx_bytes': 'Network',
                  'nprocs': 'Count',
-                 'nthreads': 'Count'}
+                 'nthreads': 'Count',
+                 'gpufbmem': 'Memory',
+                 'gpumempct': 'Memory',
+                 'gpusmpct': 'Streaming Multiprocessors',
+                 'ngpus': 'Count'
+                 }
 
     legendnames = {'vmem': 'Virtual Memory (VMEM)',
                    'pss': 'Proportional Set Size (PSS)',
@@ -134,7 +164,11 @@ def getPrMonPlotsData(request, pandaid=-1):
                    'rx_bytes': 'Network Received (bytes)',
                    'tx_bytes': 'Network Transmitted (bytes)',
                    'nprocs': 'Number of Processes',
-                   'nthreads': 'Number of Threads'}
+                   'nthreads': 'Number of Threads',
+                   'gpufbmem': 'GPU Memory',
+                   'gpumempct': 'GPU Memory',
+                   'gpusmpct': 'GPU Streaming Multiprocessors',
+                   'ngpus': 'Number of GPUs'}
 
     metric_groups = {
         'memory': ['vmem', 'pss', 'rss', 'swap'],
@@ -143,6 +177,9 @@ def getPrMonPlotsData(request, pandaid=-1):
         'cpu': ['utime', 'stime'],
         'network': ['rx_bytes', 'tx_bytes'],
         'network_count': ['rx_packets', 'tx_packets'],
+        'gpu_count': ['ngpus'],
+        'gpu_memory': ['gpufbmem'],
+        'gpu_pct': ['gpumempct', 'gpusmpct'],
     }
 
     plots_details = {
@@ -152,11 +189,16 @@ def getPrMonPlotsData(request, pandaid=-1):
         'memory_rate': {'title': 'Memory rate', 'ylabel': 'MB/min', 'xlabel': 'Wall time, min'},
         'io': {'title': 'I/O', 'ylabel': 'I/O, GB', 'xlabel': 'Wall time, min'},
         'io_rate': {'title': 'I/O rate', 'ylabel': 'MB/min', 'xlabel': 'Wall time, min'},
+        'ng': {'title': 'Number of GPUs', 'ylabel': '', 'xlabel': 'Wall time, min'},
+        'gpu_memory': {'title': 'GPU memory', 'ylabel': 'Consumed memory, GB', 'xlabel': 'Wall time, min'},
+        'gpu_memory_rate': {'title': 'GPU memory rate', 'ylabel': 'Consumed memory, GB', 'xlabel': 'Wall time, min'},
+        'gpu_res': {'title': 'GPU utilization percentage', 'ylabel': '%', 'xlabel': 'Wall time, min'}
     }
 
     msg = ''
     plots_data = {}
     raw_data = pd.DataFrame()
+    sum_data = {}
 
     # get memory_monitor_output.txt file
     if pandaid > 0:
@@ -166,6 +208,11 @@ def getPrMonPlotsData(request, pandaid=-1):
         if mmo_path is not None and os.path.exists(mmo_path):
             # load the data from file
             raw_data = pd.read_csv(mmo_path, delim_whitespace=True)
+            # get memory_monitor_summary.json
+            mms_path = mmo_path.replace('memory_monitor_output.txt', 'memory_monitor_summary.json')
+            if mms_path is not None and os.path.exists(mms_path):
+                with open(mms_path) as json_file:
+                    sum_data = json.load(json_file)
         else:
             msg = """No memory monitor output file found in a job log tarball. 
                      It can happen if a job failed and logs were not saved 
@@ -207,6 +254,14 @@ def getPrMonPlotsData(request, pandaid=-1):
             raw_data[mc + '_rate'] = raw_data[mc + '_rate'].round(3)
 
         for mm in metric_groups['memory']:
+            raw_data[mm] = raw_data[mm]/1024./1024.
+            raw_data[mm] = raw_data[mm].round(2)
+
+        for mm in metric_groups['gpu_memory']:
+            raw_data[mm + '_rate'] = raw_data[mm].diff()
+            raw_data[mm + '_rate'] /= raw_data['wtime_min_dt']
+            raw_data[mm + '_rate'] /= 1024.
+            raw_data[mm + '_rate'] = raw_data[mm + '_rate'].round(3)
             raw_data[mm] = raw_data[mm]/1024./1024.
             raw_data[mm] = raw_data[mm].round(2)
 
@@ -273,6 +328,31 @@ def getPrMonPlotsData(request, pandaid=-1):
                 tmp = tmp[:-1]
             plots_data['io_rate']['data'].append(tmp)
 
+        for mm in metric_groups['gpu_memory']:
+            tmp = [legendnames[mm]]
+            tmp.extend(raw_data[mm].tolist())
+            plots_data['gpu_memory']['data'].append(tmp)
+
+            is_cut_rate_plot_data = False
+            if tmp[-1] == 0:
+                is_cut_rate_plot_data = True
+
+            tmp = [legendnames[mm]]
+            tmp.extend(raw_data[mm + '_rate'].tolist())
+            if is_cut_rate_plot_data:
+                tmp = tmp[:-1]
+            plots_data['gpu_memory_rate']['data'].append(tmp)
+
+        for mc in metric_groups['gpu_count']:
+            tmp = [legendnames[mc]]
+            tmp.extend(raw_data[mc].tolist())
+            plots_data['ng']['data'].append(tmp)
+
+        for mc in metric_groups['gpu_pct']:
+            tmp = [legendnames[mc]]
+            tmp.extend(raw_data[mc].tolist())
+            plots_data['gpu_res']['data'].append(tmp)
+
     # remove plot if no data
     remove_list = []
     for pn, pdata in plots_data.items():
@@ -281,8 +361,33 @@ def getPrMonPlotsData(request, pandaid=-1):
     for i in remove_list:
         del plots_data[i]
 
+    # prepare HW data from memory monitor summary
+    hw_info = []
+    if len(sum_data) > 0 and 'HW' in sum_data:
+        if 'cpu' in sum_data['HW']:
+            tmp_dict = {'type': 'CPU', 'str': ''}
+            tmp_dict['str'] += sum_data['HW']['cpu']['ModelName'] + ', ' if 'ModelName' in sum_data['HW']['cpu'] else ''
+            tmp_dict['str'] += '{} cores, '.format(sum_data['HW']['cpu']['CPUs']) if 'CPUs' in sum_data['HW']['cpu'] else ''
+            tmp_dict['str'] += '{} sockets, '.format(sum_data['HW']['cpu']['Sockets']) if 'Sockets' in sum_data['HW']['cpu'] else ''
+            tmp_dict['str'] += '{} cores/socket, '.format(sum_data['HW']['cpu']['CoresPerSocket']) if 'CoresPerSocket' in sum_data['HW']['cpu'] else ''
+            tmp_dict['str'] += '{} threads/core, '.format(sum_data['HW']['cpu']['ThreadsPerCore']) if 'ThreadsPerCore' in sum_data['HW']['cpu'] else ''
+            tmp_dict['str'] = tmp_dict['str'][:-2] if tmp_dict['str'].endswith(', ') else tmp_dict['str']
+            hw_info.append(tmp_dict)
+        if 'gpu' in sum_data['HW']:
+            for gpu, info in sum_data['HW']['gpu'].items():
+                if gpu != 'nGPU':
+                    tmp_dict = {'type': 'GPU', 'str': ''}
+                    tmp_dict['str'] += info['name'] + ', ' if 'name' in info else ''
+                    tmp_dict['str'] += '{}MHz of processor core clock, '.format(info['sm_freq']) if 'sm_freq' in info else ''
+                    tmp_dict['str'] += '{}GB, '.format(round(info['total_mem']/1024./1024., 2)) if 'total_mem' in info else ''
+                    tmp_dict['str'] = tmp_dict['str'][:-2] if tmp_dict['str'].endswith(', ') else tmp_dict['str']
+                    hw_info.append(tmp_dict)
+        # sort HW info list
+        hw_info = sorted(hw_info, key=lambda x: x['type'])
+
     data = {
         'plotsDict': plots_data,
+        'hwInfo': hw_info,
         'error': msg,
     }
 
