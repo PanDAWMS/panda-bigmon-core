@@ -94,9 +94,11 @@
           if (response.status === 200) {
             $scope.prmon.message = $sce.trustAsHtml(response.data.error);
             if (response.data.error.length === 0) {
+              if (response.data.hwInfo.length > 0) {
+                $scope.prmon.hw_info = response.data.hwInfo;
+                $scope.prmon.is_data_loaded = true;
+              }
               $scope.prmon.plot_data = response.data.plotsDict;
-              $scope.prmon.hw_info = response.data.hwInfo;
-              $scope.prmon.is_data_loaded = true;
               charts = buildPlots($scope.prmon.plot_data);
             }
           }
