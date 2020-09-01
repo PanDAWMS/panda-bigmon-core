@@ -40,7 +40,8 @@ def index(request):
     _logger.debug("index started - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     ### check that all expected parameters are in URL
-    expectedFields = ['guid', 'site', 'scope', 'lfn']
+    # 'site' is not mandatory anymore, so removing it from the list
+    expectedFields = ['guid', 'scope', 'lfn']
     for expectedField in expectedFields:
         try:
             request.GET[expectedField]
