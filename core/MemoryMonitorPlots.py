@@ -11,7 +11,7 @@ from django.shortcuts import render_to_response, redirect
 from core.pandajob.models import Jobsarchived4, Jobsarchived
 
 from core.views import initRequest, login_customrequired
-from core.filebrowser.views import get_job_memory_monitor_output
+from core.filebrowser.views import get_job_log_file_path
 
 _logger = logging.getLogger('bigpandamon')
 filebrowserURL = "http://bigpanda.cern.ch/filebrowser/" #This is deployment specific because memory monitoring is intended to work in ATLAS
@@ -202,17 +202,20 @@ def getPrMonPlotsData(request, pandaid=-1):
 
     # get memory_monitor_output.txt file
     if pandaid > 0:
-        mmo_path = get_job_memory_monitor_output(pandaid)
+        mmo_path = get_job_log_file_path(pandaid, 'memory_monitor_output.txt')
 
         # check if the file exists
         if mmo_path is not None and os.path.exists(mmo_path):
             # load the data from file
             raw_data = pd.read_csv(mmo_path, delim_whitespace=True)
             # get memory_monitor_summary.json
-            mms_path = mmo_path.replace('memory_monitor_output.txt', 'memory_monitor_summary.json')
+            mms_path = get_job_log_file_path(pandaid, 'memory_monitor_summary.json')
             if mms_path is not None and os.path.exists(mms_path):
                 with open(mms_path) as json_file:
-                    sum_data = json.load(json_file)
+                    try:
+                        sum_data = json.load(json_file)
+                    except:
+                        _logger.exception('Failed to load json from memory_monitor_summary.json file')
         else:
             msg = """No memory monitor output file found in a job log tarball. 
                      It can happen if a job failed and logs were not saved 

@@ -336,13 +336,14 @@ def api_single_pandaid(request):
         return HttpResponse(t.render(context), status=400)
 
 
-def get_job_memory_monitor_output(pandaid):
+def get_job_log_file_path(pandaid, filename=''):
     """
     Download log tarball of a job and return path to a local copy of memory_monitor_output.txt file
     :param pandaid:
-    :return: mmo_path: str
+    :param filename: str, if empty the function returm path to tarball folder
+    :return: file_path: str
     """
-    mmo_path = None
+    file_path = None
     files = []
     scope = ''
     lfn = ''
@@ -384,12 +385,13 @@ def get_job_memory_monitor_output(pandaid):
                 _logger.debug('log tarball has not been downloaded, so downloading it now')
                 files, errtxt, dirprefix, tardir = get_rucio_file(scope, lfn, guid)
                 _logger.debug('Got files for dir: {} and tardir: {}. Error message: {}'.format(dirprefix, tardir, errtxt))
-            if type(files) is list and len(files) > 0:
+            if type(files) is list and len(files) > 0 and len(filename) > 0:
                 for f in files:
-                    if f['name'] == 'memory_monitor_output.txt':
-                        mmo_path = tarball_path + '/' + tardir + '/' + 'memory_monitor_output.txt'
-    _logger.debug('Final mmo_path: {}'.format(mmo_path))
-    return mmo_path
+                    if f['name'] == filename:
+                        file_path = tarball_path + '/' + tardir + '/' + filename
+
+    _logger.debug('Final path of {} file: {}'.format(filename, file_path))
+    return file_path
 
 
 def delete_files(request):
