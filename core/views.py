@@ -1729,7 +1729,8 @@ def jobSummaryDict(request, jobs, fieldlist=None):
     else:
         flist = standard_fields
 
-    numeric_fields = ('attemptnr', 'jeditaskid', 'taskid', 'noutputdatafiles', 'actualcorecount', 'corecount', 'reqid',)
+    numeric_fields = ('attemptnr', 'jeditaskid', 'taskid', 'noutputdatafiles', 'actualcorecount', 'corecount',
+                      'reqid', 'jobsetid',)
     for job in jobs:
         for f in flist:
             if f == 'pilotversion':
