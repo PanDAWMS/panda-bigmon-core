@@ -191,7 +191,7 @@ def getPrMonPlotsData(request, pandaid=-1):
         'io_rate': {'title': 'I/O rate', 'ylabel': 'MB/min', 'xlabel': 'Wall time, min'},
         'ng': {'title': 'Number of GPUs', 'ylabel': '', 'xlabel': 'Wall time, min'},
         'gpu_memory': {'title': 'GPU memory', 'ylabel': 'Consumed memory, GB', 'xlabel': 'Wall time, min'},
-        'gpu_memory_rate': {'title': 'GPU memory rate', 'ylabel': 'Consumed memory, GB', 'xlabel': 'Wall time, min'},
+        'gpu_memory_rate': {'title': 'GPU memory rate', 'ylabel': 'MB/min', 'xlabel': 'Wall time, min'},
         'gpu_res': {'title': 'GPU utilization percentage', 'ylabel': '%', 'xlabel': 'Wall time, min'}
     }
 
