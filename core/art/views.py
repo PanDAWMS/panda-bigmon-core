@@ -471,7 +471,7 @@ def artJobs(request):
                     if job['extrainfo']['html'].startswith('http'):
                         jobdict['htmllink'] = job['extrainfo']['html'] + jobdict['linktext']
                     else:
-                        jobdict['htmllink'] = link_prefix + jobdict['linktext'] + '/' + job['extrainfo']['html']
+                        jobdict['htmllink'] = link_prefix + jobdict['linktext'] + '/' + job['extrainfo']['html'] + '/'
 
                 finalresult, extraparams = get_final_result(job)
 
