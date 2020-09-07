@@ -483,7 +483,16 @@ def initRequest(request, callselfmon = True):
         VOMODE = 'atlas'
     ENV['MON_VO'] = VONAME[VOMODE]
     request.session['viewParams']['MON_VO'] = ENV['MON_VO']
+
+    # remove xurls from session if it is kept from previous requests
+    if 'xurls' in request.session:
+        try:
+            del request.session['xurls']
+        except:
+            pass
+
     global errorFields, errorCodes, errorStages
+
     requestParams = {}
     request.session['requestParams'] = requestParams
 
