@@ -251,6 +251,7 @@ def prepare_plots(task_list, productiontype=''):
 
     # build histograms
     N_BIN_MAX = 50
+    plots_to_delete = []
     for pname, pdata in plots_data['hist'].items():
         rawdata = pdata['rawdata']
         if len(rawdata) > 0:
@@ -267,6 +268,12 @@ def prepare_plots(task_list, productiontype=''):
             plots_data['hist'][pname]['data'][0].extend(list(np.floor(mranges)))
             plots_data['hist'][pname]['data'][1].extend(list(np.histogram(rawdata, ranges)[0]))
         else:
+            plots_to_delete.append(pname)
+
+    # deleting plots if no data
+    if len(plots_to_delete) > 0:
+        print(plots_to_delete)
+        for pname in plots_to_delete:
             try:
                 del (plots_data['hist'][pname])
             except:
