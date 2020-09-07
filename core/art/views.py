@@ -406,6 +406,7 @@ def artJobs(request):
     reportTo = {'mail': [], 'jira': {}}
     gitlabids = list(sorted(set([x['gitlabid'] for x in jobs if 'gitlabid' in x and x['gitlabid'] is not None])))
     linktoplots = []
+    eos_art_link = 'https://atlas-art-data.web.cern.ch/atlas-art-data/'
     link_prefix = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/'
 
     artjobsdict={}
@@ -437,7 +438,6 @@ def artJobs(request):
                 jobdict = {}
                 jobdict['jobstatus'] = job['jobstatus']
                 jobdict['origpandaid'] = job['origpandaid']
-                jobdict['linktext'] = job[art_aggr_order[1]] + '/' + job['nightly_tag'] + '/' + job['package'] + '/' + job['testname'][:-3]
                 jobdict['ntagtime'] = job['nightly_tag'][-5:]
                 jobdict['computingsite'] = job['computingsite']
                 jobdict['guid'] = job['guid']
@@ -467,11 +467,19 @@ def artJobs(request):
                         job['extrainfo'] = json.loads(job['extrainfo'])
                     except:
                         job['extrainfo'] = {}
+
+                jobdict['linktext'] = '{}/{}/{}/{}/'.format(job[art_aggr_order[1]], job['nightly_tag'],
+                                                            job['package'], job['testname'][:-3])
+                jobdict['eoslink'] = link_prefix + jobdict['linktext']
                 if 'html' in job['extrainfo'] and job['extrainfo']['html']:
                     if job['extrainfo']['html'].startswith('http'):
                         jobdict['htmllink'] = job['extrainfo']['html'] + jobdict['linktext']
+                        # replace eoslink
+                        # TODO: temporary dirty fix until ART begins to send a proper eos path
+                        if not job['extrainfo']['html'].startswith(eos_art_link):
+                            jobdict['eoslink'] = '/'.join(job['extrainfo']['html'].split('/', 4)[:4]) + '/art/' + jobdict['linktext']
                     else:
-                        jobdict['htmllink'] = link_prefix + jobdict['linktext'] + '/' + job['extrainfo']['html'] + '/'
+                        jobdict['htmllink'] = link_prefix + jobdict['linktext'] + job['extrainfo']['html'] + '/'
 
                 finalresult, extraparams = get_final_result(job)
 
