@@ -5,6 +5,95 @@ from dateutil.parser import parse
 from datetime import datetime
 from core.settings.local import dbaccess
 
+import core.constants as const
+
+
+def drop_duplicates(object_list, **kwargs):
+    """
+    Dropping duplicates base on ID. By default id = pandaid.
+    :param object_list: list of dicts
+    :param kwargs: id: name of id param
+    :return: unique_object_list: list of dicts
+    """
+    id_param = 'pandaid'
+    if 'id' in kwargs:
+        id_param = kwargs['id']
+
+    object_dict = {}
+    unique_object_list = []
+    for obj in object_list:
+        id = obj[id_param]
+        drop_flag = False
+        if id in object_dict:
+            # This is a duplicate. Drop it.
+            drop_flag = True
+        else:
+            object_dict[id] = 1
+        if not drop_flag:
+            unique_object_list.append(obj)
+
+    return unique_object_list
+
+
+def add_job_category(jobs):
+    """
+    Determine which category job belong to among: build, run or merge and add 'category' param to dict of a job
+    Need 'processingtype', 'eventservice' and 'transformation' params to make a decision
+    :param jobs: list of dicts
+    :return: jobs: list of updated dicts
+    """
+
+    for job in jobs:
+        if 'transformation' in job and 'build' in job['transformation']:
+            job['category'] = 'build'
+        elif 'processingtype' in job and job['processingtype'] == 'pmerge':
+            job['category'] = 'merge'
+        elif 'eventservice' in job and (job['eventservice'] == 2 or job['eventservice'] == 'esmerge'):
+            job['category'] = 'merge'
+        else:
+            job['category'] = 'run'
+
+    return jobs
+
+
+def job_states_count_by_param(jobs, **kwargs):
+    """
+    Counting jobs in different states and group by provided param
+    :param jobs:
+    :param kwargs:
+    :return:
+    """
+    param = 'category'
+    if 'param' in kwargs:
+        param = kwargs['param']
+
+    job_states_count_dict = {}
+    param_values = list(set([job[param] for job in jobs if param in job]))
+
+    if len(param_values) > 0:
+        for pv in param_values:
+            job_states_count_dict[pv] = {}
+            for state in const.JOB_STATES:
+                job_states_count_dict[pv][state] = 0
+
+    for job in jobs:
+        job_states_count_dict[job[param]][job['jobstatus']] += 1
+
+    job_states_count_list = {}
+    for pv, data in job_states_count_dict.items():
+        if pv not in job_states_count_list:
+            job_states_count_list[pv] = []
+
+            for state in const.JOB_STATES:
+                statecount = {
+                    'name': state,
+                    'count': job_states_count_dict[pv][state],
+                }
+                job_states_count_list[pv].append(statecount)
+
+    return job_states_count_list
+
+
 def getDataSetsForATask(taskid, type = None):
     query = {
         'jeditaskid': taskid
@@ -301,6 +390,7 @@ def lower_dicts_in_list(input_list):
         out_dict = {lower_string(k): lower_string(v) for k,v in row_dict.items()}
         output_list.append(out_dict)
     return output_list
+
 
 def get_job_queuetime(job):
     """

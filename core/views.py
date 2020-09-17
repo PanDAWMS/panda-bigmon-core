@@ -9166,6 +9166,7 @@ def ganttTaskChain(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
+
 def jobSummary2(request, query, exclude={}, extra = "(1=1)", mode='drop', isEventServiceFlag=False,
                 substatusfilter='', processingtype='', auxiliaryDict = None, algorithm = 'isOld'):
     jobs = []
@@ -9494,27 +9495,8 @@ def getJobSummaryForTask(request, jeditaskid=-1):
 
     data = getCacheEntry(request, "jobSummaryForTask"+str(jeditaskid)+mode, isData=True)
     # data = None
-
     if data is not None:
         data = json.loads(data)
-
-        plotDict = {}
-        if 'plotsDict' in data:
-            oldPlotDict = data['plotsDict']
-            for plotName, plotData in oldPlotDict.items():
-                if 'sites' in plotData and 'ranges' in plotData:
-                    plotDict[str(plotName)] = {'sites': {}, 'ranges': plotData['ranges'], 'stats': plotData['stats']}
-                    for dictSiteName, listValues in plotData['sites'].items():
-                        try:
-                            plotDict[str(plotName)]['sites'][str(dictSiteName)] = []
-                            plotDict[str(plotName)]['sites'][str(dictSiteName)] += listValues
-                        except:
-                            pass
-                elif plotName == 'neventsbysite':
-                    plotDict[str(plotName)] = plotData
-
-            data['plotsDict'] = plotDict
-
         data['request'] = request
 
         if infotype == 'jobsummary':
@@ -9527,7 +9509,6 @@ def getJobSummaryForTask(request, jeditaskid=-1):
             response = None
         return response
 
-
     extra = '(1=1)'
     query = {}
     query['jeditaskid'] = jeditaskid
@@ -9536,27 +9517,16 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         start = time.time()
         extra, transactionKeyDJ = insert_dropped_jobs_to_tmp_table(query, extra)
         end = time.time()
-        print("Inserting dropped jobs: {} sec".format(end - start))
-        print('tk of dropped jobs: {}'.format(transactionKeyDJ))
+        _logger.info("Inserting dropped jobs: {} sec".format(end - start))
+        _logger.debug('tk of dropped jobs: {}'.format(transactionKeyDJ))
 
-    plotsDict, jobsummary, jobsummaryMerge, jobScoutIDs = job_summary_for_task(
-        request, query, pandaSites, statelist, extra=extra, isEventServiceFlag=es)
-
-
-    nonzeroMERGE = 0
-    for status in jobsummaryMerge:
-        if status['count'] > 0:
-            nonzeroMERGE += 1
-            break
-
-    if nonzeroMERGE == 0:
-        jobsummaryMerge = None
+    # pass mode='nodrop' as we already took dropping into account in extra query str
+    plotsDict, jobsummary, jobScoutIDs = job_summary_for_task(query, extra=extra, mode='nodrop')
 
     alldata = {
         'jeditaskid': jeditaskid,
         'request': request,
         'jobsummary': jobsummary,
-        'jobsummaryMerge': jobsummaryMerge,
         'jobScoutIDs': jobScoutIDs,
         'plotsDict': plotsDict,
     }
@@ -9567,14 +9537,13 @@ def getJobSummaryForTask(request, jeditaskid=-1):
             'jeditaskid': jeditaskid,
             'request': request,
             'jobsummary': jobsummary,
-            'jobsummaryMerge': jobsummaryMerge,
         }
         response = render_to_response('jobSummaryForTask.html', data, content_type='text/html')
     elif infotype == 'scouts':
         data = {
             'jeditaskid': jeditaskid,
             'request': request,
-            'jobscoutids': request,
+            'jobscoutids': jobScoutIDs,
         }
         response = render_to_response('scoutsForTask.html', data, content_type='text/html')
     elif infotype == 'plots':

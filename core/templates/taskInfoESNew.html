@@ -4,7 +4,9 @@
 {% block page_title %} {{ jeditaskid }} ES task {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block css_page_library %}
-    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
 {% endblock %}
 {% block js_head_page_library %}
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
@@ -13,6 +15,9 @@
   <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
   <script src="{% static 'js/d3.v3.min.js' %}"></script>
   <script src="{% static 'js/humanize.min.js' %}"></script>
+  <!-- Load d3.js and c3.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.js"></script>
 {% endblock %}
 {% block subtitle %}PanDA Event Service task {{ jeditaskid }} {% if task.site %} at {{ task.site }} {% endif %} {% endblock %}
 
@@ -205,9 +210,9 @@
         <div class="dropdownplots">
             <button class="dropdownbutton">Memory & walltime usage</button>
             <div id="dropdown-plotchoice" class="dropdown-plot">
-                <a style="cursor: pointer;" href="#plots" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');">Memory
+                <a style="cursor: pointer;" href="#plots" onclick="togglePlots('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');">Memory
                     and Walltime usage (excluding retries)</a>
-                <a style="cursor: pointer;" href="#plots" onclick="javascript:loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'plots', 'plots');">Memory
+                <a style="cursor: pointer;" href="#plots" onclick="togglePlots('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'plots', 'plots');">Memory
                     and Walltime usage (including retries)</a>
                 <a href="http://atlas-kibana-panda.mwt2.org/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))"
                    target="_blank"><span class="tooltip-upper">Memory and Walltime usage (Kibana)<span class="tooltip-text">This Kibana instance is read-only. If you do not have access please contact Ilija Vukotic [ivukotic@cern.ch].</span></span></a>
@@ -449,11 +454,8 @@
             </table>
         {% endif %}
 
-
         <p>
-        <div id="div-error-sum">
-
-        </div>
+        <div id="div-error-sum"></div>
 
         <div id="jobsummarytables">
             {% if requestParams.warning %}
@@ -484,36 +486,23 @@
             {% endif %}
         {% endif %}
 
-        <div id="scoutstable">
+        <div id="scoutstable"></div>
 
+        <div id="plots" data-ng-controller="jobConsumptionPlotsController">
+        <div class="card bp-container-simple secondary ng-hide" ng-hide="taskinfo.jc_plots.selection.is_hidden">
+          <div class="card-divider"><p>Job consumption plots:</p></div>
+          <div class="card-section">
+            <p ng-bind-html="taskinfo.jc_plots.message"></p>
+
+            <fieldset class="inline">
+              <legend>Job category:</legend>
+              <label ng-repeat="option in taskinfo.jc_plots.options.category"><input type="radio" ng-value="option" ng-model="taskinfo.jc_plots.selection.category" ng-change="taskinfo.jc_plots.rebuild()">{$ option $}</label>
+            </fieldset>
+
+            <div class="c3-chart-block" ng-repeat="plot in taskinfo.jc_plots.plot_data" jcplot-directive plot="plot" parent="$parent"></div>
+          </div>
         </div>
-
-        <p>
-        <div id="plots" style="display: none"></div>
-
-        <div class="d3splot" id="plot0" style="float:left;display:none;font-size: 12px"></div>
-
-        <div class="d3splot" id="plot01" style="float:left;display:none;font-size: 12px"></div>
-
-        <div class="d3splot" id="plot1" style="clear:both;float:left;display:none"></div>
-
-        <div class="d3splot" id="plot2" style="float:left;display:none"></div>
-
-        <div class="d3splot" id="plot5" style="float:left;display:none"></div>
-
-        <div class="d3splot" id="plot7" style="float:left;display:none"></div>
-
-        <div class="d3splot" id="plot9" style="float:left;display:none"></div>
-
-        <div class="d3splot" id="plot3" style="clear:both;float:left;display:none"></div>
-
-        <div class="d3splot" id="plot4" style="float:left;display:none"></div>
-
-        <div class="d3splot" id="plot6" style="float:left;display:none"></div>
-
-        <div class="d3splot" id="plot8" style="float:left;display:none"></div>
-
-        <p style="clear: both"></p>
+        </div>
 
         {% if inctrs %}
             <table>
@@ -760,491 +749,527 @@
 
 
 {% block js_body_page %}
-  <script src="{% static 'js/d3jsplot.js' %}?"></script>
+{#  <script src="{% static 'js/d3jsplot.js' %}?"></script>#}
+<script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+  <script>
+  app.controller('jobConsumptionPlotsController', function($scope, $http, $sce) {
+    $scope.taskinfo = {};
+    $scope.taskinfo.jc_plots = {
+      message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+      selection: {
+        category: '',
+        is_hidden: true,
+        mode: ''
+      },
+      options: {
+        category: []
+      },
+      url_path: '{% url 'getJobSummaryForTask' jeditaskid %}',
+      plot_data: [],
+      charts: {}
+    };
 
-    <script>
-        function toggleDetailDisplay(className) {
-            el = document.getElementsByClassName(className);
-            for (i = 0; i < el.length; i++) {
-                el[i].style.display = "";
-            }
-        }
+    $scope.taskinfo.jc_plots.fetch = function (jeditaskid, mode, es, infotype) {
+      $scope.taskinfo.jc_plots.message = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... ');
+      $scope.taskinfo.jc_plots.selection.mode = mode;
+      $http.get($scope.taskinfo.jc_plots.url_path, {params:{'mode': mode, 'es': es, 'infotype': infotype, 'json':1, 'dt':1}}).then(
+        function success(response) {
+          if (response.status === 200) {
+              $scope.taskinfo.jc_plots.plot_data = response.data;
 
-        function toggleHiddenEventsStates() {
-            var myHiddenStatuses = ["running","cancelled","discarded","failed","fatal"];
-            var myHiddenStatusesLength = myHiddenStatuses.length;
-            for (var i = 0; i < myHiddenStatusesLength; i++) {
-            var element = document.getElementById(myHiddenStatuses[i] + "_hidden_data");
-            element.style.display = "";
-            var element1 = document.getElementById(myHiddenStatuses[i] +"_hidden_header");
-            element1.style.display = "";
-            }
-        }
+              $scope.taskinfo.jc_plots.options.category = [];
+              Object.keys($scope.taskinfo.jc_plots.plot_data[1].data.data).forEach((key) => {
+                $scope.taskinfo.jc_plots.options.category.push(key);
+              });
+              $scope.taskinfo.jc_plots.options.category.sort();
+              $scope.taskinfo.jc_plots.selection.category = 'run';
 
-
-        function clearDivById(id) {
-            document.getElementById(id).innerHTML = "";
-        }
-
-        function clearDivByClass(className) {
-            el = document.getElementsByClassName(className);
-            for (i = 0; i < el.length; i++) {
-                el[i].innerHTML = "";
-            }
-        }
-
-        (function ($) {
-            $.fn.goTo = function () {
-                $('html, body').animate({
-                    scrollTop: $(this).offset().top + 'px'
-                }, 'fast');
-                return this;
-            }
-        })(jQuery);
-
-        function toggleRowsDisplay(className) {
-            el = document.getElementsByClassName(className);
-            for (i = 0; i < el.length; i++) {
-                el[i].style.display = (el[i].style.display == "none") ? "" : "none";
-            }
-        }
-
-        function killtasks(taskID, action) {
-            var message = ''
-            if (action == 0)
-                message = 'Are you sure you want to FINISH this task?'
-            else
-                message = 'Are you sure you want to ABORT this task?'
-            if (confirm(message)) {
-                $.ajax({
-                    url: {% url 'killtasks' %},
-                    data: {'task': taskID, 'action': action},
-                    async: true
-                })
-                    .done(function (response) {
-                        var parcedResponse = $.parseJSON(response);
-                        alert(parcedResponse.detail);
-                        location.reload();
-                    });
-            } else {
-                // Do nothing!
-            }
-        }
-
-        function loadJobSummary(jeditaskid, mode, es, infotype, divid) {
-            if (infotype == 'plots') {clearDivByClass('d3splot');}
-            if (!$("#"+divid).is(':visible'))
-                    $("#"+divid).show();
-            $('#'+divid).html("<img src='{% static "images/load.gif" %}'> Data is loading... Be patient... ");
-            $('#'+divid).goTo();
-            $.ajax({
-                url: '{% url 'getJobSummaryForTask' jeditaskid %}',
-                data: {'mode': mode, 'es': es, 'infotype': infotype, 'json':1, 'dt':1},
-                async: true
-            })
-                .done(function (response) {
-                    if (infotype == 'jobsummary' || infotype == 'scouts') {
-                        $('#' + divid).html(response);
-                    }
-                    else if (infotype == 'plots') {
-                        buildPlots('d3splot', response)
-                    }
-                });
-        }
-
-
-        function loadErrorSummaryData(jeditaskid, mode, tkdj) {
-
-            $('#div-error-sum').html("<img src='{% static "images/load.gif" %}'>  ");
-            $.ajax({
-                url: {% url 'eventsErrorSummary' %},
-                data: {'jeditaskid': jeditaskid, 'mode': mode, 'tkdj': tkdj},
-                async: true
-            })
-                .done(function (response) {
-                    $('#div-error-sum').html(response);
-                });
-        }
-
-
-        function buildPlots(classname, data) {
-
-            $("#plots").html("<img src='{% static "images/load.gif" %}'>  ");
-            {#var values = {{ plotsDict|safe }};#}
-            if (data.constructor === String) {
-                var values = JSON.parse(data);
-            }
-            else {
-                var values = data
-            }
-            if ('nevents' in values) {
-                pandamonplotHistNew(values['nevents'], "#plot0", "Number of events histogram (finished non-merge jobs)");
-            }
-            if ('neventsbysite' in values) {
-                taskInfoPieChartFunc(values['neventsbysite'], "#plot01", 'Number of events produced by finished non-merge jobs');
-            }
-            if ('maxpss' in values) {
-                pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
-            }
-            if ('maxpssf' in values) {
-                pandamonplotHistNew(values['maxpssf'], "#plot3", "Maximum PSS histogram (failed jobs)");
-            }
-            if ('walltime' in values) {
-                pandamonplotHistNew(values['walltime'], "#plot2", "Walltime histogram");
-            }
-            if ('walltimef' in values) {
-                pandamonplotHistNew(values['walltimef'], "#plot4", "Walltime histogram (failed jobs)");
-            }
-            if ('maxpsspercore' in values) {
-                pandamonplotHistNew(values['maxpsspercore'], "#plot5", "Maximum PSS per core histogram");
-            }
-            if ('maxpsspercoref' in values) {
-                pandamonplotHistNew(values['maxpsspercoref'], "#plot6", "Maximum PSS per core histogram (failed jobs)");
-            }
-            if ('hs06s' in values) {
-                pandamonplotHistNew(values['hs06s'], "#plot7", "HS06s histogram");
-            }
-            if ('hs06sf' in values) {
-                pandamonplotHistNew(values['hs06sf'], "#plot8", "HS06s histogram (failed jobs)");
-            }
-            if ('walltimeperevent' in values) {
-                pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
-            }
-            $("#plots").html("");
-            toggleDetailDisplay(classname);
-            $('#plots').goTo();
-
-        }
-
-        function buildEventChunkTable() {
-
-
-            {#    $(document).ready(function() {#}
-            document.getElementById('div-eventchunktable').style.display = 'block';
-
-            eventchunktable = $('#eventchunktable').dataTable({
-                "aaSorting": [[4, "desc"]],
-                "aoColumns": [
-                    {
-                        "mData": "jobsetid",
-                        sDefaultContent: "",
-                        "render": function (chunk, type, full) {
-                            return '<a href="'+{% url 'jobList' %}+
-                            '?jeditaskid={{ jeditaskid }}&jobsetid=' + full['jobsetid'] + '">' + full['jobsetid'] + '</a>';
-                        },
-
-                    },
-                    {
-                        "mData": "attemptnrDS",
-                        sDefaultContent: "",
-                        "render": function (chunk, type, full) {
-                            var reStr = "";
-                            full['prevAttempts'].forEach(function (entry) {
-                                reStr += '<- <a href="'+{% url 'jobList' %}+
-                                '?jeditaskid={{ jeditaskid }}&jobsetid=' + entry + '">' + entry + '</a>';
-                            });
-                            return reStr;
-                        },
-
-                    },
-                    {
-                        "mData": "status",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "attemptnr",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "attemptnrDS",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "lfn",
-                        sDefaultContent: ""
-                    },
-                    {
-                        "mData": "startevent",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "endevent",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "failedattempt",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "maxfailure",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "maxattempt",
-                        sDefaultContent: "",
-                    },
-                ],
-
-                "bServerSide": false,
-                "searching": true,
-
-                "ajax": {
-                    "processing": true,
-                    "url": "{% url 'eventschunks' %}?jeditaskid={{ jeditaskid }}",
-                    "dataSrc": ''
-                },
-
-                "bStateSave": true, // optional
-
-
-                initComplete: function () {
-                    this.api().columns([2]).every(function () {
-                        var column = this;
-                        var select = $('<select><option value="">Show all</option></select>')
-                            .appendTo($(column.header()).empty())
-                            .on('change', function () {
-                                var val = $.fn.dataTable.util.escapeRegex(
-                                    $(this).val()
-                                );
-
-                                column
-                                    .search(val ? '^' + val + '$' : '', true, false)
-                                    .draw();
-                            });
-
-                        column.data().unique().sort().each(function (d, j) {
-                            select.append('<option value="' + d + '">' + d + '</option>')
-                        });
-                    });
-
-                }
-            });
-
-
-            $('#eventchunktable').click(function () { // only if you don't hardcode column widths
-                eventchunktable.fnAdjustColumnSizing();
-            });
-
-            $('#eventchunktable').goTo();
-        }
-
-
-        function showEventsDetails() {
-            if (!$(".showeventsdetailsrow").is(':visible')) {
-                $(".showeventsdetailsrow").show()
-            }
-            else {
-                $(".showeventsdetailsrow").hide()
-            }
-        }
-
-
-        function buildInputFilesTable(statefilter) {
-          if (document.getElementById('inputfilestable').style.display != 'table') {
-
-            document.getElementById('inputfilestable').style.display = 'table';
-
-            inputfilestable = $('#inputfilestable').dataTable({
-                "aaSorting": [[0, "asc"]],
-                "aoColumns": [
-                    {
-                        "mData": "lfn",
-                        sDefaultContent: ""
-                    },
-                    {
-                        "mData": "fileid",
-                        sDefaultContent: "",
-                        "render": function (chunk, type, full) {
-                            return '<a href="'+{% url 'fileInfo' %} + '?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '&fileid=' + full['fileid'] + '">' + full['fileid'] + '</a>';
-                        },
-                    },
-                    {
-                        "mData": "fileid",
-                        sDefaultContent: "",
-                        "render": function (chunk, type, full) {
-                            return '<a href="'+{% url 'jobList' %} + '?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '&fileid=' + full['fileid'] + '&mode=nodrop"><i class="fi-link"></i></a>';
-                        },
-                    },
-                    {
-                        "mData": "procstatus",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "attemptnr",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "maxattempt",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "startevent",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "endevent",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "failedattempt",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "maxfailure",
-                        sDefaultContent: "",
-                    },
-                ],
-                "createdRow": function ( row, data, index ) {
-                    $('td', row).eq(3).addClass('input_' + data['procstatus'] + '_fill');
-                },
-
-                "bServerSide": false,
-                "searching": true,
-
-                "ajax": {
-                    "processing": true,
-                    "url": "{% url 'taskInfoNew' jeditaskid %}?tkiec={{ tkiec }}&dt",
-                    "dataSrc": ''
-                },
-                "oSearch": {
-                    "sSearch": statefilter
-                },
-
-                "bStateSave": false // optional
-
-            });
-
-
-            $('#inputfilestable').click(function () { // only if you don't hardcode column widths
-                inputfilestable.fnAdjustColumnSizing();
-            });
-
-            $('#inputsqueued').click(function () {
-                inputfilestable.fnFilter("queued");
-            });
-
-            $('#inputsready').click(function () {
-                inputfilestable.fnFilter("ready");
-            });
-
-            $('#inputsrunning').click(function () {
-                inputfilestable.fnFilter("running");
-            });
-
-            $('#inputsmerging').click(function () {
-                inputfilestable.fnFilter("merging");
-            });
-
-            $('#inputstransferring').click(function () {
-                inputfilestable.fnFilter("transferring");
-            });
-
-            $('#inputsfinished').click(function () {
-                inputfilestable.fnFilter("finished");
-            });
-
-            $('#inputsfailed').click(function () {
-                inputfilestable.fnFilter("failed");
-            });
-
-            $('#inputfilestable').goTo();
+              $scope.taskinfo.jc_plots.message = '';
           }
-        };
+        },
+        function error(response) {
+          console.log(response);
+          $scope.taskinfo.jc_plots.message = $sce.trustAsHtml('Failed to load data :( Try to refresh page by link on the top right.');
+        },
+      );
+    };
 
-        function formatSeconds(secs)
-        {
-            var t = new Date(1970,0,1);
-            t.setSeconds(secs);
-            var s = t.toTimeString().substr(0,8);
-            if(secs > 86399)
-                s = Math.floor((t - Date.parse("1/1/70")) / 3600000) + s.substr(2);
-            return s;
+    $scope.taskinfo.jc_plots.build = function () {
+      $scope.taskinfo.jc_plots.plot_data.forEach((item) => {
+        if (item.data.details.type === 'pie') {
+          $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_donut(item.data.data[$scope.taskinfo.jc_plots.selection.category]['columns'], item.name + "_chart", item.data.details.title, {})
         }
+        else if (item.data.details.type === 'stack_bar') {
+          $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_stacked_bar_hist(item.data.data[$scope.taskinfo.jc_plots.selection.category], item.data.details, item.name + "_chart");
+        }
+      })
+    };
+
+    $scope.taskinfo.jc_plots.rebuild = function () {
+      $scope.taskinfo.jc_plots.destroy();
+      $scope.taskinfo.jc_plots.build();
+    };
+
+    $scope.taskinfo.jc_plots.destroy = function () {
+      let plot_names = Object.keys($scope.taskinfo.jc_plots.charts);
+      plot_names.forEach((item) => {
+        if ($scope.taskinfo.jc_plots.charts[item]) {
+          $scope.taskinfo.jc_plots.charts[item] = $scope.taskinfo.jc_plots.charts[item].destroy();
+        }
+      });
+    };
+
+    $scope.taskinfo.jc_plots.toggle = function (jeditaskid, mode, es, infotype) {
+      if (Object.keys($scope.taskinfo.jc_plots.charts).length === 0) {
+        $scope.taskinfo.jc_plots.fetch(jeditaskid, mode, es, infotype);
+        $scope.taskinfo.jc_plots.selection.is_hidden = false;
+      }
+      else if ($scope.taskinfo.jc_plots.selection.mode !== mode) {
+        // destroy current plots and rebuild them
+        $scope.taskinfo.jc_plots.destroy();
+        $scope.taskinfo.jc_plots.fetch(jeditaskid, mode, es, infotype);
+        $scope.taskinfo.jc_plots.selection.is_hidden = false;
+      }
+      else {
+        ($scope.taskinfo.jc_plots.selection.is_hidden) ? $scope.taskinfo.jc_plots.selection.is_hidden = false : $scope.taskinfo.jc_plots.selection.is_hidden = true;
+      }
+    }
+
+  })
+  .directive('jcplotDirective', function ($timeout) {
+      var template = '<div id="{$plot.name$}_chart"></div>';
+      return {
+          template: template,
+          scope: {
+              plot: '=',
+              parent: '=',
+          },
+          link: function (scope, element, attrs) {
+            $timeout(() => {
+              element.ready(() => {
+                if (scope.plot.data.details.type === 'pie') {
+                  scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_donut(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category]['columns'], scope.plot.name + "_chart", scope.plot.data.details.title, {})
+                }
+                else if (scope.plot.data.details.type === 'stack_bar') {
+                  scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_stacked_bar_hist(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category], scope.plot.data.details, scope.plot.name + "_chart");
+                }
+              });
+            });
+          }
+      };
+  });
+
+  function togglePlots(jeditaskid, mode, es, infotype) {
+    let scope = angular.element(document.getElementById('plots')).scope();
+    scope.taskinfo.jc_plots.toggle(jeditaskid, mode, es, infotype);
+  }
+
+    function toggleHiddenEventsStates() {
+      var myHiddenStatuses = ["running","cancelled","discarded","failed","fatal"];
+      var myHiddenStatusesLength = myHiddenStatuses.length;
+      for (var i = 0; i < myHiddenStatusesLength; i++) {
+      var element = document.getElementById(myHiddenStatuses[i] + "_hidden_data");
+      element.style.display = "";
+      var element1 = document.getElementById(myHiddenStatuses[i] +"_hidden_header");
+      element1.style.display = "";
+      }
+  }
+
+
+  (function ($) {
+      $.fn.goTo = function () {
+          $('html, body').animate({
+              scrollTop: $(this).offset().top + 'px'
+          }, 'fast');
+          return this;
+      }
+  })(jQuery);
+
+  function toggleRowsDisplay(className) {
+      el = document.getElementsByClassName(className);
+      for (i = 0; i < el.length; i++) {
+          el[i].style.display = (el[i].style.display == "none") ? "" : "none";
+      }
+  }
+
+  function killtasks(taskID, action) {
+      var message = ''
+      if (action == 0)
+          message = 'Are you sure you want to FINISH this task?'
+      else
+          message = 'Are you sure you want to ABORT this task?'
+      if (confirm(message)) {
+          $.ajax({
+              url: {% url 'killtasks' %},
+              data: {'task': taskID, 'action': action},
+              async: true
+          })
+              .done(function (response) {
+                  var parcedResponse = $.parseJSON(response);
+                  alert(parcedResponse.detail);
+                  location.reload();
+              });
+      } else {
+          // Do nothing!
+      }
+  }
+
+  function loadJobSummary(jeditaskid, mode, es, infotype, divid) {
+      if (!$("#"+divid).is(':visible'))
+              $("#"+divid).show();
+      $('#'+divid).html("<img src='{% static "images/load.gif" %}'> Data is loading... Be patient... ");
+      $('#'+divid).goTo();
+      $.ajax({
+          url: '{% url 'getJobSummaryForTask' jeditaskid %}',
+          data: {'mode': mode, 'es': es, 'infotype': infotype, 'json':1, 'dt':1},
+          async: true
+      })
+          .done(function (response) {
+            $('#' + divid).html(response);
+          });
+  }
+
+
+  function loadErrorSummaryData(jeditaskid, mode, tkdj) {
+
+      $('#div-error-sum').html("<img src='{% static "images/load.gif" %}'>  ");
+      $.ajax({
+          url: {% url 'eventsErrorSummary' %},
+          data: {'jeditaskid': jeditaskid, 'mode': mode, 'tkdj': tkdj},
+          async: true
+      })
+          .done(function (response) {
+              $('#div-error-sum').html(response);
+          });
+  }
+
+  function buildEventChunkTable() {
+
+
+      {#    $(document).ready(function() {#}
+      document.getElementById('div-eventchunktable').style.display = 'block';
+
+      eventchunktable = $('#eventchunktable').dataTable({
+          "aaSorting": [[4, "desc"]],
+          "aoColumns": [
+              {
+                  "mData": "jobsetid",
+                  sDefaultContent: "",
+                  "render": function (chunk, type, full) {
+                      return '<a href="'+{% url 'jobList' %}+
+                      '?jeditaskid={{ jeditaskid }}&jobsetid=' + full['jobsetid'] + '">' + full['jobsetid'] + '</a>';
+                  },
+
+              },
+              {
+                  "mData": "attemptnrDS",
+                  sDefaultContent: "",
+                  "render": function (chunk, type, full) {
+                      var reStr = "";
+                      full['prevAttempts'].forEach(function (entry) {
+                          reStr += '<- <a href="'+{% url 'jobList' %}+
+                          '?jeditaskid={{ jeditaskid }}&jobsetid=' + entry + '">' + entry + '</a>';
+                      });
+                      return reStr;
+                  },
+
+              },
+              {
+                  "mData": "status",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "attemptnr",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "attemptnrDS",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "lfn",
+                  sDefaultContent: ""
+              },
+              {
+                  "mData": "startevent",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "endevent",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "failedattempt",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "maxfailure",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "maxattempt",
+                  sDefaultContent: "",
+              },
+          ],
+
+          "bServerSide": false,
+          "searching": true,
+
+          "ajax": {
+              "processing": true,
+              "url": "{% url 'eventschunks' %}?jeditaskid={{ jeditaskid }}",
+              "dataSrc": ''
+          },
+
+          "bStateSave": true, // optional
+
+
+          initComplete: function () {
+              this.api().columns([2]).every(function () {
+                  var column = this;
+                  var select = $('<select><option value="">Show all</option></select>')
+                      .appendTo($(column.header()).empty())
+                      .on('change', function () {
+                          var val = $.fn.dataTable.util.escapeRegex(
+                              $(this).val()
+                          );
+
+                          column
+                              .search(val ? '^' + val + '$' : '', true, false)
+                              .draw();
+                      });
+
+                  column.data().unique().sort().each(function (d, j) {
+                      select.append('<option value="' + d + '">' + d + '</option>')
+                  });
+              });
+
+          }
+      });
+
+
+      $('#eventchunktable').click(function () { // only if you don't hardcode column widths
+          eventchunktable.fnAdjustColumnSizing();
+      });
+
+      $('#eventchunktable').goTo();
+  }
+
+
+  function showEventsDetails() {
+      if (!$(".showeventsdetailsrow").is(':visible')) {
+          $(".showeventsdetailsrow").show()
+      }
+      else {
+          $(".showeventsdetailsrow").hide()
+      }
+  }
+
+
+  function buildInputFilesTable(statefilter) {
+    if (document.getElementById('inputfilestable').style.display != 'table') {
+
+      document.getElementById('inputfilestable').style.display = 'table';
+
+      inputfilestable = $('#inputfilestable').dataTable({
+          "aaSorting": [[0, "asc"]],
+          "aoColumns": [
+              {
+                  "mData": "lfn",
+                  sDefaultContent: ""
+              },
+              {
+                  "mData": "fileid",
+                  sDefaultContent: "",
+                  "render": function (chunk, type, full) {
+                      return '<a href="'+{% url 'fileInfo' %} + '?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '&fileid=' + full['fileid'] + '">' + full['fileid'] + '</a>';
+                  },
+              },
+              {
+                  "mData": "fileid",
+                  sDefaultContent: "",
+                  "render": function (chunk, type, full) {
+                      return '<a href="'+{% url 'jobList' %} + '?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '&fileid=' + full['fileid'] + '&mode=nodrop"><i class="fi-link"></i></a>';
+                  },
+              },
+              {
+                  "mData": "procstatus",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "attemptnr",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "maxattempt",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "startevent",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "endevent",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "failedattempt",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "maxfailure",
+                  sDefaultContent: "",
+              },
+          ],
+          "createdRow": function ( row, data, index ) {
+              $('td', row).eq(3).addClass('input_' + data['procstatus'] + '_fill');
+          },
+
+          "bServerSide": false,
+          "searching": true,
+
+          "ajax": {
+              "processing": true,
+              "url": "{% url 'taskInfoNew' jeditaskid %}?tkiec={{ tkiec }}&dt",
+              "dataSrc": ''
+          },
+          "oSearch": {
+              "sSearch": statefilter
+          },
+
+          "bStateSave": false // optional
+
+      });
+
+
+      $('#inputfilestable').click(function () { // only if you don't hardcode column widths
+          inputfilestable.fnAdjustColumnSizing();
+      });
+
+      $('#inputsqueued').click(function () {
+          inputfilestable.fnFilter("queued");
+      });
+
+      $('#inputsready').click(function () {
+          inputfilestable.fnFilter("ready");
+      });
+
+      $('#inputsrunning').click(function () {
+          inputfilestable.fnFilter("running");
+      });
+
+      $('#inputsmerging').click(function () {
+          inputfilestable.fnFilter("merging");
+      });
+
+      $('#inputstransferring').click(function () {
+          inputfilestable.fnFilter("transferring");
+      });
+
+      $('#inputsfinished').click(function () {
+          inputfilestable.fnFilter("finished");
+      });
+
+      $('#inputsfailed').click(function () {
+          inputfilestable.fnFilter("failed");
+      });
+
+      $('#inputfilestable').goTo();
+    }
+  };
+
+  function formatSeconds(secs)
+  {
+      var t = new Date(1970,0,1);
+      t.setSeconds(secs);
+      var s = t.toTimeString().substr(0,8);
+      if(secs > 86399)
+          s = Math.floor((t - Date.parse("1/1/70")) / 3600000) + s.substr(2);
+      return s;
+  }
 
 
 
-        function buildWorkersTable() {
+  function buildWorkersTable() {
 
-            if (document.getElementById('workerList').style.display != 'table') {
-                document.getElementById('workerList').style.display = 'table';
-            }
-
-
-            jediDataTable = $('#workerList').dataTable({
-                //"bRetrieve": true,
-                "sPaginationType": "full_numbers",
-                paging: true,
-                "aoColumns": [
-                    {
-                        "mData": "harvesterid",
-                        sDefaultContent: "",
-                        "render": function (chunk, type, full) {
-                            return '<a target="_blank" href="'+{% url 'harvesters' %} +'?instance='+full['harvesterid']+'">'+full['harvesterid']+'</a>'
-                        },
-                    },
-                    {
-                        "mData": "workerid",
-                        sDefaultContent: "",
-                        "render": function (chunk, type, full) {
-                            return '<a target="_blank" href="'+{% url 'harvesterWorkerInfo' %} +'?harvesterid='+full['harvesterid']+'&workerid='+full['workerid']+'">'+full['workerid']+'</a>'
-                        },
-
-                    },
-                    {
-                        "mData": "sumevents",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "batchid",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "walltime",
-                        sDefaultContent: "",
-                        "render": function (chunk, type, full) {
-                            return formatSeconds(Math.round(full['walltime']*24*3600));
-                        },
-
-                    },
-                    {
-                        "mData": "ncore",
-                        sDefaultContent: "",
-                    },
-                    {
-                        "mData": "njobs",
-                        sDefaultContent: "",
-                    },
-                 ],
-
-                "aaSorting": [[0, 'asc']],
-                "ajax": {
-                    "processing": true,
-                    "url": "{% url 'workersfortask' %}?jeditaskid={{ jeditaskid }}",
-                    "dataSrc" : ''
-                },
-            })
-        };
+      if (document.getElementById('workerList').style.display != 'table') {
+          document.getElementById('workerList').style.display = 'table';
+      }
 
 
-        $(document).ready(function () {
+      jediDataTable = $('#workerList').dataTable({
+          //"bRetrieve": true,
+          "sPaginationType": "full_numbers",
+          paging: true,
+          "aoColumns": [
+              {
+                  "mData": "harvesterid",
+                  sDefaultContent: "",
+                  "render": function (chunk, type, full) {
+                      return '<a target="_blank" href="'+{% url 'harvesters' %} +'?instance='+full['harvesterid']+'">'+full['harvesterid']+'</a>'
+                  },
+              },
+              {
+                  "mData": "workerid",
+                  sDefaultContent: "",
+                  "render": function (chunk, type, full) {
+                      return '<a target="_blank" href="'+{% url 'harvesterWorkerInfo' %} +'?harvesterid='+full['harvesterid']+'&workerid='+full['workerid']+'">'+full['workerid']+'</a>'
+                  },
 
-            {% if eventssummary|length > 0 %}
+              },
+              {
+                  "mData": "sumevents",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "batchid",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "walltime",
+                  sDefaultContent: "",
+                  "render": function (chunk, type, full) {
+                      return formatSeconds(Math.round(full['walltime']*24*3600));
+                  },
 
-                if ($(".showeventsdetailsrow").is(':visible'))
-                    $(".showeventsdetailsrow").hide();
+              },
+              {
+                  "mData": "ncore",
+                  sDefaultContent: "",
+              },
+              {
+                  "mData": "njobs",
+                  sDefaultContent: "",
+              },
+           ],
 
-            {% endif %}
+          "aaSorting": [[0, 'asc']],
+          "ajax": {
+              "processing": true,
+              "url": "{% url 'workersfortask' %}?jeditaskid={{ jeditaskid }}",
+              "dataSrc" : ''
+          },
+      })
+  };
 
-            var url = window.location.href;
-            if (url.indexOf("#plots") > -1) {
-                if (!$("#plots").is(':visible'))
-                    $("#plots").show();
-                $('#plots').goTo();
-                loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');
-            }
-        })
 
-    </script>
+  $(document).ready(function () {
+
+      {% if eventssummary|length > 0 %}
+
+          if ($(".showeventsdetailsrow").is(':visible'))
+              $(".showeventsdetailsrow").hide();
+
+      {% endif %}
+
+      var url = window.location.href;
+      if (url.indexOf("#plots") > -1) {
+          $('#plots').goTo();
+          togglePlots('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');
+      }
+  })
+
+</script>
 {% endblock %}
 
 {% block helptext %}

@@ -1,61 +1,37 @@
 {% if jobsummary %}
-    <table class="fresh-table unstriped">
-      <thead>
-        <tr>
-            <th colspan=20>
-                <b>States of jobs in this task</b>         <a
-                    href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&eventservice=not2&display_limit=100">Show
-                jobs</a>
-            </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-            {% for state in jobsummary %}
-                <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
+  <table class="fresh-table unstriped">
+    <thead>
+      <tr>
+          <th colspan=20>
+              <b>States of jobs in this task</b>
+          </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th></th>
+        {% for job_category, job_states in jobsummary.items %}
+          {% if forloop.counter == 1 %}
+            {% for state in job_states %}
+              <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
             {% endfor %}
-        </tr>
+          {% endif %}
+        {% endfor %}
+      </tr>
+      {% for job_category, job_states in jobsummary.items %}
         <tr>
-            {% for state in jobsummary %}
-                <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                    {% if state.count > 0 %}
-                        <b> <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&eventservice=not2&display_limit=100">
-                            <span class='{{ state.name }}_fill'>{% if state.count > 0 %}
-                            {{ state.count }} {% endif %}</span></a> </b>
-                    {% endif %}
-                </td>
-            {% endfor %}
+          <th>{{ job_category | title }}</th>
+          {% for state in job_states %}
+            <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
+                  {% if state.count > 0 %}
+                      <b> <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode={{ requestParams.mode }}&eventservice={% if job_category == 'run' %}not2{% else %}2{% endif %}&display_limit=100">
+                          <span class='{{ state.name }}_fill'>{% if state.count > 0 %} {{ state.count }} {% endif %}</span></a> </b>
+                  {% endif %}
+            </td>
+          {% endfor %}
         </tr>
-      </tbody>
-    </table>
+      {% endfor %}
+    </tbody>
+  </table>
 {% endif %}
 
-{% if jobsummaryMerge %}
-    <table class="fresh-table unstriped">
-      <thead>
-        <tr>
-            <th colspan=20>
-                <b>States of es_merge jobs in this task</b>         <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&eventservice=2&display_limit=100">Show
-                jobs</a>
-            </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-            {% for state in jobsummaryMerge %}
-                <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
-            {% endfor %}
-        </tr>
-        <tr>
-            {% for state in jobsummaryMerge %}
-                <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                    {% if state.count > 0 %}
-                        <b> <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&display_limit=100&eventservice=2"><span
-                                class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b>
-                    {% endif %}
-                </td>
-            {% endfor %}
-        </tr>
-      </tbody>
-    </table>
-{% endif %}

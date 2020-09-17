@@ -1,4 +1,5 @@
 
+import logging
 import time
 import copy
 import random
@@ -8,32 +9,27 @@ from django.db import connection
 from django.db.models import Count
 from core.common.models import JediEvents, JediDatasetContents, JediDatasets
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
-from core.libs.exlib import dictfetchall, insert_to_temp_table
+from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, add_job_category, get_job_walltime, job_states_count_by_param
 from core.settings.local import defaultDatetimeFormat
 
+_logger = logging.getLogger('bigpandamon')
 
-def job_summary_for_task(request, query, pandaSites, statelist, extra="(1=1)", isEventServiceFlag=False):
+
+def job_summary_for_task(query, extra="(1=1)", **kwargs):
     """An attempt to rewrite it moving dropping to db request level"""
 
-    jobScoutTypes = ['cpuTime', 'walltime', 'ramCount', 'ioIntensity', 'outDiskCount']
-    jobScoutIDs = {}
-    for jst in jobScoutTypes:
-        jobScoutIDs[jst] = []
+    mode = 'nodrop'
+    if 'mode' in kwargs:
+        mode = kwargs['mode']
 
-    # hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
-    cpuTimeCurrent = []
-
-    plotsNames = ['maxpss', 'maxpsspercore', 'nevents', 'walltime', 'walltimeperevent', 'hs06s', 'cputime',
-                  'cputimeperevent', 'maxpssf', 'maxpsspercoref', 'walltimef', 'hs06sf', 'cputimef', 'cputimepereventf']
-    plotsDict = {}
-
-    newquery = copy.deepcopy(query)
-
-    values = 'actualcorecount', 'eventservice', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime'
-
-
-    # Here we apply sort for implem rule about two jobs in Jobsarchived and Jobsarchived4 with 'finished' and closed statuses
     jobs = []
+
+    # getting jobs from DB
+    newquery = copy.deepcopy(query)
+    values = ('actualcorecount', 'eventservice', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus',
+              'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics',
+              'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'transformation')
+
     start = time.time()
     jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).values(*values))
 
@@ -42,209 +38,249 @@ def job_summary_for_task(request, query, pandaSites, statelist, extra="(1=1)", i
     jobs.extend(Jobsactive4.objects.filter(**newquery).extra(where=[extra]).values(*values))
     jobs.extend(Jobsarchived4.objects.filter(**newquery).extra(where=[extra]).values(*values))
     end = time.time()
-    print("Jobs selection: {} sec".format(end - start))
-
-    # drop duplicate jobs
-    job1 = {}
-    newjobs = []
-    for job in jobs:
-        pandaid = job['pandaid']
-        dropJob = 0
-        if pandaid in job1:
-            # This is a duplicate. Drop it.
-            dropJob = 1
-        else:
-            job1[pandaid] = 1
-        if (dropJob == 0):
-            newjobs.append(job)
-    jobs = newjobs
-
-    # divide jobs into ordinary and merge (pmerge for non ES tasks and es_merge for ES tasks)
-    ojobs = []
-    mjobs = []
-
-    if not isEventServiceFlag:
-        for job in jobs:
-            if job['processingtype'] == 'pmerge':
-                mjobs.append(job)
-            else:
-                ojobs.append(job)
-    else:
-        for job in jobs:
-            if job['eventservice'] == 2 or job['eventservice'] == 'esmerge':
-                mjobs.append(job)
-            else:
-                ojobs.append(job)
-
-
-
-    # no plots, hs06 and scouts searching for merge jobs needed
-
-    for job in ojobs:
-        for jst in jobScoutTypes:
-            if 'scout='+jst in job['jobmetrics'] or ('scout=' in job['jobmetrics'] and jst in job['jobmetrics'][job['jobmetrics'].index('scout='):]):
-                jobScoutIDs[jst].append(job['pandaid'])
-
-        if 'actualcorecount' in job and job['actualcorecount'] is None:
-            job['actualcorecount'] = 1
-        if job['jobstatus'] in ['finished', 'failed'] and 'endtime' in job and 'starttime' in job and job[
-            'starttime'] and job['endtime']:
-            duration = max(job['endtime'] - job['starttime'], timedelta(seconds=0))
-            job['duration'] = duration.days * 24 * 3600 + duration.seconds
-            if job['hs06sec'] is None:
-                if job['computingsite'] in pandaSites:
-                    job['hs06sec'] = (job['duration']) * float(pandaSites[job['computingsite']]['corepower']) * job[
-                        'actualcorecount']
-                else:
-                    job['hs06sec'] = 0
-            if job['nevents'] and job['nevents'] > 0:
-                cpuTimeCurrent.append(job['hs06sec'] / job['nevents'])
-                job['walltimeperevent'] = round(job['duration'] * job['actualcorecount'] / (job['nevents'] * 1.0), 2)
-            # hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
-            # hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
-            # hs06sSum['total'] += job['hs06sec']
-
-
-
-    for pname in plotsNames:
-        plotsDict[pname] = {'sites': {}, 'ranges': {}}
-
-    for job in ojobs:
-        if job['actualcorecount'] is None:
-            job['actualcorecount'] = 1
-        if job['jobstatus'] == 'finished':
-            if job['computingsite'] not in plotsDict['nevents']['sites']:
-                plotsDict['nevents']['sites'][job['computingsite']] = []
-            plotsDict['nevents']['sites'][job['computingsite']].append(job['nevents'])
-        if job['maxpss'] is not None and job['maxpss'] != -1:
-            if job['jobstatus'] == 'finished':
-                if job['computingsite'] not in plotsDict['maxpsspercore']['sites']:
-                    plotsDict['maxpsspercore']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['maxpss']['sites']:
-                    plotsDict['maxpss']['sites'][job['computingsite']] = []
-                if job['actualcorecount'] and job['actualcorecount'] > 0:
-                    plotsDict['maxpsspercore']['sites'][job['computingsite']].append(
-                        job['maxpss'] / 1024 / job['actualcorecount'])
-                plotsDict['maxpss']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
-            elif job['jobstatus'] == 'failed':
-                if job['computingsite'] not in plotsDict['maxpsspercoref']['sites']:
-                    plotsDict['maxpsspercoref']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['maxpssf']['sites']:
-                    plotsDict['maxpssf']['sites'][job['computingsite']] = []
-                if job['actualcorecount'] and job['actualcorecount'] > 0:
-                    plotsDict['maxpsspercoref']['sites'][job['computingsite']].append(
-                        job['maxpss'] / 1024 / job['actualcorecount'])
-                plotsDict['maxpssf']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
-        if 'duration' in job and job['duration']:
-            if job['jobstatus'] == 'finished':
-                if job['computingsite'] not in plotsDict['walltime']['sites']:
-                    plotsDict['walltime']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['hs06s']['sites']:
-                    plotsDict['hs06s']['sites'][job['computingsite']] = []
-                plotsDict['walltime']['sites'][job['computingsite']].append(job['duration'])
-                plotsDict['hs06s']['sites'][job['computingsite']].append(job['hs06sec'])
-                if 'walltimeperevent' in job:
-                    if job['computingsite'] not in plotsDict['walltimeperevent']['sites']:
-                        plotsDict['walltimeperevent']['sites'][job['computingsite']] = []
-                    plotsDict['walltimeperevent']['sites'][job['computingsite']].append(job['walltimeperevent'])
-            if job['jobstatus'] == 'failed':
-                if job['computingsite'] not in plotsDict['walltimef']['sites']:
-                    plotsDict['walltimef']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['hs06sf']['sites']:
-                    plotsDict['hs06sf']['sites'][job['computingsite']] = []
-                plotsDict['walltimef']['sites'][job['computingsite']].append(job['duration'])
-                plotsDict['hs06sf']['sites'][job['computingsite']].append(job['hs06sec'])
-        if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
-            if job['jobstatus'] == 'finished':
-                if job['computingsite'] not in plotsDict['cputime']['sites']:
-                    plotsDict['cputime']['sites'][job['computingsite']] = []
-                plotsDict['cputime']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
-                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
-                    if job['computingsite'] not in plotsDict['cputimeperevent']['sites']:
-                        plotsDict['cputimeperevent']['sites'][job['computingsite']] = []
-                    plotsDict['cputimeperevent']['sites'][job['computingsite']].append(
-                        round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
-            if job['jobstatus'] == 'failed':
-                if job['computingsite'] not in plotsDict['cputimef']['sites']:
-                    plotsDict['cputimef']['sites'][job['computingsite']] = []
-                plotsDict['cputimef']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
-                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
-                    if job['computingsite'] not in plotsDict['cputimepereventf']['sites']:
-                        plotsDict['cputimepereventf']['sites'][job['computingsite']] = []
-                    plotsDict['cputimepereventf']['sites'][job['computingsite']].append(
-                        round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
-
-    # creating nevents piechart
-    if 'nevents' in plotsDict and 'sites' in plotsDict['nevents'] and len(plotsDict['nevents']['sites']) > 0:
-        plotsDict['neventsbysite'] = {}
-        for site, neventslist in plotsDict['nevents']['sites'].items():
-            plotsDict['neventsbysite'][str(site)] = sum(neventslist)
-
-
-    # creation of bins for histograms
-    nbinsmax = 100
-    for pname in plotsNames:
-        rawdata = []
-        for k, d in plotsDict[pname]['sites'].items():
-            rawdata.extend(d)
-        if len(rawdata) > 0:
-            plotsDict[pname]['stats'] = []
-            plotsDict[pname]['stats'].append(np.average(rawdata))
-            plotsDict[pname]['stats'].append(np.std(rawdata))
-            try:
-                bins, ranges = np.histogram(rawdata, bins='auto')
-            except MemoryError:
-                bins, ranges = np.histogram(rawdata, bins=nbinsmax)
-            if len(ranges) > nbinsmax + 1:
-                bins, ranges = np.histogram(rawdata, bins=nbinsmax)
-            plotsDict[pname]['ranges'] = list(np.ceil(ranges))
-            for site in plotsDict[pname]['sites'].keys():
-                sitedata = [x for x in plotsDict[pname]['sites'][site]]
-                plotsDict[pname]['sites'][site] = list(np.histogram(sitedata, ranges)[0])
-        else:
-            try:
-                del (plotsDict[pname])
-            except:
-                pass
-
+    _logger.info("Jobs selection: {} sec".format(end - start))
 
     start = time.time()
+    # drop duplicate jobs
+    jobs = drop_duplicates(jobs, id='pandaid')
 
-    ojobstates = []
-    mjobstates = []
+    # determine jobs category (build, run or merge)
+    jobs = add_job_category(jobs)
 
-    for state in statelist:
-        statecount = {}
-        statecount['name'] = state
-        statecount['count'] = 0
-        if len(ojobs) > 0:
-            for job in ojobs:
-                if job['jobstatus'] == state:
-                    statecount['count'] += 1
-                    continue
-        ojobstates.append(statecount)
-        statecount = {}
-        statecount['name'] = state
-        statecount['count'] = 0
-        if len(mjobs) > 0:
-            for job in mjobs:
-                if job['jobstatus'] == state:
-                    statecount['count'] += 1
-                    continue
-        mjobstates.append(statecount)
+    # prepare data for job consumption plots
+    plots_list = job_consumption_plots(jobs)
+
+    # jobs states aggregation by category
+
+    job_states = job_states_count_by_param(jobs, param='category')
+
+    # find scouts
+    scouts = get_task_scouts(jobs)
 
     end = time.time()
-    print("Jobs states aggregation: {} sec".format(end - start))
+    _logger.info("Preparing job states aggregation and plots: {} sec".format(end - start))
 
-    #support of old keys for scouts
-    jobScoutIDsNew = {}
-    jobScoutIDsNew['cputimescoutjob'] = jobScoutIDs['cpuTime']
-    jobScoutIDsNew['walltimescoutjob'] = jobScoutIDs['walltime']
-    jobScoutIDsNew['ramcountscoutjob'] = jobScoutIDs['ramCount']
-    jobScoutIDsNew['iointensityscoutjob'] = jobScoutIDs['ioIntensity']
-    jobScoutIDsNew['outdiskcountscoutjob'] = jobScoutIDs['outDiskCount']
+    return plots_list, job_states, scouts
 
-    return plotsDict, ojobstates, mjobstates, jobScoutIDsNew
+
+def get_task_scouts(jobs):
+    """
+    Get PanDAIDs of selected scouting metrics for a task
+    :param jobs: list of dicts
+    :return: dict:
+    """
+    scouts_dict = {}
+    scout_types = ['cpuTime', 'walltime', 'ramCount', 'ioIntensity', 'outDiskCount']
+    for jst in scout_types:
+        scouts_dict[jst] = []
+
+    for job in jobs:
+        for jst in scout_types:
+            if 'jobmetrics' in job and 'scout=' in job['jobmetrics'] and jst in job['jobmetrics'][job['jobmetrics'].index('scout='):]:
+                scouts_dict[jst].append(job['pandaid'])
+
+    return scouts_dict
+
+
+def job_consumption_plots(jobs):
+
+    plots_dict = {}
+    plot_details = {
+        'nevents_sum_finished': {'type': 'pie', 'title': 'Number of events', 'xlabel': 'N events'},
+        'nevents_finished': {'type': 'stack_bar', 'title': 'Number of events', 'xlabel': 'N events'},
+        'maxpss_finished': {'type': 'stack_bar', 'title': 'Max PSS (finished jobs)', 'xlabel': 'MaxPSS, KB'},
+        'maxpsspercore_finished': {'type': 'stack_bar', 'title': 'Max PSS/core (finished jobs)', 'xlabel': 'MaxPSS per core, KB'},
+        'walltime_finished': {'type': 'stack_bar', 'title': 'Walltime (finished jobs)', 'xlabel': 'Walltime, s'},
+        'walltimeperevent_finished': {'type': 'stack_bar', 'title': 'Walltime/event (finished jobs)', 'xlabel': 'Walltime per event, s'},
+        'hs06s_finished': {'type': 'stack_bar', 'title': 'HS06s (finished jobs)', 'xlabel': 'HS06s'},
+        'cputime_finished': {'type': 'stack_bar', 'title': 'CPU time (finished jobs)', 'xlabel': 'CPU time, s'},
+        'cputimeperevent_finished': {'type': 'stack_bar', 'title': 'CPU time/event (finished jobs)', 'xlabel': 'CPU time, s'},
+        'maxpss_failed': {'type': 'stack_bar', 'title': 'Maximum PSS (failed jobs)', 'xlabel': 'MaxPSS, kB'},
+        'maxpsspercore_failed': {'type': 'stack_bar', 'title': 'Max PSS/core (failed jobs)', 'xlabel': 'MaxPSS per core, KB'},
+        'walltime_failed': {'type': 'stack_bar', 'title': 'Walltime (failed jobs)', 'xlabel': 'walltime, s'},
+        'hs06s_failed': {'type': 'stack_bar', 'title': 'HS06s (failed jobs)', 'xlabel': 'HS06s'},
+        'cputime_failed': {'type': 'stack_bar', 'title': 'CPU time (failed jobs)', 'xlabel': 'CPU time, s'},
+        'cputimeperevent_failed': {'type': 'stack_bar', 'title': 'CPU time/event (failed jobs)', 'xlabel': 'CPU time, s'},
+    }
+
+    plots_data = {}
+    for pname, pd in plot_details.items():
+        if pd['type'] not in plots_data:
+            plots_data[pd['type']] = {}
+        plots_data[pd['type']][pname] = {
+            'build': {},
+            'run': {},
+            'merge': {}
+        }
+
+    MULTIPLIERS = {
+        "SEC": 1.0,
+        "MIN": 60.0,
+        "HOUR": 60.0 * 60.0,
+        "MB": 1024.0,
+        "GB": 1024.0 * 1024.0,
+    }
+
+    # prepare data for plots
+    for job in jobs:
+        if job['actualcorecount'] is None:
+            job['actualcorecount'] = 1
+        if 'duration' not in job:
+            job['duration'] = get_job_walltime(job)
+
+        if job['jobstatus'] in ('finished', 'failed'):
+            for pname, pd in plot_details.items():
+                if job['computingsite'] not in plots_data[pd['type']][pname][job['category']]:
+                    plots_data[pd['type']][pname][job['category']][job['computingsite']] = []
+        else:
+            continue
+
+        if 'nevents' in job and job['nevents'] >= 0 and job['jobstatus'] == 'finished':
+            plots_data['stack_bar']['nevents' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(job['nevents'])
+
+            plots_data['pie']['nevents_sum_finished'][job['category']][job['computingsite']].append(job['nevents'])
+
+        if 'maxpss' in job and job['maxpss'] is not None and job['maxpss'] >= 0:
+            plots_data['stack_bar']['maxpss' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                job['maxpss'] / MULTIPLIERS['MB']
+            )
+            if job['actualcorecount'] and job['actualcorecount'] > 0:
+                plots_data['stack_bar']['maxpsspercore' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                    job['maxpss'] / MULTIPLIERS['MB'] / job['actualcorecount']
+                )
+
+        if 'hs06sec' in jobs and job['hs06sec']:
+            plots_data['stack_bar']['hs06s' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(job['hs06sec'])
+
+        if 'duration' in job and job['duration']:
+            plots_data['stack_bar']['walltime' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(job['duration'])
+            if 'walltimeperevent' in job:
+                plots_data['stack_bar']['walltimeperevent' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                    job['walltimeperevent']
+                )
+            elif 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
+                plots_data['stack_bar']['walltimeperevent' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                    job['duration'] / (job['nevents'] * 1.0)
+                )
+
+        if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None and job['cpuconsumptiontime'] >=0:
+            plots_data['stack_bar']['cputime' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                job['cpuconsumptiontime']
+            )
+            if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
+                plots_data['stack_bar']['cputimeperevent' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                    job['cpuconsumptiontime'] / (job['nevents'] * 1.0)
+                )
+
+    # remove empty categories
+    cat_to_remove = {'build': True, 'run': True, 'merge': True}
+    for pt, td in plots_data.items():
+        for pm, pd in td.items():
+            for cat, cd in pd.items():
+                if len(cd) > 0:
+                    cat_to_remove[cat] = False
+    for pt, td in plots_data.items():
+        for pm, pd in td.items():
+            for cat, is_remove in cat_to_remove.items():
+                if is_remove:
+                    del pd[cat]
+
+    # add 'all' category to histograms
+    for pt, td in plots_data.items():
+        for pm, pd in td.items():
+            all_cat = {}
+            for cat, cd in pd.items():
+                for site, sd in cd.items():
+                    if site not in all_cat:
+                        all_cat[site] = []
+                    all_cat[site].extend(sd)
+            pd['all'] = all_cat
+
+    # remove empty plots
+    plots_to_remove = []
+    for pm, pd in plots_data['stack_bar'].items():
+        if sum([len(site_data) for site, site_data in pd['all'].items()]) == 0:
+            plots_to_remove.append(pm)
+    for pm in plots_to_remove:
+        del plots_data['stack_bar'][pm]
+        del plot_details[pm]
+
+    # prepare stack histogram data
+    for pname, pd in plot_details.items():
+        if pd['type'] == 'stack_bar':
+            plots_dict[pname] = {
+                'details': plot_details[pname],
+                'data': {},
+            }
+
+            for cat, cd in plots_data[pd['type']][pname].items():
+                stats, columns = build_stack_histogram(cd)
+                plots_dict[pname]['data'][cat] = {
+                    'columns': columns,
+                    'stats': stats,
+                }
+        elif pd['type'] == 'pie':
+            plots_dict[pname] = {
+                'details': plot_details[pname],
+                'data': {},
+            }
+            for cat, cd in plots_data[pd['type']][pname].items():
+
+                columns = []
+                for site in cd:
+                    columns.append([site, sum(cd[site])])
+
+                plots_dict[pname]['data'][cat] = {
+                    'columns': columns,
+                }
+
+    # transform dict to list
+    plots_list = []
+    for pname, pdata in plots_dict.items():
+        plots_list.append({'name': pname, 'data': pdata})
+
+    return plots_list
+
+
+def build_stack_histogram(data_raw, **kwargs):
+    """
+    Prepare stack histogram data and calculate mean and std metrics
+    :param data_raw: dict of lists
+    :param kwargs:
+    :return:
+    """
+
+    n_decimals = 0
+    if 'n_decimals' in kwargs:
+        n_decimals = kwargs['n_decimals']
+
+    N_BINS_MAX = 50
+    stats = []
+    columns = []
+
+    data_all = []
+    for site, sd in data_raw.items():
+        data_all.extend(sd)
+
+    stats.append(np.average(data_all) if not np.isnan(np.average(data_all)) else 0)
+    stats.append(np.std(data_all) if not np.isnan(np.std(data_all)) else 0)
+
+    bins_all, ranges_all = np.histogram(data_all, bins='auto')
+    if len(ranges_all) > N_BINS_MAX + 1:
+        bins_all, ranges_all = np.histogram(data_all, bins=N_BINS_MAX)
+    ranges_all = list(np.round(ranges_all, n_decimals))
+
+    x_axis_ticks = ['x']
+    x_axis_ticks.extend(ranges_all[:-1])
+    columns.append(x_axis_ticks)
+
+    for stack_param, data in data_raw.items():
+        column = [stack_param]
+        column.extend(list(np.histogram(data, ranges_all)[0]))
+
+        columns.append(column)
+
+    return stats, columns
 
 
 def event_summary_for_task(mode, query, transactionKeyDroppedJobs):

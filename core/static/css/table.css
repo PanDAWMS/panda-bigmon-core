@@ -681,6 +681,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     color: #272727;
     text-align: left;
     border: solid 1px #d3deed;
+    padding: 0.7rem;
 }
 
 .fresh-table thead th a {

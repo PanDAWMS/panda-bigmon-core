@@ -525,7 +525,7 @@ a.close-x-sign:hover {
     -webkit-justify-content: space-between;
         -ms-flex-pack: justify;
             justify-content: space-between;
-    padding: 10px 10px;
+    padding: 0.7rem;
     background-color: #d3deed;
 }
 
@@ -730,6 +730,27 @@ li.list-item > label {
   }
   .form-container select > option {
     font-weight: normal;
+  }
+
+fieldset.inline {
+  margin: 0.3rem 0.7rem;
+}
+  fieldset.inline legend {
+    font-size: 0.875rem;
+    font-weight: bold;
+    float: left;
+    display: inline-block;
+    margin: 0 0.7rem 0 0;
+  }
+  fieldset.inline label {
+    line-height: 1.5;
+    font-size: 0.875rem;
+    display: inline-block;
+    margin-right: 0.7rem;
+    vertical-align: top;
+  }
+  fieldset.inline label input {
+    margin-bottom: 0.3rem;
   }
 
 

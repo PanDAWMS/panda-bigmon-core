@@ -374,6 +374,127 @@ function draw_sbar(data, divid, title, ext) {
 }
 
 
+function draw_stacked_bar_hist(rawdata, details, divToShow)  {
+    var formatXAxis = d3.format(".2s");
+    var formatStats = d3.format(".3s");
+    var colors = [
+        "#62c9ae","#52cad7","#d5a9e4","#e38924","#9bd438","#438760","#ca46ce","#e08284","#4ba930",
+        "#a191d6","#57a3cf","#476be2","#85713b","#e35625","#a5be48","#a0c284","#498635","#e135ac","#d6c175","#dc82e1",
+        "#7458df","#e8875c","#b36eee","#5bdd61","#c39438","#d4c926","#dd74b6","#cf4482","#9e6c28","#86cd6f","#af511c",
+        "#6759bd","#a45d4d","#5c94e5","#e28fb1","#ec2c6b","#4fd08e","#9d43ba","#7a8435","#6b699b","#7f84ea","#8d5cac",
+        "#c94860","#d9a276","#a05981","#cd5644","#b3439b","#4569b1","#d9b63a","#dc3238"];
+
+    let statistics = [{type: "\u03BC", val:formatStats(rawdata['stats'][0])}];
+	  statistics.push({type:"\u03C3", val:formatStats(rawdata['stats'][1])});
+
+	  let data = rawdata['columns'];
+
+	  // make list of keys to group bars into stacks
+    var keys = [];
+    data.forEach(function (row, index) {
+        if (index >= 1) { keys.push(row[0]); }
+    });
+
+	  let is_interactive = true;
+    let legend_height = 0;
+    let data_legend_to_hide = [];
+    if (data.length > 20) {
+        // disable interactivity for plot having a lot of data
+        is_interactive = false;
+        data.forEach(function (row, index) {
+            if (index >= 20) { data_legend_to_hide.push(row[0]); }
+        });
+        legend_height = 15 * (data.length - data_legend_to_hide.length) / 4;
+        details.title += ' [only top-20 sites listed in legend]'
+    }
+    let width = getPlotWidth();
+    let height = 300 + legend_height;
+
+    var chart = c3.generate({
+        bindto: '#' + divToShow,
+        data: {
+            x: data[0][0],
+            columns: data,
+            type: 'bar',
+            groups: [keys]
+        },
+        color: {
+            pattern: colors,
+        },
+        bar: {
+            width: {
+                ratio: 0.8,
+            }
+        },
+        title: {
+            text: details.title,
+        },
+        axis: {
+            x: {
+                tick: {
+                    type: 'category',
+                    format: function (d) {return formatXAxis(d);},
+                },
+                label: {
+                    text: details.xlabel,
+                    position: 'outer-right'
+                }
+            },
+            y: {
+                tick: {
+                    format: function (d) { return d; }
+                },
+                label: {
+                  text: 'Number of jobs',
+                  position: 'outer-middle'
+                }
+            }
+        },
+        legend: {
+            hide: data_legend_to_hide,
+        },
+        tooltip: {
+          show: is_interactive,
+          format: {
+            title: function (x, index) { return  formatStats(x); }
+          }
+        },
+        interaction: {
+          enabled: is_interactive,
+        },
+        transition: {
+            duration: 0
+        },
+        size: {
+            width: width,
+            height: height,
+        },
+        padding: {
+            right: 40,
+        },
+    });
+
+    var chart_svg = d3.select('#' + divToShow + " svg");
+    var statlegend = chart_svg.selectAll(".statlegend")
+        .data(statistics)
+        .enter()
+        .append("g")
+        .attr("class", "statlegend")
+        .attr("transform", function (d, i) {
+            return "translate(" + (width - 40) + ", " + (15 + (i + 1) * 15) + ")";
+        });
+
+    statlegend.append("text")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("class", "stattext")
+        .text(function (d) {
+            return d.type + "=" + d.val;
+        });
+    return chart
+}
+
+
 function draw_bar_hist(rawdata, divToShow)  {
     var colors = [
         "#62c9ae","#52cad7","#d5a9e4","#e38924","#9bd438","#438760","#ca46ce","#e08284","#4ba930",
