@@ -107,7 +107,8 @@ from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, s
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_tmp_table_name, get_event_status_summary, get_file_info, get_job_queuetime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
-    job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task
+    job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
+    get_task_params, get_hs06s_summary_for_task
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.iDDS.algorithms import checkIfIddsTask
@@ -8566,20 +8567,28 @@ def taskInfo(request, jeditaskid=0):
         return response
 
 
+@login_customrequired
 def taskInfoNew(request, jeditaskid=0):
     try:
         jeditaskid = int(jeditaskid)
     except:
         jeditaskid = re.findall("\d+", jeditaskid)
-        jdtstr =""
+        jdtstr = ""
         for jdt in jeditaskid:
             jdtstr = jdtstr+str(jdt)
         return redirect('/task/'+jdtstr)
+
     valid, response = initRequest(request)
-    furl = request.get_full_path()
-    nomodeurl = removeParam(furl, 'mode')
-    nomodeurl = extensibleURL(request, nomodeurl)
-    if not valid: return response
+    if not valid:
+        return response
+
+    if 'jeditaskid' in request.session['requestParams']:
+        jeditaskid = int(request.session['requestParams']['jeditaskid'])
+    if jeditaskid < 0:
+        return redirect('/tasks/')
+
+    if 'taskname' in request.session['requestParams'] and request.session['requestParams']['taskname'].find('*') >= 0:
+        return taskList(request)
 
     # return json for dataTables if dt in request params
     if 'dt' in request.session['requestParams'] and 'tkiec' in request.session['requestParams']:
@@ -8590,36 +8599,33 @@ def taskInfoNew(request, jeditaskid=0):
     # Here we try to get cached data. We get any cached data is available
     data = getCacheEntry(request, "taskInfoNew", skipCentralRefresh=True)
     # data = None
-    # Temporary protection
     if data is not None:
         data = json.loads(data)
-
+        # Temporary protection
         if 'built' in data:
             ### TO DO it should be fixed
             try:
-                builtDate = datetime.strptime('2018-'+data['built'], defaultDatetimeFormat)
+                builtDate = datetime.strptime('2020-'+data['built'], defaultDatetimeFormat)
 
-                if builtDate < datetime.strptime('2018-02-27 12:00:00', defaultDatetimeFormat):
+                if builtDate < datetime.strptime('2020-09-18 18:00:00', defaultDatetimeFormat):
                     data = None
                     setCacheEntry(request, "taskInfoNew", json.dumps(data, cls=DateEncoder), 1)
             except:
                 pass
 
-    if data is not None:
         doRefresh = False
-
-        #We still want to refresh tasks if request came from central crawler and task not in the frozen state
+        # We still want to refresh tasks if request came from central crawler and task not in the frozen state
         if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
                 data['task'] and data['task']['status'] not in ['broken', 'aborted']):
             doRefresh = True
 
         # we check here whether task status didn't changed for both (user or crawler request)
         if data['task'] and data['task']['status'] and data['task']['status'] in ['done', 'finished', 'failed']:
-            if 'jeditaskid' in request.session['requestParams']: jeditaskid = int(
-                request.session['requestParams']['jeditaskid'])
+            if 'jeditaskid' in request.session['requestParams']:
+                jeditaskid = int(request.session['requestParams']['jeditaskid'])
             if jeditaskid != 0:
                 query = {'jeditaskid': jeditaskid}
-                values = ['status','superstatus','modificationtime']
+                values = ['status', 'superstatus', 'modificationtime']
                 tasks = JediTasks.objects.filter(**query).values(*values)[:1]
                 if len(tasks) > 0:
                     task = tasks[0]
@@ -8630,203 +8636,112 @@ def taskInfoNew(request, jeditaskid=0):
                         doRefresh = True
                 else:
                     doRefresh = True
+
         # temp turning on refresh of all tasks to rewrite cache
         # doRefresh = True
 
         if not doRefresh:
             data['request'] = request
-            if data['eventservice'] == True:
+            if data['eventservice']:
                 response = render_to_response('taskInfoESNew.html', data, content_type='text/html')
             else:
                 response = render_to_response('taskInfo.html', data, content_type='text/html')
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
 
-    if 'taskname' in request.session['requestParams'] and request.session['requestParams']['taskname'].find('*') >= 0:
-        return taskList(request)
     setupView(request, hours=365 * 24, limit=999999999, querytype='task')
-
-    transactionKeyDJ = -1
-    eventservice = False
-    tasks = []
-    taskrec = None
-    colnames = []
-    columns = []
-    eventsdict = []
-    objectStoreDict=[]
-    warning = {}
-    neventsProcTot = 0
-
-    if 'jeditaskid' in request.session['requestParams']:
-        jeditaskid = int(request.session['requestParams']['jeditaskid'])
-    if jeditaskid < 0:
-        return redirect('/tasks')
-
-    query = {'jeditaskid': jeditaskid}
-    tasks = JediTasks.objects.filter(**query).values()
-    if len(tasks) > 0:
-        if 'eventservice' in tasks[0] and tasks[0]['eventservice'] == 1:
-            eventservice = True
-
-    if not eventservice:
-        return redirect('/task/' + str(jeditaskid))
 
     mode = 'nodrop'
     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop':
         mode = 'drop'
 
+    eventservice = False
+    warning = {}
+
+    taskrec = None
+    query = {'jeditaskid': jeditaskid}
     extra = '(1=1)'
-
-    if mode == 'drop':
-        start = time.time()
-        extra, transactionKeyDJ = insert_dropped_jobs_to_tmp_table(query, extra)
-        end = time.time()
-        print("Inserting dropped jobs: {} sec".format(end - start))
-        print('tk of dropped jobs: {}'.format(transactionKeyDJ))
-
-
-    start = time.time()
-    tasks = cleanTaskList(request, tasks)
+    tasks = JediTasks.objects.filter(**query).values()
     try:
         taskrec = tasks[0]
-        colnames = taskrec.keys()
-        colnames = sorted(colnames)
-        for k in colnames:
-            if is_timestamp(k):
-                try:
-                    val = taskrec[k].strftime(defaultDatetimeFormat)
-                except:
-                    val = taskrec[k]
-            else:
-                val = taskrec[k]
-            if taskrec[k] == None:
-                val = ''
-                continue
-            pair = {'name': k, 'value': val}
-            columns.append(pair)
     except IndexError:
-        taskrec = None
+        _logger.exception('No task with jeditaskid={} found'.format(jeditaskid))
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'columns': None,
+        }
+        return render_to_response('taskInfoESNew.html', data, content_type='text/html')
+    _logger.info('Got task info: {}'.format(time.time() - request.session['req_init_time']))
 
-    taskpars = JediTaskparams.objects.filter(**query).values()[:1000]
-    jobparams = None
-    taskparams = None
-    taskparaml = None
-    jobparamstxt = []
-    if len(taskpars) > 0:
-        taskparams = taskpars[0]['taskparams']
-        try:
-            taskparams = json.loads(taskparams)
-            tpkeys = taskparams.keys()
-            tpkeys = sorted(tpkeys)
-            taskparaml = []
-            for k in tpkeys:
-                rec = {'name': k, 'value': taskparams[k]}
-                taskparaml.append(rec)
-            jobparams = taskparams['jobParameters']
-            if 'log' in taskparams:
-                jobparams.append(taskparams['log'])
-            for p in jobparams:
-                if p['type'] == 'constant':
-                    ptxt = p['value']
-                elif p['type'] == 'template':
-                    ptxt = "<i>%s template:</i> value='%s' " % (p['param_type'], p['value'])
-                    for v in p:
-                        if v in ['type', 'param_type', 'value']: continue
-                        ptxt += "  %s='%s'" % (v, p[v])
-                else:
-                    ptxt = '<i>unknown parameter type %s:</i> ' % p['type']
-                    for v in p:
-                        if v in ['type', ]: continue
-                        ptxt += "  %s='%s'" % (v, p[v])
-                jobparamstxt.append(ptxt)
-            jobparamstxt = sorted(jobparamstxt, key=lambda x: x.lower())
+    if 'eventservice' in taskrec and taskrec['eventservice'] == 1:
+        eventservice = True
+    if not eventservice:
+        return redirect('/task/' + str(jeditaskid))
 
-        except ValueError:
-            pass
+    # prepare ordered list of task params
+    columns = []
+    for k, val in taskrec.items():
+        if is_timestamp(k):
+            try:
+                val = taskrec[k].strftime(defaultDatetimeFormat)
+            except:
+                val = str(taskrec[k])
+        if val is None:
+            val = '-'
+            # do not add params with empty value
+            continue
+        pair = {'name': k, 'value': val}
+        columns.append(pair)
+    columns = sorted(columns, key=lambda x: x['name'].lower())
 
-    if taskrec and 'ticketsystemtype' in taskrec and taskrec['ticketsystemtype'] == '' and taskparams != None:
-        if 'ticketID' in taskparams: taskrec['ticketid'] = taskparams['ticketID']
-        if 'ticketSystemType' in taskparams: taskrec['ticketsystemtype'] = taskparams['ticketSystemType']
+    # get task params
+    taskparams, jobparams = get_task_params(jeditaskid)
 
-    if taskrec:
-        taskname = taskrec['taskname']
-    elif 'taskname' in request.session['requestParams']:
-        taskname = request.session['requestParams']['taskname']
-    else:
-        taskname = ''
-
-    logtxt = None
-    if taskrec and taskrec['errordialog']:
-        mat = re.match('^.*"([^"]+)"', taskrec['errordialog'])
-        if mat:
-            errurl = mat.group(1)
-            cmd = "curl -s -f --compressed '%s'" % errurl
-            logpfx = u"logtxt: %s\n" % cmd
-            logout = subprocess.getoutput(cmd)
-            if len(logout) > 0: logtxt = logout
+    # insert dropped jobs to temporary table if drop mode
+    transactionKeyDJ = -1
+    if mode == 'drop':
+        extra, transactionKeyDJ = insert_dropped_jobs_to_tmp_table(query, extra)
+        _logger.info("Inserting dropped jobs: {}".format(time.time() - request.session['req_init_time']))
+        _logger.info('tk of dropped jobs: {}'.format(transactionKeyDJ))
 
     # get datasets info
     dsets, dsinfo = datasets_for_task(jeditaskid)
-
     if taskrec:
         taskrec['dsinfo'] = dsinfo
         taskrec['totev'] = dsinfo['neventsTot']
         taskrec['totevproc'] = dsinfo['neventsUsedTot']
-        taskrec['totevproc_evst'] = neventsProcTot
-        taskrec['pcttotevproc_evst'] = (100 * neventsProcTot / taskrec['totev']) if (taskrec['totev'] > 0) else ''
-        taskrec['pctfinished'] = (100 * taskrec['totevproc'] / taskrec['totev']) if (taskrec['totev'] > 0) else ''
         taskrec['totevhs06'] = dsinfo['neventsTot'] * taskrec['cputime'] if (taskrec['cputime'] is not None and dsinfo['neventsTot'] > 0) else None
-
     # get input and output containers
     inctrs = []
     outctrs = []
     if taskparams and 'dsForIN' in taskparams:
         inctrs = [taskparams['dsForIN'], ]
-
     outctrs.extend(list(set([ds['containername'] for ds in dsets if ds['type'] in ('output', 'log') and ds['containername']])))
+    _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
 
+    # get event state summary
+    neventsProcTot = 0
+    event_summary_list = []
     if eventservice:
-        start = time.time()
         event_summary_list = event_summary_for_task(mode, query, transactionKeyDJ)
-        end = time.time()
-        print("Events states summary: {} sec".format(end - start))
         for entry in event_summary_list:
             entry['pct'] = round(entry['count'] * 100. / taskrec['totev'], 2) if 'totev' in taskrec and 'count' in entry else 0
             status = entry.get("statusname", "-")
             if status in ['finished', 'done', 'merged']:
                 neventsProcTot += entry.get("count", 0)
-
+        _logger.info("Events states summary: {}".format(time.time() - request.session['req_init_time']))
     if taskrec:
-        if 'creationdate' in taskrec:
-            taskrec['kibanatimefrom'] = taskrec['creationdate'].strftime("%Y-%m-%dT%H:%M:%SZ")
-        else:
-            taskrec['kibanatimefrom'] = None
-        if taskrec['status'] in ['cancelled', 'failed', 'broken', 'aborted', 'finished', 'done']:
-            taskrec['kibanatimeto'] = taskrec['modificationtime'].strftime("%Y-%m-%dT%H:%M:%SZ")
-        else:
-            taskrec['kibanatimeto'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        taskrec['totevproc_evst'] = neventsProcTot
+        taskrec['pcttotevproc_evst'] = (100 * neventsProcTot / taskrec['totev']) if (taskrec['totev'] > 0) else ''
+        taskrec['pctfinished'] = (100 * taskrec['totevproc'] / taskrec['totev']) if (taskrec['totev'] > 0) else ''
 
-    tquery = {}
-    tquery['jeditaskid'] = jeditaskid
-    tquery['storagetoken__isnull'] = False
-    storagetoken = JediDatasets.objects.filter(**tquery).values('storagetoken')
 
-    taskbrokerage = 'prod_brokerage' if (taskrec != None and taskrec['tasktype'] == 'prod') else 'analy_brokerage'
-
-    if storagetoken:
-        if taskrec:
-            taskrec['destination'] = storagetoken[0]['storagetoken']
-
-    if (taskrec != None and taskrec['cloud'] == 'WORLD'):
-        taskrec['destination'] = taskrec['nucleus']
-
-    end = time.time()
-    print("Loading task params and datasets info: {} sec".format(end - start))
-
+    # get input files state summary
     transactionKeyIEC = -1
     ifs_summary = []
     if eventservice:
-        start = time.time()
         # getting inputs states summary
         inputfiles_list, ifs_summary, ifs_tk = input_summary_for_task(taskrec, dsets)
 
@@ -8837,27 +8752,15 @@ def taskInfoNew(request, jeditaskid=0):
         # Putting list of inputs to cache separately for dataTables plugin
         transactionKeyIEC = random.randrange(100000000)
         setCacheEntry(request, transactionKeyIEC, json.dumps(inputfiles_list, cls=DateTimeEncoder), 60 * 30, isData=True)
+        _logger.info("Inputs states summary: {}".format(time.time() - request.session['req_init_time']))
 
-        end = time.time()
-        print("Inputs states summary: {} sec".format(end - start))
+    # get lighted job summary
+    jobsummarylight, jobsummarylightsplitted = job_summary_for_task_light(taskrec)
+    _logger.info("Loaded lighted job summary: {}".format(time.time() - request.session['req_init_time']))
 
     # get sum of hs06sec grouped by status
-    hquery = {}
-    hquery['jeditaskid'] = jeditaskid
-    hquery['jobstatus__in'] = ('finished', 'failed')
-    hs06sec_sum = []
-    hs06sec_sum.extend(Jobsarchived.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
-    hs06sec_sum.extend(Jobsarchived4.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
-
-    hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
-    if len(hs06sec_sum) > 0:
-        for hs in hs06sec_sum:
-            if hs['jobstatus'] == 'finished':
-                hs06sSum['finished'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
-                hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
-            elif hs['jobstatus'] == 'failed':
-                hs06sSum['failed'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
-                hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+    hs06sSum = get_hs06s_summary_for_task(jeditaskid)
+    _logger.info("Loaded sum of hs06sec grouped by status: {}".format(time.time() - request.session['req_init_time']))
 
     # get corecount and normalized corecount values
     ccquery = {}
@@ -8865,26 +8768,58 @@ def taskInfoNew(request, jeditaskid=0):
     ccquery['jobstatus'] = 'running'
     accsum = Jobsactive4.objects.filter(**ccquery).aggregate(accsum=Sum('actualcorecount'))
     naccsum = Jobsactive4.objects.filter(**ccquery).aggregate(naccsum=Sum(F('actualcorecount')*F('hs06')/F('corecount')/Value(10), output_field=FloatField()))
+    _logger.info("Loaded corecount and normalized corecount: {}".format(time.time() - request.session['req_init_time']))
 
-    # get lighted job summary
-    jobsummarylight, jobsummarylightsplitted = job_summary_for_task_light(taskrec)
+    # load logtxt
+    logtxt = None
+    if taskrec and taskrec['errordialog']:
+        mat = re.match('^.*"([^"]+)"', taskrec['errordialog'])
+        if mat:
+            errurl = mat.group(1)
+            cmd = "curl -s -f --compressed '{}'".format(errurl)
+            logout = subprocess.getoutput(cmd)
+            if len(logout) > 0:
+                logtxt = logout
+            _logger.info("Loaded error log using '{}': {}".format(cmd, time.time() - request.session['req_init_time']))
 
+    # update taskrec dct
     if taskrec:
-        taskrec['totevprochs06'] = int(hs06sSum['finished'])
-        taskrec['failedevprochs06'] = int(hs06sSum['failed'])
-        taskrec['currenttotevhs06'] = int(hs06sSum['total'])
+        if 'ticketsystemtype' in taskrec and taskrec['ticketsystemtype'] == '' and taskparams is not None:
+            if 'ticketID' in taskparams:
+                taskrec['ticketid'] = taskparams['ticketID']
+            if 'ticketSystemType' in taskparams:
+                taskrec['ticketsystemtype'] = taskparams['ticketSystemType']
+
+        if 'creationdate' in taskrec:
+            taskrec['kibanatimefrom'] = taskrec['creationdate'].strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            taskrec['kibanatimefrom'] = None
+        if taskrec['status'] in ['cancelled', 'failed', 'broken', 'aborted', 'finished', 'done']:
+            taskrec['kibanatimeto'] = taskrec['modificationtime'].strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            taskrec['kibanatimeto'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        if len(set([ds['storagetoken'] for ds in dsets if 'storagetoken' in ds and ds['storagetoken']])) > 0:
+            taskrec['destination'] = list(set([ds['storagetoken'] for ds in dsets if ds['storagetoken']]))[0]
+        elif taskrec['cloud'] == 'WORLD':
+            taskrec['destination'] = taskrec['nucleus']
+
+        if hs06sSum:
+            taskrec['totevprochs06'] = int(hs06sSum['finished']) if 'finished' in hs06sSum else None
+            taskrec['failedevprochs06'] = int(hs06sSum['failed']) if 'failed' in hs06sSum else None
+            taskrec['currenttotevhs06'] = int(hs06sSum['total']) if 'total' in hs06sSum else None
+
+        taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
         taskrec['accsum'] = accsum['accsum'] if 'accsum' in accsum else 0
         taskrec['naccsum'] = naccsum['naccsum'] if 'naccsum' in naccsum else 0
 
     # datetime type -> str in order to avoid encoding cached on template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
     datetime_dataset_param_names = ['statechecktime', 'creationtime', 'modificationtime']
-
     if taskrec:
         for dtp in datetime_task_param_names:
             if taskrec[dtp]:
                 taskrec[dtp] = taskrec[dtp].strftime(defaultDatetimeFormat)
-
     for dset in dsets:
         for dsp, dspv in dset.items():
             if dsp in datetime_dataset_param_names:
@@ -8892,59 +8827,42 @@ def taskInfoNew(request, jeditaskid=0):
             if dspv is None:
                 dset[dsp] = ''
 
+    try:
+        del request.session['TFIRST']
+        del request.session['TLAST']
+    except:
+        _logger.exception('Failed to delete TFIRST and TLAST from request session')
 
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+    if is_json_request(request):
 
         del tasks
         del columns
-        del ds
-        if taskrec:
-            taskrec['creationdate'] = taskrec['creationdate']
-            taskrec['modificationtime'] = taskrec['modificationtime']
-            taskrec['starttime'] = taskrec['starttime']
-            taskrec['statechangetime'] = taskrec['statechangetime']
 
         data = {
             'task': taskrec,
             'taskparams': taskparams,
             'datasets': dsets,
         }
-
-        del request.session['TFIRST']
-        del request.session['TLAST']
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
-        attrs = []
-        do_redirect = False
-        try:
-            if int(jeditaskid) > 0 and int(jeditaskid) < 4000000:
-                do_redirect = True
-        except:
-            pass
-        if taskrec:
-            attrs.append({'name': 'Status', 'value': taskrec['status']})
-        del request.session['TFIRST']
-        del request.session['TLAST']
+
+        furl = request.get_full_path()
+        nomodeurl = extensibleURL(request, removeParam(furl, 'mode'))
 
         data = {
             'furl': furl,
             'nomodeurl': nomodeurl,
             'mode': mode,
-            'taskbrokerage': taskbrokerage,
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'task': taskrec,
-            'taskname': taskname,
             'taskparams': taskparams,
-            'taskparaml': taskparaml,
-            'jobparams': jobparamstxt,
+            'jobparams': jobparams,
             'columns': columns,
             'jobsummarylight': jobsummarylight,
             'jobsummarylightsplitted': jobsummarylightsplitted,
             'eventssummary': event_summary_list,
-            'ossummary': objectStoreDict,
             'jeditaskid': jeditaskid,
             'logtxt': logtxt,
             'datasets': dsets,
@@ -8959,13 +8877,13 @@ def taskInfoNew(request, jeditaskid=0):
             'warning': warning,
         }
         data.update(getContextVariables(request))
-        cacheexpiration = 60*20 #second/minute * minutes
+        cacheexpiration = 60*20  # second/minute * minutes
         if taskrec and 'status' in taskrec:
             totaljobs = 0
             for state in jobsummarylight:
                 totaljobs += state['count']
-            if taskrec['status'] in ['broken','aborted','done','finished','failed'] and totaljobs > 5000:
-                cacheexpiration = 3600*24*31 # we store such data a month
+            if taskrec['status'] in ['broken', 'aborted', 'done', 'finished', 'failed'] and totaljobs > 5000:
+                cacheexpiration = 3600*24*31  # we store such data a month
         setCacheEntry(request, "taskInfoNew", json.dumps(data, cls=DateEncoder), cacheexpiration)
 
         if eventservice:
@@ -9448,14 +9366,13 @@ def getJobSummaryForTask(request, jeditaskid=-1):
     if infotype == 'jobsummary':
         data = {
             'jeditaskid': jeditaskid,
-            'request': request,
+            'mode': mode,
             'jobsummary': jobsummary,
         }
         response = render_to_response('jobSummaryForTask.html', data, content_type='text/html')
     elif infotype == 'scouts':
         data = {
             'jeditaskid': jeditaskid,
-            'request': request,
             'jobscoutids': jobScoutIDs,
         }
         response = render_to_response('scoutsForTask.html', data, content_type='text/html')

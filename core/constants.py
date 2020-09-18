@@ -49,3 +49,17 @@ RESOURCE_CAPABILITIES = (
     'SCORE_HIMEM',
     'MCORE_HIMEM'
 )
+
+EVENT_STATES = (
+    'ready',
+    'sent',
+    'running',
+    'finished',
+    'cancelled',
+    'discarded',
+    'done',
+    'failed',
+    'fatal',
+    'merged',
+    'corrupted',
+)

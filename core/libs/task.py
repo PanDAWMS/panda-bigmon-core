@@ -3,13 +3,16 @@ import logging
 import time
 import copy
 import random
+import json
 import numpy as np
 from datetime import datetime, timedelta
 from django.db import connection
-from django.db.models import Count
-from core.common.models import JediEvents, JediDatasetContents, JediDatasets
+from django.db.models import Count, Sum
+from core.common.models import JediEvents, JediDatasetContents, JediDatasets, JediTaskparams
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, add_job_category, get_job_walltime, job_states_count_by_param
+
+import core.constants as const
 from core.settings.local import defaultDatetimeFormat
 
 _logger = logging.getLogger('bigpandamon')
@@ -149,7 +152,7 @@ def job_consumption_plots(jobs):
                     job['maxpss'] / MULTIPLIERS['MB'] / job['actualcorecount']
                 )
 
-        if 'hs06sec' in jobs and job['hs06sec']:
+        if 'hs06sec' in job and job['hs06sec']:
             plots_data['stack_bar']['hs06s' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(job['hs06sec'])
 
         if 'duration' in job and job['duration']:
@@ -163,7 +166,7 @@ def job_consumption_plots(jobs):
                     job['duration'] / (job['nevents'] * 1.0)
                 )
 
-        if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None and job['cpuconsumptiontime'] >=0:
+        if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None and job['cpuconsumptiontime'] > 0:
             plots_data['stack_bar']['cputime' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
                 job['cpuconsumptiontime']
             )
@@ -366,10 +369,10 @@ def datasets_for_task(jeditaskid):
     dsquery = {
         'jeditaskid': jeditaskid,
     }
-    values = ('jeditaskid', 'datasetid', 'datasetname', 'containername','type', 'masterid', 'streamname', 'status',
-              'nevents', 'neventsused', 'neventstobeused',
-              'nfiles', 'nfilesfinished', 'nfilesfailed'
-              )
+    values = (
+        'jeditaskid', 'datasetid', 'datasetname', 'containername', 'type', 'masterid', 'streamname', 'status',
+        'storagetoken', 'nevents', 'neventsused', 'neventstobeused', 'nfiles', 'nfilesfinished', 'nfilesfailed'
+    )
     dsets.extend(JediDatasets.objects.filter(**dsquery).values(*values))
 
     nfiles = 0
@@ -622,7 +625,10 @@ def get_top_memory_consumers(taskrec):
 
 
 def get_harverster_workers_for_task(jeditaskid):
-
+    """
+    :param jeditaskid: int
+    :return: harv_workers_list: list
+    """
     jsquery = """
         select t4.*, t5.BATCHID, 
         CASE WHEN not t5.ENDTIME is null THEN t5.ENDTIME-t5.STARTTIME
@@ -712,3 +718,73 @@ def get_job_state_summary_for_tasklist(tasks):
 
     return js_count_bytask_dict
 
+
+def get_task_params(jeditaskid):
+    """
+    Extract task and job parameter lists from CLOB in  Jedi_TaskParams table
+    :param jeditaskid: int
+    :return: taskparams_list: list
+    :return: jobparams_list: list
+    """
+
+    query = {'jeditaskid': jeditaskid}
+    taskparams = JediTaskparams.objects.filter(**query).values()
+
+    taskparams_list = []
+    jobparams_list = []
+    if len(taskparams) > 0:
+        taskparams = taskparams[0]['taskparams']
+
+    try:
+        taskparams = json.loads(taskparams)
+    except ValueError:
+        pass
+
+    for k in taskparams:
+        rec = {'name': k, 'value': taskparams[k]}
+        taskparams_list.append(rec)
+    taskparams_list = sorted(taskparams_list, key=lambda x: x['name'].lower())
+
+    jobparams = taskparams['jobParameters']
+    if 'log' in taskparams:
+        jobparams.append(taskparams['log'])
+    for p in jobparams:
+        if p['type'] == 'constant':
+            ptxt = p['value']
+        elif p['type'] == 'template':
+            ptxt = "<i>{} template:</i> value='{}' ".format(p['param_type'], p['value'])
+            for v in p:
+                if v in ['type', 'param_type', 'value']:
+                    continue
+                ptxt += "  {}='{}'".format(v, p[v])
+        else:
+            ptxt = '<i>unknown parameter type {}:</i> '.format(p['type'])
+            for v in p:
+                if v in ['type', ]:
+                    continue
+                ptxt += "  {}='{}'".format(v, p[v])
+        jobparams_list.append(ptxt)
+    jobparams_list = sorted(jobparams_list, key=lambda x: x.lower())
+
+    return taskparams_list, jobparams_list
+
+
+def get_hs06s_summary_for_task(jeditaskid):
+    """"""
+    hquery = {}
+    hquery['jeditaskid'] = jeditaskid
+    hquery['jobstatus__in'] = ('finished', 'failed')
+    hs06sec_sum = []
+    hs06sec_sum.extend(Jobsarchived.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
+    hs06sec_sum.extend(Jobsarchived4.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
+    hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
+    if len(hs06sec_sum) > 0:
+        for hs in hs06sec_sum:
+            if hs['jobstatus'] == 'finished':
+                hs06sSum['finished'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+                hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+            elif hs['jobstatus'] == 'failed':
+                hs06sSum['failed'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+                hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+
+    return hs06sSum

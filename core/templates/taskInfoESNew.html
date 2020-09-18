@@ -1,5 +1,6 @@
 {% extends "_base_core.html" %}
 {% load common_tags %}
+{% load humanize %}
 {% load static %}
 {% block page_title %} {{ jeditaskid }} ES task {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
@@ -102,22 +103,26 @@
                   </td>
           {% endif %}
           {% if task.dsinfo %}
-              <td> {{ task.totev }} <br>
-                  <span class='finished'>{{ task.totevproc_evst }} ({{ task.pcttotevproc_evst|floatformat }}%)</span><br>
-                  <span class='finished'>{{ task.totevproc }} ({{ task.pctfinished|floatformat }}%)</span></td>
-              <td style="text-align:right;"> {{ task.totevhs06 }}<br>{{ task.currenttotevhs06 }}<br><span
-                      class='finished'>{{ task.totevprochs06 }}</span> <br> <span
-                      class='failed'>{{ task.failedevprochs06 }}</span></td>
-              <td> {{ task.dsinfo.nfiles }} <br>
-                  <span class='finished'>{{ task.dsinfo.nfilesfinished }} ({{ task.dsinfo.pctfinished|floatformat }}%)</span>
+              <td> {{ task.totev | intcomma }} <br>
+                  <span class='finished'>{{ task.totevproc_evst | intcomma }} ({{ task.pcttotevproc_evst|floatformat }}%)</span><br>
+                  <span class='finished'>{{ task.totevproc | intcomma }} ({{ task.pctfinished|floatformat }}%)</span></td>
+              <td style="text-align:right;"> {{ task.totevhs06 | intcomma }}
+                  <br>{{ task.currenttotevhs06 | intcomma }}
+                  <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
+                  <br><span class='failed'>{{ task.failedevprochs06 | intcomma }}</span></td>
+              <td> {{ task.dsinfo.nfiles | intcomma }} <br>
+                  <span class='finished'>{{ task.dsinfo.nfilesfinished | intcomma }} ({{ task.dsinfo.pctfinished|floatformat }}%)</span>
                   {% if task.dsinfo.nfilesfailed > 0 %} <br>
-                      <span class='failed'>{{ task.dsinfo.nfilesfailed }} ({{ task.dsinfo.pctfailed|floatformat }}%)</span>  {% endif %}
+                    <span class='failed'>{{ task.dsinfo.nfilesfailed | intcomma }} ({{ task.dsinfo.pctfailed|floatformat }}%)</span>
+                  {% endif %}
               </td>
           {% endif %}
 
           <td>{{ task.creationdate }}</td>
           <td>{{ task.modificationtime }}</td>
-          <td>{{ task.corecount }}<br><span class="finished">{% if task.accsum %}{{ task.accsum }}{% else %}-{% endif %}</span><br><span class="activated">{% if task.naccsum %}{{ task.naccsum }}{% else %}-{% endif %}</span></td>
+          <td>{{ task.corecount }}
+            <br><span class="finished">{% if task.accsum %}{{ task.accsum }}{% else %}-{% endif %}</span>
+            <br><span class="activated">{% if task.naccsum %}{{ task.naccsum }}{% else %}-{% endif %}</span></td>
           <td>{{ task.taskpriority }}</td>
           {% if task.ticketid %}
               <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a>
@@ -145,7 +150,7 @@
           <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc&type=histogram">Task
               brokerage </a>
 
-          <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc&type=histogram">Job
+          <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22{% if task.brokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc&type=histogram">Job
               brokerage </a>
 
           <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc))">Action
@@ -200,7 +205,7 @@
           {% if jobscoutids.cputimescoutjob|length > 0 or jobscoutids.walltimescoutjob|length > 0 %}
               <a href="#scoutstable">Scout jobs</a>
           {% endif %}
-          {% if taskparaml %}
+          {% if taskparams %}
               <a href="#taskparamsprodsys">Prodsys task parameters</a>
           {% endif %}
           <a href="#taskparamsjedi">PanDA/JEDI task parameters</a>
@@ -375,12 +380,8 @@
           <tbody>
             <tr>
                 {% for state in eventssummary %}
-                    <th {% if state.statusname in 'running,cancelled,discarded,failed,fatal' %} id='{{ state.statusname }}_hidden_header' style="display: none" {% endif %}><span class="{{ state.statusname }}"><b> {{ state.statusname }} </b></span>
-                        <span class="showeventsdetailsrow">
-                            {% if state.count > 0 and ossummary|length > 0 %}
-                                <br><b>ComputingElement, ObjectStoreID : Nevents</b>
-                            {% endif %}
-                        </span>
+                    <th {% if state.statusname in 'running,cancelled,discarded,failed,fatal' %} id='{{ state.statusname }}_hidden_header' style="display: none" {% endif %}>
+                      <span class="{{ state.statusname }}"><b> {{ state.statusname }} </b></span>
                     </th>
                 {% endfor %}
             </tr>
@@ -390,26 +391,14 @@
                        {% if state.count > 0 %}
                             <span class='{{ state.statusname }}_fill'>
                                 {% if state.statusname == 'failed' and state.count > 0 %}
-                                    <a onclick="loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tkdj }}' );"><b>{{ state.count }}</b></a> ({{ state.pct }}%)
-                                {% else %} {{ state.count }} ({{ state.pct }}%)
+                                    <a onclick="loadErrorSummaryData( '{{ jeditaskid }}' , '{{ mode }}' , '{{ tkdj }}' );"><b>{{ state.count | intcomma }}</b></a> ({{ state.pct }}%)
+                                {% else %} {{ state.count | intcomma }} ({{ state.pct }}%)
                                 {% endif %}
                             </span>
                         {% endif %}
                     </td>
-                {% endfor %}</tr>
-            {% if ossummary|length > 0 %}
-                <tr class="showeventsdetailsrow">
-                    {% for state in eventssummary %}
-                        <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                            {% for osrow in ossummary %}
-                                {% if state.statusname == osrow.statusname %} {{ osrow.computingelement }},
-                                    {% if osrow.objectstoreid != None %} {{ osrow.objectstoreid }} {% else %}
-                                        unknown {% endif %} : {{ osrow.nevents }} <br> {% endif %}
-                            {% endfor %}
-                        </td>
-                    {% endfor %}
-                </tr>
-            {% endif %}
+                {% endfor %}
+            </tr>
           </tbody>
         </table>
 
@@ -581,7 +570,7 @@
   {% endif %}
 
   <a name="taskparamsprodsys"></a>
-  {% if taskparaml %}
+  {% if taskparams %}
       <table class="fresh-table">
         <thead>
           <tr>
@@ -589,7 +578,7 @@
           </tr>
         </thead>
         <tbody>
-          {% for p in taskparaml %}
+          {% for p in taskparams %}
               {% if p.name != 'jobParameters' and p.name != 'log' %}
                   <tr>
                       <th> {{ p.name }} </th>
@@ -622,11 +611,11 @@
 
 {% else %}
 
-    <p>PanDA task {% if jeditaskid > 0 %}{{ jeditaskid }}:{% endif %} <b>{{ taskname }}</b> not found.</p>
-    {% if viewParams.MON_VO == 'ATLAS' %}
-      <p> Note that task info pages are currently only available for JEDI tasks in the new monitor.</p>
-      <p>You can however get a job listing for any task in quick search.</p>
-    {% endif %}
+  <p>PanDA task {% if jeditaskid > 0 %}{{ jeditaskid }}{% endif %} {% if task.taskname %}:<b>{{ task.taskname }}</b> not found.{% endif %}</p>
+  {% if viewParams.MON_VO == 'ATLAS' %}
+    <p>Note that task info pages are currently only available for JEDI tasks in the new monitor.</p>
+    <p>You can however get a job listing for any task in quick search.</p>
+  {% endif %}
 
 {% endif %}
 
@@ -759,7 +748,6 @@
       element1.style.display = "";
       }
   }
-
 
   (function ($) {
       $.fn.goTo = function () {
@@ -1219,13 +1207,6 @@
 
   $(document).ready(function () {
 
-      {% if eventssummary|length > 0 %}
-
-          if ($(".showeventsdetailsrow").is(':visible'))
-              $(".showeventsdetailsrow").hide();
-
-      {% endif %}
-
       var datasets_data = {{ datasets | safe }};
       var datasets_table = buildDatasetsTable(datasets_data);
 
@@ -1234,7 +1215,7 @@
           $('#plots').goTo();
           togglePlots('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');
       }
-  })
+  });
 
 </script>
 {% endblock %}
