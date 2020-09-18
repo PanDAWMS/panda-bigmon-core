@@ -63,7 +63,6 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
             return None
 
         request._cache_update_cache = False
-        key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
         if isData == False:
             try:
                 if request.method == "POST":
@@ -72,13 +71,10 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
                     path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
             except:
                 path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-            cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+            cache_key = '{}_{}_{}_.{}'.format(is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType, path.hexdigest())
             return cache.get(cache_key, None)
         else:
-            if 'harvester' in request.META['PATH_INFO']:
-                is_json = False
-            key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
-            cache_key = '%s' % (key_prefix)
+            cache_key = '{}_{}'.format(djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
             return cache.get(cache_key, None)
     else:
         return None
@@ -88,12 +84,11 @@ def setCacheEntry(request, viewType, data, timeout, isData = False):
     # isCache = cacheIsAvailable(request)
     isCache = True
     # do not cache data for 'refreshed' pages
-    if 'requestParams' in request.session and 'timestamp' in request.session['requestParams']:
+    if 'requestParams' in request.session and 'timestamp' in request.session['requestParams'] and not isData:
         isCache = False
     if isCache:
         is_json = is_json_request(request)
         request._cache_update_cache = False
-        key_prefix = "%s_%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
         if isData == False:
             try:
                 if request.method == "POST":
@@ -101,9 +96,9 @@ def setCacheEntry(request, viewType, data, timeout, isData = False):
                 else:
                     path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
             except: path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-            cache_key = '%s.%s' % (key_prefix, path.hexdigest())
+            cache_key = '{}_{}_{}_.{}'.format(is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType, path.hexdigest())
         else:
-            cache_key = '%s' % (key_prefix)
+            cache_key = '{}_{}'.format(djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
         cache.set(cache_key, data, timeout)
 
 
