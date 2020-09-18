@@ -362,10 +362,15 @@ def datasets_for_task(jeditaskid):
     """
     dsets = []
     dsinfo = {}
-    dsquery = {}
-    dsquery['jeditaskid'] = jeditaskid
 
-    dsets = JediDatasets.objects.filter(**dsquery).values()
+    dsquery = {
+        'jeditaskid': jeditaskid,
+    }
+    values = ('jeditaskid', 'datasetid', 'datasetname', 'containername','type', 'masterid', 'streamname', 'status',
+              'nevents', 'neventsused', 'neventstobeused',
+              'nfiles', 'nfilesfinished', 'nfilesfailed'
+              )
+    dsets.extend(JediDatasets.objects.filter(**dsquery).values(*values))
 
     nfiles = 0
     nfinished = 0
@@ -386,8 +391,10 @@ def datasets_for_task(jeditaskid):
                     scope = str(scope).split(':')[0]
                 ds['scope'] = scope
             newdslist.append(ds)
-            if ds['type'] not in ['input', 'pseudo_input']: continue
-            if ds['masterid']: continue
+            if ds['type'] not in ['input', 'pseudo_input']:
+                continue
+            if ds['masterid']:
+                continue
             if not ds['nevents'] is None and int(ds['nevents']) > 0:
                 neventsTot += int(ds['nevents'])
             if not ds['neventsused'] is None and int(ds['neventsused']) > 0:

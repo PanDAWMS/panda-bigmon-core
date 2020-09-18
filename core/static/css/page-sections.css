@@ -515,6 +515,9 @@ a.close-x-sign:hover {
 
 
 /* Cards */
+.card.card-tabs {
+  margin: 0.3rem 0;
+}
 .card-tabs .card-divider {
     display: -webkit-flex;
     display: -ms-flexbox;
@@ -576,9 +579,6 @@ a.close-x-sign:hover {
     padding: 0;
 }
 
-.card-tabs .tabs-content .card-section > :last-child {
-    margin-bottom: 0.7rem;
-}
 
 .accordion.light {
   margin-left: 0;
@@ -787,7 +787,7 @@ fieldset.inline {
     justify-content: space-between;
   }
   .card.bp-container-simple .card-section {
-    padding: 0.3rem 0;
+    padding: 0;
     margin: 0;
     color: #0a0a0a;
   }
@@ -799,6 +799,9 @@ fieldset.inline {
   }
   .card.bp-container-simple .card-section > .dataTables_wrapper {
     padding: 0 0.3rem;
+    margin: 0.3rem 0;
+  }
+  .card.bp-container-simple .card-section > table {
     margin: 0;
   }
 

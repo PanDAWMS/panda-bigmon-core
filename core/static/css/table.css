@@ -719,8 +719,14 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 }
 
 .wrap-words {
+    white-space: -moz-pre-wrap !important;
+    white-space: pre-wrap;
     word-wrap: break-word;
+    white-space: -webkit-pre-wrap;
+    word-break: break-all;
+    white-space: normal;
 }
+
 
 .fixed {
     table-layout: fixed;
