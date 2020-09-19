@@ -9311,7 +9311,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
     if 'infotype' in request.session['requestParams'] and request.session['requestParams']['infotype']:
         infotype = request.session['requestParams']['infotype']
     else:
-        return response
+        return HttpResponse(status=404)
 
     if 'es' in request.session['requestParams'] and request.session['requestParams']['es'] == 'True':
         es = True

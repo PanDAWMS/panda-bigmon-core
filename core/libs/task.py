@@ -101,6 +101,7 @@ def job_consumption_plots(jobs):
         'maxpss_failed': {'type': 'stack_bar', 'title': 'Maximum PSS (failed jobs)', 'xlabel': 'MaxPSS, kB'},
         'maxpsspercore_failed': {'type': 'stack_bar', 'title': 'Max PSS/core (failed jobs)', 'xlabel': 'MaxPSS per core, KB'},
         'walltime_failed': {'type': 'stack_bar', 'title': 'Walltime (failed jobs)', 'xlabel': 'walltime, s'},
+        'walltimeperevent_failed': {'type': 'stack_bar', 'title': 'Walltime/event (failed jobs)', 'xlabel': 'Walltime per event, s'},
         'hs06s_failed': {'type': 'stack_bar', 'title': 'HS06s (failed jobs)', 'xlabel': 'HS06s'},
         'cputime_failed': {'type': 'stack_bar', 'title': 'CPU time (failed jobs)', 'xlabel': 'CPU time, s'},
         'cputimeperevent_failed': {'type': 'stack_bar', 'title': 'CPU time/event (failed jobs)', 'xlabel': 'CPU time, s'},
