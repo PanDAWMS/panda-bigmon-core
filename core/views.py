@@ -8456,21 +8456,21 @@ def taskInfo(request, jeditaskid=0):
         if taskrec['creationdate']:
             if taskrec['creationdate'] < datetime.strptime('2018-02-07', '%Y-%m-%d'):
                 warning['dropmode'] = 'The drop mode is unavailable since the data of job retries was cleaned up. The data shown on the page is in nodrop mode.'
-            taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
-        if taskrec['modificationtime']:
-            taskrec['modificationtime'] = taskrec['modificationtime'].strftime(defaultDatetimeFormat)
-        if taskrec['starttime']:
-            taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
-        if taskrec['statechangetime']:
-            taskrec['statechangetime'] = taskrec['statechangetime'].strftime(defaultDatetimeFormat)
-        if taskrec['ttcrequested']:
-            taskrec['ttcrequested'] = taskrec['ttcrequested'].strftime(defaultDatetimeFormat)
 
+
+    # datetime type -> str in order to avoid encoding cached on template
+    datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
+    datetime_dataset_param_names = ['statechecktime', 'creationtime', 'modificationtime']
+    if taskrec:
+        for dtp in datetime_task_param_names:
+            if taskrec[dtp]:
+                taskrec[dtp] = taskrec[dtp].strftime(defaultDatetimeFormat)
     for dset in dsets:
-        dset['creationtime'] = dset['creationtime'].strftime(defaultDatetimeFormat)
-        dset['modificationtime'] = dset['modificationtime'].strftime(defaultDatetimeFormat)
-        if dset['statechecktime'] is not None:
-            dset['statechecktime'] = dset['statechecktime'].strftime(defaultDatetimeFormat)
+        for dsp, dspv in dset.items():
+            if dsp in datetime_dataset_param_names:
+                dset[dsp] = dset[dsp].strftime(defaultDatetimeFormat)
+            if dspv is None:
+                dset[dsp] = ''
 
     ### Putting list of datasets to cache separately for dataTables plugin
     transKey = random.randrange(100000000)
