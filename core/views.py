@@ -8467,7 +8467,7 @@ def taskInfo(request, jeditaskid=0):
                 taskrec[dtp] = taskrec[dtp].strftime(defaultDatetimeFormat)
     for dset in dsets:
         for dsp, dspv in dset.items():
-            if dsp in datetime_dataset_param_names:
+            if dsp in datetime_dataset_param_names and dspv is not None:
                 dset[dsp] = dset[dsp].strftime(defaultDatetimeFormat)
             if dspv is None:
                 dset[dsp] = ''
