@@ -374,7 +374,7 @@ def datasets_for_task(jeditaskid):
         'jeditaskid', 'datasetid', 'datasetname', 'containername', 'type', 'masterid', 'streamname', 'status',
         'storagetoken', 'nevents', 'neventsused', 'neventstobeused', 'nfiles', 'nfilesfinished', 'nfilesfailed'
     )
-    dsets.extend(JediDatasets.objects.filter(**dsquery).values(*values))
+    dsets.extend(JediDatasets.objects.filter(**dsquery).values())
 
     nfiles = 0
     nfinished = 0
