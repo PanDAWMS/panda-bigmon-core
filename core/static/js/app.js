@@ -39,5 +39,12 @@ function disable_input(item, options) {
     for (let i = 0; i < els.length; i++) { els[i].disabled = false; }
 }
 
-
+(function ($) {
+  $.fn.goTo = function () {
+      $('html, body').animate({
+          scrollTop: $(this).offset().top + 'px'
+      }, 'fast');
+      return this;
+  }
+})(jQuery);
 

@@ -666,6 +666,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 .fresh-table {
     width: 100%;
     background-color: #fefefe;
+    margin: 0 0 0.7rem 0;
 }
 
 .fresh-table thead {
@@ -709,6 +710,10 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     background-color: #f1f1f1;
 }
 
+.fresh-table tbody td.bold {
+  font-weight: bold;
+}
+
 .fresh-table tbody td a {
     color: rgba(53,86,129, 0.8);
     font-weight: bold;
@@ -716,6 +721,14 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 
 .fresh-table tbody td a:hover {
     color: #272727;
+}
+
+.table-scroll {
+  margin: 0 0 0.7rem 0;
+}
+.table-scroll table.fresh-table {
+  width: 100%;
+  margin: 0;
 }
 
 .wrap-words {

@@ -1,37 +1,41 @@
-{% if jobsummary %}
-  <table class="fresh-table unstriped">
-    <thead>
-      <tr>
-          <th colspan=20>
-              <b>States of jobs in this task {% if mode %}[{{ mode }} mode]{% endif %}</b>
-          </th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <th></th>
-        {% for job_category, job_states in jobsummary.items %}
-          {% if forloop.counter == 1 %}
-            {% for state in job_states %}
+  {% if jobsummary %}
+    <div class="table-scroll">
+    <table class="fresh-table unstriped">
+      <thead>
+        <tr>
+            <th colspan=20>
+                <b>States of jobs in this task {% if mode %}[{{ mode }} mode]{% endif %}</b>
+            </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th></th>
+            {% for state in jobsummary.0.job_state_counts %}
               <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
             {% endfor %}
-          {% endif %}
-        {% endfor %}
-      </tr>
-      {% for job_category, job_states in jobsummary.items %}
-        <tr>
-          <th>{{ job_category | title }}</th>
-          {% for state in job_states %}
-            <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                  {% if state.count > 0 %}
-                      <b> <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode={{ requestParams.mode }}&eventservice={% if job_category == 'run' %}not2{% else %}2{% endif %}&display_limit=100">
-                          <span class='{{ state.name }}_fill'>{% if state.count > 0 %} {{ state.count }} {% endif %}</span></a> </b>
-                  {% endif %}
-            </td>
-          {% endfor %}
         </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% endif %}
+        {% for job_category_states in jobsummary %}
+          <tr>
+            <th>{{ job_category_states.value | title }}</th>
+            {% for state in job_category_states.job_state_counts %}
+              <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
+                    {% if state.count > 0 %}
+                        <b><a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode={{ mode }}{% if job_category_states.value == 'build' %}&transformation=build*{% elif job_category_states.value == 'merge' %}&eventservice=esmerge{% else %}&eventservice=not2{% endif %}&display_limit=100">
+                           <span class='{{ state.name }}_fill'>{% if state.count > 0 %} {{ state.count }} {% endif %}</span></a> </b>
+                    {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="card bp-container-simple info">
+      <div class="card-divider">
+        <p>No jobs were found for the task</p>
+      </div>
+    </div>
+  {% endif %}
 

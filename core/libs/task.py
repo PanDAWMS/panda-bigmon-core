@@ -11,8 +11,8 @@ from django.db.models import Count, Sum
 from core.common.models import JediEvents, JediDatasetContents, JediDatasets, JediTaskparams
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, add_job_category, get_job_walltime, job_states_count_by_param
+from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp_table
 
-import core.constants as const
 from core.settings.local import defaultDatetimeFormat
 
 _logger = logging.getLogger('bigpandamon')
@@ -20,7 +20,7 @@ _logger = logging.getLogger('bigpandamon')
 
 def job_summary_for_task(query, extra="(1=1)", **kwargs):
     """An attempt to rewrite it moving dropping to db request level"""
-
+    start_time = time.time()
     mode = 'nodrop'
     if 'mode' in kwargs:
         mode = kwargs['mode']
@@ -31,39 +31,46 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
     newquery = copy.deepcopy(query)
     values = ('actualcorecount', 'eventservice', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus',
               'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics',
-              'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'transformation')
+              'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'transformation', 'jobsetid', 'specialhandling')
 
-    start = time.time()
     jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).values(*values))
-
     jobs.extend(Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).values(*values))
     jobs.extend(Jobswaiting4.objects.filter(**newquery).extra(where=[extra]).values(*values))
     jobs.extend(Jobsactive4.objects.filter(**newquery).extra(where=[extra]).values(*values))
     jobs.extend(Jobsarchived4.objects.filter(**newquery).extra(where=[extra]).values(*values))
-    end = time.time()
-    _logger.info("Jobs selection: {} sec".format(end - start))
+    _logger.info("Got jobs: {} sec".format(time.time() - start_time))
 
-    start = time.time()
     # drop duplicate jobs
     jobs = drop_duplicates(jobs, id='pandaid')
+    _logger.info("Dropped jobs: {} sec".format(time.time() - start_time))
+
+    if mode == 'drop':
+        jobs, dj, dmj = drop_job_retries(jobs, newquery['jeditaskid'], is_return_dropped_jobs=False)
+        _logger.info("Dropped job retries (drop mode): {} sec".format(time.time() - start_time))
 
     # determine jobs category (build, run or merge)
     jobs = add_job_category(jobs)
+    _logger.info("Determine job category: {} sec".format(time.time() - start_time))
 
     # prepare data for job consumption plots
     plots_list = job_consumption_plots(jobs)
+    _logger.info("Prepared job consumption plots: {} sec".format(time.time() - start_time))
 
     # jobs states aggregation by category
-
-    job_states = job_states_count_by_param(jobs, param='category')
+    job_summary_list = job_states_count_by_param(jobs, param='category')
+    job_summary_list_ordered = []
+    job_category_order = ['build', 'run', 'merge']
+    for jc in job_category_order:
+        for jcs in job_summary_list:
+            if jc == jcs['value']:
+                job_summary_list_ordered.append(jcs)
+    _logger.info("Got summary by job category: {} sec".format(time.time() - start_time))
 
     # find scouts
     scouts = get_task_scouts(jobs)
+    _logger.info("Got scouts: {} sec".format(time.time() - start_time))
 
-    end = time.time()
-    _logger.info("Preparing job states aggregation and plots: {} sec".format(end - start))
-
-    return plots_list, job_states, scouts
+    return plots_list, job_summary_list_ordered, scouts
 
 
 def get_task_scouts(jobs):
@@ -82,6 +89,15 @@ def get_task_scouts(jobs):
             if 'jobmetrics' in job and 'scout=' in job['jobmetrics'] and jst in job['jobmetrics'][job['jobmetrics'].index('scout='):]:
                 scouts_dict[jst].append(job['pandaid'])
 
+    # remove scout type if no scouts
+    st_to_remove = []
+    for jst, jstd in scouts_dict.items():
+        if len(jstd) == 0:
+            st_to_remove.append(jst)
+    for st in st_to_remove:
+        if st in scouts_dict:
+            del scouts_dict[st]
+
     return scouts_dict
 
 
@@ -91,15 +107,15 @@ def job_consumption_plots(jobs):
     plot_details = {
         'nevents_sum_finished': {'type': 'pie', 'title': 'Number of events', 'xlabel': 'N events'},
         'nevents_finished': {'type': 'stack_bar', 'title': 'Number of events', 'xlabel': 'N events'},
-        'maxpss_finished': {'type': 'stack_bar', 'title': 'Max PSS (finished jobs)', 'xlabel': 'MaxPSS, KB'},
-        'maxpsspercore_finished': {'type': 'stack_bar', 'title': 'Max PSS/core (finished jobs)', 'xlabel': 'MaxPSS per core, KB'},
+        'maxpss_finished': {'type': 'stack_bar', 'title': 'Max PSS (finished jobs)', 'xlabel': 'MaxPSS, MB'},
+        'maxpsspercore_finished': {'type': 'stack_bar', 'title': 'Max PSS/core (finished jobs)', 'xlabel': 'MaxPSS per core, MB'},
         'walltime_finished': {'type': 'stack_bar', 'title': 'Walltime (finished jobs)', 'xlabel': 'Walltime, s'},
         'walltimeperevent_finished': {'type': 'stack_bar', 'title': 'Walltime/event (finished jobs)', 'xlabel': 'Walltime per event, s'},
         'hs06s_finished': {'type': 'stack_bar', 'title': 'HS06s (finished jobs)', 'xlabel': 'HS06s'},
         'cputime_finished': {'type': 'stack_bar', 'title': 'CPU time (finished jobs)', 'xlabel': 'CPU time, s'},
         'cputimeperevent_finished': {'type': 'stack_bar', 'title': 'CPU time/event (finished jobs)', 'xlabel': 'CPU time, s'},
-        'maxpss_failed': {'type': 'stack_bar', 'title': 'Maximum PSS (failed jobs)', 'xlabel': 'MaxPSS, kB'},
-        'maxpsspercore_failed': {'type': 'stack_bar', 'title': 'Max PSS/core (failed jobs)', 'xlabel': 'MaxPSS per core, KB'},
+        'maxpss_failed': {'type': 'stack_bar', 'title': 'Maximum PSS (failed jobs)', 'xlabel': 'MaxPSS, MB'},
+        'maxpsspercore_failed': {'type': 'stack_bar', 'title': 'Max PSS/core (failed jobs)', 'xlabel': 'MaxPSS per core, MB'},
         'walltime_failed': {'type': 'stack_bar', 'title': 'Walltime (failed jobs)', 'xlabel': 'walltime, s'},
         'walltimeperevent_failed': {'type': 'stack_bar', 'title': 'Walltime/event (failed jobs)', 'xlabel': 'Walltime per event, s'},
         'hs06s_failed': {'type': 'stack_bar', 'title': 'HS06s (failed jobs)', 'xlabel': 'HS06s'},
@@ -139,7 +155,7 @@ def job_consumption_plots(jobs):
         else:
             continue
 
-        if 'nevents' in job and job['nevents'] >= 0 and job['jobstatus'] == 'finished':
+        if 'nevents' in job and job['nevents'] > 0 and job['jobstatus'] == 'finished':
             plots_data['stack_bar']['nevents' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(job['nevents'])
 
             plots_data['pie']['nevents_sum_finished'][job['category']][job['computingsite']].append(job['nevents'])
@@ -202,12 +218,15 @@ def job_consumption_plots(jobs):
 
     # remove empty plots
     plots_to_remove = []
-    for pm, pd in plots_data['stack_bar'].items():
-        if sum([len(site_data) for site, site_data in pd['all'].items()]) == 0:
-            plots_to_remove.append(pm)
+    for pt, td in plots_data.items():
+        for pm, pd in td.items():
+            if sum([len(site_data) for site, site_data in pd['all'].items()]) == 0:
+                plots_to_remove.append(pm)
     for pm in plots_to_remove:
-        del plots_data['stack_bar'][pm]
-        del plot_details[pm]
+        for pt, td in plots_data.items():
+            if pm in td:
+                del plots_data[pt][pm]
+                del plot_details[pm]
 
     # prepare stack histogram data
     for pname, pd in plot_details.items():
@@ -287,12 +306,24 @@ def build_stack_histogram(data_raw, **kwargs):
     return stats, columns
 
 
-def event_summary_for_task(mode, query, transactionKeyDroppedJobs):
+def event_summary_for_task(mode, query, **kwargs):
     """
+    Event summary for a task.
+    If drop mode, we need a transaction key (tk_dj) to except job retries. If it is not provided we do it here.
+    :param mode: str (drop or nodrop)
+    :param query: dict
+    :return: eventslist: list of dict (number of events in different states)
+    """
+    tk_dj = -1
+    if tk_dj in kwargs:
+        tk_dj = kwargs['tk_dj']
 
-    :param transactionKeyDroppedJobs:
-    :return: number of events in different states
-    """
+    if mode == 'drop' and tk_dj == -1:
+        # inserting dropped jobs to tmp table
+        extra = '(1=1)'
+        extra, tk_dj = insert_dropped_jobs_to_tmp_table(query, extra)
+
+
     eventservicestatelist = ['ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed',
                              'fatal', 'merged', 'corrupted']
     eventslist = []
@@ -329,9 +360,9 @@ def event_summary_for_task(mode, query, transactionKeyDroppedJobs):
             )  j
         WHERE ev.PANDAID = j.pandaid AND ev.jeditaskid = {} 
         GROUP BY ev.STATUS
-        """.format(jeditaskid, transactionKeyDroppedJobs, jeditaskid, transactionKeyDroppedJobs,
-                   jeditaskid, transactionKeyDroppedJobs, jeditaskid, transactionKeyDroppedJobs,
-                   jeditaskid, transactionKeyDroppedJobs, jeditaskid)
+        """.format(jeditaskid, tk_dj, jeditaskid, tk_dj,
+                   jeditaskid, tk_dj, jeditaskid, tk_dj,
+                   jeditaskid, tk_dj, jeditaskid)
         new_cur = connection.cursor()
         new_cur.execute(equerystr)
 
@@ -416,8 +447,8 @@ def datasets_for_task(jeditaskid):
     dsinfo['nfiles'] = nfiles
     dsinfo['nfilesfinished'] = nfinished
     dsinfo['nfilesfailed'] = nfailed
-    dsinfo['pctfinished'] = int(100. * nfinished / nfiles) if nfiles > 0 else 0
-    dsinfo['pctfailed'] = int(100. * nfailed / nfiles) if nfiles > 0 else 0
+    dsinfo['pctfinished'] = round(100. * nfinished / nfiles, 2) if nfiles > 0 else 0
+    dsinfo['pctfailed'] = round(100. * nfailed / nfiles, 2) if nfiles > 0 else 0
 
     dsinfo['neventsTot'] = neventsTot
     dsinfo['neventsUsedTot'] = neventsUsedTot

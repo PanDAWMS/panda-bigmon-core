@@ -8,12 +8,15 @@
 .running_tooltip:after {
     content: 'the task is running jobs';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -48,12 +51,15 @@
 .registered_tooltip:after {
     content: 'the task information is inserted to the JEDI_Tasks table';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -87,12 +93,15 @@
 .defined_tooltip:after {
     content: 'all task parameters are properly defined';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -126,12 +135,15 @@
 .assigning_tooltip:after {
     content: 'the task brokerage is assigning the task to a cloud';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -165,15 +177,18 @@
 .ready_tooltip:after {
     content: 'the task is ready to generate jobs. New jobs are generated once computing resources become available.';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
-    top: -5px;
+    top: -15px;
     left: 110%;
 }
 .ready_tooltip:before {
@@ -204,12 +219,15 @@
 .pending_tooltip:after {
     content: 'the task has a temporary problem';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -244,12 +262,15 @@
 .scouting_tooltip:after {
     content: 'the task is running scout jobs to collect job data';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -284,12 +305,15 @@
 .submitting_tooltip:after {
     content: 'the task is running scout jobs to collect job data';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -323,12 +347,15 @@
 .scouted_tooltip:after {
     content: 'all scout jobs were successfully finished';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -363,12 +390,15 @@
 .prepared_tooltip:after {
     content: 'the task is ready to go to a final status';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -403,12 +433,15 @@
 .done_tooltip:after {
     content: 'all inputs of the task were successfully processed';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -443,12 +476,15 @@
 .failed_tooltip:after {
     content: 'all inputs of the task were failed';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -483,15 +519,18 @@
 .finished_tooltip:after {
     content: 'some inputs of the task were successfully processed but others were failed or not processed since the task was terminated';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
-    top: -5px;
+    top: -15px;
     left: 110%;
 }
 .finished_tooltip:before {
@@ -523,12 +562,15 @@
 .aborting_tooltip:after {
     content: 'the task is being killed';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -563,12 +605,15 @@
 .aborted_tooltip:after {
     content: 'the task is killed';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -603,12 +648,15 @@
 .finishing_tooltip:after {
     content: 'the task is forced to get finished';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -643,12 +691,15 @@
 .topreprocess_tooltip:after {
     content: 'preprocess job is ready for the task';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -683,12 +734,15 @@
 .preprocessing_tooltip:after {
     content: 'preprocess job is running for the task';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -723,12 +777,15 @@
 .tobroken_tooltip:after {
     content: 'the task is going to broken';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -763,12 +820,15 @@
 .broken_tooltip:after {
     content: 'task cannot be executed, task definition is wrong';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -803,12 +863,15 @@
 .toretry_tooltip:after {
     content: 'the retry command was received for the task';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -843,12 +906,15 @@
 .toincexec_tooltip:after {
     content: 'the incexec command was received for the task';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -883,12 +949,15 @@
 .rerefine_tooltip:after {
     content: 'task parameters are going to be changed for incremental execution';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -923,12 +992,15 @@
 .paused_tooltip:after {
     content: 'the task is paused and does not do anything until it is resumed';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
     top: -5px;
@@ -963,15 +1035,18 @@
 .throttled_tooltip:after {
     content: 'the task is throttled to generate jobs since the largest attemptNr in the task is a multiple of 5. The throttled period is 120 x int(max(attemptNr)/5)**2 minites';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 350px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
-    top: -5px;
+    top: -15px;
     left: 110%;
 }
 .throttled_tooltip:before {
@@ -1003,15 +1078,18 @@
 .exhausted_tooltip:after {
     content: 'all reattempts were done but some inputs were still unsuccessful, and the task is configured to go to this state instead of finished to wait for manual intervention or timeout of 10 days. Also, if cpuTime of scouts jobs > 2x cpuTime of task definition, the task goes to exhausted';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 350px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
-    top: -5px;
+    top: -30px;
     left: 110%;
 }
 .exhausted_tooltip:before {
@@ -1043,15 +1121,18 @@
 .passed_tooltip:after {
     content: 'the task is ready to go to a final state after manual intervention or timeout';
     display:none;
-    width: 200px;
-    background-color: black;
+    width: 250px;
+    background-color: #272727;
     color: #fff;
-    text-align: center;
+    text-align: center; 
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1.3;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 0.3rem;
     position: absolute;
     z-index: 1;
-    top: -5px;
+    top: -15px;
     left: 110%;
 }
 .passed_tooltip:before {

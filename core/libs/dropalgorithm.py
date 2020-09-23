@@ -1,8 +1,105 @@
-import itertools, random, copy
+import random
+import copy
+import logging
+import time
 from django.db import connection
 from django.utils import timezone
+from core.libs.job import is_event_service
 from core.common.models import JediJobRetryHistory
 from core.settings.local import dbaccess
+
+_logger = logging.getLogger('bigpandamon')
+
+
+def drop_job_retries(jobs, jeditaskid, **kwards):
+    """
+    Dropping algorithm for jobs belong to a single task
+    Mandatory job's attributes:
+        PANDAID
+        JOBSTATUS
+        PROCESSINGTYPE
+        JOBSETID
+        SPECIALHANDLING
+    :param jobs: list
+    :param jeditaskid: int
+    :return:
+    """
+    start_time = time.time()
+
+    is_return_dropped_jobs = False
+    if 'is_return_dropped_jobs' in kwards:
+        is_return_dropped_jobs = True
+
+    drop_list = []
+    droppedIDs = set()
+    drop_merge_list = set()
+
+    # get job retry history for a task
+    retryquery = {
+        'jeditaskid': jeditaskid
+    }
+    extra = """
+        OLDPANDAID != NEWPANDAID 
+        AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', 'jobset_retry', 'es_merge', 'originpandaid')
+    """
+    retries = JediJobRetryHistory.objects.filter(**retryquery).extra(where=[extra]).order_by('newpandaid').values()
+    _logger.info('Got {} retries whereas total number of jobs is {}: {} sec'.format(len(retries), len(jobs),
+                                                                                    (time.time() - start_time)))
+
+    hashRetries = {}
+    for retry in retries:
+        hashRetries[retry['oldpandaid']] = retry
+
+    newjobs = []
+    for job in jobs:
+        dropJob = 0
+        pandaid = job['pandaid']
+        if not is_event_service(job):
+            if pandaid in hashRetries:
+                retry = hashRetries[pandaid]
+                if retry['relationtype'] in ('', 'retry') or (job['processingtype'] == 'pmerge' and job['jobstatus'] in ('failed', 'cancelled') and retry['relationtype'] == 'merge'):
+                    dropJob = retry['newpandaid']
+            else:
+                if job['jobsetid'] in hashRetries and hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry':
+                    dropJob = 1
+        else:
+
+            if job['pandaid'] in hashRetries and job['jobstatus'] not in ('finished', 'merging'):
+                if hashRetries[job['pandaid']]['relationtype'] == 'retry':
+                    dropJob = 1
+
+            # if hashRetries[job['pandaid']]['relationtype'] == 'es_merge' and job['jobsubstatus'] == 'es_merge':
+            #     dropJob = 1
+
+            if dropJob == 0:
+                if job['jobsetid'] in hashRetries and hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry':
+                    dropJob = 1
+
+                if job['jobstatus'] == 'closed' and job['jobsubstatus'] in ('es_unused', 'es_inaction',):
+                    dropJob = 1
+
+        if dropJob == 0 and not is_return_dropped_jobs:
+            #     and not (
+            #     'processingtype' in request.session['requestParams'] and request.session['requestParams'][
+            # 'processingtype'] == 'pmerge')
+
+            if job['processingtype'] != 'pmerge':
+                newjobs.append(job)
+            else:
+                drop_merge_list.add(pandaid)
+        elif dropJob == 0:
+            newjobs.append(job)
+        else:
+            if pandaid not in droppedIDs:
+                droppedIDs.add(pandaid)
+                drop_list.append({'pandaid': pandaid, 'newpandaid': dropJob})
+
+    _logger.info('{} jobs dropped: {} sec'.format(len(jobs) - len(newjobs), time.time() - start_time))
+    drop_list = sorted(drop_list, key=lambda x: -x['pandaid'])
+    jobs = newjobs
+
+    return jobs, drop_list, drop_merge_list
+
 
 def dropRetrielsJobs(jeditaskid,extra=None,isEventTask=False):
     droppedIDList = []
@@ -54,6 +151,7 @@ def dropRetrielsJobs(jeditaskid,extra=None,isEventTask=False):
             wildCardExtension = 'jobsetid IN (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1Debug WHERE TRANSACTIONKEY=%s)' % (
             tk)
     return tk, droppedIDList,wildCardExtension
+
 
 def clearDropRetrielsJobs(tk,jobs,droplist=0,isEventTask=False,isReturnDroppedPMerge = False):
     newjobs=[]

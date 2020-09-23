@@ -20,21 +20,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.js"></script>
 {% endblock %}
-{% block subtitle %}PanDA Event Service task {{ jeditaskid }} {% if task.site %} at {{ task.site }} {% endif %} {% endblock %}
+{% block subtitle %}Event Service task {{ jeditaskid }}{% if task.site %} at {{ task.site }} {% endif %}, input-centric view {% endblock %}
 
 {% block body %}
 
 {% if columns %}
-
-  <div class="callout success small" data-closable>
-    <h5>This is a new input-based ES task monitoring page! </h5>
-    <p>The page is nodrop mode by default. The jobs states summary is available as on-demand feature from "Show" drop-down list.
-        The old version of ES task page is accessible from "Go to" drop-down list below or through
-        <a href="{% url 'taskInfo' jeditaskid %}?version=old">link</a>. </p>
-      <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-          <span aria-hidden="true">&times;</span>
-    </button>
-  </div>
 
   <table class="fresh-table unstriped">
     <thead>
@@ -65,8 +55,11 @@
                       class='done'>done</span><br> <span class='failed'>failed</span></th>
               <th> Ninputfiles <br> <span class='finished'>finished</span> <br> <span class='failed'>failed</span></th>
           {% endif %}
-          <th>Created</th>
-          <th>Modified</th>
+          <th>Time stamps:
+            <br><span class="defined">created</span>
+            <br><span class="activated">started</span>
+            <br><span class="closed">last modified</span>
+          </th>
           <th>Cores <br>Defined <br><span class="finished">Running</span> <br><span class="activated">Normalized</span></th>
           <th>Priority</th>
           {% if task.ticketid %}
@@ -117,9 +110,10 @@
                   {% endif %}
               </td>
           {% endif %}
-
-          <td>{{ task.creationdate }}</td>
-          <td>{{ task.modificationtime }}</td>
+          <td>{% if task.creationdate %}<span class="defined">{{ task.creationdate }}</span>{% else %}&mdash;{% endif %}
+            <br>{% if task.starttime %}<span class="activated">{{ task.starttime }}</span>{% else %}&mdash;{% endif %}
+            <br>{% if task.modificationtime %}<span class="closed">{{ task.modificationtime }}</span>{% else %}&mdash;{% endif %}
+          </td>
           <td>{{ task.corecount }}
             <br><span class="finished">{% if task.accsum %}{{ task.accsum }}{% else %}-{% endif %}</span>
             <br><span class="activated">{% if task.naccsum %}{{ task.naccsum }}{% else %}-{% endif %}</span></td>
@@ -132,6 +126,26 @@
     </tbody>
   </table>
 
+  {% if task.errordialog %}
+    <div class="card bp-container-simple warning">
+      {% if logtxt %}
+        <div class="card-divider">
+          <h5>Logged status: {{ task.errordialog|safe }}</h5>
+        </div>
+        <div class="card-section scrollable">
+          <pre>
+          {{ logtxt }}
+          </pre>
+        </div>
+      {% else %}
+        <div class="card-divider errorlog">
+          <h5>Logged status: {{ task.errordialog|safe }}</h5>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <div class="bp-container-wrapper">
   <div class="dropdownplots">
       <button class="dropdownbutton">Task extra info</button>
       <div id="dropdown-plotchoice" class="dropdown-plot">
@@ -246,6 +260,7 @@
           </div>
       {% endif %}
   {% endwith %}
+  </div>
 
   {% if warning.dropmode %}
       <div class="callout warning" data-closable>
@@ -406,36 +421,15 @@
 
       </div>
     </div>
-
   {% endif %}
 
   <div id="jobsummarytables">
       {% if requestParams.warning %}
-              <div class="callout small alert">
-              <p style="color:brown">{{ requestParams.warning }}</p>
-              </div>
+        <div class="callout small alert">
+          <p style="color:brown">{{ requestParams.warning }}</p>
+        </div>
       {% endif %}
   </div>
-
-  {% if task.errordialog %}
-      <p>
-      {% if logtxt %}
-          <div class="card scrollable">
-              <div class="card-divider errorlog">
-                  <h5>Logged status: {{ task.errordialog|safe }}</h5>
-              </div>
-              <div class="card-section errorlog">
-                  <pre>
-                  {{ logtxt }}
-                  </pre>
-              </div>
-          </div>
-      {% else %}
-          <div class="card-divider errorlog">
-              <h5>Logged status: {{ task.errordialog|safe }}</h5>
-          </div>
-      {% endif %}
-  {% endif %}
 
   <div id="scoutstable"></div>
 
@@ -623,7 +617,6 @@
 
 
 {% block js_body_page %}
-{#  <script src="{% static 'js/d3jsplot.js' %}?"></script>#}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
   <script>
   app.controller('jobConsumptionPlotsController', function($scope, $http, $sce) {
@@ -748,15 +741,6 @@
       element1.style.display = "";
       }
   }
-
-  (function ($) {
-      $.fn.goTo = function () {
-          $('html, body').animate({
-              scrollTop: $(this).offset().top + 'px'
-          }, 'fast');
-          return this;
-      }
-  })(jQuery);
 
   function formatSeconds(secs) {
       var t = new Date(1970,0,1);

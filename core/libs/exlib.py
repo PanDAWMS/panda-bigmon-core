@@ -79,19 +79,29 @@ def job_states_count_by_param(jobs, **kwargs):
     for job in jobs:
         job_states_count_dict[job[param]][job['jobstatus']] += 1
 
-    job_states_count_list = {}
+    job_summary_dict = {}
     for pv, data in job_states_count_dict.items():
-        if pv not in job_states_count_list:
-            job_states_count_list[pv] = []
+        if pv not in job_summary_dict:
+            job_summary_dict[pv] = []
 
             for state in const.JOB_STATES:
                 statecount = {
                     'name': state,
                     'count': job_states_count_dict[pv][state],
                 }
-                job_states_count_list[pv].append(statecount)
+                job_summary_dict[pv].append(statecount)
 
-    return job_states_count_list
+    # dict -> list
+    job_summary_list = []
+    for key, val in job_summary_dict.items():
+        tmp_dict = {
+            'param': param,
+            'value': key,
+            'job_state_counts': val,
+        }
+        job_summary_list.append(tmp_dict)
+
+    return job_summary_list
 
 
 def getDataSetsForATask(taskid, type = None):
