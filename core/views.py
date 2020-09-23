@@ -79,7 +79,7 @@ import hashlib
 import core.Customrenderer as Customrenderer
 import collections, pickle
 
-from threading import Thread,Lock
+from threading import Thread, Lock
 import base64
 import urllib3
 from django.views.decorators.cache import never_cache
@@ -105,10 +105,10 @@ from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, set_cache_timeout
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
-    is_job_active, get_tmp_table_name, get_event_status_summary, get_file_info, get_job_queuetime
+    is_job_active, get_event_status_summary, get_file_info, get_job_queuetime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
-    get_task_params, get_hs06s_summary_for_task
+    get_task_params, get_hs06s_summary_for_task, cleanTaskList
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.job import is_event_service
 from core.libs.bpuser import get_relevant_links, filterErrorData
@@ -1542,114 +1542,6 @@ def reconstructJobsConsumers(jobsList):
             job['consumer'] = None
 
     return jobsList
-    
-
-
-def cleanTaskList(request, tasks):
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
-
-    for task in tasks:
-        if task['transpath']: task['transpath'] = task['transpath'].split('/')[-1]
-        if task['statechangetime'] == None: task['statechangetime'] = task['modificationtime']
-
-    ## Get status of input processing as indicator of task progress
-    dsquery = {}
-    dsquery['type__in'] = ['input', 'pseudo_input']
-    dsquery['masterid__isnull'] = True
-    taskl = []
-    for t in tasks:
-        taskl.append(t['jeditaskid'])
-    # dsquery['jeditaskid__in'] = taskl
-
-    random.seed()
-    transactionKey = random.randrange(1000000)
-
-    new_cur = connection.cursor()
-    for id in taskl:
-        new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
-            tmpTableName, id, transactionKey))  # Backend dependable
-
-    dsets = JediDatasets.objects.filter(**dsquery).extra(
-        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values(
-        'jeditaskid', 'nfiles', 'nfilesfinished', 'nfilesfailed')
-    dsinfo = {}
-    if len(dsets) > 0:
-        for ds in dsets:
-            taskid = ds['jeditaskid']
-            if taskid not in dsinfo:
-                dsinfo[taskid] = []
-            dsinfo[taskid].append(ds)
-
-    for task in tasks:
-        if 'totevrem' not in task:
-            task['totevrem'] = None
-        if 'eventservice' in task:
-            if task['eventservice'] == 1:
-                task['eventservice'] = 'eventservice'
-            else:
-                task['eventservice'] = 'ordinary'
-        if 'reqid' in task and task['reqid'] is not None and task['reqid'] < 100000 and task['reqid'] > 100 and task['reqid'] != 300 and (
-            ('tasktype' in task) and (not task['tasktype'].startswith('anal'))):
-            task['deftreqid'] = task['reqid']
-        if 'corecount' in task and task['corecount'] is None:
-            task['corecount'] = 1
-        # if task['status'] == 'running' and task['jeditaskid'] in dsinfo:
-        dstotals = {}
-        dstotals['nfiles'] = 0
-        dstotals['nfilesfinished'] = 0
-        dstotals['nfilesfailed'] = 0
-        dstotals['pctfinished'] = 0
-        dstotals['pctfailed'] = 0
-        if (task['jeditaskid'] in dsinfo):
-            nfiles = 0
-            nfinished = 0
-            nfailed = 0
-            for ds in dsinfo[task['jeditaskid']]:
-                if int(ds['nfiles']) > 0:
-                    nfiles += int(ds['nfiles'])
-                    nfinished += int(ds['nfilesfinished'])
-                    nfailed += int(ds['nfilesfailed'])
-            if nfiles > 0:
-                dstotals = {}
-                dstotals['nfiles'] = nfiles
-                dstotals['nfilesfinished'] = nfinished
-                dstotals['nfilesfailed'] = nfailed
-                dstotals['pctfinished'] = int(100. * nfinished / nfiles)
-                dstotals['pctfailed'] = int(100. * nfailed / nfiles)
-
-        task['dsinfo'] = dstotals
-
-    if 'sortby' in request.session['requestParams']:
-        sortby = request.session['requestParams']['sortby']
-        if sortby == 'time-ascending':
-            tasks = sorted(tasks, key=lambda x: x['modificationtime'])
-        if sortby == 'time-descending':
-            tasks = sorted(tasks, key=lambda x: x['modificationtime'], reverse=True)
-        if sortby == 'statetime-descending':
-            tasks = sorted(tasks, key=lambda x: x['statechangetime'], reverse=True)
-        elif sortby == 'priority':
-            tasks = sorted(tasks, key=lambda x: x['taskpriority'], reverse=True)
-        elif sortby == 'nfiles':
-            tasks = sorted(tasks, key=lambda x: x['dsinfo']['nfiles'], reverse=True)
-        elif sortby == 'pctfinished':
-            tasks = sorted(tasks, key=lambda x: x['dsinfo']['pctfinished'], reverse=True)
-        elif sortby == 'pctfailed':
-            tasks = sorted(tasks, key=lambda x: x['dsinfo']['pctfailed'], reverse=True)
-        elif sortby == 'taskname':
-            tasks = sorted(tasks, key=lambda x: x['taskname'])
-        elif sortby == 'jeditaskid' or sortby == 'taskid':
-            tasks = sorted(tasks, key=lambda x: -x['jeditaskid'])
-        elif sortby == 'cloud':
-            tasks = sorted(tasks, key=lambda x: x['cloud'], reverse=True)
-
-    else:
-        sortby = "jeditaskid"
-        tasks = sorted(tasks, key=lambda x: -x['jeditaskid'])
-
-    return tasks
 
 
 def jobSummaryDict(request, jobs, fieldlist=None):
@@ -4226,6 +4118,10 @@ def userInfo(request, user=''):
     # enddate = enddate.strftime(defaultDatetimeFormat)
     if enddate == None:
         enddate = timezone.now()  # .strftime(defaultDatetimeFormat)
+    if 'sortby' not in request.session['requestParams']:
+        sortby = request.session['requestParams']['sortby']
+    else:
+        sortby = None
 
     query['modificationtime__castdate__range'] = [startdate, enddate]
 
@@ -4235,9 +4131,7 @@ def userInfo(request, user=''):
     else:
         tasks = JediTasks.objects.filter(**query).filter(userQueryTask).values()
 
-
-    tasks = sorted(tasks, key=lambda x: -x['jeditaskid'])
-    tasks = cleanTaskList(request, tasks)
+    tasks = cleanTaskList(tasks, sortby=sortby, add_datasets_info=True)
     ntasks = len(tasks)
     tasksumd = taskSummaryDict(request, tasks)
 
@@ -6785,6 +6679,9 @@ def taskList(request):
         hours = 3 * 24
     else:
         hours = 7 * 24
+    sortby = None
+    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby']:
+        sortby = request.session['requestParams']['sortby']
     eventservice = False
     if 'eventservice' in request.session['requestParams'] and (
             request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
@@ -6957,7 +6854,7 @@ def taskList(request):
     if len(hashtags) > 0:
         hashtags = sorted(hashtags, key=lambda h: h.lower())
 
-    tasks = cleanTaskList(request, tasks)
+    tasks = cleanTaskList(tasks, sortby=sortby, add_datasets_info=True)
     ntasks = len(tasks)
     nmax = ntasks
 
@@ -7929,8 +7826,8 @@ def taskInfo(request, jeditaskid=0):
     taskrec = None
     query = {'jeditaskid': jeditaskid}
     tasks.extend(JediTasks.objects.filter(**query).values())
-    # TODO check why we need cleanTaskList
-    # tasks = cleanTaskList(request, tasks)
+
+    tasks = cleanTaskList(tasks, add_datasets_info=False)
     try:
         taskrec = tasks[0]
     except IndexError:
