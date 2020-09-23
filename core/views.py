@@ -101,7 +101,6 @@ from django.contrib.auth import logout as auth_logout
 from core.auth.utils import grant_rights, deny_rights
 
 from core.utils import is_json_request
-from core.libs import dropalgorithm
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, set_cache_timeout
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
