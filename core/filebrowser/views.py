@@ -196,7 +196,10 @@ def index(request):
 
     _logger.debug("index step3 - " + datetime.now().strftime("%H:%M:%S") + "  ")
     if 'json' not in request.GET:
-        return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
+        status = 200
+        if 'download' in errors and len(errors['download']) > 0:
+            status = 500
+        return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request), status=status)
     else:
         resp = HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
         _logger.debug("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")

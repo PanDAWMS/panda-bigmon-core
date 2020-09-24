@@ -58,6 +58,14 @@ select {
     text-overflow: '';
 }
 
+pre.wrap {
+   white-space: pre-wrap;       /* css-3 */
+   white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+   white-space: -pre-wrap;      /* Opera 4-6 */
+   white-space: -o-pre-wrap;    /* Opera 7 */
+   word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+
 .section{ font-weight:bold; color:darkblue; padding-bottom:10px }
 
 .docsection{ background-color:#b2d546; font-weight:bold; border-style:solid; border-width:1px; border-color:#324f00;}
@@ -929,7 +937,7 @@ fieldset.inline {
   }
 
 .card.bp-container-simple.warning {
-  border: 1px solid #FFF5D6;
+  border: none;
   font-size: 0.875rem;
 }
   .card.bp-container-simple.warning > .card-divider {
@@ -945,7 +953,9 @@ fieldset.inline {
     height: 500px;
     overflow-y: scroll;
   }
-
+  .card.bp-container-simple.warning > .card-section > pre {
+    padding: 0.3rem 0.7rem;
+  }
 
 
 .card.bp-container {

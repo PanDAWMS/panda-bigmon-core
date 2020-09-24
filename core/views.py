@@ -3599,7 +3599,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         stderr = stdout.replace('.out', '.err')
         stdlog = stdout.replace('.out', '.log')
         stdjdl = stdout.replace('.out', '.jdl')
-    elif len(harvesterInfo) > 0 and 'batchlog' in harvesterInfo[0]:
+    elif len(harvesterInfo) > 0 and 'batchlog' in harvesterInfo[0] and harvesterInfo[0]['batchlog']:
         stdlog = harvesterInfo[0]['batchlog']
         stderr = stdlog.replace('.log', '.err')
         stdout = stdlog.replace('.log', '.out')
