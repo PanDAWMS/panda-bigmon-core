@@ -21,6 +21,7 @@ _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
 hostname = "bigpanda.cern.ch"
 
+
 def index(request):
     """
         index -- filebrowser's default page

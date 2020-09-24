@@ -4113,7 +4113,7 @@ def userInfo(request, user=''):
     # enddate = enddate.strftime(defaultDatetimeFormat)
     if enddate == None:
         enddate = timezone.now()  # .strftime(defaultDatetimeFormat)
-    if 'sortby' not in request.session['requestParams']:
+    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby']:
         sortby = request.session['requestParams']['sortby']
     else:
         sortby = None
