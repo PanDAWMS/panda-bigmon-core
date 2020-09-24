@@ -10,18 +10,6 @@ from core.utils import is_json_request
 notcachedRemoteAddress = ['188.184.185.129', '188.184.116.46']
 
 
-def deleteCacheTestData(request,data):
-### Filtering data
-    if request.user.is_authenticated() and request.user.is_tester:
-        return data
-    else:
-        if data is not None:
-            for key in data.keys():
-                if '_test' in key:
-                    del data[key]
-    return data
-
-
 import socket
 import uuid
 import logging

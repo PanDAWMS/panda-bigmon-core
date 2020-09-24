@@ -102,7 +102,7 @@ from core.auth.utils import grant_rights, deny_rights
 
 from core.utils import is_json_request
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
-from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, set_cache_timeout
+from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_event_status_summary, get_file_info, get_job_queuetime
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
@@ -2153,10 +2153,6 @@ def jobList(request, mode=None, param=None):
     data = getCacheEntry(request, "jobList")
     if data is not None:
         data = json.loads(data)
-        try:
-            data = deleteCacheTestData(request,data)
-        except:
-            pass
         if 'istestmonitor' in request.session['requestParams'] and request.session['requestParams']['istestmonitor'] == 'yes':
             return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
         data['request'] = request
@@ -7736,7 +7732,7 @@ def taskInfo(request, jeditaskid=0):
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
 
     # temporarily turn off caching
-    # data = None
+    data = None
     if data is not None:
         data = json.loads(data)
         if data is not None:
@@ -7747,7 +7743,7 @@ def taskInfo(request, jeditaskid=0):
             if 'built' in data and data['built'] is not None:
                 try:
                     builtDate = datetime.strptime('2020-'+data['built'], defaultDatetimeFormat)
-                    if builtDate < datetime.strptime('2020-03-03 00:00:00', defaultDatetimeFormat):
+                    if builtDate < datetime.strptime('2020-09-24 11:00:00', defaultDatetimeFormat):
                         doRefresh = True
                 except:
                     doRefresh = True
@@ -7758,11 +7754,6 @@ def taskInfo(request, jeditaskid=0):
                     'version' not in request.session['requestParams'] or (
                         'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old' )):
                     return redirect('/tasknew/'+str(jeditaskid))
-
-            try:
-                data = deleteCacheTestData(request, data)
-            except:
-                pass
 
             # We still want to refresh tasks if request came from central crawler and task not in the frozen state
             if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
@@ -7780,7 +7771,7 @@ def taskInfo(request, jeditaskid=0):
                     if len(tasks) > 0:
                         task = tasks[0]
                         if (task['status'] == data['task']['status'] and task['superstatus'] == data['task']['superstatus'] and
-                                    task['modificationtime'].strftime(defaultDatetimeFormat) == data['task']['modificationtime']):
+                                task['modificationtime'].strftime(defaultDatetimeFormat) == data['task']['modificationtime']):
                             doRefresh = False
                         else:
                             doRefresh = True
@@ -8080,7 +8071,7 @@ def taskInfoNew(request, jeditaskid=0):
 
     # Here we try to get cached data. We get any cached data is available
     data = getCacheEntry(request, "taskInfoNew", skipCentralRefresh=True)
-    # data = None
+    data = None
     if data is not None:
         data = json.loads(data)
         # Temporary protection
@@ -8089,7 +8080,7 @@ def taskInfoNew(request, jeditaskid=0):
             try:
                 builtDate = datetime.strptime('2020-'+data['built'], defaultDatetimeFormat)
 
-                if builtDate < datetime.strptime('2020-09-18 18:00:00', defaultDatetimeFormat):
+                if builtDate < datetime.strptime('2020-09-24 11:00:00', defaultDatetimeFormat):
                     data = None
                     setCacheEntry(request, "taskInfoNew", json.dumps(data, cls=DateEncoder), 1)
             except:

@@ -19,7 +19,7 @@ from django.utils.cache import patch_cache_control, patch_response_headers
 
 
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
-from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, preparePlotData
+from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
 from core.views import login_customrequired, initRequest, setupView, escapeInput, DateEncoder, \
     extensibleURL, DateTimeEncoder, removeParam, taskSummaryDict, preprocessWildCardString
 
