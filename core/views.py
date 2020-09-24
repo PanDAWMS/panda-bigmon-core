@@ -7836,6 +7836,15 @@ def taskInfo(request, jeditaskid=0):
         }
         return render_to_response('taskInfo.html', data, content_type='text/html')
 
+    eventservice = False
+    if 'eventservice' in taskrec and (taskrec['eventservice'] == 1 or taskrec['eventservice'] == 'eventservice'):
+        eventservice = True
+
+    if eventservice:
+        if 'version' not in request.session['requestParams'] or (
+                'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old'):
+            return redirect('/tasknew/' + str(jeditaskid))
+
     # prepare ordered list of task params
     columns = []
     for k, val in taskrec.items():
@@ -7877,15 +7886,6 @@ def taskInfo(request, jeditaskid=0):
         idds_info = {'task_type': 'hpo'}
     else:
         idds_info = {'task_type': 'idds'}
-
-    eventservice = False
-    if 'eventservice' in taskrec and taskrec['eventservice'] == 1:
-        eventservice = True
-
-    if eventservice:
-        if 'version' not in request.session['requestParams'] or (
-                'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old'):
-            return redirect('/tasknew/' + str(jeditaskid))
 
     # getting job summary and plots
     plotsDict, jobsummary, scouts = job_summary_for_task(query, '(1=1)', mode=mode)
