@@ -3311,6 +3311,7 @@ def eventsInfo(request, mode=None, param=None):
 
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
+
 @login_customrequired
 @csrf_exempt
 def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
@@ -3322,7 +3323,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        if data['eventservice'] == True:
+        if data['eventservice'] is True:
             response = render_to_response('jobInfoES.html', data, content_type='text/html')
         else:
             response = render_to_response('jobInfo.html', data, content_type='text/html')
@@ -3593,11 +3594,16 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             file['attemptnr'] = dcfilesDict[file['fileid']]['attemptnr'] if file['fileid'] in dcfilesDict else file['attemptnr']
             file['maxattempt'] = dcfilesDict[file['fileid']]['maxattempt'] if file['fileid'] in dcfilesDict else None
 
-    if 'pilotid' in job and job['pilotid'] is not None and job['pilotid'].startswith('http'):
+    if 'pilotid' in job and job['pilotid'] and job['pilotid'].startswith('http') and '{' not in job['pilotid']:
         stdout = job['pilotid'].split('|')[0]
         stderr = stdout.replace('.out', '.err')
         stdlog = stdout.replace('.out', '.log')
         stdjdl = stdout.replace('.out', '.jdl')
+    elif len(harvesterInfo) > 0 and 'batchlog' in harvesterInfo[0]:
+        stdlog = harvesterInfo[0]['batchlog']
+        stderr = stdlog.replace('.log', '.err')
+        stdout = stdlog.replace('.log', '.out')
+        stdjdl = stdlog.replace('.log', '.jdl')
     else:
         stdout = stderr = stdlog = stdjdl = None
 

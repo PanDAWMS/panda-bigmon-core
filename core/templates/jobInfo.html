@@ -545,6 +545,28 @@ But if you want, you can check.
 
 {% endif %}
 
+{% if harvesterInfo %}
+<table>
+<a name="harvesterworkers"></a>
+<tr><th colspan=20 bgcolor='lightcyan'> Harvester job parameters </th></tr>
+<tr>
+<th> Harvesterid </th>
+<th> WorkerID </th>
+<th> Batchlog </th>
+<th> Computingelement </th>
+</tr>
+{% for instnace in harvesterInfo %}
+<tr>
+    <td><a href="{% url 'harvesters' %}?instance={{ instnace.harvesterid }}">{{ instnace.harvesterid }}</a></td>
+    <td><a href="{% url 'harvesterWorkerInfo' %}?harvesterid={{ instnace.harvesterid }}&workerid={{ instnace.workerid }}">{{ instnace.workerid }}</a></td>
+    <td>{% if instnace.batchlog != None %}<a href="{{instnace.batchlog}}">Link</a>{% else %} {{instnace.batchlog}} {% endif %}</td>
+    <td>{{ instnace.computingelement }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+
 <table>
 <tr><th colspan=20 bgcolor='lightcyan'> Other key job parameters </th></tr>
 	{% if job.statechangetime %}<tr><th>Last state change</th><td>to <span class={{job.jobstatus}}>{{job.jobstatus}}</span> at {{ job.statechangetime }}</td></tr></tr>{% endif %}
@@ -567,26 +589,7 @@ But if you want, you can check.
 	{% if job.batchid %}<tr><th>Batch ID</th><td>{{ job.batchid }}</td></tr>{% endif %}
 </table>
 
-{% if harvesterInfo %}
-<table>
-<a name="harvesterworkers"></a>
-<tr><th colspan=20 bgcolor='lightcyan'> Harvester job parameters </th></tr>
-<tr>
-<th> Harvesterid </th>
-<th> WorkerID </th>
-<th> Batchlog </th>
-<th> Computingelement </th>
-</tr>
-{% for instnace in harvesterInfo %}
-<tr>
-    <td><a href="{% url 'harvesters' %}?instance={{ instnace.harvesterid }}">{{ instnace.harvesterid }}</a></td>
-    <td><a href="{% url 'harvesterWorkerInfo' %}?harvesterid={{ instnace.harvesterid }}&workerid={{ instnace.workerid }}">{{ instnace.workerid }}</a></td>
-    <td>{% if instnace.batchlog != None %}<a href="{{instnace.batchlog}}">Link</a>{% else %} {{instnace.batchlog}} {% endif %}</td>
-    <td>{{ instnace.computingelement }}</td>
-</tr>
-{% endfor %}
-</table>
-{% endif %}
+
 {% if logextract %}
 <table width=1000><tr><td bgcolor="#FFF4A3"> <b>Warning: job log extract indicates possible problems </td></tr>
 <tr><td>
