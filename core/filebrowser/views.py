@@ -197,7 +197,7 @@ def index(request):
     _logger.debug("index step3 - " + datetime.now().strftime("%H:%M:%S") + "  ")
     if 'json' not in request.GET:
         status = 200
-        if 'download' in errors and len(errors['download']) > 0:
+        if 'download' in errors and errors['download'] and len(errors['download']) > 0:
             status = 500
         return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request), status=status)
     else:
