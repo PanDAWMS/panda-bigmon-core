@@ -99,9 +99,10 @@ def index(request):
     except:
         pass
 
-    # check if size of logfile is too big return to user error message containing rucio cli command to download it locally
+    # check if size of logfile is too big return to user error message with rucio cli command to download it locally
     max_sizemb = 1000
-    sizemb = None
+    sizemb = -1
+    fsize = []
     try:
         fileid = int(request.GET['fileid'])
     except:
@@ -109,9 +110,9 @@ def index(request):
     lquery = {'type': 'log'}
     if lfn and len(lfn) > 0:
         lquery['lfn'] = lfn
-        fsize = Filestable4.objects.filter(**lquery).values('fsize', 'fileid')
+        fsize.extend(Filestable4.objects.filter(**lquery).values('fsize', 'fileid', 'status'))
         if len(fsize) == 0:
-            fsize = FilestableArch.objects.filter(**lquery).values('fsize', 'fileid')
+            fsize.extend(FilestableArch.objects.filter(**lquery).values('fsize', 'fileid', 'status'))
         if len(fsize) > 0:
             try:
                 if fileid > 0:
@@ -127,7 +128,7 @@ def index(request):
     files = []
     dirprefix = ''
     tardir = ''
-    if sizemb and sizemb > max_sizemb:
+    if sizemb > max_sizemb:
         _logger.warning('Size of the requested log is {} MB which is more than limit {} MB'.format(sizemb, max_sizemb))
         errormessage = """The size of requested log is too big ({}MB). 
                             Please try to download it locally using Rucio CLI by the next command: 
@@ -197,8 +198,10 @@ def index(request):
     _logger.debug("index step3 - " + datetime.now().strftime("%H:%M:%S") + "  ")
     if 'json' not in request.GET:
         status = 200
+        # return 500 if most probably there were issue   
         if 'download' in errors and errors['download'] and len(errors['download']) > 0:
-            status = 500
+            if len(fsize) > 0 and 'status' in fsize[0] and fsize[0]['status'] != 'failed' and sizemb <= 0:
+                status = 500
         return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request), status=status)
     else:
         resp = HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
