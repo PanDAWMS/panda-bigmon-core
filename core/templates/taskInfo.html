@@ -332,7 +332,7 @@
             {% for state in job_category_states.job_state_counts %}
               <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
                     {% if state.count > 0 %}
-                        <b> <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode={{ mode }}{% if job_category == 'build' %}&transformation=build*{% elif job_category == 'merge' %}&processingtype=pmerge{% else %}&processingtype=!pmerge&prodsourcelabel={% if task.tasktype == 'prod' %}managed{% else %}user{% endif %}{% endif %}&display_limit=100">
+                        <b> <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode={{ mode }}{% if job_category_states.value == 'build' %}&transformation=build*{% elif job_category_states.value == 'merge' %}&processingtype=pmerge{% else %}&processingtype=!pmerge&prodsourcelabel={% if task.tasktype == 'prod' %}managed{% else %}user{% endif %}{% endif %}&display_limit=100">
                             <span class='{{ state.name }}_fill'>{% if state.count > 0 %} {{ state.count }} {% endif %}</span></a> </b>
                     {% endif %}
               </td>
