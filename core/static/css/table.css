@@ -551,6 +551,12 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   .data-table td.icons3 {
     padding-right: 3.5rem;
   }
+  .data-table td.icons2 {
+    padding-right: 2.5rem;
+  }
+  .data-table td.icons1 {
+    padding-right: 1.5rem;
+  }
   .data-table tbody td > a.alert {
     color: firebrick !important;
   }
@@ -575,6 +581,24 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   }
   .data-table tbody tr:nth-child(odd):hover td {
     background-color: #d4dfed !important;
+  }
+
+  .data-table tbody th.fixed30 {
+    width: 30%;
+    max-width: 30%;
+    min-width: 30%;
+  }
+  .data-table tbody td.fixed30 {
+    width: 30%;
+    max-width: 30%;
+    min-width: 30%;
+    white-space: -moz-pre-wrap !important;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    white-space: -webkit-pre-wrap;
+    word-break: break-all;
+    white-space: normal;
+
   }
 
 /*Style for compare table*/
@@ -722,6 +746,17 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 .fresh-table tbody td a:hover {
     color: #272727;
 }
+
+.fresh-table.alert thead th {
+    background-color: #FFABA2;
+    border: solid 1px #FFABA2;
+}
+.fresh-table.alert tbody a {
+  color: firebrick;
+  font-weight: bold;
+}
+
+
 
 .table-scroll {
   margin: 0 0 0.7rem 0;

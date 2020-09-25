@@ -3426,8 +3426,19 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 pass
             rw = ruciowrapper()
             rucioUserName = rw.getRucioAccountByDN(dn)
+            if len(rucioUserName) > 1:
+                rucio_username_unique = {}
+                for un in rucioUserName:
+                    if isinstance(un, dict):
+                        if 'rucio_account' in un and un['rucio_account']:
+                            rucio_username_unique[un['rucio_account']] = 1
+                    elif isinstance(un, str):
+                        rucio_username_unique[un] = 1
+                rucioUserName = list(rucio_username_unique.keys())
         else:
             rucioUserName = [jobs[0]['produserid']]
+
+
 
     try:
         job = jobs[0]
@@ -3572,6 +3583,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 for dcf in dcfiles:
                     dcfilesDict[dcf['fileid']] = dcf
         files = sorted(files, key=lambda x: x['type'])
+
     nfiles = len(files)
     logfile = {}
     for file in files:
@@ -3607,14 +3619,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     else:
         stdout = stderr = stdlog = stdjdl = None
 
-    # input,pseudo_input,output,log and alphabetically within those please
-
-    filesSorted = []
-    filesSorted.extend(sorted([file for file in files if file['type'] == 'input'], key=lambda x: x['lfn']))
-    filesSorted.extend(sorted([file for file in files if file['type'] == 'pseudo_input'], key=lambda x: x['lfn']))
-    filesSorted.extend(sorted([file for file in files if file['type'] == 'output'], key=lambda x: x['lfn']))
-    filesSorted.extend(sorted([file for file in files if file['type'] == 'log'], key=lambda x: x['lfn']))
-    files = filesSorted
 
     inputfiles = [{'jeditaskid':file['jeditaskid'], 'datasetid':file['datasetid'], 'fileid':file['fileid']} for file in files if file['type'] == 'input']
 
@@ -3799,11 +3803,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         now = datetime.now()
         tdelta = now - creationtime
         delta = int(tdelta.days) + 1
-        job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
-    if job['modificationtime']:
-        job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
-    if job['statechangetime']:
-        job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
 
     isincomparisonlist = False
     clist = []
@@ -3838,6 +3837,20 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     artqueue = {'pandaid': pandaid}
     art_test.extend(ARTTests.objects.filter(**artqueue).values())
 
+
+    # datetime type -> str in order to avoid encoding errors on template
+    datetime_job_param_names = ['creationtime', 'modificationtime', 'starttime', 'statechangetime', 'endtime']
+    datetime_file_param_names = ['creationdate', 'modificationtime']
+    if job:
+        for dtp in datetime_job_param_names:
+            if job[dtp]:
+                job[dtp] = job[dtp].strftime(defaultDatetimeFormat)
+    for f in files:
+        for fp, fpv in f.items():
+            if fp in datetime_file_param_names and fpv is not None:
+                f[fp] = f[fp].strftime(defaultDatetimeFormat)
+            if fpv is None:
+                f[fp] = ''
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
@@ -3880,13 +3893,13 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'esjobstr': esjobstr,
             'fileSummary': fileSummary,
             'built': datetime.now().strftime("%H:%M:%S"),
-            'produsername':produsername,
-            'harvesterInfo':harvesterInfo,
+            'produsername': produsername,
+            'harvesterInfo': harvesterInfo,
             'isincomparisonlist': isincomparisonlist,
             'clist': clist,
             'timedelta': delta,
             'inputfiles': inputfiles,
-            'rucioUserName':rucioUserName
+            'rucioUserName': rucioUserName
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
