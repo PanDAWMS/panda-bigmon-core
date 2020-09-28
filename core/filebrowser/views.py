@@ -13,6 +13,7 @@ from django.conf import settings
 from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_filebrowser_vo, \
     remove_folder, get_fullpath_filebrowser_directory, list_file_directory
 
+from core.auth.utils import login_customrequired
 from core.common.models import Filestable4, FilestableArch
 from core.views import DateTimeEncoder, initSelfMonitor
 from datetime import datetime
@@ -22,6 +23,7 @@ filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
 hostname = "bigpanda.cern.ch"
 
 
+@login_customrequired
 def index(request):
     """
         index -- filebrowser's default page

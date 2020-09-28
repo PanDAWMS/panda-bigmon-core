@@ -12,7 +12,8 @@ from django.db import connection
 from django.utils.cache import patch_response_headers
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.exlib import dictfetchall
-from core.views import login_customrequired, initRequest, setupView, DateEncoder, setCacheData
+from core.auth.utils import login_customrequired
+from core.views import initRequest, setupView, DateEncoder, setCacheData
 from core.common.models import JediTasksOrdered
 from core.schedresource.models import Schedconfig
 from core.settings.local import dbaccess

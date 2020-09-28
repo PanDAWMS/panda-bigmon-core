@@ -5,8 +5,8 @@ from django.utils.cache import patch_response_headers
 from django.http import JsonResponse
 from django.template.defaulttags import register
 from django.db.models import Q, F
-
-from core.views import initRequest, login_customrequired, DateEncoder
+from core.auth.utils import login_customrequired
+from core.views import initRequest, DateEncoder
 from core.iDDS.models import Transforms, Collections, Requests, Req2transforms, Processings, Contents
 from core.iDDS.useconstants import SubstitleValue
 from core.iDDS.rawsqlquery import getRequests

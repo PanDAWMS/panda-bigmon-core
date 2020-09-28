@@ -13,7 +13,8 @@ from django.db import connection
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.CustomJSONSerializer import DecimalEncoder
-from core.views import initRequest, setupView, login_customrequired, extensibleURL, DateEncoder
+from core.auth.utils import login_customrequired
+from core.views import initRequest, setupView, extensibleURL, DateEncoder
 from django.core.cache import cache
 import json
 

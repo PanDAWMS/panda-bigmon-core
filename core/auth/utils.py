@@ -3,9 +3,36 @@
 """
 
 import logging
+
+from django.http import HttpResponseRedirect
+
+from core.utils import is_json_request
 from core.common.models import BPUser
 
 _logger = logging.getLogger('bigpandamon-error')
+
+
+def login_customrequired(function):
+    def wrap(request, *args, **kwargs):
+
+        # we check here if it is a crawler:
+        notcachedRemoteAddress = ['188.184.185.129', '188.184.116.46']
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+
+        if x_forwarded_for and x_forwarded_for in notcachedRemoteAddress:
+            return function(request, *args, **kwargs)
+
+        if request.user.is_authenticated or is_json_request(request):
+            return function(request, *args, **kwargs)
+        else:
+            # if '/user/' in request.path:
+            #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
+            # else:
+            # return function(request, *args, **kwargs)
+            return HttpResponseRedirect('/login/?next='+request.get_full_path())
+    wrap.__doc__ = function.__doc__
+    wrap.__name__ = function.__name__
+    return wrap
 
 
 def grant_rights(request, rtype):

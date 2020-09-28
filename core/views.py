@@ -98,7 +98,7 @@ from core.reports import MC16aCPReport, ObsoletedTasksReport, TitanProgressRepor
 from decimal import *
 
 from django.contrib.auth import logout as auth_logout
-from core.auth.utils import grant_rights, deny_rights
+from core.auth.utils import login_customrequired, grant_rights, deny_rights
 
 from core.utils import is_json_request
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries

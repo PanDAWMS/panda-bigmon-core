@@ -12,7 +12,8 @@ from django.utils.cache import patch_response_headers
 
 from core.settings import defaultDatetimeFormat
 from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
-from core.views import login_customrequired, initRequest, setupView, DateEncoder, removeParam, preprocessWildCardString, taskSummaryDict
+from core.auth.utils import login_customrequired
+from core.views import initRequest, setupView, DateEncoder, removeParam, preprocessWildCardString, taskSummaryDict
 from core.utils import is_json_request
 
 from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots

@@ -12,7 +12,8 @@ from core.grafana.Grafana import Grafana
 from core.grafana.Query import Query
 from core.grafana.data_tranformation import stacked_hist, pledges_merging
 from core.libs.cache import setCacheEntry, getCacheEntry
-from core.views import login_customrequired, initRequest, DateTimeEncoder, DateEncoder
+from core.auth.utils import login_customrequired
+from core.views import initRequest, DateTimeEncoder, DateEncoder
 
 colours_codes = {
     "0": "#AE3C51",
