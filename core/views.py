@@ -3297,11 +3297,12 @@ def eventsInfo(request, mode=None, param=None):
 @csrf_exempt
 def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
 
     # Here we try to get cached data
     data = getCacheEntry(request, "jobInfo")
-    # data = None
+    data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
