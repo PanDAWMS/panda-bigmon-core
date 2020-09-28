@@ -117,6 +117,7 @@ from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
+from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues
 
 from django.template.context_processors import csrf
 
@@ -3518,7 +3519,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                         f['ruciodatasetname'] = dsets[0]['datasetname']
                         f['datasetname'] = dsets[0]['datasetname']
                     if job['computingsite'] in pandaSites.keys():
-                        _, _, _, computeSvsAtlasS = getCRICSites()
+                        computeSvsAtlasS = get_pq_atlas_sites()
                         f['ddmsite'] = computeSvsAtlasS.get(job['computingsite'], "")
 
                 if 'dst' in f['destinationdblocktoken']:
@@ -5042,40 +5043,6 @@ def checkUcoreSite(site, usites):
        isUsite = True
     return isUsite
 
-def getCRICSites():
-    sitesUcore = cache.get('sitesUcore')
-    sitesHarvester = cache.get('sitesHarvester')
-    sitesType = cache.get('sitesType')
-    computevsAtlasCE = cache.get('computevsAtlasCE')
-
-    if not (sitesUcore and sitesHarvester and computevsAtlasCE and sitesType):
-        sitesUcore, sitesHarvester = [], []
-        computevsAtlasCE, sitesType = {}, {}
-        url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
-        http = urllib3.PoolManager()
-        data = {}
-        try:
-            r = http.request('GET', url)
-            data = json.loads(r.data.decode('utf-8'))
-
-            for cs in data.keys():
-                if 'unifiedPandaQueue' in data[cs]['catchall'] or 'ucore' in data[cs]['capability']:
-                    sitesUcore.append(data[cs]['siteid'])
-                if 'harvester' in data[cs] and len(data[cs]['harvester']) != 0:
-                    sitesHarvester.append(data[cs]['siteid'])
-                if 'panda_site' in data[cs]:
-                    computevsAtlasCE[cs] = data[cs]['atlas_site']
-                if 'type' in data[cs]:
-                    sitesType[cs] = data[cs]['type']
-        except Exception as exc:
-            print(exc)
-
-        cache.set('sitesUcore', sitesUcore, 3600)
-        cache.set('sitesHarvester', sitesHarvester, 3600)
-        cache.set('sitesType', sitesType, 3600)
-        cache.set('computevsAtlasCE', computevsAtlasCE, 3600)
-
-    return sitesUcore, sitesHarvester, sitesType, computevsAtlasCE
 
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
@@ -11885,16 +11852,10 @@ def get_hc_tests(request):
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
     if is_archive_only or is_archive:
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
-
-    sflist = ('siteid', 'gocname', 'status', 'cloud', 'tier', 'corepower')
-    panda_queues.extend(Schedconfig.objects.filter(cloud=query['cloud']).values(*sflist))
-    panda_queues_info = {}
-    for queue in panda_queues:
-        siteid = queue['siteid']
-        panda_queues_info[siteid] = {}
-        del queue['siteid']
-        panda_queues_info[siteid] = queue
     _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
+
+    panda_queues_info = get_panda_queues()
+    _logger.info('Got PQ info: {}'.format(time.time() - request.session['req_init_time']))
 
     # getting input file info for jobs
     try:
@@ -11941,11 +11902,14 @@ def get_hc_tests(request):
 
         for f in fields:
             test[f] = job[f]
-        for f in panda_queues_info[job['computingsite']]:
-            if f == 'gocname':
-                test['site'] = panda_queues_info[job['computingsite']][f]
-            else:
-                test[f] = panda_queues_info[job['computingsite']][f]
+
+        if 'computingsite' in job and job['computingsite'] in panda_queues_info:
+            for f in ('siteid', 'gocname', 'status', 'cloud', 'tier', 'corepower'):
+                if f in panda_queues_info[job['computingsite']]:
+                    if f == 'gocname':
+                        test['site'] = panda_queues_info[job['computingsite']][f]
+                    else:
+                        test[f] = panda_queues_info[job['computingsite']][f]
         tests.append(test)
 
     data = {'tests': tests}
