@@ -891,8 +891,8 @@ fieldset.inline {
   .card.bp-container-simple .card-section > p {
     margin: 0.3rem 0.7rem;
   }
-  .card.bp-container-simple .card-section > a {
-    color: rgba(53,86,129, 0.8);
+  .card.bp-container-simple .card-section a {
+    color: #49668d;
     font-weight: bold;
   }
   .card.bp-container-simple .card-section > ul {

@@ -26,8 +26,11 @@
 <tbody>
 <tr>
 	<th>PanDA ID {% if not job.jeditaskid %} <br>Attempt# {% endif %}</th>
-	<th>Owner{% if job.workinggroup %} WG{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / VO{% endif %}{% endif %}</th>
-	<th>Request <br> Task ID</th>
+	<th>Owner{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / VO{% endif %}{% endif %}</th>
+	{% if job.workinggroup %}
+    <th>WG</th>
+  {% endif %}
+  <th>Request <br> Task ID</th>
   {% if job.parentid %}
     <th>Parent</th>
   {% endif %}
@@ -40,22 +43,26 @@
   {% endif %}
   <th>Created<br>Last modified</th>
 	<th>Time to start<br>Duration<br>[d:h:m:s]</th>
-	<th>{% if viewParams.MON_VO == 'ATLAS' %}Cloud {% endif%}Site</th>
-  {% if harvesterInfo and harvesterInfo|length > 0 %}
+	<th>{% if viewParams.MON_VO != 'ATLAS' %}Cloud {% endif%}Site</th>
+  {% if job.harvesterInfo and job.harvesterInfo|length > 0 %}
     <th>Harvester instance<br>Worker ID</th>
   {% endif %}
+  <th>Cores</th>
 	<th>Priority</th>
   <th>Attempt</th>
 </tr>
 <tr>
 	<td>{{ job.pandaid }}  {% if not job.jeditaskid %} <br>Attempt {{ job.attemptnr }} {% endif %}</td>
-	<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if job.workinggroup %} / <a href="{% url 'workingGroups' %}?workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }} {% endif %}{% endif %}</td>
+	<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }} {% endif %}{% endif %}</td>
+	{% if job.workinggroup %}
+    <td><a href="{% url 'workingGroups' %}?workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a></td>
+  {% endif %}
 	<td>{% if job.reqid %} <a href="{% url 'jobList' %}?reqid={{ job.reqid }}&display_limit=300">{{ job.reqid }}</a> <br> {% endif %}
 	{% if job.jeditaskid %}<a href="{% url 'taskInfo' job.jeditaskid %}">{{ job.jeditaskid }}</a> {% else %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
-{% if job.parentid %}
+  {% if job.parentid %}
     <td> <a href="{% url 'jobInfo' %}?pandaid={{ job.parentid }}"> {{ job.parentid }} </a>
     </td>
-{% endif %}
+  {% endif %}
 	<td class='{{job.jobstatus}}_fill'>{{ job.jobstatus }}</td>
   {% if job.processingtype and job.prodsourcelabel == 'managed' %}
     <td>{{ job.processingtype }}</td>
@@ -64,13 +71,14 @@
     <td>{{ job.transformation|safe }}</td>
   {% endif %}
 	<td>{{ job.creationtime }}<br>{{ job.modificationtime }}</td>
-	<td>{{ job.waittime }}<br>{{ job.duration }}</td>
-	<td>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite  %}">{{ job.computingsite }}</a></td>
-  {% if harvesterInfo and harvesterInfo|length > 0 %}
-    <td><a href="{% url 'harvesters' %}?instance={{ harvesterInfo.0.harvesterid }}">{{ harvesterInfo.0.harvesterid }}</a>
-        <br><a href="{% url 'harvesterWorkerInfo' %}?harvesterid={{ harvesterInfo.0.workerid }}&workerid={{ harvesterInfo.0.workerid }}">{{ harvesterInfo.0.workerid }}</a>
+	<td>{% if job.waittime %}{{ job.waittime }}{% else %}-{% endif %}<br>{% if job.duration %}{{ job.duration }}{% else %}-{% endif %}</td>
+	<td>{% if viewParams.MON_VO != 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite  %}">{{ job.computingsite }}</a></td>
+  {% if job.harvesterInfo and job.harvesterInfo|length > 0 %}
+    <td><a href="{% url 'harvesters' %}?instance={{ job.harvesterInfo.harvesterid }}">{{ job.harvesterInfo.harvesterid }}</a>
+        <br><a href="{% url 'harvesterWorkerInfo' %}?harvesterid={{ job.harvesterInfo.workerid }}&workerid={{ job.harvesterInfo.workerid }}">{{ job.harvesterInfo.workerid }}</a>
     </td>
   {% endif %}
+  <td>{% if job.actualcorecount %}{{ job.actualcorecount }}{% else %}{{ job.corecount }}{% endif %}</td>
 	<td>{{ job.currentpriority }}</td>
   <td>{{ job.attemptnr }}</td>
 </tr>
@@ -81,7 +89,7 @@
 </tr>
 {% if not fileSummary == '' %}
 <tr>
-  <th>Dataset summary:</th>
+  <th>Files summary:</th>
 	<td colspan="20"> {{ fileSummary }} </td>
 </tr>
 {% endif %}
@@ -185,8 +193,6 @@
 <div class="bp-container-wrapper">
 <div class="bp-dropdown-button">
     <button class="dropdown"><span>Logs</span></button>
-
-
     <div   class=" dropdown-items">
         {% if logfile.lfn %}
           {% if viewParams.MON_VO == 'ATLAS' %}
@@ -195,15 +201,17 @@
                     {% if job.jobstatus == 'failed' or job.jobstatus == 'finished'  or job.jobstatus == 'closed' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled'  or job.jobstatus == 'merging'  %}
                         <a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}&fileid={{ logfile.fileid }}">Log files</a>
                     {% else %}
-                        No logs available yet
+                      <a class="disabled">No logs available yet</a>
                     {% endif %}
                 {% else %}
-                    No logs were saved
+                  <a class="disabled">No logs were saved</a>
                 {% endif %}
 
                 {% if oslogpath %}
                     <a href="{{ oslogpath }}">log tarball</a>
                 {% endif %}
+              {% else %}
+                <a class="disabled">No logs available yet</a>
               {% endif %}
           {% else %}
             {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
@@ -214,7 +222,7 @@
             <a href='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'>Job cache tarball</a>
           {% endif %}
         {% else %}
-            <a>No logs available</a>
+            <a class="disabled">No logs available</a>
         {% endif %}
         {% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging'  or job.jobstatus == 'transferring' %}
             {% if stdout %}
@@ -235,25 +243,23 @@
         {% endif %}
     </div>
 </div>
-
-
 <div class="bp-dropdown-button">
     <button class="dropdown">Go to</button>
     <div   class=" dropdown-items">
         <a href="{% url 'jobList' %}?parentid={{ job.pandaid }}">Child jobs</a>
-        {% if harvesterInfo %}
-            <a href="{% url "harvesters" %}?pandaid={{pandaid}}&days={{ timedelta }}">Associated Harvester workers</a>
+        {% if job.harvesterInfo %}
+            <a href="{% url "harvesters" %}?pandaid={{pandaid}}&days={{ job.days_since_creation }}">Associated Harvester workers</a>
         {% endif %}
         {% if job.jobsetid and job.jobsetid > 0 %}
-            <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}">Jobs for {{ job.jobsetid }} jobset</a>
-            {% if libjob and libjob != job.pandaid  %}
-                <a href="{% url 'jobInfo' %}?pandaid={{ libjob }}">build job {{ libjob }}</a>
+            <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&mode=nodrop&jobsetid={{ job.jobsetid }}">Jobs for {{ job.jobsetid }} jobset</a>
+            {% if jobsetinfo and jobsetinfo.build  > 0  %}
+                <a href="{% url 'jobInfo' %}?jobsetid={{ job.jobsetid }}&mode=nodrop&transformation=build*">{{ jobsetinfo.build }} build jobs</a>
             {% endif %}
-            {% if runjobs|length > 0 %}
-                <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&processingtype=pathena">{{ runjobs|length }} run jobs</a>
+            {% if jobsetinfo and jobsetinfo.run  > 0 %}
+                <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&mode=nodrop&processingtype=!pmerge">{{ jobsetinfo.run }} run jobs</a>
             {% endif %}
-            {% if mergejobs|length > 0 %}
-                <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&processingtype=usermerge">{{ mergejobs|length }} merge jobs</a>
+            {% if jobsetinfo and jobsetinfo.merge  > 0 %}
+                <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&mode=nodrop&processingtype=pmerge">{{ jobsetinfo.merge }} merge jobs</a>
             {% endif %}
         {% endif %}
 
@@ -262,7 +268,7 @@
         {% endif %}
 
         {% if coreData %}
-                <a href="http://srs.slac.stanford.edu/Pipeline-II/exp/SRS/pi.jsp?pi={{coreData.processinstance}}">{{coreData.processinstance}} process for {{ coreData.pipelinetask }} pipeline task</a>
+            <a href="http://srs.slac.stanford.edu/Pipeline-II/exp/SRS/pi.jsp?pi={{coreData.processinstance}}">{{coreData.processinstance}} process for {{ coreData.pipelinetask }} pipeline task</a>
         {% endif %}
 
         {% if rucioUserName|length > 0 %}
@@ -270,33 +276,23 @@
               <a href="https://rucio-ui.cern.ch/r2d2?account={{ rucioUserNameIt }}">DDM User activity ({{ rucioUserNameIt }})</a>
             {% endfor %}
         {% endif %}
-
-
     </div>
 </div>
-
 <div class="bp-dropdown-button">
     <button class="dropdown">Show</button>
     <div   class="dropdown-items">
         <a onclick="loadJobStatusLog('{{ pandaid }}')">Job status log</a>
-        {% if pretries or retries %}
-          {% if pretries %}
-            <a onclick="toggleByID('pretries')">Upstream jobs (past retries)</a>
-          {% endif %}
-          {% if retries %}
-            <a onclick="toggleByID('retries')">Downstream jobs (further attempts)</a>
-          {% endif %}
-          <a onclick="loadExtendedErrorData('{{ job.jeditaskid }}','{{ job.pandaid }}');">Errors of previous attempts</a>
-        {% else %}
-            <a>No upstream and downstream jobs available</a>
+        {% if job.attemptnr > 1 %}
+          <a onclick="loadJobRelationships('{{ pandaid }}', 'upstream')">Upstream jobs (past retries)</a>
         {% endif %}
+        <a onclick="loadJobRelationships('{{ pandaid }}', 'downstream')">Downstream jobs (further attempts)</a>
+        <a onclick="loadExtendedErrorData('{{ job.jeditaskid }}','{{ job.pandaid }}');">Errors of previous attempts</a>
     </div>
 </div>
-
 <div class="bp-dropdown-button">
     <button class="dropdown">Jump to</button>
     <div   class="dropdown-items">
-        {% if harvesterInfo %}
+        {% if job.harvesterInfo %}
             <a href="#harvesterworkers">Associated Harvester workers</a>
         {% endif %}
         <a href="#jobparamskey">Key job parameters</a>
@@ -304,16 +300,12 @@
         <a href="#help">Help</a>
     </div>
 </div>
-
 <div class="bp-dropdown-button">
     <button class="dropdown">Memory and IO plots</button>
-    <div   class=" dropdown-items">
-        {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus ==  'cancelled' or job.jobstatus ==  'aborted' or job.jobstatus == 'merging' %}
-            <a href="{% url 'prMonPlots' job.pandaid %}" target="_blank">Memory and IO plots</a>
-        {% endif %}
+    <div class=" dropdown-items">
+      <a {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus ==  'cancelled' or job.jobstatus ==  'aborted' or job.jobstatus == 'merging' %}{% else %}class="disabled"{% endif %} href="{% url 'prMonPlots' job.pandaid %}" target="_blank">Memory and IO plots</a>
     </div>
 </div>
-
 {% if request.user.is_tester %}
 <div style="float: right">
     {% if isincomparisonlist %}
@@ -323,37 +315,12 @@
     {% endif %}
 </div>
 {% endif %}
-
 </div>
 
-{% if pretries %}
-<div class="card bp-container-simple secondary" id="pretries" style="display: none">
-  <div class="card-divider">
-    <p>This job is a descendent of upstream job(s), with relationship shown</p>
-  </div>
-  <div class="card-section">
-    {% for pretry in pretries %}
-        <a href="{% url 'jobInfo' pretry.oldpandaid %}">{{ pretry.oldpandaid }}</a>:{% if pretry.relationtype %}{{ pretry.relationtype }}{% else %}retry{% endif %}
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
-{% if retries %}
-<div class="card bp-container-simple secondary" id="retries" style="display: none">
-  <div class="card-divider">
-    <p>This job has descendents downstream, with relationship shown</p>
-  </div>
-  <div class="card-section">
-    {% for retry in retries %}
-        <a href="{% url 'jobInfo' retry.newpandaid %}">{{ retry.newpandaid }}</a>:{% if retry.relationtype %}{{ retry.relationtype }}{% else %}retry{% endif %}
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
+<div id="div-upstream-retries"></div>
+<div id="div-downstream-retries"></div>
 
-{% if pretries or retries %}
 <div id="div-exterrorsinfo"></div>
-{% endif %}
 
 <div id="div-statuslog"></div>
 
@@ -370,7 +337,6 @@
           <th>Attempt</th>
           <th>Max attempt</th>
           <th>Size (MB)</th>
-          <th>Job creator</th>
           <th>Scope</th>
           <th class="">Dataset</th>
           <th>Dispatch block</th>
@@ -465,6 +431,19 @@ $(document).ready(function () {
     var files_list = {{ files|safe }};
     buildFilesTable(files_list);
 });
+
+function loadJobRelationships(pandaid, direction) {
+    let id = '#div-' + direction +  '-retries';
+    $(id).html("<img src='{% static "images/load.gif" %}'>  ");
+    $.ajax({
+        url: "{% url 'jobrelationships' pandaid=pandaid %}",
+        data: 'direction=' + direction,
+        async: true,
+    }).done(function (response) {
+        $(id).html(response);
+    });
+
+}
 
 function loadExtendedErrorData(jeditaskid, pandaid) {
 
@@ -578,17 +557,21 @@ function buildFilesTable(data) {
                 let links = '';
                 if (row['type'] !== 'pseudo_input') {
                   links += '<a href = "{% url 'fileInfo' %}?lfn=' + row['lfn'] + '&scope=' + row['scope'] + '">'+row['lfn']+'</a>';
+                  links += ' <a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['lfn'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
                 }
                 else {
                   links += row['lfn'];
                 }
-                links += ' <a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['lfn'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
 
                 if (row['type'] !== 'pseudo_input' && ['defined', 'pending', 'waiting'].includes(job_status) === false ) {
                   let dtstoken = '';
                   (row['dsttoken']) ? dtstoken += row['dsttoken'] : dtstoken += '';
 
                   links += ' <a href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&from=now-30d&to=now&panelId=56&fullscreen&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=All&var-src_cloud=All&var-src_site=All&var-src_country=All&var-src_endpoint=All&var-columns=src_cloud&var-dst_cloud=All&var-dst_site=' + row['ddmsite'] + '&var-dst_country=All&var-dst_endpoint=All&var-rows=dst_cloud&var-enr_filters=data.name%7C%3D%7C' + row['lfn'] + '&var-enr_filters=data.scope%7C%3D%7C' + row['scope'] + dtstoken + '&var-measurement=ddm_transfer&var-retention_policy=raw" target="_blank"><div class="tooltip-right"><img src="/static/images/grafana.png" width=14 height=14 border=0><span container="body" class="tooltip-text">DDM Dash (Grafana)</span></div></a>';
+                }
+
+                if (row['type'] === 'input' ) {
+                  links += ' <a href = "{% url 'jobInfo' %}?creator=' + row['lfn'] + '" target="_blank"><div class="tooltip-right"><i class="fi-link"></i><span container="body" class="tooltip-text">Find creator job</span></div></a>'
                 }
                 return links
             }
@@ -605,7 +588,15 @@ function buildFilesTable(data) {
         {
             "data": "attemptnr",
             sDefaultContent: "-",
-            className: 'num'
+            className: 'num',
+            "render": function(data, type, row, meta) {
+                if (data && data.length > 0) {
+                  return data
+                }
+                else {
+                  return '-'
+                }
+            },
         },
         {
             "data": "maxattempt",
@@ -618,7 +609,7 @@ function buildFilesTable(data) {
                 else {
                   return '-'
                 }
-            }
+            },
         },
         {
             "data": "fsizemb",
@@ -626,28 +617,33 @@ function buildFilesTable(data) {
             className: 'num',
         },
         {
-            "data": "",
+            "data": "scope",
             sDefaultContent: "-",
             "render": function(data, type, row, meta) {
-                if (row['type'] === 'input' ) {
-                  return '<a href = "{% url 'jobInfo' %}?creator=' + row['lfn'] + '" target="_blank"><i class="fi-link"></i></a>'
+                if (data && data.length > 0) {
+                  return data
                 }
                 else {
                   return '-'
                 }
-            }
-        },
-        {
-            "data": "scope",
-            sDefaultContent: "-",
+            },
         },
         {
             "data": "datasetname",
             className: "text icons1",
             sDefaultContent: "---",
             "render": function(data, type, row, meta) {
-                let links = '<a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['ruciodatasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
-                links += ', <a href = "{% url 'datasetInfo' %}?datasetname=' + row['datasetname'] + '&jeditaskid=' + row['jeditaskid'] + '">'+row['datasetname']+'</a>';
+                let links = '';
+                if (row['type'] !== 'pseudo_input' && data) {
+                  links += '<a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['ruciodatasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                  links += ', <a href = "{% url 'datasetInfo' %}?datasetname=' + row['datasetname'] + '&jeditaskid=' + row['jeditaskid'] + '">'+row['datasetname']+'</a>';
+                }
+                else if (data) {
+                  links += data;
+                }
+                else {
+                  links += '-';
+                }
                 return links
             }
         },

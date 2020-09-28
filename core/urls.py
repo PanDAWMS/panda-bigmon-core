@@ -102,6 +102,7 @@ urlpatterns = [
 
     re_path(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),
     re_path(r'^descendentjoberrsinfo/$', coremon_views.descendentjoberrsinfo, name='descendentjoberrsinfo'),
+    re_path(r'^jobrelationships/(?P<pandaid>.*)/$', coremon_views.get_job_relationships, name='jobrelationships'),
     re_path(r'^taskssummary/$', coremon_views.getSummaryForTaskList, name='taskListSummary'),
     re_path(r'^ttc/$', coremon_views.ttc, name='ttc'),
     re_path(r'^taskchain/$', coremon_views.taskchain, name='taskchain'),

@@ -104,13 +104,15 @@ from core.utils import is_json_request
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
-    is_job_active, get_event_status_summary, get_file_info, get_job_queuetime
+    is_job_active, get_event_status_summary, get_file_info, get_job_queuetime, job_states_count_by_param, \
+    add_job_category
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
     get_task_params, get_hs06s_summary_for_task, cleanTaskList
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.job import is_event_service
 from core.libs.bpuser import get_relevant_links, filterErrorData
+from core.harvester.utils import isHarvesterJob
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
@@ -239,27 +241,6 @@ class DateEncoder(json.JSONEncoder):
         else:
             return str(obj)
         return json.JSONEncoder.default(self, obj)
-
-
-def login_customrequired(function):
-    def wrap(request, *args, **kwargs):
-
-        #we check here if it is a crawler:
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for and x_forwarded_for in notcachedRemoteAddress:
-            return function(request, *args, **kwargs)
-
-        if request.user.is_authenticated or (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or ('json' in request.GET or 'json' in request.POST):
-            return function(request, *args, **kwargs)
-        else:
-            # if '/user/' in request.path:
-            #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
-            # else:
-            # return function(request, *args, **kwargs)
-            return HttpResponseRedirect('/login/?next='+request.get_full_path())
-    wrap.__doc__ = function.__doc__
-    wrap.__name__ = function.__name__
-    return wrap
 
 
 @login_customrequired
@@ -3285,7 +3266,7 @@ def descendentjoberrsinfo(request):
         errors[job['pandaid']] = getErrorDescription(job, mode='txt')
     del request.session['TFIRST']
     del request.session['TLAST']
-    response = render_to_response('descentJobsErrors.html', {'errors': errors}, content_type='text/html')
+    response = render_to_response('jobDescentErrors.html', {'errors': errors}, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
@@ -3320,6 +3301,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
     # Here we try to get cached data
     data = getCacheEntry(request, "jobInfo")
+    # data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -3329,7 +3311,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             response = render_to_response('jobInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-
 
     eventservice = False
     query = setupView(request, hours=365 * 24)
@@ -3438,47 +3419,48 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         else:
             rucioUserName = [jobs[0]['produserid']]
 
-
-
+    job = {}
     try:
         job = jobs[0]
-        tquery = {}
-        tquery['jeditaskid'] = job['jeditaskid']
-        tquery['storagetoken__isnull'] = False
-        storagetoken = JediDatasets.objects.filter(**tquery).values('storagetoken')
-        if storagetoken:
-            job['destinationse'] = storagetoken[0]['storagetoken']
-        ###Harvester section####
-        from core.harvester.views import isHarvesterJob
-
-        harvesterInfo = isHarvesterJob(job['pandaid'])
-        if harvesterInfo == False:
-           harvesterInfo = {}
-
-        pandaid = job['pandaid']
-        colnames = job.keys()
-        colnames = sorted(colnames)
-        produsername = ''
-        for k in colnames:
-            if is_timestamp(k):
-                try:
-                    val = job[k].strftime(defaultDatetimeFormat)
-                except:
-                    val = job[k]
-            else:
-                val = job[k]
-            if job[k] == None:
-                val = ''
-                continue
-            pair = {'name': k, 'value': val}
-            columns.append(pair)
-            if k == 'produsername':
-                produsername = job[k]
     except IndexError:
-        job = {}
+        _logger.info('No job found for: {}'.format(jobid))
+
+    tquery = {}
+    tquery['jeditaskid'] = job['jeditaskid']
+    tquery['storagetoken__isnull'] = False
+    storagetoken = JediDatasets.objects.filter(**tquery).values('storagetoken')
+    if storagetoken:
+        job['destinationse'] = storagetoken[0]['storagetoken']
+
+    pandaid = job['pandaid'] if 'pandaid' in job else -1
+    colnames = job.keys()
+    colnames = sorted(colnames)
+    produsername = ''
+    for k in colnames:
+        if is_timestamp(k):
+            try:
+                val = job[k].strftime(defaultDatetimeFormat)
+            except:
+                val = job[k]
+        else:
+            val = job[k]
+        if job[k] == None:
+            val = ''
+            continue
+        pair = {'name': k, 'value': val}
+        columns.append(pair)
+        if k == 'produsername':
+            produsername = job[k]
+
+    # get Harvester info
+    job['harvesterInfo'] = isHarvesterJob(job['pandaid'])
+    if job['harvesterInfo'] and len(job['harvesterInfo']) > 0:
+        job['harvesterInfo'] = job['harvesterInfo'][0]
+    else:
+        job['harvesterInfo'] = {}
 
     try:
-        ## Check for logfile extracts
+        # Check for logfile extracts
         logs = Logstable.objects.filter(pandaid=pandaid)
         if logs:
             logextract = logs[0].log1
@@ -3494,8 +3476,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     fileSummary = ''
     inputFilesSize = 0
     if 'nofiles' not in request.session['requestParams']:
-        ## Get job files. First look in JEDI datasetcontents
-        print ("Pulling file info")
+        # Get job files. First look in JEDI datasetcontents
+        _logger.info("Pulling file info")
         files.extend(Filestable4.objects.filter(pandaid=pandaid).order_by('type').values())
         ninput = 0
         noutput = 0
@@ -3516,8 +3498,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                         for s in jobs[0]['jobmetrics'].split(' '):
                             if 'logBucketID' in s:
                                 logBucketID = int(s.split('=')[1])
-                                if logBucketID in [45, 41, 105, 106, 42, 61, 103, 2, 82, 101, 117,
-                                                   115]:  # Bucket Codes for S3 destination
+                                if logBucketID in [45, 41, 105, 106, 42, 61, 103, 2, 82, 101, 117, 115]:  # Bucket Codes for S3 destination
                                     f['destination'] = 'S3'
 
                                     # if len(jobs[0]['jobmetrics'])  > 0:
@@ -3543,16 +3524,14 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     parced = f['destinationdblocktoken'].split("_")
                     f['ddmsite'] = parced[0][4:]
                     f['dsttoken'] = parced[1]
-
-
             files = [x for x in files if x['destination'] != 'S3']
-
 
         if len(typeFiles) > 0:
             inputFilesSize = "%0.2f" % inputFilesSize
             for i in typeFiles:
                 fileSummary += str(i) + ': ' + str(typeFiles[i])
-                if (i == 'input'): fileSummary += ', size: ' + inputFilesSize + '(MB)'
+                if i == 'input':
+                    fileSummary += ', size: ' + inputFilesSize + ' (MB)'
                 fileSummary += '; '
             fileSummary = fileSummary[:-2]
         if len(files) == 0:
@@ -3585,6 +3564,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         files = sorted(files, key=lambda x: x['type'])
 
     nfiles = len(files)
+    inputfiles = []
     logfile = {}
     for file in files:
         if file['type'] == 'log':
@@ -3605,6 +3585,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         if file['type'] == 'input':
             file['attemptnr'] = dcfilesDict[file['fileid']]['attemptnr'] if file['fileid'] in dcfilesDict else file['attemptnr']
             file['maxattempt'] = dcfilesDict[file['fileid']]['maxattempt'] if file['fileid'] in dcfilesDict else None
+            inputfiles.append({'jeditaskid': file['jeditaskid'], 'datasetid': file['datasetid'], 'fileid': file['fileid']})
 
     if 'pilotid' in job and job['pilotid'] and job['pilotid'].startswith('http') and '{' not in job['pilotid']:
         stdout = job['pilotid'].split('|')[0]
@@ -3619,10 +3600,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     else:
         stdout = stderr = stdlog = stdjdl = None
 
-
-    inputfiles = [{'jeditaskid':file['jeditaskid'], 'datasetid':file['datasetid'], 'fileid':file['fileid']} for file in files if file['type'] == 'input']
-
-    ## Check for object store based log
+    # Check for object store based log
     oslogpath = None
     if 'computingsite' in job and job['computingsite'] in objectStores:
         ospath = objectStores[job['computingsite']]
@@ -3632,7 +3610,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             else:
                 oslogpath = ospath + '/' + logfile['lfn']
 
-    ## Check for debug info
+    # Check for debug info
     if 'specialhandling' in job and not job['specialhandling'] is None and job['specialhandling'].find('debug') >= 0:
         debugmode = True
     else:
@@ -3644,14 +3622,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             if len(debugstdoutrec) > 0:
                 if 'stdout' in debugstdoutrec[0]: debugstdout = debugstdoutrec[0]['stdout']
 
-    if 'transformation' in job and job['transformation'] is not None and job['transformation'].startswith('http'):
-        job['transformation'] = "<a href='%s'>%s</a>" % (job['transformation'], job['transformation'].split('/')[-1])
-
-    if 'metastruct' in job:
-        job['metadata'] = json.dumps(job['metastruct'], sort_keys=True, indent=4, separators=(',', ': '))
-
-    ## Get job parameters
-    print ("getting job parameters")
+    # Get job parameters
+    _logger.info("getting job parameters")
     jobparamrec = Jobparamstable.objects.filter(pandaid=pandaid)
     jobparams = None
     if len(jobparamrec) > 0:
@@ -3661,125 +3633,48 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     #    if len(jobparamrec) > 0:
     #        jobparams = jobparamrec[0].jobparameters
 
-    dsfiles = []
-    countOfInvocations = []
-    ## If this is a JEDI job, look for job retries
-    if 'jeditaskid' in job and job['jeditaskid'] and job['jeditaskid'] > 0:
-        print ("looking for retries")
-        ## Look for retries of this job
-
-
-        if not is_event_service(job):
-            retryquery = {}
-            retryquery['jeditaskid'] = job['jeditaskid']
-            retryquery['oldpandaid'] = job['pandaid']
-            retries = []
-            retries.extend(JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values())
-            pretries = getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations)
-        else:
-            retryquery = {}
-            retryquery['jeditaskid'] = job['jeditaskid']
-            retryquery['oldpandaid'] = job['jobsetid']
-            retryquery['relationtype'] = 'jobset_retry'
-            # retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
-            retries = getSequentialRetries_ESupstream(job['pandaid'], job['jobsetid'], job['jeditaskid'],
-                                                      countOfInvocations)
-            pretries = getSequentialRetries_ES(job['pandaid'], job['jobsetid'], job['jeditaskid'], countOfInvocations)
-    else:
-        retries = None
-        pretries = None
-
-    countOfInvocations = len(countOfInvocations)
-
-    ## jobset info
-    libjob = None
-    runjobs = []
-    mergejobs = []
-    if 'jobset' in request.session['requestParams'] and 'jobsetid' in job and job['jobsetid'] > 0:
-        print ("jobset info")
-        jsquery = {}
-        jsquery['jobsetid'] = job['jobsetid']
-        jsquery['produsername'] = job['produsername']
-        values = ['pandaid', 'prodsourcelabel', 'processingtype', 'transformation']
-        jsjobs = []
-        jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
-        jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
-        jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
-        jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
-        jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
-        if len(jsjobs) > 0:
-            for j in jsjobs:
-                id = j['pandaid']
-                if j['transformation'].find('runAthena') >= 0:
-                    runjobs.append(id)
-                elif j['transformation'].find('buildJob') >= 0:
-                    libjob = id
-                if j['processingtype'] == 'usermerge':
-                    mergejobs.append(id)
-
-
     esjobstr = ''
+    evtable = []
     if is_event_service(job):
-        ## for ES jobs, prepare the event table
+        # for ES jobs, prepare the event table
         esjobdict = {}
         for s in eventservicestatelist:
             esjobdict[s] = 0
         evalues = 'fileid', 'datasetid', 'def_min_eventid', 'def_max_eventid', 'processed_upto_eventid', 'status', 'job_processid', 'attemptnr', 'eventoffset'
-        evtable = JediEvents.objects.filter(pandaid=job['pandaid']).order_by('-def_min_eventid').values(*evalues)
-        fileids = {}
-        datasetids = {}
-        # for evrange in evtable:
-        #    fileids[int(evrange['fileid'])] = {}
-        #    datasetids[int(evrange['datasetid'])] = {}
-        flist = []
-        for f in fileids:
-            flist.append(f)
-        dslist = []
-        for ds in datasetids:
-            dslist.append(ds)
-        # datasets = JediDatasets.objects.filter(datasetid__in=dslist).values()
-        dsfiles = JediDatasetContents.objects.filter(fileid__in=flist).values()
-        # for ds in datasets:
-        #    datasetids[int(ds['datasetid'])]['dict'] = ds
-        # for f in dsfiles:
-        #    fileids[int(f['fileid'])]['dict'] = f
-
+        evtable.extend(JediEvents.objects.filter(pandaid=job['pandaid']).order_by('-def_min_eventid').values(*evalues))
         for evrange in evtable:
-            # evrange['fileid'] = fileids[int(evrange['fileid'])]['dict']['lfn']
-            # evrange['datasetid'] = datasetids[evrange['datasetid']]['dict']['datasetname']
             evrange['status'] = eventservicestatelist[evrange['status']]
-            esjobdict[evrange['status']] += 1
+            esjobdict[evrange['status']] += evrange['def_max_eventid'] - evrange['def_min_eventid'] + 1
             evrange['attemptnr'] = 10 - evrange['attemptnr']
 
         esjobstr = ''
         for s in esjobdict:
             if esjobdict[s] > 0:
-                esjobstr += " %s(%s) " % (s, esjobdict[s])
+                esjobstr += " {} ({}) ".format(s, esjobdict[s])
     else:
         evtable = []
 
-    runesjobs = []
-    mergeesjobs = []
-    if is_event_service(job) and 'jobsetid' in job and job['jobsetid'] > 0:
-        print ("jobset info")
-        esjsquery = {}
-        esjsquery['jobsetid'] = job['jobsetid']
-        esjsquery['produsername'] = job['produsername']
-        values = ['pandaid', 'eventservice']
-        esjsjobs = []
-        esjsjobs.extend(Jobsdefined4.objects.filter(**esjsquery).values(*values))
-        esjsjobs.extend(Jobsactive4.objects.filter(**esjsquery).values(*values))
-        esjsjobs.extend(Jobswaiting4.objects.filter(**esjsquery).values(*values))
-        esjsjobs.extend(Jobsarchived4.objects.filter(**esjsquery).values(*values))
-        esjsjobs.extend(Jobsarchived.objects.filter(**esjsquery).values(*values))
-        if len(esjsjobs) > 0:
-            for j in esjsjobs:
-                if j['eventservice'] == 1:
-                    runesjobs.append(j['pandaid'])
-                if j['eventservice'] == 2:
-                    mergeesjobs.append(j['pandaid'])
+    # jobset info
+    jobsetinfo = {}
+    if ('jobset' in request.session['requestParams'] or is_event_service(job)) and 'jobsetid' in job and job['jobsetid'] > 0:
+        jobs = []
+        jsquery = {
+            'jobsetid': job['jobsetid'],
+            'produsername': job['produsername'],
+        }
+        jvalues = ['pandaid', 'prodsourcelabel', 'processingtype', 'transformation', 'eventservice', 'jobstatus']
+        jobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*jvalues))
+        jobs.extend(Jobsactive4.objects.filter(**jsquery).values(*jvalues))
+        jobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*jvalues))
+        jobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*jvalues))
+        jobs.extend(Jobsarchived.objects.filter(**jsquery).values(*jvalues))
 
-    ## For CORE, pick up parameters from jobparams
+        jobs = add_job_category(jobs)
+        job_summary_list = job_states_count_by_param(jobs, param='category')
+        for row in job_summary_list:
+            jobsetinfo[row['value']] = sum([jss['count'] for jss in row['job_state_counts']])
+
+    # For CORE, pick up parameters from jobparams
     if VOMODE == 'core' or ('vo' in job and job['vo'] == 'core'):
         coreData = {}
         if jobparams:
@@ -3797,12 +3692,18 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         errorinfo = getErrorDescription(job)
         if len(errorinfo) > 0:
             job['errorinfo'] = errorinfo
-    delta = -1
+
+    if 'transformation' in job and job['transformation'] is not None and job['transformation'].startswith('http'):
+        job['transformation'] = "<a href='%s'>%s</a>" % (job['transformation'], job['transformation'].split('/')[-1])
+
+    if 'metastruct' in job:
+        job['metadata'] = json.dumps(job['metastruct'], sort_keys=True, indent=4, separators=(',', ': '))
+
     if job['creationtime']:
         creationtime = job['creationtime']
         now = datetime.now()
         tdelta = now - creationtime
-        delta = int(tdelta.days) + 1
+        job['days_since_creation'] = int(tdelta.days) + 1
 
     isincomparisonlist = False
     clist = []
@@ -3837,7 +3738,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     artqueue = {'pandaid': pandaid}
     art_test.extend(ARTTests.objects.filter(**artqueue).values())
 
-
     # datetime type -> str in order to avoid encoding errors on template
     datetime_job_param_names = ['creationtime', 'modificationtime', 'starttime', 'statechangetime', 'endtime']
     datetime_file_param_names = ['creationdate', 'modificationtime']
@@ -3852,8 +3752,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             if fpv is None:
                 f[fp] = ''
 
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-                'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
@@ -3866,7 +3765,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'columns': columns,
             'arttest': art_test,
             'files': files,
-            'dsfiles': dsfiles,
             'nfiles': nfiles,
             'logfile': logfile,
             'oslogpath': oslogpath,
@@ -3878,26 +3776,17 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'jobid': jobid,
             'coreData': coreData,
             'logextract': logextract,
-            'retries': retries,
-            'pretries': pretries,
-            'countOfInvocations': countOfInvocations,
             'eventservice': is_event_service(job),
-            'evtable': evtable[:100],
+            'evtable': evtable[:1000],
             'debugmode': debugmode,
             'debugstdout': debugstdout,
-            'libjob': libjob,
-            'runjobs': runjobs,
-            'mergejobs': mergejobs,
-            'runesjobs': runesjobs,
-            'mergeesjobs': mergeesjobs,
+            'jobsetinfo': jobsetinfo,
             'esjobstr': esjobstr,
             'fileSummary': fileSummary,
             'built': datetime.now().strftime("%H:%M:%S"),
             'produsername': produsername,
-            'harvesterInfo': harvesterInfo,
             'isincomparisonlist': isincomparisonlist,
             'clist': clist,
-            'timedelta': delta,
             'inputfiles': inputfiles,
             'rucioUserName': rucioUserName
         }
@@ -3909,22 +3798,97 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             response = render_to_response('jobInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-    elif (
-        ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+    elif is_json_request(request):
         del request.session['TFIRST']
         del request.session['TLAST']
 
-        data = {'files': files,
-                'job': job,
-                'dsfiles': dsfiles,
-                }
+        dsfiles = []
+        if len(evtable) > 0:
+            fileids = {}
+            for evrange in evtable:
+               fileids[int(evrange['fileid'])] = {}
+            flist = []
+            for f in fileids:
+                flist.append(f)
+            dsfiles.extend(JediDatasetContents.objects.filter(fileid__in=flist).values())
+
+        data = {
+            'files': files,
+            'job': job,
+            'dsfiles': dsfiles,
+        }
 
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
     else:
         del request.session['TFIRST']
         del request.session['TLAST']
         return HttpResponse('not understood', content_type='text/html')
+
+
+@never_cache
+def get_job_relationships(request, pandaid=-1):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    direction = ''
+    if 'direction' in  request.session['requestParams'] and request.session['requestParams']['direction']:
+        direction = request.session['requestParams']['direction']
+
+    job = {}
+    jobs = []
+    jquery = {
+        'pandaid': pandaid,
+    }
+    jvalues = ['pandaid', 'jeditaskid', 'jobsetid', 'specialhandling', 'eventservice']
+    jobs.extend(Jobsdefined4.objects.filter(**jquery).values(*jvalues))
+    jobs.extend(Jobsactive4.objects.filter(**jquery).values(*jvalues))
+    jobs.extend(Jobswaiting4.objects.filter(**jquery).values(*jvalues))
+    jobs.extend(Jobsarchived4.objects.filter(**jquery).values(*jvalues))
+    if len(jobs) == 0:
+        jobs.extend(Jobsarchived.objects.filter(**jquery).values(*jvalues))
+    try:
+        job = jobs[0]
+    except IndexError:
+        _logger.exception('No job found with pandaid: {}'.format(pandaid))
+
+    message = ''
+    job_relationships = []
+
+    countOfInvocations = []
+    # look for job retries
+    if 'jeditaskid' in job and job['jeditaskid'] and job['jeditaskid'] > 0:
+        if direction == 'upstream':
+            retries = []
+            if not is_event_service(job):
+                retryquery = {
+                    'jeditaskid': job['jeditaskid'],
+                    'oldpandaid': job['pandaid'],
+                }
+                job_relationships.extend(JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values())
+            else:
+                job_relationships = getSequentialRetries_ESupstream(job['pandaid'], job['jobsetid'], job['jeditaskid'], countOfInvocations)
+        elif direction == 'downstream':
+            if not is_event_service(job):
+                job_relationships = getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations)
+            else:
+                job_relationships = getSequentialRetries_ES(job['pandaid'], job['jobsetid'], job['jeditaskid'], countOfInvocations)
+        else:
+            message = 'Wrong direction provided, it should be up or down stream.'
+    else:
+        job_relationships = None
+
+    countOfInvocations = len(countOfInvocations)
+
+    data = {
+        'retries': job_relationships,
+        'direction': direction,
+        'message': message,
+        'countOfInvocations': countOfInvocations,
+    }
+    response = render_to_response('jobRelationships.html', data, content_type='text/html')
+    patch_response_headers(response, cache_timeout=-1)
+    return response
 
 
 @login_customrequired

@@ -423,6 +423,15 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 .dataTables_wrapper .dataTables_length label {
   margin-right: 1rem;
 }
+.dataTables_wrapper .dataTables_length label select {
+  height: 1.75rem;
+  padding: 0 1.4rem 0 0.3rem;
+}
+
+.dataTables_wrapper .dataTables_filter label input {
+  height: 1.75rem;
+  padding: 0.3rem 0.7rem;
+}
 
 .dataTables_info {
   color: #272727;
@@ -710,7 +719,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 }
 
 .fresh-table thead th a {
-    color: rgba(53,86,129, 0.8);
+    color: #49668d;
     font-weight: bold;
 }
 
@@ -739,7 +748,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 }
 
 .fresh-table tbody td a {
-    color: rgba(53,86,129, 0.8);
+    color: #49668d;
     font-weight: bold;
 }
 
