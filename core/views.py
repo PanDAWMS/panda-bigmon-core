@@ -7715,7 +7715,7 @@ def taskInfo(request, jeditaskid=0):
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
 
     # temporarily turn off caching
-    data = None
+    # data = None
     if data is not None:
         data = json.loads(data)
         if data is not None:
@@ -7726,7 +7726,7 @@ def taskInfo(request, jeditaskid=0):
             if 'built' in data and data['built'] is not None:
                 try:
                     builtDate = datetime.strptime('2020-'+data['built'], defaultDatetimeFormat)
-                    if builtDate < datetime.strptime('2020-09-24 11:00:00', defaultDatetimeFormat):
+                    if builtDate < datetime.strptime('2020-09-28 11:00:00', defaultDatetimeFormat):
                         doRefresh = True
                 except:
                     doRefresh = True
@@ -8054,7 +8054,7 @@ def taskInfoNew(request, jeditaskid=0):
 
     # Here we try to get cached data. We get any cached data is available
     data = getCacheEntry(request, "taskInfoNew", skipCentralRefresh=True)
-    data = None
+    # data = None
     if data is not None:
         data = json.loads(data)
         # Temporary protection
@@ -8063,7 +8063,7 @@ def taskInfoNew(request, jeditaskid=0):
             try:
                 builtDate = datetime.strptime('2020-'+data['built'], defaultDatetimeFormat)
 
-                if builtDate < datetime.strptime('2020-09-24 11:00:00', defaultDatetimeFormat):
+                if builtDate < datetime.strptime('2020-09-28 11:00:00', defaultDatetimeFormat):
                     data = None
                     setCacheEntry(request, "taskInfoNew", json.dumps(data, cls=DateEncoder), 1)
             except:
