@@ -116,7 +116,7 @@
         <tr><td>DDM</td><td>{{ job.ddmerrorcode }}</td><td>{{ job.ddmerrordiag }}</td></tr>
       {% endif %}
       {% if job.exeerrorcode %}
-        <tr><td>Execution</td><td>{ job.exeerrorcode }}</td><td>{{ job.exeerrordiag }}</td></tr>
+        <tr><td>Execution</td><td>{{ job.exeerrorcode }}</td><td>{{ job.exeerrordiag }}</td></tr>
       {% endif %}
       {% if job.piloterrorcode %}
         <tr><td>Pilot</td><td>{{ job.piloterrorcode }}</td><td>{{ job.piloterrordiag }}</td></tr>
