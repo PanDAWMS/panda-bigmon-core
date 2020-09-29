@@ -3896,7 +3896,8 @@ def get_job_relationships(request, pandaid=-1):
 @login_customrequired
 def userList(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
     nhours = 90 * 24
 
     setupView(request, hours=nhours, limit=-99)
@@ -3914,31 +3915,8 @@ def userList(request):
     if view == 'database':
         startdate = timezone.now() - timedelta(hours=nhours)
         startdate = startdate.strftime(defaultDatetimeFormat)
-        enddate = timezone.now().strftime(defaultDatetimeFormat)
-        query = {'lastmod__range': [startdate, enddate]}
-        # viewParams['selection'] = ", last %d days" % (float(nhours)/24.)
-        ## Use the users table
-        if 'sortby' in request.session['requestParams']:
-            sortby = request.session['requestParams']['sortby']
-            if sortby == 'name':
-                userdb = Users.objects.filter(**query).order_by('name')
-            elif sortby == 'njobs':
-                userdb = Users.objects.filter(**query).order_by('njobsa').reverse()
-            elif sortby == 'date':
-                userdb = Users.objects.filter(**query).order_by('lastmod').reverse()
-            elif sortby == 'cpua1':
-                userdb = Users.objects.filter(**query).order_by('cpua1').reverse()
-            elif sortby == 'cpua7':
-                userdb = Users.objects.filter(**query).order_by('cpua7').reverse()
-            elif sortby == 'cpup1':
-                userdb = Users.objects.filter(**query).order_by('cpup1').reverse()
-            elif sortby == 'cpup7':
-                userdb = Users.objects.filter(**query).order_by('cpup7').reverse()
-            else:
-                userdb = Users.objects.filter(**query).order_by('name')
-        else:
-            userdb = Users.objects.filter(**query).order_by('name')
-
+        query = {'lastmod__gte': startdate}
+        userdb.extend(Users.objects.filter(**query).values())
         anajobs = 0
         n1000 = 0
         n10k = 0
@@ -3948,28 +3926,36 @@ def userList(request):
         nrecent90 = 0
         ## Move to a list of dicts and adjust CPU unit
         for u in userdb:
-            u.latestjob = u.lastmod
+            u['latestjob'] = u['lastmod']
             udict = {}
-            udict['name'] = u.name
-            udict['njobsa'] = u.njobsa
-            if u.cpua1: udict['cpua1'] = "%0.1f" % (int(u.cpua1) / 3600.)
-            if u.cpua7: udict['cpua7'] = "%0.1f" % (int(u.cpua7) / 3600.)
-            if u.cpup1: udict['cpup1'] = "%0.1f" % (int(u.cpup1) / 3600.)
-            if u.cpup7: udict['cpup7'] = "%0.1f" % (int(u.cpup7) / 3600.)
-            if u.latestjob:
-                udict['latestjob'] = u.latestjob.strftime(defaultDatetimeFormat)
-                udict['lastmod'] = u.lastmod.strftime(defaultDatetimeFormat)
+            udict['name'] = u['name']
+            udict['njobsa'] = u['njobsa'] if u['njobsa'] is not None else 0
+            udict['cpua1'] = round(u['cpua1'] / 3600.) if u['cpua1'] is not None else 0
+            udict['cpua7'] = round(u['cpua7'] / 3600.) if u['cpua7'] is not None else 0
+            udict['cpup1'] = round(u['cpup1'] / 3600.) if u['cpup1'] is not None else 0
+            udict['cpup7'] = round(u['cpup7'] / 3600.) if u['cpup7'] is not None else 0
+            if u['latestjob']:
+                udict['latestjob'] = u['latestjob'].strftime(defaultDatetimeFormat)
+                udict['lastmod'] = u['lastmod'].strftime(defaultDatetimeFormat)
             userdbl.append(udict)
-            if u.njobsa is not None:
-                if u.njobsa > 0: anajobs += u.njobsa
-                if u.njobsa >= 1000: n1000 += 1
-                if u.njobsa >= 10000: n10k += 1
-            if u.latestjob != None:
-                latest = timezone.now() - u.latestjob
-                if latest.days < 4: nrecent3 += 1
-                if latest.days < 8: nrecent7 += 1
-                if latest.days < 31: nrecent30 += 1
-                if latest.days < 91: nrecent90 += 1
+
+            if u['njobsa'] is not None:
+                if u['njobsa'] > 0:
+                    anajobs += u['njobsa']
+                if u['njobsa'] >= 1000:
+                    n1000 += 1
+                if u['njobsa'] >= 10000:
+                    n10k += 1
+            if u['latestjob'] is not None:
+                latest = timezone.now() - u['latestjob']
+                if latest.days < 4:
+                    nrecent3 += 1
+                if latest.days < 8:
+                    nrecent7 += 1
+                if latest.days < 31:
+                    nrecent30 += 1
+                if latest.days < 91:
+                    nrecent90 += 1
         userstats['anajobs'] = anajobs
         userstats['n1000'] = n1000
         userstats['n10k'] = n10k
@@ -3982,19 +3968,19 @@ def userList(request):
             nhours = 12
         else:
             nhours = 7 * 24
-        query = setupView(request, hours=nhours, limit=5000)
+        query = setupView(request, hours=nhours, limit=999999)
+        # looking into user analysis jobs only
+        query['prodsourcelabel'] = 'user'
         ## dynamically assemble user summary info
-        values = 'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'processingtype', 'workinggroup', 'currentpriority', 'container_name', 'cmtconfig'
-        jobs = QuerySetChain( \
-            Jobsdefined4.objects.filter(**query).order_by('-modificationtime')[:request.session['JOB_LIMIT']].values(
-                *values),
-            Jobsactive4.objects.filter(**query).order_by('-modificationtime')[:request.session['JOB_LIMIT']].values(
-                *values),
-            Jobswaiting4.objects.filter(**query).order_by('-modificationtime')[:request.session['JOB_LIMIT']].values(
-                *values),
-            Jobsarchived4.objects.filter(**query).order_by('-modificationtime')[:request.session['JOB_LIMIT']].values(
-                *values),
-        )
+        values = ('eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus',
+                  'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid',
+                  'atlasrelease', 'processingtype', 'workinggroup', 'currentpriority', 'container_name', 'cmtconfig')
+        jobs = []
+        jobs.extend(Jobsdefined4.objects.filter(**query).values(*values))
+        jobs.extend(Jobsactive4.objects.filter(**query).values(*values))
+        jobs.extend(Jobswaiting4.objects.filter(**query).values(*values))
+        jobs.extend(Jobsarchived4.objects.filter(**query).values(*values))
+
         jobs = cleanJobList(request, jobs, doAddMeta=False)
         sumd = userSummaryDict(jobs)
         for user in sumd:
@@ -4043,7 +4029,7 @@ def userList(request):
         resp = sumd
         return HttpResponse(json.dumps(resp), content_type='application/json')
 
-#@login_required(login_url='loginauth2')
+
 @login_customrequired
 def userInfo(request, user=''):
     valid, response = initRequest(request)
