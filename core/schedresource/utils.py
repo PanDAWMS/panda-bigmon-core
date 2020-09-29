@@ -110,6 +110,40 @@ def get_pq_fairshare_policy():
     return fairshare_policy_dict
 
 
+def get_basic_info_for_pqs(pq_list):
+    """
+    Return list of dicts with basic info for list of PQs, including ATLAS site, region (cloud), tier, corepower, status
+    If input pq_list empty, return all
+    :param pq_list: list
+    :return: site_list: list
+    """
+    pq_info_list = []
+    pq_info = get_panda_queues()
+    if len(pq_list) > 0:
+        for pq in pq_list:
+            if pq in pq_info and pq_info[pq]:
+                pq_info_list.append({
+                    'pq_name': pq,
+                    'site': pq_info[pq]['gocname'],
+                    'region': pq_info[pq]['cloud'],
+                    'tier': pq_info[pq]['tier'],
+                    'corepower': pq_info[pq]['corepower'],
+                    'status': pq_info[pq]['status'],
+                })
+    else:
+        for pq, pqdata in pq_info.items():
+            pq_info_list.append({
+                'pq_name': pq,
+                'site': pq_info[pq]['gocname'],
+                'region': pq_info[pq]['cloud'],
+                'tier': pq_info[pq]['tier'],
+                'corepower': pq_info[pq]['corepower'],
+                'status': pq_info[pq]['status'],
+            })
+
+    return pq_info_list
+
+
 def get_object_stores():
     object_stores_dict = cache.get('objectStores')
     if not object_stores_dict:

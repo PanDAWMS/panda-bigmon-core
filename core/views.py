@@ -117,7 +117,7 @@ from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
-from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues
+from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs
 
 from django.template.context_processors import csrf
 
@@ -6187,6 +6187,8 @@ def dashRegion(request):
         jquery['queuetype'] = request.session['requestParams']['queuetype']
     if 'queuestatus' in request.session['requestParams'] and request.session['requestParams']['queuestatus']:
         jquery['queuestatus'] = request.session['requestParams']['queuestatus']
+    if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] != 'all':
+        jquery['queuegocname'] = request.session['requestParams']['site']
 
     # get job summary data
     jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery,
@@ -6214,9 +6216,17 @@ def dashRegion(request):
 
         # prepare lists of unique values for drop down menus
         select_params_dict = {}
-        select_params_dict['region'] = sorted(list(set([r[0] for r in jsr_regions_list])))
         select_params_dict['queuetype'] = sorted(list(set([pq[1] for pq in jsr_queues_list])))
         select_params_dict['queuestatus'] = sorted(list(set([pq[3] for pq in jsr_queues_list])))
+
+        pq_info_basic = get_basic_info_for_pqs([])
+        unique_sites_dict = {}
+        for pq in pq_info_basic:
+            if pq['site'] not in unique_sites_dict:
+                unique_sites_dict[pq['site']] = pq['region']
+        select_params_dict['site'] = sorted([{'site': site, 'region': reg} for site, reg in unique_sites_dict.items()],
+                                            key=lambda x: x['site'])
+        select_params_dict['region'] = sorted(list(set([reg for site, reg in unique_sites_dict.items()])))
 
         xurl = request.get_full_path()
         if xurl.find('?') > 0:
@@ -6228,7 +6238,7 @@ def dashRegion(request):
         view_params_str = '<b>Manually entered params</b>: '
         supported_params = {f.verbose_name: '' for f in PandaJob._meta.get_fields()}
         interactive_params = ['hours', 'days', 'date_from', 'date_to', 'timestamp',
-                              'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region']
+                              'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region', 'site']
         for pn, pv in request.session['requestParams'].items():
             if pn not in interactive_params and pn in supported_params:
                 view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))

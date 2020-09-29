@@ -137,7 +137,6 @@ def get_job_summary_region(query, **kwargs):
     else:
         resourcetype = 'all'
 
-
     # filter out queues by queue related selection params
     pq_to_remove = []
     if jobtype != 'all':
@@ -148,6 +147,9 @@ def get_job_summary_region(query, **kwargs):
         pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['status'] != query['queuestatus']])
     if 'queuetype' in query:
         pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['type'] != query['queuetype']])
+    if 'queuegocname' in query:
+        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['gocname'] != query['queuegocname']])
+        regions_list = list(set(regions_list).intersection([params['cloud'] for pqn, params in panda_queues_dict.items() if params['gocname'] == query['queuegocname']]))
     if len(pq_to_remove) > 0:
         for pqr in list(set(pq_to_remove)):
             del panda_queues_dict[pqr]
