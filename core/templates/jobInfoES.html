@@ -79,7 +79,7 @@
 	<td>{% if viewParams.MON_VO != 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite  %}">{{ job.computingsite }}</a></td>
   {% if job.harvesterInfo and job.harvesterInfo|length > 0 %}
     <td><a href="{% url 'harvesters' %}?instance={{ job.harvesterInfo.harvesterid }}">{{ job.harvesterInfo.harvesterid }}</a>
-        <br><a href="{% url 'harvesterWorkerInfo' %}?harvesterid={{ job.harvesterInfo.workerid }}&workerid={{ job.harvesterInfo.workerid }}">{{ job.harvesterInfo.workerid }}</a>
+        <br><a href="{% url 'harvesterWorkerInfo' %}?harvesterid={{ job.harvesterInfo.harvesterid }}&workerid={{ job.harvesterInfo.workerid }}">{{ job.harvesterInfo.workerid }}</a>
     </td>
   {% endif %}
   <td>{% if job.actualcorecount %}{{ job.actualcorecount }}{% else %}{{ job.corecount }}{% endif %}</td>
