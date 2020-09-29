@@ -419,6 +419,9 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 .dataTables_wrapper .dt-buttons {
   margin-bottom: 0;
 }
+.dataTables_wrapper .dt-buttons > a.button {
+  color: #fefefe;
+}
 
 .dataTables_wrapper .dataTables_length label {
   margin-right: 1rem;
