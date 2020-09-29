@@ -7815,7 +7815,8 @@ def taskInfo(request, jeditaskid=0):
             cmd = "curl -s -f --compressed '{}'".format(errurl)
             logout = subprocess.getoutput(cmd)
             if len(logout) > 0:
-                logtxt = logout
+                loglist = (logout.splitlines())[::-1]
+                logtxt = '\n'.join(loglist)
             _logger.info("Loaded error log using '{}': {}".format(cmd, time.time() - request.session['req_init_time']))
 
     # iDDS section
@@ -8199,7 +8200,8 @@ def taskInfoNew(request, jeditaskid=0):
             cmd = "curl -s -f --compressed '{}'".format(errurl)
             logout = subprocess.getoutput(cmd)
             if len(logout) > 0:
-                logtxt = logout
+                loglist = (logout.splitlines())[::-1]
+                logtxt = '\n'.join(loglist)
             _logger.info("Loaded error log using '{}': {}".format(cmd, time.time() - request.session['req_init_time']))
 
     # update taskrec dict
