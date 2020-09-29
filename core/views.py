@@ -3898,8 +3898,18 @@ def userList(request):
     valid, response = initRequest(request)
     if not valid:
         return response
-    nhours = 90 * 24
 
+    # Here we try to get cached data
+    data = getCacheEntry(request, "userList")
+    # data = None
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('userList.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+    nhours = 90 * 24
     setupView(request, hours=nhours, limit=-99)
     if VOMODE == 'atlas':
         view = 'database'
@@ -3995,8 +4005,7 @@ def userList(request):
 
         jobsumd = jobSummaryDict(request, jobs, sumparams)[0]
 
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         TFIRST = request.session['TFIRST']
         TLAST = request.session['TLAST']
         del request.session['TFIRST']
@@ -4018,16 +4027,14 @@ def userList(request):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
+        setCacheEntry(request, "userList", json.dumps(data, cls=DateEncoder), 60 * 20)
         response = render_to_response('userList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-    elif (
-        ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+    else:
         del request.session['TFIRST']
         del request.session['TLAST']
-        resp = sumd
-        return HttpResponse(json.dumps(resp), content_type='application/json')
+        return HttpResponse(json.dumps(sumd), content_type='application/json')
 
 
 @login_customrequired
