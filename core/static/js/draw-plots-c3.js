@@ -405,7 +405,7 @@ function draw_stacked_bar_hist(rawdata, details, divToShow)  {
             if (index >= 20) { data_legend_to_hide.push(row[0]); }
         });
         legend_height = 15 * (data.length - data_legend_to_hide.length) / 4;
-        details.title += ' [only top-20 sites listed in legend]'
+        if (details.title.indexOf('[only top-20') < 0) {details.title += ' [only top-20 sites listed in legend]'}
     }
     let width = getPlotWidth();
     let height = 300 + legend_height;

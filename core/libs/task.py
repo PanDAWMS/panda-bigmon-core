@@ -346,7 +346,10 @@ def job_consumption_plots(jobs):
             }
 
             for cat, cd in plots_data[pd['type']][pname].items():
-                stats, columns = build_stack_histogram(cd)
+                n_decimals = 0
+                if 'per' in pname:
+                    n_decimals = 2
+                stats, columns = build_stack_histogram(cd, n_decimals=n_decimals)
                 plots_dict[pname]['data'][cat] = {
                     'columns': columns,
                     'stats': stats,
@@ -365,6 +368,8 @@ def job_consumption_plots(jobs):
                 plots_dict[pname]['data'][cat] = {
                     'columns': columns,
                 }
+            if max([len(i['columns']) for i in plots_dict[pname]['data'].values()]) > 15:
+                plots_dict[pname]['details']['size'] = [600 + 200 * int(max([len(i['columns']) for i in plots_dict[pname]['data'].values()])/15), 300]
 
     # transform dict to list
     plots_list = []

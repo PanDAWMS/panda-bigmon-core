@@ -6693,6 +6693,7 @@ def taskList(request):
 
     # For tasks plots
     setCacheEntry(request, transactionKey, taskl, 60 * 20, isData=True)
+
     new_cur = connection.cursor()
     new_cur.execute(
         """
@@ -6870,12 +6871,12 @@ def taskList(request):
         else:
             tmpTableName = "TMP_IDS1"
 
-        transactionKey = random.randrange(1000000)
+        tk_es_jobs = random.randrange(1000000)
 #        connection.enter_transaction_management()
         new_cur = connection.cursor()
         executionData = []
         for id in esjobs:
-            executionData.append((id, transactionKey))
+            executionData.append((id, tk_es_jobs))
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
 
@@ -6883,7 +6884,7 @@ def taskList(request):
         new_cur.execute(
             """
             SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID
-            """ % (tmpTableName, transactionKey)
+            """ % (tmpTableName, tk_es_jobs)
         )
         evtable = dictfetchall(new_cur)
 
