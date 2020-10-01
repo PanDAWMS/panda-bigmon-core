@@ -8156,7 +8156,7 @@ def taskInfoNew(request, jeditaskid=0):
     if eventservice:
         event_summary_list = event_summary_for_task(mode, query, tk_dj=transactionKeyDJ)
         for entry in event_summary_list:
-            entry['pct'] = round(entry['count'] * 100. / taskrec['totev'], 2) if 'totev' in taskrec and 'count' in entry else 0
+            entry['pct'] = round(entry['count'] * 100. / taskrec['totev'], 2) if 'totev' in taskrec and taskrec['totev'] > 0 and 'count' in entry else 0
             status = entry.get("statusname", "-")
             if status in ['finished', 'done', 'merged']:
                 neventsProcTot += entry.get("count", 0)
