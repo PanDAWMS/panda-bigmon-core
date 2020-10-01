@@ -29,39 +29,40 @@
 {% endblock %}
 
 {% block body %}
+<div class="bp-selected-params">
+  {% if requestParams.statenotupdated %}
+      <b>Tasks in <span class="{{ requestParams.status }}">{{ requestParams.status }}</span> state for more
+          than {{ requestParams.statenotupdated }} hours</b> {% endif %}
+  {% if requestParams.workinggroup %}<p><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
+  {% if requestParams.username %}<p><b>User: <a
+          href="{% url 'userInfo' requestParams.username %}?display_limit=300">{{ requestParams.username }}</a> <a
+          href="{% url 'userInfo' requestParams.username %}?display_limit=300">Show user page</a></b> {% endif %}
+  {% if requestParams.tasktype %}<p><b>Task type: {{ requestParams.tasktype }}</b> {% endif %}
 
-    {% if requestParams.statenotupdated %}<br>
-        <b>Tasks in <span class="{{ requestParams.status }}">{{ requestParams.status }}</span> state for more
-            than {{ requestParams.statenotupdated }} hours</b> {% endif %}
-    {% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
-    {% if requestParams.username %}<br><b>User: <a
-            href="{% url 'userInfo' requestParams.username %}?display_limit=300">{{ requestParams.username }}</a> <a
-            href="{% url 'userInfo' requestParams.username %}?display_limit=300">Show user page</a></b> {% endif %}
-    {% if requestParams.tasktype %}<br><b>Task type: {{ requestParams.tasktype }}</b> {% endif %}
+  {% if requestParams.campaign %}<p><b>Campaign: {{ requestParams.campaign }}</b> {% endif %}
+  {% if requestParams.project %}<p><b>Project: {{ requestParams.project }}</b> {% endif %}
+  {% if requestParams.stream %}<p><b>Stream: {{ requestParams.stream }}</b> {% endif %}
+  {% if requestParams.tag %}<p><b>Tag: {{ requestParams.tag }}</b> {% endif %}
 
-    {% if requestParams.campaign %}<br><b>Campaign: {{ requestParams.campaign }}</b> {% endif %}
-    {% if requestParams.project %}<br><b>Project: {{ requestParams.project }}</b> {% endif %}
-    {% if requestParams.stream %}<br><b>Stream: {{ requestParams.stream }}</b> {% endif %}
-    {% if requestParams.tag %}<br><b>Tag: {{ requestParams.tag }}</b> {% endif %}
+  {% if requestParams.reqid_from %}<p><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
+  {% if requestParams.reqid_to %}<p><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
 
-    {% if requestParams.reqid_from %}<br><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
-    {% if requestParams.reqid_to %}<br><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
+  {% if requestParams.transpath %}<p><b>Transformation: {{ requestParams.transpath }}</b> {% endif %}
+  {% if requestParams.transuses %}<p><b>Release: {{ requestParams.transuses }}</b> {% endif %}
+  {% if requestParams.processingtype %}<p><b>Processing type: {{ requestParams.processingtype }}</b> {% endif %}
+  {% if requestParams.cloud %}<p><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
+  {% if requestParams.parent_tid %}<p><b>Parent task: {{ requestParams.parent_tid }}</b> {% endif %}
+  {% if requestParams.status %}<p>
+      <b>{% if viewParams.MON_VO == 'ATLAS' %}Detailed JEDI task status {% else %}Task status {% endif %}: <span
+              class='{{ requestParams.status }}'>{{ requestParams.status }}</span></b> {% endif %}
+  {% if requestParams.superstatus %}<p>
+      <b>{% if viewParams.MON_VO == 'ATLAS' %}Task status {% else %}Task status {% endif %}: <span
+              class='{{ requestParams.superstatus }}'>{{ requestParams.superstatus }}</span></b> {% endif %}
 
-    {% if requestParams.transpath %}<br><b>Transformation: {{ requestParams.transpath }}</b> {% endif %}
-    {% if requestParams.transuses %}<br><b>Release: {{ requestParams.transuses }}</b> {% endif %}
-    {% if requestParams.processingtype %}<br><b>Processing type: {{ requestParams.processingtype }}</b> {% endif %}
-    {% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-    {% if requestParams.parent_tid %}<br><b>Parent task: {{ requestParams.parent_tid }}</b> {% endif %}
-    {% if requestParams.status %}<br>
-        <b>{% if viewParams.MON_VO == 'ATLAS' %}Detailed JEDI task status {% else %}Task status {% endif %}: <span
-                class='{{ requestParams.status }}'>{{ requestParams.status }}</span></b> {% endif %}
-    {% if requestParams.superstatus %}<br>
-        <b>{% if viewParams.MON_VO == 'ATLAS' %}Task status {% else %}Task status {% endif %}: <span
-                class='{{ requestParams.superstatus }}'>{{ requestParams.superstatus }}</span></b> {% endif %}
+  {% if requestParams.hashtag %}<p><b>Hashtag: {{ requestParams.hashtag }} </b> {% endif %}
 
-    {% if requestParams.hashtag %}<br><b>Hashtag: {{ requestParams.hashtag }} </b> {% endif %}
-
-    {% if requestParams.eventservice %}<br><b>Event service tasks</b> {% endif %}
+  {% if requestParams.eventservice %}<p><b>Event service tasks</b> {% endif %}
+</div>
 
     {% if tasks %}
 
@@ -135,7 +136,7 @@
         {% endif %}
 
         <div id="div-plot">
-            <a href="#plots" class="button bluebutton" onclick="togglePlots();">Show jobs consumption plots</a>
+            <a href="#plots" class="button bluebutton" onclick="togglePlots();"><span class="tooltip-right">Show jobs consumption plots<span class="tooltip-text">It might be slow if number of tasks in current selection is big.</span></span></a>
         </div>
 
 
@@ -278,8 +279,8 @@
       $scope.taskinfo.jc_plots.message = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... ');
       $http.get($scope.taskinfo.jc_plots.url_path, {params:{}}).then(
         function success(response) {
-          if (response.status === 200 && response.data.length > 0) {
-              $scope.taskinfo.jc_plots.plot_data = response.data;
+          if (response.status === 200 && response.data.data.length > 0) {
+              $scope.taskinfo.jc_plots.plot_data = response.data.data;
 
               $scope.taskinfo.jc_plots.options.category = [];
               Object.keys($scope.taskinfo.jc_plots.plot_data[1].data.data).forEach((key) => {
@@ -291,7 +292,9 @@
               $scope.taskinfo.jc_plots.message = '';
           }
           else {
-            $scope.taskinfo.jc_plots.message = $sce.trustAsHtml('No jobs found for this list of tasks.');
+            let message = '';
+            (response.data.error && response.data.error.length > 0) ? message = response.data.error : message = 'No jobs found for this list of tasks.';
+            $scope.taskinfo.jc_plots.message = $sce.trustAsHtml(message);
           }
         },
         function error(response) {
@@ -331,12 +334,6 @@
         $scope.taskinfo.jc_plots.fetch();
         $scope.taskinfo.jc_plots.selection.is_hidden = false;
       }
-      else if ($scope.taskinfo.jc_plots.selection.mode !== mode) {
-        // destroy current plots and rebuild them
-        $scope.taskinfo.jc_plots.destroy();
-        $scope.taskinfo.jc_plots.fetch();
-        $scope.taskinfo.jc_plots.selection.is_hidden = false;
-      }
       else {
         ($scope.taskinfo.jc_plots.selection.is_hidden) ? $scope.taskinfo.jc_plots.selection.is_hidden = false : $scope.taskinfo.jc_plots.selection.is_hidden = true;
       }
@@ -355,6 +352,7 @@
             $timeout(() => {
               element.ready(() => {
                 if (scope.plot.data.details.type === 'pie') {
+                  if ('size' in scope.plot.data.details) {scope.plot.data.details.size[0] = getWidth();}
                   scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_donut(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category]['columns'], scope.plot.name + "_chart", scope.plot.data.details.title, scope.plot.data.details)
                 }
                 else if (scope.plot.data.details.type === 'stack_bar') {

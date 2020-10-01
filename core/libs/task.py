@@ -214,22 +214,38 @@ def job_consumption_plots(jobs):
 
     plots_dict = {}
     plot_details = {
-        'nevents_sum_finished': {'type': 'pie', 'title': 'Number of events', 'xlabel': 'N events'},
-        'nevents_finished': {'type': 'stack_bar', 'title': 'Number of events', 'xlabel': 'N events'},
-        'maxpss_finished': {'type': 'stack_bar', 'title': 'Max PSS (finished jobs)', 'xlabel': 'MaxPSS, MB'},
-        'maxpsspercore_finished': {'type': 'stack_bar', 'title': 'Max PSS/core (finished jobs)', 'xlabel': 'MaxPSS per core, MB'},
-        'walltime_finished': {'type': 'stack_bar', 'title': 'Walltime (finished jobs)', 'xlabel': 'Walltime, s'},
-        'walltimeperevent_finished': {'type': 'stack_bar', 'title': 'Walltime/event (finished jobs)', 'xlabel': 'Walltime per event, s'},
-        'hs06s_finished': {'type': 'stack_bar', 'title': 'HS06s (finished jobs)', 'xlabel': 'HS06s'},
-        'cputime_finished': {'type': 'stack_bar', 'title': 'CPU time (finished jobs)', 'xlabel': 'CPU time, s'},
-        'cputimeperevent_finished': {'type': 'stack_bar', 'title': 'CPU time/event (finished jobs)', 'xlabel': 'CPU time, s'},
-        'maxpss_failed': {'type': 'stack_bar', 'title': 'Maximum PSS (failed jobs)', 'xlabel': 'MaxPSS, MB'},
-        'maxpsspercore_failed': {'type': 'stack_bar', 'title': 'Max PSS/core (failed jobs)', 'xlabel': 'MaxPSS per core, MB'},
-        'walltime_failed': {'type': 'stack_bar', 'title': 'Walltime (failed jobs)', 'xlabel': 'walltime, s'},
-        'walltimeperevent_failed': {'type': 'stack_bar', 'title': 'Walltime/event (failed jobs)', 'xlabel': 'Walltime per event, s'},
-        'hs06s_failed': {'type': 'stack_bar', 'title': 'HS06s (failed jobs)', 'xlabel': 'HS06s'},
-        'cputime_failed': {'type': 'stack_bar', 'title': 'CPU time (failed jobs)', 'xlabel': 'CPU time, s'},
-        'cputimeperevent_failed': {'type': 'stack_bar', 'title': 'CPU time/event (failed jobs)', 'xlabel': 'CPU time, s'},
+        'nevents_sum_finished': {'type': 'pie', 'title': 'Number of events',
+                                 'xlabel': 'N events', 'ylabel': 'N jobs'},
+        'nevents_finished': {'type': 'stack_bar', 'title': 'Number of events',
+                             'xlabel': 'N events', 'ylabel': 'N jobs'},
+        'maxpss_finished': {'type': 'stack_bar', 'title': 'Max PSS (finished jobs)',
+                            'xlabel': 'MaxPSS, MB', 'ylabel': 'N jobs'},
+        'maxpsspercore_finished': {'type': 'stack_bar', 'title': 'Max PSS/core (finished jobs)',
+                                   'xlabel': 'MaxPSS per core, MB', 'ylabel': 'N jobs'},
+        'walltime_finished': {'type': 'stack_bar', 'title': 'Walltime (finished jobs)',
+                              'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
+        'walltimeperevent_finished': {'type': 'stack_bar', 'title': 'Walltime/event (finished jobs)',
+                                      'xlabel': 'Walltime per event, s', 'ylabel': 'N jobs'},
+        'hs06s_finished': {'type': 'stack_bar', 'title': 'HS06s (finished jobs)',
+                           'xlabel': 'HS06s', 'ylabel': 'N jobs'},
+        'cputime_finished': {'type': 'stack_bar', 'title': 'CPU time (finished jobs)',
+                             'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
+        'cputimeperevent_finished': {'type': 'stack_bar', 'title': 'CPU time/event (finished jobs)',
+                                     'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
+        'maxpss_failed': {'type': 'stack_bar', 'title': 'Maximum PSS (failed jobs)',
+                          'xlabel': 'MaxPSS, MB', 'ylabel': 'N jobs'},
+        'maxpsspercore_failed': {'type': 'stack_bar', 'title': 'Max PSS/core (failed jobs)',
+                                 'xlabel': 'MaxPSS per core, MB', 'ylabel': 'N jobs'},
+        'walltime_failed': {'type': 'stack_bar', 'title': 'Walltime (failed jobs)',
+                            'xlabel': 'walltime, s', 'ylabel': 'N jobs'},
+        'walltimeperevent_failed': {'type': 'stack_bar', 'title': 'Walltime/event (failed jobs)',
+                                    'xlabel': 'Walltime per event, s', 'ylabel': 'N jobs'},
+        'hs06s_failed': {'type': 'stack_bar', 'title': 'HS06s (failed jobs)',
+                         'xlabel': 'HS06s', 'ylabel': 'N jobs'},
+        'cputime_failed': {'type': 'stack_bar', 'title': 'CPU time (failed jobs)',
+                           'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
+        'cputimeperevent_failed': {'type': 'stack_bar', 'title': 'CPU time/event (failed jobs)',
+                                   'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
     }
 
     plots_data = {}
@@ -369,7 +385,8 @@ def job_consumption_plots(jobs):
                     'columns': columns,
                 }
             if max([len(i['columns']) for i in plots_dict[pname]['data'].values()]) > 15:
-                plots_dict[pname]['details']['size'] = [600 + 200 * int(max([len(i['columns']) for i in plots_dict[pname]['data'].values()])/15), 300]
+                plots_dict[pname]['details']['legend_position'] = 'bottom'
+                plots_dict[pname]['details']['size'] = [800, 300 + 20 * int(max([len(i['columns']) for i in plots_dict[pname]['data'].values()])/6)]
 
     # transform dict to list
     plots_list = []

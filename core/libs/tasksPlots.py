@@ -21,21 +21,29 @@ pandaSites = {}
 
 def getJobsData(request):
 
-    data = {}
+    data = {
+        'error': '',
+        'data': [],
+    }
     idList = request.GET.get('idtasks', '')
     tasksList = getCacheEntry(request, idList, isData=True)
     if len(tasksList) == 0:
         return HttpResponse(data, status=500, content_type='application/json')
     else:
         results = get_jobs_plot_data(tasksList)
-        # results = getJobsInfo(request, tasksList, idList)
-        data = json.dumps(results, cls=NpEncoder)
+        if len(results['error']) > 0:
+            data['error'] = results['error']
+        else:
+            data['data'] = results['plot_data']
 
-    return HttpResponse(data, content_type='application/json')
+    return HttpResponse(json.dumps(data, cls=NpEncoder), content_type='application/json')
 
 
 def get_jobs_plot_data(taskid_list):
+    error = ''
+    plots_list = []
 
+    MAX_JOBS = 1000000
     MAX_ENTRIES__IN = 100
     extra_str = "(1=1)"
     query = {}
@@ -61,14 +69,19 @@ def get_jobs_plot_data(taskid_list):
 
     jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_str]).values(*values))
 
-    # drop duplicate jobs
-    jobs = drop_duplicates(jobs, id='pandaid')
+    print("Number of found jobs: {}".format(len(jobs)))
+    print("Number of sites: {}".format(len(set([j['computingsite'] for j in jobs]))))
+    if len(jobs) > MAX_JOBS:
+        error = 'Too many jobs to prepare plots. Please decrease the selection of tasks and try again.'
+    else:
+        # drop duplicate jobs
+        jobs = drop_duplicates(jobs, id='pandaid')
 
-    # determine jobs category (build, run or merge)
-    jobs = add_job_category(jobs)
+        # determine jobs category (build, run or merge)
+        jobs = add_job_category(jobs)
 
-    # prepare data for job consumption plots
-    plots_list = job_consumption_plots(jobs)
+        # prepare data for job consumption plots
+        plots_list = job_consumption_plots(jobs)
 
-    return plots_list
+    return {'plot_data': plots_list, 'error': error}
 
