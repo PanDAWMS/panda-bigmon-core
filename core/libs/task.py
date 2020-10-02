@@ -426,13 +426,18 @@ def build_stack_histogram(data_raw, **kwargs):
 
     x_axis_ticks = ['x']
     x_axis_ticks.extend(ranges_all[:-1])
-    columns.append(x_axis_ticks)
 
     for stack_param, data in data_raw.items():
         column = [stack_param]
         column.extend(list(np.histogram(data, ranges_all)[0]))
+        # do not add if all the values are zeros
+        if sum(column[1:]) > 0:
+            columns.append(column)
 
-        columns.append(column)
+    # sort by biggest impact
+    columns = sorted(columns, key=lambda x: sum(x[1:]), reverse=True)
+
+    columns.insert(0, x_axis_ticks)
 
     return stats, columns
 
