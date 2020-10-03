@@ -419,6 +419,9 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 .dataTables_wrapper .dt-buttons {
   margin-bottom: 0;
 }
+.dataTables_wrapper .dt-buttons > a.button {
+  color: #fefefe;
+}
 
 .dataTables_wrapper .dataTables_length label {
   margin-right: 1rem;
@@ -447,7 +450,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   font-weight: bold;
 }
 
-.dataTables_paginate .paginate_button > a {
+.dataTables_paginate > ul.pagination > li.paginate_button > a {
   background-color: #5e789a;
   color: #fefefe;
 }

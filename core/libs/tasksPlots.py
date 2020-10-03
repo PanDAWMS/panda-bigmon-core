@@ -11,6 +11,8 @@ from django.http import HttpResponse
 from core.libs.CustomJSONSerializer import NpEncoder
 
 from core.libs.cache import getCacheEntry, setCacheEntry
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name
+from core.libs.task import drop_duplicates, add_job_category, job_consumption_plots
 
 from core.pandajob.models import Jobsdefined4, Jobsarchived, Jobswaiting4, Jobsactive4, Jobsarchived4
 
@@ -18,214 +20,68 @@ pandaSites = {}
 
 
 def getJobsData(request):
-    if request.is_ajax():
-        try:
-            data = None
-            idList = request.GET.get('idtasks', '')
-            tasksList = getCacheEntry(request, idList, isData=True)
-            if len(tasksList) == 0:
-                return HttpResponse(data, content_type='application/json')
-            else:
-                results = getJobsInfo(request, tasksList, idList)
-            data = json.dumps(results, cls=NpEncoder)
-        except:
-            data = 'fail'
+
+    data = {
+        'error': '',
+        'data': [],
+    }
+    idList = request.GET.get('idtasks', '')
+    tasksList = getCacheEntry(request, idList, isData=True)
+    if len(tasksList) == 0:
+        return HttpResponse(data, status=500, content_type='application/json')
     else:
-        data = 'fail'
-    return HttpResponse(data, content_type='application/json')
+        results = get_jobs_plot_data(tasksList)
+        if len(results['error']) > 0:
+            data['error'] = results['error']
+        else:
+            data['data'] = results['plot_data']
+
+    return HttpResponse(json.dumps(data, cls=NpEncoder), content_type='application/json')
 
 
-def getJobsInfo(request, tasksList, idList, exclude={}, extra="(1=1)"):
-    data = getCacheEntry(request, idList + '_jobs', isData=True)
-    if data is not None:
-        return data
+def get_jobs_plot_data(taskid_list):
+    error = ''
+    plots_list = []
+
+    MAX_JOBS = 1000000
+    MAX_ENTRIES__IN = 100
+    extra_str = "(1=1)"
+    query = {}
+    if len(taskid_list) < MAX_ENTRIES__IN:
+        query["jeditaskid__in"] = taskid_list
+        query["jobstatus__in"] = ['finished', 'failed']
     else:
-        dataForPlots = {}
+        # insert taskids to temp DB table
+        tmp_table_name = get_tmp_table_name()
+        tk_taskids = insert_to_temp_table(taskid_list)
+        extra_str += " AND jeditaskid in (select id from {} where TRANSACTIONKEY={} ) ".format(tmp_table_name, tk_taskids)
 
-        query = {}
+    values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', \
+             'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', \
+             'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid', 'attemptnr', \
+             'processingtype', 'transformation'
 
-        query["jeditaskid__in"] = tasksList
-        newquery = query
+    jobs = []
+    jobs.extend(Jobsdefined4.objects.filter(**query).extra(where=[extra_str]).values(*values))
+    jobs.extend(Jobswaiting4.objects.filter(**query).extra(where=[extra_str]).values(*values))
+    jobs.extend(Jobsactive4.objects.filter(**query).extra(where=[extra_str]).values(*values))
+    jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[extra_str]).values(*values))
 
-        jobs = []
-        runJobs = []
-        buildJobs = []
-        pmergeJobs = []
-        values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', \
-                 'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', \
-                 'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid', 'attemptnr', \
-                 'processingtype', 'transformation'
+    jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_str]).values(*values))
 
-        start = time.time()
-        jobs.extend(Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
-        jobs.extend(Jobswaiting4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
-        jobs.extend(Jobsactive4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
-        jobs.extend(Jobsarchived4.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
+    print("Number of found jobs: {}".format(len(jobs)))
+    print("Number of sites: {}".format(len(set([j['computingsite'] for j in jobs]))))
+    if len(jobs) > MAX_JOBS:
+        error = 'Too many jobs to prepare plots. Please decrease the selection of tasks and try again.'
+    else:
+        # drop duplicate jobs
+        jobs = drop_duplicates(jobs, id='pandaid')
 
-        jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).exclude(**exclude).values(*values))
-        end = time.time()
-        print(end - start)
-        for job in jobs:
-            if job['processingtype'] != 'pmerge' and 'build' not in job['transformation']:
-                runJobs.append(job)
-            elif 'build' in job['transformation']:
-                buildJobs.append(job)
-            elif job['processingtype'] == 'pmerge':
-                pmergeJobs.append(job)
+        # determine jobs category (build, run or merge)
+        jobs = add_job_category(jobs)
 
-        dataForPlots = {'all': getDataForPlots(jobs), 'run': getDataForPlots(runJobs), 'build': getDataForPlots(buildJobs),
-                        'pmerge': getDataForPlots(pmergeJobs)}
+        # prepare data for job consumption plots
+        plots_list = job_consumption_plots(jobs)
 
-        setCacheEntry(request, idList + '_jobs', dataForPlots, 60 * 20, isData=True)
-        return dataForPlots
+    return {'plot_data': plots_list, 'error': error}
 
-
-def getDataForPlots(jobs):
-    ## drop duplicate jobs
-    job1 = {}
-    newjobs = []
-    for job in jobs:
-        pandaid = job['pandaid']
-        dropJob = 0
-        if pandaid in job1:
-            ## This is a duplicate. Drop it.
-            dropJob = 1
-        else:
-            job1[pandaid] = 1
-        if (dropJob == 0):
-            newjobs.append(job)
-    jobs = newjobs
-
-    jobsSet = {}
-    newjobs = []
-
-    hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
-    cpuTimeCurrent = []
-    for job in jobs:
-
-        if not job['pandaid'] in jobsSet:
-            jobsSet[job['pandaid']] = job['jobstatus']
-            newjobs.append(job)
-        elif jobsSet[job['pandaid']] == 'closed' and job['jobstatus'] == 'finished':
-            jobsSet[job['pandaid']] = job['jobstatus']
-            newjobs.append(job)
-        if 'actualcorecount' in job and job['actualcorecount'] is None:
-            job['actualcorecount'] = 1
-        if job['jobstatus'] in ['finished', 'failed'] and 'endtime' in job and 'starttime' in job and job[
-            'starttime'] and job['endtime']:
-            duration = max(job['endtime'] - job['starttime'], timedelta(seconds=0))
-            job['duration'] = duration.days * 24 * 3600 + duration.seconds
-            if job['hs06sec'] is None:
-                if job['computingsite'] in pandaSites:
-                    job['hs06sec'] = (job['duration']) * float(pandaSites[job['computingsite']]['corepower']) * job[
-                        'actualcorecount']
-                else:
-                    job['hs06sec'] = 0
-            if job['nevents'] and job['nevents'] > 0:
-                cpuTimeCurrent.append(job['hs06sec'] / job['nevents'])
-                job['walltimeperevent'] = round(job['duration'] * job['actualcorecount'] / (job['nevents'] * 1.0),
-                                                2)
-            hs06sSum['finished'] += job['hs06sec'] if job['jobstatus'] == 'finished' else 0
-            hs06sSum['failed'] += job['hs06sec'] if job['jobstatus'] == 'failed' else 0
-            hs06sSum['total'] += job['hs06sec']
-
-    jobs = newjobs
-
-    plotsNames = ['maxpss', 'maxpsspercore', 'nevents', 'walltime', 'walltimeperevent', 'hs06s', 'cputime',
-                  'cputimeperevent', 'maxpssf', 'maxpsspercoref', 'walltimef', 'hs06sf', 'cputimef',
-                  'cputimepereventf']
-    plotsDict = {}
-
-    for pname in plotsNames:
-        plotsDict[pname] = {'sites': {}, 'ranges': {}}
-
-    for job in jobs:
-        if job['actualcorecount'] is None:
-            job['actualcorecount'] = 1
-        if job['maxpss'] is not None and job['maxpss'] != -1:
-            if job['jobstatus'] == 'finished':
-                if job['computingsite'] not in plotsDict['maxpsspercore']['sites']:
-                    plotsDict['maxpsspercore']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['nevents']['sites']:
-                    plotsDict['nevents']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['maxpss']['sites']:
-                    plotsDict['maxpss']['sites'][job['computingsite']] = []
-
-                if job['actualcorecount'] and job['actualcorecount'] > 0:
-                    plotsDict['maxpsspercore']['sites'][job['computingsite']].append(
-                        job['maxpss'] / 1024 / job['actualcorecount'])
-                plotsDict['maxpss']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
-                plotsDict['nevents']['sites'][job['computingsite']].append(job['nevents'])
-            elif job['jobstatus'] == 'failed':
-                if job['computingsite'] not in plotsDict['maxpsspercoref']['sites']:
-                    plotsDict['maxpsspercoref']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['maxpssf']['sites']:
-                    plotsDict['maxpssf']['sites'][job['computingsite']] = []
-                if job['actualcorecount'] and job['actualcorecount'] > 0:
-                    plotsDict['maxpsspercoref']['sites'][job['computingsite']].append(
-                        job['maxpss'] / 1024 / job['actualcorecount'])
-                plotsDict['maxpssf']['sites'][job['computingsite']].append(job['maxpss'] / 1024)
-        if 'duration' in job and job['duration']:
-            if job['jobstatus'] == 'finished':
-                if job['computingsite'] not in plotsDict['walltime']['sites']:
-                    plotsDict['walltime']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['hs06s']['sites']:
-                    plotsDict['hs06s']['sites'][job['computingsite']] = []
-                plotsDict['walltime']['sites'][job['computingsite']].append(job['duration'])
-                plotsDict['hs06s']['sites'][job['computingsite']].append(job['hs06sec'])
-                if 'walltimeperevent' in job:
-                    if job['computingsite'] not in plotsDict['walltimeperevent']['sites']:
-                        plotsDict['walltimeperevent']['sites'][job['computingsite']] = []
-                    plotsDict['walltimeperevent']['sites'][job['computingsite']].append(job['walltimeperevent'])
-            if job['jobstatus'] == 'failed':
-                if job['computingsite'] not in plotsDict['walltimef']['sites']:
-                    plotsDict['walltimef']['sites'][job['computingsite']] = []
-                if job['computingsite'] not in plotsDict['hs06sf']['sites']:
-                    plotsDict['hs06sf']['sites'][job['computingsite']] = []
-                plotsDict['walltimef']['sites'][job['computingsite']].append(job['duration'])
-                plotsDict['hs06sf']['sites'][job['computingsite']].append(job['hs06sec'])
-        if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
-            if job['jobstatus'] == 'finished':
-                if job['computingsite'] not in plotsDict['cputime']['sites']:
-                    plotsDict['cputime']['sites'][job['computingsite']] = []
-                plotsDict['cputime']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
-                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
-                    if job['computingsite'] not in plotsDict['cputimeperevent']['sites']:
-                        plotsDict['cputimeperevent']['sites'][job['computingsite']] = []
-                    plotsDict['cputimeperevent']['sites'][job['computingsite']].append(
-                        round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
-            if job['jobstatus'] == 'failed':
-                if job['computingsite'] not in plotsDict['cputimef']['sites']:
-                    plotsDict['cputimef']['sites'][job['computingsite']] = []
-                plotsDict['cputimef']['sites'][job['computingsite']].append(job['cpuconsumptiontime'])
-                if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
-                    if job['computingsite'] not in plotsDict['cputimepereventf']['sites']:
-                        plotsDict['cputimepereventf']['sites'][job['computingsite']] = []
-                    plotsDict['cputimepereventf']['sites'][job['computingsite']].append(
-                        round(job['cpuconsumptiontime'] / (job['nevents'] * 1.0), 2))
-
-    nbinsmax = 100
-    for pname in plotsNames:
-        rawdata = []
-        for k, d in plotsDict[pname]['sites'].items():
-            rawdata.extend(d)
-        if len(rawdata) > 0:
-            plotsDict[pname]['stats'] = []
-            plotsDict[pname]['stats'].append(np.average(rawdata))
-            plotsDict[pname]['stats'].append(np.std(rawdata))
-            bins, ranges = np.histogram(rawdata, bins='auto')
-            if len(ranges) > nbinsmax + 1:
-                bins, ranges = np.histogram(rawdata, bins=nbinsmax)
-            if pname not in ('walltimeperevent', 'cputimeperevent'):
-                plotsDict[pname]['ranges'] = list(np.ceil(ranges))
-            else:
-                plotsDict[pname]['ranges'] = list(ranges)
-            for site in plotsDict[pname]['sites'].keys():
-                sitedata = [x for x in plotsDict[pname]['sites'][site]]
-                plotsDict[pname]['sites'][site] = list(np.histogram(sitedata, ranges)[0])
-        else:
-            try:
-                del (plotsDict[pname])
-            except:
-                pass
-    return plotsDict

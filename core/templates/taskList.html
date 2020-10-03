@@ -1,5 +1,6 @@
 {% extends "_base_core.html" %}
 {% load static %}
+{% load common_tags %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA tasks{% endblock %}
 {% block subtitle %}PanDA {% if viewParams.MON_VO == 'ATLAS' %} JEDI {% endif %} task list
     {{ viewParams.selection|safe }}
@@ -14,49 +15,54 @@
 
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
 {% endblock %}
 {% block js_head_page_library %}
   <script src="{% static 'js/humanize.min.js' %}"></script>
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
   <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
-  <script src="{% static 'js/d3.v3.min.js' %}"></script>
+  <!-- Load d3.js and c3.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
 {% endblock %}
 
 {% block body %}
+<div class="bp-selected-params">
+  {% if requestParams.statenotupdated %}
+      <b>Tasks in <span class="{{ requestParams.status }}">{{ requestParams.status }}</span> state for more
+          than {{ requestParams.statenotupdated }} hours</b> {% endif %}
+  {% if requestParams.workinggroup %}<p><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
+  {% if requestParams.username %}<p><b>User: <a
+          href="{% url 'userInfo' requestParams.username %}?display_limit=300">{{ requestParams.username }}</a> <a
+          href="{% url 'userInfo' requestParams.username %}?display_limit=300">Show user page</a></b> {% endif %}
+  {% if requestParams.tasktype %}<p><b>Task type: {{ requestParams.tasktype }}</b> {% endif %}
 
-    {% if requestParams.statenotupdated %}<br>
-        <b>Tasks in <span class="{{ requestParams.status }}">{{ requestParams.status }}</span> state for more
-            than {{ requestParams.statenotupdated }} hours</b> {% endif %}
-    {% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
-    {% if requestParams.username %}<br><b>User: <a
-            href="{% url 'userInfo' requestParams.username %}?display_limit=300">{{ requestParams.username }}</a> <a
-            href="{% url 'userInfo' requestParams.username %}?display_limit=300">Show user page</a></b> {% endif %}
-    {% if requestParams.tasktype %}<br><b>Task type: {{ requestParams.tasktype }}</b> {% endif %}
+  {% if requestParams.campaign %}<p><b>Campaign: {{ requestParams.campaign }}</b> {% endif %}
+  {% if requestParams.project %}<p><b>Project: {{ requestParams.project }}</b> {% endif %}
+  {% if requestParams.stream %}<p><b>Stream: {{ requestParams.stream }}</b> {% endif %}
+  {% if requestParams.tag %}<p><b>Tag: {{ requestParams.tag }}</b> {% endif %}
 
-    {% if requestParams.campaign %}<br><b>Campaign: {{ requestParams.campaign }}</b> {% endif %}
-    {% if requestParams.project %}<br><b>Project: {{ requestParams.project }}</b> {% endif %}
-    {% if requestParams.stream %}<br><b>Stream: {{ requestParams.stream }}</b> {% endif %}
-    {% if requestParams.tag %}<br><b>Tag: {{ requestParams.tag }}</b> {% endif %}
+  {% if requestParams.reqid_from %}<p><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
+  {% if requestParams.reqid_to %}<p><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
 
-    {% if requestParams.reqid_from %}<br><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
-    {% if requestParams.reqid_to %}<br><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
+  {% if requestParams.transpath %}<p><b>Transformation: {{ requestParams.transpath }}</b> {% endif %}
+  {% if requestParams.transuses %}<p><b>Release: {{ requestParams.transuses }}</b> {% endif %}
+  {% if requestParams.processingtype %}<p><b>Processing type: {{ requestParams.processingtype }}</b> {% endif %}
+  {% if requestParams.cloud %}<p><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
+  {% if requestParams.parent_tid %}<p><b>Parent task: {{ requestParams.parent_tid }}</b> {% endif %}
+  {% if requestParams.status %}<p>
+      <b>{% if viewParams.MON_VO == 'ATLAS' %}Detailed JEDI task status {% else %}Task status {% endif %}: <span
+              class='{{ requestParams.status }}'>{{ requestParams.status }}</span></b> {% endif %}
+  {% if requestParams.superstatus %}<p>
+      <b>{% if viewParams.MON_VO == 'ATLAS' %}Task status {% else %}Task status {% endif %}: <span
+              class='{{ requestParams.superstatus }}'>{{ requestParams.superstatus }}</span></b> {% endif %}
 
-    {% if requestParams.transpath %}<br><b>Transformation: {{ requestParams.transpath }}</b> {% endif %}
-    {% if requestParams.transuses %}<br><b>Release: {{ requestParams.transuses }}</b> {% endif %}
-    {% if requestParams.processingtype %}<br><b>Processing type: {{ requestParams.processingtype }}</b> {% endif %}
-    {% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-    {% if requestParams.parent_tid %}<br><b>Parent task: {{ requestParams.parent_tid }}</b> {% endif %}
-    {% if requestParams.status %}<br>
-        <b>{% if viewParams.MON_VO == 'ATLAS' %}Detailed JEDI task status {% else %}Task status {% endif %}: <span
-                class='{{ requestParams.status }}'>{{ requestParams.status }}</span></b> {% endif %}
-    {% if requestParams.superstatus %}<br>
-        <b>{% if viewParams.MON_VO == 'ATLAS' %}Task status {% else %}Task status {% endif %}: <span
-                class='{{ requestParams.superstatus }}'>{{ requestParams.superstatus }}</span></b> {% endif %}
+  {% if requestParams.hashtag %}<p><b>Hashtag: {{ requestParams.hashtag }} </b> {% endif %}
 
-    {% if requestParams.hashtag %}<br><b>Hashtag: {{ requestParams.hashtag }} </b> {% endif %}
-
-    {% if requestParams.eventservice %}<br><b>Event service tasks</b> {% endif %}
+  {% if requestParams.eventservice %}<p><b>Event service tasks</b> {% endif %}
+</div>
 
     {% if tasks %}
 
@@ -129,56 +135,28 @@
             </table>
         {% endif %}
 
-        <div id="div-sum">
-            <a onclick="javascript:loadSummaryData('{{ nosorturl }}');">Show events summary</a> <br/>
-        </div>
         <div id="div-plot">
-            <a onclick="javascript:tasksPlots('d3splot', {{ idtasks }});">Show plots</a> <br/> <br/>
+            <a href="#plots" class="button bluebutton" onclick="togglePlots();"><span class="tooltip-right">Show jobs consumption plots<span class="tooltip-text">It might be slow if number of tasks in current selection is big.</span></span></a>
         </div>
-        <div id="plots" style="display:none">
-            <form id="radio_btn_select">
-                <fieldset>
-                    <legend>Select Job Type:</legend>
-                    <input type='radio' id='radio_all' name='jobtype' value='all' checked="checked"/>
-                    <label for="radio_all">All</label>
-                    <input type='radio' id='radio_run' name='jobtype' value='run'/>
-                    <label for="radio_run">Run</label>
-                    <input type='radio' id='radio_build' name='jobtype' value='build'/>
-                    <label for="radio_build">Build</label>
-                    <input type='radio' id='radio_pmerge' name='jobtype' value='pmerge'/>
-                    <label for="radio_pmerge">PMerge</label>
-                </fieldset>
-            </form>
-            <div id="jobsconsumptionplots"></div>
-            <div class="d3splot" id="plot1" style="float:left;display:none"></div>
 
-            <div class="d3splot" id="plot2" style="float:left;display:none"></div>
 
-            <div class="d3splot" id="plot5" style="float:left;display:none"></div>
+        <div id="plots" data-ng-controller="jobConsumptionPlotsController">
+        <div class="card bp-container-simple secondary ng-hide" ng-hide="taskinfo.jc_plots.selection.is_hidden">
+          <div class="card-divider"><p>Job consumption plots:</p></div>
+          <div class="card-section">
+            <p ng-bind-html="taskinfo.jc_plots.message"></p>
 
-            <div class="d3splot" id="plot7" style="float:left;display:none"></div>
+            <fieldset class="inline">
+              <legend>Job category:</legend>
+              <label ng-repeat="option in taskinfo.jc_plots.options.category"><input type="radio" ng-value="option" ng-model="taskinfo.jc_plots.selection.category" ng-change="taskinfo.jc_plots.rebuild()">{$ option $}</label>
+            </fieldset>
 
-            <div class="d3splot" id="plot10" style="float:left;display:none"></div>
-
-            <div class="d3splot" id="plot9" style="float:left;display:none"></div>
-
-            <div class="d3splot" id="plot11" style="float:left;display:none"></div>
-
-            <br style="clear:both;">
-
-            <div class="d3splot" id="plot3" style="clear:both;float:left;display:none"></div>
-
-            <div class="d3splot" id="plot4" style="float:left;display:none"></div>
-
-            <div class="d3splot" id="plot6" style="float:left;display:none"></div>
-
-            <div class="d3splot" id="plot8" style="float:left;display:none"></div>
-
-            <div class="d3splot" id="plot12" style="float:left;display:none"></div>
-
-            <div class="d3splot" id="plot13" style="float:left;display:none"></div>
-            <br style="clear: both">
+            <div class="c3-chart-block" ng-repeat="plot in taskinfo.jc_plots.plot_data" jcplot-directive plot="plot" parent="$parent"></div>
+          </div>
         </div>
+        </div>
+
+
         <div class="table-scroll">
             <table>
                 <tr class='tablesection'>
@@ -274,11 +252,124 @@
 {% endblock %}
 
 {% block js_body_page %}
-  <script type="text/javascript"
-          src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
-  </script>
-  <script src="{% static 'js/d3jsplot.js' %}"></script>
-  <script type="text/javascript">
+<script type="text/javascript"
+        src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
+</script>
+
+<script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+<script type="text/javascript">
+
+  app.controller('jobConsumptionPlotsController', function($scope, $http, $sce) {
+    $scope.taskinfo = {};
+    $scope.taskinfo.jc_plots = {
+      message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+      selection: {
+        category: '',
+        is_hidden: true,
+      },
+      options: {
+        category: []
+      },
+      url_path: '{% url 'tasksplots' %}?idtasks={{ idtasks }}',
+      plot_data: [],
+      charts: {}
+    };
+
+    $scope.taskinfo.jc_plots.fetch = function () {
+      $scope.taskinfo.jc_plots.message = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... ');
+      $http.get($scope.taskinfo.jc_plots.url_path, {params:{}}).then(
+        function success(response) {
+          if (response.status === 200 && response.data.data.length > 0) {
+              $scope.taskinfo.jc_plots.plot_data = response.data.data;
+
+              $scope.taskinfo.jc_plots.options.category = [];
+              Object.keys($scope.taskinfo.jc_plots.plot_data[1].data.data).forEach((key) => {
+                $scope.taskinfo.jc_plots.options.category.push(key);
+              });
+              $scope.taskinfo.jc_plots.options.category.sort();
+              $scope.taskinfo.jc_plots.selection.category = 'run';
+
+              $scope.taskinfo.jc_plots.message = '';
+          }
+          else {
+            let message = '';
+            (response.data.error && response.data.error.length > 0) ? message = response.data.error : message = 'No jobs found for this list of tasks.';
+            $scope.taskinfo.jc_plots.message = $sce.trustAsHtml(message);
+          }
+        },
+        function error(response) {
+          console.log(response);
+          $scope.taskinfo.jc_plots.message = $sce.trustAsHtml('Failed to load data :( Try to refresh page by link on the top right.');
+        },
+      );
+    };
+
+    $scope.taskinfo.jc_plots.build = function () {
+      $scope.taskinfo.jc_plots.plot_data.forEach((item) => {
+        if (item.data.details.type === 'pie') {
+          $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_donut(item.data.data[$scope.taskinfo.jc_plots.selection.category]['columns'], item.name + "_chart", item.data.details.title, item.data.details)
+        }
+        else if (item.data.details.type === 'stack_bar') {
+          $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_stacked_bar_hist(item.data.data[$scope.taskinfo.jc_plots.selection.category], item.data.details, item.name + "_chart");
+        }
+      })
+    };
+
+    $scope.taskinfo.jc_plots.rebuild = function () {
+      $scope.taskinfo.jc_plots.destroy();
+      $scope.taskinfo.jc_plots.build();
+    };
+
+    $scope.taskinfo.jc_plots.destroy = function () {
+      let plot_names = Object.keys($scope.taskinfo.jc_plots.charts);
+      plot_names.forEach((item) => {
+        if ($scope.taskinfo.jc_plots.charts[item]) {
+          $scope.taskinfo.jc_plots.charts[item] = $scope.taskinfo.jc_plots.charts[item].destroy();
+        }
+      });
+    };
+
+    $scope.taskinfo.jc_plots.toggle = function () {
+      if (Object.keys($scope.taskinfo.jc_plots.charts).length === 0) {
+        $scope.taskinfo.jc_plots.fetch();
+        $scope.taskinfo.jc_plots.selection.is_hidden = false;
+      }
+      else {
+        ($scope.taskinfo.jc_plots.selection.is_hidden) ? $scope.taskinfo.jc_plots.selection.is_hidden = false : $scope.taskinfo.jc_plots.selection.is_hidden = true;
+      }
+    }
+
+  })
+  .directive('jcplotDirective', function ($timeout) {
+      var template = '<div id="{$plot.name$}_chart"></div>';
+      return {
+          template: template,
+          scope: {
+              plot: '=',
+              parent: '=',
+          },
+          link: function (scope, element, attrs) {
+            $timeout(() => {
+              element.ready(() => {
+                if (scope.plot.data.details.type === 'pie') {
+                  if ('size' in scope.plot.data.details) {scope.plot.data.details.size[0] = getWidth();}
+                  scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_donut(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category]['columns'], scope.plot.name + "_chart", scope.plot.data.details.title, scope.plot.data.details)
+                }
+                else if (scope.plot.data.details.type === 'stack_bar') {
+                  scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_stacked_bar_hist(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category], scope.plot.data.details, scope.plot.name + "_chart");
+                }
+              });
+            });
+          }
+      };
+  });
+
+  function togglePlots() {
+    let scope = angular.element(document.getElementById('plots')).scope();
+    scope.taskinfo.jc_plots.toggle();
+  }
+
+
     $(document).ready(function () {
       var jsonData = JSON.parse('{{ datasetstage | safe}}');
       $('#stagingdatasetstable').dataTable({
@@ -311,128 +402,6 @@
       });
     });
 
-
-
-    function toggleDetailDisplay(className) {
-        el = document.getElementsByClassName(className);
-        for (i = 0; i < el.length; i++) {
-            el[i].style.display = (el[i].style.display == "none") ? "" : "none";
-        }
-    }
-
-
-    function tasksPlots(classname, idtasks) {
-        var values = []
-
-        $('input[type=radio][name=jobtype]').on('change', function () {
-            toggleDetailDisplay(classname);
-            $(".d3splot").empty();
-            switch ($(this).val()) {
-                case 'all':
-                    buildPlots(classname, values['all']);
-                    break;
-                case 'run':
-                    buildPlots(classname, values['run']);
-                    break;
-                case 'build':
-                    buildPlots(classname, values['build']);
-                    break;
-                case 'pmerge':
-                    buildPlots(classname, values['pmerge']);
-                    break;
-            }
-        });
-        $.ajax({
-            type: "GET",
-            url: '{% url 'tasksplots' %}?idtasks=' + idtasks,
-            async: false,
-            cache: false,
-            dataType: "json",
-            data: {},
-            success: function (data) {
-                values = data;
-                document.getElementById("plots").style.display = "block";
-            },
-            error: function ($xhr, textStatus, errorThrown) {
-                var string = $xhr.responseJSON;
-                var json_object = JSON.parse(string);
-                console.log("ERROR : ", json_object.message);
-            }
-        })
-        ;
-        buildPlots(classname, values['all'])
-    }
-
-    function buildPlots(classname, data) {
-        values = data;
-        el = document.getElementsByClassName(classname);
-
-        var flag = 0;
-        for (i = 0; i < el.length; i++) {
-            flag = (el[i].innerHTML) ? flag : flag + 1;
-        }
-        if (flag > 0) {
-            $("#jobsconsumptionplots").html("<img src='{% static "images/load.gif" %}'>  ");
-
-            if ('maxpss' in values) {
-                pandamonplotHistNew(values['maxpss'], "#plot1", "Maximum PSS histogram");
-            }
-            if ('maxpssf' in values) {
-                pandamonplotHistNew(values['maxpssf'], "#plot3", "Maximum PSS histogram (failed jobs)");
-            }
-            if ('walltime' in values) {
-                pandamonplotHistNew(values['walltime'], "#plot2", "Walltime histogram");
-            }
-            if ('walltimef' in values) {
-                pandamonplotHistNew(values['walltimef'], "#plot4", "Walltime histogram (failed jobs)");
-            }
-            if ('maxpsspercore' in values) {
-                pandamonplotHistNew(values['maxpsspercore'], "#plot5", "Maximum PSS per core histogram");
-            }
-            if ('maxpsspercoref' in values) {
-                pandamonplotHistNew(values['maxpsspercoref'], "#plot6", "Maximum PSS per core histogram (failed jobs)");
-            }
-            if ('hs06s' in values) {
-                pandamonplotHistNew(values['hs06s'], "#plot7", "HS06s histogram");
-            }
-            if ('hs06sf' in values) {
-                pandamonplotHistNew(values['hs06sf'], "#plot8", "HS06s histogram (failed jobs)");
-            }
-            if ('walltimeperevent' in values) {
-                pandamonplotHistNew(values['walltimeperevent'], "#plot9", "Walltime per event histogram");
-            }
-            if ('cputime' in values) {
-                pandamonplotHistNew(values['cputime'], "#plot10", "CPU time histogram");
-            }
-            if ('cputimeperevent' in values) {
-                pandamonplotHistNew(values['cputimeperevent'], "#plot11", "CPU time per event histogram");
-            }
-            if ('cputimef' in values) {
-                pandamonplotHistNew(values['cputimef'], "#plot12", "CPU time histogram (failed jobs)");
-            }
-            if ('cputimepereventf' in values) {
-                pandamonplotHistNew(values['cputimepereventf'], "#plot13", "CPU time per event histogram (failed jobs)");
-            }
-            $("#jobsconsumptionplots").html("");
-            toggleDetailDisplay(classname);
-        } else {
-            toggleDetailDisplay(classname);
-        }
-    }
-
-    function loadSummaryData(nosorturl) {
-
-        $('#div-sum').html("<img src='{% static "images/load.gif" %}'>  ");
-        $.ajax({
-            url: {% url 'taskListSummary' %},
-            data: nosorturl.replace('/tasks/?', ''),
-            async: true
-        })
-            .done(function (response) {
-                $('#div-sum').html(response);
-            });
-
-    }
   </script>
 
 {% endblock %}

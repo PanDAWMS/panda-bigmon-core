@@ -27,6 +27,7 @@ body {
 
 p {
   line-height: inherit;
+  margin-bottom: 0.3rem;
 }
 
 a, a:link {
@@ -149,6 +150,11 @@ hr {
     height: 3px;
     width: 100%;
     max-width: 100%;
+}
+
+div.bp-selected-params p {
+  font-size: inherit;
+  margin-bottom: 0;
 }
 
 .callout p {

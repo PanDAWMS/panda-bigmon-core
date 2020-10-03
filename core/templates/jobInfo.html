@@ -75,7 +75,7 @@
 	<td>{% if viewParams.MON_VO != 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite  %}">{{ job.computingsite }}</a></td>
   {% if job.harvesterInfo and job.harvesterInfo|length > 0 %}
     <td><a href="{% url 'harvesters' %}?instance={{ job.harvesterInfo.harvesterid }}">{{ job.harvesterInfo.harvesterid }}</a>
-        <br><a href="{% url 'harvesterWorkerInfo' %}?harvesterid={{ job.harvesterInfo.workerid }}&workerid={{ job.harvesterInfo.workerid }}">{{ job.harvesterInfo.workerid }}</a>
+        <br><a href="{% url 'harvesterWorkerInfo' %}?harvesterid={{ job.harvesterInfo.harvesterid }}&workerid={{ job.harvesterInfo.workerid }}">{{ job.harvesterInfo.workerid }}</a>
     </td>
   {% endif %}
   <td>{% if job.actualcorecount %}{{ job.actualcorecount }}{% else %}{{ job.corecount }}{% endif %}</td>
@@ -116,7 +116,7 @@
         <tr><td>DDM</td><td>{{ job.ddmerrorcode }}</td><td>{{ job.ddmerrordiag }}</td></tr>
       {% endif %}
       {% if job.exeerrorcode %}
-        <tr><td>Execution</td><td>{ job.exeerrorcode }}</td><td>{{ job.exeerrordiag }}</td></tr>
+        <tr><td>Execution</td><td>{{ job.exeerrorcode }}</td><td>{{ job.exeerrordiag }}</td></tr>
       {% endif %}
       {% if job.piloterrorcode %}
         <tr><td>Pilot</td><td>{{ job.piloterrorcode }}</td><td>{{ job.piloterrordiag }}</td></tr>
@@ -293,7 +293,7 @@
     <button class="dropdown">Jump to</button>
     <div   class="dropdown-items">
         {% if job.harvesterInfo %}
-            <a href="#harvesterworkers">Associated Harvester workers</a>
+            <a class="disabled">See Harvester related info in the top table</a>
         {% endif %}
         <a href="#jobparamskey">Key job parameters</a>
         <a href="#jobparamsall">All job parameters</a>

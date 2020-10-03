@@ -405,12 +405,12 @@ function draw_stacked_bar_hist(rawdata, details, divToShow)  {
             if (index >= 20) { data_legend_to_hide.push(row[0]); }
         });
         legend_height = 15 * (data.length - data_legend_to_hide.length) / 4;
-        details.title += ' [only top-20 sites listed in legend]'
+        if (details.title.indexOf('[only top-20') < 0) {details.title += ' [only top-20 sites listed in legend]'}
     }
     let width = getPlotWidth();
     let height = 300 + legend_height;
 
-    var chart = c3.generate({
+    let options = {
         bindto: '#' + divToShow,
         data: {
             x: data[0][0],
@@ -472,7 +472,16 @@ function draw_stacked_bar_hist(rawdata, details, divToShow)  {
         padding: {
             right: 40,
         },
-    });
+    };
+    if (is_interactive === false) {
+        options.legend.item = {
+            onclick: function (id) {},
+            onmouseover: function (id) {},
+            onmouseout: function (id) {},
+        };
+
+    }
+    var chart = c3.generate(options);
 
     var chart_svg = d3.select('#' + divToShow + " svg");
     var statlegend = chart_svg.selectAll(".statlegend")
@@ -557,7 +566,6 @@ function draw_bar_hist(rawdata, divToShow)  {
     }
     let width = getPlotWidth();
     let height = 300 + legend_height;
-
 
     var chart = c3.generate({
         bindto: '#' + divToShow,

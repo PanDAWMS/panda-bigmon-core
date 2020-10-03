@@ -117,6 +117,7 @@ from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
+from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs
 
 from django.template.context_processors import csrf
 
@@ -3302,7 +3303,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
     # Here we try to get cached data
     data = getCacheEntry(request, "jobInfo")
-    data = None
+    # data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
@@ -3518,7 +3519,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                         f['ruciodatasetname'] = dsets[0]['datasetname']
                         f['datasetname'] = dsets[0]['datasetname']
                     if job['computingsite'] in pandaSites.keys():
-                        _, _, _, computeSvsAtlasS = getCRICSites()
+                        computeSvsAtlasS = get_pq_atlas_sites()
                         f['ddmsite'] = computeSvsAtlasS.get(job['computingsite'], "")
 
                 if 'dst' in f['destinationdblocktoken']:
@@ -3895,9 +3896,20 @@ def get_job_relationships(request, pandaid=-1):
 @login_customrequired
 def userList(request):
     valid, response = initRequest(request)
-    if not valid: return response
-    nhours = 90 * 24
+    if not valid:
+        return response
 
+    # Here we try to get cached data
+    data = getCacheEntry(request, "userList")
+    # data = None
+    if data is not None:
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('userList.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+    nhours = 90 * 24
     setupView(request, hours=nhours, limit=-99)
     if VOMODE == 'atlas':
         view = 'database'
@@ -3913,31 +3925,8 @@ def userList(request):
     if view == 'database':
         startdate = timezone.now() - timedelta(hours=nhours)
         startdate = startdate.strftime(defaultDatetimeFormat)
-        enddate = timezone.now().strftime(defaultDatetimeFormat)
-        query = {'lastmod__range': [startdate, enddate]}
-        # viewParams['selection'] = ", last %d days" % (float(nhours)/24.)
-        ## Use the users table
-        if 'sortby' in request.session['requestParams']:
-            sortby = request.session['requestParams']['sortby']
-            if sortby == 'name':
-                userdb = Users.objects.filter(**query).order_by('name')
-            elif sortby == 'njobs':
-                userdb = Users.objects.filter(**query).order_by('njobsa').reverse()
-            elif sortby == 'date':
-                userdb = Users.objects.filter(**query).order_by('lastmod').reverse()
-            elif sortby == 'cpua1':
-                userdb = Users.objects.filter(**query).order_by('cpua1').reverse()
-            elif sortby == 'cpua7':
-                userdb = Users.objects.filter(**query).order_by('cpua7').reverse()
-            elif sortby == 'cpup1':
-                userdb = Users.objects.filter(**query).order_by('cpup1').reverse()
-            elif sortby == 'cpup7':
-                userdb = Users.objects.filter(**query).order_by('cpup7').reverse()
-            else:
-                userdb = Users.objects.filter(**query).order_by('name')
-        else:
-            userdb = Users.objects.filter(**query).order_by('name')
-
+        query = {'lastmod__gte': startdate}
+        userdb.extend(Users.objects.filter(**query).values())
         anajobs = 0
         n1000 = 0
         n10k = 0
@@ -3947,28 +3936,36 @@ def userList(request):
         nrecent90 = 0
         ## Move to a list of dicts and adjust CPU unit
         for u in userdb:
-            u.latestjob = u.lastmod
+            u['latestjob'] = u['lastmod']
             udict = {}
-            udict['name'] = u.name
-            udict['njobsa'] = u.njobsa
-            if u.cpua1: udict['cpua1'] = "%0.1f" % (int(u.cpua1) / 3600.)
-            if u.cpua7: udict['cpua7'] = "%0.1f" % (int(u.cpua7) / 3600.)
-            if u.cpup1: udict['cpup1'] = "%0.1f" % (int(u.cpup1) / 3600.)
-            if u.cpup7: udict['cpup7'] = "%0.1f" % (int(u.cpup7) / 3600.)
-            if u.latestjob:
-                udict['latestjob'] = u.latestjob.strftime(defaultDatetimeFormat)
-                udict['lastmod'] = u.lastmod.strftime(defaultDatetimeFormat)
+            udict['name'] = u['name']
+            udict['njobsa'] = u['njobsa'] if u['njobsa'] is not None else 0
+            udict['cpua1'] = round(u['cpua1'] / 3600.) if u['cpua1'] is not None else 0
+            udict['cpua7'] = round(u['cpua7'] / 3600.) if u['cpua7'] is not None else 0
+            udict['cpup1'] = round(u['cpup1'] / 3600.) if u['cpup1'] is not None else 0
+            udict['cpup7'] = round(u['cpup7'] / 3600.) if u['cpup7'] is not None else 0
+            if u['latestjob']:
+                udict['latestjob'] = u['latestjob'].strftime(defaultDatetimeFormat)
+                udict['lastmod'] = u['lastmod'].strftime(defaultDatetimeFormat)
             userdbl.append(udict)
-            if u.njobsa is not None:
-                if u.njobsa > 0: anajobs += u.njobsa
-                if u.njobsa >= 1000: n1000 += 1
-                if u.njobsa >= 10000: n10k += 1
-            if u.latestjob != None:
-                latest = timezone.now() - u.latestjob
-                if latest.days < 4: nrecent3 += 1
-                if latest.days < 8: nrecent7 += 1
-                if latest.days < 31: nrecent30 += 1
-                if latest.days < 91: nrecent90 += 1
+
+            if u['njobsa'] is not None:
+                if u['njobsa'] > 0:
+                    anajobs += u['njobsa']
+                if u['njobsa'] >= 1000:
+                    n1000 += 1
+                if u['njobsa'] >= 10000:
+                    n10k += 1
+            if u['latestjob'] is not None:
+                latest = timezone.now() - u['latestjob']
+                if latest.days < 4:
+                    nrecent3 += 1
+                if latest.days < 8:
+                    nrecent7 += 1
+                if latest.days < 31:
+                    nrecent30 += 1
+                if latest.days < 91:
+                    nrecent90 += 1
         userstats['anajobs'] = anajobs
         userstats['n1000'] = n1000
         userstats['n10k'] = n10k
@@ -3981,19 +3978,19 @@ def userList(request):
             nhours = 12
         else:
             nhours = 7 * 24
-        query = setupView(request, hours=nhours, limit=5000)
+        query = setupView(request, hours=nhours, limit=999999)
+        # looking into user analysis jobs only
+        query['prodsourcelabel'] = 'user'
         ## dynamically assemble user summary info
-        values = 'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'processingtype', 'workinggroup', 'currentpriority', 'container_name', 'cmtconfig'
-        jobs = QuerySetChain( \
-            Jobsdefined4.objects.filter(**query).order_by('-modificationtime')[:request.session['JOB_LIMIT']].values(
-                *values),
-            Jobsactive4.objects.filter(**query).order_by('-modificationtime')[:request.session['JOB_LIMIT']].values(
-                *values),
-            Jobswaiting4.objects.filter(**query).order_by('-modificationtime')[:request.session['JOB_LIMIT']].values(
-                *values),
-            Jobsarchived4.objects.filter(**query).order_by('-modificationtime')[:request.session['JOB_LIMIT']].values(
-                *values),
-        )
+        values = ('eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus',
+                  'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid',
+                  'atlasrelease', 'processingtype', 'workinggroup', 'currentpriority', 'container_name', 'cmtconfig')
+        jobs = []
+        jobs.extend(Jobsdefined4.objects.filter(**query).values(*values))
+        jobs.extend(Jobsactive4.objects.filter(**query).values(*values))
+        jobs.extend(Jobswaiting4.objects.filter(**query).values(*values))
+        jobs.extend(Jobsarchived4.objects.filter(**query).values(*values))
+
         jobs = cleanJobList(request, jobs, doAddMeta=False)
         sumd = userSummaryDict(jobs)
         for user in sumd:
@@ -4008,8 +4005,7 @@ def userList(request):
 
         jobsumd = jobSummaryDict(request, jobs, sumparams)[0]
 
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         TFIRST = request.session['TFIRST']
         TLAST = request.session['TLAST']
         del request.session['TFIRST']
@@ -4031,18 +4027,16 @@ def userList(request):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
+        setCacheEntry(request, "userList", json.dumps(data, cls=DateEncoder), 60 * 20)
         response = render_to_response('userList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-    elif (
-        ('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+    else:
         del request.session['TFIRST']
         del request.session['TLAST']
-        resp = sumd
-        return HttpResponse(json.dumps(resp), content_type='application/json')
+        return HttpResponse(json.dumps(sumd), content_type='application/json')
 
-#@login_required(login_url='loginauth2')
+
 @login_customrequired
 def userInfo(request, user=''):
     valid, response = initRequest(request)
@@ -5042,40 +5036,6 @@ def checkUcoreSite(site, usites):
        isUsite = True
     return isUsite
 
-def getCRICSites():
-    sitesUcore = cache.get('sitesUcore')
-    sitesHarvester = cache.get('sitesHarvester')
-    sitesType = cache.get('sitesType')
-    computevsAtlasCE = cache.get('computevsAtlasCE')
-
-    if not (sitesUcore and sitesHarvester and computevsAtlasCE and sitesType):
-        sitesUcore, sitesHarvester = [], []
-        computevsAtlasCE, sitesType = {}, {}
-        url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
-        http = urllib3.PoolManager()
-        data = {}
-        try:
-            r = http.request('GET', url)
-            data = json.loads(r.data.decode('utf-8'))
-
-            for cs in data.keys():
-                if 'unifiedPandaQueue' in data[cs]['catchall'] or 'ucore' in data[cs]['capability']:
-                    sitesUcore.append(data[cs]['siteid'])
-                if 'harvester' in data[cs] and len(data[cs]['harvester']) != 0:
-                    sitesHarvester.append(data[cs]['siteid'])
-                if 'panda_site' in data[cs]:
-                    computevsAtlasCE[cs] = data[cs]['atlas_site']
-                if 'type' in data[cs]:
-                    sitesType[cs] = data[cs]['type']
-        except Exception as exc:
-            print(exc)
-
-        cache.set('sitesUcore', sitesUcore, 3600)
-        cache.set('sitesHarvester', sitesHarvester, 3600)
-        cache.set('sitesType', sitesType, 3600)
-        cache.set('computevsAtlasCE', computevsAtlasCE, 3600)
-
-    return sitesUcore, sitesHarvester, sitesType, computevsAtlasCE
 
 
 def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
@@ -6220,6 +6180,8 @@ def dashRegion(request):
         jquery['queuetype'] = request.session['requestParams']['queuetype']
     if 'queuestatus' in request.session['requestParams'] and request.session['requestParams']['queuestatus']:
         jquery['queuestatus'] = request.session['requestParams']['queuestatus']
+    if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] != 'all':
+        jquery['queuegocname'] = request.session['requestParams']['site']
 
     # get job summary data
     jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery,
@@ -6247,9 +6209,17 @@ def dashRegion(request):
 
         # prepare lists of unique values for drop down menus
         select_params_dict = {}
-        select_params_dict['region'] = sorted(list(set([r[0] for r in jsr_regions_list])))
         select_params_dict['queuetype'] = sorted(list(set([pq[1] for pq in jsr_queues_list])))
         select_params_dict['queuestatus'] = sorted(list(set([pq[3] for pq in jsr_queues_list])))
+
+        pq_info_basic = get_basic_info_for_pqs([])
+        unique_sites_dict = {}
+        for pq in pq_info_basic:
+            if pq['site'] not in unique_sites_dict:
+                unique_sites_dict[pq['site']] = pq['region']
+        select_params_dict['site'] = sorted([{'site': site, 'region': reg} for site, reg in unique_sites_dict.items()],
+                                            key=lambda x: x['site'])
+        select_params_dict['region'] = sorted(list(set([reg for site, reg in unique_sites_dict.items()])))
 
         xurl = request.get_full_path()
         if xurl.find('?') > 0:
@@ -6261,7 +6231,7 @@ def dashRegion(request):
         view_params_str = '<b>Manually entered params</b>: '
         supported_params = {f.verbose_name: '' for f in PandaJob._meta.get_fields()}
         interactive_params = ['hours', 'days', 'date_from', 'date_to', 'timestamp',
-                              'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region']
+                              'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region', 'site']
         for pn, pv in request.session['requestParams'].items():
             if pn not in interactive_params and pn in supported_params:
                 view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
@@ -6723,6 +6693,7 @@ def taskList(request):
 
     # For tasks plots
     setCacheEntry(request, transactionKey, taskl, 60 * 20, isData=True)
+
     new_cur = connection.cursor()
     new_cur.execute(
         """
@@ -6900,12 +6871,12 @@ def taskList(request):
         else:
             tmpTableName = "TMP_IDS1"
 
-        transactionKey = random.randrange(1000000)
+        tk_es_jobs = random.randrange(1000000)
 #        connection.enter_transaction_management()
         new_cur = connection.cursor()
         executionData = []
         for id in esjobs:
-            executionData.append((id, transactionKey))
+            executionData.append((id, tk_es_jobs))
         query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
         new_cur.executemany(query, executionData)
 
@@ -6913,7 +6884,7 @@ def taskList(request):
         new_cur.execute(
             """
             SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID
-            """ % (tmpTableName, transactionKey)
+            """ % (tmpTableName, tk_es_jobs)
         )
         evtable = dictfetchall(new_cur)
 
@@ -7852,7 +7823,8 @@ def taskInfo(request, jeditaskid=0):
             cmd = "curl -s -f --compressed '{}'".format(errurl)
             logout = subprocess.getoutput(cmd)
             if len(logout) > 0:
-                logtxt = logout
+                loglist = (logout.splitlines())[::-1]
+                logtxt = '\n'.join(loglist)
             _logger.info("Loaded error log using '{}': {}".format(cmd, time.time() - request.session['req_init_time']))
 
     # iDDS section
@@ -8184,7 +8156,7 @@ def taskInfoNew(request, jeditaskid=0):
     if eventservice:
         event_summary_list = event_summary_for_task(mode, query, tk_dj=transactionKeyDJ)
         for entry in event_summary_list:
-            entry['pct'] = round(entry['count'] * 100. / taskrec['totev'], 2) if 'totev' in taskrec and 'count' in entry else 0
+            entry['pct'] = round(entry['count'] * 100. / taskrec['totev'], 2) if 'totev' in taskrec and taskrec['totev'] > 0 and 'count' in entry else 0
             status = entry.get("statusname", "-")
             if status in ['finished', 'done', 'merged']:
                 neventsProcTot += entry.get("count", 0)
@@ -8236,7 +8208,8 @@ def taskInfoNew(request, jeditaskid=0):
             cmd = "curl -s -f --compressed '{}'".format(errurl)
             logout = subprocess.getoutput(cmd)
             if len(logout) > 0:
-                logtxt = logout
+                loglist = (logout.splitlines())[::-1]
+                logtxt = '\n'.join(loglist)
             _logger.info("Loaded error log using '{}': {}".format(cmd, time.time() - request.session['req_init_time']))
 
     # update taskrec dict
@@ -11885,16 +11858,10 @@ def get_hc_tests(request):
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
     if is_archive_only or is_archive:
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
-
-    sflist = ('siteid', 'gocname', 'status', 'cloud', 'tier', 'corepower')
-    panda_queues.extend(Schedconfig.objects.filter(cloud=query['cloud']).values(*sflist))
-    panda_queues_info = {}
-    for queue in panda_queues:
-        siteid = queue['siteid']
-        panda_queues_info[siteid] = {}
-        del queue['siteid']
-        panda_queues_info[siteid] = queue
     _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
+
+    panda_queues_info = get_panda_queues()
+    _logger.info('Got PQ info: {}'.format(time.time() - request.session['req_init_time']))
 
     # getting input file info for jobs
     try:
@@ -11941,11 +11908,14 @@ def get_hc_tests(request):
 
         for f in fields:
             test[f] = job[f]
-        for f in panda_queues_info[job['computingsite']]:
-            if f == 'gocname':
-                test['site'] = panda_queues_info[job['computingsite']][f]
-            else:
-                test[f] = panda_queues_info[job['computingsite']][f]
+
+        if 'computingsite' in job and job['computingsite'] in panda_queues_info:
+            for f in ('siteid', 'gocname', 'status', 'cloud', 'tier', 'corepower'):
+                if f in panda_queues_info[job['computingsite']]:
+                    if f == 'gocname':
+                        test['site'] = panda_queues_info[job['computingsite']][f]
+                    else:
+                        test[f] = panda_queues_info[job['computingsite']][f]
         tests.append(test)
 
     data = {'tests': tests}

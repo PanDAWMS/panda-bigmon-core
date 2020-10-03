@@ -69,32 +69,38 @@
 {% endif %}
 
 <div data-ng-app="jobSummaryRegion">
-<div data-ng-controller="JobSummaryRegionController">
+<div data-ng-controller="JobSummaryRegionController" id="div-jobSummaryRegion">
 <form novalidate class="simple-form">
 <div class="row form-container">
 <div class="medium-1 column">
     <label>Region:
-    <select id="region__select" ng-model="dash.selection.region" ng-options="qt.value as qt.name for qt in dash.availableOptions.region">
+    <select id="region__select" ng-model="dash.selection.region" ng-options="qt.name as qt.name for qt in dash.availableOptions.region">
+    </select>
+    </label>
+</div>
+<div class="medium-2 column">
+    <label>Site:
+    <select id="region__select" ng-model="dash.selection.site" ng-options="qt.name as qt.name for qt in dash.availableOptions.site | filter:{region:dash.selection.region}">
     </select>
     </label>
 </div>
 <div class="medium-2 column">
     <label>Queue type:
-    <select id="queuetype__select" ng-model="dash.selection.queuetype" ng-options="qt.value as qt.name for qt in dash.availableOptions.queuetype">
+    <select id="queuetype__select" ng-model="dash.selection.queuetype" ng-options="qt.name as qt.name for qt in dash.availableOptions.queuetype">
     </select>
     </label>
 </div>
-<div class="medium-2 column">
+<div class="medium-1 column">
     <label>Queue status:
-    <select id="queuestatus__select" ng-model="dash.selection.queuestatus" ng-options="qs.value as qs.name for qs in dash.availableOptions.queuestatus">
+    <select id="queuestatus__select" ng-model="dash.selection.queuestatus" ng-options="qs.name as qs.name for qs in dash.availableOptions.queuestatus">
     </select>
     </label>
 </div>
-<div class="medium-2 column">
+<div class="medium-1 column">
     <label>Job type:
     <select id="jobtype__select"
             ng-model="dash.selection.jobtype"
-            ng-options="jt.value as jt.name for jt in dash.availableOptions.jobtype"
+            ng-options="jt.name as jt.name for jt in dash.availableOptions.jobtype"
             ng-change="change(dash.selection)">
     </select>
     </label>
@@ -103,7 +109,7 @@
     <label>Resource type:
     <select id="resourcetype__select"
             ng-model="dash.selection.resourcetype"
-            ng-options="rt.value as rt.name for rt in dash.availableOptions.resourcetype"
+            ng-options="rt.name as rt.name for rt in dash.availableOptions.resourcetype"
             ng-change="change(dash.selection)">
     </select>
     </label>
@@ -223,11 +229,12 @@ var err_threshold = 15;
 app.controller('JobSummaryRegionController', ['$scope', function($scope) {
     $scope.dash = {
         selection: {
-            region: '',
-            queuetype: '',
-            queuestatus: '',
-            jobtype: '',
-            resourcetype: '',
+            region: 'all',
+            site: 'all',
+            queuetype: 'all',
+            queuestatus: 'all',
+            jobtype: 'all',
+            resourcetype: 'all',
             splitby: {
                 jobtype: false,
                 resourcetype: false,
@@ -237,6 +244,7 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
 
     $scope.dash.availableOptions = {
         region: [{name:'all', value:'', query: ''},],
+        site: [{name:'all', value:'', region:'all', query:'' },],
         queuetype: [{name:'all', value:'', query: ''},],
         queuestatus: [{name:'all', value:'', query: ''},],
         jobtype: [
@@ -254,6 +262,11 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
     };
     select_params.region.forEach(function (param) {
      $scope.dash.availableOptions.region.push({name:param, value:param, query:'region' + param + '&'});
+     $scope.dash.availableOptions.site.push({name:'all', value:'', region:param, query:'' });
+    });
+
+    select_params.site.forEach(function (param) {
+     $scope.dash.availableOptions.site.push({name:param.site, value:param.site, region:param.region + '_all', query:'site' + param + '&' });
     });
 
     select_params.queuetype.forEach(function (param) {
@@ -295,7 +308,7 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
                 }
             }
             else {
-                if (selection[key].toString().length > 0) {
+                if (selection[key] !== 'all') {
                     query += key + '=' + selection[key].toString() + '&'
                 }
             }
