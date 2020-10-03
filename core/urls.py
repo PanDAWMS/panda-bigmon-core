@@ -20,6 +20,7 @@ from core.dashboards import campaignprediction as campaignprediction
 from core.dashboards import campaingprogressDKB
 from core.dashboards import jobsummaryregion as jsr_views
 from core.libs import tasksPlots as tasksPlots
+from core.dashboards import dtctails as dtctails
 
 from core.compare import views as compare_views
 
@@ -86,6 +87,9 @@ urlpatterns = [
     re_path(r'^getdtcsubmissionhist/$', dtcdboard.getDTCSubmissionHist, name='getDTCSubmissionHist'),
 
     re_path(r'^datacardash/$', dtcdboard.dataCarouselleDashBoard, name='dataCarouselleDashBoard'),
+    re_path(r'^datacartaildata/$', dtctails.getStagingTailsData, name='datacartaildata'),
+    re_path(r'^datacartails/$', dtctails.dataCarouselTailsDashBoard, name='datacartails'),
+
     re_path(r'^campaignpredictiondash/$', campaignprediction.campaignPredictionDash, name='campaignPredictionDash'),
     re_path(r'^campaignpredictioninfo/$', campaignprediction.campaignPredictionInfo, name='campaignPredictionInfo'),
 

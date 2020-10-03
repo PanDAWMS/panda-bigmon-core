@@ -12,6 +12,7 @@ from schedinstances.SQLAggregator import SQLAggregator
 from schedinstances.SQLAggregatorCampaign import SQLAggregatorCampaign
 from schedinstances.PandaLogsStorageCleanUp import PandaLogsStorageCleanUp
 from schedinstances.GrafanaPlots import GrafanaPlots
+from schedinstances.DataCarouselPrestageCollector import DataCarouselPrestageCollector
 
 from settingscron import EXECUTION_CAP_FOR_MAINMENUURLS
 from settingscron import LOG_PATH
@@ -32,8 +33,10 @@ grafanaPlots = GrafanaPlots(EXECUTION_CAP_FOR_MAINMENUURLS)
 cephCleanUp = PandaLogsStorageCleanUp()
 sQLAggregator = SQLAggregator()
 sQLAggregatorCampaign = SQLAggregatorCampaign()
+stageProgressCollector = DataCarouselPrestageCollector()
 
-#mainMenuURLs.processPayload()
+
+#stageProgressCollector.processPayload()
 
 
 def run_threaded(job_func):
@@ -54,6 +57,7 @@ schedule.every(2).hours.do(run_threaded, infrequentURLS.execute)
 schedule.every().day.at("20:18").do(run_threaded, cephCleanUp.execute)
 schedule.every().day.at("09:00").do(run_threaded, artMails.execute)
 schedule.every().day.at("12:00").do(run_threaded, artMails.execute)
+schedule.every(2).hours.do(run_threaded, stageProgressCollector.execute)
 
 while 1:
     schedule.run_pending()
