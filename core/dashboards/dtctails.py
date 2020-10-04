@@ -6,7 +6,7 @@ import json
 import datetime
 import numpy as np
 import os
-#from sklearn.preprocessing import scale
+from sklearn.preprocessing import scale
 from core.views import initRequest, setupView, DateEncoder, setCacheData
 from django.shortcuts import render_to_response
 from django.views.decorators.cache import never_cache
