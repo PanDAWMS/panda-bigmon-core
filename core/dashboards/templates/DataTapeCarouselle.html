@@ -120,8 +120,26 @@
                      <th>Time Elapsed</th>
                      <th>Started At</th>
                      <th>Rucio Rule</th>
+                     <th>Update time</th>
                  </tr>
                  </thead>
+                 <tfoot>
+                 <tr>
+                     <th></th>
+                     <th></th>
+                     <th></th>
+                     <th></th>
+                     <th></th>
+                     <th></th>
+                     <th></th>
+                     <th></th>
+                     <th></th>
+                     <th></th>
+                     <th></th>
+                     <th></th>
+                 </tr>
+                 </tfoot>
+
              </table>
          </div>
      </div>
@@ -330,9 +348,34 @@
                       "render": function(data, type, full, meta) {
                             return '<a href="https://rucio-ui.cern.ch/rule?rule_id='+full['rse']+'">'+full['rse']+'</a>';
                         },
-                    }
-                ]
+                    },
+                    { data: 'update_time' },
+                ],
+                initComplete: function () {
+                    this.api().columns(3).every( function () {
+                        var column = this;
+                        var select = $('<select><option value="All"></option></select>')
+                            .appendTo( $(column.footer()).empty() )
+                            .on( 'change', function () {
+                                var val = $.fn.dataTable.util.escapeRegex(
+                                    $(this).val()
+                                );
+
+                                column
+                                    .search( val ? '^'+val+'$' : '', true, false )
+                                    .draw();
+                            } );
+
+                        column.data().unique().sort().each( function ( d, j ) {
+                            select.append( '<option value="'+d+'">'+d+'</option>' )
+                        } );
+                    } );
+                }
+
             });
+
+
+
         };
         $scope.selectedTime = 24;
         $scope.dateFrom = '';
