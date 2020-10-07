@@ -122,7 +122,7 @@ def patch_start_time(dbrow):
         serie=json.loads(dbrow[1].read())
     else:
         serie=dbrow[1]
-    serie[0] = [start, 0]
+    serie.insert(0,[start, 0])
     serie_dict = {}
     for row in serie:
         row[0] = datetime.datetime.strptime(row[0],dformat)
