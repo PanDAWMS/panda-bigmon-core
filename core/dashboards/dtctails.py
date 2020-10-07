@@ -122,7 +122,8 @@ def patch_start_time(dbrow):
         serie=json.loads(dbrow[1].read())
     else:
         serie=dbrow[1]
-    serie.insert(0,[start, 0])
+    if len(serie) > 0:
+        serie[0] = [start, 0]
     serie_dict = {}
     for row in serie:
         row[0] = datetime.datetime.strptime(row[0],dformat)
@@ -147,6 +148,7 @@ def setCachedProgress(se, taskid, stagestatus, progress):
 def getOutliers(datasets_dict, stageStat, tasks_to_rucio):
     output = {}
     output_table = {}
+    basicstat = None
     for se, datasets in datasets_dict.items():
         basicstat = stageStat.get(se, [])
         for ds in datasets:
@@ -155,29 +157,31 @@ def getOutliers(datasets_dict, stageStat, tasks_to_rucio):
                 progress_info = getStaginProgress(str(ds['TASKID']))
                 if progress_info:
                     setCachedProgress(se, ds['TASKID'], ds['STATUS'], progress_info)
-            progress_info = patch_start_time((ds['START_TIME'], progress_info, ds['TOTAL_FILES']))
-            progress_info = transform_into_eq_intervals(progress_info, str(ds['TASKID']))
-            basicstat.append(progress_info)
-            tasks_to_rucio[ds['TASKID']] = ds['RRULE']
-        datamerged = pd.concat([s for s in basicstat], axis=1)
-        zscore = datamerged.copy(deep=True)
-        zscore = zscore.apply(lambda V: scale(V,axis=0,with_mean=True, with_std=True,copy=False),axis=1)
-        zscore_df = pd.DataFrame.from_dict(dict(zip(zscore.index, zscore.values))).T
-        outliers = ((zscore_df< -1.5).any().values)
-        datamerged = datamerged.fillna("_")
-        list_of_val = datamerged.values.tolist()
-        timeticks = (datamerged.index / np.timedelta64(1, 'h')).tolist()
-        for i in range(len(timeticks)):
-            list_of_val[i] = [timeticks[i]] + list_of_val[i]
-        tasksids = datamerged.columns.values.tolist()
-        report = {}
-        report['series'] = [["Time"]+tasksids] + list_of_val
-        report['tasksids'] = tasksids
-        report['outliers'] =  outliers.tolist()
-        output[se] = report
-        if len(list(filter(lambda x: x, report['outliers']))) > 0:
-            outliers_tasks_rucio = [(tasksids[idx], tasks_to_rucio.get(int(tasksids[idx]), None)) for idx, state in enumerate(report['outliers']) if state]
-            output_table.setdefault(se, []).extend(outliers_tasks_rucio)
+            if progress_info:
+                progress_info = patch_start_time((ds['START_TIME'], progress_info, ds['TOTAL_FILES']))
+                progress_info = transform_into_eq_intervals(progress_info, str(ds['TASKID']))
+                basicstat.append(progress_info)
+                tasks_to_rucio[ds['TASKID']] = ds['RRULE']
+        if basicstat:
+            datamerged = pd.concat([s for s in basicstat], axis=1)
+            zscore = datamerged.copy(deep=True)
+            zscore = zscore.apply(lambda V: scale(V,axis=0,with_mean=True, with_std=True,copy=False),axis=1)
+            zscore_df = pd.DataFrame.from_dict(dict(zip(zscore.index, zscore.values))).T
+            outliers = ((zscore_df< -1.5).any().values)
+            datamerged = datamerged.fillna("_")
+            list_of_val = datamerged.values.tolist()
+            timeticks = (datamerged.index / np.timedelta64(1, 'h')).tolist()
+            for i in range(len(timeticks)):
+                list_of_val[i] = [timeticks[i]] + list_of_val[i]
+            tasksids = datamerged.columns.values.tolist()
+            report = {}
+            report['series'] = [["Time"]+tasksids] + list_of_val
+            report['tasksids'] = tasksids
+            report['outliers'] =  outliers.tolist()
+            output[se] = report
+            if len(list(filter(lambda x: x, report['outliers']))) > 0:
+                outliers_tasks_rucio = [(tasksids[idx], tasks_to_rucio.get(int(tasksids[idx]), None)) for idx, state in enumerate(report['outliers']) if state]
+                output_table.setdefault(se, []).extend(outliers_tasks_rucio)
     return {'plotsdata':output, 'tasks_rucio':output_table}
 
 
