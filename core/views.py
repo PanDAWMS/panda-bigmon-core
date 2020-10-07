@@ -8166,7 +8166,6 @@ def taskInfoNew(request, jeditaskid=0):
         taskrec['pcttotevproc_evst'] = (100 * neventsProcTot / taskrec['totev']) if (taskrec['totev'] > 0) else ''
         taskrec['pctfinished'] = (100 * taskrec['totevproc'] / taskrec['totev']) if (taskrec['totev'] > 0) else ''
 
-
     # get input files state summary
     transactionKeyIEC = -1
     ifs_summary = []

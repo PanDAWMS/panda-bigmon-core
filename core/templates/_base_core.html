@@ -116,14 +116,17 @@
                 <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
                 <li><a href="{% url 'dashAnalysis' %}?mode=task">Analysis tasks</a></li>
                 <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
+                <li><a>Data Carousel</a>
+                    <ul class="submenu menu">
+                        <li><a href="{% url 'dataCarouselleDashBoard' %}">Dashboard</a></li>
+                        <li><a href="{% url 'datacartails' %}">Staging Tails</a></li>
+                    </ul>
+                </li>
+                <li><a href="{% url 'iddsmain' %}">iDDS</a></li>
                 <li><a href="{% url 'globalshares' %}">Global Shares</a></li>
                 <li><a href="{% url 'dashObjectStore' %}">Objectstore view</a></li>
                 <li><a href="{% url 'art-mainPage' %}">ART tests</a></li>
-                <li><a href="{% url 'dataCarouselleDashBoard' %}">Data Carousel</a></li>
-                <li><a href="{% url 'datacartails' %}">Data Carousel Staging Tails</a></li>
                 <li><a href="{% url 'BuildGlobal' %}">Nightlies and CI</a></li>
-
-
             {% else %}
                 <li><a href="{% url 'dashboard' %}">VOs, sites</a></li>
                 <li><a href="{% url 'workingGroups' %}">Working groups</a></li>

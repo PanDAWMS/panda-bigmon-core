@@ -397,6 +397,11 @@ function draw_stacked_bar_hist(rawdata, details, divToShow)  {
 
 	  let is_interactive = true;
     let legend_height = 0;
+    // if length of legend strings is big -> increase height of legend
+    if (data.map(a => a[0].length).reduce((a,b) => a + b) > 50)  {
+        legend_height = 15 * (Math.floor(data.map(a => a[0].length).reduce((a,b) => a + b) / 50 ) - 1);
+    }
+    // if number of legend items is large -> show only top 20
     let data_legend_to_hide = [];
     if (data.length > 20) {
         // disable interactivity for plot having a lot of data

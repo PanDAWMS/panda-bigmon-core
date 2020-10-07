@@ -140,7 +140,8 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
     newquery = copy.deepcopy(query)
     values = ('actualcorecount', 'eventservice', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus',
               'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics',
-              'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'transformation', 'jobsetid', 'specialhandling')
+              'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'cpuconsumptionunit', 'transformation',
+              'jobsetid', 'specialhandling')
 
     jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).values(*values))
     jobs.extend(Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).values(*values))
@@ -214,38 +215,45 @@ def job_consumption_plots(jobs):
 
     plots_dict = {}
     plot_details = {
-        'nevents_sum_finished': {'type': 'pie', 'title': 'Number of events',
+        'nevents_sum_finished': {'type': 'pie', 'group_by': 'computingsite', 'title': 'Number of events',
                                  'xlabel': 'N events', 'ylabel': 'N jobs'},
-        'nevents_finished': {'type': 'stack_bar', 'title': 'Number of events',
+        'nevents_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Number of events',
                              'xlabel': 'N events', 'ylabel': 'N jobs'},
-        'maxpss_finished': {'type': 'stack_bar', 'title': 'Max PSS (finished jobs)',
+        'maxpss_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Max PSS (finished jobs)',
                             'xlabel': 'MaxPSS, MB', 'ylabel': 'N jobs'},
-        'maxpsspercore_finished': {'type': 'stack_bar', 'title': 'Max PSS/core (finished jobs)',
+        'maxpsspercore_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Max PSS/core (finished jobs)',
                                    'xlabel': 'MaxPSS per core, MB', 'ylabel': 'N jobs'},
-        'walltime_finished': {'type': 'stack_bar', 'title': 'Walltime (finished jobs)',
+        'walltime_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Walltime (finished jobs)',
                               'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
-        'walltimeperevent_finished': {'type': 'stack_bar', 'title': 'Walltime/event (finished jobs)',
+        'walltimeperevent_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Walltime/event (finished jobs)',
                                       'xlabel': 'Walltime per event, s', 'ylabel': 'N jobs'},
-        'hs06s_finished': {'type': 'stack_bar', 'title': 'HS06s (finished jobs)',
+        'hs06s_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'HS06s (finished jobs)',
                            'xlabel': 'HS06s', 'ylabel': 'N jobs'},
-        'cputime_finished': {'type': 'stack_bar', 'title': 'CPU time (finished jobs)',
+        'cputime_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'CPU time (finished jobs)',
                              'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
-        'cputimeperevent_finished': {'type': 'stack_bar', 'title': 'CPU time/event (finished jobs)',
+        'cputimeperevent_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'CPU time/event (finished jobs)',
                                      'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
-        'maxpss_failed': {'type': 'stack_bar', 'title': 'Maximum PSS (failed jobs)',
+        'maxpss_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Maximum PSS (failed jobs)',
                           'xlabel': 'MaxPSS, MB', 'ylabel': 'N jobs'},
-        'maxpsspercore_failed': {'type': 'stack_bar', 'title': 'Max PSS/core (failed jobs)',
+        'maxpsspercore_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Max PSS/core (failed jobs)',
                                  'xlabel': 'MaxPSS per core, MB', 'ylabel': 'N jobs'},
-        'walltime_failed': {'type': 'stack_bar', 'title': 'Walltime (failed jobs)',
+        'walltime_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Walltime (failed jobs)',
                             'xlabel': 'walltime, s', 'ylabel': 'N jobs'},
-        'walltimeperevent_failed': {'type': 'stack_bar', 'title': 'Walltime/event (failed jobs)',
+        'walltimeperevent_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Walltime/event (failed jobs)',
                                     'xlabel': 'Walltime per event, s', 'ylabel': 'N jobs'},
-        'hs06s_failed': {'type': 'stack_bar', 'title': 'HS06s (failed jobs)',
+        'hs06s_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'HS06s (failed jobs)',
                          'xlabel': 'HS06s', 'ylabel': 'N jobs'},
-        'cputime_failed': {'type': 'stack_bar', 'title': 'CPU time (failed jobs)',
+        'cputime_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'CPU time (failed jobs)',
                            'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
-        'cputimeperevent_failed': {'type': 'stack_bar', 'title': 'CPU time/event (failed jobs)',
+        'cputimeperevent_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'CPU time/event (failed jobs)',
                                    'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
+
+        'walltime_bycpuunit_finished': {'type': 'stack_bar', 'group_by': 'cpuconsumptionunit',
+                                        'title': 'Walltime (finished jobs)',
+                                        'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
+        'walltime_bycpuunit_failed': {'type': 'stack_bar', 'group_by': 'cpuconsumptionunit',
+                                      'title': 'Walltime (failed jobs)',
+                                      'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
     }
 
     plots_data = {}
@@ -275,8 +283,8 @@ def job_consumption_plots(jobs):
 
         if job['jobstatus'] in ('finished', 'failed'):
             for pname, pd in plot_details.items():
-                if job['computingsite'] not in plots_data[pd['type']][pname][job['category']]:
-                    plots_data[pd['type']][pname][job['category']][job['computingsite']] = []
+                if pd['group_by'] in job and job[pd['group_by']] not in plots_data[pd['type']][pname][job['category']]:
+                    plots_data[pd['type']][pname][job['category']][job[pd['group_by']]] = []
         else:
             continue
 
@@ -307,6 +315,9 @@ def job_consumption_plots(jobs):
                 plots_data['stack_bar']['walltimeperevent' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
                     job['duration'] / (job['nevents'] * 1.0)
                 )
+
+            if 'cpuconsumptionunit' in job and job['cpuconsumptionunit']:
+                plots_data['stack_bar']['walltime_bycpuunit' + '_' + job['jobstatus']][job['category']][job['cpuconsumptionunit']].append(job['duration'])
 
         if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None and job['cpuconsumptiontime'] > 0:
             plots_data['stack_bar']['cputime' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
@@ -426,13 +437,18 @@ def build_stack_histogram(data_raw, **kwargs):
 
     x_axis_ticks = ['x']
     x_axis_ticks.extend(ranges_all[:-1])
-    columns.append(x_axis_ticks)
 
     for stack_param, data in data_raw.items():
         column = [stack_param]
         column.extend(list(np.histogram(data, ranges_all)[0]))
+        # do not add if all the values are zeros
+        if sum(column[1:]) > 0:
+            columns.append(column)
 
-        columns.append(column)
+    # sort by biggest impact
+    columns = sorted(columns, key=lambda x: sum(x[1:]), reverse=True)
+
+    columns.insert(0, x_axis_ticks)
 
     return stats, columns
 
