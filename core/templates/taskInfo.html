@@ -738,11 +738,13 @@ function killtasks(taskID, action) {
             data: {'task': taskID, 'action': action},
             async: true
         })
-            .done(function (response) {
-                var parcedResponse = $.parseJSON(response);
-                alert(parcedResponse.detail);
-                location.reload();
-            });
+        .done(function (response) {
+            if (typeof response === 'string') {
+                response = $.parseJSON(response);
+            }
+            alert(response.detail);
+            location.reload();
+        });
     } else {
         // Do nothing!
     }
