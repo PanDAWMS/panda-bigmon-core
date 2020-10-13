@@ -33,6 +33,7 @@ from django.core.cache import cache
 from django.utils import encoding
 from django.conf import settings as djangosettings
 from django.db import connection
+from django.template.loaders.app_directories import get_app_template_dirs
 
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import defaultDatetimeFormat
@@ -2007,6 +2008,47 @@ def helpPage(request):
     setupView(request)
     del request.session['TFIRST']
     del request.session['TLAST']
+
+    if 'version' in request.session['requestParams']:
+        # find all help templates
+        template_files = []
+        for template_dir in (tuple(djangosettings.TEMPLATES[0]['DIRS']) + get_app_template_dirs('templates')):
+            for dir, dirnames, filenames in os.walk(template_dir):
+                for filename in filenames:
+                    if filename.endswith('Help.html') and filename != 'completeHelp.html':
+                        template_files.append(filename)
+        template_files = sorted(list(set(template_files)))
+        # group by object
+        camel_case_regex = "(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
+        help_template_dict = {}
+        for tfn in template_files:
+            tfn_words = re.split(camel_case_regex, tfn)
+            if tfn_words[0] not in help_template_dict:
+                help_template_dict[tfn_words[0]] = {
+                    'key': tfn_words[0],
+                    'template_names': [],
+                    'anchor': tfn_words[0],
+                    'title': tfn_words[0].title(),
+                }
+            help_template_dict[tfn_words[0]]['template_names'].append({
+                'name': tfn,
+                'title': ' '.join([word.title() for word in tfn_words[:-1]]),
+                'anchor': tfn.replace('.html', '')
+            })
+        help_template_list = list(help_template_dict.values())
+
+        data = {
+            'prefix': getPrefix(request),
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
+            'templates': help_template_list,
+        }
+        response = render_to_response('help.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
         data = {

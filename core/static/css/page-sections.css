@@ -1036,7 +1036,27 @@ fieldset.inline {
     margin: 0; }
 
 
+/* ---------------------------------------------------------- */
+/* Side bar contents */
+/* ---------------------------------------------------------- */
+.side-contents li {
+  font-size: 0.875rem;
+  line-height: 1;
+  margin: 0.3rem 0 0.3rem 0;
+}
+.side-contents li a {
+  color: #355681;
+  font-weight: bold;
+}
+.side-contents li a:hover {
+  color: #0a0a0a;
+}
 
+.side-contents li > ul > li {
+  font-size: 0.785rem;
+  line-height: 1;
+  margin: 0.3rem 0 0.3rem 0.7rem;
+}
 
 /* ---------------------------------------------------------- */
 /* Footer */

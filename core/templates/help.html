@@ -1,0 +1,53 @@
+{% extends "_base_core.html" %}
+
+{% block page_title %} PanDA Monitor Help{% endblock %}
+{% block title %} {{ viewParams.MON_VO }} PanDA monitor{% endblock %}
+{% block subtitle %} Consolidated help information {% endblock %}
+
+{% block body %}
+
+
+<div class="row bp-container-wrapper">
+  <div class="columns small-10 medium-10 large-11">
+    <p id="sticky-anchor-top">This page consolidates the help information displayed at the bottom of PanDA monitor pages,
+      for ease of reference and to give a complete view of the available internal documentation.</p>
+    {% for tmp in templates %}
+      <a name="{{ tmp.anchor }}"></a>
+      {% for tmpn in tmp.template_names %}
+        <a name="{{ tmpn.anchor }}"></a>
+        {% include tmpn.name with show="all" %}
+      {% endfor %}
+    {% endfor %}
+  </div>
+  <div class="columns small-2 medium-2 large-1 right" data-sticky-container>
+    <div class="sticky" data-sticky data-top-anchor="sticky-anchor-top:top" data-btm-anchor="">
+      <!-- This sticky element would stick to the window for the height of the element #foo, with a 1em marginTop -->
+      <ul class="no-bullet side-contents">
+        {% for tmp in templates %}
+          {% if tmp.template_names|length > 1 %}
+          <li><a href="#{{ tmp.anchor }}"> {{ tmp.title }} </a>
+            <ul class="no-bullet">
+            {% for tmpn in tmp.template_names %}
+              <li><a href="#{{ tmpn.anchor }}"> {{ tmpn.title }} </a></li>
+            {% endfor %}
+            </ul>
+          </li>
+          {% else %}
+            <li><a href="#{{ tmp.template_names.0.anchor }}"> {{ tmp.template_names.0.title }} </a>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+{% endblock %}
