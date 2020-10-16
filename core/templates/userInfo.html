@@ -298,9 +298,9 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 
 {% endblock %}
 
-{% block helptext %}
-{% include "userInfoHelp.html" with helptitle="User information page help" %}
-{% include "taskInfoHelp.html" with helptitle="Tasks" %}
-{% include "jobListHelp.html" with helptitle="Job list" %}
-{% include "jobInfoHelp.html" with helptitle="Jobs" %}
+{% block help %}
+{% include "userInfoHelp.html" %}
+{% include "taskInfoHelp.html" %}
+{% include "jobListHelp.html" %}
+{% include "jobInfoHelp.html" with show='all' %}
 {% endblock %}

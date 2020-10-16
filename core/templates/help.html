@@ -1,5 +1,8 @@
 {% extends "_base_core.html" %}
-
+{% load static %}{% load common_tags %}
+{% block css_page %}
+    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
+{% endblock %}
 {% block page_title %} PanDA Monitor Help{% endblock %}
 {% block title %} {{ viewParams.MON_VO }} PanDA monitor{% endblock %}
 {% block subtitle %} Consolidated help information {% endblock %}
@@ -8,7 +11,7 @@
 
 
 <div class="row bp-container-wrapper">
-  <div class="columns small-10 medium-10 large-11">
+  <div class="columns small-8 medium-10">
     <p id="sticky-anchor-top">This page consolidates the help information displayed at the bottom of PanDA monitor pages,
       for ease of reference and to give a complete view of the available internal documentation.</p>
     {% for tmp in templates %}
@@ -19,8 +22,8 @@
       {% endfor %}
     {% endfor %}
   </div>
-  <div class="columns small-2 medium-2 large-1 right" data-sticky-container>
-    <div class="sticky" data-sticky data-top-anchor="sticky-anchor-top:top" data-btm-anchor="">
+  <div class="columns small-4 medium-2 right" data-sticky-container>
+    <div class="sticky" data-sticky data-top-anchor="sticky-anchor-top:top" data-btm-anchor="sticky-anchor-bottom">
       <!-- This sticky element would stick to the window for the height of the element #foo, with a 1em marginTop -->
       <ul class="no-bullet side-contents">
         {% for tmp in templates %}
@@ -41,13 +44,6 @@
   </div>
 </div>
 
-
-
-
-
-
-
-
-
+  <p id="sticky-anchor-bottom"></p>
 
 {% endblock %}

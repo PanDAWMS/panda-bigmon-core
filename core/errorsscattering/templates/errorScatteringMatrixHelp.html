@@ -1,8 +1,9 @@
-<tr class="docsection"><th><a name="errorsScatteringHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="doctextlight">
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Errors scattering matrix help:</p></div>
+<div class="card-section">
 
 <p>
-The page represents a correlation matrix between ATLAS production Requests/Tasks and Regions/Queues.
+  <a href="{% url 'errorsScattering' %}">The page</a> represents a correlation matrix between ATLAS production Requests/Tasks and Regions/Queues.
 </p>
 <p>
     The displayed tasks are in <span class="running"><b>running</b></span>  or <span class="submitting"><b>submitting</b></span>  states only. <span class="paused"><b>Paused</b></span> tasks are removed.
@@ -34,4 +35,5 @@ The page has various display or filtering options through the following buttons:
     <li> <b><q>Hide low statistics cells</q></b> button will omit the cells with <100 statistics, so basically it will condense the matrix, showing only the cells with higher contributions to production. </li>
 </ul>
 
-</td>
+</div>
+</div>

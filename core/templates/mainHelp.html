@@ -1,7 +1,6 @@
-<tr class="docsection"><th><a name="mainHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="doctextlight">
-
-{% if requestParams|length == 0 %}
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Help:</p></div>
+<div class="card-section">
 
 <p>
 Contextual help for monitor pages can be found at the bottom of each page.
@@ -9,7 +8,10 @@ Use the help menu in the upper right corner to navigate directly. All the monito
 </p>
 
 <p>
-Bookmarking pages of interest to you is recommended. Save that useful drill-down rather than doing all the clicking again. All monitor pages are bookmarkable (the full specification of the page is in the URL). Not all the capability is expressed explicitly on the interface at present (partly deliberately to go easy on the DB). You can often extend the depth and breadth of queries with options like days=N, limit=N on the URL. 
+Bookmarking pages of interest to you is recommended. Save that useful drill-down rather than doing all the clicking again.
+  All monitor pages are bookmarkable (the full specification of the page is in the URL).
+  Not all the capability is expressed explicitly on the interface at present (partly deliberately to go easy on the DB).
+  You can often extend the depth and breadth of queries with options like <code>days=N</code>, <code>limit=N</code> on the URL.
 </p>
 {% comment %}
 <p>
@@ -18,7 +20,10 @@ The monitor has a secure https mode. If you go to <a href='https://bigpanda.cern
 {% endcomment %}
 
 <p>
-If you need to use PanDA data programmatically, json dumps are available for job and task data. Search on 'curl' in the <a href="{% url 'helpPage' %}">help page</a>. Use with caution; do not pull huge amounts of data, especially systematically. Do not use web scraping, use these json dumps. If you need to extract other information, tell us.
+If you need to use PanDA data programmatically, json dumps are available for job and task data.
+  Search on 'curl' in the <a href="{% url 'helpPage' %}">help page</a>.
+  Use with caution; do not pull huge amounts of data, especially systematically.
+  Do not use web scraping, use these json dumps. If you need to extract other information, tell us.
 </p>
 
 <p>
@@ -36,21 +41,18 @@ PanDA is described and (kind of) documented on the <a href="http://twiki.cern.ch
 
 <p>
 For ATLAS users there is documentation on <a href='https://twiki.cern.ch/twiki/bin/view/PanDA/DAonPanda'>distributed analysis on PanDA</a> describing how to use pathena, prun etc.
-<br><b>New documentation on JEDI for analysis</b>, its advantages and how to use it, 
-<a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJediAnalysis">can be found here</a>.
-Give it a try! This monitor supports analysis with JEDI. 
-
+<br><b>The documentation on JEDI for analysis </b> <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJediAnalysis">can be found here</a>.
 </p>
 
 <p>
 Use the <a href="https://groups.cern.ch/group/hn-atlas-dist-analysis-help">hn-atlas-dist-analysis-help e-group</a> to learn about distributed analysis problems and their reported solutions and to report problems of your own.
-A <a href='https://twiki.cern.ch/twiki/bin/view/AtlasComputing/AtlasDAST'>distributed analysis shift team (DAST)</a> provides user support for distributed analysis. The <a href='https://atlas-logbook.cern.ch/elog/ATLAS+Computer+Operations+Logbook/'>ATLAS Computer Operations Logbook</a> logs service issues with PanDA and much else.
+A <a href='https://twiki.cern.ch/twiki/bin/view/AtlasComputing/AtlasDAST'>distributed analysis shift team (DAST)</a> provides user support for distributed analysis.
+The <a href='https://atlas-logbook.cern.ch/elog/ATLAS+Computer+Operations+Logbook/'>ATLAS Computer Operations Logbook</a> logs service issues with PanDA and much else.
 Issues with ATLAS PanDA itself are tracked in the <a href="https://its.cern.ch/jira/browse/ATLASPANDA">JIRA ATLASPANDA project</a>.
 Other ATLAS PanDA specifics can be found on the <a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/PanDA">ATLAS-internal PanDA twiki</a>.
 </p>
 
 {% endif %}
 
-{% endif %}
-
-</td>
+</div>
+</div>

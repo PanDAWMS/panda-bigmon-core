@@ -868,6 +868,9 @@ fieldset.inline {
 .bp-container-wrapper {
   margin: 0 0 0.7rem 0;
 }
+.row.bp-container-wrapper .columns, .row.bp-container-wrapper .column {
+  padding: 0 0.3rem 0 0.3rem;
+}
 
 
 .card.bp-container-simple {
@@ -941,6 +944,9 @@ fieldset.inline {
   .card.bp-container-simple.help .card-section p {
     margin: 0.3rem 0 0.7rem 0;
     line-height: 1.3;
+  }
+  .card.bp-container-simple.help .card-section code {
+    font-size: 0.75rem;
   }
 
 .card.bp-container-simple.info {
@@ -1039,8 +1045,11 @@ fieldset.inline {
 /* ---------------------------------------------------------- */
 /* Side bar contents */
 /* ---------------------------------------------------------- */
+.side-contents {
+  margin-left: 1rem;
+}
 .side-contents li {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   line-height: 1;
   margin: 0.3rem 0 0.3rem 0;
 }
@@ -1053,7 +1062,7 @@ fieldset.inline {
 }
 
 .side-contents li > ul > li {
-  font-size: 0.785rem;
+  font-size: 0.75rem;
   line-height: 1;
   margin: 0.3rem 0 0.3rem 0.7rem;
 }

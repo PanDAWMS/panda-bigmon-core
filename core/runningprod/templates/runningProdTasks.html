@@ -287,19 +287,12 @@
       <p>No matches to query.</p>
   {% endif %}
 
-  <div class="callout primary" data-closable>
-    <h5><b>This is a running production tasks page!</b></h5>
-    <p>It summarizes the status of different productions such as MC, derivation, reprocessing and other. </p>
-    <p>Only active tasks are taken into account and shown.
-      The plots on the top represents the current status of a production in number of events and allocated slots.</p>
-    <p>Use the row of drop-down menus to more narrow selection of tasks by processing type, working group, campaign etc.</p>
-    <p>Click on <b><i class="fi fi-plus"></i></b> icon next to Events title of number of events pie charts section to see extra charts.</p>
-    <p>Click on <b>show historical trend</b> to see a line plot showing how number of waiting and running events have been changing for last 7 days. </p>
-    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-      <span aria-hidden="true">&times;</span>
-    </button>
-  </div>
 {% endblock %}
+
+{% block help %}
+  {% include 'taskRunningProductionHelp.html' %}
+{% endblock %}
+
 
 {% block js_body_page %}
 

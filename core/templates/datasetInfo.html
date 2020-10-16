@@ -67,25 +67,6 @@ No PanDA dataset <b>{{ datasetname }}</b> found.
 
 
 
-{% block helptext %}
-
-<tr class="docsection"><th> Dataset query </th></tr>
-<tr><td class="doctextlight">
-
-{% if columns %}
-    {% if dsrec.vuid %}
-        <p>
-        This is a 'pre-JEDI' old format dataset.
-        </p>
-    {% else %}
-        <p>
-        This is a PanDA JEDI dataset.
-        </p>
-    {% endif %}
-{% endif %}
-
-</td>
-
-{% include "datasetInfoHelp.html" with helptitle="PanDA/JEDI Dataset information" %}
-
+{% block help %}
+{% include "datasetInfoHelp.html"  %}
 {% endblock %}

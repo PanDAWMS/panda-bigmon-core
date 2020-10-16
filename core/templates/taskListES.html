@@ -299,7 +299,8 @@
 
 {% endblock %}
 
-{% block helptext %}
-{% include "taskInfoHelp.html" with helptitle="Task list help" show="all" %}
+{% block help %}
+  {% include "taskListHelp.html" %}
+  {% include "taskInfoHelp.html" with show="all" %}
 {% endblock %}
 

@@ -1,9 +1,9 @@
-<tr class="helpsection"><th><a name="artHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="helplight">
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>ART GRID jobs help</p></div>
+<div class="card-section">
 
-{% if viewParams.MON_VO == 'ATLAS' %}
 <b>The color coding of test result is the following:</b>
-<ul>
+<ul class="no-bullet">
     <li> <div class="art-legend active_job">Active</div> - PanDA job still running. </li>
     <li> <div class="art-legend finished_job">Succeeded</div> - PanDA job finished, sub-steps results are not loaded yet;</li>
     <li> <div class="art-legend succeeded_job">Succeeded</div> - Athena and sub-steps succeeded;</li>
@@ -11,6 +11,6 @@
     <li> <div class="art-legend failed_job">Failed</div> - Athena failed or PanDA job failed; </li>
 </ul>
 
-{% endif %}
-</td>
+</div>
+</div>
 

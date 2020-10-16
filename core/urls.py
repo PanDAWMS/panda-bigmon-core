@@ -107,7 +107,6 @@ urlpatterns = [
     re_path(r'^taskESExtendedInfo/$', coremon_views.taskESExtendedInfo, name='taskESExtendedInfo'),
     re_path(r'^descendentjoberrsinfo/$', coremon_views.descendentjoberrsinfo, name='descendentjoberrsinfo'),
     re_path(r'^jobrelationships/(?P<pandaid>.*)/$', coremon_views.get_job_relationships, name='jobrelationships'),
-    re_path(r'^taskssummary/$', coremon_views.getSummaryForTaskList, name='taskListSummary'),
     re_path(r'^ttc/$', coremon_views.ttc, name='ttc'),
     re_path(r'^taskchain/$', coremon_views.taskchain, name='taskchain'),
     re_path(r'^ganttTaskChain/$', coremon_views.ganttTaskChain, name='ganttTaskChain'),
@@ -163,8 +162,9 @@ urlpatterns = [
     re_path(r'^datatable/data/jeditaskid',coremon_views.esatlasPandaLoggerJson, name='dataTableJediTaskId'),
     re_path(r'^datatable/data/errorSummaryList', coremon_views.summaryErrorsListJSON, name='summaryErrorsListJSON'),
     re_path(r'^datatable/data/errorMessagesSummaryList', coremon_views.summaryErrorMessagesListJSON, name='summaryErrorMessagesListJSON'),
+
     ###self monitor
-    #re_path(r'^admin/', include('core.admin.urls', namespace='admin')),
+    # re_path(r'^admin/', include('core.admin.urls'), name='admin'),
 
     ### api
     re_path(r'^api/$', core_coremon_support_views.maxpandaid, name='supportRoot'),

@@ -1,17 +1,31 @@
-<tr class="docsection"><th><a name="errorSummaryHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="doctextlight">
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Error summary help:</p></div>
+<div class="card-section">
 
 <p>
-This page summarizes the failure modes of recent jobs. PanDA has several error categories based on where the error occurred: in the PanDA server (taskbuffer), the server's dispatcher, the pilot, the DDM services invoked by the pilot, the transformation (job payload). With particular errors designated by particular codes, and each error having an associated error description (which can differ job to job as they detail the error).
+  <a href="{% url 'errorSummary' %}?sortby=count&display_limit=20">This page</a> summarizes the failure modes of recent jobs.
+  PanDA has several error categories based on where the error occurred:
+<ul class="no-bullet">
+  <li> the PanDA server (taskbuffer),
+  <li> the server's dispatcher,
+  <li> the pilot ,
+  <li> the DDM services invoked by the pilot,
+  <li> the transformation (job payload).
+</ul>
+With particular errors designated by particular codes, and each error having an associated error description (which can differ job to job as they detail the error).
 </p>
 <p>
-This page summarizes category:code occurrences for various views of interest: overall error summary, error breakdown by site, by user, and by task. 
+  This page summarizes <code>category:code</code> occurrences for various views of interest: overall error summary, error breakdown by site, by user, and by task.
 </p>
 <p>
-If you drill down eg. into the failures at a particular site, by clicking the site name, you will bring up a page summarizing errors at that site. The limit depth of the query will now be applied entirely to the site you have zeroed in on, so you will get more failure information (the limit is necessary for performance reasons). The timeline plot, attribute summary, and category:code breakdown will now be exclusive to the site of interest. Similarly for drilling down to users and tasks. 
+If you drill down eg. into the failures at a particular site, by clicking the site name, you will bring up a page summarizing errors at that site.
+  The limit depth of the query will now be applied entirely to the site you have zeroed in on, so you will get more failure information (the limit is necessary for performance reasons).
+  The timeline plot, attribute summary, and <code>category:code</code> breakdown will now be exclusive to the site of interest. Similarly for drilling down to users and tasks.
 </p>
 <p>
-<b>Wildcards:</b> The computingsite parameter on the URL supports wildcards such that multiple sites can be included in the error summary. eg. computingsite=UKI-*, computingsite=*MCORE, computingsite=*-MAN-*
-
-</td>
+<b>Wildcards:</b> The computingsite parameter on the URL supports wildcards such that multiple sites can be included in the error summary,
+  e.g. <code>&computingsite=UKI-*</code>, <code>&computingsite=*MCORE</code>, <code>&computingsite=*-MAN-*</code>
+</p>
+</div>
+</div>
 

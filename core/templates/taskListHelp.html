@@ -1,6 +1,22 @@
-<tr class="docsection"><th><a name="taskListHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="doctextlight">
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Task List information:</p></div>
+<div class="card-section">
 
-(all info moved to taskInfoHelp)
+<p><a href="{% url 'taskList' %}?display_limit=300">This page</a> summarizes a selection of recent JEDI tasks.</p>
 
-</td>
+<p>
+The task attribute summary gives an overview of the parameters of the selected tasks and enables you to drill down to the tasks of interest.
+  If there are other parameters that it would be useful to have summarized here, let us know.
+</p>
+
+<p>
+  The task list itself is expensive to build (for the server, network and your browser) and so is limited by the <code>display_limit</code> parameter that is included by default on the URL.
+  The progress of each task based on number of files.
+</p>
+
+<p>
+  You can load memory, walltime and CPU time distribution plots for jobs belong to the selection of tasks; look for "Show jobs consumption plots".
+</p>
+
+</div>
+</div>
