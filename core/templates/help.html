@@ -9,11 +9,9 @@
 
 {% block body %}
 
-
+<p id="sticky-anchor-top"></p>
 <div class="row bp-container-wrapper">
   <div class="columns small-8 medium-10">
-    <p id="sticky-anchor-top">This page consolidates the help information displayed at the bottom of PanDA monitor pages,
-      for ease of reference and to give a complete view of the available internal documentation.</p>
     {% for tmp in templates %}
       <a name="{{ tmp.anchor }}"></a>
       {% for tmpn in tmp.template_names %}
@@ -43,7 +41,6 @@
     </div>
   </div>
 </div>
-
-  <p id="sticky-anchor-bottom"></p>
+<p id="sticky-anchor-bottom"></p>
 
 {% endblock %}

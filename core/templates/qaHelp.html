@@ -3,6 +3,13 @@
 <div class="card-divider"><p>Q&amp;A</p></div>
 <div class="card-section">
 
+<p>
+  Please look at <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaAthena#FAQ">FAQ section</a> of <b>How to submit Athena jobs to PanDA</b> twiki
+  for information regarding performing Distributed Analysis on GRID.
+</p>
+
+<p>Below the tips of PanDA monitoring usage are:</p>
+
 <dl>
 
 <dt> The status of the task is failed but all input/output have the status running?
@@ -14,21 +21,12 @@ at the same time.
 <dd> The finished job was a build job, so there was no successful jobs. The failed job was going to be retried and thus it was not counted as a failure at that time. 
 
 <dt> My task failed because input data is only available on tape?
-<dd> You cannot process data directly from tape. Use DaTRI to first replicate the data to disk.
+<dd> You cannot process data directly from tape.
 
 <dt> How can I see my job logs from the task page?
-<dd> Click on 'job list' in the View box, then on a job PandaID link and then the log files link in the box.
+  <dd> Click on job counts in <b>States of jobs in this task</b> table or follow one of links in <b>Show jobs</b> blue drop-down box,
+  then on a job PandaID link and then the log files link in the box.
 
-<dt> If we want to kill a JEDI task, is there a way that I can do: "kill(JEDI TASK ID)"? Or should I instead kill the corresponding JobsetID associated to this task? i.e. Just do "kill(Jobset ID)"?
-<dd> Yes, for now, kill the Jobset ID. Each jediTaskID is mapped to a unique jobsetID for the user. Once everything migrates to JEDI,
-pbook functions could change to take jediTaskID instead of jobsetID.
-
-<dt> If I want to retry the some failed jobs in a running JEDI task, is it possible? And what should I do in pbook?
-<dd> They are automatically retried at the same and/or other sites at most 3 times by default.
-Once the task goes to finished/failed, you can retry it by using pbook.retry(jobsetID).
-
-<dt> How do I find out the JobsetIDs associated with a task?
-<dd> There is a 1:1 correspondence between jobsetid and task. The jobsetid for a given task is shown in the task detail page top summary, and in the task list on user pages.
 </dl>
 
 </div>

@@ -2018,40 +2018,43 @@ def helpPage(request):
         'gs': 'GS',
         'wn': 'WN',
     }
-    if 'version' in request.session['requestParams']:
-        # find all help templates
-        template_files = []
-        for template_dir in (tuple(djangosettings.TEMPLATES[0]['DIRS']) + get_app_template_dirs('templates')):
-            for dir, dirnames, filenames in os.walk(template_dir):
-                for filename in filenames:
-                    if filename.endswith('Help.html') and filename != 'completeHelp.html':
-                        template_files.append(filename)
-        template_files = sorted(list(set(template_files)))
-        # group by object
-        camel_case_regex = "(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
-        help_template_dict = {}
-        for tfn in template_files:
-            tfn_words = re.split(camel_case_regex, tfn)
-            tfn_words_humanized = []
-            for w in tfn_words:
-                if w.lower() in acronyms:
-                    tfn_words_humanized.append(acronyms[w.lower()])
-                else:
-                    tfn_words_humanized.append(w.title())
-            if tfn_words[0] not in help_template_dict:
-                help_template_dict[tfn_words[0]] = {
-                    'key': tfn_words[0],
-                    'template_names': [],
-                    'anchor': tfn_words[0],
-                    'title': tfn_words_humanized[0],
-                }
-            help_template_dict[tfn_words[0]]['template_names'].append({
-                'name': tfn,
-                'title': ' '.join([word for word in tfn_words_humanized[:-1]]),
-                'anchor': tfn.replace('.html', '')
-            })
-        help_template_list = list(help_template_dict.values())
 
+    # find all help templates
+    template_files = []
+    for template_dir in (tuple(djangosettings.TEMPLATES[0]['DIRS']) + get_app_template_dirs('templates')):
+        for dir, dirnames, filenames in os.walk(template_dir):
+            for filename in filenames:
+                if filename.endswith('Help.html'):
+                    template_files.append(filename)
+    template_files = sorted(list(set(template_files)))
+    # group by object
+    camel_case_regex = "(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
+    help_template_dict = {}
+    for tfn in template_files:
+        tfn_words = re.split(camel_case_regex, tfn)
+        tfn_words_humanized = []
+        for w in tfn_words:
+            if w.lower() in acronyms:
+                tfn_words_humanized.append(acronyms[w.lower()])
+            else:
+                tfn_words_humanized.append(w.title())
+        if tfn_words[0] not in help_template_dict:
+            help_template_dict[tfn_words[0]] = {
+                'key': tfn_words[0],
+                'template_names': [],
+                'anchor': tfn_words[0],
+                'title': tfn_words_humanized[0],
+            }
+        help_template_dict[tfn_words[0]]['template_names'].append({
+            'name': tfn,
+            'title': ' '.join([word for word in tfn_words_humanized[:-1]]),
+            'anchor': tfn.replace('.html', '')
+        })
+    help_template_list = list(help_template_dict.values())
+    # move introduction help to the beginning
+    help_template_list.insert(0, help_template_list.pop(min([i for i, d in enumerate(help_template_list) if d['key'].lower() == 'introduction'])))
+
+    if not is_json_request(request):
         data = {
             'prefix': getPrefix(request),
             'request': request,
@@ -2063,24 +2066,8 @@ def helpPage(request):
         response = render_to_response('help.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
-        data = {
-            'prefix': getPrefix(request),
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            'built': datetime.now().strftime("%H:%M:%S"),
-        }
-        data.update(getContextVariables(request))
-        response = render_to_response('completeHelp.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
-        return HttpResponse('json', content_type='text/html')
     else:
-        return HttpResponse('not understood', content_type='text/html')
+        return HttpResponse('json', content_type='text/html')
 
 
 def errorInfo(job, nchars=300, mode='html'):
