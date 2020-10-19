@@ -7,7 +7,9 @@ Details on JEDI's task based workload management can be found in the <a href="ht
 </p>
 
 <p>
-The task status shown in the monitor is in JEDI terms the simplified 'superstatus' the task is in. In ATLAS, these are in sync with DEFT states. JEDI uses internally a more complex set of states, shown on task detail pages as 'Detailed JEDI status' (when it differs from the superstatus); this is the 'status' field in the JEDI task.
+The task status shown in the monitor is in JEDI terms the simplified 'superstatus' the task is in. In ATLAS, these are in sync with DEFT states.
+  JEDI uses internally a more complex set of states, shown on task detail pages as 'Detailed JEDI status' (when it differs from the superstatus);
+  this is the 'status' field in the JEDI task.
 </p>
 
 <ul>
@@ -59,14 +61,15 @@ Click on the failed file percentage or count to see a summary of the errors.
 </p>
 
 <p>
-In the new JEDI system, task progress cannot be monitored in terms of jobs completed/failed because jobs are defined dynamically. The input files associated with a task are an invariant of the task, so measuring their progress is a valid metric of task progress.
-JEDI centers around tasks, no longer around jobs as in the old system.
+In the JEDI system, task progress cannot be monitored in terms of jobs completed/failed because jobs are defined dynamically.
+  The input files associated with a task are an invariant of the task, so measuring their progress is a valid metric of task progress.
 </p>
 <p>
-In the old system, the front end clients -- analysis and prodsys1 -- predefined the jobs for panda, and panda's mission was to process those jobs. The metric for progress and success was the processing of those jobs.
-</p>
-<p>
-In the new system, the front end clients -- JEDI based analysis and prodsys2 -- define only the task: a transformation to be applied to a set of inputs. Panda's mission in this system is to process those inputs, and the metric is progress and success in processing those input files. Jobs are dynamically created and re-created at panda's discretion to process and as necessary retry those inputs, shaping the jobs optimally for the resources available at a given time. So jobs are shapeshifting and fluid, it is the inputs that really define the task and are the measure of its completion.
+The front end clients -- JEDI based analysis and prodsys2 -- define only the task: a transformation to be applied to a set of inputs.
+  PanDA's mission in this system is to process those inputs, and the metric is progress and success in processing those input files.
+  Jobs are dynamically created and re-created at PanDA's discretion to process and as necessary retry those inputs,
+    shaping the jobs optimally for the resources available at a given time.
+  So jobs are shapeshifting and fluid, it is the inputs that really define the task and are the measure of its completion.
 </p>
 <p>
 <b>For JEDI based analysis and production, monitoring tasks and the processing of their input files is the best means of assessing processing status.</b>
@@ -74,18 +77,57 @@ In the new system, the front end clients -- JEDI based analysis and prodsys2 -- 
 
 <p>
 Further information that can be viewed via the task detail page:
+</p>
 <ul>
-<li> Job list: lists the task's jobs. Jobs that have been retried are excluded from the list (they are obsolete and would clutter the list with misleading information). 
-<li> Child tasks: tasks can have parent/child relationships. This lists child tasks of the present task
-<li> Prodsys task page: the prodsys2 page for the task with access to DEFT information and functionality
-<li> Brokerage logger: shows the history of brokerage actions for the task
-<li> JEDI action logger: look here to see the detailed history of JEDI actions in processing the task
-<li> Error summary: job error summary page for the jobs in this task
+  <li> <b>Task extra info:</b>
+    <ul>
+      <li>ProdSys2 UI to manage task</li>
+      <li>Task and its job brokerage at ES-ATLAS Kibana</li>
+      <li>Actions and retries logger at ES-ATLAS Kibana</li>
+      <li>Error summary: job error summary page for the jobs in this task</li>
+      <li>Child tasks: tasks can have parent/child relationships. This lists child tasks of the present task</li>
+    </ul>
+  </li>
+  <li> <b>Show jobs:</b>
+    <ul>
+      <li>Jobs including retries</li>
+      <li>Jobs excluding retries</li>
+      <li>Scout jobs if there is any</li>
+      <li>Active and ended jobs</li>
+    </ul>
+  </li>
+  <li> <b>Task parameters and help</b>
+    <ul>
+      <li>Task status log - on demand option to see history of states a task went through</li>
+      <li>Anchor links to different parts of the page</li>
+    </ul>
+  </li>
+  <li> <b>Memory and walltime usage</b>
+    <ul>
+      <li>Task jobs consumption plots - on demand option to see a few histograms showing the following metrics distribution: PSS, walltime, CPU time</li>
+      <li>Link to dashboard at Kibana@Chicago</li>
+    </ul>
+  </li>
+  <li> <b>Other plots</b>
+    <ul>
+      <li>Task chain diagrams (tree and Gantt) to see child/parent tasks</li>
+      <li>Task profile - to observe a task progress profile</li>
+    </ul>
+  </li>
 </ul>
+
+
+
+<h1>API</h1>
+<p>
+  Task data can be retrieved in JSON format with <code>curl</code> so that it can be used programmatically.
+  See <a href="{% url 'helpPage' %}?#apiHelp">API section</a> in complete help page how to do it from either lxplus or outside CERN.
+  <b>Use this carefully</b>, do not for example put scripts in crons that do heavy retrieval of job data this way.
+  If you have systematic needs for PanDA job data, tell us what they are. Do <b>*not*</b> use web page scraping.
 </p>
 
 <p>
-Tasks can be listed based on a substring of the taskname using the Search page. It supports searches by project, tag, stream. All of these are simply taskname substring searches. You can also use &amp;taskname=*substring* in the URL.
+  By default you will 3 dictionaries: "task", "taskparams" and "datasets" that are corresponds to key tables in the page.
 </p>
 
 

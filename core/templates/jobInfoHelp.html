@@ -54,5 +54,18 @@ Note that the --debugMode option is available as a pathena/prun option, it cause
 
 {% endif %}
 
+<h1>API</h1>
+<p>
+  Job data can be retrieved in JSON format with <code>curl</code> so that it can be used programmatically.
+  See <a href="{% url 'helpPage' %}?#apiHelp">API section</a> in complete help page how to do it from either lxplus or outside CERN.
+  <b>Use this carefully</b>, do not for example put scripts in crons that do heavy retrieval of job data this way.
+  If you have systematic needs for PanDA job data, tell us what they are. Do <b>*not*</b> use web page scraping.
+</p>
+
+<p>
+  By default you will get 2 dictionaries: "job" and "files". For EventService jobs an extra "dsfiles" is provided, which contains event ranges information.
+</p>
+
+
 </div>
 </div>
