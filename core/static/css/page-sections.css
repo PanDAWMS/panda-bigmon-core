@@ -73,7 +73,7 @@ pre.wrap {
 .doctext{ background-color:#e4f9a6; border-style:solid; border-width:1px; border-color:#324f00;}
 .doctextlight{ background-color:#F4FFDD; border-style:solid; border-width:1px; border-color:#324f00;}
 li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
-.help { color: #55b080 }
+.help { color: #88C8A6 }
 .helpsection{ font-weight:bold; font-size:14pt; background-color:#4ba173; color:white; border-style:solid; border-width:1px; border-color:#4ba173;}
 .helplight { background-color:#bce0cd; color: #222222 }
 .helpdark { color:forestgreen }
@@ -930,7 +930,6 @@ fieldset.inline {
   .card.bp-container-simple.help .card-divider {
     background-color: #bce0cd;
     color: #0a0a0a;
-    font-size: 1rem;
   }
   .card.bp-container-simple.help .card-section {
     background-color: #fefefe;

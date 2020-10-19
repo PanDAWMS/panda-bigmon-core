@@ -2015,7 +2015,7 @@ def helpPage(request):
         'api': 'API',
         'qa': 'Q&A',
         'idds': 'iDDS',
-        'gs': 'GS',
+        'gs': 'Global Shares',
         'wn': 'WN',
     }
 
