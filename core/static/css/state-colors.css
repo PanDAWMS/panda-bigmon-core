@@ -50,6 +50,7 @@
 .assigning { color:#099999 }
 .scheduled { color:#099999 }
 .assigned { color:#099999 }
+.staging { color:#099999 }
 .defined { color:#2174bb }
 .registered { color:#2174bb }
 .toretry { color:grey }
@@ -120,6 +121,7 @@
 .assigning_fill { color:black;  background-color:#d9efef; position: static; }
 .assigned_fill { color:black;  background-color: #d9efef }
 .scheduled_fill { color:black;  background-color:#d9efef }
+.staging_fill { color:black;  background-color:#d9efef }
 
 .activated_fill { color:black;  background-color:#d9efde }
 .ready_fill { color:black;  background-color:#d9efde; position: static; }
