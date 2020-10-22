@@ -37,6 +37,7 @@ a, a:link {
 a:hover, a:visited, a:active
 {
   text-decoration: none;
+  color: #0a47ff;
 }
 
 a.button, a.button.primary {

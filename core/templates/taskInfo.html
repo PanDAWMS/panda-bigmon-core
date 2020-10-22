@@ -107,16 +107,16 @@
         <td class='{{ task.status }}_fill'>
           {% if task.superstatus %}
             <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
-                  class="{{ task.superstatus }}_tooltip blacklink"><b>{{ task.superstatus }}</b></a>
+                  class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</a>
           {% else %}
             <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
-               class="{{ task.status }}_tooltip blacklink"><b>{{ task.status }}</b></a>
+               class="bp_tooltip task_{{ task.status }}"><b>{{ task.status }}</b></a>
           {% endif %}
         </td>
         {% if task.superstatus and task.superstatus != task.status %}
           <td class='{{ task.status }}_fill'>
             <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
-               class="{{ task.status }}_tooltip blacklink"><b>{{ task.status }}</b></a>
+               class="bp_tooltip task_{{ task.status }}"><b>{{ task.status }}</b></a>
           </td>
         {% endif %}
         {% if task.idds_info and task.idds_info.task_type == 'hpo' %}

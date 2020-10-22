@@ -50,9 +50,9 @@
 .assigning { color:#099999 }
 .scheduled { color:#099999 }
 .assigned { color:#099999 }
-.staging { color:#099999 }
 .defined { color:#2174bb }
 .registered { color:#2174bb }
+.staging { color:#551cfe }
 .toretry { color:grey }
 .toincexec { color:grey }
 .rerefine { color:grey }
@@ -121,7 +121,6 @@
 .assigning_fill { color:black;  background-color:#d9efef; position: static; }
 .assigned_fill { color:black;  background-color: #d9efef }
 .scheduled_fill { color:black;  background-color:#d9efef }
-.staging_fill { color:black;  background-color:#d9efef }
 
 .activated_fill { color:black;  background-color:#d9efde }
 .ready_fill { color:black;  background-color:#d9efde; position: static; }
@@ -132,6 +131,8 @@
 
 .paused_fill { color:black;  background-color:#edeeef; position: static; }
 .passed_fill { color: black; background-color:#edeeef; position: static;}
+
+.staging_fill { color:black;  background-color:#f1e8ff }
 
 .warning_fill { color:black;  background-color:#FFCB2F }
 

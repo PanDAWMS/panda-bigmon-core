@@ -18,6 +18,7 @@
 {% endblock %}
 {% block js_head_page_library %}
   <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/jquery.shorten.1.0.js' %}"></script>
   <!-- Load d3.js and c3.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
@@ -53,16 +54,16 @@
 <table>
 <tr class='tablesection'><th colspan=20> Task attribute summary, {{ ntasks }} tasks </th></tr>
 {% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><td>
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th><div class="comment more"><td>
 {% for item in fdict.list %}
-<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}} {{item.kname}}_tooltip' {% endif %}> {{ item.kname }} </span>
+<span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}} bp_tooltip task_{{item.kname}}' {% endif %}> {{ item.kname }} </span>
 {% if not request.session.xurls or fdict.field not in request.session.xurls %}
     <a href="{{ xurl }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
 {% else %}
     <a href="{{ request.session.xurls|get_item:fdict.field }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
 {% endif %}
 {% endfor %}
-</td></tr>
+</td></div></tr>
 {% endfor %}
 {% if hashtags and hashtags|length > 0 %}
     <tr>
@@ -139,7 +140,7 @@
 
         <td> <a href="{% url 'siteInfo' task.site %}">{{ task.site }}</a> </td>
 
-		<td  class='{{task.superstatus}}_fill'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} <span class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</span> {% else %} <span class="{{ task.status }}_tooltip">{{ task.status }} </span> {% endif %}</a></td>
+		<td  class='{{task.superstatus}}_fill'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} <span class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</span> {% else %} <span class="bp_tooltip task_{{ task.status }}">{{ task.status }} </span> {% endif %}</a></td>
         <td>
             {{ task.dsinfo.nfiles }} | <span class='finished'> {{ task.dsinfo.nfilesfinished }}</span> | <span class='failed'>{{ task.dsinfo.nfilesfailed }}</span>
         </td>
@@ -294,6 +295,10 @@
           $('#div-'+jeditaskid).html(response);
       });
   }
+
+  $(document).ready(function () {
+    $(".comment").shorten({chars: 250});
+  });
 
 </script>
 

@@ -477,7 +477,7 @@ function DisplayErrorMessagesListTableData() {
 
 $(document).ready(function () {
 
-    $(".comment").shorten();
+    $(".comment").shorten({chars: 250});
 
     DisplayErrorCountListTableData();
     DisplayErrorMessagesListTableData();

@@ -23,6 +23,7 @@
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
   <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script src="{% static 'js/jquery.shorten.1.0.js' %}"></script>
   <!-- Load d3.js and c3.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
@@ -66,29 +67,26 @@
 
     {% if tasks %}
 
-
         {% if flowstruct %}
             {% include "googleFlowDiagram.html" with struct=flowstruct %}
         {% endif %}
 
-
         {% if sumd %}
-
             <table>
                 <tr class='tablesection'>
                     <th colspan=20> Task attribute summary, {{ ntasks }} tasks</th>
                 </tr>
                 {% for fdict in sumd %}
-
                     <tr>
                         <th> {{ fdict.field }} ({{ fdict.list|length }})</th>
                         <td>
+                          <div class="comment more">
                             {% if fdict.list|length > 300 %}
                                 Too many to list
                             {% else %}
                                 {% for item in fdict.list %}
                                     <span {% if fdict.field == 'status' or fdict.field == 'superstatus' %}
-                                        class='{{ item.kname }} {{ item.kname }}_tooltip'{% endif %}> {{ item.kname }} </span>
+                                        class='{{ item.kname }} bp_tooltip task_{{ item.kname }}'{% endif %}> {{ item.kname }} </span>
                                     {% if not request.session.xurls or fdict.field not in request.session.xurls %}
                                         <a href="{{ xurl }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
                                     {% else %}
@@ -96,6 +94,7 @@
                                     {% endif %}
                                 {% endfor %}
                             {% endif %}
+                          </div>
                         </td>
                     </tr>
                 {% endfor %}
@@ -219,8 +218,8 @@
                         {% endif %}>
                             <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">
                                 {% if task.superstatus %}
-                                    <span class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</span> {% else %}
-                                    <span class="{{ task.status }}_tooltip">{{ task.status }} </span> {% endif %}
+                                    <span class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</span> {% else %}
+                                    <span class="bp_tooltip task_{{ task.status }}">{{ task.status }} </span> {% endif %}
                             </a> {% if task.failedscouting == True %}<br>during scouting{% endif %}
                             {% if task.dsinfo.nfiles > 0 %} <br>{{ task.dsinfo.nfiles }} {% endif %} </td>
                         <td>{% if task.dsinfo.nfilesfinished > 0 %}
@@ -370,37 +369,38 @@
   }
 
 
-    $(document).ready(function () {
-      var jsonData = JSON.parse('{{ datasetstage | safe}}');
-      $('#stagingdatasetstable').dataTable({
-          data: jsonData,
-          columns: [
-              {
-                  data: 'TASKID',
-                  "render": function (data, type, full, meta) {
-                      var entry = '<a href="'+{% url 'taskInfo' %}+
-                      full['TASKID'] + '">' + full['TASKID'] + '</a>';
-                      entry += '<a target="_blank" href="'+{% url 'staginprogressplot' %}+
-                      '?jeditaskid=' + full['TASKID'] + '"><img src=\'/static/images/tinychart.png\' width=14 height=14 border=0/></a>';
-                      return entry;
-                  },
-              },
-              {data: 'SOURCE_RSE'},
-              {data: 'DATASET'},
-              {data: 'STATUS'},
-              {data: 'STAGED_FILES'},
-              {data: 'TOTAL_FILES'},
-              {data: 'START_TIME'},
-              {data: 'END_TIME'},
-              {data: 'UPDATE_TIME'},
-              {
-                  data: 'RSE', "render": function (data, type, full, meta) {
-                      return '<a target="_blanc" href="https://rucio-ui.cern.ch/rule?rule_id=' + full['RSE'] + '">' + full['RSE'] + '</a>';
-                  },
-              },
-          ]
-      });
+  $(document).ready(function () {
+    $(".comment").shorten({chars: 250});
+    var jsonData = JSON.parse('{{ datasetstage | safe}}');
+    $('#stagingdatasetstable').dataTable({
+        data: jsonData,
+        columns: [
+            {
+                data: 'TASKID',
+                "render": function (data, type, full, meta) {
+                    var entry = '<a href="'+{% url 'taskInfo' %}+
+                    full['TASKID'] + '">' + full['TASKID'] + '</a>';
+                    entry += '<a target="_blank" href="'+{% url 'staginprogressplot' %}+
+                    '?jeditaskid=' + full['TASKID'] + '"><img src=\'/static/images/tinychart.png\' width=14 height=14 border=0/></a>';
+                    return entry;
+                },
+            },
+            {data: 'SOURCE_RSE'},
+            {data: 'DATASET'},
+            {data: 'STATUS'},
+            {data: 'STAGED_FILES'},
+            {data: 'TOTAL_FILES'},
+            {data: 'START_TIME'},
+            {data: 'END_TIME'},
+            {data: 'UPDATE_TIME'},
+            {
+                data: 'RSE', "render": function (data, type, full, meta) {
+                    return '<a target="_blanc" href="https://rucio-ui.cern.ch/rule?rule_id=' + full['RSE'] + '">' + full['RSE'] + '</a>';
+                },
+            },
+        ]
     });
+  });
 
   </script>
 

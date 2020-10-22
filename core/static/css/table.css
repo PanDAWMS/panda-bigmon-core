@@ -754,6 +754,10 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     color: #49668d;
     font-weight: bold;
 }
+.fresh-table tbody td[class$="_fill"] a {
+  font-weight: bold;
+  color: #0a0a0a;
+}
 
 .fresh-table tbody td a:hover {
     color: #272727;

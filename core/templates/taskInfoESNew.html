@@ -83,16 +83,16 @@
           <td class='{{ task.status }}_fill'>
             {% if task.superstatus %}
               <b><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
-                    class="{{ task.superstatus }}_tooltip blacklink">{{ task.superstatus }}</a></b>
+                    class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</a></b>
             {% else %}
               <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
-                 class="{{ task.superstatus }}_tooltip blacklink">{{ task.status }}</a>
+                 class="bp_tooltip task_{{ task.superstatus }}">{{ task.status }}</a>
             {% endif %}
           </td>
           {% if task.superstatus and task.superstatus != task.status %}
                   <td class='{{ task.status }}'>
                       <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
-                          class="{{ task.status }}_tooltip blacklink">{{ task.status }}</a>
+                          class="bp_tooltip task_{{ task.status }}">{{ task.status }}</a>
                   </td>
           {% endif %}
           {% if task.dsinfo %}
