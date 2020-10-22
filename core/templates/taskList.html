@@ -370,7 +370,7 @@
 
 
   $(document).ready(function () {
-    $(".comment").shorten({chars: 250});
+    $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
     var jsonData = JSON.parse('{{ datasetstage | safe}}');
     $('#stagingdatasetstable').dataTable({
         data: jsonData,

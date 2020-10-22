@@ -325,7 +325,7 @@ function toggleComparisonList(buttonid, value) {
 }
 
 	$(document).ready(function() {
-	    $(".comment").shorten();
+	    $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
 	});
 
 </script>
