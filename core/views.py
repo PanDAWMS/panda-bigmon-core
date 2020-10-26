@@ -10323,6 +10323,7 @@ def fileInfo(request):
         }
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
+
 @login_customrequired
 def fileList(request):
     valid, response = initRequest(request)
@@ -10405,9 +10406,7 @@ def loadFileList(request, datasetid=-1):
     if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
         query['procstatus'] = request.session['requestParams']['procstatus']
 
-
     sortOrder = 'lfn'
-
     if int(datasetid) > 0:
         query['datasetid'] = datasetid
         files.extend(JediDatasetContents.objects.filter(**query).values().order_by(sortOrder)[:limit])
@@ -10417,34 +10416,35 @@ def loadFileList(request, datasetid=-1):
         pandaids.append(f['pandaid'])
 
     query = {}
-    filesFromFileTable = []
-    filesFromFileTableDict = {}
+    files_ft = []
+    files_ft_dict = {}
     query['pandaid__in'] = pandaids
     # JEDITASKID, DATASETID, FILEID
-    filesFromFileTable.extend(
+    files_ft.extend(
         Filestable4.objects.filter(**query).values('fileid', 'dispatchdblock', 'scope', 'destinationdblock'))
-    if len(filesFromFileTable) == 0:
-        filesFromFileTable.extend(
+    if len(files_ft) == 0:
+        files_ft.extend(
             FilestableArch.objects.filter(**query).values('fileid', 'dispatchdblock', 'scope', 'destinationdblock'))
-    if len(filesFromFileTable) > 0:
-        for f in filesFromFileTable:
-            filesFromFileTableDict[f['fileid']] = f
+    if len(files_ft) > 0:
+        for f in files_ft:
+            files_ft_dict[f['fileid']] = f
 
-    ## Count the number of distinct files
-    filed = {}
     for f in files:
-        filed[f['lfn']] = 1
         f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
-        ruciolink = ""
-        if f['fileid'] in filesFromFileTableDict:
-            if len(filesFromFileTableDict[f['fileid']]['dispatchdblock']) > 0:
-                ruciolink = 'https://rucio-ui.cern.ch/did?scope=' + filesFromFileTableDict[f['fileid']][
-                        'scope'] + '&name=' + filesFromFileTableDict[f['fileid']]['dispatchdblock']
-            else:
-                if len(filesFromFileTableDict[f['fileid']]['destinationdblock']) > 0:
-                    ruciolink = 'https://rucio-ui.cern.ch/did?scope=' + filesFromFileTableDict[f['fileid']][
-                        'scope'] + '&name=' + filesFromFileTableDict[f['fileid']]['destinationdblock']
-        f['ruciolink'] = ruciolink
+        ruciolink_base = 'https://rucio-ui.cern.ch/did?scope='
+        f['ruciolink'] = ''
+        if f['fileid'] in files_ft_dict:
+            name_param = ''
+            if len(files_ft_dict[f['fileid']]['dispatchdblock']) > 0:
+                name_param = 'dispatchdblock'
+            elif len(files_ft_dict[f['fileid']]['destinationdblock']) > 0:
+                name_param = 'destinationdblock'
+            if len(name_param) > 0:
+                if files_ft_dict[f['fileid']][name_param].startswith(files_ft_dict[f['fileid']]['scope']):
+                    ruciolink_base += files_ft_dict[f['fileid']]['scope']
+                else:
+                    ruciolink_base += files_ft_dict[f['fileid']][name_param].split('.')[0]
+                f['ruciolink'] = ruciolink_base + '&name=' + files_ft_dict[f['fileid']][name_param]
         f['creationdatecut'] = f['creationdate'].strftime('%Y-%m-%d')
         f['creationdate'] = f['creationdate'].strftime(defaultDatetimeFormat)
 
