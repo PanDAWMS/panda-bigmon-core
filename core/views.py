@@ -109,7 +109,7 @@ from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, pa
     add_job_category
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
-    get_task_params, get_hs06s_summary_for_task, cleanTaskList
+    get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.job import is_event_service
 from core.libs.bpuser import get_relevant_links, filterErrorData
@@ -7790,7 +7790,7 @@ def taskInfo(request, jeditaskid=0):
     columns = sorted(columns, key=lambda x: x['name'].lower())
 
     # get task params
-    taskparams, jobparams = get_task_params(jeditaskid)
+    taskparams = get_task_params(jeditaskid)
     _logger.info('Got task info: {}'.format(time.time() - request.session['req_init_time']))
 
     # load logtxt
@@ -7840,8 +7840,8 @@ def taskInfo(request, jeditaskid=0):
     inctrs = []
     outctrs = []
     for tp in taskparams:
-        if tp['name'] == 'dsForIN':
-            inctrs = [tp['value'], ]
+        if tp == 'dsForIN':
+            inctrs = [taskparams[tp], ]
     outctrs.extend(list(set([ds['containername'] for ds in dsets if ds['type'] in ('output', 'log') and ds['containername']])))
     _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
 
@@ -7933,6 +7933,7 @@ def taskInfo(request, jeditaskid=0):
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
 
+        taskparams, jobparams = humanize_task_params(taskparams)
         furl = request.get_full_path()
         nomodeurl = extensibleURL(request, removeParam(furl, 'mode'))
         data = {
@@ -8105,7 +8106,7 @@ def taskInfoNew(request, jeditaskid=0):
     columns = sorted(columns, key=lambda x: x['name'].lower())
 
     # get task params
-    taskparams, jobparams = get_task_params(jeditaskid)
+    taskparams = get_task_params(jeditaskid)
 
     # insert dropped jobs to temporary table if drop mode
     transactionKeyDJ = -1
@@ -8254,6 +8255,7 @@ def taskInfoNew(request, jeditaskid=0):
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
 
+        taskparams, jobparams = humanize_task_params(taskparams)
         furl = request.get_full_path()
         nomodeurl = extensibleURL(request, removeParam(furl, 'mode'))
 

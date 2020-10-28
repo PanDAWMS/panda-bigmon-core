@@ -904,22 +904,31 @@ def get_task_params(jeditaskid):
     """
     Extract task and job parameter lists from CLOB in  Jedi_TaskParams table
     :param jeditaskid: int
-    :return: taskparams_list: list
-    :return: jobparams_list: list
+    :return: taskparams: dict
+    :return: jobparams: list
     """
 
     query = {'jeditaskid': jeditaskid}
     taskparams = JediTaskparams.objects.filter(**query).values()
 
-    taskparams_list = []
-    jobparams_list = []
     if len(taskparams) > 0:
         taskparams = taskparams[0]['taskparams']
-
     try:
         taskparams = json.loads(taskparams)
     except ValueError:
         pass
+
+    return taskparams
+
+
+def humanize_task_params(taskparams):
+    """
+    Prepare list of params for template output
+    :param taskparams: dict
+    :return: taskparams_list, jobparams_list
+    """
+    taskparams_list = []
+    jobparams_list = []
 
     for k in taskparams:
         rec = {'name': k, 'value': taskparams[k]}
@@ -929,6 +938,7 @@ def get_task_params(jeditaskid):
     jobparams = taskparams['jobParameters']
     if 'log' in taskparams:
         jobparams.append(taskparams['log'])
+
     for p in jobparams:
         if p['type'] == 'constant':
             ptxt = p['value']
