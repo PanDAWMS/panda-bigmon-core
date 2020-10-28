@@ -243,9 +243,11 @@ def get_file_info(job_list, **kwargs):
                 file_info_dict[file['pandaid']] = file
 
         for job in job_list:
+            job[file_info_dict[job['pandaid']]['type'] + 'filename'] = ''
+            job[file_info_dict[job['pandaid']]['type'] + 'filesize'] = 0
             if job['pandaid'] in file_info_dict:
-                job[file_info_dict[job['pandaid']]['type'] + 'filename'] = file_info_dict[job['pandaid']]['lfn']
-                job[file_info_dict[job['pandaid']]['type'] + 'filesize'] = file_info_dict[job['pandaid']]['fsize']
+                job[file_info_dict[job['pandaid']]['type'] + 'filename'] += file_info_dict[job['pandaid']]['lfn'] + ','
+                job[file_info_dict[job['pandaid']]['type'] + 'filesize'] += file_info_dict[job['pandaid']]['fsize']
 
     return job_list
 
