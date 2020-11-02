@@ -45,7 +45,6 @@
           <th>Working Group</th>
         {% endif %}
         <th>User</th>
-        <th>Destination</th>
         <th>Nucleus</th>
         <th>Task status</th>
         {% if task.superstatus and task.superstatus != task.status %}
@@ -106,7 +105,6 @@
           <td> {{ task.workinggroup }} </td>
         {% endif %}
         <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
-        <td>{% if task.destination %}{{ task.destination }}{% else %}&mdash;{% endif %}</td>
         <td>{% if task.nucleus %}{{ task.nucleus }}{% else %}&mdash;{% endif %}</td>
         <td class='{{ task.status }}_fill'>
           {% if task.superstatus %}
