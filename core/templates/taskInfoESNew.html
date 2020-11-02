@@ -43,6 +43,7 @@
           <th>Processing type</th>
           <th>Transform</th>
           <th>User</th>
+          <th>Nucleus</th>
           {% if task.campaign %}
               <th> Campaign</th> {% endif %}
           <th>Task status</th>
@@ -78,6 +79,7 @@
           <td>{% if task.processingtype %} {{ task.processingtype }} {% endif %} </td>
           <td> {{ task.transpath }} </td>
           <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
+          <td>{% if task.nucleus %}{{ task.nucleus }}{% else %}&mdash;{% endif %}</td>
           {% if task.campaign %}
               <td><a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a></td> {% endif %}
           <td class='{{ task.status }}_fill'>

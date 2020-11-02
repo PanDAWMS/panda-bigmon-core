@@ -30,6 +30,9 @@
     <tbody>
       <tr>
         <th>Task ID</th>
+        {% if task.campaign %}
+            <th> Campaign</th>
+        {% endif %}
         {% if task.deftreqid %}
             <th> Request</th>
         {% endif %}
@@ -37,14 +40,13 @@
             <th>Jobset</th>
         {% endif %}
         <th>Type</th>
+        <th>Processing type</th>
         {% if task.workinggroup %}
           <th>Working Group</th>
         {% endif %}
         <th>User</th>
         <th>Destination</th>
-        {% if task.campaign %}
-            <th> Campaign</th>
-        {% endif %}
+        <th>Nucleus</th>
         <th>Task status</th>
         {% if task.superstatus and task.superstatus != task.status %}
             <th> Detailed JEDI status</th>
@@ -88,6 +90,9 @@
       <tr>
         <td><a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
                target="_blank">{{ task.jeditaskid }}</a></td>
+        {% if task.campaign %}
+            <td><a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a></td>
+        {% endif %}
         {% if task.deftreqid %}
             <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/"
                    target="_blank">{{ task.deftreqid }}</a></td>
@@ -96,14 +101,13 @@
             <td>{{ task.reqid }}</td>
         {% endif %}
         <td>{% if task.tasktype == 'anal' %} analy {% else %} {{ task.tasktype }} {% endif %}</td>
+        <td>{% if task.processingtype %} {{ task.processingtype }} {% endif %} </td>
         {% if task.workinggroup %}
           <td> {{ task.workinggroup }} </td>
         {% endif %}
         <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
         <td>{% if task.destination %}{{ task.destination }}{% else %}&mdash;{% endif %}</td>
-        {% if task.campaign %}
-            <td><a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a></td>
-        {% endif %}
+        <td>{% if task.nucleus %}{{ task.nucleus }}{% else %}&mdash;{% endif %}</td>
         <td class='{{ task.status }}_fill'>
           {% if task.superstatus %}
             <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
