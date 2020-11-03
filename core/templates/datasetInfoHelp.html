@@ -1,6 +1,9 @@
-<tr class="docsection"><th><a name="datasetInfoHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="doctextlight">
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Dataset information:</p></div>
+<div class="card-section">
 
+<p>This page accumulates all the information of JEDI dataset.
+</p>
 <p>
 See the JEDI twiki for documentation on PanDA JEDI dataset
 <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_dataset_status">status transitions</a> and
@@ -10,5 +13,21 @@ See the JEDI twiki for documentation on PanDA JEDI dataset
 <p>
 Be sure to familiarize yourself with
 <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJediAnalysis#Differences_from_user_s_point_of">JEDI based analysis differences from a user perspective</a>, important ones relate to datasets.
+</p>
 
-</td>
+<p><b>Dataset states description:</b></p>
+<ul>
+{% if show == 'all' or  dsrec.status == 'defined' %} <li>  Status <b class='defined'>defined</b> indicates the dataset information is inserted to the JEDI_Datasets table {% endif %}</li>
+{% if show == 'all' or  dsrec.status == 'toupdate' %} <li>  Status <b class='toupdate'>toupdate</b> indicates the dataset information needs to be updated {% endif %}</li>
+{% if show == 'all' or  dsrec.status == 'pending' %} <li>  Status <b class='pending'>pending</b> indicates the dataset is temporally unavailable {% endif %}</li>
+{% if show == 'all' or  dsrec.status == 'broken' %} <li>  Status <b class='broken'>broken</b> indicates the dataset is permanently unavailable {% endif %}</li>
+{% if show == 'all' or  dsrec.status == 'ready' %} <li>  Status <b class='ready'>ready</b> indicates the dataset is ready to be used {% endif %}</li>
+{% if show == 'all' or  dsrec.status == 'done' %} <li>  Status <b class='done'>done</b> indicates all files in the input dataset were processed or the final status of output dataset {% endif %}</li>
+{% if show == 'all' or  dsrec.status == 'running' %} <li>  Status <b class='running'>running</b> indicates files are being added to the output dataset {% endif %}</li>
+{% if show == 'all' or  dsrec.status == 'prepared' %} <li>  Status <b class='prepared'>prepared</b> indicates the dataset is ready for post-processing {% endif %}</li>
+</ul>
+
+
+
+</div>
+</div>

@@ -240,12 +240,17 @@ def get_file_info(job_list, **kwargs):
     if len(file_info) > 0:
         for file in file_info:
             if file['pandaid'] not in file_info_dict:
-                file_info_dict[file['pandaid']] = file
+                file_info_dict[file['pandaid']] = []
+            file_info_dict[file['pandaid']].append(file)
 
         for job in job_list:
             if job['pandaid'] in file_info_dict:
-                job[file_info_dict[job['pandaid']]['type'] + 'filename'] = file_info_dict[job['pandaid']]['lfn']
-                job[file_info_dict[job['pandaid']]['type'] + 'filesize'] = file_info_dict[job['pandaid']]['fsize']
+                for file in file_info_dict[job['pandaid']]:
+                    if file['type'] + 'filename' not in job:
+                        job[file['type'] + 'filename'] = ''
+                        job[file['type'] + 'filesize'] = 0
+                    job[file['type'] + 'filename'] += file['lfn'] + ','
+                    job[file['type'] + 'filesize'] += file['fsize'] if isinstance(file['fsize'], int) else 0
 
     return job_list
 

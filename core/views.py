@@ -33,6 +33,7 @@ from django.core.cache import cache
 from django.utils import encoding
 from django.conf import settings as djangosettings
 from django.db import connection
+from django.template.loaders.app_directories import get_app_template_dirs
 
 from core.common.utils import getPrefix, getContextVariables, QuerySetChain
 from core.settings import defaultDatetimeFormat
@@ -108,7 +109,7 @@ from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, pa
     add_job_category
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
-    get_task_params, get_hs06s_summary_for_task, cleanTaskList
+    get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.job import is_event_service
 from core.libs.bpuser import get_relevant_links, filterErrorData
@@ -2007,23 +2008,66 @@ def helpPage(request):
     setupView(request)
     del request.session['TFIRST']
     del request.session['TLAST']
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+
+    acronyms = {
+        'panda': 'PanDA',
+        'art': 'ART',
+        'api': 'API',
+        'qa': 'Q&A',
+        'idds': 'iDDS',
+        'gs': 'Global Shares',
+        'wn': 'WN',
+    }
+
+    # find all help templates
+    template_files = []
+    for template_dir in (tuple(djangosettings.TEMPLATES[0]['DIRS']) + get_app_template_dirs('templates')):
+        for dir, dirnames, filenames in os.walk(template_dir):
+            for filename in filenames:
+                if filename.endswith('Help.html'):
+                    template_files.append(filename)
+    template_files = sorted(list(set(template_files)))
+    # group by object
+    camel_case_regex = "(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
+    help_template_dict = {}
+    for tfn in template_files:
+        tfn_words = re.split(camel_case_regex, tfn)
+        tfn_words_humanized = []
+        for w in tfn_words:
+            if w.lower() in acronyms:
+                tfn_words_humanized.append(acronyms[w.lower()])
+            else:
+                tfn_words_humanized.append(w.title())
+        if tfn_words[0] not in help_template_dict:
+            help_template_dict[tfn_words[0]] = {
+                'key': tfn_words[0],
+                'template_names': [],
+                'anchor': tfn_words[0],
+                'title': tfn_words_humanized[0],
+            }
+        help_template_dict[tfn_words[0]]['template_names'].append({
+            'name': tfn,
+            'title': ' '.join([word for word in tfn_words_humanized[:-1]]),
+            'anchor': tfn.replace('.html', '')
+        })
+    help_template_list = list(help_template_dict.values())
+    # move introduction help to the beginning
+    help_template_list.insert(0, help_template_list.pop(min([i for i, d in enumerate(help_template_list) if d['key'].lower() == 'introduction'])))
+
+    if not is_json_request(request):
         data = {
             'prefix': getPrefix(request),
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'built': datetime.now().strftime("%H:%M:%S"),
+            'templates': help_template_list,
         }
-        data.update(getContextVariables(request))
-        response = render_to_response('completeHelp.html', data, content_type='text/html')
+        response = render_to_response('help.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-    elif request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
-        return HttpResponse('json', content_type='text/html')
     else:
-        return HttpResponse('not understood', content_type='text/html')
+        return HttpResponse('json', content_type='text/html')
 
 
 def errorInfo(job, nchars=300, mode='html'):
@@ -7116,7 +7160,7 @@ def killtasks(request):
             elif resp['result'] == "OK":
                 resp['detail'] = 'Action peformed successfully, details: ' + resp['details']
         except:
-            resp = {"detail":"prodsys responce could not be parced"}
+            resp = {"detail": "prodsys responce could not be parced"}
     else:
         resp = {"detail": "Error with sending request to prodsys"}
     dump = json.dumps(resp, cls=DateEncoder)
@@ -7355,71 +7399,6 @@ def getErrorSummaryForEvents(request):
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
-
-def getSummaryForTaskList(request):
-    valid, response = initRequest(request)
-    if not valid: return response
-    data = {}
-
-    if 'limit' in request.session['requestParams']:
-        limit = int(request.session['requestParams']['limit'])
-    else:
-        limit = 5000
-
-    if not valid: return response
-    if 'tasktype' in request.session['requestParams'] and request.session['requestParams']['tasktype'].startswith(
-            'anal'):
-        hours = 3 * 24
-    else:
-        hours = 7 * 24
-    eventservice = False
-    if 'eventservice' in request.session['requestParams'] and (
-                    request.session['requestParams']['eventservice'] == 'eventservice' or
-                    request.session['requestParams']['eventservice'] == '1'): eventservice = True
-    if eventservice: hours = 7 * 24
-    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task',
-                                                           wildCardExt=True)
-    if 'statenotupdated' in request.session['requestParams']:
-        tasks = taskNotUpdated(request, query, wildCardExtension)
-    else:
-        tasks = JediTasks.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values('jeditaskid',
-                                                                                                  'status',
-                                                                                                  'creationdate',
-                                                                                                  'modificationtime')
-    taskl = []
-    for t in tasks:
-        taskl.append(t['jeditaskid'])
-
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
-    taskEvents = []
-    random.seed()
-    transactionKey = random.randrange(1000000)
-
-    new_cur = connection.cursor()
-    for id in taskl:
-        new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
-        tmpTableName, id, transactionKey))  # Backend dependable
-
-    taske = GetEventsForTask.objects.extra(
-        where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values()
-    for task in taske:
-        taskEvents.append(task)
-
-    nevents = {'neventstot': 0, 'neventsrem': 0}
-    for task in taskEvents:
-        if 'totev' in task and task['totev'] is not None:
-            nevents['neventstot'] += task['totev']
-        if 'totevrem' in task and task['totevrem'] is not None:
-            nevents['neventsrem'] += task['totevrem']
-
-    del request.session['TFIRST']
-    del request.session['TLAST']
-    response = render_to_response('taskListSummary.html', {'nevents': nevents}, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    return response
 
 @never_cache
 def report(request):
@@ -7811,7 +7790,7 @@ def taskInfo(request, jeditaskid=0):
     columns = sorted(columns, key=lambda x: x['name'].lower())
 
     # get task params
-    taskparams, jobparams = get_task_params(jeditaskid)
+    taskparams = get_task_params(jeditaskid)
     _logger.info('Got task info: {}'.format(time.time() - request.session['req_init_time']))
 
     # load logtxt
@@ -7861,8 +7840,8 @@ def taskInfo(request, jeditaskid=0):
     inctrs = []
     outctrs = []
     for tp in taskparams:
-        if tp['name'] == 'dsForIN':
-            inctrs = [tp['value'], ]
+        if tp == 'dsForIN':
+            inctrs = [taskparams[tp], ]
     outctrs.extend(list(set([ds['containername'] for ds in dsets if ds['type'] in ('output', 'log') and ds['containername']])))
     _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
 
@@ -7954,6 +7933,7 @@ def taskInfo(request, jeditaskid=0):
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
 
+        taskparams, jobparams = humanize_task_params(taskparams)
         furl = request.get_full_path()
         nomodeurl = extensibleURL(request, removeParam(furl, 'mode'))
         data = {
@@ -8126,7 +8106,7 @@ def taskInfoNew(request, jeditaskid=0):
     columns = sorted(columns, key=lambda x: x['name'].lower())
 
     # get task params
-    taskparams, jobparams = get_task_params(jeditaskid)
+    taskparams = get_task_params(jeditaskid)
 
     # insert dropped jobs to temporary table if drop mode
     transactionKeyDJ = -1
@@ -8275,6 +8255,7 @@ def taskInfoNew(request, jeditaskid=0):
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
 
+        taskparams, jobparams = humanize_task_params(taskparams)
         furl = request.get_full_path()
         nomodeurl = extensibleURL(request, removeParam(furl, 'mode'))
 
@@ -10344,6 +10325,7 @@ def fileInfo(request):
         }
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
+
 @login_customrequired
 def fileList(request):
     valid, response = initRequest(request)
@@ -10426,9 +10408,7 @@ def loadFileList(request, datasetid=-1):
     if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
         query['procstatus'] = request.session['requestParams']['procstatus']
 
-
     sortOrder = 'lfn'
-
     if int(datasetid) > 0:
         query['datasetid'] = datasetid
         files.extend(JediDatasetContents.objects.filter(**query).values().order_by(sortOrder)[:limit])
@@ -10438,34 +10418,35 @@ def loadFileList(request, datasetid=-1):
         pandaids.append(f['pandaid'])
 
     query = {}
-    filesFromFileTable = []
-    filesFromFileTableDict = {}
+    files_ft = []
+    files_ft_dict = {}
     query['pandaid__in'] = pandaids
     # JEDITASKID, DATASETID, FILEID
-    filesFromFileTable.extend(
+    files_ft.extend(
         Filestable4.objects.filter(**query).values('fileid', 'dispatchdblock', 'scope', 'destinationdblock'))
-    if len(filesFromFileTable) == 0:
-        filesFromFileTable.extend(
+    if len(files_ft) == 0:
+        files_ft.extend(
             FilestableArch.objects.filter(**query).values('fileid', 'dispatchdblock', 'scope', 'destinationdblock'))
-    if len(filesFromFileTable) > 0:
-        for f in filesFromFileTable:
-            filesFromFileTableDict[f['fileid']] = f
+    if len(files_ft) > 0:
+        for f in files_ft:
+            files_ft_dict[f['fileid']] = f
 
-    ## Count the number of distinct files
-    filed = {}
     for f in files:
-        filed[f['lfn']] = 1
         f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
-        ruciolink = ""
-        if f['fileid'] in filesFromFileTableDict:
-            if len(filesFromFileTableDict[f['fileid']]['dispatchdblock']) > 0:
-                ruciolink = 'https://rucio-ui.cern.ch/did?scope=' + filesFromFileTableDict[f['fileid']][
-                        'scope'] + '&name=' + filesFromFileTableDict[f['fileid']]['dispatchdblock']
-            else:
-                if len(filesFromFileTableDict[f['fileid']]['destinationdblock']) > 0:
-                    ruciolink = 'https://rucio-ui.cern.ch/did?scope=' + filesFromFileTableDict[f['fileid']][
-                        'scope'] + '&name=' + filesFromFileTableDict[f['fileid']]['destinationdblock']
-        f['ruciolink'] = ruciolink
+        ruciolink_base = 'https://rucio-ui.cern.ch/did?scope='
+        f['ruciolink'] = ''
+        if f['fileid'] in files_ft_dict:
+            name_param = ''
+            if len(files_ft_dict[f['fileid']]['dispatchdblock']) > 0:
+                name_param = 'dispatchdblock'
+            elif len(files_ft_dict[f['fileid']]['destinationdblock']) > 0:
+                name_param = 'destinationdblock'
+            if len(name_param) > 0:
+                if files_ft_dict[f['fileid']][name_param].startswith(files_ft_dict[f['fileid']]['scope']):
+                    ruciolink_base += files_ft_dict[f['fileid']]['scope']
+                else:
+                    ruciolink_base += files_ft_dict[f['fileid']][name_param].split('.')[0]
+                f['ruciolink'] = ruciolink_base + '&name=' + files_ft_dict[f['fileid']][name_param]
         f['creationdatecut'] = f['creationdate'].strftime('%Y-%m-%d')
         f['creationdate'] = f['creationdate'].strftime(defaultDatetimeFormat)
 

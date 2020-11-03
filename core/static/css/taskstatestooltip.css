@@ -1,17 +1,17 @@
-.running_tooltip {
+.bp_tooltip {
   position: relative;
 }
-.running_tooltip:hover {
+  .bp_tooltip:hover {
     cursor: hand;
-    text-decoration:underline;
-}
-.running_tooltip:after {
-    content: 'the task is running jobs';
+    text-decoration: underline;
+  }
+  .bp_tooltip:after {
+    content: '';
     display:none;
     width: 250px;
     background-color: #272727;
     color: #fff;
-    text-align: center; 
+    text-align: center;
     font-size: 0.75rem;
     font-weight: normal;
     line-height: 1.3;
@@ -21,8 +21,8 @@
     z-index: 1;
     top: -5px;
     left: 110%;
-}
-.running_tooltip:before {
+  }
+  .bp_tooltip:before {
     content: '';
     position: absolute;
     display:none;
@@ -31,1124 +31,97 @@
     margin-top: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.running_tooltip:hover:before {
-   display: inline-block;
-}
-.running_tooltip:hover:after {
-   display: inline-block;
-}
+    border-color: transparent #272727 transparent transparent;
+  }
+  .bp_tooltip:hover:before {
+    display: inline-block;
+  }
+  .bp_tooltip:hover:after {
+    display: inline-block;
+  }
 
-
-.registered_tooltip {
-  position: relative;
-}
-.registered_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.registered_tooltip:after {
+  .bp_tooltip.task_registered:after {
     content: 'the task information is inserted to the JEDI_Tasks table';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.registered_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.registered_tooltip:hover:before {
-   display: inline-block;
-}
-.registered_tooltip:hover:after {
-   display: inline-block;
-}
-
-.defined_tooltip {
-  position: relative;
-}
-.defined_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.defined_tooltip:after {
+  }
+  .bp_tooltip.task_defined:after {
     content: 'all task parameters are properly defined';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.defined_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.defined_tooltip:hover:before {
-   display: inline-block;
-}
-.defined_tooltip:hover:after {
-   display: inline-block;
-}
-
-.assigning_tooltip {
-  position: relative;
-}
-.assigning_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.assigning_tooltip:after {
+  }
+  .bp_tooltip.task_assigning:after {
     content: 'the task brokerage is assigning the task to a cloud';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.assigning_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.assigning_tooltip:hover:before {
-   display: inline-block;
-}
-.assigning_tooltip:hover:after {
-   display: inline-block;
-}
-
-.ready_tooltip {
-  position: relative;
-}
-.ready_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.ready_tooltip:after {
+  }
+  .bp_tooltip.task_ready:after {
     content: 'the task is ready to generate jobs. New jobs are generated once computing resources become available.';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -15px;
-    left: 110%;
-}
-.ready_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.ready_tooltip:hover:before {
-   display: inline-block;
-}
-.ready_tooltip:hover:after {
-   display: inline-block;
-}
-
-.pending_tooltip {
-  position: relative;
-}
-.pending_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.pending_tooltip:after {
+  }
+  .bp_tooltip.task_pending:after {
     content: 'the task has a temporary problem';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.pending_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.pending_tooltip:hover:before {
-   display: inline-block;
-}
-.pending_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.scouting_tooltip {
-  position: relative;
-}
-.scouting_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.scouting_tooltip:after {
+  }
+  .bp_tooltip.task_scouting:after {
     content: 'the task is running scout jobs to collect job data';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.scouting_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.scouting_tooltip:hover:before {
-   display: inline-block;
-}
-.scouting_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.submitting_tooltip {
-  position: relative;
-}
-.submitting_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.submitting_tooltip:after {
+  }
+  .bp_tooltip.task_submitting:after {
     content: 'the task is running scout jobs to collect job data';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.submitting_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.submitting_tooltip:hover:before {
-   display: inline-block;
-}
-.submitting_tooltip:hover:after {
-   display: inline-block;
-}
-
-.scouted_tooltip {
-  position: relative;
-}
-.scouted_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.scouted_tooltip:after {
+  }
+  .bp_tooltip.task_scouted:after {
     content: 'all scout jobs were successfully finished';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.scouted_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.scouted_tooltip:hover:before {
-   display: inline-block;
-}
-.scouted_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.prepared_tooltip {
-  position: relative;
-}
-.prepared_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.prepared_tooltip:after {
+  }
+  .bp_tooltip.task_running:after {
+    content: 'the task is running jobs';
+  }
+  .bp_tooltip.task_prepared:after {
     content: 'the task is ready to go to a final status';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.prepared_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.prepared_tooltip:hover:before {
-   display: inline-block;
-}
-.prepared_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.done_tooltip {
-  position: relative;
-}
-.done_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.done_tooltip:after {
+  }
+  .bp_tooltip.task_done:after {
     content: 'all inputs of the task were successfully processed';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.done_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.done_tooltip:hover:before {
-   display: inline-block;
-}
-.done_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.failed_tooltip {
-  position: relative;
-}
-.failed_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.failed_tooltip:after {
+  }
+  .bp_tooltip.task_failed:after {
     content: 'all inputs of the task were failed';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.failed_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.failed_tooltip:hover:before {
-   display: inline-block;
-}
-.failed_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.finished_tooltip {
-  position: relative;
-}
-.finished_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.finished_tooltip:after {
+  }
+  .bp_tooltip.task_finished:after {
     content: 'some inputs of the task were successfully processed but others were failed or not processed since the task was terminated';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -15px;
-    left: 110%;
-}
-.finished_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.finished_tooltip:hover:before {
-   display: inline-block;
-}
-.finished_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.aborting_tooltip {
-  position: relative;
-}
-.aborting_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.aborting_tooltip:after {
+  }
+  .bp_tooltip.task_aborting:after {
     content: 'the task is being killed';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.aborting_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.aborting_tooltip:hover:before {
-   display: inline-block;
-}
-.aborting_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.aborted_tooltip {
-  position: relative;
-}
-.aborted_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.aborted_tooltip:after {
+  }
+  .bp_tooltip.task_aborted:after {
     content: 'the task is killed';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.aborted_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.aborted_tooltip:hover:before {
-   display: inline-block;
-}
-.aborted_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.finishing_tooltip {
-  position: relative;
-}
-.finishing_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.finishing_tooltip:after {
+  }
+  .bp_tooltip.task_finishing:after {
     content: 'the task is forced to get finished';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.finishing_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.finishing_tooltip:hover:before {
-   display: inline-block;
-}
-.finishing_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.topreprocess_tooltip {
-  position: relative;
-}
-.topreprocess_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.topreprocess_tooltip:after {
+  }
+  .bp_tooltip.task_topreprocess:after {
     content: 'preprocess job is ready for the task';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.topreprocess_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.topreprocess_tooltip:hover:before {
-   display: inline-block;
-}
-.topreprocess_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.preprocessing_tooltip {
-  position: relative;
-}
-.preprocessing_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.preprocessing_tooltip:after {
+  }
+  .bp_tooltip.task_preprocessing:after {
     content: 'preprocess job is running for the task';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.preprocessing_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.preprocessing_tooltip:hover:before {
-   display: inline-block;
-}
-.preprocessing_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.tobroken_tooltip {
-  position: relative;
-}
-.tobroken_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.tobroken_tooltip:after {
+  }
+  .bp_tooltip.task_tobroken:after {
     content: 'the task is going to broken';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.tobroken_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.tobroken_tooltip:hover:before {
-   display: inline-block;
-}
-.tobroken_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.broken_tooltip {
-  position: relative;
-}
-.broken_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.broken_tooltip:after {
+  }
+  .bp_tooltip.task_broken:after {
     content: 'task cannot be executed, task definition is wrong';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.broken_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.broken_tooltip:hover:before {
-   display: inline-block;
-}
-.broken_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.toretry_tooltip {
-  position: relative;
-}
-.toretry_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.toretry_tooltip:after {
+  }
+  .bp_tooltip.task_toretry:after {
     content: 'the retry command was received for the task';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.toretry_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.toretry_tooltip:hover:before {
-   display: inline-block;
-}
-.toretry_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.toincexec_tooltip {
-  position: relative;
-}
-.toincexec_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.toincexec_tooltip:after {
+  }
+  .bp_tooltip.task_toincexec:after {
     content: 'the incexec command was received for the task';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.toincexec_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.toincexec_tooltip:hover:before {
-   display: inline-block;
-}
-.toincexec_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.rerefine_tooltip {
-  position: relative;
-}
-.rerefine_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.rerefine_tooltip:after {
+  }
+  .bp_tooltip.task_rerefine:after {
     content: 'task parameters are going to be changed for incremental execution';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.rerefine_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.rerefine_tooltip:hover:before {
-   display: inline-block;
-}
-.rerefine_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.paused_tooltip {
-  position: relative;
-}
-.paused_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.paused_tooltip:after {
+  }
+  .bp_tooltip.task_paused:after {
     content: 'the task is paused and does not do anything until it is resumed';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.paused_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.paused_tooltip:hover:before {
-   display: inline-block;
-}
-.paused_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.throttled_tooltip {
-  position: relative;
-}
-.throttled_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.throttled_tooltip:after {
+  }
+  .bp_tooltip.task_throttled:after {
     content: 'the task is throttled to generate jobs since the largest attemptNr in the task is a multiple of 5. The throttled period is 120 x int(max(attemptNr)/5)**2 minites';
-    display:none;
-    width: 350px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -15px;
-    left: 110%;
-}
-.throttled_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.throttled_tooltip:hover:before {
-   display: inline-block;
-}
-.throttled_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.exhausted_tooltip {
-  position: relative;
-}
-.exhausted_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.exhausted_tooltip:after {
+  }
+  .bp_tooltip.task_exhausted:after {
     content: 'all reattempts were done but some inputs were still unsuccessful, and the task is configured to go to this state instead of finished to wait for manual intervention or timeout of 10 days. Also, if cpuTime of scouts jobs > 2x cpuTime of task definition, the task goes to exhausted';
-    display:none;
-    width: 350px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -30px;
-    left: 110%;
-}
-.exhausted_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.exhausted_tooltip:hover:before {
-   display: inline-block;
-}
-.exhausted_tooltip:hover:after {
-   display: inline-block;
-}
-
-
-.passed_tooltip {
-  position: relative;
-}
-.passed_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.passed_tooltip:after {
+  }
+  .bp_tooltip.task_paused:after {
     content: 'the task is ready to go to a final state after manual intervention or timeout';
-    display:none;
-    width: 250px;
-    background-color: #272727;
-    color: #fff;
-    text-align: center; 
-    font-size: 0.75rem;
-    font-weight: normal;
-    line-height: 1.3;
-    border-radius: 6px;
-    padding: 0.3rem;
-    position: absolute;
-    z-index: 1;
-    top: -15px;
-    left: 110%;
-}
-.passed_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.passed_tooltip:hover:before {
-   display: inline-block;
-}
-.passed_tooltip:hover:after {
-   display: inline-block;
-}
+  }
+  .bp_tooltip.task_staging:after {
+    content: 'inputs for the task are staging from tape';
+  }
+

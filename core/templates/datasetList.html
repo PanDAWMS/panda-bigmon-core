@@ -53,6 +53,7 @@ No datasets matching search were found.
 
 {% endblock %}
 
-{% block helptext %}
-{% include "datasetListHelp.html" with helptitle="Dataset list help" %}
+{% block help %}
+{% include "datasetListHelp.html" %}
+{% include "datasetInfoHelp.html" with show='all' %}
 {% endblock %}

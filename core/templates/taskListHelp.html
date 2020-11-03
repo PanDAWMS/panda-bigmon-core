@@ -1,6 +1,50 @@
-<tr class="docsection"><th><a name="taskListHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="doctextlight">
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Task List information:</p></div>
+<div class="card-section">
 
-(all info moved to taskInfoHelp)
+<p><a href="{% url 'taskList' %}?display_limit=300">This page</a> summarizes a selection of recent JEDI tasks.</p>
 
-</td>
+<p>
+The task attribute summary gives an overview of the parameters of the selected tasks and enables you to drill down to the tasks of interest.
+  If there are other parameters that it would be useful to have summarized here, let us know.
+</p>
+
+<p>
+  Tasks can be listed based on a substring of the taskname by adding <code>&taskname=*substring*</code> to the URL.
+</p>
+
+<p>
+  The task list itself is expensive to build (for the server, network and your browser) and so is limited by the <code>display_limit</code> parameter that is included by default on the URL.
+  The progress of each task based on number of files.
+</p>
+
+<p>
+  You can load memory, walltime and CPU time distribution plots for jobs belong to the selection of tasks; look for "Show jobs consumption plots".
+</p>
+
+<h1>API</h1>
+<p>
+  Task data can be retrieved in JSON format with <code>curl</code> so that it can be used programmatically.
+  See <a href="{% url 'helpPage' %}?#apiHelp">API section</a> in complete help page how to do it from either lxplus or outside CERN.
+  <b>Use this carefully</b>, do not for example put scripts in crons that do heavy retrieval of job data this way.
+  If you have systematic needs for PanDA job data, tell us what they are. Do <b>*not*</b> use web page scraping.
+</p>
+
+<p>
+  By default you will get a list of dictionaries, each of them describes a task. Among usual task parameters,
+  it contains "dsinfo" and "datasets" sub dictionaries, where the first shows summary of inputs, the second one is a list of all associated datasets.
+</p>
+
+<p>
+  To get job counts by status for each task add <code>&extra=jobstatecount</code> to URL, e.g.:
+  <a href="{% url 'taskList' %}?json&extra=jobstatecount&status=done&limit=10">/tasks/?json&extra=jobstatecount&status=done&limit=10</a>
+</p>
+
+<p>
+  For some tasks, mostly ML, a metadata is available. To include it to JSON response please add <code>&extra=metastruct</code>
+    (can be used together with "jobstatecount", separated by comma), e.g.
+  <a href="{% url 'taskList' %}?json&extra=metastruct&container_name=*hpogrid*&status=done">/tasks/?json&extra=metastruct&container_name=*hpogrid*&status=done</a>
+</p>
+
+</div>
+</div>

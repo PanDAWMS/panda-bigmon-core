@@ -477,7 +477,7 @@ function DisplayErrorMessagesListTableData() {
 
 $(document).ready(function () {
 
-    $(".comment").shorten();
+    $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
 
     DisplayErrorCountListTableData();
     DisplayErrorMessagesListTableData();
@@ -501,8 +501,8 @@ $(document).ready(function () {
 </script>
 {% endblock %}
 
-{% block helptext %}
-{% include "jobListHelp.html" with helptitle="Job list help" %}
-{% include "jobInfoHelp.html" with helptitle="Job information" show="all" %}
+{% block help %}
+{% include "jobListHelp.html" %}
+{% include "jobInfoHelp.html" with show="all" %}
 {% endblock %}
 

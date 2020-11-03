@@ -857,27 +857,29 @@ def get_job_state_summary_for_tasklist(tasks):
     taskids = [int(task['jeditaskid']) for task in tasks]
     trans_key = insert_to_temp_table(taskids)
 
+    tmp_table = get_tmp_table_name()
+
     jsquery = """
         select  jeditaskid, jobstatus, count(pandaid) as njobs from (
         (
         select jeditaskid, pandaid, jobstatus from atlas_pandabigmon.combined_wait_act_def_arch4 
-            where jeditaskid in (select id from ATLAS_PANDABIGMON.TMP_IDS1Debug where TRANSACTIONKEY = :tk )
+            where jeditaskid in (select id from {0} where TRANSACTIONKEY = :tk )
         )
         union all
         (
         select jeditaskid, pandaid, jobstatus from atlas_pandaarch.jobsarchived 
-            where jeditaskid in (select id from ATLAS_PANDABIGMON.TMP_IDS1Debug where TRANSACTIONKEY = :tk )
+            where jeditaskid in (select id from {0} where TRANSACTIONKEY = :tk )
         minus
         select jeditaskid, pandaid, jobstatus from atlas_pandaarch.jobsarchived 
-            where jeditaskid in (select id from ATLAS_PANDABIGMON.TMP_IDS1Debug where TRANSACTIONKEY = :tk ) 
+            where jeditaskid in (select id from {0} where TRANSACTIONKEY = :tk ) 
                 and pandaid in (
                     select pandaid from atlas_pandabigmon.combined_wait_act_def_arch4 
-                        where jeditaskid in (select id from ATLAS_PANDABIGMON.TMP_IDS1Debug where TRANSACTIONKEY = :tk )
+                        where jeditaskid in (select id from {0} where TRANSACTIONKEY = :tk )
             )
         )
         )
         group by jeditaskid, jobstatus
-        """
+        """.format(tmp_table)
     cur = connection.cursor()
     cur.execute(jsquery, {'tk': trans_key})
     js_count_bytask = cur.fetchall()
@@ -902,22 +904,31 @@ def get_task_params(jeditaskid):
     """
     Extract task and job parameter lists from CLOB in  Jedi_TaskParams table
     :param jeditaskid: int
-    :return: taskparams_list: list
-    :return: jobparams_list: list
+    :return: taskparams: dict
+    :return: jobparams: list
     """
 
     query = {'jeditaskid': jeditaskid}
     taskparams = JediTaskparams.objects.filter(**query).values()
 
-    taskparams_list = []
-    jobparams_list = []
     if len(taskparams) > 0:
         taskparams = taskparams[0]['taskparams']
-
     try:
         taskparams = json.loads(taskparams)
     except ValueError:
         pass
+
+    return taskparams
+
+
+def humanize_task_params(taskparams):
+    """
+    Prepare list of params for template output
+    :param taskparams: dict
+    :return: taskparams_list, jobparams_list
+    """
+    taskparams_list = []
+    jobparams_list = []
 
     for k in taskparams:
         rec = {'name': k, 'value': taskparams[k]}
@@ -927,6 +938,7 @@ def get_task_params(jeditaskid):
     jobparams = taskparams['jobParameters']
     if 'log' in taskparams:
         jobparams.append(taskparams['log'])
+
     for p in jobparams:
         if p['type'] == 'constant':
             ptxt = p['value']
