@@ -19,6 +19,7 @@ import pandas as pd
 import numpy as np
 from django.views.decorators.cache import never_cache
 from django.utils import timezone
+from core.schedresource.utils import getCRICSEs
 
 @never_cache
 @login_customrequired
@@ -116,6 +117,12 @@ def getBinnedData(listData, additionalList1 = None, additionalList2 = None):
         data.append([time, count])
     return data
 
+def substitudeRSEbreakdown(rse):
+    rses = getCRICSEs().get(rse, [])
+    final_string = ""
+    for rse in rses:
+        final_string += "&var-src_endpoint=" + rse
+    return final_string
 
 @never_cache
 def getDTCSubmissionHist(request):
@@ -137,8 +144,10 @@ def getDTCSubmissionHist(request):
     for task, dsdata in staginData.items():
         epltime = None
         timelistSubmitted.append(dsdata['start_time'])
-
-        dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_queued":0, "ds_90pdone":0, "files_rem":0, "files_q":0, "files_done":0})
+        source_rse_breakdown = substitudeRSEbreakdown(dsdata['source_rse'])
+        dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0,
+                                                             "ds_queued":0, "ds_90pdone":0, "files_rem":0, "files_q":0,
+                                                             "files_done":0, "source_rse_breakdown": source_rse_breakdown})
 
         if dsdata['occurence'] == 1:
             dictSE["files_done"] += dsdata['staged_files']

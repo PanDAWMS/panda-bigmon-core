@@ -180,6 +180,24 @@ def get_object_stores():
 
     return object_stores_dict
 
+def getCRICSEs():
+    SEs = cache.get('CRIC_SEs')
+    if not SEs:
+        url = "https://atlas-cric.cern.ch/api/atlas/ddmendpoint/query/?json"
+        http = urllib3.PoolManager()
+        SEs = {}
+        try:
+            r = http.request('GET', url)
+            data = json.loads(r.data.decode('utf-8'))
+            for se in data.keys():
+                su = data[se].get("su", None)
+                if su:
+                    SEs.setdefault(su, set()).add(se)
+        except Exception:
+            _logger.exception('Got exception on getCRICSEs')
+        cache.set('CRIC_SEs', SEs, 7200)
+    return SEs
+
 
 def getCRICSites():
     sitesUcore = cache.get('sitesUcore')
