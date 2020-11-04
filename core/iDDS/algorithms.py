@@ -26,16 +26,20 @@ def getiDDSInfoForTask(jeditaskid):
 
     new_cur = connection.cursor()
     new_cur.execute(
-        """ select r.request_id, r.scope, r.name, r.request_type, r.transform_tag, r.workload_id, r.status, r.created_at request_created_at, r.updated_at request_updated_at, tr.transform_id, tr.transform_status, tr.in_status, tr.in_total_files, tr.in_processed_files, tr.out_status, tr.out_total_files, tr.out_processed_files, tr.out_created_at, tr.out_updated_at
-            from atlas_idds.requests r
-             join atlas_idds.req2transforms rt on (r.request_id=rt.request_id and r.workload_id={0})
+        """
+        select r.request_id, r.scope, r.name, r.request_type, r.transform_tag, r.workload_id, r.status, r.created_at request_created_at, r.updated_at request_updated_at, tr.transform_id, tr.transform_status, tr.in_status, tr.in_total_files, tr.in_processed_files, tr.out_status, tr.out_total_files, tr.out_processed_files, tr.out_created_at, tr.out_updated_at
+            from ATLAS_IDDS.requests r
+             join (
+                select request_id, workprogress_id from ATLAS_IDDS.workprogresses
+             ) wp on (r.request_id=wp.request_id and r.workload_id={0})
+             join ATLAS_IDDS.wp2transforms wt on (wp.workprogress_id=wt.workprogress_id)
              join (
                 select t.transform_id, t.status transform_status, in_coll.status in_status, in_coll.total_files in_total_files, in_coll.processed_files in_processed_files,
-                out_coll.status out_status, out_coll.total_files out_total_files, out_coll.processed_files out_processed_files, out_coll.out_created_at, out_coll.out_updated_at
-                from atlas_idds.transforms t
-                join (select coll_id , transform_id, status, total_files, processed_files from atlas_idds.collections where relation_type = 0) in_coll on (t.transform_id = in_coll.transform_id)
-                join (select coll_id , transform_id, status, total_files, processed_files, created_at out_created_at, updated_at out_updated_at from atlas_idds.collections where relation_type = 1) out_coll on (t.transform_id = out_coll.transform_id)
-                ) tr on (rt.transform_id=tr.transform_id)
+                out_coll.status out_status, out_coll.total_files out_total_files, out_coll.processed_files out_processed_files, out_coll.created_at out_created_at, out_coll.updated_at out_updated_at
+                from ATLAS_IDDS.transforms t
+                join (select coll_id , transform_id, status, total_files, processed_files, created_at, updated_at from ATLAS_IDDS.collections where relation_type = 0) in_coll on (t.transform_id = in_coll.transform_id)
+                join (select coll_id , transform_id, status, total_files, processed_files, created_at, updated_at from ATLAS_IDDS.collections where relation_type = 1) out_coll on (t.transform_id = out_coll.transform_id)
+             ) tr on (wt.transform_id=tr.transform_id)
             """.format(int(jeditaskid)))
 
     transformationWithNested = dictfetchall(new_cur)
