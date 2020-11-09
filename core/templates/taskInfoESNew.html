@@ -565,25 +565,23 @@
       </table>
   {% endif %}
 
-  <a name="taskparamsprodsys"></a>
   {% if taskparams %}
-      <table class="fresh-table">
-        <thead>
-          <tr>
-              <th colspan=20> Prodsys task parameters</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in taskparams %}
-              {% if p.name != 'jobParameters' and p.name != 'log' %}
-                  <tr>
-                      <th> {{ p.name }} </th>
-                      <td class="wrap-words">{% if p.value != None %} {{ p.value }} {% endif %}</td>
-                  </tr>
-              {% endif %}
-          {% endfor %}
-        </tbody>
-      </table>
+    <a name="taskparamsprodsys"></a>
+    <table class="fresh-table">
+      <thead>
+        <tr><th colspan=20> Prodsys task parameters</th></tr>
+      </thead>
+      <tbody>
+        {% for p in taskparams %}
+            {% if p.name != 'jobParameters' and p.name != 'log' %}
+                <tr>
+                    <td class="bold">{{ p.name }}</td>
+                    <td class="wrap-words">{% if not p.value is None and not p.value == '' %} {{ p.value }} {% else %}&mdash;{% endif %}</td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
   {% endif %}
 
   <a name="taskparamsjedi"></a>
@@ -596,10 +594,17 @@
     <tbody>
       {% for col in columns %}
           <tr>
-              <th>{{ col.name }} </th>
-              <td class="wrap-words"> {% if col.value != 'None' %} {% if col.name == 'cputimescoutjob' %}
-                  <a href="{% url 'jobInfo' %}?pandaid={{ col.value }}">{{ col.value }}</a> {% else %}
-                  {{ col.value }} {% endif %} {% endif %}</td>
+              <td class="bold">{{ col.name }}</td>
+              <td class="wrap-words">
+                {% if not col.value is None and not col.value == '' %}
+                  {% if col.name == 'cputimescoutjob' %}
+                    <a href="{% url 'jobInfo' %}?pandaid={{ col.value }}">{{ col.value }}</a>
+                  {% else %}
+                    {{ col.value }}
+                  {% endif %}
+                {% else %} &mdash;
+                {% endif %}
+              </td>
           </tr>
       {% endfor %}
     </tbody>
