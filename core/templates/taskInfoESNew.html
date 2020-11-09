@@ -666,7 +666,7 @@
     $scope.taskinfo.jc_plots.build = function () {
       $scope.taskinfo.jc_plots.plot_data.forEach((item) => {
         if (item.data.details.type === 'pie') {
-          $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_donut(item.data.data[$scope.taskinfo.jc_plots.selection.category]['columns'], item.name + "_chart", item.data.details.title, {})
+          $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_donut(item.data.data[$scope.taskinfo.jc_plots.selection.category]['columns'], item.name + "_chart", item.data.details.title, item.data.details)
         }
         else if (item.data.details.type === 'stack_bar') {
           $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_stacked_bar_hist(item.data.data[$scope.taskinfo.jc_plots.selection.category], item.data.details, item.name + "_chart");
@@ -717,7 +717,8 @@
             $timeout(() => {
               element.ready(() => {
                 if (scope.plot.data.details.type === 'pie') {
-                  scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_donut(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category]['columns'], scope.plot.name + "_chart", scope.plot.data.details.title, {})
+                  if ('size' in scope.plot.data.details) {scope.plot.data.details.size[0] = getWidth();}
+                  scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_donut(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category]['columns'], scope.plot.name + "_chart", scope.plot.data.details.title, scope.plot.data.details)
                 }
                 else if (scope.plot.data.details.type === 'stack_bar') {
                   scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_stacked_bar_hist(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category], scope.plot.data.details, scope.plot.name + "_chart");
