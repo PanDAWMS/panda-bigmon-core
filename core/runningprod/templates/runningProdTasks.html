@@ -277,6 +277,9 @@
             <th>Jumbo</th>
             <th>Hastags</th>
             <th>Site</th>
+            {% if requestParams.preset == 'MC' %}
+              <th>Container name</th>
+            {% endif %}
         </tr>
         </thead>
     <tbody>
@@ -798,6 +801,18 @@ $(document).ready(function () {
               "render": function(data, type, full, meta) {
                   if (data) {
                       return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              }
+          },
+          {
+              "data": "container_name",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}container_name=' + full['container_name'] + '">' + full['container_name'] + '</a>'
                   }
                   else {
                       return '---';
