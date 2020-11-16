@@ -147,5 +147,3 @@ def getiDDSInfoForTaskRequest(request):
         transformationWithNested = getiDDSInfoForTask(jeditaskid)
 
     return JsonResponse({'data': transformationWithNested}, encoder=DateEncoder, safe=False)
-
-
