@@ -11,7 +11,7 @@ from django.db.models import Count, Sum
 from core.common.models import JediEvents, JediDatasetContents, JediDatasets, JediTaskparams
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, add_job_category, get_job_walltime, \
-    job_states_count_by_param, get_tmp_table_name
+    job_states_count_by_param, get_tmp_table_name, parse_datetime
 from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp_table
 
 from core.settings.local import defaultDatetimeFormat
@@ -43,6 +43,7 @@ def cleanTaskList(tasks, **kwargs):
             task['deftreqid'] = task['reqid']
         if 'corecount' in task and task['corecount'] is None:
             task['corecount'] = 1
+        task['age'] = get_task_age(task)
 
     # Get status of input processing as indicator of task progress if requested
     if add_datasets_info:
@@ -95,10 +96,11 @@ def cleanTaskList(tasks, **kwargs):
                     dstotals['nfiles'] = nfiles
                     dstotals['nfilesfinished'] = nfinished
                     dstotals['nfilesfailed'] = nfailed
-                    dstotals['pctfinished'] = int(100. * nfinished / nfiles)
-                    dstotals['pctfailed'] = int(100. * nfailed / nfiles)
+                    dstotals['pctfinished'] = round(100. * nfinished / nfiles, 2)
+                    dstotals['pctfailed'] = round(100. * nfailed / nfiles, 2)
 
             task['dsinfo'] = dstotals
+            task.update(dstotals)
 
     if sortby is not None:
         if sortby == 'time-ascending':
@@ -979,3 +981,25 @@ def get_hs06s_summary_for_task(jeditaskid):
                 hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
 
     return hs06sSum
+
+
+def get_task_age(task):
+    """
+    :param task: dict of task params, creationtime is obligatory
+    :return: age in days or -1 if not enough data provided
+    """
+    task_age = -1
+
+    if 'endtime' in task and task['endtime'] is not None:
+        endtime = parse_datetime(task['endtime']) if not isinstance(task['endtime'], datetime) else task['endtime']
+    else:
+        endtime = datetime.now()
+    if 'creationdate' in task and task['creationdate'] is not None:
+        creationtime = parse_datetime(task['creationdate']) if not isinstance(task['creationdate'], datetime) else task['creationdate']
+    else:
+        creationtime = None
+
+    if endtime and creationtime:
+        task_age = round((endtime-creationtime).total_seconds() / 60. / 60. / 24., 2)
+
+    return task_age

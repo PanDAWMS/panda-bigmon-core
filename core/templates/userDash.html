@@ -1,0 +1,356 @@
+{% extends "_base_core.html" %}
+{% load static %}{% load common_tags %}{% load humanize %}
+{% block page_title %} {{ viewParams.MON_VO }} PanDA user {{ user }} {% endblock %}
+{% block subtitle %}PanDA user <b>{{ user }}</b> dashboard {{ viewParams.selection|safe }}{% endblock %}
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+  <!-- Load d3.js and c3.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
+{% endblock %}
+
+
+{% block body %}
+
+<p>
+{% if requestParams.priorityrange %}<br><b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}
+</p>
+
+
+{% if request.user and request.user.is_authenticated and links and links|length > 0 %}
+
+  <div class="card bp-container-simple">
+  <div class="card-divider"><p>Inspired by your visits history:</p></div>
+  <div class="card-section">
+    {% for category, linkslist in links.items %}
+      <p><b>{{ category | title }}:</b></p>
+      <ul class="no-bullet uservisits">
+        {% for link in linkslist %}
+          {% if link.keyparams|length > 0 %}
+            <a href={{ link.url }}>
+              {% for param in link.keyparams %}
+                {% if forloop.first %}{% elif forloop.counter == 2 %}({% else %},{% endif %}
+                {% if param.param == 'status' %}<span class="{{ param.value }}">{{ param.param }}:{{ param.value }}</span>
+                {% elif param.param == 'jeditaskid' or param.param == 'taskid' %}
+                  {% if category != 'task' %}{{ param.param }}:{% endif %}<b>{{ param.value }}</b>
+                {% elif param.param == 'pandaid' %}<b>{{ param.value }}</b>
+                {% elif param.param == 'jobstatus' or param.param == 'status' %}<span class="{{ param.value }}">{{ param.value }}</span>
+                {% elif param.param == 'site' %}<b>{{param.value}}</b>
+                {% elif param.param == 'cloud' %}{{ param.param }}:<b>{{ param.value }}</b>
+                {% else %}{{ param.param }}:{{ param.value }}
+                {% endif %}
+                {% if forloop.last and link.keyparams|length > 1 %}){% else %}{% endif %}
+              {% endfor %}</a>
+          {% else %}<a href={{ link.url }}>{{ link.pagename }}</a>
+          {% endif %}
+        {% if forloop.last %}{% else %},&emsp;{% endif %}
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  </div>
+  </div>
+{% endif %}
+
+
+{% if tasks|length > 0 %}
+  <div id="plots" data-ng-controller="userTaskSummaryPlotsController">
+  <div class="card bp-container-simple secondary">
+    <div class="card-divider"><p>User activity overview:</p></div>
+    <div class="card-section">
+      <p>
+        Personal CPU hours for last 1 day | 7 days: {{ userstats.cpua1 }} | {{ userstats.cpua7 }}.
+        Group CPU hours for last 1 day | 7 days: {{ userstats.cpup1 }} | {{ userstats.cpup7 }}.
+      </p>
+      <div class="c3-chart-block" ng-repeat="plot in userinfo.uts_plots.plot_data" jcplot-directive plot="plot" parent="$parent"></div>
+    </div>
+  </div>
+  </div>
+
+
+  <div class="card bp-container-simple secondary" id="container_tasks">
+  <div class="card-divider"><p>{{ tasks|length }} tasks listed:</p></div>
+  <div class="card-section">
+    <table class="data-table" id="taskstable">
+        <thead></thead>
+        <tbody></tbody>
+    </table>
+  </div>
+  </div>
+
+{% else %}
+  <div class="card bp-container-simple info">
+  <div class="card-divider"><p>No tasks were found.</p></div>
+  </div>
+{% endif %}
+
+
+
+{% endblock %}
+
+{% block js_body_page %}
+
+<script src="{% static 'js/d3jsplot.js' %}"></script>
+<script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+
+
+<script type="text/javascript">
+
+var plot_data = {{ plots|safe }};
+  app.controller('userTaskSummaryPlotsController', function($scope) {
+    $scope.userinfo = {};
+    $scope.userinfo.uts_plots = {
+      plot_data: plot_data,
+      charts: {}
+    };
+
+    $scope.userinfo.uts_plots.plot_data.forEach((item) => {
+      item.options.size = [getWidth()/$scope.userinfo.uts_plots.plot_data.length - 20 , 300]
+    });
+
+    $scope.userinfo.uts_plots.build = function () {
+      $scope.userinfo.uts_plots.plot_data.forEach((item) => {
+        if (item.type === 'pie') {
+          $scope.userinfo.uts_plots.charts[item.name + "_chart"] = draw_donut(
+            item.data,
+            item.name + "_chart",
+            item.title,
+            item.options,
+          );
+        }
+        else if (item.type === 'bar') {
+          $scope.userinfo.uts_plots.charts[item.name + "_chart"] = draw_bar(
+            item.data,
+            item.name + "_chart",
+            item.title,
+            item.options)
+        }
+      });
+    };
+
+
+  })
+  .directive('jcplotDirective', function ($timeout) {
+      var template = '<div id="{$plot.name$}_chart"></div>';
+      return {
+          template: template,
+          scope: {
+              plot: '=',
+              parent: '=',
+          },
+          link: function (scope, element, attrs) {
+            $timeout(() => {
+              element.ready(() => {
+                if (scope.plot.type === 'pie') {
+                  scope.parent.userinfo.uts_plots.charts[scope.plot.name + "_chart"] = draw_donut(
+                    scope.plot.data,
+                    scope.plot.name + "_chart",
+                    scope.plot.title,
+                    scope.plot.options)
+                }
+                else if (scope.plot.type === 'bar') {
+                  scope.parent.userinfo.uts_plots.charts[scope.plot.name + "_chart"] = draw_bar(
+                    scope.plot.data,
+                    scope.plot.name + "_chart",
+                    scope.plot.title,
+                    scope.plot.options)
+                }
+              });
+            });
+          }
+      };
+  });
+
+
+  $(document).ready(function() {
+
+    var tasks_list = {{ tasks|safe }};
+    buildTasksTable(tasks_list);
+
+  });
+
+
+
+  
+function buildTasksTable(data) {
+  $('#taskstable').dataTable({
+    "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+    "iDisplayLength": 20,
+    "paging": true,
+    "scrollX": true,
+    "aaSorting": [[9, 'desc']],
+    "columnDefs": [
+        {"type": "num-html", "targets": [3,4,5] }
+    ],
+    "data": data,
+    "aoColumns": [
+      {
+        title: "Task ID",
+        data: "jeditaskid",
+        sDefaultContent: "-",
+        render: function(data, type, row, meta) {
+          if (data) {
+            return '<a href="{% url 'taskInfo' %}?jeditaskid=' + data + '">' + data + '</a>'
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Type",
+        data: "tasktype",
+        sDefaultContent: "-",
+        render: function(data, type, row, meta) {
+          if (data && data.length > 0) {
+            return (data !== 'prod') ? 'analy' : 'prod';
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Task name",
+        data: "taskname",
+        sDefaultContent: "-",
+        render: function(data, type, row, meta) {
+          if (data && data.length > 0) {
+            return data.replace(/\./g, '.<wbr>');
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Status (PS2)",
+        data: "superstatus",
+        sDefaultContent: "-",
+        className: 'state',
+      },
+      {
+        title: "Status (JEDI)",
+        data: "status",
+        sDefaultContent: "-",
+        className: 'state',
+      },
+      {
+        title: "N files total",
+        data: "nfiles",
+        sDefaultContent: "-",
+        className: 'num',
+      },
+      {
+        title: "N files done",
+        data: "nfilesfinished",
+        sDefaultContent: "-",
+        className: 'num',
+      },
+      {
+        title: "N files failed",
+        data: "nfilesfailed",
+        sDefaultContent: "-",
+        className: 'num',
+      },
+      {
+        title: "Progress, %",
+        data: "pctfinished",
+        sDefaultContent: "-",
+        className: 'num',
+      },
+      {
+        title: "Age, days",
+        data: "age",
+        sDefaultContent: "-",
+        className: 'num',
+      },
+      {
+        title: "Logged status",
+        data: "errordialog",
+        sDefaultContent: "-",
+        className: 'alert',
+        render: function(data, type, row, meta) {
+          if (data && data.length > 0) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Max PSS/core, MB",
+        data: "job_maxpss_per_actualcorecount",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Wall time, hours",
+        data: "job_walltime",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Queue time, hours",
+        data: "job_queuetime",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Failure, %",
+        data: "job_failed",
+        sDefaultContent: "-",
+        className: 'num',
+      },
+
+    ],
+    "createdRow": function ( row, data, index ) {
+        $('td', row).eq(3).addClass(data['superstatus'] + '_fill');
+        $('td', row).eq(4).addClass(data['status'] + '_fill');
+    }
+  });
+}
+
+</script>
+{% endblock %}
+
+
+{% block help %}
+{% include "userInfoHelp.html" %}
+{% include "taskInfoHelp.html" %}
+{% include "jobListHelp.html" %}
+{% include "jobInfoHelp.html" with show='all' %}
+{% endblock %}

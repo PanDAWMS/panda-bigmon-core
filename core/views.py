@@ -111,8 +111,9 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
 from core.libs.task import get_job_state_summary_for_tasklist
-from core.libs.job import is_event_service
+from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
+from core.libs.user import prepare_user_dash_plots, get_panda_user_stats
 from core.harvester.utils import isHarvesterJob
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
@@ -4084,7 +4085,8 @@ def userList(request):
 @login_customrequired
 def userInfo(request, user=''):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
     fullname = ''
     login = ''
     userQueryTask = None
@@ -4161,194 +4163,237 @@ def userInfo(request, user=''):
 
     tasks = getTaskScoutingInfo(tasks, ntasksmax)
 
-    timestamp_vars = ['modificationtime', 'statechangetime', 'starttime']
-    for task in tasks:
-        for tsv in timestamp_vars:
-            if tsv in task and task[tsv]:
-                task[tsv] = task[tsv].strftime(defaultDatetimeFormat)
+    # consumed cpu hours stats for a user
+    panda_user_name = fullname if fullname != '' else user.strip()
+    userstats = get_panda_user_stats(panda_user_name)
 
-    ## Jobs
-    limit = 5000
-    query = setupView(request, hours=72, limit=limit, querytype='job')
-    jobs = []
-    values = 'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'container_name', 'cmtconfig'
-
-    if userQueryJobs is None:
-        query['produsername__icontains'] = user.strip()
-        jobs.extend(Jobsdefined4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-        jobs.extend(Jobsactive4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-        jobs.extend(Jobswaiting4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-        jobs.extend(Jobsarchived4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-        if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
-            jobs.extend(Jobsarchived.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-    else:
-        jobs.extend(Jobsdefined4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
-        jobs.extend(Jobsactive4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
-        jobs.extend(Jobswaiting4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
-        jobs.extend(Jobsarchived4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
-
-
-        # Here we go to an archive. Separation OR condition is done to enforce Oracle to perform indexed search.
-        if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
-            query['produsername__startswith'] = user.strip() #.filter(userQueryJobs)
-            archjobs = []
-            # This two filters again to force Oracle search
-            archjobs.extend(Jobsarchived.objects.filter(**query).filter(Q(produsername=user.strip()))[:request.session['JOB_LIMIT']].values(*values))
-            if len(archjobs) > 0:
-                jobs = jobs+archjobs
-            elif len(fullname) > 0:
-                #del query['produsername']
-                query['produsername__startswith'] = fullname
-                jobs.extend(Jobsarchived.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-
-
-    jobsetids = None
-    # if len(jobs) < limit and ntasks == 0:
-    #             ## try at least to find some old jobsets
-    #             startdate = timezone.now() - timedelta(hours=30*24)
-    #             startdate = startdate.strftime(defaultDatetimeFormat)
-    #             enddate = timezone.now().strftime(defaultDatetimeFormat)
-    #             query = { 'modificationtime__range' : [startdate, enddate] }
-    #             query['produsername'] = user
-    #             jobsetids = Jobsarchived.objects.filter(**query).values('jobsetid').distinct()
-
-    jobs = cleanJobList(request, jobs, doAddMeta=False)
-    if fullname != '':
-        query = {'name': fullname}
-    else:
-        query = {'name__icontains': user.strip()}
-    userdb = Users.objects.filter(**query).values()
-    if len(userdb) > 0:
-        userstats = userdb[0]
-        user = userstats['name']
-        for field in ['cpua1', 'cpua7', 'cpup1', 'cpup7']:
-            try:
-                userstats[field] = "%0.1f" % (float(userstats[field]) / 3600.)
-            except:
-                userstats[field] = '-'
-        for timefield in ['cachetime', 'firstjob', 'lastmod', 'latestjob']:
-            try:
-                userstats[timefield] = userstats[timefield].strftime(defaultDatetimeFormat)
-            except:
-                userstats[timefield] = userstats[timefield]
-    else:
-        userstats = None
-
-    ## Divide up jobs by jobset and summarize
-    jobsets = {}
-    for job in jobs:
-        if 'jobsetid' not in job or job['jobsetid'] == None: continue
-        if job['jobsetid'] not in jobsets:
-            jobsets[job['jobsetid']] = {}
-            jobsets[job['jobsetid']]['jobsetid'] = job['jobsetid']
-            jobsets[job['jobsetid']]['jobs'] = []
-        jobsets[job['jobsetid']]['jobs'].append(job)
-    for jobset in jobsets:
-        jobsets[jobset]['sum'] = jobStateSummary(jobsets[jobset]['jobs'])
-        jobsets[jobset]['njobs'] = len(jobsets[jobset]['jobs'])
-        tfirst = timezone.now()
-        tlast = timezone.now() - timedelta(hours=2400)
-        plow = 1000000
-        phigh = -1000000
-        for job in jobsets[jobset]['jobs']:
-            if job['modificationtime'] > tlast: tlast = job['modificationtime']
-            if job['modificationtime'] < tfirst: tfirst = job['modificationtime']
-            if job['currentpriority'] > phigh: phigh = job['currentpriority']
-            if job['currentpriority'] < plow: plow = job['currentpriority']
-        jobsets[jobset]['tfirst'] = tfirst.strftime(defaultDatetimeFormat)
-        jobsets[jobset]['tlast'] = tlast.strftime(defaultDatetimeFormat)
-        jobsets[jobset]['plow'] = plow
-        jobsets[jobset]['phigh'] = phigh
-    jobsetl = []
-    jsk = jobsets.keys()
-    jsk = sorted(jsk, reverse=True)
-    for jobset in jsk:
-        jobsetl.append(jobsets[jobset])
-
-    njobsmax = len(jobs)
-    if 'display_limit_jobs' in request.session['requestParams'] and int(
-            request.session['requestParams']['display_limit_jobs']) < len(jobs):
-        display_limit_jobs = int(request.session['requestParams']['display_limit_jobs'])
-        njobsmax = display_limit_jobs
-        url_nolimit_jobs = removeParam(request.get_full_path(), 'display_limit_jobs') + 'display_limit_jobs=' + str(len(jobs))
-    else:
-        display_limit_jobs = 100
-        njobsmax = display_limit_jobs
-        url_nolimit_jobs = request.get_full_path() + 'display_limit_jobs=' + str(len(jobs))
-
-    links = ''
     # getting most relevant links based on visit statistics
-    if request.user.is_authenticated:
+    links = {}
+    if request.user.is_authenticated and (
+            'user' not in request.session['requestParams'] and 'produsername' not in request.session['requestParams']):
         userids = BPUser.objects.filter(email=request.user.email).values('id')
         userid = userids[0]['id']
-        fields = {'job': standard_fields, 'task': copy.deepcopy(standard_taskfields), 'site': standard_sitefields}
+        fields = {
+            'job': copy.deepcopy(standard_fields),
+            'task': copy.deepcopy(standard_taskfields),
+            'site': copy.deepcopy(standard_sitefields),
+        }
         links = get_relevant_links(userid, fields)
 
-    sumd = userSummaryDict(jobs)
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
-        flist = ['jobstatus', 'prodsourcelabel', 'processingtype', 'specialhandling', 'transformation', 'jobsetid',
-                 'jeditaskid', 'computingsite', 'cloud', 'workinggroup', 'homepackage', 'inputfileproject',
-                 'inputfiletype', 'attemptnr', 'priorityrange', 'jobsetrange']
-        if VOMODE != 'atlas':
-            flist.append('vo')
-        else:
-            flist.append('atlasrelease')
-        jobsumd, esjobssumd = jobSummaryDict(request, jobs, flist)
-        njobsetmax = 100
-        xurl = extensibleURL(request)
-        nosorturl = removeParam(xurl, 'sortby', mode='extensible')
+    # new user dashboard
+    if 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'dash':
 
-        timestamp_vars = ['modificationtime', 'creationtime']
-        for job in jobs:
-            for tsv in timestamp_vars:
-                if tsv in job and job[tsv]:
-                    job[tsv] = job[tsv].strftime(defaultDatetimeFormat)
+        # get jobs states counts
+        # jss_dict = get_job_state_summary_for_tasklist(tasks)
 
-        TFIRST = request.session['TFIRST']
-        TLAST = request.session['TLAST']
-        del request.session['TFIRST']
-        del request.session['TLAST']
+        plots = prepare_user_dash_plots(tasks)
 
-        data = {
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            'xurl': xurl,
-            'nosorturl': nosorturl,
-            'user': user,
-            'sumd': sumd,
-            'jobsumd': jobsumd,
-            'jobList': jobs[:njobsmax],
-            'njobs': len(jobs),
-            'display_limit_jobs': display_limit_jobs,
-            'url_nolimit_jobs': url_nolimit_jobs,
-            'query': query,
-            'userstats': userstats,
-            'tfirst': TFIRST.strftime(defaultDatetimeFormat),
-            'tlast': TLAST.strftime(defaultDatetimeFormat),
-            'plow': PLOW,
-            'phigh': PHIGH,
-            'jobsets': jobsetl[:njobsetmax - 1],
-            'njobsetmax': njobsetmax,
-            'njobsets': len(jobsetl),
-            'url_nolimit_tasks': url_nolimit_tasks,
-            'display_limit_tasks': display_limit_tasks,
-            'tasks': tasks[:ntasksmax],
-            'ntasks': ntasks,
-            'tasksumd': tasksumd,
-            'built': datetime.now().strftime("%H:%M:%S"),
-            'links' : links,
+        # jobs summary
+        query = {
+            'jeditaskid__in': [t['jeditaskid'] for t in tasks if 'jeditaskid' in t and t['jeditaskid']]
         }
-        data.update(getContextVariables(request))
-        response = render_to_response('userInfo.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
+        err_fields = [
+            'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag',
+            'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',
+            'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode'
+        ]
+        jobs = get_job_list(query, values=err_fields)
+
+        errs_by_message = get_error_message_summary(jobs)
+        metrics = calc_jobs_metrics(jobs, group_by='jeditaskid')
+
+        for task in tasks:
+            for metric in metrics:
+                if task['jeditaskid'] in metrics[metric]['group_by']:
+                    task['job_' + metric] = metrics[metric]['group_by'][task['jeditaskid']]
+                else:
+                    task['job_' + metric] = ''
+
+        if is_json_request(request):
+            pass
+        else:
+            timestamp_vars = ['modificationtime', 'statechangetime', 'starttime', 'creationdate', 'resquetime',
+                              'endtime', 'lockedtime', 'frozentime', 'ttcpredictiondate']
+            for task in tasks:
+                for tp in task:
+                    if tp in timestamp_vars and task[tp] is not None:
+                        task[tp] = task[tp].strftime(defaultDatetimeFormat)
+                    if task[tp] is None:
+                        task[tp] = ''
+                    if task[tp] is True:
+                        task[tp] = 'true'
+                    if task[tp] is False:
+                        task[tp] = 'false'
+
+            xurl = extensibleURL(request)
+
+            data = {
+                'request': request,
+                'viewParams': request.session['viewParams'],
+                'requestParams': request.session['requestParams'],
+                'xurl': xurl,
+                'links': links,
+                'tasks': tasks,
+                'plots': plots,
+                'userstats': userstats,
+            }
+            response = render_to_response('userDash.html', data, content_type='text/html')
+            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+            return response
     else:
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        resp = sumd
-        return HttpResponse(json.dumps(resp,default=datetime_handler),content_type='application/json')
+        ## Jobs
+        limit = 5000
+        query = setupView(request, hours=72, limit=limit, querytype='job')
+        jobs = []
+        values = 'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'container_name', 'cmtconfig'
+
+        if userQueryJobs is None:
+            query['produsername__icontains'] = user.strip()
+            jobs.extend(Jobsdefined4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobsactive4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobswaiting4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobsarchived4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+            if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
+                jobs.extend(Jobsarchived.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+        else:
+            jobs.extend(Jobsdefined4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobsactive4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobswaiting4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobsarchived4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
+
+
+            # Here we go to an archive. Separation OR condition is done to enforce Oracle to perform indexed search.
+            if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
+                query['produsername__startswith'] = user.strip() #.filter(userQueryJobs)
+                archjobs = []
+                # This two filters again to force Oracle search
+                archjobs.extend(Jobsarchived.objects.filter(**query).filter(Q(produsername=user.strip()))[:request.session['JOB_LIMIT']].values(*values))
+                if len(archjobs) > 0:
+                    jobs = jobs+archjobs
+                elif len(fullname) > 0:
+                    #del query['produsername']
+                    query['produsername__startswith'] = fullname
+                    jobs.extend(Jobsarchived.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+
+        jobs = cleanJobList(request, jobs, doAddMeta=False)
+
+        # Divide up jobs by jobset and summarize
+        jobsets = {}
+        for job in jobs:
+            if 'jobsetid' not in job or job['jobsetid'] == None: continue
+            if job['jobsetid'] not in jobsets:
+                jobsets[job['jobsetid']] = {}
+                jobsets[job['jobsetid']]['jobsetid'] = job['jobsetid']
+                jobsets[job['jobsetid']]['jobs'] = []
+            jobsets[job['jobsetid']]['jobs'].append(job)
+        for jobset in jobsets:
+            jobsets[jobset]['sum'] = jobStateSummary(jobsets[jobset]['jobs'])
+            jobsets[jobset]['njobs'] = len(jobsets[jobset]['jobs'])
+            tfirst = timezone.now()
+            tlast = timezone.now() - timedelta(hours=2400)
+            plow = 1000000
+            phigh = -1000000
+            for job in jobsets[jobset]['jobs']:
+                if job['modificationtime'] > tlast: tlast = job['modificationtime']
+                if job['modificationtime'] < tfirst: tfirst = job['modificationtime']
+                if job['currentpriority'] > phigh: phigh = job['currentpriority']
+                if job['currentpriority'] < plow: plow = job['currentpriority']
+            jobsets[jobset]['tfirst'] = tfirst.strftime(defaultDatetimeFormat)
+            jobsets[jobset]['tlast'] = tlast.strftime(defaultDatetimeFormat)
+            jobsets[jobset]['plow'] = plow
+            jobsets[jobset]['phigh'] = phigh
+        jobsetl = []
+        jsk = jobsets.keys()
+        jsk = sorted(jsk, reverse=True)
+        for jobset in jsk:
+            jobsetl.append(jobsets[jobset])
+
+        njobsmax = len(jobs)
+        if 'display_limit_jobs' in request.session['requestParams'] and int(
+                request.session['requestParams']['display_limit_jobs']) < len(jobs):
+            display_limit_jobs = int(request.session['requestParams']['display_limit_jobs'])
+            njobsmax = display_limit_jobs
+            url_nolimit_jobs = removeParam(request.get_full_path(), 'display_limit_jobs') + 'display_limit_jobs=' + str(len(jobs))
+        else:
+            display_limit_jobs = 100
+            njobsmax = display_limit_jobs
+            url_nolimit_jobs = request.get_full_path() + 'display_limit_jobs=' + str(len(jobs))
+
+        sumd = userSummaryDict(jobs)
+        if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
+            'json' not in request.session['requestParams'])):
+            flist = ['jobstatus', 'prodsourcelabel', 'processingtype', 'specialhandling', 'transformation', 'jobsetid',
+                     'jeditaskid', 'computingsite', 'cloud', 'workinggroup', 'homepackage', 'inputfileproject',
+                     'inputfiletype', 'attemptnr', 'priorityrange', 'jobsetrange']
+            if VOMODE != 'atlas':
+                flist.append('vo')
+            else:
+                flist.append('atlasrelease')
+            jobsumd, esjobssumd = jobSummaryDict(request, jobs, flist)
+            njobsetmax = 100
+            xurl = extensibleURL(request)
+            nosorturl = removeParam(xurl, 'sortby', mode='extensible')
+
+            timestamp_vars = ['modificationtime', 'statechangetime', 'starttime', 'creationdate', 'resquetime',
+                              'endtime', 'lockedtime', 'frozentime', 'ttcpredictiondate']
+            for task in tasks:
+                for tp in task:
+                    if tp in timestamp_vars and task[tp] is not None:
+                        task[tp] = task[tp].strftime(defaultDatetimeFormat)
+                    if task[tp] is None:
+                        task[tp] = ''
+
+            timestamp_vars = ['modificationtime', 'creationtime']
+            for job in jobs:
+                for tsv in timestamp_vars:
+                    if tsv in job and job[tsv]:
+                        job[tsv] = job[tsv].strftime(defaultDatetimeFormat)
+
+            TFIRST = request.session['TFIRST']
+            TLAST = request.session['TLAST']
+            del request.session['TFIRST']
+            del request.session['TLAST']
+
+            data = {
+                'request': request,
+                'viewParams': request.session['viewParams'],
+                'requestParams': request.session['requestParams'],
+                'xurl': xurl,
+                'nosorturl': nosorturl,
+                'user': user,
+                'sumd': sumd,
+                'jobsumd': jobsumd,
+                'jobList': jobs[:njobsmax],
+                'njobs': len(jobs),
+                'display_limit_jobs': display_limit_jobs,
+                'url_nolimit_jobs': url_nolimit_jobs,
+                'query': query,
+                'userstats': userstats,
+                'tfirst': TFIRST.strftime(defaultDatetimeFormat),
+                'tlast': TLAST.strftime(defaultDatetimeFormat),
+                'plow': PLOW,
+                'phigh': PHIGH,
+                'jobsets': jobsetl[:njobsetmax - 1],
+                'njobsetmax': njobsetmax,
+                'njobsets': len(jobsetl),
+                'url_nolimit_tasks': url_nolimit_tasks,
+                'display_limit_tasks': display_limit_tasks,
+                'tasks': tasks[:ntasksmax],
+                'ntasks': ntasks,
+                'tasksumd': tasksumd,
+                'built': datetime.now().strftime("%H:%M:%S"),
+                'links' : links,
+            }
+            data.update(getContextVariables(request))
+            response = render_to_response('userInfo.html', data, content_type='text/html')
+            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+            return response
+        else:
+            del request.session['TFIRST']
+            del request.session['TLAST']
+            resp = sumd
+            return HttpResponse(json.dumps(resp,default=datetime_handler),content_type='application/json')
+
 
 @login_customrequired
 def siteList(request):

@@ -315,7 +315,6 @@ def get_event_status_summary(pandaids, eventservicestatelist):
     return summary
 
 
-
 def dictfetchall(cursor):
     "Returns all rows from a cursor as a dict"
     desc = cursor.description
@@ -418,7 +417,7 @@ def get_job_queuetime(job):
         starttime = parse_datetime(job['starttime']) if not isinstance(job['starttime'], datetime) else job['starttime']
     else:
         starttime = None
-    if 'endtime' in job and job['endtime'] is not None:
+    if 'creationtime' in job and job['creationtime'] is not None:
         creationtime = parse_datetime(job['creationtime']) if not isinstance(job['creationtime'], datetime) else job['creationtime']
     else:
         creationtime = None

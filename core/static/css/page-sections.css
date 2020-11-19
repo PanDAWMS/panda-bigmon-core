@@ -1001,6 +1001,15 @@ fieldset.inline {
   }
 
 
+.card.bp-container-simple > .card-section > ul.uservisits a {
+  color: #272727;
+  font-weight: normal;
+  border-bottom: 1px dotted;
+}
+  .card.bp-container-simple > .card-section > ul.uservisits a:hover {
+    color: #49668d;
+    border-bottom: none;
+  }
 
 
 .card.bp-container {

@@ -48,6 +48,29 @@ function draw_donut(data, divid, title, ext={}) {
     else if (ext.colors !== null && typeof ext.colors === 'object') {
         colors = ext.colors;
     }
+    else if (title.indexOf('status') > -1) {
+        colors =  {
+            'done': '#165616',
+            'finished': '#207f20',
+            'running': '#34a934',
+            'waiting': '#c7c7c7',
+            'assigning': '#099999',
+            'exhausted': '#FF9933',
+            'paused': '#808080',
+            'throttled': '#deb900',
+            'pending': '#a9a9a9',
+            'ready': '#3b8e67',
+            'registered': '#4a4a4a',
+            'scouting': '#addf80',
+            'aborting': '#ff9896',
+            'aborted': '#ff9896',
+            'failed': '#ff0000',
+            'broken': '#b22222',
+            'passed': '#1a1a1a',
+            'defined': '#2174bb',
+            'remaining': '#2174bb',
+        };
+    }
     else {
        let colors_all = [
         "#62c9ae","#52cad7","#d5a9e4","#e38924","#9bd438","#438760","#ca46ce","#e08284","#4ba930",
