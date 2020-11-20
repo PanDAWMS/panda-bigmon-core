@@ -171,11 +171,11 @@ def jbhome(request):
 
     url_no_computetype = removeParam(request.get_full_path(), 'computetype')
 
+    request.session['timerange'] = [starttime.strftime(OI_DATETIME_FORMAT), endtime.strftime(OI_DATETIME_FORMAT)]
     data = {
         'request': request,
         'requestParams': request.session['requestParams'],
         'viewParams': request.session['viewParams'],
-        'timerange': [starttime.strftime(OI_DATETIME_FORMAT), endtime.strftime(OI_DATETIME_FORMAT)],
         'message': message,
         'mesures': [],
         'metric': metric,

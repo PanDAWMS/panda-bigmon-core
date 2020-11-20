@@ -6335,6 +6335,7 @@ def dashRegion(request):
             if pn not in interactive_params and pn in supported_params:
                 view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
         request.session['viewParams']['selection'] = view_params_str if not view_params_str.endswith(': ') else ''
+        request.session['timerange'] = jquery['modificationtime__castdate__range']
 
         data = {
             'request': request,
@@ -6347,7 +6348,6 @@ def dashRegion(request):
             'jobstates': statelist,
             'regions': jsr_regions_list,
             'queues': jsr_queues_list,
-            'timerange': jquery['modificationtime__castdate__range'],
             'show': 'all',
         }
 
@@ -6419,6 +6419,7 @@ def dashNucleus(request):
             if pn in supported_params:
                 view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
         request.session['viewParams']['selection'] = view_params_str if not view_params_str.endswith(': ') else ''
+        request.session['timerange'] = query['modificationtime__castdate__range']
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -6427,7 +6428,6 @@ def dashNucleus(request):
             'jobstates': statelist,
             'show': 'all',
             'hours': hours,
-            'timerange': query['modificationtime__castdate__range'],
             'xurl': xurl,
             'nuclei': jsn_nucleus_list,
             'satellites': jsn_satellite_list,
@@ -6519,7 +6519,7 @@ def dashES(request):
             if pn not in interactive_params and pn in supported_params:
                 view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
         request.session['viewParams']['selection'] = view_params_str if not view_params_str.endswith(': ') else ''
-
+        request.session['timerange'] = jquery['modificationtime__castdate__range']
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -6531,7 +6531,6 @@ def dashES(request):
             'jobstates': statelist,
             'regions': jsr_regions_list,
             'queues': jsr_queues_list,
-            'timerange': jquery['modificationtime__castdate__range'],
             'show': 'all',
         }
 

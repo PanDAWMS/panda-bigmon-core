@@ -461,7 +461,7 @@
         </p>
     </div>
 
-    {% if timerange and timerange|length > 0 %}
+    {% if request.session.timerange and request.session.timerange|length > 0 %}
     <div class="column medium-7 large-8 center show-for-medium">
         {% block time_window %}{% endblock %}
         <a class="button time-window" data-toggle="time-window-change-panel">Change</a>
