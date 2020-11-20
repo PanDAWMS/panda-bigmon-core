@@ -11,7 +11,7 @@ from django.db.models import Count, Sum
 from core.common.models import JediEvents, JediDatasetContents, JediDatasets, JediTaskparams
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, add_job_category, get_job_walltime, \
-    job_states_count_by_param, get_tmp_table_name, parse_datetime
+    job_states_count_by_param, get_tmp_table_name, parse_datetime, get_job_queuetime
 from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp_table
 
 from core.settings.local import defaultDatetimeFormat
@@ -143,7 +143,7 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
     values = ('actualcorecount', 'eventservice', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus',
               'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics',
               'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'cpuconsumptionunit', 'transformation',
-              'jobsetid', 'specialhandling')
+              'jobsetid', 'specialhandling', 'creationtime')
 
     jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).values(*values))
     jobs.extend(Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).values(*values))
@@ -229,6 +229,8 @@ def job_consumption_plots(jobs):
                               'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
         'walltimeperevent_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Walltime/event (finished jobs)',
                                       'xlabel': 'Walltime per event, s', 'ylabel': 'N jobs'},
+        'queuetime_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Time to start (finished jobs)',
+                            'xlabel': 'Time to start, s', 'ylabel': 'N jobs'},
         'hs06s_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'HS06s (finished jobs)',
                            'xlabel': 'HS06s', 'ylabel': 'N jobs'},
         'cputime_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'CPU time (finished jobs)',
@@ -241,6 +243,8 @@ def job_consumption_plots(jobs):
                                  'xlabel': 'MaxPSS per core, MB', 'ylabel': 'N jobs'},
         'walltime_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Walltime (failed jobs)',
                             'xlabel': 'walltime, s', 'ylabel': 'N jobs'},
+        'queuetime_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Time to start (failed jobs)',
+                            'xlabel': 'Time to start, s', 'ylabel': 'N jobs'},
         'walltimeperevent_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Walltime/event (failed jobs)',
                                     'xlabel': 'Walltime per event, s', 'ylabel': 'N jobs'},
         'hs06s_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'HS06s (failed jobs)',
@@ -282,6 +286,8 @@ def job_consumption_plots(jobs):
             job['actualcorecount'] = 1
         if 'duration' not in job:
             job['duration'] = get_job_walltime(job)
+        if 'queuetime' not in job:
+            job['queuetime'] = get_job_queuetime(job)
 
         if job['jobstatus'] in ('finished', 'failed'):
             for pname, pd in plot_details.items():
@@ -306,6 +312,9 @@ def job_consumption_plots(jobs):
 
         if 'hs06sec' in job and job['hs06sec']:
             plots_data['stack_bar']['hs06s' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(job['hs06sec'])
+
+        if 'queuetime' in job and job['queuetime']:
+            plots_data['stack_bar']['queuetime' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(job['queuetime'])
 
         if 'duration' in job and job['duration']:
             plots_data['stack_bar']['walltime' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(job['duration'])
@@ -395,7 +404,7 @@ def job_consumption_plots(jobs):
                     columns.append([site, sum(cd[site])])
 
                 plots_dict[pname]['data'][cat] = {
-                    'columns': columns,
+                    'columns': sorted(columns, key=lambda x: -x[1]),
                 }
             if max([len(i['columns']) for i in plots_dict[pname]['data'].values()]) > 15:
                 plots_dict[pname]['details']['legend_position'] = 'bottom'

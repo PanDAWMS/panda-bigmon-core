@@ -4200,6 +4200,7 @@ def userInfo(request, user=''):
         jobs = get_job_list(query, values=err_fields)
 
         errs_by_message = get_error_message_summary(jobs)
+
         metrics = calc_jobs_metrics(jobs, group_by='jeditaskid')
 
         for task in tasks:
