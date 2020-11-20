@@ -4143,6 +4143,7 @@ def userInfo(request, user=''):
         sortby = None
 
     query['modificationtime__castdate__range'] = [startdate, enddate]
+    request.session['timerange'] = query['modificationtime__castdate__range']
 
     if userQueryTask is None:
         query['username__icontains'] = user.strip()
@@ -4189,17 +4190,20 @@ def userInfo(request, user=''):
         plots = prepare_user_dash_plots(tasks)
 
         # jobs summary
-        query = {
+        jquery = {
             'jeditaskid__in': [t['jeditaskid'] for t in tasks if 'jeditaskid' in t and t['jeditaskid']]
         }
         err_fields = [
             'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag',
             'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',
-            'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode'
+            'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',
+            'produsername'
         ]
-        jobs = get_job_list(query, values=err_fields)
+        jobs = get_job_list(jquery, values=err_fields)
 
         errs_by_message = get_error_message_summary(jobs)
+        request.session['requestParams']['sortby'] = 'count'
+        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(request, jobs, {}, False, flist=[])
 
         metrics = calc_jobs_metrics(jobs, group_by='jeditaskid')
 
@@ -4209,6 +4213,11 @@ def userInfo(request, user=''):
                     task['job_' + metric] = metrics[metric]['group_by'][task['jeditaskid']]
                 else:
                     task['job_' + metric] = ''
+            for task_errs in errs_by_task:
+                if task['jeditaskid'] == task_errs['name']:
+                    task['top_errors'] = '<br>'.join(
+                        ['<b>{}</b> [{}] "{}"'.format(err['count'], err['error'], err['diag']) for err in task_errs['errorlist']][:2])
+
 
         if is_json_request(request):
             pass
@@ -8575,9 +8584,11 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs, **kwargs):
             errHistL[0].insert(0, 'Timestamp')
             errHistL[1].insert(0, 'Number of failed jobs')
 
-    flist = standard_errorfields
+    if 'flist' in kwargs:
+        flist = kwargs['flist']
+    else:
+        flist = copy.deepcopy(standard_errorfields)
 
-    print(len(jobs))
     for job in jobs:
         if not testjobs:
             if job['jobstatus'] not in ['failed', 'holding']: continue

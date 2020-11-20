@@ -50,18 +50,6 @@ def prepare_user_dash_plots(tasks, **kwargs):
             'title': 'N tasks by status',
             'options': {'legend_position': 'bottom'}
         },
-        'ntasks_by_gshare': {
-            'type': 'pie',
-            'data': {},
-            'title': 'N tasks by gshare',
-            'options': {'legend_position': 'bottom'}
-        },
-        'ntasks_by_processingtype': {
-            'type': 'pie',
-            'data': {},
-            'title': 'Tasks by proc. type',
-            'options': {'legend_position': 'bottom'}
-        },
         'age_hist': {
             'type': 'bar',
             'data': {},
@@ -84,16 +72,6 @@ def prepare_user_dash_plots(tasks, **kwargs):
         if task['status'] not in plots_dict['ntasks_by_status']['data']:
             plots_dict['ntasks_by_status']['data'][task['status']] = 0
         plots_dict['ntasks_by_status']['data'][task['status']] += 1
-
-        if task['gshare'] not in plots_dict['ntasks_by_gshare']['data']:
-            plots_dict['ntasks_by_gshare']['data'][task['gshare']] = 0
-        plots_dict['ntasks_by_gshare']['data'][task['gshare']] += 1
-
-        if task['processingtype'] and task['processingtype'].startswith('panda'):
-            task['processingtype'] = task['processingtype'].split('jedi-')[1]
-        if task['processingtype'] not in plots_dict['ntasks_by_processingtype']['data']:
-            plots_dict['ntasks_by_processingtype']['data'][task['processingtype']] = 0
-        plots_dict['ntasks_by_processingtype']['data'][task['processingtype']] += 1
 
         if task['age'] > 0:
             if task['username'] not in plots_dict['age_hist']['data']:
