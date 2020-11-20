@@ -1,7 +1,7 @@
 {% extends "_base_core.html" %}
 {% load static %}{% load common_tags %}{% load humanize %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA user {{ user }} {% endblock %}
-{% block subtitle %}PanDA user <b>{{ user }}</b> dashboard {{ viewParams.selection|safe }}{% endblock %}
+{% block subtitle %}PanDA user <b>{{ user }}</b> dashboard{% endblock %}
 {% block time_window %}
     Modification time window: <span class="time-window-range">{{ request.session.timerange.0 }}</span>
     - <span class="time-window-range">{{ request.session.timerange.1 }}</span> UTC
@@ -30,6 +30,7 @@
 {% block body %}
 
 <p>
+{# {{ viewParams.selection|safe }} #}
 {% if requestParams.priorityrange %}<br><b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}
 </p>
 
@@ -75,8 +76,9 @@
     <div class="card-divider"><p>User activity overview:</p></div>
     <div class="card-section">
       <p>
-        Personal CPU hours for last 1 day | 7 days: {{ userstats.cpua1 }} | {{ userstats.cpua7 }}.
-        Group CPU hours for last 1 day | 7 days: {{ userstats.cpup1 }} | {{ userstats.cpup7 }}.
+        {% for m in metrics %}
+          <span class="label medium {% if m.class and m.class|length > 0 %}{{ m.class }}{% else %} ok {% endif %}">{{ m.title }}: <b>{{ m.value | intcomma }}</b> {{ m.unit }}</span>
+        {% endfor %}
       </p>
       <div class="c3-chart-block" ng-repeat="plot in userinfo.uts_plots.plot_data" jcplot-directive plot="plot" parent="$parent"></div>
     </div>
@@ -192,7 +194,7 @@ function buildTasksTable(data) {
     "iDisplayLength": 20,
     "paging": true,
     "scrollX": true,
-    "aaSorting": [[9, 'desc']],
+    "aaSorting": [[0, 'desc']],
     "columnDefs": [
         {"type": "num-html", "targets": [3,4,5] }
     ],
@@ -201,11 +203,11 @@ function buildTasksTable(data) {
       {
         extend: 'colvisGroup',
         text: 'Minimize view',
-        hide: [ 6, 11, 12, 13 ],
+        hide: [ 4,13,14,15,16,17 ],
       },
       {
         extend: 'colvisGroup',
-        text: 'Show details',
+        text: 'Show all metrics',
         show: ':hidden',
       }
     ],
@@ -242,24 +244,12 @@ function buildTasksTable(data) {
         sDefaultContent: "-",
         render: function(data, type, row, meta) {
           if (data && data.length > 0) {
-            return data.replace(/\./g, '.<wbr>');
+            return data.replace(/\./g, '.<wbr>').replace(/\_/g, '_<wbr>');
           }
           else {
             return '-'
           }
         },
-      },
-      {
-        title: "Status (PS2)",
-        data: "superstatus",
-        sDefaultContent: "-",
-        className: 'state',
-      },
-      {
-        title: "Status (JEDI)",
-        data: "status",
-        sDefaultContent: "-",
-        className: 'state',
       },
       {
         title: "N files total",
@@ -286,6 +276,18 @@ function buildTasksTable(data) {
         className: 'num',
       },
       {
+        title: "Status (PS2)",
+        data: "superstatus",
+        sDefaultContent: "-",
+        className: 'state',
+      },
+      {
+        title: "Status (JEDI)",
+        data: "status",
+        sDefaultContent: "-",
+        className: 'state',
+      },
+      {
         title: "Age, days",
         data: "age",
         sDefaultContent: "-",
@@ -298,49 +300,7 @@ function buildTasksTable(data) {
         className: 'alert',
         render: function(data, type, row, meta) {
           if (data && data.length > 0) {
-            return data;
-          }
-          else {
-            return '-'
-          }
-        },
-      },
-      {
-        title: "Max PSS/core, MB",
-        data: "job_maxpss_per_actualcorecount",
-        sDefaultContent: "-",
-        className: 'num',
-        render: function(data, type, row, meta) {
-          if (data) {
-            return data;
-          }
-          else {
-            return '-'
-          }
-        },
-      },
-      {
-        title: "Wall time, hours",
-        data: "job_walltime",
-        sDefaultContent: "-",
-        className: 'num',
-        render: function(data, type, row, meta) {
-          if (data) {
-            return data;
-          }
-          else {
-            return '-'
-          }
-        },
-      },
-      {
-        title: "Queue time, hours",
-        data: "job_queuetime",
-        sDefaultContent: "-",
-        className: 'num',
-        render: function(data, type, row, meta) {
-          if (data) {
-            return data;
+            return data.replace(/\./g, '.<wbr>').replace(/\_/g, '_<wbr>');
           }
           else {
             return '-'
@@ -367,8 +327,78 @@ function buildTasksTable(data) {
         sDefaultContent: "-",
         className: 'alert',
         render: function(data, type, row, meta) {
-          if (data && data.length > 0) {
+          if (data && data.length > 0 && row['status'] !== 'done') {
             return data.replace(/\./g, '.<wbr>');
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Queue time, hours",
+        data: "job_queuetime",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Wall time, hours",
+        data: "job_walltime",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Max PSS/core, MB",
+        data: "job_maxpss_per_actualcorecount",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Jobs efficiency",
+        data: "job_efficiency",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Jobs attempts",
+        data: "job_attemptnr",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
           }
           else {
             return '-'
@@ -377,12 +407,12 @@ function buildTasksTable(data) {
       },
     ],
     "createdRow": function ( row, data, index ) {
-        $('td', row).eq(3).addClass(data['superstatus'] + '_fill');
-        $('td', row).eq(4).addClass(data['status'] + '_fill');
+        $('td', row).eq(7).addClass(data['superstatus'] + '_fill');
+        $('td', row).eq(8).addClass(data['status'] + '_fill');
     }
   });
 
-  tasksTable.columns( [ 6, 11, 12, 13] ).visible( false );
+  tasksTable.columns( [ 4,13,14,15,16,17 ] ).visible( false );
   tasksTable.buttons().container()
       .appendTo( '#taskstable_wrapper .small-6.columns:eq(0)' );
 }
@@ -393,7 +423,4 @@ function buildTasksTable(data) {
 
 {% block help %}
 {% include "userInfoHelp.html" %}
-{% include "taskInfoHelp.html" %}
-{% include "jobListHelp.html" %}
-{% include "jobInfoHelp.html" with show='all' %}
 {% endblock %}

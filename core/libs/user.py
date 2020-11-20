@@ -41,7 +41,7 @@ def prepare_user_dash_plots(tasks, **kwargs):
         'nfiles_sum_status': {
             'type': 'pie',
             'data': {'done': 0, 'failed': 0, 'remaining': 0},
-            'title': 'N files by status',
+            'title': 'Input files by status',
             'options': {'legend_position': 'bottom'}
         },
         'ntasks_by_status': {
@@ -95,3 +95,85 @@ def prepare_user_dash_plots(tasks, **kwargs):
         plots_list.append(pdict)
 
     return plots_list
+
+
+def humanize_metrics(metrics):
+    """
+    Prepare interesting metrics for display
+    :param metrics:
+    :return:
+    """
+    metric_defs = {
+        'maxpss_per_actualcorecount': {
+            'title': 'Average maxPSS/core',
+            'unit': 'GB',
+        },
+        'walltime': {
+            'title': 'Average jobs walltime',
+            'unit': 'hours',
+        },
+        'queuetime': {
+            'title': 'Average jobs time to start',
+            'unit': 'hours',
+        },
+        'failed': {
+            'title': 'Jobs failure',
+            'unit': '%',
+        },
+        'cpua7': {
+            'title': 'Personal CPU hours for last 7 days',
+            'unit': '',
+        },
+        'cpup7': {
+            'title': 'Group CPU hours for last 7 days',
+            'unit': '',
+        },
+        'efficiency': {
+            'title': ' Average jobs efficiency',
+            'unit': '',
+        },
+        'attemptnr': {
+            'title': ' Average jobs attempt number',
+            'unit': '',
+        },
+    }
+
+    metrics_thresholds = {
+        'pss': {
+            'warning': [1.9, 2.5],
+            'alert': [2.5, 1000000]
+        },
+        'time': {
+            'warning': [12, 36],
+            'alert': [36, 1000000]
+        },
+        'fail': {
+            'warning': [25, 50],
+            'alert': [50, 100]
+        },
+        'efficiency': {
+            'warning': [0.5, 0.7],
+            'alert': [0, 0.5]
+        },
+        'attemptnr': {
+            'warning': [3, 5],
+            'alert': [5, 100]
+        }
+    }
+
+    metrics_list = []
+    for md in metric_defs:
+        if md in metrics and metrics[md]:
+            if 'pss' in md:
+                metric_defs[md]['value'] = round(metrics[md]/1024., 2)
+            else:
+                metric_defs[md]['value'] = metrics[md]
+
+            for key, thresholds in metrics_thresholds.items():
+                if key in md:
+                    metric_defs[md]['class'] = [c for c, crange in thresholds.items() if metric_defs[md]['value'] >= crange[0] and metric_defs[md]['value'] < crange[1]]
+                    metric_defs[md]['class'] = metric_defs[md]['class'][0] if len(metric_defs[md]['class']) > 0 else ''
+
+            metrics_list.append(metric_defs[md])
+
+    return metrics_list

@@ -106,6 +106,15 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
 .label {
   border-radius: 0.8rem;
 }
+.label.medium {
+  font-size: 0.9rem;
+  margin: 0.3rem;
+}
+.label.ok {
+  background-color: #4ba173;
+  color: #fefefe;
+}
+
 table tr th p {
   margin: 0;
   padding: 0;

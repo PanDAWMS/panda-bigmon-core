@@ -113,7 +113,7 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
 from core.libs.task import get_job_state_summary_for_tasklist
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
-from core.libs.user import prepare_user_dash_plots, get_panda_user_stats
+from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
 from core.harvester.utils import isHarvesterJob
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
@@ -423,6 +423,9 @@ def initRequest(request, callselfmon = True):
     for trp in timerange_params:
         notimerangeurl = removeParam(notimerangeurl, trp, mode='extensible')
     request.session['notimerangeurl'] = notimerangeurl
+
+    if 'timerange' in request.session:
+        del request.session['timerange']
 
     request.session['secureurl'] = 'https://bigpanda.cern.ch' + url
 
@@ -4108,6 +4111,10 @@ def userInfo(request, user=''):
         days = int(request.session['requestParams']['days'])
     else:
         days = 7
+    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby']:
+        sortby = request.session['requestParams']['sortby']
+    else:
+        sortby = None
 
     requestParams = {}
     for param in request.session['requestParams']:
@@ -4116,34 +4123,6 @@ def userInfo(request, user=''):
 
     ## Tasks owned by the user
     query = setupView(request, hours=72, limit=999999, querytype='task')
-    startdate = timezone.now() - timedelta(hours=days * 24)
-    startdate = startdate.strftime(defaultDatetimeFormat)
-    enddate = timezone.now().strftime(defaultDatetimeFormat)
-
-    if 'date_from' in request.session['requestParams']:
-        time_from_struct = time.strptime(request.session['requestParams']['date_from'], '%Y-%m-%d')
-        startdate = datetime.utcfromtimestamp(time.mktime(time_from_struct))
-    if not startdate:
-        startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
-    # startdate = startdate.strftime(defaultDatetimeFormat)
-    if 'date_to' in request.session['requestParams']:
-        time_from_struct = time.strptime(request.session['requestParams']['date_to'], '%Y-%m-%d')
-        enddate = datetime.utcfromtimestamp(time.mktime(time_from_struct))
-    if 'earlierthan' in request.session['requestParams']:
-        enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthan']))
-    # enddate = enddate.strftime(defaultDatetimeFormat)
-    if 'earlierthandays' in request.session['requestParams']:
-        enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthandays']) * 24)
-    # enddate = enddate.strftime(defaultDatetimeFormat)
-    if enddate == None:
-        enddate = timezone.now()  # .strftime(defaultDatetimeFormat)
-    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby']:
-        sortby = request.session['requestParams']['sortby']
-    else:
-        sortby = None
-
-    query['modificationtime__castdate__range'] = [startdate, enddate]
-    request.session['timerange'] = query['modificationtime__castdate__range']
 
     if userQueryTask is None:
         query['username__icontains'] = user.strip()
@@ -4184,8 +4163,8 @@ def userInfo(request, user=''):
     # new user dashboard
     if 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'dash':
 
-        # get jobs states counts
-        # jss_dict = get_job_state_summary_for_tasklist(tasks)
+        if query and 'modificationtime__castdate__range' in query:
+            request.session['timerange'] = query['modificationtime__castdate__range']
 
         plots = prepare_user_dash_plots(tasks)
 
@@ -4201,7 +4180,6 @@ def userInfo(request, user=''):
         ]
         jobs = get_job_list(jquery, values=err_fields)
 
-        errs_by_message = get_error_message_summary(jobs)
         request.session['requestParams']['sortby'] = 'count'
         errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(request, jobs, {}, False, flist=[])
 
@@ -4218,6 +4196,12 @@ def userInfo(request, user=''):
                     task['top_errors'] = '<br>'.join(
                         ['<b>{}</b> [{}] "{}"'.format(err['count'], err['error'], err['diag']) for err in task_errs['errorlist']][:2])
 
+        # prepare relevant metrics to show
+        metrics_total = {m: v['total'] for m, v in metrics.items() if 'total' in v}
+        if userstats:
+            metrics_total['cpua7'] = userstats['cpua7'] if 'cpua7' in userstats else 0
+            metrics_total['cpup7'] = userstats['cpup7'] if 'cpup7' in userstats else 0
+        metrics_total = humanize_metrics(metrics_total)
 
         if is_json_request(request):
             pass
@@ -4242,9 +4226,11 @@ def userInfo(request, user=''):
                 'viewParams': request.session['viewParams'],
                 'requestParams': request.session['requestParams'],
                 'xurl': xurl,
+                'user': user,
                 'links': links,
                 'tasks': tasks,
                 'plots': plots,
+                'metrics': metrics_total,
                 'userstats': userstats,
             }
             response = render_to_response('userDash.html', data, content_type='text/html')

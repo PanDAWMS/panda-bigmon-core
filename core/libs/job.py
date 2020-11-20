@@ -72,22 +72,33 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
         'walltime': {'total': [], 'group_by': {}},
         'queuetime': {'total': [], 'group_by': {}},
         'failed': {'total': [], 'group_by': {}},
+        'efficiency': {'total': [], 'group_by': {}},
+        'attemptnr': {'total': [], 'group_by': {}},
+        'walltime_loss': {'total': [], 'group_by': {}},
     }
 
     # calc metrics
     for job in jobs:
         if group_by in job and job[group_by]:
 
+            job['failed'] = 100 if 'jobstatus' in job and job['jobstatus'] == 'failed' else 0
+
             if 'maxpss' in job and job['maxpss'] and isinstance(job['maxpss'], int) and (
                     'actualcorecount' in job and isinstance(job['actualcorecount'], int) and job['actualcorecount'] > 0):
                 job['maxpss_per_actualcorecount'] = 1.0 * job['maxpss'] / job['actualcorecount'] / 1024.
 
             job['walltime'] = get_job_walltime(job)
-            job['walltime'] = round(job['walltime'] / 60. / 60., 2) if job['walltime'] is not None else job['walltime']
             job['queuetime'] = get_job_queuetime(job)
-            job['queuetime'] = round(job['queuetime'] / 60. / 60., 2) if job['queuetime'] is not None else job['queuetime']
 
-            job['failed'] = 100 if 'jobstatus' in job and job['jobstatus'] == 'failed' else 0
+            if job['walltime'] and 'cpuconsumptiontime' in job and (
+                    isinstance(job['cpuconsumptiontime'], int) and job['cpuconsumptiontime'] > 0) and (
+                    'actualcorecount' in job and isinstance(job['actualcorecount'], int) and job['actualcorecount'] > 0):
+                job['efficiency'] = round(1.0*job['cpuconsumptiontime']/job['walltime']/job['actualcorecount'], 2)
+
+            job['walltime'] = round(job['walltime'] / 60. / 60., 2) if job['walltime'] is not None else 0
+            job['queuetime'] = round(job['queuetime'] / 60. / 60., 2) if job['queuetime'] is not None else 0
+
+            job['walltime_loss'] = job['walltime'] if 'jobstatus' in job and job['jobstatus'] == 'failed' else 0
 
             for metric in metrics_dict:
                 if metric in job and job[metric] is not None:
@@ -108,6 +119,5 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
                     sum(metrics_dict[metric]['group_by'][gbp]) / len(metrics_dict[metric]['group_by'][gbp]), 2)
             else:
                 metrics_dict[metric]['group_by'][gbp] = -1
-
 
     return metrics_dict

@@ -63,7 +63,7 @@ function draw_donut(data, divid, title, ext={}) {
             'registered': '#4a4a4a',
             'scouting': '#addf80',
             'aborting': '#ff9896',
-            'aborted': '#ff9896',
+            'aborted': '#FF8174',
             'failed': '#ff0000',
             'broken': '#b22222',
             'passed': '#1a1a1a',
