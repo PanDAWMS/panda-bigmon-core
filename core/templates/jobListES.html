@@ -191,13 +191,13 @@
 <a name="joblist"></a> Job list
 {% if display_limit  and display_limit < njobs %}
 <font size=-1>Only the most recent {{ display_limit }} jobs (sorted by PandaID) are shown. Remove the limit and sort by 
-<a href="{{nosorturl}}">PandaID</a>, 
+<a href="{{nosorturl}}sortby=pandaid">PandaID</a>,
 {% else %}
 Sort by 
 {% if sortby == "PandaID" %}
 <b>PandaID</b>,
 {% else %}
-<a href="{{nosorturl}}">PandaID</a>, 
+<a href="{{nosorturl}}sortby=pandaid">PandaID</a>,
 {% endif %}
 {% endif %}
 
