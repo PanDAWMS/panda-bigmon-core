@@ -10174,26 +10174,42 @@ def datasetInfo(request):
 @login_customrequired
 def datasetList(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
     setupView(request, hours=365 * 24, limit=999999999)
     query = {}
-    dsets = []
-    for par in ('jeditaskid', 'containername'):
+    extrastr = '(1=1)'
+
+    for par in ('jeditaskid', 'containername', 'datasetname'):
         if par in request.session['requestParams']:
             query[par] = request.session['requestParams'][par]
 
-    if len(query) > 0:
-        dsets = JediDatasets.objects.filter(**query).values()
+    dsets = []
+    if len(query) > 0 or len(extrastr) > 5:
+        dsets = JediDatasets.objects.filter(**query).extra(where=[extrastr]).values()
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
+        # redirect to datasetInfo if only one dataset found
+        if len(dsets) == 1:
+            return redirect('/datasetInfo/?datasetname=' + dsets[0]['datasetname'])
 
     del request.session['TFIRST']
     del request.session['TLAST']
-    for ds in dsets:
-        ds['creationtime'] = ds['creationtime'].strftime(defaultDatetimeFormat)
-        ds['modificationtime'] = ds['modificationtime'].strftime(defaultDatetimeFormat)
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+
+    if not is_json_request(request):
+        timestamp_vars = ['modificationtime', 'statechangetime', 'starttime', 'creationdate', 'resquetime',
+                          'endtime', 'lockedtime', 'frozentime', 'creationtime', 'statechecktime']
+        for ds in dsets:
+            for p in ds:
+                if p in timestamp_vars and ds[p] is not None:
+                    ds[p] = ds[p].strftime(defaultDatetimeFormat)
+                if ds[p] is None:
+                    ds[p] = ''
+                if ds[p] is True:
+                    ds[p] = 'true'
+                if ds[p] is False:
+                    ds[p] = 'false'
         data = {
+            'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'datasets': dsets,
@@ -10205,6 +10221,7 @@ def datasetList(request):
         return response
     else:
         return HttpResponse(json.dumps(dsets), content_type='application/json')
+
 
 @login_customrequired
 def fileInfo(request):
