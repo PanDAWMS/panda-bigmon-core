@@ -60,7 +60,7 @@ def prepare_user_dash_plots(tasks, **kwargs):
 
     # collect data
     for task in tasks:
-        if 'nfiles' in task and isinstance(task['nfiles'], int):
+        if 'nfiles' in task and isinstance(task['nfiles'], int) and task['status'] not in ('aborting', 'aborted'):
             plots_dict['nfiles_sum_status']['data']['remaining'] += task['nfiles']
             if 'nfilesfinished' in task and isinstance(task['nfilesfinished'], int):
                 plots_dict['nfiles_sum_status']['data']['done'] += task['nfilesfinished']

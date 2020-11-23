@@ -4193,8 +4193,11 @@ def userInfo(request, user=''):
                     task['job_' + metric] = ''
             for task_errs in errs_by_task:
                 if task['jeditaskid'] == task_errs['name']:
+                    link_jobs_base = '/jobs/?mode=nodrop&jeditaskid={}&'.format(task['jeditaskid'])
                     task['top_errors'] = '<br>'.join(
-                        ['<b>{}</b> [{}] "{}"'.format(err['count'], err['error'], err['diag']) for err in task_errs['errorlist']][:2])
+                        ['<a href="{}{}={}">{}</a> [{}] "{}"'.format(
+                            link_jobs_base, err['codename'], err['codeval'], err['count'], err['error'], err['diag']
+                        ) for err in task_errs['errorlist']][:2])
 
         # prepare relevant metrics to show
         metrics_total = {m: v['total'] for m, v in metrics.items() if 'total' in v}

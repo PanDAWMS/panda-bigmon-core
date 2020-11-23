@@ -6,7 +6,7 @@ Created by Tatiana Korchuganova on 05.03.2020
 
 from datetime import datetime, timedelta
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
-from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, get_job_walltime, get_job_queuetime
+from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, get_job_walltime, get_job_queuetime, drop_duplicates
 
 
 def is_event_service(job):
@@ -56,6 +56,9 @@ def get_job_list(query, **kwargs):
         'modificationtime__castdate__range' in query and query['modificationtime__castdate__range'][0] < (
             datetime.now() - timedelta(days=3))):
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_str]).values(*values))
+
+    # drop duplicate jobs
+    jobs = drop_duplicates(jobs, id='pandaid')
 
     return jobs
 

@@ -92,6 +92,7 @@
     <table class="data-table" id="taskstable">
         <thead></thead>
         <tbody></tbody>
+        <tfoot></tfoot>
     </table>
   </div>
   </div>
@@ -183,7 +184,7 @@ var plot_data = {{ plots|safe }};
   $(document).ready(function() {
 
     var tasks_list = {{ tasks|safe }};
-    buildTasksTable(tasks_list);
+    var tasksTable = buildTasksTable(tasks_list);
 
   });
 
@@ -280,12 +281,28 @@ function buildTasksTable(data) {
         data: "superstatus",
         sDefaultContent: "-",
         className: 'state',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return '<a href="{{ xurl }}superstatus=' + data + '">' + data + '</a>'
+          }
+          else {
+            return '-'
+          }
+        },
       },
       {
         title: "Status (JEDI)",
         data: "status",
         sDefaultContent: "-",
         className: 'state',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return '<a href="{{ xurl }}status=' + data + '">' + data + '</a>'
+          }
+          else {
+            return '-'
+          }
+        },
       },
       {
         title: "Age, days",
@@ -406,15 +423,17 @@ function buildTasksTable(data) {
         },
       },
     ],
-    "createdRow": function ( row, data, index ) {
+    createdRow: function ( row, data, index ) {
         $('td', row).eq(7).addClass(data['superstatus'] + '_fill');
         $('td', row).eq(8).addClass(data['status'] + '_fill');
-    }
+    },
   });
 
   tasksTable.columns( [ 4,13,14,15,16,17 ] ).visible( false );
   tasksTable.buttons().container()
       .appendTo( '#taskstable_wrapper .small-6.columns:eq(0)' );
+
+  return tasksTable
 }
 
 </script>
