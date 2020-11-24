@@ -1452,7 +1452,11 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
                 job['jobsetrange'] = "%d:%d" % (plo, phi)
         if 'corecount' in job and job['corecount'] is None:
             job['corecount'] = 1
-    ## drop duplicate jobs
+        if 'maxpss' in job and isinstance(job['maxpss'], int) and (
+                'actualcorecount' in job and isinstance(job['actualcorecount'], int) and job['actualcorecount'] > 0):
+            job['maxpssgbpercore'] = round(job['maxpss']/1024./1024./job['actualcorecount'], 2)
+
+    # drop duplicate jobs
     droplist = []
     job1 = {}
     newjobs = []
@@ -2302,9 +2306,9 @@ def jobList(request, mode=None, param=None):
             'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount',
             'statechangetime', 'nucleus', 'eventservice', 'nevents', 'gshare', 'jobmetrics',
             'noutputdatafiles', 'parentid', 'actualcorecount', 'resourcetype','schedulerid', 'pilotid',
-            'container_name', 'cmtconfig']
+            'container_name', 'cmtconfig', 'maxpss']
     if not eventservice:
-        values.extend(['avgvmem', 'maxvmem', 'maxpss', 'maxrss',])
+        values.extend(['avgvmem', 'maxvmem', 'maxrss'])
 
     totalJobs = 0
     showTop = 0
@@ -4122,7 +4126,7 @@ def userInfo(request, user=''):
     request.session['requestParams'] = requestParams
 
     ## Tasks owned by the user
-    query = setupView(request, hours=72, limit=999999, querytype='task')
+    query = setupView(request, hours=days*24, limit=999999, querytype='task')
 
     if userQueryTask is None:
         query['username__icontains'] = user.strip()

@@ -588,7 +588,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   .data-table .state {
     text-align: center !important;
   }
-  .data-table tbody tr:nth-child(even):hover td{
+  .data-table tbody tr:nth-child(even):hover td {
     background-color: #d4dfed !important;
   }
   .data-table tbody tr:nth-child(odd):hover td {

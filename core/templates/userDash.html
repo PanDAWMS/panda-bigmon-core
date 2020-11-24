@@ -317,7 +317,7 @@ function buildTasksTable(data) {
         className: 'alert',
         render: function(data, type, row, meta) {
           if (data && data.length > 0) {
-            return data.replace(/\./g, '.<wbr>').replace(/\_/g, '_<wbr>');
+            return data.replace(/\_/g, '_<wbr>');
           }
           else {
             return '-'
@@ -339,7 +339,7 @@ function buildTasksTable(data) {
         },
       },
       {
-        title: "Top job errors, count [code] message",
+        title: 'Top job errors, count [code] "sample message"',
         data: "top_errors",
         sDefaultContent: "-",
         className: 'alert',
@@ -441,5 +441,6 @@ function buildTasksTable(data) {
 
 
 {% block help %}
-{% include "userInfoHelp.html" %}
+{% include "userInfoHelp.html" with view='dash' %}
+{% include "taskInfoHelp.html" with show='all' %}
 {% endblock %}

@@ -2,14 +2,53 @@
 <div class="card-divider"><p>User information page help:</p></div>
 <div class="card-section">
 
-<p>
-  This page summarize all the recent user tasks and jobs.
-</p>
+{% if view and view == 'dash' %}
+  <p>
+    This page summarizes all the recent user tasks.
+    By default the tasks with a modification date in the last 7 days are selected.
+    You can change the time window by clicking on blue "Change" button in the top subbar.
+  </p>
+  <p>
+    The <b>"User activity overview"</b> section shows overall metrics, that can give a clue of potential problems.
+    Each metric label has 3 color codes:
+    <span class="label ok">OK</span>, <span class="label warning">Warning</span> and <span class="label alert">Alert</span>.
+    For example, if you see <span class="label warning">Average MaxPSS/core: <b>2.3</b>GB</span> ,
+      most probably your jobs consume a lof of memory that can be a cause of jobs failure.
+  </p>
+  <p>
+    Also the <b>"User activity overview"</b> section has 3 plots:
+    <ul>
+      <li><b>Inputs by status</b> represents the total number of input files for all the tasks (excluding aborted) grouped by 3 states:
+        <span class="done">done</span>, <span class="registered">remaining</span> and <span class="failed">failed</span>.
+      </li>
+      <li><b>Tasks by status</b> shows the number of tasks grouped by detailed JEDI task status.
+        The description of task states can be found below. </li>
+      <li><b>Task age histogram</b> displays the distribution of task age.
+        If task ended, the age is difference between end time and creation time.
+        If task is in active state, the age is the current time - creation time.</li>
+    </ul>
+  </p>
+  <p>
+    The full list of tasks are in the table. It is based on a popular DataTable plugin,
+      so the pagination is enabled by default showing 20 tasks by page. You can use "Search" input to filter the tasks.
+    The jobs metrics are calculated per task as well, you can show/hide them by using 2 buttons:
+      <b>"Show all metrics"</b> and <b>"Minimize view"</b>.
+    The <b>"Top job errors, count [code] message"</b> column shows the top-3 job errors per task,
+      the count is clickable and goes to a classic jobs page.
+    The <b>"Task ID"</b> links goes to a task page,
+      the  <b>"Jobs failure, %"</b> links goes to error summary page for a task.
+  </p>
 
-<p>
-The task list in this page shows tasks with a modification date in the last 7 days.
-If deeper searches are required, the Tasks -&gt; Analysis -&gt; (select your username) page can be used with &amp;days=N on the URL to set the search depth.
-</p>
+{% else %}
+  <p>
+    This page summarizes all the recent user tasks and jobs.
+  </p>
+
+  <p>
+  The task list in this page shows tasks with a modification date in the last 7 days.
+  If deeper searches are required, the Tasks -&gt; Analysis -&gt; (select your username) page can be used with &amp;days=N on the URL to set the search depth.
+  </p>
+{% endif %}
 
 <p>
 Documentation on JEDI for analysis, its advantages and how to use it, 

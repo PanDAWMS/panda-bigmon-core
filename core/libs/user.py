@@ -104,6 +104,10 @@ def humanize_metrics(metrics):
     :return:
     """
     metric_defs = {
+        'failed': {
+            'title': 'Jobs failure',
+            'unit': '%',
+        },
         'maxpss_per_actualcorecount': {
             'title': 'Average maxPSS/core',
             'unit': 'GB',
@@ -116,9 +120,13 @@ def humanize_metrics(metrics):
             'title': 'Average jobs time to start',
             'unit': 'hours',
         },
-        'failed': {
-            'title': 'Jobs failure',
+        'efficiency': {
+            'title': ' Average jobs efficiency',
             'unit': '%',
+        },
+        'attemptnr': {
+            'title': ' Average number of job attempts',
+            'unit': '',
         },
         'cpua7': {
             'title': 'Personal CPU hours for last 7 days',
@@ -128,32 +136,28 @@ def humanize_metrics(metrics):
             'title': 'Group CPU hours for last 7 days',
             'unit': '',
         },
-        'efficiency': {
-            'title': ' Average jobs efficiency',
-            'unit': '',
-        },
-        'attemptnr': {
-            'title': ' Average jobs attempt number',
-            'unit': '',
-        },
     }
 
     metrics_thresholds = {
         'pss': {
-            'warning': [1.9, 2.5],
+            'warning': [2.0, 2.5],
             'alert': [2.5, 1000000]
         },
-        'time': {
+        'walltime': {
             'warning': [12, 36],
             'alert': [36, 1000000]
+        },
+        'queuetime': {
+            'warning': [4, 12],
+            'alert': [12, 1000000]
         },
         'fail': {
             'warning': [25, 50],
             'alert': [50, 100]
         },
         'efficiency': {
-            'warning': [0.5, 0.7],
-            'alert': [0, 0.5]
+            'warning': [50, 70],
+            'alert': [0, 50]
         },
         'attemptnr': {
             'warning': [3, 5],
@@ -166,6 +170,8 @@ def humanize_metrics(metrics):
         if md in metrics and metrics[md]:
             if 'pss' in md:
                 metric_defs[md]['value'] = round(metrics[md]/1024., 2)
+            elif 'efficiency' in md:
+                metric_defs[md]['value'] = round(metrics[md] * 100., 2)
             else:
                 metric_defs[md]['value'] = metrics[md]
 
