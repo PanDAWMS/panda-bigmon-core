@@ -6,8 +6,8 @@
 {% block subtitle %}Jobs Buster{{ viewParams.selection|safe }}{% endblock %}
 
 {% block time_window %}
-    Time window: <span class="time-window-range">{{ request.session.timerange.0 }}</span>
-    - <span class="time-window-range">{{ request.session.timerange.1 }}</span> UTC
+    Time window: <span class="time-window-range">{{ timerange.0 }}</span>
+    - <span class="time-window-range">{{ timerange.1 }}</span> UTC
 {% endblock %}
 
 {% block css_page_library %}

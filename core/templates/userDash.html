@@ -3,8 +3,8 @@
 {% block page_title %} {{ viewParams.MON_VO }} PanDA user {{ user }} {% endblock %}
 {% block subtitle %}PanDA user <b>{{ user }}</b> dashboard{% endblock %}
 {% block time_window %}
-    Modification time window: <span class="time-window-range">{{ request.session.timerange.0 }}</span>
-    - <span class="time-window-range">{{ request.session.timerange.1 }}</span> UTC
+    Modification time window: <span class="time-window-range">{{ timerange.0 }}</span>
+    - <span class="time-window-range">{{ timerange.1 }}</span> UTC
 {% endblock %}
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">

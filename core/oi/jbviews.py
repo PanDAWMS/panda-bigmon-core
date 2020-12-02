@@ -176,6 +176,7 @@ def jbhome(request):
         'request': request,
         'requestParams': request.session['requestParams'],
         'viewParams': request.session['viewParams'],
+        'timerange': request.session['timerange'],
         'message': message,
         'mesures': [],
         'metric': metric,

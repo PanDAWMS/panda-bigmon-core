@@ -452,7 +452,7 @@
 </div>
 
 <div class="row collapse top-subbar">
-    <div class="column {% if request.session.timerange and request.session.timerange|length > 0 %} small-6 medium-2 large-2 {% else %} small-6 medium-9 large-10 {% endif %}" id="">
+    <div class="column {% if timerange and timerange|length > 0 %} small-6 medium-2 large-2 {% else %} small-6 medium-9 large-10 {% endif %}" id="">
         <p>
             {% block subtitle %}Subtitle goes here{% endblock %}
             {% if not timerange %}
@@ -461,7 +461,7 @@
         </p>
     </div>
 
-    {% if request.session.timerange and request.session.timerange|length > 0 %}
+    {% if timerange and timerange|length > 0 %}
     <div class="column medium-7 large-8 center show-for-medium">
         {% block time_window %}{% endblock %}
         <a class="button time-window" data-toggle="time-window-change-panel">Change</a>
@@ -547,10 +547,8 @@
     <script src="{% static 'js/app.js' %}?{% cache_bust "js/app.js" %}"></script>
     <script src="{% static 'js/user-settings.js' %}?{% cache_bust "js/user-settings.js" %}"></script>
     <script>
-      {% if request.session.timerange %}
-          var timerange = {{ request.session.timerange|safe }};
-      {% elif timerange %}
-      var timerange = {{ timerange|safe }};
+      {% if timerange %}
+          var timerange = {{ timerange|safe }};
       {% else %}
           var timerange =  ['', ''];
       {% endif %}
