@@ -28,42 +28,6 @@
 
 {% block body %}
 
-<div class="callout primary" data-closable>
-  <h5><b>This is a new dashboard page!</b></h5>
-  <p>The old one is still available, via the links:
-    <a class="blacklink" href="{% url 'dashboard' %}?version=old"><b>all</b></a>,
-    <a class="blacklink" href="{% url 'dashProduction' %}?version=old"><b>production</b></a>,
-    <a class="blacklink" href="{% url 'dashAnalysis' %}?version=old"><b>analysis</b></a>. But it will be decommissioned soon.
-  </p>
-  <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
-  <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
-    Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type.
-      I.e. if you check the <b>split by job type</b> checkbox, you will get up to 2 rows in tables for each Region/PQ showing number of production and analysis jobs separately.
-      If you check the <b>split by resource type</b> checkbox, you will get up to 4 rows in tables for each Region/PQ showing number of jobs using SCORE, MCORE, SCORE_HIMEM and MCORE_HIMEM resources separately.
-      If you check both checkboxes, you will get up to 8 rows for each Region/PQ showing split statistics of jobs.
-    Click on <b>Update</b> button to apply selection.</p>
-  <p><b>By default the view is minimized</b>, i.e. some short transient states and Harvester workers summary numbers are hidden.
-    Press <b>Show details</b> buttons to see all the states of jobs and workers.</p>
-  <p>Click the job counts to go to job listings. Click on workers counts to go to harvester workers listings.
-    Use the <b>Search</b> text input on the top of second table to find a PQ by name.</p>
-  <p>Click on PQ name to go to a BigPanDA site info page. Next to a PQ name there are 3 links:
-    <img src="{% static '/images/grafana.png' %}" width=14 height=14 border=0> goes to Jobs accounting for a PQ at MONIT Grafana;
-    <img src="{% static '/images/grafana-black.png' %}" width=14 height=14 border=0> - Jobs monitoring for a PQ at MONIT Grafana (Eric's monitoring);
-    <img src="{% static '/images/kibana-logo.png' %}" width=14 height=14 border=0> - recent brokerage actions related to a PQ at Kibana.
-  </p>
-  <p>Click on a PQ status to go to blacklisting history at CRIC UI.</p>
-  <p><b>N running workers</b> column has the next color coding scheme:
-    <span class="alert"><b>dark red</b></span> if N running workers > N running jobs for more than 20%,
-    <span class="warning"><b>orange</b></span> if N running workers > N running jobs for more than 10% and less than 20%.</p>
-  <p>If you want too see more rows in tables by default, add <b>&display_limit=N</b> to URL where N is desired number.
-     You can change the default last 12 hours time range by clicking a blue "Change" button in the top sub-bar. </p>
-  <p>If you notice any issue or if you have an advise how to improve the page, please let us know
-    <a class="blacklink" href="mailto:atlas-adc-pandamon-support@cern.ch"><b>atlas-adc-pandamon-support@cern.ch</b></a> !</p>
-  <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-    <span aria-hidden="true">&times;</span>
-  </button>
-</div>
-
 {% if viewParams.selection %}
   {{ viewParams.selection|safe }}
 {% endif %}

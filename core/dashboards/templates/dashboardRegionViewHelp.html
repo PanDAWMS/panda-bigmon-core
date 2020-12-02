@@ -3,6 +3,11 @@
 <div class="card-divider"><p>Job summary region view:</p></div>
 <div class="card-section">
   <p><a href="{% url 'dashRegion' %}">This page</a> summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
+  <p>The old one is still available, via the links:
+    <a class="blacklink" href="{% url 'dashboard' %}?version=old"><b>all</b></a>,
+    <a class="blacklink" href="{% url 'dashProduction' %}?version=old"><b>production</b></a>,
+    <a class="blacklink" href="{% url 'dashAnalysis' %}?version=old"><b>analysis</b></a>. But it will be decommissioned soon.
+  </p>
   <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
     Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type.
       I.e. if you check the <b>split by job type</b> checkbox, you will get up to 2 rows in tables for each Region/PQ showing number of production and analysis jobs separately.
@@ -18,11 +23,14 @@
     <li><img src="{% static '/images/grafana.png' %}" width=14 height=14 border=0> goes to Jobs accounting for a PQ at MONIT Grafana;
     <li><img src="{% static '/images/grafana-black.png' %}" width=14 height=14 border=0> opens a new tab with rendered plot of Jobs monitoring for a PQ at MONIT Grafana (Eric's monitoring);
     <li><img src="{% static '/images/kibana-logo.png' %}" width=14 height=14 border=0> goes to recent brokerage actions related to a PQ at Kibana.
+    <li><img src="{% static '/images/kibana-logo-black.png' %}" width=14 height=14 border=0> goes to Harvester dashboard for a PQ at Kibana.
   </ul></p>
   <p>Click on a PQ status to go to blacklisting history at CRIC UI.</p>
   <p><b>N running workers</b> column has the next color coding scheme:
     <span class="alert"><b>dark red</b></span> if N running workers > N running jobs for more than 20%,
     <span class="warning"><b>orange</b></span> if N running workers > N running jobs for more than 10% and less than 20%.</p>
+  <p>If you want too see more rows in tables by default, add <b>&display_limit=N</b> to URL where N is desired number.
+    You can change the default last 12 hours time range by clicking a blue <b>"Change"</b> button in the top sub-bar. </p>
   <p><b>Job states description:</b></p>
   <p>
   <ul>
@@ -44,6 +52,7 @@
   {% if show == 'all' or  job.jobstatus == 'closed' %} <li>  Status <b class='closed'>closed</b> terminated by the system before completing the allocated workload. E.g., killed to be reassigned to another site.{% endif %}
   </ul>
   </p>
-
+  <p>If you notice any issue or if you have an advise how to improve the page, please let us know
+    <a class="blacklink" href="mailto:atlas-adc-pandamon-support@cern.ch"><b>atlas-adc-pandamon-support@cern.ch</b></a> !</p>
 </div>
 </div>
