@@ -143,9 +143,13 @@ def humanize_metrics(metrics):
             'warning': [2.0, 2.5],
             'alert': [2.5, 1000000]
         },
+        'time': {
+            'warning': [24, 36],
+            'alert': [48, 1000000]
+        },
         'walltime': {
-            'warning': [12, 36],
-            'alert': [36, 1000000]
+            'warning': [1, 2],
+            'alert': [0, 1]
         },
         'queuetime': {
             'warning': [4, 12],
@@ -168,6 +172,7 @@ def humanize_metrics(metrics):
     metrics_list = []
     for md in metric_defs:
         if md in metrics and metrics[md]:
+            metric_defs[md]['class'] = []
             if 'pss' in md:
                 metric_defs[md]['value'] = round(metrics[md]/1024., 2)
             elif 'efficiency' in md:
@@ -177,9 +182,9 @@ def humanize_metrics(metrics):
 
             for key, thresholds in metrics_thresholds.items():
                 if key in md:
-                    metric_defs[md]['class'] = [c for c, crange in thresholds.items() if metric_defs[md]['value'] >= crange[0] and metric_defs[md]['value'] < crange[1]]
-                    metric_defs[md]['class'] = metric_defs[md]['class'][0] if len(metric_defs[md]['class']) > 0 else ''
+                    metric_defs[md]['class'].extend([c for c, crange in thresholds.items() if metric_defs[md]['value'] >= crange[0] and metric_defs[md]['value'] < crange[1]])
 
+            metric_defs[md]['class'] = metric_defs[md]['class'][0] if len(metric_defs[md]['class']) > 0 else ''
             metrics_list.append(metric_defs[md])
 
     return metrics_list
