@@ -221,7 +221,7 @@ urlpatterns = [
     re_path(r'^datatable/data/fairsharePolicy', globalshares.fairsharePolicy, name='fairsharePolicy'),
 
     ###Grafana###
-    re_path(r'^api/grafana$', grafana.grafana_api, name='grafana_api'),
+    re_path(r'^api/grafana$', grafana.grafana_api_es, name='grafana_api'),
     re_path(r'^api/grafana/pledges$', grafana.pledges, name='grafana_pledges'),
     # re_path(r'^grafanaplots', grafana.index, name='grafana_plots'),
     re_path(r'^grafanaplots', grafana.chartjs, name='grafana_chartjsplots'),
