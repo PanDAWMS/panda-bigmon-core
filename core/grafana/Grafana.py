@@ -28,7 +28,6 @@ class Grafana(object):
     def get_query(self, object):
         query_object = object
         if query_object.endtime == "" and query_object.starttime == "":
-            delta = timedelta(minute=1)
             timebefore = timedelta(days=query_object.days)
 
             endtime = (datetime.utcnow()).replace(minute=00, hour=00, second=00, microsecond=000)
