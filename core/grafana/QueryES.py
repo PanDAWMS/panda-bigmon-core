@@ -212,6 +212,8 @@ class Query(object):
                 output_parametres = output_parametres + """\\\"""" + str(parametr) + """\\\""""
                 if parametr != new_input_parametres[-1]:
                     output_parametres = output_parametres + """ OR """
+        else:
+            output_parametres = input_parametres
         return output_parametres
 
 def _round_to_hour(dt):
