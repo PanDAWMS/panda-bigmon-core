@@ -122,27 +122,49 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       new_cur.execute(query01)
       reslt1 = new_cur.fetchall()
       lenres=len(reslt1)
-      if lenres != 0 and ( reslt1[0][2] == 'cancel' or reslt1[0][2] == 'CANCEL' ):
+      if lenres != 0 and ( reslt1[0][2] == 'cancel' or reslt1[0][2] == 'CANCEL' or reslt1[0][2] == 'ABORT' or reslt1[0][2] == 'abort' ):
           pjname=reslt1[0][1]
-          erla=reslt1[0][17]
-          if erla == None or erla == '': erla='N/A'
-          sula=reslt1[0][18]
-          if sula == None or sula == '': sula='N/A'
-          e_im = reslt1[0][19]
-          if e_im == None or e_im == '': e_im = 'N/A'
-          s_im = reslt1[0][20]
-          if s_im == None or s_im == '': s_im = 'N/A'
           s_ext = reslt1[0][22]
           if s_ext == None or s_ext == '': s_ext = 'N/A'
           vext = reslt1[0][23]
           if vext == None or vext == '': vext = '0'
+          s_checkout = 'N/A'
+          if reslt1[0][14] != None: s_checkout = str(reslt1[0][14])
+          s_config = 'N/A';
+          s_inst = 'N/A'
+          if str(vext) != 1: s_config = '0'; s_inst = '0'
+          if reslt1[0][12] != None: s_config = str(reslt1[0][12])
+          if reslt1[0][13] != None: s_inst = str(reslt1[0][13])
           hname=reslt1[0][24]
           if re.search(r'\.',hname):
               hname=(re.split(r'\.',hname))[0]
           area_suffix = reslt1[0][9]
           if area_suffix == None: area_suffix = "";
-          row_cand=[rname,t_start,'NO NEW<BR>CODE','N/A','N/A','CANCELLED','N/A','N/A','N/A','N/A','N/A','N/A','N/A',hname,'N/A']
-          rows_s.append(row_cand)
+          [i_checkout, i_inst, i_config, i_ext] = \
+              map(lambda x: di_res.get(str(x), str(x)),
+                  [s_checkout, s_inst, s_config, s_ext])
+          if i_checkout == None or i_checkout == "None": i_checkout = radiooff_icon;
+          if i_inst == None or i_inst == "None": i_inst = radiooff_icon;
+          if i_config == None or i_config == "None": i_config = radiooff_icon;
+          if i_ext == None or i_ext == "None": i_ext = radiooff_icon;
+          ii_checkout, ii_config, ii_ext = i_checkout, i_config, i_ext
+          if str(vext) != '1':
+              ii_ext = i_inst
+          else:
+              if ii_checkout == check_icon or ii_checkout == error_icon or ii_checkout == majorwarn_icon or ii_checkout == minorwarn_icon:
+                  ii_checkout = "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_checkout.html' + "\">" + i_checkout + "</a>"
+              if ii_ext == check_icon or ii_ext == error_icon or ii_ext == majorwarn_icon or ii_ext == minorwarn_icon:
+                  ii_ext = "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_externals_build.html' + "\">" + i_ext + "</a>"
+              if ii_config == check_icon or ii_config == error_icon or ii_config == majorwarn_icon or ii_config == minorwarn_icon:
+                  ii_config = "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_cmake_config.html' + "\">" + i_config + "</a>"
+
+          if reslt1[0][2] == 'ABORT' or reslt1[0][2] == 'abort':
+              row_cand = [rname, t_start, ii_checkout, ii_ext, ii_config, 'ABORTED', 'N/A', 'N/A', 'N/A',
+                          'N/A', 'N/A', 'N/A', 'N/A', hname, 'N/A']
+              rows_s.append(row_cand)
+          else:
+              row_cand=[rname,t_start,'NO NEW<BR>CODE','N/A','N/A','CANCELLED','N/A','N/A','N/A','N/A','N/A','N/A','N/A',hname,'N/A']
+              rows_s.append(row_cand)
       else: 
           query1="select to_char(jid),projname,ncompl,pccompl,npb,ner,pcpb,pcer from cstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
           new_cur.execute(query1)
