@@ -1621,7 +1621,7 @@ def jobSummaryDict(request, jobs, fieldlist=None):
                     newvalues[roundedval] = sumd[f][ky]
             for ky in newvalues:
                 iteml.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
-            iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
+            iteml = sorted(iteml, key=lambda x: int(x['kname'].split("-")[0]))
         elif f == 'durationmin':
             if len(kys) == 1 and kys[0] == 0:
                 iteml.append({'kname': '0-0', 'kvalue': sumd[f][0]})
