@@ -4214,7 +4214,7 @@ def userInfo(request, user=''):
             pass
         else:
             timestamp_vars = ['modificationtime', 'statechangetime', 'starttime', 'creationdate', 'resquetime',
-                              'endtime', 'lockedtime', 'frozentime', 'ttcpredictiondate']
+                              'endtime', 'lockedtime', 'frozentime', 'ttcpredictiondate', 'ttcrequested']
             for task in tasks:
                 for tp in task:
                     if tp in timestamp_vars and task[tp] is not None:

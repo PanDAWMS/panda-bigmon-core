@@ -204,7 +204,7 @@ function buildTasksTable(data) {
       {
         extend: 'colvisGroup',
         text: 'Minimize view',
-        hide: [ 4,13,14,15,16,17 ],
+        hide: [ 4,10,11,12,13,14, ],
       },
       {
         extend: 'colvisGroup',
@@ -219,7 +219,7 @@ function buildTasksTable(data) {
         sDefaultContent: "-",
         render: function(data, type, row, meta) {
           if (data) {
-            return '<a href="{% url 'taskInfo' %}?jeditaskid=' + data + '">' + data + '</a>'
+            return '<a href="{% url 'taskInfo' %}' + data + '/">' + data + '</a>'
           }
           else {
             return '-'
@@ -311,48 +311,6 @@ function buildTasksTable(data) {
         className: 'num',
       },
       {
-        title: "Task logged status",
-        data: "errordialog",
-        sDefaultContent: "-",
-        className: 'alert',
-        render: function(data, type, row, meta) {
-          if (data && data.length > 0) {
-            return data.replace(/\_/g, '_<wbr>');
-          }
-          else {
-            return '-'
-          }
-        },
-      },
-      {
-        title: "Jobs failure, %",
-        data: "job_failed",
-        sDefaultContent: "-",
-        className: 'num',
-        render: function(data, type, row, meta) {
-          if (data && data > 0) {
-            return '<a href="{% url 'errorSummary' %}?jeditaskid=' + row['jeditaskid'] + '">' + data + '</a>'
-          }
-          else {
-            return 0
-          }
-        },
-      },
-      {
-        title: 'Top job errors, count [code] "sample message"',
-        data: "top_errors",
-        sDefaultContent: "-",
-        className: 'alert',
-        render: function(data, type, row, meta) {
-          if (data && data.length > 0 && row['status'] !== 'done') {
-            return data.replace(/\./g, '.<wbr>');
-          }
-          else {
-            return '-'
-          }
-        },
-      },
-      {
         title: "Queue time, hours",
         data: "job_queuetime",
         sDefaultContent: "-",
@@ -422,6 +380,48 @@ function buildTasksTable(data) {
           }
         },
       },
+      {
+        title: "Task logged status",
+        data: "errordialog",
+        sDefaultContent: "-",
+        className: 'alert',
+        render: function(data, type, row, meta) {
+          if (data && data.length > 0) {
+            return data.replace(/\_/g, '_<wbr>');
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Jobs failure, %",
+        data: "job_failed",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data && data > 0) {
+            return '<a href="{% url 'errorSummary' %}?jeditaskid=' + row['jeditaskid'] + '">' + data + '</a>'
+          }
+          else {
+            return 0
+          }
+        },
+      },
+      {
+        title: 'Top job errors, count [code] "sample message"',
+        data: "top_errors",
+        sDefaultContent: "-",
+        className: 'alert',
+        render: function(data, type, row, meta) {
+          if (data && data.length > 0 && row['status'] !== 'done') {
+            return data.replace(/\./g, '.<wbr>');
+          }
+          else {
+            return '-'
+          }
+        },
+      },
     ],
     createdRow: function ( row, data, index ) {
         $('td', row).eq(7).addClass(data['superstatus'] + '_fill');
@@ -429,7 +429,7 @@ function buildTasksTable(data) {
     },
   });
 
-  tasksTable.columns( [ 4,13,14,15,16,17 ] ).visible( false );
+  tasksTable.columns( [ 4,10,11,12,13,14, ] ).visible( false );
   tasksTable.buttons().container()
       .appendTo( '#taskstable_wrapper .small-6.columns:eq(0)' );
 
