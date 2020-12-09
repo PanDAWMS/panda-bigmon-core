@@ -7896,7 +7896,7 @@ def taskInfo(request, jeditaskid=0):
     # get dataset locality
     dataset_locality = get_dataset_locality(jeditaskid)
     for ds in dsets:
-        if ds['datasetid'] in dataset_locality[jeditaskid]:
+        if jeditaskid in dataset_locality and ds['datasetid'] in dataset_locality[jeditaskid]:
             ds['rse'] = ', '.join([item['rse'] for item in dataset_locality[jeditaskid][ds['datasetid']]])
     _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
 
@@ -8186,7 +8186,7 @@ def taskInfoNew(request, jeditaskid=0):
     # get dataset locality
     dataset_locality = get_dataset_locality(jeditaskid)
     for ds in dsets:
-        if ds['datasetid'] in dataset_locality[jeditaskid]:
+        if jeditaskid in dataset_locality and ds['datasetid'] in dataset_locality[jeditaskid]:
             ds['rse'] = ', '.join([item['rse'] for item in dataset_locality[jeditaskid][ds['datasetid']]])
     _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
 
