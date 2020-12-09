@@ -8,7 +8,7 @@ import numpy as np
 from datetime import datetime
 from django.db import connection
 from django.db.models import Count, Sum
-from core.common.models import JediEvents, JediDatasetContents, JediDatasets, JediTaskparams
+from core.common.models import JediEvents, JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, add_job_category, get_job_walltime, \
     job_states_count_by_param, get_tmp_table_name, parse_datetime, get_job_queuetime
@@ -22,9 +22,14 @@ _logger = logging.getLogger('bigpandamon')
 def cleanTaskList(tasks, **kwargs):
 
     add_datasets_info = False
+    add_datasets_locality = False
+    sortby = None
+
     if 'add_datasets_info' in kwargs:
         add_datasets_info = kwargs['add_datasets_info']
-    sortby = None
+    if 'add_datasets_locality' in kwargs:
+        add_datasets_locality = kwargs['add_datasets_locality']
+        add_datasets_info = True
     if 'sortby' in kwargs:
         sortby = kwargs['sortby']
 
@@ -73,6 +78,9 @@ def cleanTaskList(tasks, **kwargs):
                     dsinfo[taskid] = []
                 dsinfo[taskid].append(ds)
 
+        if add_datasets_locality:
+            input_dataset_rse = get_dataset_locality(taskl)
+
         for task in tasks:
             if 'totevrem' not in task:
                 task['totevrem'] = None
@@ -101,6 +109,9 @@ def cleanTaskList(tasks, **kwargs):
 
             task['dsinfo'] = dstotals
             task.update(dstotals)
+
+
+
 
     if sortby is not None:
         if sortby == 'time-ascending':
@@ -1012,3 +1023,35 @@ def get_task_age(task):
         task_age = round((endtime-creationtime).total_seconds() / 60. / 60. / 24., 2)
 
     return task_age
+
+
+def get_dataset_locality(jeditaskid):
+    """
+    Getting RSEs for a task input datasets
+    :return:
+    """
+    N_IN_MAX = 100
+    query = {}
+    extra_str = ' (1=1) '
+    if isinstance(jeditaskid, list) or isinstance(jeditaskid, tuple):
+        if len(jeditaskid) > N_IN_MAX:
+            trans_key = insert_to_temp_table(jeditaskid)
+            tmp_table = get_tmp_table_name()
+            extra_str += ' AND jeditaskid IN (SELEECT id FROM {} WHERE transactionkey = {} )'.format(tmp_table, trans_key)
+        else:
+            query['jeditaskid__in'] = jeditaskid
+    elif isinstance(jeditaskid, int):
+        query['jeditaskid'] = jeditaskid
+
+    rse_list = JediDatasetLocality.objects.filter(**query).extra(where=[extra_str]).values()
+
+    rse_dict = {}
+    if len(rse_list) > 0:
+        for item in rse_list:
+            if item['jeditaskid'] not in rse_dict:
+                rse_dict[item['jeditaskid']] = {}
+            if item['datasetid'] not in rse_dict[item['jeditaskid']]:
+                rse_dict[item['jeditaskid']][item['datasetid']] = []
+            rse_dict[item['jeditaskid']][item['datasetid']].append({'rse': item['rse'], 'timestamp': item['timestamp']})
+
+    return rse_dict
