@@ -39,6 +39,7 @@ class TasksErrorCodesAnalyser:
         return processed_string
 
     def get_messages_groups(self, tasks_list):
+        tasks_errors_groups = {}
         if len(tasks_list) > 0:
             frame_rows = list(map(lambda z: (z['jeditaskid'], z['errordialog'], ""), tasks_list))
             tasks_errors_frame = pd.DataFrame(frame_rows, columns=['taskid','errordialog','processed_errordialog'])
@@ -55,7 +56,8 @@ class TasksErrorCodesAnalyser:
                 apply(lambda row: self.remove_special_character(row['errordialog']), axis=1)
 
             del tasks_errors_groups['taskid']
-        return tasks_errors_groups.to_dict('records')
+            tasks_errors_groups = tasks_errors_groups.to_dict('records')
+        return tasks_errors_groups
 
     def process_error_messages(self, tasks_list):
         return self.get_messages_groups(tasks_list)
