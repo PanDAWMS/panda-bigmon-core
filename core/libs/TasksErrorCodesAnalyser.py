@@ -15,17 +15,21 @@ class TasksErrorCodesAnalyser:
             return s.split()
         vectorizer = CountVectorizer(tokenizer=my_tokenizer, analyzer="word", stop_words=None, preprocessor=None)
         corpus = frame['errordialog'].tolist()
-        bag_of_words = vectorizer.fit_transform(corpus)
-        sum_words = bag_of_words.sum(axis=0)
-        words_freq = [(word, sum_words[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
-        words_freqf = [x[0] for x in filter(lambda x: x[1] < 3, words_freq)]
-        words_freqf = set(words_freqf)
-        def replace_all(text):
-            common_tokens = set(my_tokenizer(text)).intersection(words_freqf)
-            for i in common_tokens:
-                text = text.replace(i, '**REPLACEMENT**') if len(i) > 1 else text
-            return text
-        frame['processed_errordialog'] = frame['errordialog'].apply(replace_all)
+        try:
+            bag_of_words = vectorizer.fit_transform(corpus)
+            sum_words = bag_of_words.sum(axis=0)
+            words_freq = [(word, sum_words[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
+            words_freqf = [x[0] for x in filter(lambda x: x[1] < 3, words_freq)]
+            words_freqf = set(words_freqf)
+
+            def replace_all(text):
+                common_tokens = set(my_tokenizer(text)).intersection(words_freqf)
+                for i in common_tokens:
+                    text = text.replace(i, '**REPLACEMENT**') if len(i) > 1 else text
+                return text
+            frame['processed_errordialog'] = frame['errordialog'].apply(replace_all)
+        except:
+            frame['processed_errordialog'] = frame['errordialog']
         return frame
 
     def encode_into_link(self, error_msg):
