@@ -84,6 +84,7 @@ import base64
 import urllib3
 from django.views.decorators.cache import never_cache
 from core import chainsql
+from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 
 errorFields = []
 errorCodes = {}
@@ -6781,6 +6782,9 @@ def taskList(request):
     for task in tasks:
         taskl.append(task['jeditaskid'])
 
+    error_codes_analyser = TasksErrorCodesAnalyser()
+    error_codes_analyser.schedule_preprocessing(tasks)
+
     transactionKey = insert_to_temp_table(taskl)
 
     # For tasks plots
@@ -7042,7 +7046,8 @@ def taskList(request):
         if task['ttcrequested']:
             task['ttcrequested'] = task['ttcrequested'].strftime(defaultDatetimeFormat)
 
-
+    error_summary_table = error_codes_analyser.get_errors_table()
+    error_summary_table = json.dumps(error_summary_table, cls=DateEncoder)
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
@@ -7126,6 +7131,7 @@ def taskList(request):
             'tasksTotalCount': tasksTotalCount,
             'built': datetime.now().strftime("%H:%M:%S"),
             'idtasks': transactionKey,
+            'error_summary_table': error_summary_table
         }
 
         setCacheEntry(request, "taskList", json.dumps(data, cls=DateEncoder), 60 * 20)
