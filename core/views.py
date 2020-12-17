@@ -4142,7 +4142,7 @@ def userInfo(request, user=''):
     else:
         display_limit_tasks = int(request.session['requestParams']['display_limit_tasks'])
     ntasksmax = display_limit_tasks
-    url_nolimit_tasks = request.get_full_path() + "&display_limit_tasks=" + str(ntasks)
+    url_nolimit_tasks = removeParam(extensibleURL(request), 'display_limit_tasks', mode='extensible') + "display_limit_tasks=" + str(ntasks)
 
     tasks = getTaskScoutingInfo(tasks, ntasksmax)
 
@@ -4315,12 +4315,10 @@ def userInfo(request, user=''):
         if 'display_limit_jobs' in request.session['requestParams'] and int(
                 request.session['requestParams']['display_limit_jobs']) < len(jobs):
             display_limit_jobs = int(request.session['requestParams']['display_limit_jobs'])
-            njobsmax = display_limit_jobs
-            url_nolimit_jobs = removeParam(request.get_full_path(), 'display_limit_jobs') + 'display_limit_jobs=' + str(len(jobs))
         else:
             display_limit_jobs = 100
-            njobsmax = display_limit_jobs
-            url_nolimit_jobs = request.get_full_path() + 'display_limit_jobs=' + str(len(jobs))
+        njobsmax = display_limit_jobs
+        url_nolimit_jobs = removeParam(extensibleURL(request), 'display_limit_jobs', mode='extensible') + 'display_limit_jobs=' + str(len(jobs))
 
         sumd = userSummaryDict(jobs)
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
@@ -9273,7 +9271,6 @@ def errorSummary(request):
             resp.append({'pandaid': job['pandaid'], 'status': job['jobstatus'], 'prodsourcelabel': job['prodsourcelabel'],
                          'produserid': job['produserid']})
         return HttpResponse(json.dumps(resp), content_type='application/json')
-
 
 
 def removeParam(urlquery, parname, mode='complete'):
