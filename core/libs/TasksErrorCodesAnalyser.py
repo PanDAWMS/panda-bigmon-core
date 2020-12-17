@@ -23,7 +23,7 @@ class TasksErrorCodesAnalyser:
         def replace_all(text):
             common_tokens = set(my_tokenizer(text)).intersection(words_freqf)
             for i in common_tokens:
-                text = text.replace(i, '**REPLACEMENT**') if len(i) > 3 else text
+                text = text.replace(i, '**REPLACEMENT**') if len(i) > 1 else text
             return text
         frame['processed_errordialog'] = frame['errordialog'].apply(replace_all)
         return frame
