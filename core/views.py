@@ -7006,6 +7006,9 @@ def taskList(request):
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     nohashtagurl = removeParam(xurl, 'hashtag', mode='extensible')
+    nohashtagurl = removeParam(xurl, 'hashtag', mode='extensible')
+    noerrordialogurl = removeParam(xurl, 'hashtag', mode='errordialog')
+
     if thread!=None:
         try:
             thread.join()
@@ -7123,6 +7126,7 @@ def taskList(request):
             'xurl': xurl,
             'nosorturl': nosorturl,
             'nohashtagurl': nohashtagurl,
+            'noerrordialogurl':noerrordialogurl,
             'url_nolimit': url_nolimit,
             'display_limit': nmax,
             'flowstruct': flowstruct,

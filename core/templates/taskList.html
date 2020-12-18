@@ -122,6 +122,7 @@
                     <th>Preprocessed error message</th>
                     <th>Example</th>
                     <th>Count</th>
+                    <th>Nucleus</th>
                 </tr>
                 </thead>
             </table>
@@ -421,8 +422,9 @@
             {data: 'processed_errordialog'},
             {data: 'errordialog'},
             {   data: 'count', "render": function (data, type, full, meta) {
-                    return '<a target="_blanc" href="{{ xurl }}' + full['link'] + '">' + full['count'] + '</a>';
+                    return '<a target="_blanc" href="{{ noerrordialogurl }}' + full['link'] + '">' + full['count'] + '</a>';
                 },},
+            {data: 'sites'},
         ],
         order: [[ 2, "desc" ]]
     });

@@ -3,6 +3,7 @@ import concurrent.futures
 import logging
 import pandas as pd
 import urllib
+import re
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -12,14 +13,15 @@ class TasksErrorCodesAnalyser:
 
     def remove_stop_words(self, frame):
         def my_tokenizer(s):
-            return s.split()
+            return list(filter(None, re.split("[/ \-!?:()><]+", s)))
+
         vectorizer = CountVectorizer(tokenizer=my_tokenizer, analyzer="word", stop_words=None, preprocessor=None)
         corpus = frame['errordialog'].tolist()
         try:
             bag_of_words = vectorizer.fit_transform(corpus)
             sum_words = bag_of_words.sum(axis=0)
             words_freq = [(word, sum_words[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
-            words_freqf = [x[0] for x in filter(lambda x: x[1] < 3, words_freq)]
+            words_freqf = [x[0] for x in filter(lambda x: x[1] < 2, words_freq)]
             words_freqf = set(words_freqf)
 
             def replace_all(text):
@@ -58,10 +60,19 @@ class TasksErrorCodesAnalyser:
             # This step is needed due to issues with JSON encoding when deliver to template
             tasks_errors_groups['errordialog'] = tasks_errors_groups.\
                 apply(lambda row: self.remove_special_character(row['errordialog']), axis=1)
+            tasks_errors_groups['processed_errordialog'] = tasks_errors_groups.\
+                apply(lambda row: self.remove_special_character(row['processed_errordialog']), axis=1)
 
+            self.add_site_information(tasks_list, tasks_errors_groups)
             del tasks_errors_groups['taskid']
+            tasks_errors_groups.drop(tasks_errors_groups[tasks_errors_groups.errordialog == ''].index, inplace=True)
             tasks_errors_groups = tasks_errors_groups.to_dict('records')
         return tasks_errors_groups
+
+    def add_site_information(self, tasks_list, tasks_errors_groups):
+        tasks_to_site = {t['jeditaskid']: t['nucleus'] for t in tasks_list }
+        tasks_errors_groups['sites'] = tasks_errors_groups.apply(lambda row: ', '.join(set([tasks_to_site[task]
+                                                                              for task in row['taskid']])), axis=1)
 
     def process_error_messages(self, tasks_list):
         return self.get_messages_groups(tasks_list)
