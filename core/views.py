@@ -430,7 +430,7 @@ def initRequest(request, callselfmon = True):
         initSelfMonitor(request)
 
     ## Set default page lifetime in the http header, for the use of the front end cache
-    request.session['max_age_minutes'] = 10
+    request.session['max_age_minutes'] = 1
 
     ## Is it an https connection with a legit cert presented by the user?
     if 'SSL_CLIENT_S_DN' in request.META or 'HTTP_X_SSL_CLIENT_S_DN' in request.META:
@@ -3672,7 +3672,7 @@ def jobList(request, mode=None, param=None):
             'warning': warning,
         }
         data.update(getContextVariables(request))
-        setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
+        setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 1)
 
         _logger.debug('Cache was set: {}'.format(time.time() - start_time))
 
@@ -4522,11 +4522,16 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             file['attemptnr'] = dcfilesDict[file['fileid']]['attemptnr'] if file['fileid'] in dcfilesDict else file['attemptnr']
             file['maxattempt'] = dcfilesDict[file['fileid']]['maxattempt'] if file['fileid'] in dcfilesDict else None
 
-    if 'pilotid' in job and job['pilotid'] is not None and job['pilotid'].startswith('http'):
+    if 'pilotid' in job and job['pilotid'] and job['pilotid'].startswith('http') and '{' not in job['pilotid']:
         stdout = job['pilotid'].split('|')[0]
         stderr = stdout.replace('.out', '.err')
         stdlog = stdout.replace('.out', '.log')
         stdjdl = stdout.replace('.out', '.jdl')
+    elif len(harvesterInfo) > 0 and 'batchlog' in harvesterInfo[0]:
+        stdlog = harvesterInfo[0]['batchlog']
+        stderr = stdlog.replace('.log', '.err')
+        stdout = stdlog.replace('.log', '.out')
+        stdjdl = stdlog.replace('.log', '.jdl')
     else:
         stdout = stderr = stdlog = stdjdl = None
 
@@ -4813,7 +4818,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'rucioUserName':rucioUserName
         }
         data.update(getContextVariables(request))
-        setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
+        setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 1)
         if isEventService(job):
             response = render_to_response('jobInfoES.html', data, content_type='text/html')
         else:
@@ -7962,7 +7967,7 @@ def taskList(request):
             'idtasks': transactionKey,
         }
 
-        setCacheEntry(request, "taskList", json.dumps(data, cls=DateEncoder), 60 * 20)
+        setCacheEntry(request, "taskList", json.dumps(data, cls=DateEncoder), 60 * 1)
         if eventservice:
             response = render_to_response('taskListES.html', data, content_type='text/html')
         else:
@@ -8941,7 +8946,7 @@ def taskInfo(request, jeditaskid=0):
 
     ### Putting list of datasets to cache separately for dataTables plugin
     transKey = random.randrange(100000000)
-    setCacheEntry(request, transKey, json.dumps(dsets, cls=DateEncoder), 60 * 30, isData=True)
+    setCacheEntry(request, transKey, json.dumps(dsets, cls=DateEncoder), 60 * 1, isData=True)
 
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
@@ -9526,7 +9531,7 @@ def taskInfoNew(request, jeditaskid=0):
             'warning': warning,
         }
         data.update(getContextVariables(request))
-        cacheexpiration = 60*20 #second/minute * minutes
+        cacheexpiration = 60*1 #second/minute * minutes
         if taskrec and 'status' in taskrec:
             totaljobs = 0
             for state in jobsummary:
