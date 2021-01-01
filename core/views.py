@@ -8077,7 +8077,7 @@ def taskInfoNew(request, jeditaskid=0):
         if 'built' in data:
             ### TO DO it should be fixed
             try:
-                builtDate = datetime.strptime('2020-'+data['built'], defaultDatetimeFormat)
+                builtDate = datetime.strptime('2021-'+data['built'], defaultDatetimeFormat)
 
                 if builtDate < datetime.strptime('2020-09-28 11:00:00', defaultDatetimeFormat):
                     data = None
@@ -8108,9 +8108,6 @@ def taskInfoNew(request, jeditaskid=0):
                         doRefresh = True
                 else:
                     doRefresh = True
-        # temp solution.
-        if data is None:
-           doRefresh = True
 
         # temp turning on refresh of all tasks to rewrite cache
         # doRefresh = True
