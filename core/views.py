@@ -8092,7 +8092,7 @@ def taskInfoNew(request, jeditaskid=0):
             doRefresh = True
 
         # we check here whether task status didn't changed for both (user or crawler request)
-        if data['task'] and data['task']['status'] and data['task']['status'] in ['done', 'finished', 'failed']:
+        if data is not None and data['task'] and data['task']['status'] and data['task']['status'] in ['done', 'finished', 'failed']:
             if 'jeditaskid' in request.session['requestParams']:
                 jeditaskid = int(request.session['requestParams']['jeditaskid'])
             if jeditaskid != 0:
@@ -8108,6 +8108,9 @@ def taskInfoNew(request, jeditaskid=0):
                         doRefresh = True
                 else:
                     doRefresh = True
+        # temp solution.
+        if data is None:
+           doRefresh = True
 
         # temp turning on refresh of all tasks to rewrite cache
         # doRefresh = True
