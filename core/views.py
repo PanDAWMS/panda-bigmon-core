@@ -8077,7 +8077,7 @@ def taskInfoNew(request, jeditaskid=0):
         if 'built' in data:
             ### TO DO it should be fixed
             try:
-                builtDate = datetime.strptime('2020-'+data['built'], defaultDatetimeFormat)
+                builtDate = datetime.strptime('2021-'+data['built'], defaultDatetimeFormat)
 
                 if builtDate < datetime.strptime('2020-09-28 11:00:00', defaultDatetimeFormat):
                     data = None
@@ -8092,7 +8092,7 @@ def taskInfoNew(request, jeditaskid=0):
             doRefresh = True
 
         # we check here whether task status didn't changed for both (user or crawler request)
-        if data['task'] and data['task']['status'] and data['task']['status'] in ['done', 'finished', 'failed']:
+        if data is not None and data['task'] and data['task']['status'] and data['task']['status'] in ['done', 'finished', 'failed']:
             if 'jeditaskid' in request.session['requestParams']:
                 jeditaskid = int(request.session['requestParams']['jeditaskid'])
             if jeditaskid != 0:
