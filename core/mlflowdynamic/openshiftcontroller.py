@@ -19,11 +19,9 @@ class occlicalls:
     configuration.api_key = {"authorization": OC_TOKEN}
     configuration.api_key_prefix['authorization'] = 'Bearer'
 
-
     def __init__(self, taskid):
         self.INSTANCE = ''.join(random.choices(string.ascii_lowercase +
                                                 string.digits, k=7))
-        #self.INSTANCE = str(taskid)
         self.taskid = taskid
         self.ocp_client = DynamicClient(
             client.ApiClient(configuration=self.configuration)
@@ -32,12 +30,20 @@ class occlicalls:
     def get_instance(self):
         return self.INSTANCE
 
+    def get_deployment_status(self, name):
+        deployments = self.ocp_client.resources.get(api_version='v1', kind='DeploymentConfig')
+        response = deployments.get(name='bigpanda-mlflow-'+name[:-1], namespace=OC_NAMESPACE)
+        status = 'failed'
+        if response.get('status').get('availableReplicas', 0) > 0:
+            status = 'active'
+        if response.get('status').get('availableReplicas', 0) == 0:
+            status = 'spinning'
+        return status
 
     def openshift_actions(self):
         resp = self.openshift_action("06-deploymentconfig.yml", 'apps.openshift.io/v1', 'DeploymentConfig')
         resp = self.openshift_action("07-nginx-svc.yml", 'v1', 'Service')
         resp = self.openshift_action("08-route.yml", 'v1', 'Route')
-
 
     def openshift_action(self, yml_file_name, api_version, kind):
         with open(path.join(path.dirname(__file__), yml_file_name)) as f:
@@ -59,7 +65,6 @@ class occlicalls:
         self.create_config_map(configmap_name="nginx-redirection-{instance_path}".format(instance_path= self.INSTANCE),
                                labels=labels, data=data)
         return self.INSTANCE
-
 
     def create_config_map(
         self,
@@ -85,7 +90,6 @@ class occlicalls:
         )
         return configmap_name
 
-
     def patchConfig(self, inputObj, instance, taskid):
         if isinstance(inputObj, dict):
             inputObj.update((k, self.patchConfig(v, instance, taskid)) for k, v in inputObj.items())
@@ -96,16 +100,11 @@ class occlicalls:
             return inputObj
         elif isinstance(inputObj, str):
             if 'MLARTEFACTSVAL' in inputObj:
-                return inputObj.replace('MLARTEFACTSVAL', 'https://bigpanda.cern.ch/idds/downloadlog/?workloadid='+taskid)
+                return inputObj.replace('MLARTEFACTSVAL', 'https://bigpanda.cern.ch/idds/downloadhpometrics/?workloadid='+taskid)
             if 'randomstring' in inputObj:
                 return inputObj.replace('randomstring', instance)
             return inputObj
         else:
             # e.g. int data type - do nothing
             return inputObj
-
-
-#ocwrap = occlicalls(21492864)
-#ocwrap.register_config_map()
-#ocwrap.openshift_actions()
 

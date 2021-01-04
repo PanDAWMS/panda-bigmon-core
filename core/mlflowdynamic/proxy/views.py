@@ -78,17 +78,13 @@ class ProxyView(View):
 
     def get_upstream(self, path):
         upstream = self.upstream
-
         if not getattr(self, '_parsed_url', None):
             self._parsed_url = urlparse(upstream)
-
         if self._parsed_url.scheme not in ('http', 'https'):
             raise InvalidUpstream(ERRORS_MESSAGES['upstream-no-scheme'] %
                                   upstream)
-
         if path and upstream[-1] != '/':
             upstream += '/'
-
         return upstream
 
     @classonlymethod
@@ -132,12 +128,10 @@ class ProxyView(View):
 
         """
         request_headers = self.get_proxy_request_headers(self.request)
-
         if (self.add_remote_user and hasattr(self.request, 'user')
                 and self.request.user.is_active):
             request_headers['REMOTE_USER'] = self.request.user.get_username()
             self.log.info("REMOTE_USER set")
-
         return request_headers
 
     def get_quoted_path(self, path):
@@ -151,18 +145,13 @@ class ProxyView(View):
 
     def _created_proxy_response(self, request, path):
         request_payload = request.body
-
         self.log.debug("Request headers: %s", self.request_headers)
-
         path = self.get_quoted_path(path)
-
         request_url = self.get_upstream(path) + path
         self.log.debug("Request URL: %s", request_url)
-
         if request.GET:
             request_url += '?' + self.get_encoded_query_params()
             self.log.debug("Request URL: %s", request_url)
-
         try:
             proxy_response = self.http.urlopen(request.method,
                                                request_url,
@@ -221,7 +210,6 @@ class ProxyView(View):
 
         response = get_django_response(proxy_response,
                                        strict_cookies=self.strict_cookies)
-
         self.log.debug("RESPONSE RETURNED: %s", response)
         return response
 
