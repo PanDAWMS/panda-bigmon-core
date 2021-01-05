@@ -6,7 +6,9 @@ from os import path
 from kubernetes import client, config
 from openshift.dynamic import DynamicClient
 import yaml
-import time
+import logging
+logger = logging.getLogger('bigpandamon-error')
+
 
 class occlicalls:
     TIME_OUT_FOR_QUERY = 60 * 5
@@ -39,6 +41,30 @@ class occlicalls:
         if response.get('status').get('availableReplicas', 0) == 0:
             status = 'spinning'
         return status
+
+    def remove_deployment(self, name):
+        res = None
+        try:
+            routes = self.ocp_client.resources.get(api_version='v1', kind='Route')
+            res = routes.delete(namespace=OC_NAMESPACE, label_selector='instance=' + name[:-1])
+        except Exception as e:
+            logger.error(e)
+        try:
+            service = self.ocp_client.resources.get(api_version='v1', kind='Service')
+            res = service.delete(namespace=OC_NAMESPACE, name='nginx-redirection-' + name[:-1])
+        except Exception as e:
+            logger.error(e)
+        try:
+            deployments = self.ocp_client.resources.get(api_version='v1', kind='DeploymentConfig')
+            res = deployments.delete(namespace=OC_NAMESPACE, label_selector='instance=' + name[:-1])
+        except Exception as e:
+            logger.error(e)
+        try:
+            configmap = self.ocp_client.resources.get(api_version='v1', kind='ConfigMap')
+            res = configmap.delete(namespace=OC_NAMESPACE, name='nginx-redirection-' + name[:-1])
+        except Exception as e:
+            logger.error(e)
+        return res
 
     def openshift_actions(self):
         resp = self.openshift_action("06-deploymentconfig.yml", 'apps.openshift.io/v1', 'DeploymentConfig')
