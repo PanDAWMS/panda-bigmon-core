@@ -11,7 +11,7 @@ class MLFlowCleanup(BaseTasksProvider):
 
     def processPayload(self):
         try:
-            query = "SELECT jeditaskid,INSTANCEURL FROM mlflow_containers where status='active' and spinned_at < sysdate - interval '%i' minute" \
+            query = "SELECT jeditaskid,INSTANCEURL FROM mlflow_containers where status='active' and spinned_at < sysdate - interval '%i' second" \
                     % MLFLOW_CLEANUP
             db = self.pool.acquire()
             cursor = db.cursor()
