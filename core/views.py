@@ -2671,7 +2671,7 @@ def jobList(request, mode=None, param=None):
     for key, val in request.session['requestParams'].items():
         if (key!='limit' and key!='display_limit'):
             listPar.append(key + '=' + str(val))
-    if len(listPar)>0:
+    if len(listPar) > 0:
         urlParametrs = '&'.join(listPar)+'&'
     else:
         urlParametrs = None
@@ -2728,10 +2728,11 @@ def jobList(request, mode=None, param=None):
                           'date_from=' + request.session['TFIRST'].strftime('%Y-%m-%dT%H:%M') + \
                           '&date_to=' + request.session['TLAST'].strftime('%Y-%m-%dT%H:%M')
         nodurminurl = removeParam(xurl, 'durationmin', mode='extensible')
-        print (xurl)
+        print(xurl)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
-        xurl = removeParam(nosorturl, 'mode', mode='extensible')
+        #xurl = removeParam(nosorturl, 'mode', mode='extensible')
+        xurl = nosorturl
 
         # check if there are jobs exceeding timewindow and add warning message
         if math.floor((request.session['TLAST'] - request.session['TFIRST']).total_seconds()) > LAST_N_HOURS_MAX * 3600:
