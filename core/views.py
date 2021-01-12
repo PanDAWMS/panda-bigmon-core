@@ -330,11 +330,11 @@ def setupSiteInfo(request):
     global homeCloud, objectStores, pandaSites, callCount
     callCount += 1
     if len(homeCloud) > 0 and callCount % 100 != 1 and 'refresh' not in request.session['requestParams']: return
-    sflist = ('siteid', 'site', 'status', 'cloud', 'tier', 'comment_field', 'objectstore', 'catchall', 'corepower')
+    sflist = ('siteid', 'site', 'status', 'cloud', 'tier', 'comment_field', 'objectstore', 'catchall', 'corepower','gocname')
     sites = Schedconfig.objects.filter().exclude(cloud='CMS').values(*sflist)
     for site in sites:
         pandaSites[site['siteid']] = {}
-        for f in ('siteid', 'status', 'tier', 'site', 'comment_field', 'cloud', 'corepower'):
+        for f in ('siteid', 'status', 'tier', 'site', 'comment_field', 'cloud', 'corepower', 'gocname'):
             pandaSites[site['siteid']][f] = site[f]
         homeCloud[site['siteid']] = site['cloud']
         if (site['catchall'] != None) and (
@@ -3572,9 +3572,11 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                         f['ruciodatasetname'] = dsets[0]['datasetname']
                         f['datasetname'] = dsets[0]['datasetname']
                     if job['computingsite'] in pandaSites.keys():
-                        computeSvsAtlasS = get_pq_atlas_sites()
-                        f['ddmsite'] = computeSvsAtlasS.get(job['computingsite'], "")
-
+                        if job['computingsite'] in ('CERN-P1'):
+                            f['ddmsite'] = pandaSites[job['computingsite']]['gocname']
+                        else:
+                            computeSvsAtlasS = get_pq_atlas_sites()
+                            f['ddmsite'] = computeSvsAtlasS.get(job['computingsite'], "")
                 if 'dst' in f['destinationdblocktoken']:
                     parced = f['destinationdblocktoken'].split("_")
                     f['ddmsite'] = parced[0][4:]
