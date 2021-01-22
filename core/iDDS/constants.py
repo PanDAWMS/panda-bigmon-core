@@ -23,6 +23,7 @@ class Sections:
     Main = 'main'
     Common = 'common'
     Clerk = 'clerk'
+    Marshaller = 'marshaller'
     Transformer = 'transformer'
     Transporter = 'transporter'
     Carrier = 'carrier'
@@ -46,6 +47,19 @@ class HTTP_STATUS_CODE:
     InternalError = 500
 
 
+class WorkStatus(Enum):
+    New = 0
+    Ready = 1
+    Transforming = 2
+    Finished = 3
+    SubFinished = 4
+    Failed = 5
+    Extend = 6
+    ToCancel = 7
+    Cancelling = 8
+    Cancelled = 9
+
+
 class RequestStatus(Enum):
     New = 0
     Ready = 1
@@ -64,21 +78,41 @@ class RequestLocking(Enum):
     Locking = 1
 
 
+class WorkprogressStatus(Enum):
+    New = 0
+    Ready = 1
+    Transforming = 2
+    Finished = 3
+    SubFinished = 4
+    Failed = 5
+    Extend = 6
+    ToCancel = 7
+    Cancelling = 8
+    Cancelled = 9
+
+
+class WorkprogressLocking(Enum):
+    Idle = 0
+    Locking = 1
+
+
 class RequestType(Enum):
-    Derivation = 0
+    Workflow = 0
     EventStreaming = 1
     StageIn = 2
     ActiveLearning = 3
     HyperParameterOpt = 4
+    Derivation = 5
     Other = 99
 
 
 class TransformType(Enum):
-    Derivation = 0
+    Workflow = 0
     EventStreaming = 1
     StageIn = 2
     ActiveLearning = 3
     HyperParameterOpt = 4
+    Derivation = 5
     Other = 99
 
 
@@ -146,6 +180,11 @@ class ContentStatus(Enum):
     Mapped = 7
 
 
+class ContentLocking(Enum):
+    Idle = 0
+    Locking = 1
+
+
 class GranularityType(Enum):
     File = 0
     Event = 1
@@ -160,6 +199,10 @@ class ProcessingStatus(Enum):
     Failed = 5
     Lost = 6
     Cancel = 7
+    FinishedOnStep = 8
+    FinishedOnExec = 9
+    TimeOut = 10
+    FinishedTerm = 11
 
 
 class ProcessingLocking(Enum):
