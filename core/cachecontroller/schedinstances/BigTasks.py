@@ -19,8 +19,8 @@ class BigTasks(BaseURLTasksProvider):
 
         if esTaskList:
             for task in esTaskList:
-                urlsQueue.put((self.BASIC_PRIORITY, '/task/' + str(task['jeditaskid']) + '/?version=old'))
-                urlsQueue.put((self.BASIC_PRIORITY, '/task/' + str(task['jeditaskid']) + '/?version=old&mode=nodrop'))
+                #urlsQueue.put((self.BASIC_PRIORITY, '/task/' + str(task['jeditaskid']) + '/?version=old'))
+                #urlsQueue.put((self.BASIC_PRIORITY, '/task/' + str(task['jeditaskid']) + '/?version=old&mode=nodrop'))
                 urlsQueue.put((self.BASIC_PRIORITY, '/tasknew/' + str(task['jeditaskid']) + '/'))
 
                 # cache of jobsummary and plots for tasknew page
