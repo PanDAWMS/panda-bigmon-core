@@ -7883,7 +7883,10 @@ def taskInfo(request, jeditaskid=0):
     # getting events summary for a ES tas
     eventssummary = []
     if eventservice:
-        eventssummary = event_summary_for_task(mode, query)
+        equery = copy.deepcopy(query)
+        equery['creationdate__range'] = [taskrec['creationdate']]
+        equery['creationdate__range'].append(taskrec['endtime'].strftime(defaultDatetimeFormat) if 'endtime' in taskrec and taskrec['endtime'] else datetime.now().strftime(defaultDatetimeFormat))
+        eventssummary = event_summary_for_task(mode, equery)
 
     # get sum of hs06sec grouped by status
     hs06sSum = get_hs06s_summary_for_task(jeditaskid)
