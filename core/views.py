@@ -3884,6 +3884,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
 @never_cache
 def get_job_relationships(request, pandaid=-1):
+    """
+    Getting job relationships in both directions: downstream (further retries); upstream (past retries).
+    """
     valid, response = initRequest(request)
     if not valid:
         return response
@@ -3915,7 +3918,7 @@ def get_job_relationships(request, pandaid=-1):
     countOfInvocations = []
     # look for job retries
     if 'jeditaskid' in job and job['jeditaskid'] and job['jeditaskid'] > 0:
-        if direction == 'upstream':
+        if direction == 'downstream':
             retries = []
             if not is_event_service(job):
                 retryquery = {
@@ -3925,7 +3928,7 @@ def get_job_relationships(request, pandaid=-1):
                 job_relationships.extend(JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values())
             else:
                 job_relationships = getSequentialRetries_ESupstream(job['pandaid'], job['jobsetid'], job['jeditaskid'], countOfInvocations)
-        elif direction == 'downstream':
+        elif direction == 'upstream':
             if not is_event_service(job):
                 job_relationships = getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations)
             else:
