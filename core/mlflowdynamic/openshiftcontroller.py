@@ -7,6 +7,7 @@ from kubernetes import client, config
 from openshift.dynamic import DynamicClient
 import yaml
 import logging
+import core.mlflowdynamic.MLFlowSpinner as MLFlowSpinner
 logger = logging.getLogger('bigpandamon-error')
 
 
@@ -32,12 +33,23 @@ class occlicalls:
     def get_instance(self):
         return self.INSTANCE
 
+    def check_mlflow_accepts_calls(self, name):
+        URL = MLFlowSpinner.MLFlowProxyView.upstream+name
+        check = requests.get(URL)
+        if check.status_code == 200:
+            return True
+        else:
+            return False
+
+
     def get_deployment_status(self, name):
         deployments = self.ocp_client.resources.get(api_version='v1', kind='DeploymentConfig')
         response = deployments.get(name='bigpanda-mlflow-'+name[:-1], namespace=OC_NAMESPACE)
         status = 'failed'
         if response.get('status').get('availableReplicas', 0) > 0:
             status = 'active'
+            if not self.check_mlflow_accepts_calls(name):
+                status = 'spinning'
         if response.get('status').get('availableReplicas', 0) == 0:
             status = 'spinning'
         return status
@@ -50,7 +62,7 @@ class occlicalls:
         except Exception as e:
             logger.error(e)
         try:
-            service = self.ocp_client.resources.get(api_version='v1', kind='Service')
+            service = self.ocp_client.resources.get(api_version='apps.openshift.io/v1', kind='Service')
             res = service.delete(namespace=OC_NAMESPACE, name='nginx-redirection-' + name[:-1])
         except Exception as e:
             logger.error(e)
@@ -60,7 +72,7 @@ class occlicalls:
         except Exception as e:
             logger.error(e)
         try:
-            configmap = self.ocp_client.resources.get(api_version='v1', kind='ConfigMap')
+            configmap = self.ocp_client.resources.get(api_version='apps.openshift.io/v1', kind='ConfigMap')
             res = configmap.delete(namespace=OC_NAMESPACE, name='nginx-redirection-' + name[:-1])
         except Exception as e:
             logger.error(e)
