@@ -45,7 +45,7 @@ class occlicalls:
     def remove_deployment(self, name):
         res = None
         try:
-            routes = self.ocp_client.resources.get(api_version='v1', kind='Route')
+            routes = self.ocp_client.resources.get(api_version='route.openshift.io/v1', kind='Route')
             res = routes.delete(namespace=OC_NAMESPACE, label_selector='instance=' + name[:-1])
         except Exception as e:
             logger.error(e)
@@ -55,7 +55,7 @@ class occlicalls:
         except Exception as e:
             logger.error(e)
         try:
-            deployments = self.ocp_client.resources.get(api_version='v1', kind='DeploymentConfig')
+            deployments = self.ocp_client.resources.get(api_version='apps.openshift.io/v1', kind='DeploymentConfig')
             res = deployments.delete(namespace=OC_NAMESPACE, label_selector='instance=' + name[:-1])
         except Exception as e:
             logger.error(e)
@@ -69,7 +69,7 @@ class occlicalls:
     def openshift_actions(self):
         resp = self.openshift_action("06-deploymentconfig.yml", 'apps.openshift.io/v1', 'DeploymentConfig')
         resp = self.openshift_action("07-nginx-svc.yml", 'v1', 'Service')
-        resp = self.openshift_action("08-route.yml", 'v1', 'Route')
+        resp = self.openshift_action("08-route.yml", 'route.openshift.io/v1', 'Route')
 
     def openshift_action(self, yml_file_name, api_version, kind):
         with open(path.join(path.dirname(__file__), yml_file_name)) as f:
