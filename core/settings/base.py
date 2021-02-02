@@ -229,3 +229,4 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 AUTH_USER_MODEL = 'common.BPUser'
 
 DKB_CAMPAIGN_URL = 'http://aiatlas172.cern.ch:5080/campaign/stat'
+ML_FLOW_UPSTREAM = 'https://bigpanda-mlflow.web.cern.ch/'

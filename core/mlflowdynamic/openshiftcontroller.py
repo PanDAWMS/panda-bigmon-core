@@ -7,8 +7,8 @@ from kubernetes import client, config
 from openshift.dynamic import DynamicClient
 import yaml
 import logging
-#import core.mlflowdynamic.MLFlowSpinner as MLFlowSpinner
 logger = logging.getLogger('bigpandamon-error')
+from core.settings.base import ML_FLOW_UPSTREAM
 
 
 class occlicalls:
@@ -21,7 +21,6 @@ class occlicalls:
     configuration.verify_ssl = False
     configuration.api_key = {"authorization": OC_TOKEN}
     configuration.api_key_prefix['authorization'] = 'Bearer'
-    upstream = 'https://bigpanda-mlflow.web.cern.ch/'
 
     def __init__(self, taskid):
         self.INSTANCE = ''.join(random.choices(string.ascii_lowercase +
@@ -35,7 +34,7 @@ class occlicalls:
         return self.INSTANCE
 
     def check_mlflow_accepts_calls(self, name):
-        URL = self.upstream+name
+        URL = ML_FLOW_UPSTREAM+name
         check = requests.get(URL)
         if check.status_code == 200:
             return True

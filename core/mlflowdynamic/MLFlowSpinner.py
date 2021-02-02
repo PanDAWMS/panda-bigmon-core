@@ -7,10 +7,10 @@ from django.utils.cache import patch_response_headers
 from core.mlflowdynamic.models import MLFlowContainers
 from core.mlflowdynamic.openshiftcontroller import occlicalls
 from datetime import datetime
-
+from core.settings.base import ML_FLOW_UPSTREAM
 
 class MLFlowProxyView(ProxyView):
-    upstream = 'https://bigpanda-mlflow.web.cern.ch/'
+    upstream = ML_FLOW_UPSTREAM
 
     def patch_path(self, path, taskid, instance_url):
         return path.replace(str(taskid) + "/", instance_url, 1)
