@@ -241,30 +241,14 @@
 <div class="bp-dropdown-button">
     <button class="dropdown">Go to</button>
     <div   class=" dropdown-items">
-        <a href="{% url 'jobList' %}?parentid={{ job.pandaid }}">Child jobs</a>
         {% if job.harvesterInfo %}
             <a href="{% url "harvesters" %}?pandaid={{pandaid}}&days={{ job.days_since_creation }}">Associated Harvester workers</a>
-        {% endif %}
-        {% if job.jobsetid and job.jobsetid > 0 %}
-            <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&mode=nodrop&jobsetid={{ job.jobsetid }}">Jobs for {{ job.jobsetid }} jobset</a>
-
-            {% if jobsetinfo and jobsetinfo.build  > 0  %}
-                <a href="{% url 'jobInfo' %}?jobsetid={{ job.jobsetid }}&mode=nodrop&transformation=build*">{{ jobsetinfo.build }} build jobs</a>
-            {% endif %}
-
-            {% if jobsetinfo and jobsetinfo.run  > 0 %}
-                <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&mode=nodrop&eventservice=1|3|4|5">JobSet ES jobs ({{ jobsetinfo.run }})</a>
-            {% endif %}
-
-            {% if jobsetinfo and jobsetinfo.merge  > 0 %}
-                <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&jobsetid={{ job.jobsetid }}&mode=nodrop&eventservice=esmerge">JobSet ES Merge jobs ({{ jobsetinfo.merge }})</a>
-            {% endif %}
         {% endif %}
 
         {% if inputfiles|length > 0 %}
             <a href="{% url 'jobList' %}?jeditaskid={{ inputfiles.0.jeditaskid }}&datasetid={{ inputfiles.0.datasetid }}&fileid={{ inputfiles.0.fileid }}&mode=nodrop&eventservice=1|2|4|5">Jobs for {{ inputfiles.0.fileid }} event chunk </a>
-            <a href="{% url 'jobList' %}?jeditaskid={{ inputfiles.0.jeditaskid }}&datasetid={{ inputfiles.0.datasetid }}&fileid={{ inputfiles.0.fileid }}&eventservice=1">ES jobs for {{ inputfiles.0.fileid }} event chunk </a>
-            <a href="{% url 'jobList' %}?jeditaskid={{ inputfiles.0.jeditaskid }}&datasetid={{ inputfiles.0.datasetid }}&fileid={{ inputfiles.0.fileid }}&eventservice=2">ES merge jobs for {{ inputfiles.0.fileid }} event chunk</a>
+            <a href="{% url 'jobList' %}?jeditaskid={{ inputfiles.0.jeditaskid }}&datasetid={{ inputfiles.0.datasetid }}&fileid={{ inputfiles.0.fileid }}&mode=nodrop&eventservice=1">ES jobs for {{ inputfiles.0.fileid }} event chunk </a>
+            <a href="{% url 'jobList' %}?jeditaskid={{ inputfiles.0.jeditaskid }}&datasetid={{ inputfiles.0.datasetid }}&fileid={{ inputfiles.0.fileid }}&mode=nodrop&eventservice=2">ES merge jobs for {{ inputfiles.0.fileid }} event chunk</a>
         {% endif %}
 
         {% if pandaid %}
