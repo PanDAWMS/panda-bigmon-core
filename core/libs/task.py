@@ -8,7 +8,7 @@ import numpy as np
 from datetime import datetime
 from django.db import connection
 from django.db.models import Count, Sum
-from core.common.models import JediEvents, JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality
+from core.common.models import JediEvents, JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, add_job_category, get_job_walltime, \
     job_states_count_by_param, get_tmp_table_name, parse_datetime, get_job_queuetime
@@ -17,6 +17,22 @@ from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp
 from core.settings.local import defaultDatetimeFormat
 
 _logger = logging.getLogger('bigpandamon')
+
+
+def is_event_service_task(jeditaskid):
+    """
+    Check if a task is EventService
+    :param jeditaskid: int
+    :return: eventservice: bool
+    """
+    eventservice = False
+
+    query = {'jeditaskid': jeditaskid}
+    task = list(JediTasks.objects.filter(**query).values('eventservice'))
+    if len(task) > 0 and 'eventservice' in task[0] and task[0]['eventservice'] is not None and task[0]['eventservice'] == 1:
+        eventservice = True
+
+    return eventservice
 
 
 def cleanTaskList(tasks, **kwargs):

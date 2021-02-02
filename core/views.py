@@ -110,7 +110,7 @@ from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, pa
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
-from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality
+from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
@@ -2181,7 +2181,6 @@ def jobList(request, mode=None, param=None):
 
     dkey = digkey(request)
     thread = None
-    isEventTask = False
 
     # Here we try to get data from cache
     data = getCacheEntry(request, "jobList")
@@ -2200,6 +2199,7 @@ def jobList(request, mode=None, param=None):
 
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
         return jobParamList(request)
+
     eventservice = False
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         eventservice = True
@@ -2211,6 +2211,13 @@ def jobList(request, mode=None, param=None):
         '1' in request.session['requestParams']['eventservice'] or '2' in request.session['requestParams']['eventservice'] or
         '4' in request.session['requestParams']['eventservice'] or '5' in request.session['requestParams']['eventservice']):
         eventservice = True
+    elif 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
+        try:
+            jeditaskid = int(request.session['requestParams']['jeditaskid'])
+        except:
+            jeditaskid = None
+        if jeditaskid:
+            eventservice = is_event_service_task(jeditaskid)
 
     noarchjobs = False
     if 'noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs'] == '1':
@@ -2400,10 +2407,11 @@ def jobList(request, mode=None, param=None):
         if 'jeditaskid' in job:
             taskids[job['jeditaskid']] = 1
 
+    # if ES -> nodrop by default
     dropmode = True
     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop':
         dropmode = True
-    if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'nodrop':
+    if ('mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'nodrop') or eventservice:
         dropmode = False
 
     isReturnDroppedPMerge = False
