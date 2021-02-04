@@ -3542,6 +3542,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         # Get job files. First look in JEDI datasetcontents
         _logger.info("Pulling file info")
         files.extend(Filestable4.objects.filter(pandaid=pandaid).order_by('type').values())
+        if len(files) == 0:
+            files.extend(FilestableArch.objects.filter(pandaid=pandaid).order_by('type').values())
         ninput = 0
         noutput = 0
         npseudo_input = 0
@@ -3573,7 +3575,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 f['fsizemb'] = "%0.2f" % (f['fsize'] / 1048576.)
                 dsets = JediDatasets.objects.filter(datasetid=f['datasetid']).values()
                 if len(dsets) > 0:
-                    if  f['scope']+":" in f['dataset']:
+                    if f['scope'] + ":" in f['dataset']:
                         f['datasetname'] = dsets[0]['datasetname']
                         f['ruciodatasetname'] = dsets[0]['datasetname'].split(":")[1]
                     else:
@@ -3599,8 +3601,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     fileSummary += ', size: ' + inputFilesSize + ' (MB)'
                 fileSummary += '; '
             fileSummary = fileSummary[:-2]
-        if len(files) == 0:
-            files.extend(FilestableArch.objects.filter(pandaid=pandaid).order_by('type').values())
+
         if len(files) > 0:
             for f in files:
                 if 'creationdate' not in f: f['creationdate'] = f['modificationtime']

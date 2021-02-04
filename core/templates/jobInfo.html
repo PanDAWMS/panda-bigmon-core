@@ -590,7 +590,7 @@ function buildFilesTable(data) {
             sDefaultContent: "-",
             className: 'num',
             "render": function(data, type, row, meta) {
-                if (data && data.length > 0) {
+                if ((data !== undefined) && (data !== null)) {
                   return data
                 }
                 else {
@@ -603,7 +603,7 @@ function buildFilesTable(data) {
             sDefaultContent: "-",
             className: 'num',
             "render": function(data, type, row, meta) {
-                if (data && data.length > 0) {
+                if ((data !== undefined) && (data !== null)) {
                   return data
                 }
                 else {
