@@ -426,3 +426,27 @@ def get_job_queuetime(job):
         queueutime = (starttime-creationtime).total_seconds()
 
     return queueutime
+
+
+def convert_bytes(n_bytes, output_unit='MB'):
+    """
+    Convert bytes to KB, MB etc
+    :param n_bytes: int
+    :param output_unit: str
+    :return: output
+    """
+    output = 0
+    multipliers_dict = {
+        'KB': 1.0/1000,
+        'MB': 1.0/1000000,
+        'GB': 1.0/1000000000,
+        'TB': 1.0/1000000000000,
+        'KiB': 1.0/1024,
+        'MiB': 1.0/1024/1024,
+        'GiB': 1.0/1024/1024/1024,
+        'TiB': 1.0/1024/1024/1024/1024,
+    }
+    if output_unit in multipliers_dict.keys():
+        output = n_bytes*multipliers_dict[output_unit]
+
+    return output
