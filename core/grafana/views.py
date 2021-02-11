@@ -445,6 +445,8 @@ def grafana_api_es(request):
             group_by = groupby_params[0]
             if len(groupby_params) > 1:
                 split_series = groupby_params[1]
+            else:
+                split_series = group_by
 
     result = []
 

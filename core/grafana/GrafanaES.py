@@ -142,7 +142,7 @@ class Grafana(object):
         else:
             prodsourcelabel = query_object.prodsourcelabel
 
-        query_base = """{"search_type":"query_then_fetch","ignore_unavailable":true,"index":["%s-*"]}\n""" % (self._get_index(query_object.table))
+        query_base = """{"search_type":"query_then_fetch","ignore_unavailable":true,"index":["%s*"]}\n""" % (self._get_index(query_object.table))
         query_date = """{"size":0,"query":{"bool":{"filter":[{"range":{"metadata.timestamp":{"gte":%s,"lte":%s,"format":"epoch_millis"}}},""" % (startMillisec, endMillisec)
         query_string = """{"query_string":{"analyze_wildcard":true,"query":"data.dst_experiment_site:%s AND data.dst_cloud:%s AND data.dst_country:%s AND data.dst_federation:%s AND data.adcactivity:%s AND data.resourcesreporting:%s AND data.actualcorecount:%s AND data.resource_type:%s AND data.workinggroup:%s AND data.inputfiletype:%s AND data.eventservice:%s AND data.inputfileproject:%s AND data.outputproject:%s AND data.jobstatus:%s AND data.computingsite:%s AND data.gshare:%s AND data.dst_tier:%s AND data.processingtype:%s AND ((NOT _exists_:data.nucleus) OR (data.nucleus:%s)) AND ((NOT _exists_:data.error_category) OR data.error_category:%s) AND ((NOT _exists_:data.prodsourcelabel) OR (data.prodsourcelabel:%s))"}}]}},""" % \
                        (dst_experiment_site,
@@ -152,8 +152,8 @@ class Grafana(object):
                        dst_tier, processingtype, nucleus, error_category, prodsourcelabel)
 
         query_agg_query_time_template = """"aggs":{"time":{"date_histogram":{"interval":"%s","field":"metadata.timestamp","min_doc_count":0,"extended_bounds":{"min":%s,"max":%s},"format":"epoch_millis"},%s}}""" % (query_object.bin, startMillisec, endMillisec, '%s')
-        query_agg_func_template = """"aggs":{"%s":{"%s":{"field":"data.%s","missing":0,"script":{"inline":"_value / 1"}}}""" % (
-             query_object.field, query_object.agg_func, query_object.field)
+        query_agg_func_template = self._get_complete_metrics_function(query_object.field)
+
         query_agg_template = self._get_complete_agg_function(query_object.grouping, query_agg_query_time_template, query_agg_func_template)
         query = query_base + query_date + query_string + query_agg_template + "\n"
 
@@ -164,7 +164,7 @@ class Grafana(object):
         request_url = "%s/%s" % (self.grafana_proxy, datasource_url)
         request_query = self.get_query(query)
         response = post(request_url, headers=self.grafana_headers, data=request_query)
-
+        print(request_query)
         if response.ok:
             result = loads(response.text)['responses'][0]['aggregations']
 
@@ -187,4 +187,29 @@ class Grafana(object):
         if "time" in groupby:
            temp_agg_temp = temp_agg_temp % (agg_time_template)
         temp_agg_temp = temp_agg_temp % (agg_func_template)
+        return temp_agg_temp
+
+    def _get_complete_metrics_function(self, input_fields, agg_func='sum'):
+        agg_func_template = """"%s":{"%s":{"field":"data.%s","missing":0,"script":{"inline":"_value / 1"}}}"""
+        def fill_agg_terms(nested_temp, term, nested_func='%s'):
+            nested_temp = nested_temp % (term, agg_func, term, nested_func)
+            return nested_temp
+        temp_agg_temp = agg_func_template
+        quotes = ''
+        if ',' in input_fields:
+            fields = input_fields.split(',')
+
+            for field in fields:
+                if field != fields[-1]:
+                    quotes = quotes + '}'
+                    temp_agg_temp = temp_agg_temp + ",%s"
+                    temp_agg_temp = fill_agg_terms(temp_agg_temp, field, agg_func_template)
+                else:
+                    quotes = quotes + '}'
+                    temp_agg_temp = temp_agg_temp + "%s"
+                    temp_agg_temp = fill_agg_terms(temp_agg_temp, field, quotes)
+            temp_agg_temp = """"aggs":{""" + temp_agg_temp
+        else:
+            temp_agg_temp = """"aggs":{"%s":{"%s":{"field":"data.%s","missing":0,"script":{"inline":"_value / 1"}}}"""% (input_fields, agg_func, input_fields)
+
         return temp_agg_temp

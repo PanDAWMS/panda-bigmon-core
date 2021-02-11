@@ -198,7 +198,7 @@ class Query(object):
                         newgroups += group + ','
                 newgroups = newgroups[:-1]
             else:
-                newgroups = '"' + str(request.session['requestParams']['groupby']) + '"'
+                newgroups = str(request.session['requestParams']['groupby'])
             self.grouping = newgroups
         else:
             self.grouping = "time,adcactivity"
