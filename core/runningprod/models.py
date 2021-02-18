@@ -42,6 +42,8 @@ class RunningProdTasksModel(models.Model):
     neventsrunning = models.BigIntegerField(db_column='NRUNNINGEVENTS')
     jumbo = models.IntegerField(null=True, db_column='JUMBO', blank=True)
     container_name = models.BigIntegerField(db_column='CONTAINER_NAME')
+    stepid = models.IntegerField(null=True, db_column='STEPID', blank=True)
+    sliceid = models.IntegerField(null=True, db_column='SLICEID', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODTASKS"'
 
@@ -78,6 +80,8 @@ class FrozenProdTasksModel(models.Model):
     modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
     jumbo = models.IntegerField(null=True, db_column='JUMBO', blank=True)
     container_name = models.BigIntegerField(db_column='CONTAINER_NAME')
+    stepid = models.IntegerField(null=True, db_column='STEPID', blank=True)
+    sliceid = models.IntegerField(null=True, db_column='SLICEID', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."FROZENPRODTASKS"'
 

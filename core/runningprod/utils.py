@@ -22,8 +22,13 @@ def clean_running_task_list(task_list):
         task['neventsused'] = task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
         task['neventstobeused'] = task['neventstobeused'] if 'neventstobeused' in task and task['neventstobeused'] is not None else 0
         task['neventsrunning'] = task['neventsrunning'] if 'neventsrunning' in task and task['neventsrunning'] is not None else 0
-        task['neventswaiting'] = task['neventstobeused']
         task['neventsdone'] = task['neventsused']
+        task['neventswaiting'] = task['neventstobeused']
+        # check if running + waiting + done = total
+        if task['neventsdone'] + task['neventsrunning'] + task['neventswaiting'] > task['nevents'] and \
+                task['neventsdone'] + task['neventswaiting'] == task['nevents']:
+            task['neventswaiting'] -= task['neventsrunning']
+
         task['slots'] = task['slots'] if task['slots'] else 0
         task['aslots'] = task['aslots'] if task['aslots'] else 0
 
