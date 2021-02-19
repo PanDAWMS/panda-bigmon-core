@@ -605,7 +605,8 @@ $(document).ready(function () {
               "data": "reqid",
               sDefaultContent: "",
               "render": function ( data, type, full, meta ) {
-                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/reqtask/' + full['reqid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                  let slice = (full['sliceid'] && full['sliceid'] > 0) ? '#inputList' + full['sliceid'] : '' ;
+                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/' + full['reqid'] + '/' + slice + '" target="_blank"><i class="fi-link"></i></a>'
               }
           },
           {
@@ -666,7 +667,7 @@ $(document).ready(function () {
 
           },
           {
-              "data": "neventsused",
+              "data": "neventsdone",
               sDefaultContent: "",
               className: 'num',
               render: $.fn.dataTable.render.number( ',', '.')
@@ -678,7 +679,7 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
-              "data": "neventstobeused",
+              "data": "neventswaiting",
               sDefaultContent: "---",
               className: 'num',
               render: $.fn.dataTable.render.number( ',', '.')
@@ -853,7 +854,8 @@ $(document).ready(function () {
               "data": "reqid",
               sDefaultContent: "",
               "render": function ( data, type, full, meta ) {
-                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/reqtask/' + full['reqid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                  let slice = (full['sliceid'] && full['sliceid'] > 0) ? '#inputList' + full['sliceid'] : '' ;
+                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/' + full['reqid'] + '/' + slice + '" target="_blank"><i class="fi-link"></i></a>'
               }
           },
           {
@@ -906,7 +908,7 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
-              "data": "neventsused",
+              "data": "neventsdone",
               sDefaultContent: "",
               className: 'num',
               render: $.fn.dataTable.render.number( ',', '.')
@@ -918,7 +920,7 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
-              "data": "neventstobeused",
+              "data": "neventswaiting",
               sDefaultContent: "---",
               className: 'num',
               render: $.fn.dataTable.render.number( ',', '.')
@@ -1078,7 +1080,8 @@ $(document).ready(function () {
               "data": "reqid",
               sDefaultContent: "",
               "render": function ( data, type, full, meta ) {
-                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/reqtask/' + full['reqid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                  let slice = (full['sliceid'] && full['sliceid'] > 0) ? '#inputList' + full['sliceid'] : '' ;
+                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/' + full['reqid'] + '/' + slice + '" target="_blank"><i class="fi-link"></i></a>'
               }
           },
           {
@@ -1138,7 +1141,7 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
-              "data": "neventsused",
+              "data": "neventsdone",
               sDefaultContent: "",
               className: 'num',
               render: $.fn.dataTable.render.number( ',', '.')
@@ -1150,7 +1153,7 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
-              "data": "neventstobeused",
+              "data": "neventswaiting",
               sDefaultContent: "---",
               className: 'num',
               render: $.fn.dataTable.render.number( ',', '.')

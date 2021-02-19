@@ -115,24 +115,31 @@
         {% endif %}
 
         {% if error_summary_table and error_summary_table|length > 0 %}
-            <b>Errors summary table:</b>
-            <table class="table table-striped table-bordered" id="error_summary_table" style="clear: both;">
-                <thead>
-                <tr>
+            <div class="card bp-container-simple secondary" id="container_est">
+            <div class="card-divider"><p>Errors summary table:</p></div>
+            <div class="card-section">
+              <table class="data-table left-aligned" id="error_summary_table">
+                  <thead>
+                  <tr>
                     <th>Preprocessed error message</th>
                     <th>Example</th>
                     <th>Count</th>
                     <th>Nucleus</th>
-                </tr>
-                </thead>
-            </table>
+                  </tr>
+                  </thead>
+                  <tbody></tbody>
+              </table>
+            </div>
+            </div>
         {% endif %}
 
         {% if datasetstage and datasetstage|length > 3 %}
-            <b>Datasets staging information for preselected tasks:</b>
-            <table class="table table-striped table-bordered" id="stagingdatasetstable" style="clear: both;">
-                <thead>
-                <tr>
+            <div class="card bp-container-simple secondary" id="container_sdt">
+            <div class="card-divider"><p>Datasets staging information for preselected tasks:</p></div>
+            <div class="card-section">
+              <table class="data-table left-aligned" id="stagingdatasetstable">
+                  <thead>
+                  <tr>
                     <th>Task ID</th>
                     <th>Source RSE</th>
                     <th>Dataset</th>
@@ -143,9 +150,12 @@
                     <th>End time</th>
                     <th>Update time</th>
                     <th>Rse</th>
-                </tr>
-                </thead>
-            </table>
+                  </tr>
+                  </thead>
+                  <tbody></tbody>
+              </table>
+            </div>
+            </div>
         {% endif %}
 
         <div id="div-plot">
@@ -419,22 +429,20 @@
         $('#error_summary_table').dataTable({
         data: jsonData,
         columns: [
-            {data: 'processed_errordialog'},
-            {data: 'errordialog'},
-            {   data: 'count', "render": function (data, type, full, meta) {
-                    return '<a target="_blanc" href="{{ noerrordialogurl }}' + full['link'] + '">' + full['count'] + '</a>';
-                },},
+            {data: 'processed_errordialog', render: function (data, type, full, meta) {
+                return data.replace(/\_/g, '_<wbr>');
+              },},
+            {data: 'errordialog', render: function (data, type, full, meta) {
+                return data.replace(/\_/g, '_<wbr>');
+              },},
+            {data: 'count', render: function (data, type, full, meta) {
+                return '<a target="_blanc" href="{{ noerrordialogurl }}' + full['link'] + '">' + full['count'] + '</a>';
+              },},
             {data: 'sites'},
         ],
-        order: [[ 2, "desc" ]]
+        order: [[ 2, "desc" ]],
+        scrollX: true,
     });
-
-
-
-
-
-
-
   });
 
   </script>
