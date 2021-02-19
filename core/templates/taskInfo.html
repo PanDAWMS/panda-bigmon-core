@@ -93,7 +93,7 @@
             <td><a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a></td>
         {% endif %}
         {% if task.deftreqid %}
-            <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/"
+            <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
                    target="_blank">{{ task.deftreqid }}</a></td>
         {% endif %}
         {% if task.reqid != task.jeditaskid and not task.deftreqid %}

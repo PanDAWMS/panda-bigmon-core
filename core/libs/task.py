@@ -1079,3 +1079,20 @@ def get_dataset_locality(jeditaskid):
             rse_dict[item['jeditaskid']][item['datasetid']].append({'rse': item['rse'], 'timestamp': item['timestamp']})
 
     return rse_dict
+
+
+def get_prod_slice_by_taskid(jeditaskid):
+    jsquery = """
+        SELECT tasks.taskid, tasks.PR_ID, tasks.STEP_ID, datasets.SLICE from ATLAS_DEFT.T_PRODUCTION_TASK tasks 
+        JOIN ATLAS_DEFT.T_PRODUCTION_STEP steps on tasks.step_id = steps.step_id 
+        JOIN ATLAS_DEFT.T_INPUT_DATASET datasets ON datasets.IND_ID=steps.IND_ID  
+        where tasks.taskid=:taskid
+    """
+    cur = connection.cursor()
+    cur.execute(jsquery, {'taskid': jeditaskid})
+    task_prod_info = cur.fetchall()
+    cur.close()
+    slice = None
+    if task_prod_info:
+        slice = task_prod_info[0][3]
+    return slice

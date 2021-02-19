@@ -426,8 +426,9 @@
             <td><a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
                    target="_blank">{{ task.jeditaskid }}</a></td>
             {% if task.deftreqid %}
-                <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/"
-                       target="_blank">{{ task.deftreqid }}</a></td> {% endif %}
+                <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
+                       target="_blank">{{ task.deftreqid }}</a></td>
+            {% endif %}
             {% if task.reqid != task.jeditaskid and not task.deftreqid %}
                 <td>{{ task.reqid }}</td>{% endif %}
             <td>{{ task.tasktype }}</td>

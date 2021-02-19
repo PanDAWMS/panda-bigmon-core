@@ -110,7 +110,8 @@ from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, pa
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
-from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task
+from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
+    get_prod_slice_by_taskid
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
@@ -7980,6 +7981,7 @@ def taskInfo(request, jeditaskid=0):
             taskrec['currenttotevhs06'] = int(hs06sSum['total']) if 'total' in hs06sSum else None
 
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
+        taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid)
 
     # datetime type -> str in order to avoid encoding errors on template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
@@ -8307,6 +8309,8 @@ def taskInfoNew(request, jeditaskid=0):
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
         taskrec['accsum'] = accsum['accsum'] if 'accsum' in accsum else 0
         taskrec['naccsum'] = naccsum['naccsum'] if 'naccsum' in naccsum else 0
+        taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid)
+
 
     # datetime type -> str in order to avoid encoding cached on template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
