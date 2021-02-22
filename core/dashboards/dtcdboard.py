@@ -176,9 +176,15 @@ def getDTCSubmissionHist(request):
         summarytableDict[dsdata['source_rse']] = dictSE
         selectCampaign.append({"name": dsdata['campaign'], "value": dsdata['campaign'], "selected": "0"})
         selectSource.append({"name": dsdata['source_rse'], "value": dsdata['source_rse'], "selected": "0"})
-        detailsTable.append({'campaign': dsdata['campaign'], 'pr_id': dsdata['pr_id'], 'taskid': dsdata['taskid'], 'status': dsdata['status'], 'total_files': dsdata['total_files'],
-                             'staged_files': dsdata['staged_files'], 'progress': int(round(dsdata['staged_files'] * 100.0 / dsdata['total_files'])),
-                             'source_rse': dsdata['source_rse'], 'elapsedtime': epltime, 'start_time': dsdata['start_time'], 'rse': dsdata['rse'], 'update_time': dsdata['update_time'], 'processingtype': dsdata['processingtype']})
+        detailsTable.append({'campaign': dsdata['campaign'], 'pr_id': dsdata['pr_id'], 'taskid': dsdata['taskid'],
+                             'status': dsdata['status'], 'total_files': dsdata['total_files'],
+                             'staged_files': dsdata['staged_files'],
+                             'progress':
+                                 int(round(dsdata['staged_files'] * 100.0 / dsdata['total_files'])),
+                             'source_rse': dsdata['source_rse'], 'elapsedtime': epltime,
+                             'start_time': dsdata['start_time'], 'rse': dsdata['rse'], 'update_time':
+                                 dsdata['update_time'], 'update_time_sort': dsdata['update_time_sort'],
+                             'processingtype': dsdata['processingtype']})
 
     #For uniquiness
     selectSource = list({v['name']: v for v in selectSource}.values())
@@ -233,14 +239,11 @@ def getDTCSubmissionHist(request):
     finalvalue["selecttime"] = selectTime
     finalvalue["selectcampaign"] = selectCampaign
     finalvalue["detailstable"] = detailsTable
-
-
     response = HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
     return response
 
 
 def getStagingData(request):
-
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
     timewindow = query['modificationtime__castdate__range']
 
@@ -311,5 +314,11 @@ def getStagingData(request):
         # Sort out requests by request on February 19, 2020
         if dataset['STATUS'] in ('staging', 'queued', 'done'):
             dataset = {k.lower(): v for k, v in dataset.items()}
+
+            if dataset.get('update_time'):
+                dataset['update_time_sort'] = int(dataset['update_time'].total_seconds())
+            else:
+                dataset['update_time_sort'] = None
+
             data[dataset['taskid']] = dataset
     return data

@@ -12,10 +12,11 @@
   <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
 {% endblock %}
 {% block js_head_page_library %}
-  <script src="{% static 'js/humanize.min.js' %}"></script>
-  <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
-  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+
   <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 {% endblock %}
 
@@ -351,7 +352,12 @@
                             return '<a href="https://rucio-ui.cern.ch/rule?rule_id='+full['rse']+'">'+full['rse']+'</a>';
                         },
                     },
-                    { data: 'update_time' },
+                    {
+                      "render": function(data, type, full, meta) {
+                        if(type == 'display')  return full['update_time'];
+                            return full['update_time_sort'];
+                        },
+                    },
                 ],
                 initComplete: function () {
                     this.api().columns(3).every( function () {
@@ -393,9 +399,6 @@
                 }
 
             });
-
-
-
         };
         $scope.selectedTime = 24;
         $scope.dateFrom = '';
