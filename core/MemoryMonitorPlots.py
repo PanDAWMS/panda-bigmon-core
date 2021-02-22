@@ -375,6 +375,8 @@ def getPrMonPlotsData(request, pandaid=-1):
             tmp_dict['str'] += '{} sockets, '.format(sum_data['HW']['cpu']['Sockets']) if 'Sockets' in sum_data['HW']['cpu'] else ''
             tmp_dict['str'] += '{} cores/socket, '.format(sum_data['HW']['cpu']['CoresPerSocket']) if 'CoresPerSocket' in sum_data['HW']['cpu'] else ''
             tmp_dict['str'] += '{} threads/core, '.format(sum_data['HW']['cpu']['ThreadsPerCore']) if 'ThreadsPerCore' in sum_data['HW']['cpu'] else ''
+            if 'mem' in sum_data['HW'] and 'MemTotal' in sum_data['HW']['mem']:
+                tmp_dict['str'] += '{}GB of memory in total, '.format(round(sum_data['HW']['mem']['MemTotal']/1024./1024., 2)) if isinstance(sum_data['HW']['mem']['MemTotal'], int) else ''
             tmp_dict['str'] = tmp_dict['str'][:-2] if tmp_dict['str'].endswith(', ') else tmp_dict['str']
             hw_info.append(tmp_dict)
         if 'gpu' in sum_data['HW']:
@@ -389,9 +391,16 @@ def getPrMonPlotsData(request, pandaid=-1):
         # sort HW info list
         hw_info = sorted(hw_info, key=lambda x: x['type'])
 
+    # extraction prmon info, e.g. version
+    prmon_info = ''
+    if len(sum_data) > 0 and 'prmon' in sum_data:
+        for k in sum_data['prmon']:
+            prmon_info += ', {} {}'.format(k.lower(), str(sum_data['prmon'][k]))
+
     data = {
         'plotsDict': plots_data,
         'hwInfo': hw_info,
+        'prmonInfo': prmon_info,
         'error': msg,
     }
 

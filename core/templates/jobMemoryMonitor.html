@@ -60,7 +60,8 @@
       </div>
     </div>
   </div>
-  <p>Represented data metrics were collected using <a href="https://github.com/HSF/prmon">prmon</a> program.</p>
+  <p>Represented data metrics were collected using <a href="https://github.com/HSF/prmon">prmon</a> program
+    <span ng-bind-html="prmon.prmon_info"></span></p>
 {% else %}
   <p>
   <div class="callout alert" data-closable>
@@ -84,6 +85,7 @@
     $scope.prmon.is_data_loaded = false;
     $scope.prmon.plot_data = {};
     $scope.prmon.hw_info = [];
+    $scope.prmon.prmon_info = '';
     $scope.prmon.message = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
     $scope.prmon.url_path = "{% url 'getPrMonPlotsData' pandaid %}";
 
@@ -97,6 +99,9 @@
               if (response.data.hwInfo.length > 0) {
                 $scope.prmon.hw_info = response.data.hwInfo;
                 $scope.prmon.is_data_loaded = true;
+              }
+              if (response.data.prmonInfo.length > 0) {
+                $scope.prmon.prmon_info = $sce.trustAsHtml(response.data.prmonInfo);
               }
               $scope.prmon.plot_data = response.data.plotsDict;
               charts = buildPlots($scope.prmon.plot_data);
