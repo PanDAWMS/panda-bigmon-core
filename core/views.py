@@ -4263,23 +4263,23 @@ def userInfo(request, user=''):
     else:
         ## Jobs
         limit = 5000
-        query = setupView(request, hours=72, limit=limit, querytype='job')
+        query, extra_query_str, LAST_N_HOURS_MAX = setupView(request, hours=72, limit=limit, querytype='job', wildCardExt=True)
         jobs = []
         values = 'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'container_name', 'cmtconfig'
 
         if userQueryJobs is None:
             query['produsername__icontains'] = user.strip()
-            jobs.extend(Jobsdefined4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsactive4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobswaiting4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsarchived4.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobsdefined4.objects.filter(**query).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobsactive4.objects.filter(**query).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobswaiting4.objects.filter(**query).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
             if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
-                jobs.extend(Jobsarchived.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+                jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
         else:
-            jobs.extend(Jobsdefined4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsactive4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobswaiting4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsarchived4.objects.filter(**query).filter(userQueryJobs)[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobsdefined4.objects.filter(**query).filter(userQueryJobs).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobsactive4.objects.filter(**query).filter(userQueryJobs).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobswaiting4.objects.filter(**query).filter(userQueryJobs).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
+            jobs.extend(Jobsarchived4.objects.filter(**query).filter(userQueryJobs).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
 
 
             # Here we go to an archive. Separation OR condition is done to enforce Oracle to perform indexed search.
@@ -4287,13 +4287,13 @@ def userInfo(request, user=''):
                 query['produsername__startswith'] = user.strip() #.filter(userQueryJobs)
                 archjobs = []
                 # This two filters again to force Oracle search
-                archjobs.extend(Jobsarchived.objects.filter(**query).filter(Q(produsername=user.strip()))[:request.session['JOB_LIMIT']].values(*values))
+                archjobs.extend(Jobsarchived.objects.filter(**query).filter(Q(produsername=user.strip())).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
                 if len(archjobs) > 0:
                     jobs = jobs+archjobs
                 elif len(fullname) > 0:
                     #del query['produsername']
                     query['produsername__startswith'] = fullname
-                    jobs.extend(Jobsarchived.objects.filter(**query)[:request.session['JOB_LIMIT']].values(*values))
+                    jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
 
         jobs = cleanJobList(request, jobs, doAddMeta=False)
 
