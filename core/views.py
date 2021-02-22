@@ -9485,11 +9485,10 @@ def esatlasPandaLoggerJson(request):
         max_retries=10,
         retry_on_timeout=True,
     )
-    today = time.strftime("%Y.%m.%d")
 
     jedi = {}
-    logindexjedi = 'atlas_jedilogs-'
-    res = es.search(index=logindexjedi + str(today), stored_fields=['jediTaskID', 'type', 'logLevel'], body={
+    logindexjedi = 'atlas_jedilogs-*'
+    res = es.search(index=logindexjedi, stored_fields=['jediTaskID', 'type', 'logLevel'], body={
         "aggs": {
             "jediTaskID": {
                 "terms": {"field": "jediTaskID", "size": 500},
@@ -9507,6 +9506,7 @@ def esatlasPandaLoggerJson(request):
         }
     })
     print('query completed')
+
     jdListFinal = []
     for agg in res['aggregations']['jediTaskID']['buckets']:
         jdlist = {}
