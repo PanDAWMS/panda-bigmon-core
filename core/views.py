@@ -106,7 +106,7 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_r
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_event_status_summary, get_file_info, get_job_queuetime, job_states_count_by_param, \
-    add_job_category, convert_bytes
+    add_job_category, convert_bytes, get_tmp_table_name
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
@@ -6763,7 +6763,8 @@ def taskList(request):
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
 
-    tmpTableName = 'ATLAS_PANDABIGMON.TMP_IDS1Debug'
+    tmpTableName = get_tmp_table_name()
+
     if 'jeditaskid__in' in query:
         taskl = query['jeditaskid__in']
         if len(taskl) > 20:
