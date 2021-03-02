@@ -44,7 +44,10 @@ class occlicalls:
 
     def get_deployment_status(self, name):
         deployments = self.ocp_client.resources.get(api_version='v1', kind='DeploymentConfig')
-        response = deployments.get(name='bigpanda-mlflow-'+name[:-1], namespace=OC_NAMESPACE)
+        try:
+            response = deployments.get(name='bigpanda-mlflow-'+name[:-1], namespace=OC_NAMESPACE)
+        except:
+            return 'failed'
         status = 'failed'
         if response.get('status').get('availableReplicas', 0) > 0:
             status = 'active'
