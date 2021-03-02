@@ -11663,7 +11663,7 @@ def getJobStatusLog(request, pandaid = None):
 
 
 @never_cache
-def getTaskStatusLog(request, jeditaskid = None):
+def getTaskStatusLog(request, jeditaskid=None):
     """
     A view to asynchronously load task states changes history
     :param request:
@@ -11699,8 +11699,11 @@ def getTaskStatusLog(request, jeditaskid = None):
 
     for sl in statusLog:
         sl['modiftime_str'] = sl[mtimeparam].strftime(defaultDatetimeFormat) if sl[mtimeparam] is not None else "---"
-    response = render_to_response('taskStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    if is_json_request(request):
+        response = HttpResponse(json.dumps(statusLog, cls=DateEncoder), content_type='application/json')
+    else:
+        response = render_to_response('taskStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
 
