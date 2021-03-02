@@ -383,10 +383,23 @@
       </div>
   {% endif %}
 
-  <div id="div-statuslog"></div>
+  <div id="div-statuslog" ng-app="taskInfoAppSL" ng-controller="TaskStatusLogController">
+    <div class="card bp-container-simple secondary ng-hide" ng-hide="status_log.is_hidden">
+    <div class="card-divider"><p>Task status history</p></div>
+    <div class="card-section">
+      <p ng-bind-html="status_log.message"></p>
+      <div class="c3-chart-block" id="tsl_plot"></div>
+      <table class="data-table left-aligned nowrap" id="taskstatuslogtable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  </div>
+
 
   <div id="plots" data-ng-controller="jobConsumptionPlotsController">
-  <div class="card bp-container-simple secondary" ng-hide="taskinfo.jc_plots.selection.is_hidden">
+  <div class="card bp-container-simple secondary ng-hide" ng-hide="taskinfo.jc_plots.selection.is_hidden">
     <div class="card-divider"><p>Job consumption plots:</p></div>
     <div class="card-section">
 
@@ -704,6 +717,116 @@
         };
     });
 
+    app.controller('TaskStatusLogController', function ($scope, $http, $sce) {
+        $scope.status_log = {
+          message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+          data: [],
+          is_hidden: true,
+          data_table: "",
+          plot_data: {
+            columns: [],
+            ext: {
+              xs: {},
+              size: [getWidth() - 40, 400],
+              colors: "task_states",
+              labels: ['Time', 'Task attempt'],
+            },
+          },
+          plot: "",
+        };
+        $scope.status_log.get = function () {
+            $http({
+                    url: "{% url 'gettaskstatuslog' jeditaskid %}",
+                    method: "GET",
+                    params: {'json':1}
+                }
+            ).then(function success(response) {
+                $scope.status_log.message = "";
+                $scope.status_log.data = angular.fromJson(response.data);
+                if ($scope.status_log.data.length > 0) {
+                  $scope.status_log.buildPlot();
+                  $scope.status_log.buildDataTable();
+                }
+                else {
+                  $scope.status_log.message = $sce.trustAsHtml("No data received :(");
+                }
+              },
+              function error(response) {
+                console.log(response);
+                $scope.status_log.message = $sce.trustAsHtml('Failed to load data :( ');
+              }
+            );
+        };
+        $scope.status_log.buildDataTable = function () {
+            $scope.status_log.data_table = $('#taskstatuslogtable').dataTable({
+                "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+                "paging": true,
+                "scrollX": true,
+                "aaSorting": [[1,'asc']],
+                "data": $scope.status_log.data,
+                "aoColumns": [
+                    {
+                        title: "Attempt",
+                        data: "attemptnr",
+                        sDefaultContent: "-",
+                    },
+                    {
+                        title: "Time",
+                        data: "modiftime_str",
+                        sDefaultContent: "-",
+                    },
+                    {
+                        title: "Status",
+                        data: "status",
+                        sDefaultContent: "-",
+                        className: 'state',
+                    },
+                    {
+                        title: "Duration, d:h:m:s",
+                        data: "duration",
+                        sDefaultContent: "-",
+                    },
+                    {
+                        title: "Modification host",
+                        data: "modificationhost",
+                        sDefaultContent: "-",
+                    },
+                    {
+                        title: "Reason",
+                        data: "reason",
+                        sDefaultContent: "-",
+                    },
+
+                ],
+                "createdRow": function ( row, data, index ) {
+                    $('td', row).eq(2).addClass(data['status'] + '_fill');
+                }
+              })
+        };
+        $scope.status_log.buildPlot = function() {
+            if ($scope.status_log.data.length > 0) {
+                let tmp_obj = {};
+                $scope.status_log.plot_data.columns.push(['x', ]);
+                $scope.status_log.data.forEach((item) => {
+                    tmp_obj[item.status] = [item.status, ];
+                    $scope.status_log.plot_data.columns[0].push(item.modiftime_str);
+                });
+                $scope.status_log.data.forEach((item) => {
+                  Object.keys(tmp_obj).forEach((key) => {
+                    (item.status === key) ? tmp_obj[key].push(item.attemptnr+1) : tmp_obj[key].push(0);
+                  });
+                });
+                Object.keys(tmp_obj).forEach((key) => {
+                  $scope.status_log.plot_data.columns.push([key, ...tmp_obj[key]]);
+                })
+            }
+            $scope.status_log.plot = draw_steps($scope.status_log.plot_data.columns, 'tsl_plot', 'Task statuses transition', $scope.status_log.plot_data.ext);
+        };
+        $scope.status_log.toggle = function() {
+            $scope.status_log.is_hidden = false;
+            $scope.status_log.get();
+        };
+    });
 
     $(document).ready(function () {
         var dataset_list = {{ datasets|safe }};
@@ -721,10 +844,17 @@ function togglePlots() {
   });
 }
 
+function loadStatusLog(jeditaskid) {
+    let scope = angular.element(document.getElementById('div-statuslog')).scope();
+    scope.$apply(function(){
+        scope.status_log.toggle();
+    });
+}
+
 
 function killtasks(taskID, action) {
-    var message = ''
-    if (action == 0)
+    var message = '';
+    if (action === 0)
         message = 'Are you sure you want to FINISH this task?'
     else
         message = 'Are you sure you want to ABORT this task?'
@@ -744,19 +874,6 @@ function killtasks(taskID, action) {
     } else {
         // Do nothing!
     }
-}
-
-function loadStatusLog(jeditaskid) {
-
-    $('#div-statuslog').html("<img src='{% static "images/load.gif" %}'>  ");
-    $.ajax({
-        url: '{% url 'gettaskstatuslog' jeditaskid %}',
-        data: '',
-        async: true,
-    }).done(function (response) {
-        $('#div-statuslog').html(response);
-    });
-
 }
 
 function buildDatasetsTable(data) {

@@ -1,4 +1,32 @@
 
+
+var task_state_colors =  {
+    'done': '#165616',
+    'finished': '#207f20',
+    'running': '#47D147',
+    'waiting': '#c7c7c7',
+    'assigning': '#099999',
+    'exhausted': '#FF9933',
+    'paused': '#808080',
+    'throttled': '#FF9933',
+    'pending': '#deb900',
+    'ready': '#099999',
+    'registered': '#4a4a4a',
+    'scouting': '#addf80',
+    'scouted': '#addf80',
+    'toabort': '#ff9896',
+    'aborting': '#FF8174',
+    'aborted': '#ff0000',
+    'failed': '#ff0000',
+    'broken': '#b22222',
+    'passed': '#1a1a1a',
+    'defined': '#2174bb',
+    'remaining': '#2174bb',
+    'rerefine': '#4a4a4a',
+    'prepared': '#4a4a4a',
+};
+
+
 // Replace the confusing G (for Giga) with  the more recognizable B (for Billion) in default SI prefixes.
 function hFormat(num) {
     var siFormat = d3.format(",.3s");
@@ -885,6 +913,141 @@ function draw_multi_line(data, divid, title, ext) {
         },
         padding: {
           right: 20,
+        },
+    });
+    return chart
+}
+
+function draw_scatter(data, divid, title, ext) {
+    let width = 500;
+    let height = 200;
+    if (ext.size) {width = ext.size[0]; height=ext.size[1]}
+    let colors = {};
+    if (ext.colors) {
+        if (typeof ext.colors === 'string' || ext.colors instanceof String)  {colors = task_state_colors;}
+        else if (typeof ext.colors === 'object') {colors = ext.colors;}
+    }
+    let axis_labels = ['', ''];
+    if (ext.labels) {axis_labels = ext.labels;}
+    var chart = c3.generate({
+        bindto: '#' + divid,
+        data: {
+            xs: ext.xs,
+            xFormat: '%Y-%m-%d %H:%M:%S',
+            columns: data,
+            type: 'scatter',
+            colors: colors,
+        },
+        point: {
+            r: 5,
+        },
+        title: {
+            text: title,
+        },
+        axis: {
+            x: {
+                type: 'timeseries',
+                tick: {
+                    format: '%Y-%m-%d %H:%M:%S',
+                    rotate: -30,
+                    // count: width/10,
+                },
+                label: {
+                    text: axis_labels[0],
+                    position: 'outer-right'
+                },
+            },
+            y: {
+                // min: 0,
+                padding: {
+                  bottom: 0,
+                },
+                label: {
+                  text: axis_labels[1],
+                  position: 'outer-middle',
+                }
+            }
+        },
+        transition: {
+            duration: 0
+        },
+        tooltip: {
+            show: true,
+        },
+        size: {
+            width: width,
+            height: height,
+        },
+        padding: {
+          right: 20,
+          left: 100,
+        },
+    });
+    return chart
+}
+
+function draw_steps(data, divid, title, ext) {
+    let width = 500;
+    let height = 200;
+    if (ext.size) {width = ext.size[0]; height=ext.size[1]}
+    let colors = {};
+    if (ext.colors) {
+        if (typeof ext.colors === 'string' || ext.colors instanceof String)  {colors = task_state_colors;}
+        else if (typeof ext.colors === 'object') {colors = ext.colors;}
+    }
+    let axis_labels = ['', ''];
+    if (ext.labels) {axis_labels = ext.labels;}
+    var chart = c3.generate({
+        bindto: '#' + divid,
+        data: {
+            x: data[0][0],
+            xFormat: '%Y-%m-%d %H:%M:%S',
+            columns: data,
+            type: 'area-step',
+            colors: colors,
+        },
+        line: {
+            step: {
+                type: 'step-before',
+            }
+        },
+        title: {
+            text: title,
+        },
+        axis: {
+            x: {
+                type: 'timeseries',
+                tick: {
+                    format: '%Y-%m-%d %H:%M:%S',
+                    rotate: -30,
+                    // count: width/10,
+                },
+                label: {
+                    text: axis_labels[0],
+                    position: 'outer-right'
+                },
+            },
+            y: {
+                // min: 0,
+                padding: {
+                  bottom: 0,
+                },
+                label: {
+                  text: axis_labels[1],
+                  position: 'outer-middle',
+                }
+            }
+        },
+        transition: {
+            duration: 0
+        },
+        size: {
+            width: width,
+            height: height,
+        },
+        padding: {
+          right: 20,
+          left: 100,
         },
     });
     return chart
