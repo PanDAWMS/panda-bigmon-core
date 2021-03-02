@@ -62,7 +62,7 @@ class occlicalls:
         except Exception as e:
             logger.error(e)
         try:
-            service = self.ocp_client.resources.get(api_version='apps.openshift.io/v1', kind='Service')
+            service = self.ocp_client.resources.get(api_version='v1', kind='Service')
             res = service.delete(namespace=OC_NAMESPACE, name='nginx-redirection-' + name[:-1])
         except Exception as e:
             logger.error(e)
