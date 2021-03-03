@@ -96,14 +96,14 @@ class MLFlowProxyView(ProxyView):
                                       {"message": "Requested task is not HPO, please correct", "status": "error"},
                                       content_type='text/html')
         (entry, created) = self.get_mlflow_container_for_task(taskid)
-        if entry.status == "error":
+        if entry.status == "failed":
             response = render_to_response('banner.html', {"message": "Error during spinning up the container. Try later.",
                                                       "status": "error"}, content_type='text/html')
         if entry.status == "spinning":
             response = render_to_response('banner.html',
                                       {"message": "Spinning up an MLFlow containter. Please refresh in 30 seconds. After MLFlow container spins up it might take additional time while input data becomes available. If case of slow data transer, refresh page additionally in few minutes.", "status": "spinning"},
                                       content_type='text/html')
-        if entry.status == "active":
+        if entry.status in "active":
             response = self.process_proxy(request, path, taskid, entry.instanceurl)
         patch_response_headers(response, cache_timeout=0)
         return response
