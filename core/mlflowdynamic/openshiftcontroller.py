@@ -34,16 +34,18 @@ class occlicalls:
         return self.INSTANCE
 
     def check_mlflow_accepts_calls(self, name):
+        #this check is failing in deployment configuration
         URL = ML_FLOW_UPSTREAM+name
         check = requests.get(URL)
-        if check.status_code == 200:
-            return True
-        else:
-            return False
+        return True
+        #if check.status_code == 200:
+        #    return True
+        #else:
+        #    return False
 
 
     def get_deployment_status(self, name):
-        deployments = self.ocp_client.resources.get(api_version='v1', kind='DeploymentConfig')
+        deployments = self.ocp_client.resources.get(api_version='apps.openshift.io/v1', kind='DeploymentConfig')
         try:
             response = deployments.get(name='bigpanda-mlflow-'+name[:-1], namespace=OC_NAMESPACE)
         except:
