@@ -1,5 +1,6 @@
 from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch
 import math, random, datetime
+import numpy as np
 from django.db import connection
 from dateutil.parser import parse
 from datetime import datetime
@@ -450,3 +451,54 @@ def convert_bytes(n_bytes, output_unit='MB'):
         output = n_bytes*multipliers_dict[output_unit]
 
     return output
+
+
+def split_into_intervals(input_data, **kwargs):
+    """
+    Split numeric values list into intervals for sumd
+    :param input_data: list
+    :return: output_data: list of dicts
+    """
+    N_BIN_MAX = 20
+    minstep = 1
+    if 'minstep' in kwargs and kwargs['minstep'] and isinstance(kwargs['minstep'], int):
+        minstep = kwargs['minstep']
+
+    output_data = []
+    data_dict = {}
+    if isinstance(input_data, list):
+        for v in input_data:
+            if v not in data_dict:
+                data_dict[v] = 0
+            data_dict[v] += 1
+
+    kys = list(data_dict.keys())
+
+    # find range bounds
+    rangebounds = []
+    if min(kys) == 0:
+        output_data.append({'kname': '0-0', 'kvalue': data_dict[0]})
+        dstep = minstep if (max(kys) - min(kys) + 1) / N_BIN_MAX < minstep else int(round_to_n((max(kys) - min(kys) + 1) / N_BIN_MAX, 1))
+        rangebounds.extend([lb for lb in range(min(kys) + 1, max(kys) + dstep, dstep)])
+    else:
+        dstep = minstep if (max(kys) - min(kys)) / N_BIN_MAX < minstep else int(round_to_n((max(kys) - min(kys)) / N_BIN_MAX, 1))
+        rangebounds.extend([lb - 1 for lb in range(min(kys), max(kys) + dstep, dstep)])
+    if len(rangebounds) == 1:
+        rangebounds.append(rangebounds[0] + dstep)
+
+    # split list into calculated ranges
+    bins, ranges = np.histogram(input_data, bins=rangebounds)
+    for i, bin in enumerate(bins):
+        if bin != 0:
+            output_data.append({'kname': str(ranges[i]) + '-' + str(ranges[i + 1]), 'kvalue': bin})
+
+    return output_data
+
+
+def round_to_n(x, n):
+    if not x:
+        return 0
+    power = - int(math.floor(math.log10(abs(x)))) + (n - 1)
+    factor = (10 ** power)
+
+    return round(x * factor) / factor
