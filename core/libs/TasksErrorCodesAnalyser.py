@@ -40,7 +40,7 @@ class TasksErrorCodesAnalyser:
         return error_dialog
 
     def remove_special_character(self, input_str):
-        bad_chars = ['"', ':', "'"]
+        bad_chars = ['"', ':', "'", '\n']
         processed_string = ''.join((filter(lambda i: i not in bad_chars, input_str)))
         return processed_string
 
