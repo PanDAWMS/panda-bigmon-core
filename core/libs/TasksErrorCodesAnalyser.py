@@ -21,7 +21,7 @@ class TasksErrorCodesAnalyser:
             bag_of_words = vectorizer.fit_transform(corpus)
             sum_words = bag_of_words.sum(axis=0)
             words_freq = [(word, sum_words[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
-            words_freqf = [x[0] for x in filter(lambda x: x[1] < 2, words_freq)]
+            words_freqf = [x[0] for x in filter(lambda x: x[1] < 2 or isinstance(x[0], float), words_freq)]
             words_freqf = set(words_freqf)
 
             def replace_all(text):
@@ -53,8 +53,6 @@ class TasksErrorCodesAnalyser:
             tasks_errors_groups = tasks_errors_frame.groupby('processed_errordialog').\
                 agg({'taskid': lambda x: list(x), 'errordialog': 'first'}).reset_index()
             tasks_errors_groups['count'] = tasks_errors_groups.apply(lambda row: len(row['taskid']), axis=1)
-            tasks_errors_groups['link'] = tasks_errors_groups.\
-                apply(lambda row: self.encode_into_link(row['processed_errordialog']), axis=1)
             tasks_errors_groups = tasks_errors_groups.sort_values(by=['count'], ascending=False)
 
             # This step is needed due to issues with JSON encoding when deliver to template
@@ -64,6 +62,8 @@ class TasksErrorCodesAnalyser:
                 apply(lambda row: self.remove_special_character(row['processed_errordialog']), axis=1)
 
             self.add_site_information(tasks_list, tasks_errors_groups)
+            tasks_errors_groups['link'] = tasks_errors_groups.apply(lambda row: 'jeditaskid=' + '|'.join([str(taskid) for taskid in row['taskid']]), axis=1)
+
             del tasks_errors_groups['taskid']
             tasks_errors_groups.drop(tasks_errors_groups[tasks_errors_groups.errordialog == ''].index, inplace=True)
             tasks_errors_groups = tasks_errors_groups.to_dict('records')
