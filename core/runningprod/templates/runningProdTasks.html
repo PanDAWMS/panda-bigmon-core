@@ -255,8 +255,8 @@
             <th>Evts done</th>
             <th>Evts running</th>
             <th>Evts waiting</th>
+            <th>Evts failed</th>
             <th>%</th>
-            <th>Failed files</th>
             <th>Priority</th>
             {% if requestParams.preset == 'DPD' %}
                 <th>pTag</th>
@@ -318,6 +318,7 @@ $(document).ready(function () {
           'done': '#207f20',
           'running': '#34a934',
           'waiting': '#c7c7c7',
+          'failed': '#d62728',
         };
         charts[item] = draw_bar_cat(plots_dict[pgroup][item]['data'], item, plots_dict[pgroup][item]['title'], options)
       }
@@ -356,6 +357,7 @@ $(document).ready(function () {
             'registered': '#4a4a4a',
             'scouting': '#47D147',
             'aborting': '#ff9896',
+            'failed': '#d62728',
             'broken': '#b22222',
             'passed': '#1a1a1a',
             'defined': '#2174bb',
@@ -685,14 +687,15 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
+              "data": "neventsfailed",
+              sDefaultContent: "",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
               "data": "percentage",
               sDefaultContent: "",
               className: 'num'
-          },
-          {
-              "data": "nfilesfailed",
-              sDefaultContent: "---",
-              className: 'num',
           },
           {
               "data": "priority",
@@ -926,13 +929,14 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
-              "data": "percentage",
+              "data": "neventsfailed",
               sDefaultContent: "",
               className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
           },
           {
-              "data": "nfilesfailed",
-              sDefaultContent: "---",
+              "data": "percentage",
+              sDefaultContent: "",
               className: 'num',
           },
           {
@@ -1159,14 +1163,15 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
+              "data": "neventsfailed",
+              sDefaultContent: "",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
               "data": "percentage",
               sDefaultContent: "",
               className: 'num'
-          },
-          {
-              "data": "nfilesfailed",
-              sDefaultContent: "---",
-              className: 'num',
           },
           {
               "data": "priority",
