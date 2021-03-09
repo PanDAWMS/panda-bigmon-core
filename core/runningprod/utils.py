@@ -4,6 +4,7 @@ Utils for runningProdTasks module
 """
 
 import numpy as np
+import math
 from datetime import datetime
 from django.db import transaction, DatabaseError
 from core.runningprod.models import ProdNeventsHistory
@@ -21,13 +22,16 @@ def clean_running_task_list(task_list):
         task['nevents'] = task['nevents'] if task['nevents'] is not None else 0
         task['neventsused'] = task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
         task['neventstobeused'] = task['neventstobeused'] if 'neventstobeused' in task and task['neventstobeused'] is not None else 0
-        task['neventsrunning'] = task['neventsrunning'] if 'neventsrunning' in task and task['neventsrunning'] is not None else 0
-        task['neventsdone'] = task['neventsused']
-        task['neventswaiting'] = task['neventstobeused']
-        # check if running + waiting + done = total
-        if task['neventsdone'] + task['neventsrunning'] + task['neventswaiting'] > task['nevents'] and \
-                task['neventsdone'] + task['neventswaiting'] == task['nevents']:
-            task['neventswaiting'] -= task['neventsrunning']
+        if task['neventsrunning'] + task['neventsfinished'] + task['neventsfailed'] + task['neventswaiting'] == task['nevents']:
+            task['neventsdone'] = task['neventsfinished']
+        else:
+            task['neventsdone'] = task['neventsused']
+            task['neventswaiting'] = task['neventstobeused']
+
+        # # check if running + waiting + done = total
+        # if task['neventsdone'] + task['neventsrunning'] + task['neventswaiting'] > task['nevents'] and \
+        #         task['neventsdone'] + task['neventswaiting'] == task['nevents']:
+        #     task['neventswaiting'] -= task['neventsrunning']
 
         task['slots'] = task['slots'] if task['slots'] else 0
         task['aslots'] = task['aslots'] if task['aslots'] else 0
@@ -55,7 +59,7 @@ def clean_running_task_list(task_list):
             outputtypes = task['outputdatasettype'].split(',')
         else:
             outputtypes = []
-        if len(outputtypes) > 0:
+        if len(outputtypes) > 0 and len(outputtypes[0]) > 0:
             clean_outputtypes = []
             for outputtype in outputtypes:
                 task['outputtypes'] += outputtype.split('_')[1] + ' ' if '_' in outputtype else ''
@@ -67,6 +71,9 @@ def clean_running_task_list(task_list):
                 clean_outputtypes.append(cot)
             clean_outputtypes = list(set(clean_outputtypes))
             task['outputdatatype'] = clean_outputtypes[0] if len(clean_outputtypes) == 1 else ' '.join(clean_outputtypes)
+        else:
+            task['outputtypes'] = 'N/A'
+            task['outputdatatype'] = 'N/A'
 
         if 'hashtags' in task and len(task['hashtags']) > 1:
             task['hashtaglist'] = []
@@ -83,7 +90,7 @@ def prepare_plots(task_list, productiontype=''):
     :param productiontype: str
     :return:
     """
-    ev_states = ['waiting', 'running', 'done']
+    ev_states = ['waiting', 'running', 'done', 'failed']
     plots_groups = {
         'main': ['nevents_sum_status', 'age_hist'],
         'main_preset': [],
@@ -157,6 +164,7 @@ def prepare_plots(task_list, productiontype=''):
                     'waiting': 0,
                     'running': 0,
                     'done': 0,
+                    'failed': 0,
                 }
             }
         },

@@ -106,7 +106,7 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_r
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_event_status_summary, get_file_info, get_job_queuetime, job_states_count_by_param, \
-    add_job_category, convert_bytes, get_tmp_table_name
+    add_job_category, convert_bytes, get_tmp_table_name, split_into_intervals
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
@@ -943,13 +943,21 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             if durationrange[0] == '0' and durationrange[1] == '0':
                 extraQueryString += ' AND (  (endtime is NULL and starttime is null) ) '
             else:
-                extraQueryString += """ 
+                extraQueryString += """ AND (
             (endtime is not NULL and starttime is not null 
             and (endtime - starttime) * 24 * 60 > {} and (endtime - starttime) * 24 * 60 < {} ) 
             or 
             (endtime is NULL and starttime is not null 
             and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 > {} and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 < {} ) 
             ) """.format(str(durationrange[0]), str(durationrange[1]), str(durationrange[0]), str(durationrange[1]))
+        elif param == 'neventsrange' and request.session['requestParams'][param]:
+            try:
+                neventsrange = request.session['requestParams'][param].split('-')
+            except:
+                continue
+            if neventsrange and len(neventsrange) == 2:
+                query['nevents__gte'] = neventsrange[0]
+                query['nevents__lte'] = neventsrange[1]
         elif param == 'errormessage':
             errfield_map_dict = {}
             for errcode in errorcodelist:
@@ -1545,6 +1553,12 @@ def jobSummaryDict(request, jobs, fieldlist=None):
 
     numeric_fields = ('attemptnr', 'jeditaskid', 'taskid', 'noutputdatafiles', 'actualcorecount', 'corecount',
                       'reqid', 'jobsetid',)
+    numeric_intervals = ('durationmin', 'nevents',)
+
+    agg_fields = {
+        'nevents': 'neventsrange'
+    }
+
     for job in jobs:
         for f in flist:
             if f == 'pilotversion':
@@ -1609,7 +1623,10 @@ def jobSummaryDict(request, jobs, fieldlist=None):
     suml = []
     for f in sumd:
         itemd = {}
-        itemd['field'] = f
+        if f in agg_fields:
+            itemd['field'] = agg_fields[f]
+        else:
+            itemd['field'] = f
         iteml = []
         kys = list(sumd[f].keys())
         if f == 'minramcount':
@@ -1623,26 +1640,17 @@ def jobSummaryDict(request, jobs, fieldlist=None):
             for ky in newvalues:
                 iteml.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
             iteml = sorted(iteml, key=lambda x: int(x['kname'].split("-")[0]))
-        elif f == 'durationmin':
+        elif f in numeric_intervals:
             if len(kys) == 1 and kys[0] == 0:
                 iteml.append({'kname': '0-0', 'kvalue': sumd[f][0]})
             else:
-                nbinsmax = 20
-                minstep = 10
-                rangebounds = []
-                if min(kys) == 0:
-                    iteml.append({'kname': '0-0', 'kvalue': sumd[f][0]})
-                    dstep = minstep if (max(kys)-min(kys)+1)/nbinsmax < minstep else int((max(kys)-min(kys)+1)/nbinsmax)
-                    rangebounds.extend([lb for lb in range(min(kys)+1, max(kys)+dstep, dstep)])
+                if f == 'nevents':
+                    minstep = 1000
+                elif f == 'durationmin':
+                    minstep = 10
                 else:
-                    dstep = minstep if (max(kys)-min(kys))/nbinsmax < minstep else int((max(kys)-min(kys))/nbinsmax)
-                    rangebounds.extend([lb-1 for lb in range(min(kys), max(kys)+dstep, dstep)])
-                if len(rangebounds) == 1:
-                    rangebounds.append(rangebounds[0]+dstep)
-                bins, ranges = np.histogram([job['durationmin'] for job in jobs if 'durationmin' in job], bins=rangebounds)
-                for i, bin in enumerate(bins):
-                    iteml.append({'kname': str(ranges[i]) + '-' + str(ranges[i+1]), 'kvalue':bin})
-
+                    minstep = 1
+                iteml.extend(split_into_intervals([job[f] for job in jobs if f in job], minstep=minstep))
         else:
             if f in ('priorityrange', 'jobsetrange'):
                 skys = []
@@ -2606,7 +2614,7 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     # Sort in order to see the most important tasks
-    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount', 'noutputdatafiles', 'actualcorecount', 'schedulerid', 'pilotversion', 'computingelement', 'container_name'])
+    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount', 'noutputdatafiles', 'actualcorecount', 'schedulerid', 'pilotversion', 'computingelement', 'container_name', 'nevents'])
     if sumd:
         for item in sumd:
             if item['field'] == 'jeditaskid':
