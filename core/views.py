@@ -4172,7 +4172,10 @@ def userInfo(request, user=''):
     tasks = getTaskScoutingInfo(tasks, ntasksmax)
 
     # consumed cpu hours stats for a user
-    panda_user_name = fullname if fullname != '' else user.strip()
+    if len(tasks) > 0:
+        panda_user_name = list(set([t['username'] for t in tasks]))[0]
+    else:
+        panda_user_name = fullname if fullname != '' else user.strip()
     userstats = get_panda_user_stats(panda_user_name)
 
     # getting most relevant links based on visit statistics
@@ -4386,7 +4389,7 @@ def userInfo(request, user=''):
                 'requestParams': request.session['requestParams'],
                 'xurl': xurl,
                 'nosorturl': nosorturl,
-                'user': user,
+                'user': panda_user_name,
                 'sumd': sumd,
                 'jobsumd': jobsumd,
                 'jobList': jobs[:njobsmax],
