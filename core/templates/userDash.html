@@ -1,7 +1,7 @@
 {% extends "_base_core.html" %}
 {% load static %}{% load common_tags %}{% load humanize %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA user {{ user }} {% endblock %}
-{% block subtitle %}PanDA user <b>{{ user }}</b> dashboard{% endblock %}
+{% block subtitle %}PanDA user <b>{{ user }}</b>{% endblock %}
 {% block time_window %}
     Modification time window: <span class="time-window-range">{{ timerange.0 }}</span>
     - <span class="time-window-range">{{ timerange.1 }}</span> UTC
@@ -339,7 +339,7 @@ function buildTasksTable(data) {
         },
       },
       {
-        title: "Max PSS/core, MB",
+        title: "Max PSS/core, GB",
         data: "job_maxpss_per_actualcorecount",
         sDefaultContent: "-",
         className: 'num',

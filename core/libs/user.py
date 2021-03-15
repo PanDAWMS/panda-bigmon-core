@@ -109,23 +109,23 @@ def humanize_metrics(metrics):
             'unit': '%',
         },
         'maxpss_per_actualcorecount': {
-            'title': 'Average maxPSS/core',
+            'title': 'Median maxPSS/core',
             'unit': 'GB',
         },
         'walltime': {
-            'title': 'Average jobs walltime',
+            'title': 'Median jobs walltime',
             'unit': 'hours',
         },
         'queuetime': {
-            'title': 'Average jobs time to start',
+            'title': 'Median jobs time to start',
             'unit': 'hours',
         },
         'efficiency': {
-            'title': ' Average jobs efficiency',
+            'title': ' Median jobs efficiency',
             'unit': '%',
         },
         'attemptnr': {
-            'title': ' Average number of job attempts',
+            'title': ' Median number of job attempts',
             'unit': '',
         },
         'cpua7': {
@@ -145,7 +145,7 @@ def humanize_metrics(metrics):
         },
         'time': {
             'warning': [24, 36],
-            'alert': [48, 1000000]
+            'alert': [36, 1000000]
         },
         'walltime': {
             'warning': [1, 2],
@@ -174,7 +174,7 @@ def humanize_metrics(metrics):
         if md in metrics and metrics[md]:
             metric_defs[md]['class'] = []
             if 'pss' in md:
-                metric_defs[md]['value'] = round(metrics[md]/1024., 2)
+                metric_defs[md]['value'] = round(metrics[md], 2)
             elif 'efficiency' in md:
                 metric_defs[md]['value'] = round(metrics[md] * 100., 2)
             else:
