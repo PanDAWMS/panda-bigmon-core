@@ -636,7 +636,7 @@ def datasets_for_task(jeditaskid):
                     dsinfo['nfilesfinished'] += int(ds['nfilesfinished'])
                     dsinfo['nfilesfailed'] += int(ds['nfilesfailed'])
             elif ds['type'] in ('output', ):
-                dsinfo['neventsOutput'] += int(ds['nevents'])
+                dsinfo['neventsOutput'] += int(ds['nevents']) if ds['nevents'] and ds['nevents'] > 0 else 0
 
         dsets = newdslist
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())

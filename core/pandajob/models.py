@@ -343,32 +343,31 @@ class PandaJob(models.Model):
 
 class Jobsactive4(PandaJob):
     class Meta:
-#        managed = False
         db_table = u'jobsactive4'
+
 
 class Jobsarchived(PandaJob):
     class Meta:
-#        managed = False
         db_table = u'jobsarchived'
+
 
 class Jobsarchived4(PandaJob):
     class Meta:
-#        managed = False
         db_table = u'jobsarchived4'
+
 
 class Jobsdefined4(PandaJob):
     class Meta:
-#        managed = False
         db_table = u'jobsdefined4'
 
     # __getitem__
     def __getitem__(self, name):
-#        return super(HTCondorJob, self).__getattr__(name)
+        # return super(HTCondorJob, self).__getattr__(name)
         return self.__dict__[name]
+
 
 class Jobswaiting4(PandaJob):
     class Meta:
-#        managed = False
         db_table = u'jobswaiting4'
 
 

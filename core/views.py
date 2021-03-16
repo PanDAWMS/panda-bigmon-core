@@ -7085,7 +7085,7 @@ def taskList(request):
         ## Add info to the json dump if the request is for a single task
         if len(tasks) == 1:
             id = tasks[0]['jeditaskid']
-            dsquery = {'jeditaskid': id, 'type__in': ['input', 'output']}
+            dsquery = {'jeditaskid': id, 'type__in': ['pseudo_input', 'input', 'output']}
             dsets = JediDatasets.objects.filter(**dsquery).values()
             dslist = []
             for ds in dsets:
@@ -7094,7 +7094,7 @@ def taskList(request):
         else:
             for task in tasks:
                 id = task['jeditaskid']
-                dsquery = {'jeditaskid': id, 'type__in': ['input', 'output']}
+                dsquery = {'jeditaskid': id, 'type__in': ['pseudo_input', 'input', 'output']}
                 dsets = JediDatasets.objects.filter(**dsquery).values()
                 dslist = []
                 for ds in dsets:
@@ -8218,6 +8218,8 @@ def taskInfoNew(request, jeditaskid=0):
         taskrec['totev'] = dsinfo['neventsTot']
         taskrec['totevproc'] = dsinfo['neventsUsedTot']
         taskrec['totevhs06'] = dsinfo['neventsTot'] * taskrec['cputime'] if (taskrec['cputime'] is not None and dsinfo['neventsTot'] > 0) else None
+        taskrec['totevoutput'] = dsinfo['neventsOutput'] if 'neventsOutput' in dsinfo else 0
+
     # get input and output containers
     inctrs = []
     outctrs = []

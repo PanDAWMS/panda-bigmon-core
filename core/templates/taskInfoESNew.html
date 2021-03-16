@@ -51,10 +51,11 @@
               <th> Detailed JEDI status</th>
           {% endif %}
           {% if task.dsinfo %}
-              <th> Nevents <br> <span class='finished'>processed</span><br> <span class='finished'>used</span></th>
+              <th> N input events <br> <span class='finished'>processed</span><br> <span class='finished'>used</span></th>
+              <th> N output events </th>
               <th style="white-space: nowrap">HS06*sec<br> Expected<br> Total<br><span
                       class='done'>done</span><br> <span class='failed'>failed</span></th>
-              <th> Ninputfiles <br> <span class='finished'>finished</span> <br> <span class='failed'>failed</span></th>
+              <th> N input files <br> <span class='finished'>finished</span> <br> <span class='failed'>failed</span></th>
           {% endif %}
           <th>Time stamps:
             <br><span class="defined">created</span>
@@ -102,6 +103,7 @@
               <td> {{ task.totev | intcomma }} <br>
                   <span class='finished'>{{ task.totevproc_evst | intcomma }} ({{ task.pcttotevproc_evst|floatformat }}%)</span><br>
                   <span class='finished'>{{ task.totevproc | intcomma }} ({{ task.pctfinished|floatformat }}%)</span></td>
+              <td> {{ task.totevoutput | intcomma }} </td>
               <td style="text-align:right;"> {{ task.totevhs06 | intcomma }}
                   <br>{{ task.currenttotevhs06 | intcomma }}
                   <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
