@@ -589,7 +589,16 @@ def datasets_for_task(jeditaskid):
     :return: dsinfo: dict
     """
     dsets = []
-    dsinfo = {}
+    dsinfo = {
+        'nfiles': 0,
+        'nfilesfinished': 0,
+        'nfilesfailed': 0,
+        'pctfinished': 0.0,
+        'pctfailed': 0,
+        'neventsTot': 0,
+        'neventsUsedTot': 0,
+        'neventsOutput': 0,
+    }
 
     dsquery = {
         'jeditaskid': jeditaskid,
@@ -598,16 +607,10 @@ def datasets_for_task(jeditaskid):
         'jeditaskid', 'datasetid', 'datasetname', 'containername', 'type', 'masterid', 'streamname', 'status',
         'storagetoken', 'nevents', 'neventsused', 'neventstobeused', 'nfiles', 'nfilesfinished', 'nfilesfailed'
     )
-    dsets.extend(JediDatasets.objects.filter(**dsquery).values())
+    dsets.extend(JediDatasets.objects.filter(**dsquery).values(*values))
 
-    nfiles = 0
-    nfinished = 0
-    nfailed = 0
-    neventsTot = 0
-    neventsUsedTot = 0
     scope = ''
     newdslist = []
-
     if len(dsets) > 0:
         for ds in dsets:
             if len(ds['datasetname']) > 0:
@@ -619,32 +622,27 @@ def datasets_for_task(jeditaskid):
                     scope = str(scope).split(':')[0]
                 ds['scope'] = scope
             newdslist.append(ds)
-            if ds['type'] not in ['input', 'pseudo_input']:
-                continue
-            if ds['masterid']:
-                continue
-            if not ds['nevents'] is None and int(ds['nevents']) > 0:
-                neventsTot += int(ds['nevents'])
-            if not ds['neventsused'] is None and int(ds['neventsused']) > 0:
-                neventsUsedTot += int(ds['neventsused'])
 
-            if int(ds['nfiles']) > 0:
-                ds['percentfinished'] = int(100. * int(ds['nfilesfinished']) / int(ds['nfiles']))
-                nfiles += int(ds['nfiles'])
-                nfinished += int(ds['nfilesfinished'])
-                nfailed += int(ds['nfilesfailed'])
+            # input primary datasets
+            if ds['type'] in ['input', 'pseudo_input'] and ds['masterid'] is None:
+                if not ds['nevents'] is None and int(ds['nevents']) > 0:
+                    dsinfo['neventsTot'] += int(ds['nevents'])
+                if not ds['neventsused'] is None and int(ds['neventsused']) > 0:
+                    dsinfo['neventsUsedTot'] += int(ds['neventsused'])
+
+                if int(ds['nfiles']) > 0:
+                    ds['percentfinished'] = int(100. * int(ds['nfilesfinished']) / int(ds['nfiles']))
+                    dsinfo['nfiles'] += int(ds['nfiles'])
+                    dsinfo['nfilesfinished'] += int(ds['nfilesfinished'])
+                    dsinfo['nfilesfailed'] += int(ds['nfilesfailed'])
+            elif ds['type'] in ('output', ):
+                dsinfo['neventsOutput'] += int(ds['nevents'])
 
         dsets = newdslist
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
 
-    dsinfo['nfiles'] = nfiles
-    dsinfo['nfilesfinished'] = nfinished
-    dsinfo['nfilesfailed'] = nfailed
-    dsinfo['pctfinished'] = round(100. * nfinished / nfiles, 2) if nfiles > 0 else 0
-    dsinfo['pctfailed'] = round(100. * nfailed / nfiles, 2) if nfiles > 0 else 0
-
-    dsinfo['neventsTot'] = neventsTot
-    dsinfo['neventsUsedTot'] = neventsUsedTot
+        dsinfo['pctfinished'] = round(100.*dsinfo['nfilesfinished']/dsinfo['nfiles'], 2) if dsinfo['nfiles'] > 0 else 0
+        dsinfo['pctfailed'] = round(100.*dsinfo['nfilesfailed']/dsinfo['nfiles'], 2) if dsinfo['nfiles'] > 0 else 0
 
     return dsets, dsinfo
 

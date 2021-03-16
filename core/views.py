@@ -7925,6 +7925,7 @@ def taskInfo(request, jeditaskid=0):
         taskrec['totevproc'] = dsinfo['neventsUsedTot']
         taskrec['pctfinished'] = (100 * taskrec['totevproc'] / taskrec['totev']) if (taskrec['totev'] > 0) else ''
         taskrec['totevhs06'] = dsinfo['neventsTot'] * taskrec['cputime'] if (taskrec['cputime'] is not None and dsinfo['neventsTot'] > 0) else None
+        taskrec['totevoutput'] = dsinfo['neventsOutput'] if 'neventsOutput' in dsinfo else 0
     # get input and output containers
     inctrs = []
     outctrs = []

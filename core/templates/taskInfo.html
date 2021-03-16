@@ -62,7 +62,8 @@
             {% endif %}
         {% else %}
           {% if task.dsinfo %}
-            <th class="num"> Nevents  <br><span class='finished'>used</span></th>
+            <th class="num"> N input events <br><span class='finished'>used</span></th>
+            <th class="num">N output events</th>
             <th class="num">HS06*sec
                 <br> <span class="closed">Expected</span>
                 <br> Total<br><span class='done'>done</span>
@@ -145,6 +146,7 @@
             <td class="num"> {{ task.totev | intcomma }}
               <br><span class='finished'>{{ task.totevproc | intcomma }} ({{ task.pctfinished|floatformat }}%)</span>
             </td>
+            <td class="num"> {{ task.totevoutput | intcomma }}</td>
             <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06 | intcomma }}{% else %}&mdash;{% endif %}</span>
               <br>{{ task.currenttotevhs06 | intcomma }}
               <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
