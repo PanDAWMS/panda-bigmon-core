@@ -7,7 +7,8 @@ import re
 
 _logger = logging.getLogger('bigpandamon')
 
-system_synonyms = ['aipanda052.cern.ch', 'aipanda058.cern.ch', 'aipanda054.cern.ch','aipanda189.cern.ch']
+system_synonyms = ['aipanda052.cern.ch', 'aipanda058.cern.ch', 'aipanda054.cern.ch','aipanda189.cern.ch',
+                   'aipanda055.cern.ch']
 
 class TasksErrorCodesAnalyser:
     future = None
@@ -27,10 +28,15 @@ class TasksErrorCodesAnalyser:
         except ValueError:
             return False
 
+    def isHours(self, value):
+        if value[-1] == 'h' and self.isint(value[:-1]):
+            return True
+        else:
+            return False
 
     def remove_stop_words(self, frame):
         def my_tokenizer(s):
-            return list(filter(None, re.split("[/ \-!?:()><=]+", s)))
+            return list(filter(None, re.split("[/ \-!?:()><=,]+", s)))
 
         vectorizer = CountVectorizer(tokenizer=my_tokenizer, analyzer="word", stop_words=None, preprocessor=None)
         corpus = frame['errordialog'].tolist()
@@ -38,9 +44,9 @@ class TasksErrorCodesAnalyser:
             bag_of_words = vectorizer.fit_transform(corpus)
             sum_words = bag_of_words.sum(axis=0)
             words_freq = [(word, sum_words[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
-            words_freqf = [x[0] for x in filter(lambda x: x[1] < 2 or
+            words_freqf = [x[0] for x in filter(lambda x: (x[1] < 2 or
                                                           self.isint(x[0]) or self.isfloat(x[0]) or x[0] in
-                                                          system_synonyms, words_freq)]
+                                                          system_synonyms or self.isHours(x[0])), words_freq)]
             words_freqf = set(words_freqf)
 
             def replace_all(text):
