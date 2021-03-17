@@ -7,7 +7,7 @@ import re
 
 _logger = logging.getLogger('bigpandamon')
 
-system_synonyms = ['aipanda052.cern.ch', 'aipanda058.cern.ch', 'aipanda054.cern.ch']
+system_synonyms = ['aipanda052.cern.ch', 'aipanda058.cern.ch', 'aipanda054.cern.ch','aipanda189.cern.ch']
 
 class TasksErrorCodesAnalyser:
     future = None
@@ -22,7 +22,7 @@ class TasksErrorCodesAnalyser:
 
     def isint(self, value):
         try:
-            float(value)
+            int(value)
             return True
         except ValueError:
             return False
@@ -45,8 +45,9 @@ class TasksErrorCodesAnalyser:
 
             def replace_all(text):
                 common_tokens = set(my_tokenizer(text)).intersection(words_freqf)
+                common_tokens = sorted(common_tokens, key=len, reverse=True)
                 for i in common_tokens:
-                    text = text.replace(i, '**REPLACEMENT**') if len(i) > 1 else text
+                    text = text.replace(i, '*R*')
                 return text
             frame['processed_errordialog'] = frame['errordialog'].apply(replace_all)
         except:
