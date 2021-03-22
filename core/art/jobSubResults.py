@@ -233,7 +233,7 @@ def get_final_result(job):
     except:
         pass
     try:
-        extraParamsDict['subresults'] = job['result']['result'] if 'result' in job['result'] else []
+        extraParamsDict['subresults'] = job['result']['result'] if 'result' in job['result'] else None
     except:
         pass
     try:
