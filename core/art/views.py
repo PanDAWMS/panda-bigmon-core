@@ -77,6 +77,7 @@ def art(request):
     data = {
             'request': request,
             'viewParams': request.session['viewParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
             'packages': sorted(package_list, key=str.lower),
             'branches': [b['branch'] for b in branches],
             'ntags': [t['nightly_tag_date'] for t in ntags]
@@ -177,6 +178,7 @@ def artOverview(request):
             'request': request,
             'requestParams': request.session['requestParams'],
             'viewParams': request.session['viewParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
             'artpackages': artpackagesdict,
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
@@ -287,6 +289,7 @@ def artTasks(request):
             'request': request,
             'requestParams': request.session['requestParams'],
             'viewParams': request.session['viewParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
             'arttasks' : arttasksdict,
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
@@ -556,6 +559,7 @@ def artJobs(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
             'artjobs': artjobslist,
             'testdirectories': testdirectories,
             'noviewurl': noviewurl,
