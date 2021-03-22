@@ -76,6 +76,8 @@ from core.TaskProgressPlot import TaskProgressPlot
 from core.ErrorCodes import ErrorCodes
 import hashlib
 
+import core.constants as const
+
 import core.Customrenderer as Customrenderer
 import collections, pickle
 
@@ -7748,6 +7750,12 @@ def taskInfo(request, jeditaskid=0):
     if not valid:
         return response
 
+    # return json for dataTables if dt in request params
+    if 'dt' in request.session['requestParams'] and 'tkiec' in request.session['requestParams']:
+        tkiec = request.session['requestParams']['tkiec']
+        data = getCacheEntry(request, tkiec, isData=True)
+        return HttpResponse(data, content_type='application/json')
+
     # Here we try to get cached data. We get any cached data is available
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
 
@@ -7758,22 +7766,15 @@ def taskInfo(request, jeditaskid=0):
         if data is not None:
             doRefresh = False
 
-            # check the build date of cached data, since data structure for plots changed on 02.02.2020 and
+            # check the build date of cached data, since data structure changed on 2021-03-22 and
             # we need to refresh cached data for ended tasks which we store for 1 month
             if 'built' in data and data['built'] is not None:
                 try:
-                    builtDate = datetime.strptime('2020-'+data['built'], defaultDatetimeFormat)
-                    if builtDate < datetime.strptime('2020-09-28 11:00:00', defaultDatetimeFormat):
+                    builtDate = datetime.strptime('2021-'+data['built'], defaultDatetimeFormat)
+                    if builtDate < datetime.strptime('2021-03-22 14:00:00', defaultDatetimeFormat):
                         doRefresh = True
                 except:
                     doRefresh = True
-
-            # redirect event service tasks to new special view
-            if 'eventservice' in data and data['eventservice'] is not None:
-                if data['eventservice'] is True and (
-                    'version' not in request.session['requestParams'] or (
-                        'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old' )):
-                    return redirect('/tasknew/'+str(jeditaskid))
 
             # We still want to refresh tasks if request came from central crawler and task not in the frozen state
             if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in notcachedRemoteAddress) and
@@ -7786,7 +7787,7 @@ def taskInfo(request, jeditaskid=0):
                     request.session['requestParams']['jeditaskid'])
                 if jeditaskid != 0:
                     query = {'jeditaskid': jeditaskid}
-                    values = ['status','superstatus','modificationtime']
+                    values = ['status', 'superstatus', 'modificationtime']
                     tasks = JediTasks.objects.filter(**query).values(*values)[:1]
                     if len(tasks) > 0:
                         task = tasks[0]
@@ -7802,7 +7803,11 @@ def taskInfo(request, jeditaskid=0):
             if not doRefresh:
                 data['request'] = request
                 if data['eventservice']:
-                    response = render_to_response('taskInfoES.html', data, content_type='text/html')
+                    if 'version' not in request.session['requestParams'] or (
+                            'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old'):
+                        response = render_to_response('taskInfoESNew.html', data, content_type='text/html')
+                    else:
+                        response = render_to_response('taskInfoES.html', data, content_type='text/html')
                 else:
                     response = render_to_response('taskInfo.html', data, content_type='text/html')
                 patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -7835,6 +7840,7 @@ def taskInfo(request, jeditaskid=0):
     # getting task info
     taskrec = None
     query = {'jeditaskid': jeditaskid}
+    extra = '(1=1)'
     tasks.extend(JediTasks.objects.filter(**query).values())
 
     tasks = cleanTaskList(tasks, add_datasets_info=False)
@@ -7854,10 +7860,14 @@ def taskInfo(request, jeditaskid=0):
     if 'eventservice' in taskrec and (taskrec['eventservice'] == 1 or taskrec['eventservice'] == 'eventservice'):
         eventservice = True
 
-    if eventservice:
-        if 'version' not in request.session['requestParams'] or (
-                'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old'):
-            return redirect('/tasknew/' + str(jeditaskid))
+    # iDDS section
+    task_type = checkIfIddsTask(taskrec)
+    idds_info = None
+    if task_type == 'hpo':
+        mode = 'nodrop'
+        idds_info = {'task_type': 'hpo'}
+    else:
+        idds_info = {'task_type': 'idds'}
 
     # prepare ordered list of task params
     columns = []
@@ -7892,31 +7902,6 @@ def taskInfo(request, jeditaskid=0):
                 logtxt = '\n'.join(loglist)
             _logger.info("Loaded error log using '{}': {}".format(cmd, time.time() - request.session['req_init_time']))
 
-    # iDDS section
-    task_type = checkIfIddsTask(taskrec)
-    idds_info = None
-
-    if task_type == 'hpo':
-        mode = 'nodrop'
-        idds_info = {'task_type': 'hpo'}
-    else:
-        idds_info = {'task_type': 'idds'}
-
-    # getting job summary and plots
-    plotsDict, jobsummary, scouts = job_summary_for_task(query, '(1=1)', mode=mode)
-
-    # getting events summary for a ES tas
-    eventssummary = []
-    if eventservice:
-        equery = copy.deepcopy(query)
-        equery['creationdate__range'] = [taskrec['creationdate']]
-        equery['creationdate__range'].append(taskrec['endtime'].strftime(defaultDatetimeFormat) if 'endtime' in taskrec and taskrec['endtime'] else datetime.now().strftime(defaultDatetimeFormat))
-        eventssummary = event_summary_for_task(mode, equery)
-
-    # get sum of hs06sec grouped by status
-    hs06sSum = get_hs06s_summary_for_task(jeditaskid)
-    _logger.info("Loaded sum of hs06sec grouped by status: {}".format(time.time() - request.session['req_init_time']))
-
     # get datasets list and containers
     dsets, dsinfo = datasets_for_task(jeditaskid)
     if taskrec:
@@ -7942,6 +7927,43 @@ def taskInfo(request, jeditaskid=0):
 
     # getBrokerageLog(request)
 
+    # get sum of hs06sec grouped by status
+    hs06sSum = get_hs06s_summary_for_task(jeditaskid)
+    _logger.info("Loaded sum of hs06sec grouped by status: {}".format(time.time() - request.session['req_init_time']))
+
+    eventssummary = []
+    if eventservice:
+        # insert dropped jobs to temporary table if drop mode
+        transactionKeyDJ = -1
+        if mode == 'drop':
+            extra, transactionKeyDJ = insert_dropped_jobs_to_tmp_table(query, extra)
+            _logger.info("Inserting dropped jobs: {}".format(time.time() - request.session['req_init_time']))
+            _logger.info('tk of dropped jobs: {}'.format(transactionKeyDJ))
+
+        # getting events summary for a ES task
+        taskrec['totevproc_evst'] = 0
+        equery = copy.deepcopy(query)
+        # set timerange for better use of partitioned JOBSARCHIVED
+        equery['creationdate__range'] = [taskrec['creationdate']]
+        if 'endtime' in taskrec and taskrec['endtime']:
+            equery['creationdate__range'].append(taskrec['endtime'].strftime(defaultDatetimeFormat))
+        else:
+            equery['creationdate__range'].append(datetime.now().strftime(defaultDatetimeFormat))
+        eventssummary = event_summary_for_task(mode, equery, tk_dj=transactionKeyDJ)
+        for entry in eventssummary:
+            if 'count' in entry and 'totev' in taskrec and taskrec['totev'] > 0:
+                entry['pct'] = round(entry['count'] * 100. / taskrec['totev'], 2)
+            else:
+                entry['pct'] = 0
+            status = entry.get("statusname", "-")
+            if status in ['finished', 'done', 'merged']:
+                taskrec['totevproc_evst'] += entry.get("count", 0)
+        # update task dict in data with more accurate events data
+        if taskrec:
+            taskrec['pcttotevproc_evst'] = round(100. * taskrec['totevproc_evst'] / taskrec['totev'], 2) if taskrec['totev'] > 0 else ''
+            taskrec['pctfinished'] = round(100. * taskrec['totevproc'] / taskrec['totev'], 2) if taskrec['totev'] > 0 else ''
+        _logger.info("Events states summary: {}".format(time.time() - request.session['req_init_time']))
+
     # update taskrec dict
     if taskrec:
         if 'tasktype' in taskrec and taskrec['tasktype']:
@@ -7953,16 +7975,10 @@ def taskInfo(request, jeditaskid=0):
                 warning['memoryleaksuspicion']['jobs'] = tmcj_list
 
         if task_type is not None and idds_info is not None:
-            idds_timestamp_names = ['request_created_at', 'request_updated_at', 'out_created_at', 'out_updated_at']
             for itn in idds_info:
                 if itn in idds_info and isinstance(idds_info[itn], datetime):
                     idds_info[itn] = idds_info[itn].strftime(defaultDatetimeFormat)
             taskrec['idds_info'] = idds_info
-
-        taskrec['n_jobs_total'] = 0
-        for jcs in jobsummary:
-            if 'job_state_counts' in jcs:
-                taskrec['n_jobs_total'] += sum([val['count'] for val in jcs['job_state_counts']])
 
         if taskrec['creationdate'] and taskrec['creationdate'] < datetime.strptime('2018-02-07', '%Y-%m-%d'):
             warning['dropmode'] = """The drop mode is unavailable since the data of job retries was cleaned up. 
@@ -7996,7 +8012,7 @@ def taskInfo(request, jeditaskid=0):
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
         taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid)
 
-    # datetime type -> str in order to avoid encoding errors on template
+    # datetime type -> str in order to avoid encoding errors in template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
     datetime_dataset_param_names = ['statechecktime', 'creationtime', 'modificationtime']
     if taskrec:
@@ -8032,6 +8048,13 @@ def taskInfo(request, jeditaskid=0):
         taskparams, jobparams = humanize_task_params(taskparams)
         furl = request.get_full_path()
         nomodeurl = extensibleURL(request, removeParam(furl, 'mode'))
+
+        # decide on data caching time [seconds]
+        cacheexpiration = 60 * 20  # second/minute * minutes
+        if taskrec and 'status' in taskrec and taskrec['status'] in const.TASK_STATES_FINAL and (
+                'dsinfo' in taskrec and 'nfiles' in taskrec['dsinfo'] and isinstance(taskrec['dsinfo']['nfiles'], int) and taskrec['dsinfo']['nfiles'] > 10000):
+            cacheexpiration = 3600 * 24 * 31  # we store such data a month
+
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -8043,10 +8066,6 @@ def taskInfo(request, jeditaskid=0):
             'taskparams': taskparams,
             'jobparams': jobparams,
             'columns': columns,
-            'jobsummary': jobsummary,
-            'plotsDict': plotsDict,
-            'jobscoutids': scouts,
-            'eventssummary': eventssummary,
             'jeditaskid': jeditaskid,
             'logtxt': logtxt,
             'datasets': dsets,
@@ -8058,15 +8077,67 @@ def taskInfo(request, jeditaskid=0):
             'warning': warning,
         }
         data.update(getContextVariables(request))
-        cacheexpiration = 60 * 20  # second/minute * minutes
-        if taskrec and 'status' in taskrec and 'n_jobs_total' in taskrec and isinstance(taskrec['n_jobs_total'], int):
-            if taskrec['status'] in ['broken', 'aborted', 'done', 'finished', 'failed'] and taskrec['n_jobs_total'] > 5000:
-                cacheexpiration = 3600*24*31  # we store such data a month
-        setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
 
         if eventservice:
-            response = render_to_response('taskInfoES.html', data, content_type='text/html')
+            data['eventssummary'] = eventssummary
+            if 'version' not in request.session['requestParams'] or (
+                    'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old'):
+                # prepare input-centric ES taskInfo
+                _logger.info("This is input-centric ES taskInfo request")
+                # get input files state summary
+                transactionKeyIEC = -1
+                ifs_summary = []
+                inputfiles_list, ifs_summary, ifs_tk = input_summary_for_task(taskrec, dsets)
+
+                # Putting list of inputs IDs to tmp table for connection with jobList
+                for tk, ids_list in ifs_tk.items():
+                    tk = insert_to_temp_table(ids_list, tk)
+
+                # Putting list of inputs to cache separately for dataTables plugin
+                transactionKeyIEC = random.randrange(100000000)
+                setCacheEntry(request, transactionKeyIEC, json.dumps(inputfiles_list, cls=DateTimeEncoder), 60 * 30, isData=True)
+                _logger.info("Inputs states summary: {}".format(time.time() - request.session['req_init_time']))
+
+                # get lighted job summary
+                jobsummarylight, jobsummarylightsplitted = job_summary_for_task_light(taskrec)
+                _logger.info("Loaded lighted job summary: {}".format(time.time() - request.session['req_init_time']))
+
+                # get corecount and normalized corecount values
+                ccquery = {
+                    'jeditaskid': jeditaskid,
+                    'jobstatus': 'running',
+                }
+                accsum = Jobsactive4.objects.filter(**ccquery).aggregate(accsum=Sum('actualcorecount'))
+                naccsum = Jobsactive4.objects.filter(**ccquery).aggregate(
+                    naccsum=Sum(F('actualcorecount')*F('hs06')/F('corecount')/Value(10), output_field=FloatField()))
+                _logger.info("Loaded corecount and normalized corecount: {}".format(time.time() - request.session['req_init_time']))
+
+                data['iecsummary'] = ifs_summary
+                data['tkiec'] = transactionKeyIEC
+                data['jobsummarylight'] = jobsummarylight
+                data['jobsummarylightsplitted'] = jobsummarylightsplitted
+                data['tkdj'] = transactionKeyDJ
+                data['task']['accsum'] = accsum['accsum'] if 'accsum' in accsum else 0
+                data['task']['naccsum'] = naccsum['naccsum'] if 'naccsum' in naccsum else 0
+                setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
+                response = render_to_response('taskInfoESNew.html', data, content_type='text/html')
+            else:
+                _logger.info("This old style ES taskInfo request")
+                # getting job summary and plots
+                plotsDict, jobsummary, scouts = job_summary_for_task(query, '(1=1)', mode=mode)
+                data['jobsummary'] = jobsummary
+                data['plotsDict'] = plotsDict
+                data['jobscoutids'] = scouts
+                setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
+                response = render_to_response('taskInfoES.html', data, content_type='text/html')
         else:
+            _logger.info("This is ordinary non-ES task")
+            # getting job summary and plots
+            plotsDict, jobsummary, scouts = job_summary_for_task(query, '(1=1)', mode=mode)
+            data['jobsummary'] = jobsummary
+            data['plotsDict'] = plotsDict
+            data['jobscoutids'] = scouts
+            setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
             response = render_to_response('taskInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response

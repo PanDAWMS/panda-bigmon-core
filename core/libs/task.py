@@ -14,6 +14,7 @@ from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates,
     job_states_count_by_param, get_tmp_table_name, parse_datetime, get_job_queuetime
 from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp_table
 
+import core.constants as const
 from core.settings.local import defaultDatetimeFormat
 
 _logger = logging.getLogger('bigpandamon')
@@ -493,7 +494,7 @@ def build_stack_histogram(data_raw, **kwargs):
 
 def event_summary_for_task(mode, query, **kwargs):
     """
-    Event summary for a task.
+    Event summary for a ES task.
     If drop mode, we need a transaction key (tk_dj) to except job retries. If it is not provided we do it here.
     :param mode: str (drop or nodrop)
     :param query: dict
@@ -508,14 +509,11 @@ def event_summary_for_task(mode, query, **kwargs):
         extra = '(1=1)'
         extra, tk_dj = insert_dropped_jobs_to_tmp_table(query, extra)
 
-    eventservicestatelist = [
-        'ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed', 'fatal', 'merged',
-        'corrupted'
-    ]
+    eventservicestatelist = list(copy.deepcopy(const.EVENT_STATES))
     eventslist = []
     essummary = dict((key, 0) for key in eventservicestatelist)
 
-    print ('getting events states summary')
+    _logger.info('getting events states summary')
     if mode == 'drop':
         jeditaskid = query['jeditaskid']
         # explicit time window for better searching over partitioned JOBSARCHIVED
@@ -560,10 +558,10 @@ def event_summary_for_task(mode, query, **kwargs):
         new_cur.execute(equerystr, {'tid': jeditaskid, 'tkdj': tk_dj})
 
         evtable = dictfetchall(new_cur)
-
         for ev in evtable:
             essummary[eventservicestatelist[ev['STATUS']]] += ev['EVCOUNT']
-    if mode == 'nodrop':
+
+    elif mode == 'nodrop':
         event_counts = []
         equery = {'jeditaskid': query['jeditaskid']}
         event_counts.extend(
@@ -655,8 +653,11 @@ def input_summary_for_task(taskrec, dsets):
     A dictionary with tk as key and list of input files IDs that is needed for jobList view filter
     """
     jeditaskid = taskrec['jeditaskid']
+    task_creationdate = taskrec['creationdate']
+    if isinstance(taskrec['creationdate'], str):
+        task_creationdate = parse_datetime(taskrec['creationdate'])
     # Getting statuses of inputfiles
-    if taskrec['creationdate'] < datetime.strptime('2018-10-22 10:00:00', defaultDatetimeFormat):
+    if task_creationdate < datetime.strptime('2018-10-22 10:00:00', defaultDatetimeFormat):
         ifsquery = """
             select  
             ifs.jeditaskid,
@@ -713,7 +714,7 @@ def input_summary_for_task(taskrec, dsets):
     else:
         ifsquery = {}
         ifsquery['jeditaskid'] = jeditaskid
-        indsids = [ds['datasetid'] for ds in dsets if ds['type'] == 'input' and ds['masterid'] is None]
+        indsids = [ds['datasetid'] for ds in dsets if ds['type'] == 'input' and (ds['masterid'] is None or ds['masterid'] == '')]
         ifsquery['datasetid__in'] = indsids if len(indsids) > 0 else [-1,]
         inputfiles_list = []
         inputfiles_list.extend(JediDatasetContents.objects.filter(**ifsquery).values())

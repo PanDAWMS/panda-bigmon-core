@@ -63,3 +63,11 @@ EVENT_STATES = (
     'merged',
     'corrupted',
 )
+
+TASK_STATES_FINAL = (
+    'broken',
+    'aborted',
+    'done',
+    'finished',
+    'failed'
+)

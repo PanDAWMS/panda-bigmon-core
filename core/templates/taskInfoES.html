@@ -495,7 +495,7 @@
         <button class="dropdownbutton">Task extra info</button>
         <div id="dropdown-plotchoice" class="dropdown-plot">
 
-            <a href="{% url 'taskInfoNew' task.jeditaskid %}">New ES task page</a>
+            <a href="{% url 'taskInfo' task.jeditaskid %}">New ES task page</a>
 
             {% if requestParams.mode and requestParams.mode == 'nodrop' %}
                 <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Drop mode</a>
