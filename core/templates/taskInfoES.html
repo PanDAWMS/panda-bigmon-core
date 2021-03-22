@@ -569,8 +569,8 @@
         <button class="dropdownbutton">Memory & walltime usage</button>
         <div id="dropdown-plotchoice" class="dropdown-plot">
             <a style="cursor: pointer;" href="#plots" onclick="togglePlots('d3splot');">Memory and Walltime usage</a>
-              <a href="https://atlas-kibana.mwt2.org/s/webexports/app/dashboards#/view/BP_ES_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_ES_task,viewMode:view)"
-               target="_blank"><span class="tooltip-upper">Memory and Walltime usage (Kibana)<span class="tooltip-text">This Kibana instance is read-only. If you do not have access please contact Ilija Vukotic [ivukotic@cern.ch].</span></span></a>
+              <a href="https://atlas-kibana.mwt2.org:5601/s/webexports/app/dashboards#/view/BP_ES_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_ES_task,viewMode:view)"
+               target="_blank"><span class="tooltip-upper">Memory and Walltime usage (Kibana)</span></a>
         </div>
     </div>
 
@@ -585,8 +585,8 @@
                 <a href="{% url 'taskprofileplot' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Profile</a>
                 <a href="{% url 'taskesprofileplot' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Events Processing Profile (Not dropped finished jobs)</a>
             {% endif %}
-            <a href="https://atlas-kibana.mwt2.org/s/webexports/app/dashboards#/view/BP_ES_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_ES_task,viewMode:view)"
-               target="_blank"><span class="tooltip-upper">Memory and Walltime usage (Kibana)<span class="tooltip-text">This Kibana instance is read-only. If you do not have access please contact Ilija Vukotic [ivukotic@cern.ch].</span></span></a>
+            <a href="https://atlas-kibana.mwt2.org:5601/s/webexports/app/dashboards#/view/BP_ES_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_ES_task,viewMode:view)"
+               target="_blank"><span class="tooltip-upper">Memory and Walltime usage (Kibana)</span></a>
         </div>
     </div>
 
