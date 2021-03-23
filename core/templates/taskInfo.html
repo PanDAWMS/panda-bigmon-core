@@ -36,9 +36,6 @@
         {% if task.deftreqid %}
             <th> Request</th>
         {% endif %}
-        {% if task.reqid != task.jeditaskid and not task.deftreqid %}
-            <th>Jobset</th>
-        {% endif %}
         <th>Type</th>
         <th>Processing type</th>
         {% if task.workinggroup %}
@@ -62,7 +59,7 @@
             {% endif %}
         {% else %}
           {% if task.dsinfo %}
-            <th class="num"> N input events <br><span class='finished'>used</span></th>
+            <th class="num">N input events <br><span class='finished'>used</span></th>
             <th class="num">N output events</th>
             <th class="num">HS06*sec
                 <br> <span class="closed">Expected</span>
@@ -77,11 +74,11 @@
         {% endif %}
         <th>Time stamps:
           <br><span class="defined">created</span>
-          <br><span class="activated">started</span>
           <br><span class="closed">last modified</span>
         </th>
         <th>Cores</th>
         <th>Priority</th>
+        <th>Attempt</th>
         <th>Parent</th>
         {% if task.ticketid %}
             <th>Tracker</th>
@@ -96,9 +93,6 @@
         {% if task.deftreqid %}
             <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
                    target="_blank">{{ task.deftreqid }}</a></td>
-        {% endif %}
-        {% if task.reqid != task.jeditaskid and not task.deftreqid %}
-            <td>{{ task.reqid }}</td>
         {% endif %}
         <td>{% if task.tasktype == 'anal' %} analy {% else %} {{ task.tasktype }} {% endif %}</td>
         <td>{% if task.processingtype %} {{ task.processingtype }} {% endif %} </td>
@@ -161,10 +155,10 @@
           {% endif %}
         {% endif %}
         <td>{% if task.creationdate %}<span class="defined">{{ task.creationdate }}</span>{% else %}&mdash;{% endif %}
-          <br>{% if task.starttime %}<span class="activated">{{ task.starttime }}</span>{% else %}&mdash;{% endif %}
           <br>{% if task.modificationtime %}<span class="closed">{{ task.modificationtime }}</span>{% else %}&mdash;{% endif %}
         </td>
         <td>{{ task.corecount }}</td>
+        <td>{{ task.attemptnr }}</td>
         <td>{{ task.taskpriority }}</td>
         <td>
           {% if task.parent_tid and task.parent_tid != task.jeditaskid %}

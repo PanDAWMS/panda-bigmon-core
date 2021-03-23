@@ -36,9 +36,8 @@
       <tr>
           <th>Task ID</th>
           {% if task.deftreqid %}
-              <th> Request</th> {% endif %}
-          {% if task.reqid != task.jeditaskid and not task.deftreqid %}
-              <th>Jobset</th>{% endif %}
+            <th> Request</th>
+          {% endif %}
           <th>Type</th>
           <th>Processing type</th>
           <th>User</th>
@@ -52,17 +51,20 @@
           {% if task.dsinfo %}
               <th> N input events <br> <span class='finished'>processed</span><br> <span class='finished'>used</span></th>
               <th> N output events </th>
-              <th style="white-space: nowrap">HS06*sec<br> Expected<br> Total<br><span
-                      class='done'>done</span><br> <span class='failed'>failed</span></th>
+              <th style="white-space: nowrap">HS06*sec
+                <br> <span class="closed">Expected</span>
+                <br> Total
+                <br><span class='done'>done</span>
+                <br> <span class='failed'>failed</span></th>
               <th> N input files <br> <span class='finished'>finished</span> <br> <span class='failed'>failed</span></th>
           {% endif %}
           <th>Time stamps:
             <br><span class="defined">created</span>
-            <br><span class="activated">started</span>
             <br><span class="closed">last modified</span>
           </th>
           <th>Cores <br>Defined <br><span class="finished">Running</span> <br><span class="activated">Normalized</span></th>
           <th>Priority</th>
+          <th>Attempt</th>
           {% if task.ticketid %}
               <th>Tracker</th>
           {% endif %}
@@ -74,8 +76,6 @@
                 <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
                        target="_blank">{{ task.deftreqid }}</a></td>
           {% endif %}
-          {% if task.reqid != task.jeditaskid and not task.deftreqid %}
-              <td>{{ task.reqid }}</td>{% endif %}
           <td>{{ task.tasktype }}</td>
           <td>{% if task.processingtype %} {{ task.processingtype }} {% endif %} </td>
           <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
@@ -102,7 +102,7 @@
                   <span class='finished'>{{ task.totevproc_evst | intcomma }} ({{ task.pcttotevproc_evst|floatformat }}%)</span><br>
                   <span class='finished'>{{ task.totevproc | intcomma }} ({{ task.pctfinished|floatformat }}%)</span></td>
               <td> {{ task.totevoutput | intcomma }} </td>
-              <td style="text-align:right;"> {{ task.totevhs06 | intcomma }}
+              <td class="num"> <span class="closed">{{ task.totevhs06 | intcomma }}</span>
                   <br>{{ task.currenttotevhs06 | intcomma }}
                   <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
                   <br><span class='failed'>{{ task.failedevprochs06 | intcomma }}</span></td>
@@ -114,13 +114,13 @@
               </td>
           {% endif %}
           <td>{% if task.creationdate %}<span class="defined">{{ task.creationdate }}</span>{% else %}&mdash;{% endif %}
-            <br>{% if task.starttime %}<span class="activated">{{ task.starttime }}</span>{% else %}&mdash;{% endif %}
             <br>{% if task.modificationtime %}<span class="closed">{{ task.modificationtime }}</span>{% else %}&mdash;{% endif %}
           </td>
           <td>{{ task.corecount }}
             <br><span class="finished">{% if task.accsum %}{{ task.accsum }}{% else %}-{% endif %}</span>
             <br><span class="activated">{% if task.naccsum %}{{ task.naccsum }}{% else %}-{% endif %}</span></td>
           <td>{{ task.taskpriority }}</td>
+          <td>{{ task.attemptnr }}</td>
           {% if task.ticketid %}
               <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a>
               </td>
