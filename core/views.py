@@ -7859,6 +7859,7 @@ def taskInfo(request, jeditaskid=0):
     eventservice = False
     if 'eventservice' in taskrec and (taskrec['eventservice'] == 1 or taskrec['eventservice'] == 'eventservice'):
         eventservice = True
+        mode = 'nodrop'
 
     # iDDS section
     task_type = checkIfIddsTask(taskrec)
@@ -7963,6 +7964,19 @@ def taskInfo(request, jeditaskid=0):
             taskrec['pcttotevproc_evst'] = round(100. * taskrec['totevproc_evst'] / taskrec['totev'], 2) if taskrec['totev'] > 0 else ''
             taskrec['pctfinished'] = round(100. * taskrec['totevproc'] / taskrec['totev'], 2) if taskrec['totev'] > 0 else ''
         _logger.info("Events states summary: {}".format(time.time() - request.session['req_init_time']))
+
+        # get corecount and normalized corecount values
+        ccquery = {
+            'jeditaskid': jeditaskid,
+            'jobstatus': 'running',
+        }
+        accsum = Jobsactive4.objects.filter(**ccquery).aggregate(accsum=Sum('actualcorecount'))
+        naccsum = Jobsactive4.objects.filter(**ccquery).aggregate(
+            naccsum=Sum(F('actualcorecount') * F('hs06') / F('corecount') / Value(10), output_field=FloatField()))
+        taskrec['accsum'] = accsum['accsum'] if 'accsum' in accsum else 0
+        taskrec['naccsum'] = naccsum['naccsum'] if 'naccsum' in naccsum else 0
+        _logger.info("Loaded corecount and normalized corecount: {}".format(time.time() - request.session['req_init_time']))
+
 
     # update taskrec dict
     if taskrec:
@@ -8102,23 +8116,11 @@ def taskInfo(request, jeditaskid=0):
                 jobsummarylight, jobsummarylightsplitted = job_summary_for_task_light(taskrec)
                 _logger.info("Loaded lighted job summary: {}".format(time.time() - request.session['req_init_time']))
 
-                # get corecount and normalized corecount values
-                ccquery = {
-                    'jeditaskid': jeditaskid,
-                    'jobstatus': 'running',
-                }
-                accsum = Jobsactive4.objects.filter(**ccquery).aggregate(accsum=Sum('actualcorecount'))
-                naccsum = Jobsactive4.objects.filter(**ccquery).aggregate(
-                    naccsum=Sum(F('actualcorecount')*F('hs06')/F('corecount')/Value(10), output_field=FloatField()))
-                _logger.info("Loaded corecount and normalized corecount: {}".format(time.time() - request.session['req_init_time']))
-
                 data['iecsummary'] = ifs_summary
                 data['tkiec'] = transactionKeyIEC
                 data['jobsummarylight'] = jobsummarylight
                 data['jobsummarylightsplitted'] = jobsummarylightsplitted
                 data['tkdj'] = transactionKeyDJ
-                data['task']['accsum'] = accsum['accsum'] if 'accsum' in accsum else 0
-                data['task']['naccsum'] = naccsum['naccsum'] if 'naccsum' in naccsum else 0
                 setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
                 response = render_to_response('taskInfoESNew.html', data, content_type='text/html')
             else:
@@ -8317,8 +8319,8 @@ def taskInfoNew(request, jeditaskid=0):
         _logger.info("Events states summary: {}".format(time.time() - request.session['req_init_time']))
     if taskrec:
         taskrec['totevproc_evst'] = neventsProcTot
-        taskrec['pcttotevproc_evst'] = (100 * neventsProcTot / taskrec['totev']) if (taskrec['totev'] > 0) else ''
-        taskrec['pctfinished'] = (100 * taskrec['totevproc'] / taskrec['totev']) if (taskrec['totev'] > 0) else ''
+        taskrec['pcttotevproc_evst'] = round(100. * neventsProcTot / taskrec['totev'],2) if (taskrec['totev'] > 0) else ''
+        taskrec['pctfinished'] = round(100 * taskrec['totevproc'] / taskrec['totev'],2) if (taskrec['totev'] > 0) else ''
 
     # get input files state summary
     transactionKeyIEC = -1
