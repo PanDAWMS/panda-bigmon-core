@@ -7983,7 +7983,6 @@ def taskInfo(request, jeditaskid=0):
         taskrec['naccsum'] = naccsum['naccsum'] if 'naccsum' in naccsum else 0
         _logger.info("Loaded corecount and normalized corecount: {}".format(time.time() - request.session['req_init_time']))
 
-
     # update taskrec dict
     if taskrec:
         if 'tasktype' in taskrec and taskrec['tasktype']:

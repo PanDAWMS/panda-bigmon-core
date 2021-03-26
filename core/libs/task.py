@@ -901,6 +901,8 @@ def get_top_memory_consumers(taskrec):
             row['maxrssratio'] = int(row['maxrssratio'])
         except:
             row['maxrssratio'] = 0
+        row['jobmaxpss_percore'] = round(row['jobmaxpss_percore']) if row['jobmaxpss_percore'] else 0
+        row['sitemaxrss_percore'] = round(row['sitemaxrss_percore']) if row['sitemaxrss_percore'] else 0
     return topmemoryconsumedjobs
 
 
