@@ -189,12 +189,11 @@
   <div class="dropdownplots">
       <button class="dropdownbutton">Show jobs</button>
       <div id="dropdown-plotchoice" class="dropdown-plot">
-          <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">All (access
-              to job details and logs)</a>
-          <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&specialhandling=sj">Scouts</a>
-          <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=finished|failed|cancelled">Ended</a>
-          <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Active</a>
-      </div>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">All</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&specialhandling=sj">Scouts</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=finished|failed|cancelled">Ended</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Active</a>
+    </div>
   </div>
 
   <div class="dropdownplots">
@@ -202,7 +201,7 @@
       <div id="dropdown-plotchoice" class="dropdown-plot">
 
           <a style="cursor: pointer;" onclick="loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show full jobs summary including retries</a>
-          <a style="cursor: pointer;" onclick="loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show full jobs summary excluding retries</a>
+          <a {% if 'dropmode' in warning %}class="disabled"{% endif %} style="cursor: pointer;" onclick="loadJobSummary('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'jobsummary', 'jobsummarytables');">Show full jobs summary excluding retries</a>
 
           <a style="cursor: pointer;" onclick="loadJobSummary('{{ jeditaskid }}', 'nodrop', '{{ eventservice }}', 'scouts', 'scoutstable');">Show scout jobs</a>
 
@@ -265,16 +264,6 @@
   {% endwith %}
   </div>
 
-  {% if warning.dropmode %}
-      <div class="callout warning" data-closable>
-        <h5>Warning! </h5>
-        <p>{{ warning.dropmode }}</p>
-          <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-              <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-  {% endif %}
-
   {% if iecsummary %}
 
     <div class="card bp-container-simple secondary">
@@ -322,6 +311,24 @@
     </div>
   {% endif %}
 
+  {% if warning.dropmode %}
+      <div class="callout warning" data-closable>
+        <h5>Warning! </h5>
+        <p>{{ warning.dropmode }}</p>
+          <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+              <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+  {% endif %}
+  {% if warning.archive %}
+      <div class="callout warning" data-closable>
+        <h5>Warning! </h5>
+        <p>{{ warning.archive }}</p>
+          <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+            <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+  {% endif %}
 
   {% if jobsummarylight %}
       <div class="card card-tabs">
@@ -350,7 +357,7 @@
                       {% for state in countslist %}
                           <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
                               {% if state.count > 0 %}<b>
-                                  <a class="blacklink" href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}{% if estype == 'es' %}&eventservice=1|5{% elif estype == 'esmerge' %}&eventservice=2{% elif estype == 'jumbo' %}&eventservice=4{% endif %}&jobstatus={{ state.name }}&mode=nodrop">{{ state.count }}</a></b>
+                                  <a {% if 'archive' in warning %}class="disabled"{% endif %} class="blacklink" href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}{% if estype == 'es' %}&eventservice=1|5{% elif estype == 'esmerge' %}&eventservice=2{% elif estype == 'jumbo' %}&eventservice=4{% endif %}&jobstatus={{ state.name }}&mode=nodrop">{{ state.count }}</a></b>
                               {% endif %}
                           </td>
                       {% endfor %}
@@ -375,7 +382,7 @@
                       {% for state in jobsummarylight %}
                           <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
                               {% if state.count > 0 %}<b>
-                                  <a class="blacklink" href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode=nodrop">{{ state.count }}</a></b>
+                                  <a {% if 'archive' in warning %}class="disabled"{% endif %} class="blacklink" href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode=nodrop">{{ state.count }}</a></b>
                               {% endif %}
                           </td>
                       {% endfor %}

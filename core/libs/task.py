@@ -5,14 +5,15 @@ import copy
 import random
 import json
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.db import connection
 from django.db.models import Count, Sum
 from core.common.models import JediEvents, JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks
-from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
+from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4, Jobsarchived_y2015
 from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, add_job_category, get_job_walltime, \
     job_states_count_by_param, get_tmp_table_name, parse_datetime, get_job_queuetime
 from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp_table
+from core.pandajob.utils import get_pandajob_models_by_year
 
 import core.constants as const
 from core.settings.local import defaultDatetimeFormat
@@ -160,24 +161,44 @@ def cleanTaskList(tasks, **kwargs):
 def job_summary_for_task(query, extra="(1=1)", **kwargs):
     """An attempt to rewrite it moving dropping to db request level"""
     start_time = time.time()
+
     mode = 'nodrop'
     if 'mode' in kwargs:
         mode = kwargs['mode']
 
+    task_archive_flag = 1
+    if 'task_archive_flag' in kwargs and kwargs['task_archive_flag']:
+        task_archive_flag = kwargs['task_archive_flag']
     jobs = []
 
     # getting jobs from DB
-    newquery = copy.deepcopy(query)
+    jquery = copy.deepcopy(query)
+    jquery_notime = copy.deepcopy(query)
+    if 'modificationtime__castdate__range' in jquery_notime:
+        try:
+            del jquery_notime['modificationtime__castdate__range']
+        except:
+            _logger.warning('failed to remove modificationtime range from jquery')
+
     values = ('actualcorecount', 'eventservice', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus',
               'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics',
               'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'cpuconsumptionunit', 'transformation',
               'jobsetid', 'specialhandling', 'creationtime')
 
-    jobs.extend(Jobsarchived.objects.filter(**newquery).extra(where=[extra]).values(*values))
-    jobs.extend(Jobsdefined4.objects.filter(**newquery).extra(where=[extra]).values(*values))
-    jobs.extend(Jobswaiting4.objects.filter(**newquery).extra(where=[extra]).values(*values))
-    jobs.extend(Jobsactive4.objects.filter(**newquery).extra(where=[extra]).values(*values))
-    jobs.extend(Jobsarchived4.objects.filter(**newquery).extra(where=[extra]).values(*values))
+    if task_archive_flag >= 0:
+        jobs.extend(Jobsdefined4.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
+        jobs.extend(Jobswaiting4.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
+        jobs.extend(Jobsactive4.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
+        jobs.extend(Jobsarchived4.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
+        jobs.extend(Jobsarchived.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
+        _logger.info("Got jobs from ADCR: {} sec".format(time.time() - start_time))
+    if task_archive_flag <= 0:
+        # get list of jobsarchived models
+        jobsarchived_models = get_pandajob_models_by_year(jquery['modificationtime__castdate__range'])
+        if len(jobsarchived_models) > 0:
+            for jam in jobsarchived_models:
+                jobs.extend(jam.objects.filter(**jquery).extra(where=[extra]).values(*values))
+            _logger.info("Got jobs from ATLARC: {} sec".format(time.time() - start_time))
     _logger.info("Got jobs: {} sec".format(time.time() - start_time))
 
     # drop duplicate jobs
@@ -185,7 +206,7 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
     _logger.info("Dropped jobs: {} sec".format(time.time() - start_time))
 
     if mode == 'drop':
-        jobs, dj, dmj = drop_job_retries(jobs, newquery['jeditaskid'], is_return_dropped_jobs=False)
+        jobs, dj, dmj = drop_job_retries(jobs, jquery['jeditaskid'], is_return_dropped_jobs=False)
         _logger.info("Dropped job retries (drop mode): {} sec".format(time.time() - start_time))
 
     # determine jobs category (build, run or merge)
@@ -756,40 +777,69 @@ def job_summary_for_task_light(taskrec):
     jeditaskidstr = str(taskrec['jeditaskid'])
     statelistlight = ['defined', 'assigned', 'activated', 'starting', 'running', 'holding', 'transferring', 'finished',
                       'failed', 'cancelled']
-    estypes = ['es', 'esmerge', 'jumbo']
+    estypes = ['es', 'esmerge', 'jumbo', 'unknown']
+
+    # create structure and fill the dicts by 0 values
     jobSummaryLight = {}
     jobSummaryLightSplitted = {}
     for state in statelistlight:
         jobSummaryLight[str(state)] = 0
-
     for estype in estypes:
         jobSummaryLightSplitted[estype] = {}
         for state in statelistlight:
             jobSummaryLightSplitted[estype][str(state)] = 0
 
-    jsquery = """
-        select jobstatus, case eventservice when 1 then 'es' when 5 then 'es' when 2 then 'esmerge' when 4 then 'jumbo' else 'unknown' end, count(pandaid) as njobs from (
-        (
-        select pandaid, es as eventservice, jobstatus from atlas_pandabigmon.combined_wait_act_def_arch4 where jeditaskid = :jtid
-        )
-        union all
-        (
-        select pandaid, eventservice, jobstatus from atlas_pandaarch.jobsarchived where jeditaskid = :jtid
-        minus
-        select pandaid, eventservice, jobstatus from atlas_pandaarch.jobsarchived where jeditaskid = :jtid and pandaid in (
-            select pandaid from atlas_pandabigmon.combined_wait_act_def_arch4 where jeditaskid = :jtid
-            )
-        )
-        )
-        group by jobstatus, eventservice
-    """
-    cur = connection.cursor()
-    cur.execute(jsquery, {'jtid': jeditaskidstr})
-    js_count = cur.fetchall()
-    cur.close()
+    js_count_list = []
+    # decide which tables to query, if -1: only atlarc, 1: adcr, 0: both
+    task_archive_flag = get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime'))
 
-    js_count_names = ['state', 'es', 'count']
-    js_count_list = [dict(zip(js_count_names, row)) for row in js_count]
+    if task_archive_flag >= 0:
+        jsquery = """
+            select jobstatus, case eventservice when 1 then 'es' when 5 then 'es' when 2 then 'esmerge' when 4 then 'jumbo' else 'unknown' end, count(pandaid) as njobs from (
+            (
+            select pandaid, es as eventservice, jobstatus from atlas_pandabigmon.combined_wait_act_def_arch4 where jeditaskid = :jtid
+            )
+            union all
+            (
+            select pandaid, eventservice, jobstatus from atlas_pandaarch.jobsarchived where jeditaskid = :jtid
+            minus
+            select pandaid, eventservice, jobstatus from atlas_pandaarch.jobsarchived where jeditaskid = :jtid and pandaid in (
+                select pandaid from atlas_pandabigmon.combined_wait_act_def_arch4 where jeditaskid = :jtid
+                )
+            )
+            )
+            group by jobstatus, eventservice
+        """
+        cur = connection.cursor()
+        cur.execute(jsquery, {'jtid': jeditaskidstr})
+        js_count = cur.fetchall()
+        cur.close()
+        js_count_names = ['state', 'es', 'count']
+        js_count_list = [dict(zip(js_count_names, row)) for row in js_count]
+
+    # if old task go to ATLARC for jobs summary
+    if task_archive_flag <= 0:
+        js_count_raw_list = []
+        jquery = {
+            'jeditaskid': taskrec['jeditaskid'],
+            'modificationtime__castdate__range': get_task_timewindow(taskrec, format_out='str')
+        }
+        jobsarchived_models = get_pandajob_models_by_year(get_task_timewindow(taskrec, format_out='str'))
+        if len(jobsarchived_models) > 0:
+            for jam in jobsarchived_models:
+                js_count_raw_list.extend(jam.objects.filter(**jquery).values('eventservice', 'jobstatus').annotate(count=Count('pandaid')))
+            _logger.info("Got jobs summary from ATLARC")
+        if len(js_count_raw_list) > 0:
+            for row in js_count_raw_list:
+                tmp_dict = {
+                    'state': row['jobstatus'],
+                    'count': row['count'],
+                }
+                if row['eventservice']:
+                    tmp_dict['es'] = const.EVENT_SERVICE_JOB_TYPES[row['eventservice']] if row['eventservice'] in const.EVENT_SERVICE_JOB_TYPES else 'unknown'
+                else:
+                    tmp_dict['es'] = 'unknown'
+                js_count_list.append(tmp_dict)
 
     for row in js_count_list:
         if row['state'] in statelistlight:
@@ -797,6 +847,12 @@ def job_summary_for_task_light(taskrec):
                 jobSummaryLight[row['state']] += row['count']
             if row['es'] in estypes and not (row['state'] == 'cancelled' and row['es'] in ('es', 'esmerge')):
                 jobSummaryLightSplitted[row['es']][row['state']] += row['count']
+    # delete 'unknown' if count = 0
+    if 'unknown' in jobSummaryLightSplitted and sum(v for v in jobSummaryLightSplitted['unknown'].values()) == 0:
+        try:
+            del jobSummaryLightSplitted['unknown']
+        except:
+            _logger.warning("Failed to delete empty unknown category in jobSummaryLightSplitted")
 
     # dict -> list for template
     jobsummarylight = [dict(name=state, count=jobSummaryLight[state]) for state in statelistlight]
@@ -1005,23 +1061,29 @@ def humanize_task_params(taskparams):
     return taskparams_list, jobparams_list
 
 
-def get_hs06s_summary_for_task(jeditaskid):
+def get_hs06s_summary_for_task(query):
     """"""
-    hquery = {}
-    hquery['jeditaskid'] = jeditaskid
-    hquery['jobstatus__in'] = ('finished', 'failed')
-    hs06sec_sum = []
-    hs06sec_sum.extend(Jobsarchived.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
-    hs06sec_sum.extend(Jobsarchived4.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
     hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
-    if len(hs06sec_sum) > 0:
-        for hs in hs06sec_sum:
-            if hs['jobstatus'] == 'finished':
-                hs06sSum['finished'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
-                hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
-            elif hs['jobstatus'] == 'failed':
-                hs06sSum['failed'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
-                hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+
+    hquery = copy.deepcopy(query)
+    hquery['jobstatus__in'] = ('finished', 'failed')
+
+    if 'jeditaskid' in hquery:
+
+        hs06sec_sum = []
+        pj_models = get_pandajob_models_by_year(query['modificationtime__castdate__range'])
+
+        for pjm in pj_models:
+            hs06sec_sum.extend(pjm.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
+
+        if len(hs06sec_sum) > 0:
+            for hs in hs06sec_sum:
+                if hs['jobstatus'] == 'finished':
+                    hs06sSum['finished'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+                    hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+                elif hs['jobstatus'] == 'failed':
+                    hs06sSum['failed'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+                    hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
 
     return hs06sSum
 
@@ -1046,6 +1108,57 @@ def get_task_age(task):
         task_age = round((endtime-creationtime).total_seconds() / 60. / 60. / 24., 2)
 
     return task_age
+
+
+def get_task_timewindow(task, **kwargs):
+    """
+    Return a list of two datetime when task run
+    :param task:
+    :return: timewindow: list of datetime or str
+    """
+    format_out = 'datetime'
+    if 'format_out' in kwargs and kwargs['format_out'] == 'str':
+        format_out = 'str'
+
+    timewindow = [datetime.now(), datetime.now()]
+
+    if 'creationdate' in task and task['creationdate']:
+        timewindow[0] = task['creationdate'] if isinstance(task['creationdate'], datetime) else parse_datetime(task['creationdate'])
+    else:
+        timewindow[0] = datetime.now()
+
+    if task['status'] in const.TASK_STATES_FINAL:
+        if 'endtime' in task and task['endtime']:
+            timewindow[1] = task['endtime'] if isinstance(task['endtime'], datetime) else parse_datetime(task['endtime'])
+        elif 'modificationtime' in task and task['modificationtime']:
+            timewindow[1] = task['modificationtime'] if isinstance(task['modificationtime'], datetime) else parse_datetime(task['modificationtime'])
+        else:
+            timewindow[1] = datetime.now()
+    else:
+        timewindow[1] = datetime.now()
+
+    if format_out == 'str':
+        timewindow = [t.strftime(defaultDatetimeFormat) for t in timewindow]
+
+    return timewindow
+
+
+def get_task_time_archive_flag(task_timewindow):
+    """
+    Decide which tables query, if -1: only atlarc, 1: adcr, 0: both
+    :param timewindow: list of two datetime
+    :return: task_age_flag: -1, 0 or 1
+    """
+    #
+    task_age_flag = 1
+    if task_timewindow[1] < datetime.now() - timedelta(days=365*3):
+        task_age_flag = -1
+    elif task_timewindow[0] > datetime.now() - timedelta(days=365*3) and task_timewindow[1] < datetime.now() - timedelta(days=365*2):
+        task_age_flag = 0
+    elif task_timewindow[0] > datetime.now() - timedelta(days=365*2):
+        task_age_flag = 1
+
+    return task_age_flag
 
 
 def get_dataset_locality(jeditaskid):

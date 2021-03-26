@@ -198,7 +198,7 @@
       <button class="dropdown">Task extra info</button>
       <div class="dropdown-items">
           {% if requestParams.mode and requestParams.mode == 'nodrop' %}
-              <a href="{{ nomodeurl }}mode=drop">Switch to drop mode</a>
+              <a {% if 'dropmode' in warning %}class="disabled"{% endif %} href="{{ nomodeurl }}mode=drop">Switch to drop mode</a>
           {% else %}
               <a href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
           {% endif %}
@@ -235,12 +235,11 @@
   <div class="bp-dropdown-button">
     <button class="dropdown">Show jobs</button>
     <div class="dropdown-items">
-      <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">All (including retries)</a>
-      <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=drop&display_limit=100">All (retries dropped)</a>
-      <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&specialhandling=sj">Scouts</a>
-      <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=finished|failed|cancelled">Ended</a>
-      <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Active</a>
-
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">All (including retries)</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=drop&display_limit=100">All (retries dropped)</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&specialhandling=sj">Scouts</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=finished|failed|cancelled">Ended</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Active</a>
     </div>
   </div>
 
@@ -299,6 +298,15 @@
         </button>
       </div>
   {% endif %}
+  {% if warning.archive %}
+      <div class="callout warning" data-closable>
+        <h5>Warning! </h5>
+        <p>{{ warning.archive }}</p>
+          <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+              <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+  {% endif %}
 
   {% if jobsummary %}
     {% if requestParams.warning %}
@@ -328,7 +336,7 @@
             {% for state in job_category_states.job_state_counts %}
               <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
                     {% if state.count > 0 %}
-                        <b> <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode={{ mode }}{% if job_category_states.value == 'build' %}&transformation=build*{% elif job_category_states.value == 'merge' %}&processingtype=pmerge{% else %}&processingtype=!pmerge&prodsourcelabel={% if task.tasktype == 'prod' %}managed{% else %}user{% endif %}{% endif %}&display_limit=100">
+                        <b> <a {% if 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode={{ mode }}{% if job_category_states.value == 'build' %}&transformation=build*{% elif job_category_states.value == 'merge' %}&processingtype=pmerge{% else %}&processingtype=!pmerge&prodsourcelabel={% if task.tasktype == 'prod' %}managed{% else %}user{% endif %}{% endif %}&display_limit=100">
                             <span class='{{ state.name }}_fill'>{% if state.count > 0 %} {{ state.count }} {% endif %}</span></a> </b>
                     {% endif %}
               </td>

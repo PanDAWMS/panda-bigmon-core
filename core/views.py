@@ -113,7 +113,7 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
 from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
-    get_prod_slice_by_taskid
+    get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
@@ -7861,6 +7861,13 @@ def taskInfo(request, jeditaskid=0):
         eventservice = True
         mode = 'nodrop'
 
+    # nodrop only for tasks older than 2 years
+    if get_task_timewindow(taskrec, format_out='datetime')[0] <= datetime.now() - timedelta(days=365*3):
+        warning['dropmode'] = """The drop mode is unavailable since the data of job retries was cleaned up. 
+                    The data shown on the page is in nodrop mode."""
+        mode = 'nodrop'
+        warning['archive'] = "The jobs data is moved to the archive, so the links to jobs page is unavailable"
+
     # iDDS section
     task_type = checkIfIddsTask(taskrec)
     idds_info = None
@@ -7929,7 +7936,10 @@ def taskInfo(request, jeditaskid=0):
     # getBrokerageLog(request)
 
     # get sum of hs06sec grouped by status
-    hs06sSum = get_hs06s_summary_for_task(jeditaskid)
+    # creating a jquery with timewindow
+    jquery = copy.deepcopy(query)
+    jquery['modificationtime__castdate__range'] = get_task_timewindow(taskrec, format_out='str')
+    hs06sSum = get_hs06s_summary_for_task(jquery)
     _logger.info("Loaded sum of hs06sec grouped by status: {}".format(time.time() - request.session['req_init_time']))
 
     eventssummary = []
@@ -7945,11 +7955,7 @@ def taskInfo(request, jeditaskid=0):
         taskrec['totevproc_evst'] = 0
         equery = copy.deepcopy(query)
         # set timerange for better use of partitioned JOBSARCHIVED
-        equery['creationdate__range'] = [taskrec['creationdate']]
-        if 'endtime' in taskrec and taskrec['endtime']:
-            equery['creationdate__range'].append(taskrec['endtime'].strftime(defaultDatetimeFormat))
-        else:
-            equery['creationdate__range'].append(datetime.now().strftime(defaultDatetimeFormat))
+        equery['creationdate__range'] = get_task_timewindow(taskrec, format_out='str')
         eventssummary = event_summary_for_task(mode, equery, tk_dj=transactionKeyDJ)
         for entry in eventssummary:
             if 'count' in entry and 'totev' in taskrec and taskrec['totev'] > 0:
@@ -7993,10 +7999,6 @@ def taskInfo(request, jeditaskid=0):
                 if itn in idds_info and isinstance(idds_info[itn], datetime):
                     idds_info[itn] = idds_info[itn].strftime(defaultDatetimeFormat)
             taskrec['idds_info'] = idds_info
-
-        if taskrec['creationdate'] and taskrec['creationdate'] < datetime.strptime('2018-02-07', '%Y-%m-%d'):
-            warning['dropmode'] = """The drop mode is unavailable since the data of job retries was cleaned up. 
-            The data shown on the page is in nodrop mode."""
 
         if 'ticketsystemtype' in taskrec and taskrec['ticketsystemtype'] == '' and taskparams is not None:
             if 'ticketID' in taskparams:
@@ -8126,7 +8128,10 @@ def taskInfo(request, jeditaskid=0):
             else:
                 _logger.info("This old style ES taskInfo request")
                 # getting job summary and plots
-                plotsDict, jobsummary, scouts = job_summary_for_task(query, '(1=1)', mode=mode)
+                plotsDict, jobsummary, scouts = job_summary_for_task(
+                    jquery, '(1=1)',
+                    mode=mode,
+                    task_archive_flag=get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime')))
                 data['jobsummary'] = jobsummary
                 data['plotsDict'] = plotsDict
                 data['jobscoutids'] = scouts
@@ -8135,7 +8140,10 @@ def taskInfo(request, jeditaskid=0):
         else:
             _logger.info("This is ordinary non-ES task")
             # getting job summary and plots
-            plotsDict, jobsummary, scouts = job_summary_for_task(query, '(1=1)', mode=mode)
+            plotsDict, jobsummary, scouts = job_summary_for_task(
+                jquery, '(1=1)',
+                mode=mode,
+                task_archive_flag=get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime')))
             data['jobsummary'] = jobsummary
             data['plotsDict'] = plotsDict
             data['jobscoutids'] = scouts
@@ -8343,7 +8351,10 @@ def taskInfoNew(request, jeditaskid=0):
     _logger.info("Loaded lighted job summary: {}".format(time.time() - request.session['req_init_time']))
 
     # get sum of hs06sec grouped by status
-    hs06sSum = get_hs06s_summary_for_task(jeditaskid)
+    # creating a jquery with timewindow
+    jquery = copy.deepcopy(query)
+    jquery['modificationtime__castdate__range'] = get_task_timewindow(taskrec, format_out='str')
+    hs06sSum = get_hs06s_summary_for_task(jquery)
     _logger.info("Loaded sum of hs06sec grouped by status: {}".format(time.time() - request.session['req_init_time']))
 
     # get corecount and normalized corecount values
