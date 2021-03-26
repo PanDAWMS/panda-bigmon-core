@@ -246,7 +246,7 @@
   <div class="bp-dropdown-button">
       <button class="dropdown">Task parameters and help</button>
       <div class="dropdown-items">
-          <a onclick="loadStatusLog('{{ jeditaskid }}')">Show task status log</a>
+          <a href="#statuslog" onclick="toggleStatusLog() ">Show task status log</a>
           <a href="#jobparams">Jump to job parameters</a>
           {% if jobscoutids|length > 0 %}
               <a href="#scouts">Jump to scout jobs</a>
@@ -387,7 +387,7 @@
       </div>
   {% endif %}
 
-  <div id="div-statuslog" ng-app="taskInfoAppSL" ng-controller="TaskStatusLogController">
+  <div id="statuslog" ng-app="taskInfoAppSL" ng-controller="TaskStatusLogController">
     <div class="card bp-container-simple secondary ng-hide" ng-hide="status_log.is_hidden">
     <div class="card-divider"><p>Task status history</p></div>
     <div class="card-section">
@@ -839,6 +839,9 @@
         if (url.indexOf("#plots") > -1) {
             togglePlots();
         }
+        if (url.indexOf("#statuslog") > -1) {
+            toggleStatusLog();
+        }
     });
 
 function togglePlots() {
@@ -848,11 +851,13 @@ function togglePlots() {
   });
 }
 
-function loadStatusLog(jeditaskid) {
-    let scope = angular.element(document.getElementById('div-statuslog')).scope();
-    scope.$apply(function(){
+function toggleStatusLog() {
+    let scope = angular.element(document.getElementById('statuslog')).scope();
+    if (scope.status_log.is_hidden) {
+      scope.$apply(function () {
         scope.status_log.toggle();
-    });
+      });
+    }
 }
 
 
