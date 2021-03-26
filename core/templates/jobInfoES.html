@@ -145,6 +145,9 @@
         <tr><td>Task Buffer</td><td>{{ job.taskbuffererrorcode }}</td><td>{{ job.taskbuffererrordiag }}</td></tr>
       {% endif %}
       {% endif %}
+      {% if job.harvesterInfo.diagmessage %}
+        <tr><td>Harvester worker</td><td>{{ job.harvesterInfo.errorcode }}</td><td>{{ job.harvesterInfo.diagmessage }}</td></tr>
+      {% endif %}
     </tbody>
   </table>
 {% endif %}

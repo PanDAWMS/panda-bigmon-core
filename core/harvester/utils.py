@@ -5,12 +5,14 @@ def isHarvesterJob(pandaid):
     jobHarvesterInfo = []
 
     sqlQuery = """
-    SELECT workerid,HARVESTERID, BATCHLOG, COMPUTINGELEMENT FROM (SELECT 
+    SELECT workerid, HARVESTERID, BATCHLOG, COMPUTINGELEMENT, ERRORCODE, DIAGMESSAGE  FROM (SELECT 
       a.PANDAID,
       a.workerid,
       a.HARVESTERID,
       b.BATCHLOG,
-      b.COMPUTINGELEMENT
+      b.COMPUTINGELEMENT,
+      b.ERRORCODE,
+      b.DIAGMESSAGE
       FROM ATLAS_PANDA.HARVESTER_REL_JOBS_WORKERS a,
       ATLAS_PANDA.HARVESTER_WORKERS b
       WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) where pandaid = {0}
