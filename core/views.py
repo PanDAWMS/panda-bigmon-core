@@ -108,7 +108,7 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_r
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
 from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_event_status_summary, get_file_info, get_job_queuetime, job_states_count_by_param, \
-    add_job_category, convert_bytes, get_tmp_table_name, split_into_intervals
+    add_job_category, convert_bytes, convert_hs06, get_tmp_table_name, split_into_intervals
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
@@ -7917,7 +7917,7 @@ def taskInfo(request, jeditaskid=0):
         taskrec['totev'] = dsinfo['neventsTot']
         taskrec['totevproc'] = dsinfo['neventsUsedTot']
         taskrec['pctfinished'] = (100 * taskrec['totevproc'] / taskrec['totev']) if (taskrec['totev'] > 0) else ''
-        taskrec['totevhs06'] = dsinfo['neventsTot'] * taskrec['cputime'] if (taskrec['cputime'] is not None and dsinfo['neventsTot'] > 0) else None
+        taskrec['totevhs06'] = round(dsinfo['neventsTot'] * convert_hs06(taskrec['cputime'], taskrec['cputimeunit'])) if (taskrec['cputime'] and taskrec['cputimeunit'] and dsinfo['neventsTot'] > 0) else None
         taskrec['totevoutput'] = dsinfo['neventsOutput'] if 'neventsOutput' in dsinfo else 0
     # get input and output containers
     inctrs = []

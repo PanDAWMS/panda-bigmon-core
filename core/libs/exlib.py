@@ -453,6 +453,24 @@ def convert_bytes(n_bytes, output_unit='MB'):
     return output
 
 
+def convert_hs06(input, unit):
+    """
+    taking into account cputimeunit
+    :param cputime: int
+    :param unit: str
+    :return:
+    """
+    output = 0
+    multipliers_dict = {
+        'HS06sPerEvent': 1,
+        'mHS06sPerEvent': 1.0/1000,
+    }
+    if unit in multipliers_dict:
+        output = input * multipliers_dict[unit]
+
+    return output
+
+
 def split_into_intervals(input_data, **kwargs):
     """
     Split numeric values list into intervals for sumd
