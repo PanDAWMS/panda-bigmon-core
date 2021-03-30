@@ -114,6 +114,10 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
   background-color: #4ba173;
   color: #fefefe;
 }
+.label.neutral {
+  background-color: #acacac;
+  color: #fefefe;
+}
 
 table tr th p {
   margin: 0;

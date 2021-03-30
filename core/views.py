@@ -4203,6 +4203,7 @@ def userInfo(request, user=''):
 
         # jobs summary
         jquery = {
+            'jobstatus__in': ['finished', 'failed', ],
             'jeditaskid__in': [t['jeditaskid'] for t in tasks if 'jeditaskid' in t and t['jeditaskid']]
         }
         err_fields = [

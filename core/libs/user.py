@@ -107,40 +107,48 @@ def humanize_metrics(metrics):
         'failed': {
             'title': 'Jobs failure',
             'unit': '%',
+            'class': [],
         },
         'maxpss_per_actualcorecount': {
             'title': 'Median maxPSS/core',
             'unit': 'GB',
+            'class': [],
         },
         'walltime': {
             'title': 'Median jobs walltime',
             'unit': 'hours',
+            'class': [],
         },
         'queuetime': {
             'title': 'Median jobs time to start',
             'unit': 'hours',
+            'class': [],
         },
         'efficiency': {
             'title': ' Median jobs efficiency',
             'unit': '%',
+            'class': [],
         },
         'attemptnr': {
             'title': ' Median number of job attempts',
             'unit': '',
+            'class': [],
         },
         'cpua7': {
             'title': 'Personal CPU hours for last 7 days',
             'unit': '',
+            'class': ['neutral', ],
         },
         'cpup7': {
             'title': 'Group CPU hours for last 7 days',
             'unit': '',
+            'class': ['neutral', ],
         },
     }
 
     metrics_thresholds = {
         'pss': {
-            'warning': [2.0, 2.5],
+            'warning': [2, 2.5],
             'alert': [2.5, 1000000]
         },
         'time': {
@@ -156,23 +164,22 @@ def humanize_metrics(metrics):
             'alert': [12, 1000000]
         },
         'fail': {
-            'warning': [25, 50],
-            'alert': [50, 100]
+            'warning': [20, 40],
+            'alert': [40, 100]
         },
         'efficiency': {
             'warning': [50, 70],
             'alert': [0, 50]
         },
         'attemptnr': {
-            'warning': [3, 5],
-            'alert': [5, 100]
+            'warning': [2, 4],
+            'alert': [4, 100]
         }
     }
 
     metrics_list = []
     for md in metric_defs:
         if md in metrics and metrics[md]:
-            metric_defs[md]['class'] = []
             if 'pss' in md:
                 metric_defs[md]['value'] = round(metrics[md], 2)
             elif 'efficiency' in md:
@@ -184,7 +191,7 @@ def humanize_metrics(metrics):
                 if key in md:
                     metric_defs[md]['class'].extend([c for c, crange in thresholds.items() if metric_defs[md]['value'] >= crange[0] and metric_defs[md]['value'] < crange[1]])
 
-            metric_defs[md]['class'] = metric_defs[md]['class'][0] if len(metric_defs[md]['class']) > 0 else ''
+            metric_defs[md]['class'] = metric_defs[md]['class'][0] if len(metric_defs[md]['class']) > 0 else 'ok'
             metrics_list.append(metric_defs[md])
 
     return metrics_list
