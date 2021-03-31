@@ -4886,30 +4886,55 @@ def wgSummary(query):
 
 def wnSummary(query):
     summary = []
-    querynotime = query
+    querynotime = copy.deepcopy(query)
     cores_running = Sum('actualcorecount', filter=Q(jobstatus__exact='running'))
     minramcount_running = Sum('minramcount', filter=Q(jobstatus__exact='running'))
-    # del querynotime['modificationtime__range']    ### creates inconsistency with job lists. Stick to advertised 12hrs
-    summary.extend(Jobsactive4.objects.filter(**querynotime).values('modificationhost', 'jobstatus').annotate(
+    is_archive = False
+    if 'modificationtime__castdate__range' in querynotime:
+        if parse_datetime(querynotime['modificationtime__castdate__range'][0]) < (datetime.now() - timedelta(days=3)):
+            is_archive = True
+        try:
+            del querynotime['modificationtime__castdate__range']    # creates inconsistency with job lists. Stick to advertised 12hrs
+        except KeyError:
+            _logger.warning('Failed to remove modificationtime range from query')
+
+    summary.extend(Jobsdefined4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
+        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
+    summary.extend(Jobswaiting4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
+        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
+    summary.extend(Jobsactive4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
         Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
     summary.extend(Jobsarchived4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
         Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
+    if is_archive:
+        summary.extend(Jobsarchived.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
+            Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
+
     return summary
 
 
 @login_customrequired
 def wnInfo(request, site, wnname='all'):
     """ Give worker node level breakdown of site activity. Spot hot nodes, error prone nodes. """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
 
-    if 'hours' in request.GET:
-        hours = int(request.GET['hours'])
-    elif 'days' in request.GET:
-        hours = 24*int(request.GET['days'])
+    jobs_url = '?computingsite={}&mode=nodrop'.format(site)
+    if 'hours' in request.session['requestParams']:
+        hours = int(request.session['requestParams']['hours'])
+    elif 'days' in request.session['requestParams']:
+        hours = 24*int(request.session['requestParams']['days'])
+    elif 'date_from' in request.session['requestParams'] and 'date_to' in request.session['requestParams']:
+        hours = 0
     else:
         hours = 12
+        jobs_url += '&hours={}'.format(hours)
 
-    valid, response = initRequest(request)
-    if not valid: return response
+    exclude_params = ['timestamp', 'wnname', ]
+    for p, v in request.session['requestParams'].items():
+        if p not in exclude_params:
+            jobs_url += '&{}={}'.format(p, v)
 
     if site and site not in pandaSites:
         data = {
@@ -4924,7 +4949,6 @@ def wnInfo(request, site, wnname='all'):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-
     # Here we try to get cached data
     data = getCacheEntry(request, "wnInfo")
     if data is not None:
@@ -4933,7 +4957,6 @@ def wnInfo(request, site, wnname='all'):
         response = render_to_response('wnInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-
 
     errthreshold = 15
 
@@ -5114,6 +5137,7 @@ def wnInfo(request, site, wnname='all'):
             'requestParams': request.session['requestParams'],
             'url': request.path,
             'xurl': xurl,
+            'jurl': jobs_url,
             'site': site,
             'wnname': wnname,
             'user': None,

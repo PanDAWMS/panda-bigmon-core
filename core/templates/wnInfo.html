@@ -180,10 +180,10 @@
 <td> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </td>
 <td class="num">{{ wn.slotcount }} </td>
 <td class="num">{{ wn.rcores }} </td>
-<td class="num"><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
+<td class="num"><a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
 {% if state.name != 'assigned' and state.name != 'activated' %}
-<td class="num_dt {{ state.name }}_fill">{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100">{{ state.count }}</a> {% else %}-{% endif %} </td>
+<td class="num_dt {{ state.name }}_fill">{% if state.count > 0 %}<a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&jobstatus={{ state.name }}">{{ state.count }}</a> {% else %}-{% endif %} </td>
 {% endif %}
 {% endfor %}
 <td class="num"> {% if wn.pctfail > errthreshold %} <span class="failed">{{ wn.pctfail }}</span> {% else %} {{ wn.pctfail  }} {% endif %} </td>
@@ -243,10 +243,10 @@ $(document).ready(function () {
 <td class="num">{{ wn.slotcount }} </td>
 <td class="num">{{ wn.rcores }} </td>
 <td class="num">{{ wn.rminramcount  }} </td>
-<td class="num"><a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&mode=nodrop&display_limit=100"> {{ wn.count }} </a></td>
+<td class="num"><a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
 {% if state.name != 'assigned' and state.name != 'activated' and state.name != 'pending' %}
-<td class="num_dt {{ state.name }}_fill">{% if state.count > 0 %}<a href="{% url 'jobList' %}?computingsite={{ site }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&hours={{hours}}&jobstatus={{ state.name }}&mode=nodrop&display_limit=100">{{ state.count }}</a> {% else %} - {% endif %} </td>
+<td class="num_dt {{ state.name }}_fill">{% if state.count > 0 %}<a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&jobstatus={{ state.name }}">{{ state.count }}</a> {% else %} - {% endif %} </td>
 {% endif %}
 {% endfor %}
 <td class="num"> {% if wn.pctfail > errthreshold %} <span class="failed">{{ wn.pctfail  }}</span> {% else %} {{ wn.pctfail  }} {% endif %} </td>
